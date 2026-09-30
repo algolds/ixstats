@@ -11,80 +11,28 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
-import { useIxMedia } from "~/components/media/MediaContext";
+import { useIxMediaActions } from "~/components/media/MediaContext";
 import type { Media } from "~/lib/media/types";
 import { withBasePath } from "~/lib/base-path";
+import type { PlaybackBlock } from "./narrator/narrator-types";
+import { extractArticleBlocks } from "./narrator/narrator-dom-parser";
 
-export interface PlaybackBlock {
-  id: string; // DOM element ID or data-index key
-  text: string; // Cleaned plain text to speak
-  type: "heading" | "prose";
-  sectionId?: string; // Nearest parent heading section ID
-  element: HTMLElement;
-}
-
-// Strip citation/edit cruft from raw article text.
-function cleanContentText(text: string): string {
-  return text
-    .replace(/\[\d+\]/g, "") // remove [1], [2] citation brackets
-    .replace(/\[citation needed\]/gi, "")
-    .replace(/\[edit\]/gi, "")
-    .trim();
-}
-
-// Split prose into sentences (abbreviation-naive, but the server re-splits anyway).
-function splitSentences(text: string): string[] {
-  const parts = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g);
-  return parts ? parts.map((s) => s.trim()).filter(Boolean) : [text];
-}
-
-// Pack prose into bounded chunks so every TTS request is ~constant size regardless of
-// input: one chunk ≈ TTS_CHUNK_CHARS of audio on the free HF Space (~14s). Short sentences
-// merge up (fewer requests, smoother playback); a giant run-on sentence or list item
-// hard-splits on clause then word boundaries so it can never stall/timeout.
-const TTS_CHUNK_CHARS = 240;
-function chunkText(text: string): string[] {
-  const out: string[] = [];
-  let buf = "";
-  const flush = () => {
-    const t = buf.trim();
-    if (t) out.push(t);
-    buf = "";
-  };
-  const add = (s: string) => {
-    if (buf && buf.length + s.length + 1 > TTS_CHUNK_CHARS) flush();
-    buf = buf ? `${buf} ${s}` : s;
-  };
-  for (const sentence of splitSentences(text)) {
-    if (sentence.length <= TTS_CHUNK_CHARS) {
-      add(sentence);
-      continue;
-    }
-    flush(); // oversize sentence — split on clause, then words
-    for (const clause of sentence.split(/(?<=[,;:—-])\s+/)) {
-      if (clause.length <= TTS_CHUNK_CHARS) {
-        add(clause);
-        continue;
-      }
-      for (const word of clause.split(/\s+/)) add(word);
-    }
-  }
-  flush();
-  return out.length ? out : [text];
-}
+export type { PlaybackBlock };
 
 export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | null>) {
   const notify = useNotify();
   const {
     articleTitle,
+    // oxlint-disable-next-line eslint/no-unused-vars
     tocEntries,
     setNarratorState,
     registerNarratorActions,
+    // oxlint-disable-next-line eslint/no-unused-vars
     activeSectionId,
     setActiveSectionId,
   } = useWikiContext() as any;
 
-  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMedia();
+  const { playTrack, registerPlaybackDelegate, updatePlaybackState } = useIxMediaActions();
   const hasNarratorAccess = useHasNarratorAccess();
 
   const [blocks, setBlocks] = useState<PlaybackBlock[]>([]);
@@ -92,6 +40,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1.0);
   const [voice, setVoice] = useState("");
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [volume, setVolume] = useState(0.2);
 
   // Load persisted audio preferences (default volume ~20%)
@@ -108,7 +57,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         setVolume(0.2);
         volumeRef.current = 0.2;
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — defaults apply
+    }
   }, []);
 
   // Create mediaTrack representing the article
@@ -294,62 +245,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     if (!hasNarratorAccess || !articleRef.current) return;
     const container = articleRef.current;
 
-    // Find all headings, paragraphs, and list items
-    const elements = Array.from(container.querySelectorAll("h2, h3, h4, p, li")) as HTMLElement[];
-
-    const validBlocks: PlaybackBlock[] = [];
-    let currentSectionId = "";
-
-    elements.forEach((el, index) => {
-      // Exclude elements inside infoboxes, sidebars, coordinates, nav boxes, math, etc.
-      if (
-        el.closest(".infobox") ||
-        el.closest(".aside") ||
-        el.closest(".sidebar") ||
-        el.closest(".navbox") ||
-        el.closest(".reflist") ||
-        el.closest(".coordinates") ||
-        el.closest(".wikios-ixworld-loading") ||
-        el.closest("table")
-      ) {
-        return;
-      }
-
-      // Read cleaned text content
-      const clean = cleanContentText(el.textContent || "");
-      if (!clean) return;
-
-      const isHeading = el.tagName.startsWith("H");
-
-      if (isHeading) {
-        currentSectionId = el.id || `heading-${index}`;
-      }
-
-      // Add a unique identifier class to bind the DOM element
-      const blockId = `wikios-narrator-block-${index}`;
-      el.setAttribute("data-narrator-block", blockId);
-
-      if (isHeading) {
-        validBlocks.push({
-          id: blockId,
-          text: clean,
-          type: "heading",
-          sectionId: currentSectionId || undefined,
-          element: el,
-        });
-      } else {
-        // One block per bounded chunk, all sharing the same DOM element for highlighting.
-        chunkText(clean).forEach((chunk, si) => {
-          validBlocks.push({
-            id: `${blockId}-s${si}`,
-            text: chunk,
-            type: "prose",
-            sectionId: currentSectionId || undefined,
-            element: el,
-          });
-        });
-      }
-    });
+    const validBlocks = extractArticleBlocks(container);
 
     // Restore saved reading progress if available
     let initialIdx = -1;
@@ -363,7 +259,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           }
         }
       }
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — start from the first block
+    }
 
     setBlocks(validBlocks);
     setActiveIdx(initialIdx);
@@ -372,8 +270,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       isPlaying: false,
       activeBlockIndex: initialIdx >= 0 ? initialIdx : 0,
       totalBlocks: validBlocks.length,
-      activeText: initialIdx >= 0 ? validBlocks[initialIdx]?.text ?? "" : "",
-      activeSectionTitle: initialIdx >= 0 ? validBlocks[initialIdx]?.sectionId ?? "" : "",
+      activeText: initialIdx >= 0 ? (validBlocks[initialIdx]?.text ?? "") : "",
+      activeSectionTitle: initialIdx >= 0 ? (validBlocks[initialIdx]?.sectionId ?? "") : "",
       speed,
       voice,
       volume: volumeRef.current,
@@ -410,10 +308,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       highlightedElementRef.current.classList.remove(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
-        "transition-all",
+        "bg-onoma-primary/5",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         "duration-300"
       );
       highlightedElementRef.current = null;
@@ -427,10 +325,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       el.classList.add(
         "wikios-narrator-active-block",
         "border-l-4",
-        "border-[#0091ff]",
+        "border-onoma-primary",
         "pl-3",
-        "bg-[#0091ff]/5",
-        "transition-all",
+        "bg-onoma-primary/5",
+        "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
         "duration-300"
       );
       highlightedElementRef.current = el;
@@ -543,7 +441,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         if (articleTitle) {
           sessionStorage.setItem(`wikios:narrator:pos:${articleTitle}`, String(index));
         }
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
 
       try {
         if (isKokoroEnabled) {
@@ -669,6 +569,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
   }, []);
 
   // Narrator Control Actions with intelligent dynamic recovery
+  // oxlint-disable-next-line
   const play = useCallback(() => {
     if (!hasNarratorAccess || isPlaying) return;
     setIsPlaying(true);
@@ -684,7 +585,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
             targetIdx = parsed;
           }
         }
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — start from the first block
+      }
       if (targetIdx < 0 || targetIdx >= blocksRef.current.length) {
         targetIdx = findViewportClosestBlock();
       }
@@ -769,7 +672,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       volumeRef.current = clamped;
       try {
         localStorage.setItem("onoma-personal-volume", String(clamped));
-      } catch {}
+      } catch {
+        // storage unavailable (private mode) — preference is not persisted
+      }
       setNarratorState({ volume: clamped });
       if (audioRef.current) {
         audioRef.current.volume = clamped;

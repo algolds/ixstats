@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 function Skeleton({ className, style, ...props }: React.ComponentProps<"div">) {
   const [blurAmount, setBlurAmount] = useState(4); // Start with rack focus blur

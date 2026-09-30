@@ -35,10 +35,7 @@ export function parseTypecheckArgs(args: string[]): {
   return { projectPath, logPath, extraArgs };
 }
 
-export function runTypecheck(
-  args: string[],
-  onExit?: (code: number) => void
-): void {
+export function runTypecheck(args: string[], onExit?: (code: number) => void): void {
   const { projectPath, logPath, extraArgs } = parseTypecheckArgs(args);
 
   if (!projectPath) {
@@ -102,7 +99,7 @@ export function runTypecheck(
 
   child.on("close", (code, signal) => {
     logStream?.end();
-    const finalCode = signal ? 1 : code ?? 0;
+    const finalCode = signal ? 1 : (code ?? 0);
     if (onExit) {
       onExit(finalCode);
       return;

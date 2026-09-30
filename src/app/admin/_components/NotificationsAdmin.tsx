@@ -1,11 +1,11 @@
-// src/app/admin/_components/NotificationsAdmin.tsx
 "use client";
+// src/app/admin/_components/NotificationsAdmin.tsx
 
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "./AdminHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Bell, ListTree, ScanEye, Send } from "lucide-react";
+import { Bell, NumberedListLeft as ListTree, ScanQrCode as ScanEye, Send } from "iconoir-react";
 import {
   EventsRegistryPanel,
   NotificationBrowser,
@@ -28,17 +28,26 @@ export function NotificationsAdmin() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4 w-full justify-start">
-          <TabsTrigger value="rules" className="flex items-center gap-1.5">
-            <ListTree className="h-4 w-4" />
+        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
+          <TabsTrigger
+            value="rules"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            <ListTree className="h-3.5 w-3.5" />
             Rules & Event Hooks
           </TabsTrigger>
-          <TabsTrigger value="log" className="flex items-center gap-1.5">
-            <ScanEye className="h-4 w-4" />
+          <TabsTrigger
+            value="log"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            <ScanEye className="h-3.5 w-3.5" />
             Logs & Inbox
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-1.5">
-            <Send className="h-4 w-4" />
+          <TabsTrigger
+            value="testing"
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
+            <Send className="h-3.5 w-3.5" />
             Testing & Composition
           </TabsTrigger>
         </TabsList>

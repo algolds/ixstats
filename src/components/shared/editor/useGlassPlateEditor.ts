@@ -1,9 +1,8 @@
+"use client";
 // src/components/shared/editor/useGlassPlateEditor.ts
 // Hook managing PlateJS editor state, mention autocompletion, popovers, and keyboard submission.
 
-"use client";
-
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { createPlateEditor, ParagraphPlugin } from "platejs/react";
 import { Transforms, Editor, Range, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
@@ -210,6 +209,7 @@ export function useGlassPlateEditor({
   const stashItems = stashItemsQuery.data?.items || [];
   const imageItems = useMemo(
     () => stashItems.filter((item) => item.pageTitle.startsWith("commons:")),
+    // oxlint-disable-next-line
     [stashItems]
   );
   const imageTitles = useMemo(
@@ -232,15 +232,19 @@ export function useGlassPlateEditor({
     return map;
   }, [resolvedImagesList]);
 
-  // Initial Slate state
+  const lastEmittedHtmlRef = useRef<string | null>(null);
+  const lastEmittedPlainRef = useRef<string | null>(null);
+
+  // Initial Slate state (computed once on initial mount)
   const initialValue = useMemo(() => {
     if (!value || value.trim() === "") {
       return [{ type: "p", children: [{ text: "" }] }];
     }
     return parsoidHtmlToSlate(value);
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Initialize Editor
+  // Initialize Editor once
   const editor = useMemo(() => {
     return createPlateEditor({
       plugins: [
@@ -260,11 +264,27 @@ export function useGlassPlateEditor({
     });
   }, [initialValue]);
 
-  // Sync editor if external value completely resets
+  // Sync editor if external value changes from outside (e.g. reset or prefilled)
   useEffect(() => {
     if (!value || value === "") {
-      editor.children = [{ type: "p", children: [{ text: "" }] }];
-      setVersion((v) => v + 1);
+      if (lastEmittedHtmlRef.current !== "" && lastEmittedPlainRef.current !== "") {
+        editor.children = [{ type: "p", children: [{ text: "" }] }];
+        lastEmittedHtmlRef.current = "";
+        lastEmittedPlainRef.current = "";
+        setVersion((v) => v + 1);
+      }
+      return;
+    }
+
+    if (value !== lastEmittedHtmlRef.current && value !== lastEmittedPlainRef.current) {
+      try {
+        const newNodes = parsoidHtmlToSlate(value);
+        editor.children = newNodes;
+        lastEmittedHtmlRef.current = value;
+        setVersion((v) => v + 1);
+      } catch (e) {
+        console.warn("Failed to sync external value to Plate editor:", e);
+      }
     }
   }, [value, editor]);
 
@@ -276,6 +296,9 @@ export function useGlassPlateEditor({
         .map((n: any) => SlateNode.string(n))
         .join("\n")
         .trim();
+
+      lastEmittedHtmlRef.current = html;
+      lastEmittedPlainRef.current = plainText;
 
       onChange?.(html, plainText);
       setVersion((v) => v + 1);
@@ -327,11 +350,14 @@ export function useGlassPlateEditor({
       Transforms.select(editor as any, mentionRange);
 
       if (item.type === "wiki") {
-        Transforms.insertNodes(editor as any, {
-          type: "wikilink",
-          target: item.id,
-          children: [{ text: item.id }],
-        } as any);
+        Transforms.insertNodes(
+          editor as any,
+          {
+            type: "wikilink",
+            target: item.id,
+            children: [{ text: item.id }],
+          } as any
+        );
       } else {
         Transforms.insertText(editor as any, `${item.name} `);
       }
@@ -355,7 +381,9 @@ export function useGlassPlateEditor({
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
-          setMentionSelectedIndex((prev) => (prev - 1 + mentionResults.length) % mentionResults.length);
+          setMentionSelectedIndex(
+            (prev) => (prev - 1 + mentionResults.length) % mentionResults.length
+          );
           return;
         }
         if (e.key === "Enter" || e.key === "Tab") {
@@ -415,11 +443,14 @@ export function useGlassPlateEditor({
   const insertLink = useCallback(() => {
     if (!linkUrl.trim()) return;
     const textToInsert = linkText.trim() || linkUrl.trim();
-    Transforms.insertNodes(editor as any, {
-      type: "link",
-      url: linkUrl.trim(),
-      children: [{ text: textToInsert }],
-    } as any);
+    Transforms.insertNodes(
+      editor as any,
+      {
+        type: "link",
+        url: linkUrl.trim(),
+        children: [{ text: textToInsert }],
+      } as any
+    );
     setIsLinkOpen(false);
     setLinkUrl("");
     setLinkText("");
@@ -429,21 +460,27 @@ export function useGlassPlateEditor({
   const insertWikiLink = useCallback(() => {
     if (!wikiTarget.trim()) return;
     if (wikiInsertMode === "embed") {
-      Transforms.insertNodes(editor as any, {
-        type: "wikiembed",
-        title: wikiTarget.trim(),
-        summary: wikiIntroQuery.data?.intro || "",
-        imageUrl: selectedWikiImageUrl || "",
-        source: selectedWikiSource,
-        children: [{ text: "" }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "wikiembed",
+          title: wikiTarget.trim(),
+          summary: wikiIntroQuery.data?.intro || "",
+          imageUrl: selectedWikiImageUrl || "",
+          source: selectedWikiSource,
+          children: [{ text: "" }],
+        } as any
+      );
     } else {
       const textToInsert = wikiText.trim() || wikiTarget.trim();
-      Transforms.insertNodes(editor as any, {
-        type: "wikilink",
-        target: wikiTarget.trim(),
-        children: [{ text: textToInsert }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "wikilink",
+          target: wikiTarget.trim(),
+          children: [{ text: textToInsert }],
+        } as any
+      );
     }
     setIsWikiOpen(false);
     setWikiTarget("");
@@ -462,12 +499,15 @@ export function useGlassPlateEditor({
 
   const insertStashedImage = useCallback(
     (url: string, title: string) => {
-      Transforms.insertNodes(editor as any, {
-        type: "img",
-        src: url,
-        alt: title,
-        children: [{ text: "" }],
-      } as any);
+      Transforms.insertNodes(
+        editor as any,
+        {
+          type: "img",
+          src: url,
+          alt: title,
+          children: [{ text: "" }],
+        } as any
+      );
       setIsStashesOpen(false);
       ReactEditor.focus(editor as any);
     },

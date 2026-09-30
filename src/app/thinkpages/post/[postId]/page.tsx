@@ -2,7 +2,7 @@
 
 import React, { use, useState, useRef } from "react";
 import { useUser } from "~/context/auth-context";
-import { ArrowLeft, Loader2, ArrowUp } from "lucide-react";
+import { ArrowLeft, SystemRestart as Loader2, ArrowUp } from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -175,7 +175,7 @@ export default function PostPage({ params }: PostPageProps) {
           {replies.length > 0 && (
             <div className="relative z-10 ml-5 space-y-4">
               {replies.map((reply: any) => (
-                <div key={reply.id} className="transition-all duration-300">
+                <div key={reply.id} className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                   <ThinkpagesPost
                     post={reply}
                     currentUserAccountId={currentAccount?.id || ""}
@@ -213,7 +213,7 @@ export default function PostPage({ params }: PostPageProps) {
 
       {/* Floating Bottom Composer Capsule */}
       <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 px-4">
-        <div className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-slate-950/75 px-4 py-2 shadow-2xl backdrop-blur-xl transition-all duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
+        <div className="flex w-full items-center gap-3 rounded-full border border-white/10 bg-slate-950/75 px-4 py-2 shadow-2xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
           <Avatar className="h-8 w-8 shrink-0 border border-white/10">
             {currentAccount?.profileImageUrl ? (
               <AvatarImage src={currentAccount.profileImageUrl} />
@@ -253,7 +253,7 @@ export default function PostPage({ params }: PostPageProps) {
             size="icon"
             onClick={handleSubmitReply}
             disabled={!replyText.trim() || !currentAccount || createPostMutation.isPending}
-            className="h-8 w-8 shrink-0 rounded-full bg-blue-600 text-white transition-all duration-200 hover:bg-blue-500 disabled:opacity-40"
+            className="h-8 w-8 shrink-0 rounded-full bg-blue-600 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-blue-500 disabled:opacity-40"
           >
             {createPostMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

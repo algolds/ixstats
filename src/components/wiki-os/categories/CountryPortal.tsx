@@ -4,8 +4,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { Badge } from "~/components/ui/badge";
-import { ExternalLink, TrendingUp, Users, Coins, BarChart3 } from "lucide-react";
+import {
+  OpenNewWindow as ExternalLink,
+  GraphUp as TrendingUp,
+  Group as Users,
+  Coins,
+  Page as FileText,
+} from "iconoir-react";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -23,6 +28,7 @@ const CountryMapEmbed = dynamic(
 interface CategoryMember {
   title: string;
   ns: number;
+  imageUrl?: string | null;
 }
 
 interface CountryPortalProps {
@@ -37,16 +43,7 @@ interface CountryPortalProps {
   pages: CategoryMember[];
 }
 
-function formatNumber(n: number): string {
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toFixed(0);
-}
-
-function formatCurrency(n: number): string {
-  return `$${formatNumber(n)}`;
-}
+import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 
 export function CountryPortal({ country, subcategories, pages }: CountryPortalProps) {
   const { data: summary } = api.mycountry.getNationalSummary.useQuery(
@@ -66,28 +63,58 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
   const slug = encodeURIComponent(country.name.replace(/ /g, "_"));
 
   return (
-    <div className="wikios-portal">
-      {/* Hero */}
-      <div className="wikios-portal-hero">
-        {country.flagUrl && <img src={country.flagUrl} alt="" className="wikios-portal-flag" />}
-        <div className="wikios-portal-hero-text">
-          <h1 className="wikios-portal-hero-name">{country.name}</h1>
-          <div className="wikios-portal-hero-badges">
-            {country.economicTier && (
-              <Badge variant="secondary" className="text-[10px]">
-                {country.economicTier}
-              </Badge>
+    <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
+      {/* ── Apple-Grade Masthead Card ── */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+          <div className="flex items-start gap-5 sm:items-center">
+            {country.flagUrl ? (
+              <img
+                src={country.flagUrl}
+                alt=""
+                className="border-border/80 h-14 w-22 shrink-0 rounded-2xl border object-cover shadow-md sm:h-16 sm:w-26"
+              />
+            ) : (
+              <div className="bg-muted border-border flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border">
+                <FileText className="text-muted-foreground h-7 w-7" />
+              </div>
             )}
-            <Link href={withBasePath(`/wiki/${slug}`)} className="wikios-portal-hero-link">
-              <ExternalLink className="h-3 w-3" />
-              Wiki article
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Link
+                  href={withBasePath("/wiki/categories")}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/15 dark:text-emerald-400"
+                >
+                  <span>Nations</span>
+                </Link>
+                {country.economicTier && (
+                  <span className="bg-muted/80 text-muted-foreground border-border/60 rounded-full border px-2.5 py-0.5 text-xs font-semibold">
+                    {country.economicTier}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-foreground font-brand text-2xl font-bold tracking-tight sm:text-4xl">
+                {country.name}
+              </h1>
+            </div>
+          </div>
+
+          {/* Quick Action Navigation Buttons */}
+          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+            <Link
+              href={withBasePath(`/wiki/${slug}`)}
+              className="border-border/60 text-foreground inline-flex items-center gap-2 rounded-xl border bg-white/60 px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/40 hover:bg-white/90 active:scale-[0.97] dark:bg-zinc-800/60 dark:hover:bg-zinc-800/90"
+            >
+              <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+              <span>Wiki Article</span>
             </Link>
+
             <Link
               href={withBasePath(`/countries/${country.slug ?? country.id}`)}
-              className="wikios-portal-hero-link"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-[0.97]"
             >
-              <BarChart3 className="h-3 w-3" />
-              Full dashboard
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>National Dashboard</span>
             </Link>
           </div>
         </div>
@@ -177,9 +204,19 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                   <Link
                     key={m.title}
                     href={withBasePath(`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`)}
-                    className="wikios-portal-card"
+                    className="wikios-portal-card group"
                   >
-                    {m.title}
+                    {m.imageUrl ? (
+                      <img
+                        src={m.imageUrl}
+                        alt=""
+                        className="wikios-portal-card-img"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5 shrink-0 opacity-40" />
+                    )}
+                    <span className="wikios-portal-card-title">{m.title}</span>
                   </Link>
                 ))}
               </div>
@@ -190,7 +227,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
         {/* Right column (sidebar) */}
         <div className="wikios-portal-sidebar">
           {/* Map */}
-          <div className="wikios-portal-map glass-hierarchy-child">
+          <div className="wikios-portal-map facet-hierarchy-child">
             <CountryMapEmbed
               countryId={country.id}
               height="h-56"
@@ -202,7 +239,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
           {/* Blurbs */}
           {blurbs.length > 0 && (
-            <div className="wikios-portal-blurbs glass-hierarchy-child">
+            <div className="wikios-portal-blurbs facet-hierarchy-child">
               <h3 className="wikios-portal-blurbs-title">Country Voices</h3>
               {blurbs.map((r) => (
                 <Link
@@ -231,7 +268,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
 function VitalityCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="wikios-portal-vitality-card glass-hierarchy-child">
+    <div className="wikios-portal-vitality-card facet-hierarchy-child">
       <span className="wikios-portal-vitality-value" style={{ color }}>
         {Math.round(value)}
       </span>
@@ -250,7 +287,7 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <div className="wikios-portal-metric glass-hierarchy-child">
+    <div className="wikios-portal-metric facet-hierarchy-child">
       <div className="wikios-portal-metric-icon">{icon}</div>
       <div>
         <div className="wikios-portal-metric-value">{value}</div>

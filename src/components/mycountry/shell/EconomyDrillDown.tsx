@@ -3,19 +3,20 @@
 import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-  TrendingUp,
-  Landmark,
+  StatUp as TrendingUp,
+  Bank as Landmark,
   Coins,
-  Globe2,
-  Loader2,
-  Briefcase,
-  PieChart,
-  Scale,
-} from "lucide-react";
+  Globe as Globe2,
+  SystemRestart as Loader2,
+  Suitcase as Briefcase,
+  Reports as PieChart,
+  ScaleFrameEnlarge as Scale,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -62,6 +63,53 @@ const TradeCommerceConsole = dynamic(
   }
 );
 
+const InfrastructureMaintenanceCard = dynamic(
+  () =>
+    import("~/components/mycountry/domains/government/budget/InfrastructureMaintenanceCard").then((m) => ({
+      default: m.InfrastructureMaintenanceCard,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
+
+interface EconomicProfileData {
+  economicComplexity?: number | null;
+  exportsGDPPercent?: number | null;
+}
+
+interface LaborMarketData {
+  totalWorkforce?: number;
+  laborForceParticipationRate?: number;
+  unemploymentRate?: number;
+  youthUnemploymentRate?: number;
+  femaleParticipationRate?: number;
+  medianWage?: number;
+  informalEmploymentRate?: number;
+}
+
+interface FiscalSystemData {
+  taxEfficiency?: number | null;
+}
+
+interface IncomeDistributionData {
+  top10PercentWealth?: number | null;
+  middleClassPercent?: number | null;
+  intergenerationalMobility?: number | null;
+}
+
+interface EconomyConfigurationPayload {
+  economicProfile?: EconomicProfileData | null;
+  laborMarket?: LaborMarketData | null;
+  fiscalSystem?: FiscalSystemData | null;
+  incomeDistribution?: IncomeDistributionData | null;
+}
+
 export interface EconomyDrillDownProps {
   countryId: string;
 }
@@ -83,10 +131,11 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
     { enabled: !!countryId, staleTime: 30_000 }
   );
 
-  const profile = (econConfig as any)?.economicProfile;
-  const labor = (econConfig as any)?.laborMarket;
-  const fiscal = (econConfig as any)?.fiscalSystem;
-  const income = (econConfig as any)?.incomeDistribution;
+  const typedConfig = econConfig as EconomyConfigurationPayload | undefined;
+  const profile = typedConfig?.economicProfile;
+  const labor = typedConfig?.laborMarket;
+  const fiscal = typedConfig?.fiscalSystem;
+  const income = typedConfig?.incomeDistribution;
 
   const gdpBase = country?.currentTotalGdp ?? 100_000_000_000;
 
@@ -130,7 +179,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             ? `${dashboard.governmentalEfficiency}/100`
             : "—",
         sub: "Administrative capacity",
-        accent: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+        accent: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
       },
     ],
     [
@@ -149,11 +198,15 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            data-cuelume-press="soft"
+            onClick={() => {
+              soundEffects.press();
+              setActiveTab(id);
+            }}
             className={cn(
-              "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-all duration-200 select-none active:scale-95",
+              "flex w-full cursor-pointer items-center justify-center gap-2 truncate rounded-xl px-3 py-2 text-center text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
               activeTab === id
-                ? "border border-emerald-500/40 bg-gradient-to-r from-emerald-500/25 to-teal-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10"
+                ? "border border-emerald-500/40 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 shadow-xs"
                 : "text-muted-foreground hover:bg-muted/20 hover:text-foreground border border-transparent"
             )}
           >
@@ -174,19 +227,19 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   accent
                 )}
               >
-                <p className="text-muted-foreground/70 text-[10px] font-semibold tracking-wider uppercase">
+                <p className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
                   {label}
                 </p>
                 <p className="text-foreground mt-1 font-mono text-lg font-bold tracking-tight tabular-nums">
                   {value}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[10px] font-medium">{sub}</p>
+                <p className="text-muted-foreground mt-0.5 text-xs font-medium">{sub}</p>
               </div>
             ))}
           </div>
 
           {/* Sector Output Distribution Matrix */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <PieChart className="h-4 w-4 text-emerald-400" />
@@ -194,14 +247,14 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   Sector Output & Complexity Matrix
                 </h4>
               </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-emerald-400">
                 Complexity Index: {profile?.economicComplexity ?? 74.2}
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-xs">
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <div className="flex justify-between text-[11px]">
+                <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground font-semibold">Services</span>
                   <span className="font-mono font-bold text-emerald-400 tabular-nums">58%</span>
                 </div>
@@ -211,7 +264,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
               </div>
 
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <div className="flex justify-between text-[11px]">
+                <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground font-semibold">Industry & Mfg</span>
                   <span className="font-mono font-bold text-cyan-400 tabular-nums">32%</span>
                 </div>
@@ -221,7 +274,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
               </div>
 
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <div className="flex justify-between text-[11px]">
+                <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground font-semibold">Agriculture</span>
                   <span className="font-mono font-bold text-amber-400 tabular-nums">10%</span>
                 </div>
@@ -233,7 +286,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </FacetCard>
 
           {/* Labor Force & Employment Matrix */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-cyan-400" />
@@ -241,7 +294,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   Labor Market & Employment Dynamics
                 </h4>
               </div>
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-cyan-400">
+              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-cyan-400">
                 Participation:{" "}
                 {labor?.femaleParticipationRate ? `${labor.femaleParticipationRate}%` : "67.4%"}
               </span>
@@ -249,69 +302,69 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
 
             <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
               <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Unemployment
                 </p>
                 <p className="mt-0.5 font-mono text-base font-bold text-emerald-400 tabular-nums">
                   3.8%
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">Nominal Rate</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Nominal Rate</p>
               </div>
 
               <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Youth Unemployment
                 </p>
                 <p className="mt-0.5 font-mono text-base font-bold text-amber-400 tabular-nums">
                   {labor?.youthUnemploymentRate ? `${labor.youthUnemploymentRate}%` : "7.2%"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">Ages 18-24</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Ages 18-24</p>
               </div>
 
               <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Median Annual Wage
                 </p>
                 <p className="mt-0.5 font-mono text-base font-bold text-cyan-400 tabular-nums">
                   $
-                  {(labor as any)?.medianWage
-                    ? Math.round((labor as any).medianWage).toLocaleString()
+                  {labor?.medianWage
+                    ? Math.round(labor.medianWage).toLocaleString()
                     : "42,500"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">Annual Full-Time</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Annual Full-Time</p>
               </div>
 
               <div className="border-border/20 bg-muted/15 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Informal Labor
                 </p>
-                <p className="mt-0.5 font-mono text-base font-bold text-purple-400 tabular-nums">
-                  {(labor as any)?.informalEmploymentRate
-                    ? `${(labor as any).informalEmploymentRate}%`
+                <p className="mt-0.5 font-mono text-base font-bold text-foreground tabular-nums">
+                  {labor?.informalEmploymentRate
+                    ? `${labor.informalEmploymentRate}%`
                     : "4.1%"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">Unregulated Employment</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">Unregulated Employment</p>
               </div>
             </div>
           </FacetCard>
 
           {/* Income Inequality & Wealth Distribution */}
-          <FacetCard depth={1} className="bg-card/30 space-y-3 p-4 backdrop-blur-md">
+          <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
-                <Scale className="h-4 w-4 text-purple-400" />
+                <Scale className="h-4 w-4 text-indigo-500" />
                 <h4 className="text-foreground text-xs font-semibold">
                   Income & Wealth Equality Console
                 </h4>
               </div>
-              <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-purple-400">
+              <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-500 dark:text-indigo-400">
                 Gini Index: 31.4 (Moderate)
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-xs">
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Top 10% Wealth Share
                 </p>
                 <p className="font-mono text-base font-bold text-amber-400 tabular-nums">
@@ -320,7 +373,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
               </div>
 
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Middle Class Share
                 </p>
                 <p className="font-mono text-base font-bold text-emerald-400 tabular-nums">
@@ -329,7 +382,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
               </div>
 
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-lg border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Social Mobility Score
                 </p>
                 <p className="font-mono text-base font-bold text-cyan-400 tabular-nums">
@@ -348,7 +401,8 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           {/* Revenue Integration Banner */}
           <FacetCard
             depth={1}
-            className="bg-card/30 border-border/30 space-y-3 border p-4 shadow-lg backdrop-blur-xl"
+            surface="solid"
+            className="border-border/30 space-y-3 border p-4 shadow-lg"
           >
             <div className="border-border/20 flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
@@ -357,14 +411,14 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                   Revenue Integration & Budget Balance
                 </h4>
               </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-emerald-400">
                 Integrated Treasury Stream
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Fiscal Tax Revenue Yield
                 </p>
                 <p className="font-mono text-base font-bold text-emerald-400 tabular-nums">
@@ -372,13 +426,13 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                     ? `$${(country.governmentRevenueTotal / 1e9).toFixed(2)}B / yr`
                     : "—"}
                 </p>
-                <p className="text-muted-foreground text-[10px] font-medium">
+                <p className="text-muted-foreground text-xs font-medium">
                   Sourced from Fiscal Policy tab
                 </p>
               </div>
 
               <div className="border-border/20 bg-muted/15 space-y-1 rounded-xl border p-2.5">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Trade Tariff Revenue
                 </p>
                 <p className="font-mono text-base font-bold text-cyan-400 tabular-nums">
@@ -386,13 +440,13 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                     ? `$${((gdpBase * (profile.exportsGDPPercent / 100) * 0.05 * fiscal.taxEfficiency) / 1e9).toFixed(2)}B / yr`
                     : "—"}
                 </p>
-                <p className="text-muted-foreground text-[10px] font-medium">
+                <p className="text-muted-foreground text-xs font-medium">
                   Sourced from Trade & Commerce tab
                 </p>
               </div>
 
               <div className="border-border/20 bg-muted/15 col-span-2 space-y-1 rounded-xl border p-2.5 sm:col-span-1">
-                <p className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Tax System Efficiency
                 </p>
                 <p className="font-mono text-base font-bold text-amber-400 tabular-nums">
@@ -400,7 +454,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
                     ? `${Math.round(fiscal.taxEfficiency * 100)}%`
                     : "85%"}
                 </p>
-                <p className="text-muted-foreground text-[10px] font-medium">
+                <p className="text-muted-foreground text-xs font-medium">
                   Collection Efficiency
                 </p>
               </div>
@@ -408,6 +462,8 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           </FacetCard>
 
           <BudgetManagementDashboard countryId={countryId} />
+
+          <InfrastructureMaintenanceCard countryId={countryId} />
         </div>
       )}
 

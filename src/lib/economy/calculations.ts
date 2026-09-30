@@ -43,6 +43,27 @@ export enum StorytellerEffectType {
   ECONOMIC_POLICY = "economic_policy",
 }
 
+/** Floor for the summed annual population growth rate; keeps `1 + rate` positive. */
+const MIN_POPULATION_GROWTH_RATE = -0.5;
+
+const PERSISTED_STAT_KEYS = [
+  "currentPopulation",
+  "currentGdpPerCapita",
+  "currentTotalGdp",
+] as const;
+
+/** Throws when a stat about to be written to the DB is non-finite or negative. */
+export function assertPersistableStats(
+  stats: Pick<CountryStats, (typeof PERSISTED_STAT_KEYS)[number]>
+): void {
+  for (const key of PERSISTED_STAT_KEYS) {
+    const value = stats[key];
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error(`Refusing to persist non-finite/negative ${key}`);
+    }
+  }
+}
+
 export interface StatsCalculationResult {
   country: string;
   oldStats: Partial<CountryStats>;
@@ -275,8 +296,10 @@ export class IxStatsCalculator {
         adjustedRate += inputValue;
       }
     });
+    adjustedRate = Math.max(adjustedRate, MIN_POPULATION_GROWTH_RATE);
 
-    return baselinePopulation * Math.pow(1 + adjustedRate, yearsFromBaseline);
+    const next = baselinePopulation * Math.pow(1 + adjustedRate, yearsFromBaseline);
+    return Number.isFinite(next) && next >= 0 ? next : baselinePopulation;
   }
 
   /**

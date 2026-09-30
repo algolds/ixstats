@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { initializeSoundEngine, soundEffects } from "~/lib/sound/cuelume";
 
 /**
- * CuelumeSoundProvider
- *
- * Bootstraps Cuelume's delegated Web Audio listeners onto the document and
- * listens to client-side route arrivals with subtle Apple Design audio cues.
+ * Bootstraps Cuelume's delegated Web Audio listeners on the document and plays a
+ * subtle arrival cue on client-side route changes. Renders nothing — mount it once
+ * as a sibling in the root layout (it is an effect, not a context provider).
  */
-export function CuelumeSoundProvider({ children }: { children: React.ReactNode }) {
+export function CuelumeSoundProvider() {
   const pathname = usePathname();
   const initialMountRef = useRef(true);
 
@@ -18,15 +17,14 @@ export function CuelumeSoundProvider({ children }: { children: React.ReactNode }
     initializeSoundEngine();
   }, []);
 
-  // Subtle arrival sound when navigating between top-level sections
   useEffect(() => {
     if (initialMountRef.current) {
       initialMountRef.current = false;
       return;
     }
-    // Fire subtle arrival sound on route transition
     soundEffects.arrival();
+    // oxlint-disable-next-line
   }, [pathname]);
 
-  return <>{children}</>;
+  return null;
 }

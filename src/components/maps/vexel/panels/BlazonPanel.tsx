@@ -26,7 +26,7 @@ export default function BlazonPanel() {
           <button
             onClick={handleCopy}
             disabled={!blazon}
-            className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-zinc-400 transition-all hover:bg-white/10 hover:text-amber-400"
+            className="rounded bg-white/5 px-2 py-0.5 text-xs font-semibold text-zinc-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-amber-400"
           >
             {copied ? "✓ Copied" : "📋 Copy"}
           </button>

@@ -13,19 +13,19 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
 import {
-  Building2,
+  City as Building2,
   User,
-  Users,
+  Group as Users,
   MapPin,
-  DollarSign,
-  TrendingUp,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
   Star,
-  Zap,
+  Flash as Zap,
   Clock,
   CheckCircle,
   ArrowUpCircle,
-  XCircle,
-} from "lucide-react";
+  XmarkCircle as XCircle,
+} from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 
 interface EmbassyDetailSheetProps {
@@ -75,7 +75,7 @@ function StatBar({
       </div>
       <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full transition-all duration-300"
+          className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
           style={{ width: `${pct}%`, backgroundColor: color }}
         />
       </div>
@@ -163,9 +163,9 @@ export function EmbassyDetailSheet({
       3: "Grand Embassy",
     };
     const colors: Record<number, string> = {
-      1: "bg-blue-50 text-blue-700 dark:bg-blue-950/20",
-      2: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/20",
-      3: "bg-purple-50 text-purple-700 dark:bg-purple-950/20",
+      1: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/15",
+      2: "bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 dark:bg-cyan-500/25",
+      3: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
     };
     const l = level ?? 1;
     return (
@@ -175,8 +175,8 @@ export function EmbassyDetailSheet({
     );
   };
 
-  const missions = (embassy as any)?.missions ?? [];
-  const activeMissions = missions.filter((m: any) => m.status === "active");
+  const missions = embassy?.missions ?? [];
+  const activeMissions = missions.filter((m) => m.status === "active");
 
   return (
     <Dialog
@@ -224,12 +224,12 @@ export function EmbassyDetailSheet({
               <div className="space-y-2">
                 <InfoRow
                   label="Host Country"
-                  value={(embassy as any).hostCountryName ?? embassy.hostCountryId}
+                  value={embassy.hostCountryName ?? embassy.hostCountryId}
                   icon={MapPin}
                 />
                 <InfoRow
                   label="Guest Country"
-                  value={(embassy as any).guestCountryName ?? embassy.guestCountryId}
+                  value={embassy.guestCountryName ?? embassy.guestCountryId}
                   icon={Building2}
                 />
                 {embassy.ambassadorName && (
@@ -296,14 +296,14 @@ export function EmbassyDetailSheet({
                       Active Missions ({activeMissions.length})
                     </h4>
                     <div className="space-y-2">
-                      {activeMissions.map((m: any) => (
+                      {activeMissions.map((m) => (
                         <div
                           key={m.id}
                           className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{m.name}</span>
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" className="text-xs">
                               {m.type}
                             </Badge>
                           </div>
@@ -311,11 +311,11 @@ export function EmbassyDetailSheet({
                             <div className="mt-1.5">
                               <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
                                 <div
-                                  className="h-full rounded-full bg-cyan-500 transition-all"
+                                  className="h-full rounded-full bg-cyan-500 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                                   style={{ width: `${m.progress}%` }}
                                 />
                               </div>
-                              <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                              <span className="text-muted-foreground mt-0.5 block text-xs">
                                 {m.progress}% complete
                               </span>
                             </div>

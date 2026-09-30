@@ -3,9 +3,8 @@
 
 import type { CardRarity, CardType } from "@prisma/client";
 import type {
-  ArtworkVariants,
+  // oxlint-disable-next-line typescript/no-unused-vars
   CardStatsData,
-  CardEnhancementsData,
   CardInstance,
 } from "./cards-display";
 

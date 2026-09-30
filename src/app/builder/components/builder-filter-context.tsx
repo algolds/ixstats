@@ -2,8 +2,11 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef } from "react";
 import type { RealCountryData } from "~/app/builder/lib/economy-data-service";
+import type { BuilderSection } from "~/app/builder/lib/builder-theme";
+import { safeSetItemSync } from "~/lib/system/local-storage-mutex";
+import { readStoredViewMode } from "~/app/builder/hooks/builderStateTypes";
 
-interface BuilderFilterState {
+export interface BuilderFilterState {
   searchTerm: string;
   setSearchTerm: (v: string) => void;
   selectedArchetypes: string[];
@@ -18,19 +21,17 @@ interface BuilderFilterState {
   showFilters: boolean;
   setShowFilters: (v: boolean) => void;
   toggleFilters: () => void;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: BuilderSection) => void;
+  foundationPath: "hero" | "template" | "archetype" | "country";
+  setFoundationPath: (p: "hero" | "template" | "archetype" | "country") => void;
   gridWidth: number;
   setGridWidth: (w: number) => void;
   selectedTemplate: RealCountryData | null;
   setSelectedTemplate: (c: RealCountryData | null) => void;
   heroHeight: number;
   setHeroHeight: (h: number) => void;
-  previewWidgetHeight: number;
-  setPreviewWidgetHeight: (h: number) => void;
   welcomeModalOpen: boolean;
   setWelcomeModalOpen: (v: boolean) => void;
-  diExpansionTrigger: number;
-  triggerDIExpansion: () => void;
   viewMode: "standard" | "expert";
   setViewMode: (v: "standard" | "expert") => void;
 }
@@ -40,9 +41,12 @@ const BuilderFilterCtx = createContext<BuilderFilterState | null>(null);
 export function BuilderFilterProvider({
   children,
   onNavigate,
+  defaultViewMode = "standard",
 }: {
   children: React.ReactNode;
-  onNavigate?: (section: any) => void;
+  onNavigate?: (section: BuilderSection) => void;
+  /** View mode until the user picks one with the toggle. */
+  defaultViewMode?: "standard" | "expert";
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
@@ -51,11 +55,18 @@ export function BuilderFilterProvider({
   const [showFilters, setShowFilters] = useState(false);
   const [gridWidth, setGridWidth] = useState<number>(0);
   const [selectedTemplate, setSelectedTemplate] = useState<RealCountryData | null>(null);
+  const [foundationPath, setFoundationPath] = useState<"hero" | "template" | "archetype" | "country">("hero");
   const [heroHeight, setHeroHeight] = useState<number>(0);
-  const [previewWidgetHeight, setPreviewWidgetHeight] = useState<number>(82);
   const [welcomeModalOpen, setWelcomeModalOpen] = useState(false);
-  const [diExpansionTrigger, setDiExpansionTrigger] = useState(0);
-  const [viewMode, setViewMode] = useState<"standard" | "expert">("standard");
+  const [viewMode, setViewModeState] = useState<"standard" | "expert">(
+    () => readStoredViewMode() ?? defaultViewMode
+  );
+
+  const setViewMode = useCallback((mode: "standard" | "expert") => {
+    setViewModeState(mode);
+    safeSetItemSync("ixstates:builder-advanced-mode", mode === "expert" ? "advanced" : "standard");
+    safeSetItemSync("editor-mode", mode);
+  }, []);
   const confirmHandlerRef = useRef<(() => void) | null>(null);
 
   // Auto-open guide on first visit disabled
@@ -69,14 +80,11 @@ export function BuilderFilterProvider({
     setSoftSelectedCountry(null);
     setNewCountryName("");
     setSelectedTemplate(null);
+    setFoundationPath("hero");
   }, []);
 
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev);
-  }, []);
-
-  const triggerDIExpansion = useCallback(() => {
-    setDiExpansionTrigger((prev) => prev + 1);
   }, []);
 
   return (
@@ -97,18 +105,16 @@ export function BuilderFilterProvider({
         setShowFilters,
         toggleFilters,
         onNavigate,
+        foundationPath,
+        setFoundationPath,
         gridWidth,
         setGridWidth,
         selectedTemplate,
         setSelectedTemplate,
         heroHeight,
         setHeroHeight,
-        previewWidgetHeight,
-        setPreviewWidgetHeight,
         welcomeModalOpen,
         setWelcomeModalOpen,
-        diExpansionTrigger,
-        triggerDIExpansion,
         viewMode,
         setViewMode,
       }}

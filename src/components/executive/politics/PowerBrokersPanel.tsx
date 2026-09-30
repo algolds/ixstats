@@ -3,7 +3,14 @@
 import React from "react";
 import { api } from "~/trpc/react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Shield, Landmark, Building2, Users2, Compass, AlertCircle } from "lucide-react";
+import {
+  Shield,
+  Bank as Landmark,
+  City as Building2,
+  Group as Users2,
+  Compass,
+  WarningCircle as AlertCircle,
+} from "iconoir-react";
 
 interface PowerBrokersPanelProps {
   countryId: string;
@@ -19,10 +26,10 @@ const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
 
 const BROKER_COLORS: Record<string, string> = {
   technocrats: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-  party: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+  party: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
   generals: "text-red-500 bg-red-500/10 border-red-500/20",
   magnates: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  clergy: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
+  clergy: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
 };
 
 export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
@@ -45,7 +52,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
     <div className="flex w-full flex-col gap-4">
       <div>
         <h3 className="text-xs font-bold tracking-wider uppercase opacity-70">Power Brokers</h3>
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-muted-foreground text-xs">
           Internal interest groups unlocked by your country structure and budget allocation
         </p>
       </div>
@@ -54,7 +61,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
         <div className="text-muted-foreground flex flex-col items-center justify-center rounded-lg border border-dashed border-black/10 py-8 text-center text-xs dark:border-white/10">
           <AlertCircle className="mb-2 h-6 w-6 opacity-30" />
           No Power Brokers are currently active.
-          <span className="mt-1 text-[10px] opacity-75">
+          <span className="mt-1 text-xs opacity-75">
             Select government components in the editor to summon interest groups.
           </span>
         </div>
@@ -72,7 +79,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
             return (
               <FacetCard
                 key={broker.id}
-                className={`flex flex-col justify-between border p-3.5 transition-all hover:border-black/25 dark:hover:border-white/25 ${
+                className={`flex flex-col justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/25 dark:hover:border-white/25 ${
                   broker.satisfied
                     ? "border-emerald-500/25 bg-emerald-500/[0.02]"
                     : "border-black/5 dark:border-white/5"
@@ -87,7 +94,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                       <span className="text-xs font-bold">{broker.name}</span>
                     </div>
                     <span
-                      className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                      className={`rounded px-1.5 py-0.5 text-xs font-bold uppercase ${
                         broker.satisfied
                           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
                           : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
@@ -97,7 +104,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </span>
                   </div>
 
-                  <p className="text-muted-foreground text-[10px] leading-relaxed">
+                  <p className="text-muted-foreground text-xs leading-relaxed">
                     {broker.description}
                   </p>
                 </div>
@@ -105,7 +112,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                 <div className="mt-4 space-y-2.5">
                   {/* Budget allocation satisfaction bar */}
                   <div className="space-y-1">
-                    <div className="text-muted-foreground flex justify-between text-[9px] font-medium">
+                    <div className="text-muted-foreground flex justify-between text-xs font-medium">
                       <span>Favored Budget Allocation</span>
                       <span>
                         {broker.currentSpend}% / {broker.requiredSpend}%
@@ -113,7 +120,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
                       <div
-                        className={`h-full transition-all duration-300 ${
+                        className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                           broker.satisfied ? "bg-emerald-500" : "bg-amber-500"
                         }`}
                         style={{ width: `${percent}%` }}
@@ -122,9 +129,9 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                   </div>
 
                   <div className="border-t border-black/5 pt-2 dark:border-white/5">
-                    <p className="text-muted-foreground text-[9px] font-semibold">ACTIVE EFFECT:</p>
+                    <p className="text-muted-foreground text-xs font-semibold">ACTIVE EFFECT:</p>
                     <p
-                      className={`mt-0.5 text-[10px] font-medium ${
+                      className={`mt-0.5 text-xs font-medium ${
                         broker.satisfied ? "text-foreground" : "text-muted-foreground"
                       }`}
                     >

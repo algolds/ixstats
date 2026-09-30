@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Globe, PenTool } from "lucide-react";
+import { Globe, EditPencil as PenTool } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
@@ -68,7 +68,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
             "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md",
             card.wikiSource === "iiwiki"
               ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-              : "border-sky-500/30 bg-sky-500/15 text-sky-600 dark:text-sky-400"
+              : "border-wiki/30 bg-wiki/15 text-wiki"
           )}
         >
           <Globe className="h-3 w-3" />
@@ -114,7 +114,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
           { historicalSignificance?: number; culturalImpact?: number } | undefined;
         if (!loreStats) return null;
         return (
-          <div className="glass-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
+          <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
             <h4 className="text-foreground text-muted-foreground/80 text-xs font-bold tracking-wider uppercase">
               Historical Metrics
             </h4>
@@ -129,13 +129,13 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
               </div>
               <div className="border-border/40 bg-card/60 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs font-medium">Cultural Impact</div>
-                <div className="mt-1 font-mono text-xl font-bold text-purple-500 tabular-nums dark:text-purple-400">
+                <div className="mt-1 font-mono text-xl font-bold text-indigo-500 tabular-nums dark:text-indigo-400">
                   {loreStats.culturalImpact ?? 0}/100
                 </div>
               </div>
             </div>
             {meta?.qualityScore != null && (
-              <div className="text-muted-foreground/70 pt-1 text-[11px]">
+              <div className="text-muted-foreground/70 pt-1 text-xs">
                 Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
               </div>
             )}

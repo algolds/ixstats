@@ -14,13 +14,20 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { Card, CardContent } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { AdminHeader } from "../_components/AdminHeader";
 import { SportsLabsInspector } from "~/components/admin/sports-labs/SportsLabsInspector";
 import { cn } from "~/lib/utils";
-import { Trophy, Users, Calendar, Swords, Sliders, Database, FlaskConical } from "lucide-react";
+import {
+  Trophy,
+  Group as Users,
+  Calendar,
+  Tournament as Swords,
+  ControlSlider as Sliders,
+  Database,
+  Flask as FlaskConical,
+} from "iconoir-react";
 
 // Custom Node Component
 function PipelineNode({ data, selected }: NodeProps) {
@@ -31,7 +38,7 @@ function PipelineNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "relative min-w-[210px] rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md transition-all duration-300",
+        "relative min-w-[210px] rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
         selected
           ? "scale-105 border-amber-500 bg-amber-500/10 shadow-amber-500/10"
           : "bg-card/90 border-border/80 hover:border-muted-foreground/40"
@@ -65,10 +72,10 @@ function PipelineNode({ data, selected }: NodeProps) {
           {Icon && <Icon className="h-4.5 w-4.5" />}
         </div>
         <div className="text-left">
-          <div className="text-foreground text-[11px] leading-tight font-bold">
+          <div className="text-foreground text-xs leading-tight font-bold">
             {data.label as string}
           </div>
-          <div className="text-muted-foreground text-[9px]">{data.description as string}</div>
+          <div className="text-muted-foreground text-xs">{data.description as string}</div>
         </div>
       </div>
 
@@ -357,14 +364,14 @@ export default function SportsLabsPanel() {
       <div className="facet-hierarchy-parent border-border/60 bg-card/40 flex flex-col justify-between gap-4 rounded-xl border p-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
           <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-amber-500">
-            <FlaskConical className="h-6 w-6 animate-pulse" />
+            <FlaskConical className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-foreground flex items-center gap-2 text-2xl font-bold">
               MatchResolver
               <Badge
                 variant="outline"
-                className="border-amber-500/20 bg-amber-500/10 text-[10px] font-semibold text-amber-400 uppercase"
+                className="border-amber-500/20 bg-amber-500/10 text-xs font-semibold text-amber-400 uppercase"
               >
                 Simulation Kernel Layer
               </Badge>
@@ -425,7 +432,7 @@ export default function SportsLabsPanel() {
               />
               <Panel
                 position="top-left"
-                className="bg-background/80 border-border/60 text-muted-foreground rounded-lg border px-3 py-1.5 text-[10px] shadow-sm backdrop-blur-sm select-none"
+                className="bg-background/80 border-border/60 text-muted-foreground rounded-lg border px-3 py-1.5 text-xs shadow-sm backdrop-blur-sm select-none"
               >
                 <span className="mr-1 font-bold text-amber-500">💡 Pipeline Loop:</span> Click nodes
                 to select and configure settings in the inspector.

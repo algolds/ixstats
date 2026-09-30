@@ -3,7 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { Flame, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  FireFlame as Flame,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Minus,
+} from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
@@ -15,7 +20,7 @@ export function TrendingTopics() {
   });
 
   return (
-    <div className="glass-hierarchy-child rounded-lg p-4">
+    <div className="facet-hierarchy-child rounded-lg p-4">
       <div className="mb-4 flex items-center gap-2">
         <Flame className="h-5 w-5 text-orange-600 dark:text-orange-400" />
         <h3 className="text-foreground font-semibold">Trending Now</h3>
@@ -34,6 +39,7 @@ export function TrendingTopics() {
           ))
         ) : topics && topics.length > 0 ? (
           // Trending topics
+          // oxlint-disable-next-line eslint/no-unused-vars
           topics.map((topic, index) => {
             const isHashtag = topic.title.startsWith("#");
             const tag = isHashtag ? topic.title.slice(1) : topic.title;

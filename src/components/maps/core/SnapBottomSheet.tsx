@@ -16,7 +16,7 @@
  */
 
 import { useRef, useCallback, useState, useEffect } from "react";
-import { ChevronUp } from "lucide-react";
+import { NavArrowUp as ChevronUp } from "iconoir-react";
 
 export type SnapPosition = "dismissed" | "peek" | "half" | "full";
 

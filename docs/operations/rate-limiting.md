@@ -24,11 +24,11 @@ Rate limiting restricts the number of API requests that can be made in a given t
 ### Key Features
 
 - **Dual Backend Support**: Redis (production) + In-memory fallback (development)
-- **Tiered Limits**: Different limits for different operation types (10-120 req/min)
+- **Tiered Limits**: Different limits for different operation types (60-120 req/min)
 - **Namespace Isolation**: Separate rate limit buckets for different operation categories
 - **Automatic Failover**: Falls back to in-memory store if Redis is unavailable
 - **Middleware Integration**: Seamless tRPC procedure integration
-- **Configurable**: Environment-based configuration for flexibility
+- **Configurable**: `RATE_LIMIT_ENABLED` turns it on/off; tier limits are set in code, and `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` set the default for callers that pass no limits
 
 ---
 
@@ -63,63 +63,50 @@ Rate limiting restricts the number of API requests that can be made in a given t
 
 The IxStats rate limiting system consists of three main components:
 
-1. **Rate Limiter Service** (`/src/lib/rate-limiter.ts`)
-   - Core rate limiting logic
+1. **Rate Limiter Service** (`src/lib/cache/rate-limiter.ts`, exported from `~/lib/cache`)
+   - Core rate limiting logic (`rateLimiter` singleton)
    - Redis and in-memory backend support
-   - Sliding window algorithm for accurate rate tracking
+   - Sliding window (Redis sorted sets); fixed window in the in-memory fallback
 
-2. **tRPC Middleware** (`/src/server/api/trpc.ts`)
-   - Procedure-level rate limiting enforcement
+2. **tRPC Middleware** (`src/server/api/trpc/middleware.ts`, procedures in `src/server/api/trpc/procedures.ts`)
+   - Procedure-level rate limiting enforcement (`createRateLimitMiddleware`)
    - Tiered middleware for different operation types
-   - Error handling and user feedback
+   - Throws `RateLimitError` → tRPC `TOO_MANY_REQUESTS` (HTTP 429)
 
-3. **Proxy + Middleware** (`/src/proxy.ts`)
-    - Sets rate limit identifiers from request context
-    - Extracts user ID or IP address for tracking
-    - Adds security headers (CSP, auth, etc.)
+3. **Rate limit identity** (`src/server/api/trpc/rate-limit-identity.ts`, used by `src/server/api/trpc/context.ts`)
+    - `user:<clerkUserId>` for signed-in callers (the *real* user, even while playing as someone else)
+    - Otherwise `ip:<CF-Connecting-IP or X-Real-IP>`, else `anonymous`
+    - Never trusts `X-Forwarded-For` or `X-RateLimit-Identifier` (client-controlled)
+
+`src/proxy.ts` also sets an informational `X-RateLimit-Identifier` response header on `/api` paths; the limiter does not read it.
 
 ### Rate Limiting Tiers
 
-IxStats implements five rate limiting tiers based on operation intensity:
+IxStats implements four tRPC rate limiting tiers plus a limit on admin procedures (all per 60-second window):
 
-| Tier | Requests/Min | Use Case | Procedure Type |
-|------|-------------|----------|----------------|
-| **Heavy Mutations** | 10 | Resource-intensive operations | `heavyMutationProcedure` |
-| **Standard Mutations** | 60 | Normal mutation operations | `standardMutationProcedure` |
-| **Light Mutations** | 100 | Lightweight updates | `lightMutationProcedure` |
-| **Read-Only** | 120 | Query operations | `readOnlyProcedure` |
-| **Public** | 30 | Unauthenticated endpoints | `rateLimitedPublicProcedure` |
+| Tier | Requests/Min | Namespace | Procedure Type |
+|------|-------------|-----------|----------------|
+| **Standard Mutations** | 60 | `mutations` | `standardMutationCountryOwnerProcedure` (country owner required) |
+| **Light Mutations** | 100 | `light_mutations` | `lightMutationProcedure` |
+| **Read-Only** | 120 | `queries` | `readOnlyProcedure` (defined, currently used by no router) |
+| **Public** | 100 | `public` | `rateLimitedPublicProcedure` |
+| **Admin** | 100 | `default` | `adminProcedure` |
+
+There is no "heavy mutation" tier; `heavyMutationProcedure` and similar builders do not exist. The public tier was declared as 30/min before plan 340, but the limiter ignored per-procedure limits then, so it is kept at the 100/min that was actually enforced.
+
+Other callers of the limiter:
+- `commons` router (`src/server/api/routers/commons.ts`): its own 100/min `commons` namespace.
+- Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/wiki/sync-webhook` (`wiki-sync-webhook`), `/api/onoma/tts` (`onoma-tts`), `/api/mediawiki/[wiki]/api.php` (`wiki_proxy`), `/api/upload/image` (`file_upload`).
+
+`publicProcedure`, `protectedProcedure`, `countryOwnerProcedure`, `premiumProcedure` and the `cached*Procedure` builders apply **no** rate limit.
 
 ### Operation Examples by Tier
 
-**Heavy Mutations (10 req/min):**
-- `createCountry`: Full country initialization with all sub-systems
-- `bulkUpdate`: Batch operations affecting multiple records
-- `calculateEconomy`: Complex economic simulations
-- `massImport`: Large data imports
+**Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.populateFromWiki`, `countryGeo.updateGeoRollupMode`.
 
-**Standard Mutations (60 req/min):**
-- `updateProfile`: User profile updates
-- `createPost`: ThinkPages post creation
-- `submitForm`: Form submissions
-- `updateSettings`: User preference changes
+**Light Mutations (100 req/min):** `notifications.markAllAsRead`, `notifications.dismissNotification`, `ixnayid` wiki verification, `realms.claimCountry`/`realms.claimNationPage`, `users.setActiveNation`.
 
-**Light Mutations (100 req/min):**
-- `toggleLike`: Quick interaction toggles
-- `markAsRead`: Notification acknowledgments
-- `updatePreference`: Individual preference toggles
-- `simpleUpdate`: Single-field updates
-
-**Read-Only (120 req/min):**
-- `getCountries`: Country listing queries
-- `searchUsers`: Search operations
-- `getStatistics`: Dashboard data retrieval
-- `listData`: General data listing
-
-**Public (30 req/min):**
-- `publicSearch`: Unauthenticated searches
-- `publicStats`: Public statistics
-- `publicData`: Public data access
+**Public (100 req/min):** `users.getProfile`, `countries.getByIdWithEconomicData`, `achievements.getLeaderboard`.
 
 ### Backend Implementations
 
@@ -130,7 +117,7 @@ Redis provides distributed, persistent rate limiting using sorted sets:
 ```typescript
 // Sliding window algorithm
 const now = Date.now();
-const windowStart = now - this.config.windowMs;
+const windowStart = now - cfg.windowMs;  // cfg = the tier's limits
 
 // Remove old entries outside the time window
 multi.zremrangebyscore(key, 0, windowStart);
@@ -142,7 +129,7 @@ multi.zadd(key, now, `${now}-${Math.random()}`);
 multi.zcard(key);
 
 // Set expiry to prevent memory leaks
-multi.expire(key, Math.ceil(this.config.windowMs / 1000));
+multi.expire(key, Math.ceil(cfg.windowMs / 1000));
 ```
 
 **Advantages:**
@@ -153,7 +140,7 @@ multi.expire(key, Math.ceil(this.config.windowMs / 1000));
 
 #### In-Memory Backend (Development/Fallback)
 
-Simple Map-based implementation for development and automatic fallback:
+Simple Map-based fixed-window counter, per process, used when Redis is disabled or not connected:
 
 ```typescript
 // Simple counter with time window
@@ -183,15 +170,15 @@ Rate limits are isolated by namespace to prevent cross-contamination:
 const key = `ratelimit:${namespace}:${identifier}`;
 
 // Examples:
-// ratelimit:heavy_mutations:user_123
-// ratelimit:queries:user_123
-// ratelimit:public:192.168.1.1
+// ratelimit:mutations:user:user_123
+// ratelimit:light_mutations:user:user_123
+// ratelimit:public:ip:192.168.1.1
 ```
 
 This allows a user to:
-- Make 120 queries per minute
+- Make 100 public-tier requests per minute
+- Make 100 light mutations per minute
 - Make 60 standard mutations per minute
-- Make 10 heavy mutations per minute
 
 All simultaneously without interference.
 
@@ -202,6 +189,8 @@ All simultaneously without interference.
 ### Step 1: Install Redis
 
 #### Option A: Docker (Recommended)
+
+The repo's own helper is `bun run redis:start` (`scripts/setup-redis.sh`), which creates `ixstats-redis-cache` on `127.0.0.1:6379` with `maxmemory 2gb` / `allkeys-lru`; `start-development.sh` and `start-production.sh` call it. A manual equivalent:
 
 ```bash
 # Pull and run Redis container
@@ -262,8 +251,7 @@ REDIS_URL="redis://localhost:6379"  # Update with your Redis URL
 ### Step 3: Verify Configuration
 
 ```bash
-# Install dependencies (if not already installed)
-bun install ioredis
+# ioredis is already a dependency (package.json)
 
 # Test Redis connection
 node -e "const Redis = require('ioredis'); const client = new Redis(process.env.REDIS_URL); client.ping().then(r => console.log('Redis:', r)).catch(e => console.error(e)).finally(() => client.quit());"
@@ -278,11 +266,12 @@ bun run build
 # Start production server
 bun run start:prod
 
-# Verify rate limiting is active
-curl -I http://localhost:3550/api/trpc/health.check
+# Verify the app is up
+curl -I http://localhost:3550/projects/ixstates/api/health
 
-# Check for rate limit headers (if implemented)
-# Look for: X-RateLimit-Identifier
+# Look for "[Rate Limiter] Connected to Redis" in the server output.
+# /api responses carry an informational X-RateLimit-Identifier header (set by src/proxy.ts);
+# no X-RateLimit-Limit/Remaining headers are sent.
 ```
 
 ### Environment Variable Reference
@@ -290,9 +279,9 @@ curl -I http://localhost:3550/api/trpc/health.check
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `RATE_LIMIT_ENABLED` | No | `"true"` | Enable/disable rate limiting globally |
-| `RATE_LIMIT_MAX_REQUESTS` | No | `"100"` | Default max requests (tier-specific limits override this) |
+| `RATE_LIMIT_MAX_REQUESTS` | No | `"100"` | Default max requests for callers that pass no limits (route handlers); tRPC tiers use their own limits |
 | `RATE_LIMIT_WINDOW_MS` | No | `"60000"` | Time window in milliseconds (60 seconds) |
-| `REDIS_ENABLED` | No | `"false"` | Enable Redis backend (required for production) |
+| `REDIS_ENABLED` | No | `"false"` | Enable Redis backend (recommended for production; also used by caches and the ThinkPages broadcast bridge) |
 | `REDIS_URL` | Yes (if Redis) | None | Redis connection URL |
 
 ### Security Best Practices
@@ -341,40 +330,44 @@ When creating or updating tRPC endpoints, select the appropriate procedure type 
 
 ```
 Is this a mutation (creates/updates/deletes data)?
-├─ NO → Use readOnlyProcedure or readOnlyPublicProcedure
-└─ YES → How resource-intensive is it?
-    ├─ VERY HIGH (affects many records, complex calculations)
-    │   └─ Use heavyMutationProcedure or heavyMutationCountryOwnerProcedure
-    ├─ MODERATE (normal CRUD operations)
-    │   └─ Use standardMutationProcedure or standardMutationCountryOwnerProcedure
-    └─ LOW (simple toggles, single-field updates)
-        └─ Use lightMutationProcedure or lightMutationCountryOwnerProcedure
+├─ NO → Is it public?
+│   ├─ YES → rateLimitedPublicProcedure (100/min)
+│   └─ NO  → readOnlyProcedure (120/min)
+└─ YES → Does it write country-owned data?
+    ├─ YES → standardMutationCountryOwnerProcedure (60/min, ownership checked)
+    └─ NO  → lightMutationProcedure (100/min)
+Admin-only? → adminProcedure (100/min, `default` namespace)
+Needs a different limit? → protectedProcedure.use(createRateLimitMiddleware({ max, windowMs, namespace }))
 ```
 
 ### Available Procedure Types
+
+All are exported from `~/server/api/trpc` (`src/server/api/trpc/index.ts`).
 
 #### Base Procedures (No Rate Limiting)
 
 ```typescript
 import { publicProcedure, protectedProcedure } from "~/server/api/trpc";
 
-// Use only for endpoints that don't need rate limiting
-// (Generally avoid these - prefer rate-limited variants)
+// No rate limit. countryOwnerProcedure, premiumProcedure and the cached*Procedure
+// builders are also unlimited.
 ```
 
-#### Read-Only Procedures (120 req/min)
+#### Read-Only and Public Procedures
 
 ```typescript
-import { readOnlyProcedure, readOnlyPublicProcedure } from "~/server/api/trpc";
+import { readOnlyProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 export const dataRouter = createTRPCRouter({
+  // 120/min, signed-in callers (namespace "queries")
   getCountries: readOnlyProcedure
     .input(z.object({ limit: z.number().optional() }))
     .query(async ({ ctx, input }) => {
       // Query logic here
     }),
 
-  publicSearch: readOnlyPublicProcedure
+  // 100/min, no auth (namespace "public")
+  publicSearch: rateLimitedPublicProcedure
     .input(z.object({ query: z.string() }))
     .query(async ({ ctx, input }) => {
       // Public search logic
@@ -388,12 +381,6 @@ export const dataRouter = createTRPCRouter({
 import { lightMutationProcedure } from "~/server/api/trpc";
 
 export const interactionsRouter = createTRPCRouter({
-  toggleLike: lightMutationProcedure
-    .input(z.object({ postId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Simple toggle logic
-    }),
-
   markAsRead: lightMutationProcedure
     .input(z.object({ notificationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -405,58 +392,26 @@ export const interactionsRouter = createTRPCRouter({
 #### Standard Mutation Procedures (60 req/min)
 
 ```typescript
-import {
-  standardMutationProcedure,
-  standardMutationCountryOwnerProcedure,
-  standardMutationPremiumProcedure
-} from "~/server/api/trpc";
+import { standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 
-export const postsRouter = createTRPCRouter({
-  createPost: standardMutationProcedure
-    .input(z.object({ title: z.string(), content: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Create post logic
-    }),
-
+export const countrySettingsRouter = createTRPCRouter({
   updateCountrySettings: standardMutationCountryOwnerProcedure
     .input(z.object({ countryId: z.string(), settings: z.object({}) }))
     .mutation(async ({ ctx, input }) => {
-      // Update country settings (requires country ownership)
-    }),
-
-  premiumFeature: standardMutationPremiumProcedure
-    .input(z.object({ data: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      // Premium-only mutation
+      // Update country settings (requires country ownership; staff pass through)
     }),
 });
 ```
 
-#### Heavy Mutation Procedures (10 req/min)
+#### Custom Limits
 
 ```typescript
-import {
-  heavyMutationProcedure,
-  heavyMutationCountryOwnerProcedure
-} from "~/server/api/trpc";
+import { protectedProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 
-export const countryRouter = createTRPCRouter({
-  createCountry: heavyMutationProcedure
-    .input(z.object({ name: z.string(), /* ... */ }))
-    .mutation(async ({ ctx, input }) => {
-      // Heavy country creation logic
-      // - Creates country record
-      // - Initializes economy
-      // - Sets up government structure
-      // - Creates initial budget
-    }),
-
-  bulkUpdateEconomy: heavyMutationCountryOwnerProcedure
-    .input(z.object({ countryId: z.string(), updates: z.array(z.object({})) }))
-    .mutation(async ({ ctx, input }) => {
-      // Bulk update logic affecting many records
-    }),
-});
+// e.g. a stricter limit for an expensive operation (there is no built-in heavy tier)
+const expensiveOperationProcedure = protectedProcedure.use(
+  createRateLimitMiddleware({ max: 10, windowMs: 60_000, namespace: "expensive" })
+);
 ```
 
 ### Migration Example
@@ -479,12 +434,6 @@ export const oldRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Mutation logic
     }),
-
-  heavyOperation: protectedProcedure
-    .input(z.object({ /* ... */ }))
-    .mutation(async ({ ctx, input }) => {
-      // Complex operation
-    }),
 });
 ```
 
@@ -492,30 +441,22 @@ export const oldRouter = createTRPCRouter({
 
 ```typescript
 import {
-  readOnlyPublicProcedure,      // For getData
-  standardMutationProcedure,     // For updateData
-  heavyMutationProcedure,        // For heavyOperation
+  rateLimitedPublicProcedure,   // For getData
+  lightMutationProcedure,       // For updateData
 } from "~/server/api/trpc";
 
 export const newRouter = createTRPCRouter({
-  // Changed: publicProcedure → readOnlyPublicProcedure
-  getData: readOnlyPublicProcedure
+  // Changed: publicProcedure → rateLimitedPublicProcedure
+  getData: rateLimitedPublicProcedure
     .query(async ({ ctx }) => {
       // Query logic (unchanged)
     }),
 
-  // Changed: protectedProcedure → standardMutationProcedure
-  updateData: standardMutationProcedure
+  // Changed: protectedProcedure → lightMutationProcedure
+  updateData: lightMutationProcedure
     .input(z.object({ id: z.string(), data: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Mutation logic (unchanged)
-    }),
-
-  // Changed: protectedProcedure → heavyMutationProcedure
-  heavyOperation: heavyMutationProcedure
-    .input(z.object({ /* ... */ }))
-    .mutation(async ({ ctx, input }) => {
-      // Complex operation (unchanged)
     }),
 });
 ```
@@ -524,20 +465,17 @@ export const newRouter = createTRPCRouter({
 
 | Procedure Type | Rate Limit | Auth Required | Special Access | Use For |
 |---------------|------------|---------------|----------------|---------|
-| `publicProcedure` | None | No | None | Legacy only |
-| `protectedProcedure` | None | Yes | None | Legacy only |
-| `readOnlyPublicProcedure` | 120/min | No | None | Public queries |
-| `readOnlyProcedure` | 120/min | Yes | None | Auth queries |
+| `publicProcedure` | None | No | None | Unlimited public endpoints |
+| `protectedProcedure` | None | Yes | None | Unlimited signed-in endpoints |
+| `cachedPublicProcedure` / `cachedStaticProcedure` | None (response cache) | No | None | Cached public reads |
+| `cachedProtectedProcedure` | None (response cache) | Yes | None | Cached per-user reads |
+| `rateLimitedPublicProcedure` | 100/min | No | None | Public queries |
+| `readOnlyProcedure` | 120/min | Yes | None | Auth queries (currently unused) |
 | `lightMutationProcedure` | 100/min | Yes | None | Simple updates |
-| `lightMutationCountryOwnerProcedure` | 100/min | Yes | Country owner | Simple country updates |
-| `standardMutationProcedure` | 60/min | Yes | None | Normal mutations |
 | `standardMutationCountryOwnerProcedure` | 60/min | Yes | Country owner | Country mutations |
-| `standardMutationPremiumProcedure` | 60/min | Yes | Premium | Premium mutations |
-| `heavyMutationProcedure` | 10/min | Yes | None | Heavy operations |
-| `heavyMutationCountryOwnerProcedure` | 10/min | Yes | Country owner | Heavy country ops |
-| `adminProcedure` | 100/min | Yes | Admin | Admin operations |
-| `executiveProcedure` | 100/min | Yes | Country owner | Executive actions |
+| `countryOwnerProcedure` | None | Yes | Country owner | Country-scoped endpoints |
 | `premiumProcedure` | None | Yes | Premium | Premium features |
+| `adminProcedure` | 100/min | Yes | Admin (not while playing as another user) | Admin operations |
 
 ---
 
@@ -550,15 +488,17 @@ export const newRouter = createTRPCRouter({
 Update `.env.local`:
 
 ```bash
-RATE_LIMIT_ENABLED="true"
-RATE_LIMIT_MAX_REQUESTS="5"  # Lower limit for easier testing
-RATE_LIMIT_WINDOW_MS="60000"  # 60 seconds
+RATE_LIMIT_ENABLED="true"     # also the default
+RATE_LIMIT_MAX_REQUESTS="5"   # Only affects callers that pass no limits (e.g. /api/upload/image);
+RATE_LIMIT_WINDOW_MS="60000"  # the tRPC tiers use their hard-coded limits
 REDIS_ENABLED="false"  # Use in-memory for testing
 ```
 
-#### 2. Create a Test Script
+Automated coverage already exists: `src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts` and `src/tests/server/realms/realm-rate-limits.test.ts`.
 
-Create `scripts/test-rate-limit.ts`:
+#### 2. Create a Test Script (sketch — not in the repo)
+
+Create `scripts/test-rate-limit.ts`. Note that `countries.getAll` is a cached, unlimited procedure; to see limiting, call a `rateLimitedPublicProcedure` such as `users.getProfile` 101+ times:
 
 ```typescript
 import { api } from "~/trpc/server";
@@ -609,16 +549,15 @@ bun scripts/test-rate-limit.ts
 #### 3. Test with cURL
 
 ```bash
-# Test public endpoint
-for i in {1..35}; do
-  echo "Request $i:"
+# Test a public-tier endpoint (rateLimitedPublicProcedure, 100/min)
+for i in {1..105}; do
+  echo -n "Request $i: "
   curl -s -o /dev/null -w "%{http_code}\n" \
-    "http://localhost:3000/api/trpc/countries.getAll?input=%7B%22limit%22%3A10%7D"
-  sleep 1
+    "http://localhost:3000/api/trpc/users.getProfile"
 done
 
-# Requests 1-30 should return 200
-# Requests 31-35 should return 429 or 500 (rate limited)
+# Requests 1-100 should return 200
+# Requests 101-105 should return 429 (TOO_MANY_REQUESTS)
 ```
 
 #### 4. Monitor Console Logs
@@ -626,19 +565,19 @@ done
 Watch for rate limit warnings in your development console:
 
 ```
-[RATE_LIMIT] anonymous exceeded 30 requests per 60000ms limit for countries.getAll (namespace: public)
-[RATE_LIMIT] user_123 on mutations.createPost: 5 of 60 requests remaining (namespace: mutations)
+[RATE_LIMIT] ip:127.0.0.1 exceeded 100 requests per 60000ms limit for users.getProfile (namespace: public)
+[RATE_LIMIT] user:user_123 on countryGeo.upsertCity: 11 of 60 requests remaining (namespace: mutations)
 ```
 
 ### Production Monitoring
 
-#### 1. Add Custom Monitoring Endpoint
+#### 1. Add Custom Monitoring Endpoint (not implemented — sketch)
 
-Create `src/app/api/admin/rate-limit-stats/route.ts`:
+No such route exists. To add one, create `src/app/api/admin/rate-limit-stats/route.ts`:
 
 ```typescript
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimiter } from "~/lib/rate-limiter";
+import { rateLimiter } from "~/lib/cache";
 
 export async function GET(req: NextRequest) {
   // Verify admin access (implement your auth check)
@@ -647,12 +586,13 @@ export async function GET(req: NextRequest) {
 
   const identifier = req.nextUrl.searchParams.get("identifier") || "test";
 
-  // Get status for different namespaces
+  // Get status for different namespaces (pass each tier's limits; getStatus defaults to the env config)
+  const w = 60_000;
   const statuses = {
-    public: await rateLimiter.getStatus(identifier, "public"),
-    queries: await rateLimiter.getStatus(identifier, "queries"),
-    mutations: await rateLimiter.getStatus(identifier, "mutations"),
-    heavy_mutations: await rateLimiter.getStatus(identifier, "heavy_mutations"),
+    public: await rateLimiter.getStatus(identifier, "public", { maxRequests: 100, windowMs: w }),
+    queries: await rateLimiter.getStatus(identifier, "queries", { maxRequests: 120, windowMs: w }),
+    light_mutations: await rateLimiter.getStatus(identifier, "light_mutations", { maxRequests: 100, windowMs: w }),
+    mutations: await rateLimiter.getStatus(identifier, "mutations", { maxRequests: 60, windowMs: w }),
   };
 
   return NextResponse.json({
@@ -667,7 +607,7 @@ export async function GET(req: NextRequest) {
 Access it:
 
 ```bash
-curl http://localhost:3550/api/admin/rate-limit-stats?identifier=user_123
+curl "http://localhost:3550/projects/ixstates/api/admin/rate-limit-stats?identifier=user:user_123"
 ```
 
 #### 2. Redis Monitoring
@@ -681,22 +621,22 @@ redis-cli
 # View all rate limit keys
 KEYS ratelimit:*
 
-# Check specific user's limits
-KEYS ratelimit:*:user_123
+# Check specific user's limits (identifiers are user:<clerkId> or ip:<addr>)
+KEYS ratelimit:*:user:user_123
 
 # Get count for specific namespace
-ZCARD ratelimit:queries:user_123
+ZCARD ratelimit:mutations:user:user_123
 
 # View all entries in a sorted set
-ZRANGE ratelimit:queries:user_123 0 -1 WITHSCORES
+ZRANGE ratelimit:mutations:user:user_123 0 -1 WITHSCORES
 
 # Monitor Redis commands in real-time
 MONITOR
 ```
 
-#### 3. Application Metrics
+#### 3. Application Metrics (not implemented — sketch)
 
-Add custom metrics to track rate limiting:
+There is no metrics client in the codebase; `metrics` below is a placeholder. Today the only signal is the `[RATE_LIMIT]` console lines:
 
 ```typescript
 // In your rate limiter middleware
@@ -717,9 +657,9 @@ if (result.remaining < warningThreshold) {
 }
 ```
 
-#### 4. Discord Webhook Alerts
+#### 4. Discord Webhook Alerts (not implemented — sketch)
 
-Add alert notifications for rate limit abuse:
+Rate-limit breaches are not sent to Discord. `~/lib/discord-webhook` does not exist; a real version would go through `ErrorLogger` (`~/lib/logging`), which posts `ERROR`-level entries when `DISCORD_WEBHOOK_ENABLED=true`:
 
 ```typescript
 import { sendDiscordWebhook } from "~/lib/discord-webhook";
@@ -784,12 +724,15 @@ if (!result.success) {
 3. **Check procedure types**:
    ```typescript
    // Make sure you're using rate-limited procedures
-   // ❌ Wrong:
+   // ❌ Wrong (unlimited):
    publicProcedure.query(...)
+   cachedPublicProcedure.query(...)
 
    // ✅ Correct:
-   readOnlyPublicProcedure.query(...)
+   rateLimitedPublicProcedure.query(...)
    ```
+
+4. **Remember `RATE_LIMIT_MAX_REQUESTS` does not change tRPC tiers**: the tier limits are hard-coded in `src/server/api/trpc/middleware.ts`.
 
 ### Issue 2: Redis Connection Failures
 
@@ -834,15 +777,10 @@ if (!result.success) {
    tail -f /var/log/redis/redis-server.log
 
    # Docker logs
-   docker logs ixstats-redis
+   docker logs ixstats-redis-cache
    ```
 
-4. **Verify ioredis is installed**:
-    ```bash
-    bun pm ls | grep ioredis
-    # If not installed:
-    bun add ioredis
-    ```
+4. **Verify `REDIS_ENABLED="true"`**: with Redis disabled the limiter logs `[RateLimiter] Redis not available — using in-memory fallback` at startup (ioredis itself is a regular dependency).
 
 ### Issue 3: Rate Limit Too Restrictive
 
@@ -857,15 +795,15 @@ if (!result.success) {
    ```bash
    # Check Redis for high-frequency users
    redis-cli
-   > KEYS ratelimit:*:user_*
-   > ZCARD ratelimit:queries:user_123  # Check request count
+   > KEYS ratelimit:*:user:*
+   > ZCARD ratelimit:mutations:user:user_123  # Check request count
    ```
 
 2. **Adjust tier limits**:
    ```typescript
-   // In src/server/api/trpc.ts
+   // In src/server/api/trpc/middleware.ts
    // Increase limits for specific tiers
-   const readOnlyRateLimit = createRateLimitMiddleware({
+   export const readOnlyRateLimit = createRateLimitMiddleware({
      max: 200,  // Increased from 120
      windowMs: 60000,
      namespace: 'queries'
@@ -885,7 +823,7 @@ if (!result.success) {
      .use(highVolumeReadLimit);
    ```
 
-4. **Implement user-tier based limits**:
+4. **Implement user-tier based limits** (not implemented — sketch):
    ```typescript
    const createUserTierRateLimit = (options: RateLimitOptions) => {
      return t.middleware(async ({ ctx, next }) => {
@@ -907,15 +845,18 @@ if (!result.success) {
 
 **Solutions:**
 
-The current implementation sets `X-RateLimit-Identifier` in middleware. To add more detailed headers:
+The current implementation only sets an informational `X-RateLimit-Identifier` header in `src/proxy.ts` (Clerk user ID or the raw `X-Forwarded-For` value — not the identifier the limiter uses). `X-RateLimit-Limit/Remaining/Reset` are not implemented. A sketch for adding them:
 
 ```typescript
-// In src/server/api/trpc.ts, update createRateLimitMiddleware
+// In src/server/api/trpc/middleware.ts, update createRateLimitMiddleware
 const createRateLimitMiddleware = (options: RateLimitOptions) => {
   return t.middleware(async ({ ctx, next, path }) => {
     // ... existing code ...
 
-    const result = await rateLimiter.check(identifier, namespace);
+    const result = await rateLimiter.check(identifier, namespace, {
+      maxRequests: options.max,
+      windowMs: options.windowMs,
+    });
 
     // Add rate limit info to context for response headers
     ctx.rateLimitInfo = {
@@ -977,9 +918,9 @@ Redis ensures all server instances share the same rate limit state.
 
 2. **Verify window configuration**:
    ```typescript
-   // Make sure windowMs is set correctly
+   // tRPC tiers use a hard-coded 60000ms window; RATE_LIMIT_WINDOW_MS only affects
+   // callers that pass no limits (route handlers)
    console.log('Rate limit window:', process.env.RATE_LIMIT_WINDOW_MS);
-   // Should be 60000 (60 seconds)
    ```
 
 3. **Check for clock skew**:
@@ -999,11 +940,11 @@ Redis ensures all server instances share the same rate limit state.
 
 **Guidelines:**
 
-- **Heavy Mutations (10/min)**: Operations taking >500ms or affecting >100 records
-- **Standard Mutations (60/min)**: Normal CRUD operations taking 50-500ms
+- **Custom (e.g. 10/min)**: Operations taking >500ms or affecting >100 records — no built-in tier; use `createRateLimitMiddleware`
+- **Standard Mutations (60/min)**: Country-owned CRUD operations taking 50-500ms
 - **Light Mutations (100/min)**: Simple updates taking <50ms
 - **Read-Only (120/min)**: Query operations with minimal processing
-- **Public (30/min)**: Unauthenticated endpoints (most restrictive)
+- **Public (100/min)**: Unauthenticated endpoints
 
 **Example Decision Process:**
 
@@ -1012,13 +953,13 @@ Redis ensures all server instances share the same rate limit state.
 // - Single database insert
 // - Some validation
 // - Maybe 100-200ms
-// ✅ Use: standardMutationProcedure
+// ✅ Use: standardMutationCountryOwnerProcedure (country data) or lightMutationProcedure
 
 // ❓ Bulk importing 1000 records
 // - Multiple database operations
 // - Complex validation
 // - Likely >2 seconds
-// ✅ Use: heavyMutationProcedure
+// ✅ Use: a custom createRateLimitMiddleware({ max: 10, ... }) procedure (no built-in heavy tier)
 
 // ❓ Toggling a favorite
 // - Single field update
@@ -1033,10 +974,12 @@ Redis ensures all server instances share the same rate limit state.
 // ❌ Bad error message
 throw new Error('Rate limited');
 
-// ✅ Good error message (automatically provided)
-throw new Error(
-  `RATE_LIMITED: Too many requests. Maximum ${max} requests per ${windowMs / 1000} seconds. Try again at ${resetAt.toISOString()}`
+// ✅ Good error message (automatically provided by createRateLimitMiddleware)
+throw new RateLimitError(
+  `Too many requests. Maximum ${max} requests per ${windowMs / 1000} seconds. Try again at ${resetAt.toISOString()}`,
+  resetAt
 );
+// Reaches the client as tRPC code TOO_MANY_REQUESTS (HTTP 429) with data.context.resetAt
 ```
 
 ### 3. Implement Client-Side Backoff
@@ -1045,11 +988,11 @@ throw new Error(
 // In your tRPC client
 const mutation = api.posts.create.useMutation({
   onError: (error) => {
-    if (error.message.includes('RATE_LIMITED')) {
-      // Extract reset time from error message
-      const resetMatch = error.message.match(/Try again at (.+)/);
-      if (resetMatch) {
-        const resetTime = new Date(resetMatch[1]);
+    if (error.data?.code === 'TOO_MANY_REQUESTS') {
+      // Reset time is in the error context
+      const resetAt = (error.data as any)?.context?.resetAt;
+      if (resetAt) {
+        const resetTime = new Date(resetAt);
         const waitSeconds = Math.ceil((resetTime.getTime() - Date.now()) / 1000);
 
         toast.error(`Rate limit exceeded. Please wait ${waitSeconds} seconds.`);
@@ -1088,27 +1031,28 @@ const rateLimitMiddleware = t.middleware(async ({ ctx, next, path }) => {
 });
 ```
 
-### 5. Document Limits for API Consumers
+### 5. Document Limits for API Consumers (not implemented — sketch)
 
-Create a public endpoint that shows rate limits:
+No such endpoint exists. A public endpoint that shows rate limits could look like:
 
 ```typescript
 // src/app/api/rate-limits/route.ts
 export async function GET() {
   return NextResponse.json({
     limits: {
-      public: { requests: 30, window: '1 minute' },
+      public: { requests: 100, window: '1 minute' },
       queries: { requests: 120, window: '1 minute' },
       light_mutations: { requests: 100, window: '1 minute' },
       mutations: { requests: 60, window: '1 minute' },
-      heavy_mutations: { requests: 10, window: '1 minute' },
+      default: { requests: 100, window: '1 minute' }, // adminProcedure
     },
-    note: 'Premium users may have higher limits',
   });
 }
 ```
 
-### 6. Handle Edge Cases
+### 6. Handle Edge Cases (not implemented — sketch)
+
+System owners and admins do **not** bypass rate limits today. A bypass could look like:
 
 ```typescript
 // System administrators bypass rate limits
@@ -1127,16 +1071,18 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
 
 ### 7. Test Rate Limiting in CI/CD
 
+Unit tests already cover the limiter and middleware (`src/tests/lib/cache/rate-limiter.test.ts`, `src/tests/server/api/rate-limit-middleware.test.ts`, `src/tests/server/realms/realm-rate-limits.test.ts`). An end-to-end sketch against a running server:
+
 ```typescript
-// tests/rate-limiting.test.ts
+// sketch
 describe('Rate Limiting', () => {
   it('should enforce rate limits on public endpoints', async () => {
     const requests = [];
 
-    // Make 35 requests (limit is 30)
-    for (let i = 0; i < 35; i++) {
+    // Make 105 requests (public tier limit is 100)
+    for (let i = 0; i < 105; i++) {
       requests.push(
-        fetch('/api/trpc/countries.getAll')
+        fetch('/api/trpc/users.getProfile')
           .then(r => r.status)
       );
     }
@@ -1145,7 +1091,7 @@ describe('Rate Limiting', () => {
     const successCount = results.filter(s => s === 200).length;
     const rateLimitedCount = results.filter(s => s === 429).length;
 
-    expect(successCount).toBeLessThanOrEqual(30);
+    expect(successCount).toBeLessThanOrEqual(100);
     expect(rateLimitedCount).toBeGreaterThan(0);
   });
 });
@@ -1157,24 +1103,21 @@ describe('Rate Limiting', () => {
 
 ### Custom Rate Limit Strategies
 
-#### 1. IP-Based Rate Limiting
+The strategies below other than IP-based identity are **not implemented**; they are sketches.
+
+#### 1. IP-Based Rate Limiting (implemented)
+
+`src/server/api/trpc/rate-limit-identity.ts`:
 
 ```typescript
-// In src/proxy.ts, enhance identifier logic
-const getRateLimitIdentifier = (req: NextRequest, userId: string | null): string => {
-  // Prefer user ID for authenticated requests
-  if (userId) {
-    return `user:${userId}`;
-  }
-
-  // Fall back to IP address for unauthenticated
-  const forwardedFor = req.headers.get('x-forwarded-for');
-  const realIp = req.headers.get('x-real-ip');
-  const ip = forwardedFor?.split(',')[0] || realIp || 'unknown';
-
-  return `ip:${ip}`;
-};
+export function resolveRateLimitIdentifier(headers: Headers, realUserId: string | null): string {
+  if (realUserId) return `user:${realUserId}`;
+  const ip = headers.get("cf-connecting-ip")?.trim() || headers.get("x-real-ip")?.trim();
+  return ip ? `ip:${ip}` : "anonymous";
+}
 ```
+
+`X-Forwarded-For` is deliberately ignored because clients can set it. This assumes the origin only accepts traffic from Cloudflare; if it is directly reachable, `CF-Connecting-IP` can be forged.
 
 #### 2. Endpoint-Specific Limits
 
@@ -1266,8 +1209,10 @@ const geoRateLimit = t.middleware(async ({ ctx, next }) => {
 
 For high-scale deployments, use Redis Cluster:
 
+Not implemented (`REDIS_CLUSTER_ENABLED`/`REDIS_PASSWORD` are not read anywhere). Sketch:
+
 ```typescript
-// In src/lib/rate-limiter.ts
+// In src/lib/cache/rate-limiter.ts
 import Redis from 'ioredis';
 
 private async initRedis() {
@@ -1289,7 +1234,7 @@ private async initRedis() {
 }
 ```
 
-### Rate Limit Exemptions
+### Rate Limit Exemptions (not implemented — sketch)
 
 ```typescript
 // Exempt specific users or services
@@ -1333,18 +1278,18 @@ Rate limiting is a critical component of the IxStats platform's security and per
 
 ### Next Steps
 
-1. ✅ Verify production Redis configuration
-2. ✅ Audit all endpoints and apply appropriate rate limits
-3. ✅ Set up monitoring and alerting
-4. ✅ Document limits for API consumers
-5. ✅ Test rate limiting under load
+1. ⏳ Set `REDIS_ENABLED=true` in production (the 2026-09 rose-garden runbook adds it; prod had no `REDIS_ENABLED` on 2026-09-27)
+2. ⏳ Most procedures still use unlimited builders (`publicProcedure`, `protectedProcedure`, `cached*Procedure`); fewer than 100 of roughly 960 procedures use a rate-limited builder besides `adminProcedure`
+3. ⏳ Monitoring and alerting: only `[RATE_LIMIT]` console lines exist
+4. ⏳ No public rate-limit documentation endpoint or `X-RateLimit-*` headers
+5. ⏳ No load test of the limiter
 
 ### Related Documentation
 
-- **API Reference**: `docs/reference/api-complete.md` — Full tRPC API catalog (1,329 endpoints)
+- **API Reference**: [`api-complete.md`](../reference/api-complete.md) — Full tRPC API catalog
 
 ---
 
 **Version**: 1.0.0
-**Last Updated**: October 22, 2025
+**Last Updated**: September 29, 2026
 **Maintained By**: IxStats Development Team

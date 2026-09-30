@@ -74,9 +74,13 @@ export const DepartmentInputSchema = z.object({
   functions: z.array(z.string()).optional(),
 });
 
+/** Bounds for `budgetYear`, an IxTime game year (see ~/lib/government/budget-year). */
+export const BUDGET_YEAR_MIN = 1900;
+export const BUDGET_YEAR_MAX = 3000;
+
 export const BudgetAllocationInputSchema = z.object({
   departmentId: z.string().min(1),
-  budgetYear: z.number().int().min(2020).max(2035),
+  budgetYear: z.number().int().min(BUDGET_YEAR_MIN).max(BUDGET_YEAR_MAX),
   allocatedAmount: z.number().nonnegative(),
   allocatedPercent: z.number().min(0).max(100),
   notes: z.string().optional(),
@@ -224,6 +228,131 @@ export type BudgetPriority = "Critical" | "High" | "Medium" | "Low";
 
 export type RevenueCategory =
   "Direct Tax" | "Indirect Tax" | "Non-Tax Revenue" | "Fees and Fines" | "Other";
+
+export interface CollectionMethod {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  isTaxRelated: boolean;
+  taxCategoryType?: string;
+  calculationMethod?: string;
+  defaultRate?: number;
+}
+
+export const COLLECTION_METHODS: CollectionMethod[] = [
+  {
+    id: "automatic_deduction",
+    name: "Automatic Deduction",
+    description: "Automatically deducted from income/salary",
+    icon: "Zap",
+    color: "#059669",
+    isTaxRelated: true,
+    taxCategoryType: "Direct Tax",
+    calculationMethod: "progressive",
+    defaultRate: 15,
+  },
+  {
+    id: "self_assessment",
+    name: "Self Assessment",
+    description: "Taxpayers calculate and pay themselves",
+    icon: "Calculator",
+    color: "#0891b2",
+    isTaxRelated: true,
+    taxCategoryType: "Direct Tax",
+    calculationMethod: "progressive",
+    defaultRate: 20,
+  },
+  {
+    id: "point_of_sale",
+    name: "Point of Sale",
+    description: "Collected at time of purchase/transaction",
+    icon: "CreditCard",
+    color: "#dc2626",
+    isTaxRelated: true,
+    taxCategoryType: "Indirect Tax",
+    calculationMethod: "percentage",
+    defaultRate: 10,
+  },
+  {
+    id: "withholding_tax",
+    name: "Withholding Tax",
+    description: "Deducted at source by payers",
+    icon: "Shield",
+    color: "#7c3aed",
+    isTaxRelated: true,
+    taxCategoryType: "Direct Tax",
+    calculationMethod: "percentage",
+    defaultRate: 25,
+  },
+  {
+    id: "annual_return",
+    name: "Annual Return",
+    description: "Filed annually with tax returns",
+    icon: "FileText",
+    color: "#ea580c",
+    isTaxRelated: true,
+    taxCategoryType: "Direct Tax",
+    calculationMethod: "progressive",
+    defaultRate: 18,
+  },
+  {
+    id: "direct_billing",
+    name: "Direct Billing",
+    description: "Government bills directly for services",
+    icon: "Receipt",
+    color: "#059669",
+    isTaxRelated: false,
+    taxCategoryType: "Non-Tax Revenue",
+    calculationMethod: "fixed",
+    defaultRate: 0,
+  },
+  {
+    id: "licensing_fee",
+    name: "Licensing Fee",
+    description: "Periodic fees for licenses/permits",
+    icon: "FileCheck",
+    color: "#0891b2",
+    isTaxRelated: false,
+    taxCategoryType: "Fees and Fines",
+    calculationMethod: "fixed",
+    defaultRate: 0,
+  },
+  {
+    id: "fine_penalty",
+    name: "Fine/Penalty",
+    description: "One-time fines and penalties",
+    icon: "AlertTriangle",
+    color: "#dc2626",
+    isTaxRelated: false,
+    taxCategoryType: "Fees and Fines",
+    calculationMethod: "fixed",
+    defaultRate: 0,
+  },
+  {
+    id: "royalty_payment",
+    name: "Royalty Payment",
+    description: "Payments for resource extraction",
+    icon: "Mountain",
+    color: "#7c3aed",
+    isTaxRelated: false,
+    taxCategoryType: "Non-Tax Revenue",
+    calculationMethod: "percentage",
+    defaultRate: 12,
+  },
+  {
+    id: "dividend_distribution",
+    name: "Dividend Distribution",
+    description: "Profits from state-owned enterprises",
+    icon: "TrendingUp",
+    color: "#059669",
+    isTaxRelated: false,
+    taxCategoryType: "Non-Tax Revenue",
+    calculationMethod: "percentage",
+    defaultRate: 8,
+  },
+];
 
 export type OrganizationalLevel =
   "Ministry" | "Department" | "Agency" | "Bureau" | "Office" | "Commission";

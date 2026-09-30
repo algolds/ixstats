@@ -2,19 +2,18 @@
 
 import { useMemo } from "react";
 import {
-  BarChart3,
-  BookOpen,
+  StatsReport as BarChart3,
+  OpenBook as BookOpen,
   Compass,
   Crown,
-  Database,
   Globe,
-  MessageSquare,
+  ChatBubble as MessageSquare,
   Trophy,
-} from "lucide-react";
-import { FaWikipediaW } from "react-icons/fa";
-import { GiCardRandom } from "react-icons/gi";
-import { GiSoapExperiment } from "react-icons/gi";
-import { OnomaNavIcon } from "~/app/labs/onoma/components/shared/OnomaBrandLogo";
+  MultiplePages as CardsIcon,
+  Flask as LabsIcon,
+} from "iconoir-react";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
+import { OnomaNavIcon } from "~/components/onoma/OnomaBrandLogo";
 import type { NavigationItem } from "~/lib/navigation-config";
 
 export interface UseNavigationItemsParams {
@@ -92,20 +91,20 @@ export function useNavigationItems({
       {
         name: "Wiki",
         href: "/wiki",
-        icon: FaWikipediaW,
+        icon: WikiOSLogomark,
         requiresAuth: false,
       },
       {
         name: "Cards",
         href: "/vault",
-        icon: GiCardRandom,
+        icon: CardsIcon,
         requiresAuth: true,
         description: "IxCards trading card system",
       },
       {
         name: "Labs",
         href: "",
-        icon: GiSoapExperiment,
+        icon: LabsIcon,
         requiresAuth: true,
         isDropdown: true,
         // Only labs with live routes. Vexel/Strata/Dynas/Nomora are not built yet

@@ -3,7 +3,16 @@
 import React, { useState } from "react";
 import { useIxMedia } from "./MediaContext";
 import { FacetModal } from "~/components/ui/facet-container";
-import { X, Play, Pause, SkipForward, SkipBack, Volume2, ListMusic, Gauge } from "lucide-react";
+import {
+  Xmark as X,
+  Play,
+  Pause,
+  FastArrowRight as SkipForward,
+  FastArrowLeft as SkipBack,
+  SoundHigh as Volume2,
+  Playlist as ListMusic,
+  Dashboard as Gauge,
+} from "iconoir-react";
 import { WaveformVisualizer } from "./WaveformVisualizer";
 import { QueuePanel } from "./QueuePanel";
 import { ChapterNavigator } from "./ChapterNavigator";
@@ -67,7 +76,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             duration={duration}
             onSeek={seekTrack}
           />
-          <div className="text-muted-foreground flex items-center justify-between font-mono text-[10px]">
+          <div className="text-muted-foreground flex items-center justify-between font-mono text-xs">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -84,14 +93,14 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
           {isPlaying ? (
             <button
               onClick={pauseTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-all hover:scale-105"
+              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
             >
               <Pause className="h-6 w-6 fill-current" />
             </button>
           ) : (
             <button
               onClick={resumeTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-all hover:scale-105"
+              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
             >
               <Play className="ml-0.5 h-6 w-6 fill-current" />
             </button>

@@ -10,7 +10,7 @@ import {
   toArticleSlug,
   toArticleId,
   toRevisionId,
-  type ArticleSlug,
+  // oxlint-disable-next-line typescript/no-unused-vars
   type ArticleId,
   type RevisionId,
   type SaveArticleInput,
@@ -18,6 +18,7 @@ import {
   type WikiRevisionSummary,
 } from "./domain-types";
 import { LinkGraphService } from "./link-graph-service";
+import { MediaAssetService } from "./media-asset-service";
 
 export class ArticleRepository {
   static async getArticleBySlug(
@@ -30,53 +31,74 @@ export class ArticleRepository {
   /**
    * Find an authoritative article by slug (<2ms query)
    */
-  static async findBySlug(
-    slug: string,
-    source = "ixwiki"
-  ): Promise<WikiArticleEntity | null> {
+  static async findBySlug(slug: string, source = "ixwiki"): Promise<WikiArticleEntity | null> {
     const normalizedSlug = toArticleSlug(slug);
 
     try {
-      const article: any = await (db as any).wikiArticle.findFirst({
+      const article = await db.wikiArticle.findFirst({
         where: {
           source,
           OR: [
-            { title: slug.replace(/_/g, " ") },
-            { title: slug },
-            { title: normalizedSlug },
+            { slug: { equals: normalizedSlug, mode: "insensitive" } },
+            { slug: { equals: slug, mode: "insensitive" } },
+            { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
+            { title: { equals: slug, mode: "insensitive" } },
+            { title: { equals: normalizedSlug, mode: "insensitive" } },
           ],
         },
         select: {
           id: true,
           title: true,
           source: true,
+          status: true,
+          format: true,
+          contentHtml: true,
+          contentJson: true,
           wikitext: true,
+          summary: true,
+          namespace: true,
+          namespacePrefix: true,
+          protectionLevel: true,
+          protectionExpiry: true,
+          redirectTargetSlug: true,
+          redirectTargetFragment: true,
+          readingTime: true,
+          wordCount: true,
+          viewCount: true,
+          leadImageUrl: true,
+          authorId: true,
+          lastEditorId: true,
           syncedAt: true,
           updatedAt: true,
         },
       });
 
-      if (!article || !article.wikitext) return null;
+      if (!article || (!article.wikitext && !article.contentHtml)) return null;
 
       return {
         id: toArticleId(article.id),
         slug: toArticleSlug(article.title),
         title: article.title,
         source: article.source,
-        status: "PUBLISHED" as any,
-        format: "STRUCTURED_JSON" as any,
-        contentHtml: "",
-        contentJson: null,
-        wikitext: article.wikitext,
-        summary: null,
+        status: (article.status || "PUBLISHED") as WikiArticleEntity["status"],
+        format: (article.format || "STRUCTURED_JSON") as WikiArticleEntity["format"],
+        contentHtml: article.contentHtml ?? "",
+        contentJson: (article.contentJson as unknown as WikiArticleEntity["contentJson"]) ?? null,
+        wikitext: article.wikitext ?? "",
+        summary: article.summary ?? null,
+        namespace: article.namespace ?? 0,
+        namespacePrefix: article.namespacePrefix ?? null,
+        protectionLevel: article.protectionLevel ?? "ALL",
+        protectionExpiry: article.protectionExpiry ?? null,
         infoboxData: null,
-        readingTime: 1,
-        wordCount: 0,
-        viewCount: 0,
-        leadImageUrl: null,
-        redirectTargetSlug: null,
-        authorId: null,
-        lastEditorId: null,
+        readingTime: article.readingTime ?? 1,
+        wordCount: article.wordCount ?? 0,
+        viewCount: article.viewCount ?? 0,
+        leadImageUrl: article.leadImageUrl ?? null,
+        redirectTargetSlug: article.redirectTargetSlug ?? null,
+        redirectTargetFragment: article.redirectTargetFragment ?? null,
+        authorId: article.authorId ?? null,
+        lastEditorId: article.lastEditorId ?? null,
         createdAt: article.syncedAt ?? new Date(),
         updatedAt: article.updatedAt ?? new Date(),
       };
@@ -108,7 +130,29 @@ export class ArticleRepository {
     const readingTime = Math.max(1, Math.ceil(words / 200));
 
     // Save article and create revision in a single atomic transaction
-    const result = await db.$transaction(async (tx: any) => {
+    const result = await db.$transaction(async (tx) => {
+      // Resolve DB user id if Clerk ID or username was provided
+      let resolvedDbUserId: string | null = null;
+      if (authorId) {
+        const user = await tx.user.findFirst({
+          where: {
+            OR: [{ id: authorId }, { clerkUserId: authorId }],
+          },
+          select: { id: true, wikiUsername: true },
+        });
+        if (user) {
+          resolvedDbUserId = user.id;
+          if (!user.wikiUsername && authorName && authorName !== "Community Contributor") {
+            await tx.user
+              .update({
+                where: { id: user.id },
+                data: { wikiUsername: authorName, lastWikiSync: new Date() },
+              })
+              .catch(() => null);
+          }
+        }
+      }
+
       // 1. Upsert WikiArticle
       const article = await tx.wikiArticle.upsert({
         where: {
@@ -116,32 +160,59 @@ export class ArticleRepository {
         },
         create: {
           title,
+          slug,
           source,
           wikitext,
+          contentHtml,
+          summary: input.summary ?? null,
+          authorId: resolvedDbUserId,
+          lastEditorId: resolvedDbUserId,
+          readingTime,
+          wordCount: words,
         },
         update: {
           wikitext,
+          contentHtml,
+          summary: input.summary ?? undefined,
+          lastEditorId: resolvedDbUserId ?? undefined,
           syncedAt: new Date(),
+          readingTime,
+          wordCount: words,
         },
         select: {
           id: true,
           title: true,
+          slug: true,
           source: true,
           wikitext: true,
+          namespace: true,
+          namespacePrefix: true,
+          protectionLevel: true,
+          protectionExpiry: true,
           syncedAt: true,
           updatedAt: true,
         },
       });
 
-      // 2. Create append-only revision
+      // 2. Create append-only revision, sized against the previous one
+      const byteSize = Buffer.byteLength(wikitext, "utf8");
+      const previous = await tx.wikiRevision.findFirst({
+        where: { articleId: article.id },
+        orderBy: { createdAt: "desc" },
+        select: { byteSize: true },
+      });
       const revision = await tx.wikiRevision.create({
         data: {
           articleId: article.id,
           wikitext,
+          contentHtml,
           summary: input.summary ?? null,
           minor: input.minor ?? false,
           source,
           author: authorName,
+          authorId: resolvedDbUserId,
+          byteSize,
+          byteDelta: byteSize - (previous?.byteSize ?? 0),
         },
         select: {
           id: true,
@@ -169,6 +240,11 @@ export class ArticleRepository {
       console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
     }
 
+    // 4. Auto-register any new image references in PostgreSQL wiki_assets
+    void MediaAssetService.processContentImages(wikitext || contentHtml).catch((err) => {
+      console.warn("[ArticleRepository] Media asset processing failed:", err);
+    });
+
     return {
       article: {
         id: toArticleId(result.article.id),
@@ -181,12 +257,17 @@ export class ArticleRepository {
         contentJson: null,
         wikitext: result.article.wikitext,
         summary: input.summary ?? null,
+        namespace: result.article.namespace ?? 0,
+        namespacePrefix: result.article.namespacePrefix ?? null,
+        protectionLevel: result.article.protectionLevel ?? "ALL",
+        protectionExpiry: result.article.protectionExpiry ?? null,
         infoboxData: null,
         readingTime,
         wordCount: words,
         viewCount: 0,
         leadImageUrl: null,
         redirectTargetSlug: null,
+        redirectTargetFragment: null,
         authorId: authorId ?? null,
         lastEditorId: authorId ?? null,
         createdAt: result.article.syncedAt || new Date(),
@@ -195,6 +276,22 @@ export class ArticleRepository {
       revisionId: toRevisionId(result.revision.id),
       extractedLinksCount: linksCount,
     };
+  }
+
+  /**
+   * Of `titles`, the ones with no article in this realm — one query, used to mark red links.
+   */
+  static async findMissingTitles(titles: string[], source = "ixwiki"): Promise<string[]> {
+    if (titles.length === 0) return [];
+    const found = await db.wikiArticle.findMany({
+      where: {
+        source,
+        OR: [{ slug: { in: titles.map((t) => toArticleSlug(t)) } }, { title: { in: titles } }],
+      },
+      select: { slug: true, title: true },
+    });
+    const existing = new Set(found.flatMap((a) => [toArticleSlug(a.slug), toArticleSlug(a.title)]));
+    return titles.filter((t) => !existing.has(toArticleSlug(t)));
   }
 
   /**
@@ -207,12 +304,15 @@ export class ArticleRepository {
   ): Promise<WikiRevisionSummary[]> {
     const normalized = toArticleSlug(slug);
 
-    const revisions: any[] = await (db as any).wikiRevision.findMany({
+    const revisions = await db.wikiRevision.findMany({
       where: {
         article: {
           source,
           OR: [
+            { slug: { equals: normalized, mode: "insensitive" } },
+            { slug: { equals: slug, mode: "insensitive" } },
             { title: { equals: slug.replace(/_/g, " "), mode: "insensitive" } },
+            { title: { equals: slug, mode: "insensitive" } },
             { title: { equals: normalized, mode: "insensitive" } },
           ],
         },
@@ -221,25 +321,32 @@ export class ArticleRepository {
       take: limit,
       select: {
         id: true,
+        mwRevId: true,
         articleId: true,
         summary: true,
         minor: true,
         author: true,
+        authorId: true,
         createdAt: true,
         wikitext: true,
+        byteSize: true,
+        byteDelta: true,
+        format: true,
       },
     });
 
-    return revisions.map((r: any) => ({
+    return revisions.map((r) => ({
       id: toRevisionId(r.id),
+      mwRevId: r.mwRevId,
       articleId: toArticleId(r.articleId),
-      format: (r.format || "STRUCTURED_JSON") as any,
+      format: (r.format || "STRUCTURED_JSON") as WikiRevisionSummary["format"],
       summary: r.summary ?? null,
       minor: r.minor ?? false,
       author: r.author ?? null,
       authorId: r.authorId ?? null,
       createdAt: r.createdAt,
-      byteSize: Buffer.byteLength(r.wikitext || "", "utf8"),
+      byteSize: r.byteSize || Buffer.byteLength(r.wikitext || "", "utf8"),
+      byteDelta: r.byteDelta ?? 0,
     }));
   }
 }

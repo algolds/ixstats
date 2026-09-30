@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { Info, Star, Sparkles, Gift } from "lucide-react";
+import { InfoCircle as Info, Star, Sparks as Sparkles, Gift } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
@@ -132,7 +132,7 @@ export function PackHolographicCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-all hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
+            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
             title="View Pack Details"
           >
             <Info className="h-3.5 w-3.5" />
@@ -192,20 +192,20 @@ export function PackHolographicCard({
 
         <div className="mt-2.5 space-y-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="text-foreground line-clamp-1 text-[11px] font-semibold">
+            <span className="text-foreground line-clamp-1 text-xs font-semibold">
               {pack.name}
             </span>
             <Badge
               variant="outline"
               className={cn(
-                "px-1 py-0 text-[8px] font-medium tracking-wider uppercase",
+                "px-1 py-0 text-xs font-medium tracking-wider uppercase",
                 config.color
               )}
             >
               {config.label}
             </Badge>
           </div>
-          <p className="text-muted-foreground line-clamp-2 text-[9px] leading-tight">
+          <p className="text-muted-foreground line-clamp-2 text-xs leading-tight">
             {pack.description || `${pack.cardCount} premium cards included`}
           </p>
           <div className="pt-1">{actionButton}</div>

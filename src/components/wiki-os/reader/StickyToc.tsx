@@ -1,10 +1,15 @@
-// src/components/wiki-os/reader/StickyToc.tsx
 "use client";
+// src/components/wiki-os/reader/StickyToc.tsx
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, X, ChevronUp, ChevronDown } from "lucide-react";
-import { cn } from "~/lib/utils";
+import {
+  Search,
+  Xmark as X,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+} from "iconoir-react";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 interface StickyTocProps {
   entries: TocEntry[];
@@ -54,7 +59,8 @@ function highlightText(element: HTMLElement, query: string) {
 }
 
 export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTocProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const { activeSectionId } = useWikiContext();
+  const activeId = activeSectionId;
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchCount, setMatchCount] = useState(0);
@@ -79,10 +85,12 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
   // Reset search and original HTML when entries (page) change
   useEffect(() => {
     originalHtml.current = null;
+    // oxlint-disable-next-line
     setSearchQuery("");
     setShowSearch(false);
     setMatchCount(0);
     setCurrentMatchIndex(-1);
+    // oxlint-disable-next-line
   }, [entries]);
 
   // Find in page search highlighting effect
@@ -99,6 +107,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     }
 
     if (!searchQuery.trim()) {
+      // oxlint-disable-next-line
       setMatchCount(0);
       setCurrentMatchIndex(-1);
       return;
@@ -137,48 +146,11 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
 
-  // Scroll spy with RAF throttling to highlight active section efficiently
-  useEffect(() => {
-    const ids = visibleEntries.map((e) => e.id);
-    if (ids.length === 0) return;
-
-    let rafId: number | undefined;
-    let isTicking = false;
-
-    function tick() {
-      if (!isTicking) {
-        isTicking = true;
-        rafId = requestAnimationFrame(() => {
-          let current: string | null = null;
-          for (const id of ids) {
-            const el = document.getElementById(id);
-            if (el) {
-              const rect = el.getBoundingClientRect();
-              if (rect.top <= 120) {
-                current = id;
-              }
-            }
-          }
-          setActiveId(current);
-          isTicking = false;
-        });
-      }
-    }
-
-    window.addEventListener("scroll", tick, { passive: true });
-    tick();
-
-    return () => {
-      window.removeEventListener("scroll", tick);
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [visibleEntries]);
-
   if (isCollapsed) return null;
 
   return (
     <nav
-      className="wikios-sticky-toc transition-all duration-300 ease-out select-none"
+      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out select-none"
       aria-label="Table of contents"
     >
       <div className="wikios-sticky-toc-header">
@@ -219,7 +191,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Previous match"
                 type="button"
               >
-                <ChevronUp size={12} />
+                <ChevronUp className="h-3 w-3" />
               </button>
               <button
                 onClick={handleNext}
@@ -228,7 +200,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Next match"
                 type="button"
               >
-                <ChevronDown size={12} />
+                <ChevronDown className="h-3 w-3" />
               </button>
               <button
                 onClick={handleCloseSearch}
@@ -236,7 +208,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
                 title="Close search"
                 type="button"
               >
-                <X size={12} />
+                <X className="h-3 w-3" />
               </button>
             </div>
           </div>
@@ -249,7 +221,7 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
               title="Find on page"
               type="button"
             >
-              <Search size={12} />
+              <Search className="h-3 w-3" />
             </button>
           </>
         )}

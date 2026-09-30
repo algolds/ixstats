@@ -1,10 +1,8 @@
-"use client";
-
-import { Command } from "lucide-react";
-import { api } from "~/trpc/react";
-import { IntentComposer } from "~/components/mycountry/shared/primitives/IntentComposer";
+import {
+  IntentComposer,
+  type IntentCommitResult,
+} from "~/components/mycountry/shared/primitives/IntentComposer";
 import { FacetCard } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
 
 /**
  * EXECUTIVE mode — the Console.
@@ -16,7 +14,7 @@ export interface ExecutiveConsoleProps {
   countryId: string;
   initialGoal?: string;
   onDone?: (msg?: string) => void;
-  onCommitted?: (res: any) => void;
+  onCommitted?: (res: IntentCommitResult) => void;
 }
 
 export type V2ConsoleProps = ExecutiveConsoleProps;
@@ -32,7 +30,7 @@ export function ExecutiveConsole({
       <IntentComposer
         countryId={countryId}
         initialGoal={initialGoal}
-        onCommitted={(res: any) => {
+        onCommitted={(res) => {
           onCommitted?.(res);
           onDone?.(res?.summary ?? "Directive committed.");
         }}

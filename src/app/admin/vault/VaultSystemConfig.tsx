@@ -9,7 +9,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Switch } from "~/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 
 export function VaultSystemConfig() {
   const notify = useNotify();
@@ -117,7 +117,7 @@ export function VaultSystemConfig() {
                       }
                       className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                       IxC
                     </span>
                   </div>
@@ -138,7 +138,7 @@ export function VaultSystemConfig() {
                       }
                       className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                       IxC
                     </span>
                   </div>
@@ -159,7 +159,7 @@ export function VaultSystemConfig() {
                       }
                       className="bg-background border-border/40 text-foreground pr-12 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                       XP
                     </span>
                   </div>
@@ -180,7 +180,7 @@ export function VaultSystemConfig() {
                       }
                       className="bg-background border-border/40 text-foreground pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                       IxC
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export function VaultSystemConfig() {
                       }
                       className="bg-background border-border/40 text-foreground pr-8 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-[10px]">
+                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
                       x
                     </span>
                   </div>
@@ -216,7 +216,7 @@ export function VaultSystemConfig() {
                   <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-foreground text-xs font-semibold">Enable Earning</span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Enables user active & social credits.
                       </span>
                     </div>
@@ -231,7 +231,7 @@ export function VaultSystemConfig() {
                   <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-foreground text-xs font-semibold">Enable Store</span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Allows buying dynamic storefront cosmetics.
                       </span>
                     </div>
@@ -246,7 +246,7 @@ export function VaultSystemConfig() {
                   <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-foreground text-xs font-semibold">Enable Crafting</span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Allows fusing and evolving collector cards.
                       </span>
                     </div>
@@ -263,7 +263,7 @@ export function VaultSystemConfig() {
                       <span className="text-foreground text-xs font-semibold">
                         Enable Card Packs
                       </span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Enables pack purchases & award mutations.
                       </span>
                     </div>
@@ -280,7 +280,7 @@ export function VaultSystemConfig() {
                       <span className="text-foreground text-xs font-semibold">
                         Enable P2P Trading
                       </span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Allows player card negotiation trades.
                       </span>
                     </div>
@@ -297,7 +297,7 @@ export function VaultSystemConfig() {
                       <span className="text-foreground text-xs font-semibold">
                         Enable P2P Auctions
                       </span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Enables card listings and active bidding.
                       </span>
                     </div>
@@ -314,7 +314,7 @@ export function VaultSystemConfig() {
                       <span className="text-destructive text-xs font-semibold">
                         Maintenance Mode
                       </span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Blocks all write operations globally.
                       </span>
                     </div>
@@ -329,7 +329,7 @@ export function VaultSystemConfig() {
                   <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-foreground text-xs font-semibold">Exempt Staff</span>
-                      <span className="text-muted-foreground text-[10px]">
+                      <span className="text-muted-foreground text-xs">
                         Exempt role levels 20 & lower from capacity limit.
                       </span>
                     </div>

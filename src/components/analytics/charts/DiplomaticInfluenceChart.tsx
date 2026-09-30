@@ -16,7 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Globe, FileSpreadsheet, Download } from "lucide-react";
+import { Globe, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -32,7 +32,7 @@ interface DiplomaticInfluenceChartProps {
 export const DiplomaticInfluenceChart = React.memo<DiplomaticInfluenceChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="diplomatic-influence-chart">
+      <Card className="facet-hierarchy-child" id="diplomatic-influence-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

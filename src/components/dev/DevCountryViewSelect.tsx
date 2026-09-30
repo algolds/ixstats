@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Eye, RotateCcw } from "lucide-react";
+import { Eye, Undo as RotateCcw } from "iconoir-react";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -33,13 +34,15 @@ export function DevCountryViewSelect() {
 
   // Fetch country list for dropdown
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
-    { limit: 500 },
+    { limit: 500, realm: ALL_REALMS },
     { enabled: canUseDevView }
   );
 
   const countries = useMemo<{ id: string; name: string }[]>(() => {
     if (!countriesData) return [];
-    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any).items ?? [];
+    const list = Array.isArray(countriesData)
+      ? countriesData
+      : ((countriesData as any).items ?? []);
     return list.map((c: any) => ({
       id: c.id,
       name: c.name,

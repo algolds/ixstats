@@ -6,11 +6,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  countryOwnerProcedure,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { upsertCity } from "~/lib/country-geo";
 import { invalidateCache } from "~/lib/cache";
@@ -33,92 +29,11 @@ const cityImportRowSchema = z.object({
   wikiPageTitle: z.string().max(200).optional(),
 });
 
-type CityImportRow = z.infer<typeof cityImportRowSchema>;
-
 // ── Validation helper ─────────────────────────────────────────────────────────
-
-async function validateCityRow(
-  db: any,
-  countryId: string,
-  row: CityImportRow,
-  existingNames: Set<string>
-): Promise<string[]> {
-  const issues: string[] = [];
-
-  // Inside-country check via PostGIS
-  try {
-    const containResult = (await db.$queryRawUnsafe(
-      `SELECT ST_Covers(
-         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
-         ST_SetSRID(ST_MakePoint($2, $3), 4326)
-       ) as is_inside`,
-      countryId,
-      row.lng,
-      row.lat
-    )) as Array<{ is_inside: boolean | null }>;
-
-    // If geom_postgis is null, containResult[0]?.is_inside is null — skip check gracefully
-    if (containResult[0] && containResult[0].is_inside === false) {
-      issues.push("City coordinates are outside country borders");
-    }
-  } catch {
-    // PostGIS unavailable (e.g. dev without spatial data) — skip silently
-  }
-
-  // Name conflict with existing cities
-  if (existingNames.has(row.name.toLowerCase())) {
-    issues.push(`City name "${row.name}" already exists in this country`);
-  }
-
-  return issues;
-}
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
 export const geoAdminCitiesRouter = createTRPCRouter({
-  /**
-   * Validate a batch of city rows for a country:
-   * - Checks each point is inside the country border (PostGIS)
-   * - Checks for name conflicts with existing cities
-   *
-   * Returns per-row issues (not a fatal error — caller shows warnings).
-   */
-  validateCityImport: countryOwnerProcedure
-    .input(
-      z.object({
-        countryId: z.string(),
-        cities: z.array(cityImportRowSchema),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const country = ctx.country as any;
-      // countryOwnerMiddleware sets ctx.country = null for admins; non-admins must own the country
-      if (country && country.id !== input.countryId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only validate cities for your own country",
-        });
-      }
-
-      // Pre-fetch existing city names for this country
-      const existingCities = await ctx.db.city.findMany({
-        where: { countryId: input.countryId },
-        select: { name: true },
-      });
-      const existingNames = new Set(
-        (existingCities as Array<{ name: string }>).map((c) => c.name.toLowerCase())
-      );
-
-      const results = await Promise.all(
-        input.cities.map(async (row) => {
-          const issues = await validateCityRow(ctx.db, input.countryId, row, existingNames);
-          return { name: row.name, lat: row.lat, lng: row.lng, issues };
-        })
-      );
-
-      return { results };
-    }),
-
   /**
    * Commit a validated batch of city rows.
    * Re-validates each row server-side (never trusts client validation).

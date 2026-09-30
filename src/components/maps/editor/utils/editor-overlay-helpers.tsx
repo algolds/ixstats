@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, Component, type ReactNode } from "react";
-import { Map, AlertCircle } from "lucide-react";
+import { Map, WarningCircle as AlertCircle } from "iconoir-react";
+import type { Geometry, Position } from "geojson";
 
 // ── Editor Loading Screen ────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
   }, []);
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#0a1628]">
+    <div className="bg-map-ocean absolute inset-0 z-40 flex items-center justify-center">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.06)_0%,_transparent_70%)]" />
 
       <div className="relative z-10 flex flex-col items-center gap-6 text-center">
@@ -24,9 +25,9 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
         <div className="relative h-24 w-24">
           <div className="absolute inset-0 animate-[spin_6s_linear_infinite] rounded-full border-2 border-dashed border-emerald-500/30" />
           <div className="absolute inset-3 animate-[spin_4s_linear_infinite_reverse] rounded-full border border-emerald-400/20" />
-          <div className="absolute inset-6 animate-pulse rounded-full border border-emerald-300/15" />
+          <div className="absolute inset-6 rounded-full border border-emerald-300/15" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <Map className="h-8 w-8 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+            <Map className="h-8 w-8 text-emerald-400" />
           </div>
         </div>
 
@@ -35,7 +36,7 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
           {countryName && <p className="text-muted-foreground mt-1 text-xs">{countryName}</p>}
         </div>
 
-        <div className="text-muted-foreground/60 flex gap-4 text-[10px]">
+        <div className="text-muted-foreground/60 flex gap-4 text-xs">
           <span>Geometry</span>
           <span>Features</span>
           <span>Layers</span>
@@ -47,14 +48,14 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
 
 // ── Geometry Vertices Counter Helper ─────────────────────────────────
 
-export function countGeometryVertices(geometry: object): number {
-  const geo = geometry as { type: string; coordinates: unknown };
+export function countGeometryVertices(geometry: Geometry | object): number {
+  const geo = geometry as { type?: string; coordinates?: Position[][] | Position[][][] };
   if (!geo.coordinates) return 0;
   if (geo.type === "Polygon") {
-    return (geo.coordinates as number[][][]).reduce((s, ring) => s + ring.length, 0);
+    return (geo.coordinates as Position[][]).reduce((s, ring) => s + ring.length, 0);
   }
   if (geo.type === "MultiPolygon") {
-    return (geo.coordinates as number[][][][]).reduce(
+    return (geo.coordinates as Position[][][]).reduce(
       (s, poly) => s + poly.reduce((s2, ring) => s2 + ring.length, 0),
       0
     );

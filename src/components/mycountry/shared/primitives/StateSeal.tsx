@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Crown, Church, Cog, Shield, Star, Landmark } from "lucide-react";
+import { Crown, Church, Settings as Cog, Shield, Star, Bank as Landmark } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export const SEAL_STYLE = `

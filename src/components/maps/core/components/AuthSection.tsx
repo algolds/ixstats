@@ -1,6 +1,6 @@
 "use client";
 
-import { LogIn, User, LayoutDashboard, Crown } from "lucide-react";
+import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { getNationUrl } from "~/lib/utils";
@@ -16,13 +16,13 @@ interface AuthSectionProps {
 
 export function AuthSection({ user, isLoaded, greeting, countryName, router }: AuthSectionProps) {
   if (!isLoaded) {
-    return <span className="text-muted-foreground text-[11px]">…</span>;
+    return <span className="text-muted-foreground text-xs">…</span>;
   }
 
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
+        <button className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors">
           <LogIn className="h-3 w-3" />
           <span className="hidden sm:inline">Sign in</span>
         </button>
@@ -32,7 +32,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
 
   return (
     <Popover>
-      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors">
+      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors">
         {user.imageUrl ? (
           <img
             src={user.imageUrl}
@@ -71,7 +71,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
               {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
             </div>
             {countryName && (
-              <div className="text-muted-foreground truncate text-[11px]">{countryName}</div>
+              <div className="text-muted-foreground truncate text-xs">{countryName}</div>
             )}
           </div>
         </div>

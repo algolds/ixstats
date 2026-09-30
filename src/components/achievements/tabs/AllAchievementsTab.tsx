@@ -4,22 +4,21 @@ import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Lock,
-  Award,
-  LayoutGrid,
+  Trophy as Award,
+  ViewGrid as LayoutGrid,
   List,
   Eye,
-  EyeOff,
-  Diamond,
+  EyeClosed as EyeOff,
+  Crown as Diamond,
   Search,
-  X,
-  Gem,
-  Zap,
-  Target,
-  CircleDot,
-  Layers,
+  Xmark as X,
+  Crown as Gem,
+  Flash as Zap,
+  Archery as Target,
+  OnePointCircle as CircleDot,
+  Component as Layers,
   Hexagon,
-  Check,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import {
@@ -72,9 +71,9 @@ const ACHIEVEMENT_TIER_CONFIG: Record<
   bronze: {
     label: "Core",
     icon: Target,
-    bg: "bg-sky-500/15 border-sky-500/35 text-sky-600 dark:text-sky-300 font-extrabold shadow-sm",
-    border: "border-sky-500/40 shadow-sm",
-    text: "text-sky-600 dark:text-sky-300 font-bold",
+    bg: "bg-stone-500/15 border-stone-500/35 text-stone-600 dark:text-stone-300 font-extrabold shadow-sm",
+    border: "border-stone-500/40 shadow-sm",
+    text: "text-stone-600 dark:text-stone-300 font-bold",
   },
 };
 
@@ -93,7 +92,8 @@ const RARITY_CONFIG: Record<
     label: "All",
     icon: Layers,
     color: "text-amber-500 dark:text-amber-400",
-    activeBg: "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
+    activeBg:
+      "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
     textColor: "text-amber-600 dark:text-amber-300 font-bold",
     ringColor: "ring-amber-500/20",
   },
@@ -101,7 +101,8 @@ const RARITY_CONFIG: Record<
     label: "Legendary",
     icon: Zap,
     color: "text-amber-500 dark:text-amber-400",
-    activeBg: "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
+    activeBg:
+      "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
     textColor: "text-amber-600 dark:text-amber-300 font-bold",
     ringColor: "ring-amber-500/20",
   },
@@ -109,7 +110,8 @@ const RARITY_CONFIG: Record<
     label: "Epic",
     icon: Gem,
     color: "text-purple-500 dark:text-purple-400",
-    activeBg: "bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-300 font-bold",
+    activeBg:
+      "bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-300 font-bold",
     textColor: "text-purple-600 dark:text-purple-300 font-bold",
     ringColor: "ring-purple-500/20",
   },
@@ -125,7 +127,8 @@ const RARITY_CONFIG: Record<
     label: "Uncommon",
     icon: Target,
     color: "text-emerald-500 dark:text-emerald-400",
-    activeBg: "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 font-bold",
+    activeBg:
+      "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 font-bold",
     textColor: "text-emerald-600 dark:text-emerald-300 font-bold",
     ringColor: "ring-emerald-500/20",
   },
@@ -164,6 +167,7 @@ function GroupedSeriesCard({
     if (selectedRarity !== "all") {
       const matchIdx = item.levels.findIndex((l) => l.rarity === selectedRarity);
       if (matchIdx !== -1 && item.levels[matchIdx].isUnlocked) {
+        // oxlint-disable-next-line
         setInspectedIndex(matchIdx);
         return;
       }
@@ -192,7 +196,8 @@ function GroupedSeriesCard({
   const isUltraRare = (activeLevel.globalUnlockPercent || 100) < 5;
   const categoryTheme = getCategoryTheme(item.category);
   const CategoryIcon = categoryTheme.icon;
-  const rawIconPath = item.iconPath || getAchievementGameIconPath(activeLevel.key, activeLevel.category);
+  const rawIconPath =
+    item.iconPath || getAchievementGameIconPath(activeLevel.key, activeLevel.category);
   const iconPath = createUrl(rawIconPath);
   const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
@@ -204,10 +209,10 @@ function GroupedSeriesCard({
       whileHover={isUnlocked ? { y: -3, scale: 1.008 } : { y: 0 }}
       whileTap={isUnlocked ? { scale: 0.985 } : {}}
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/60 border-t-white/20 bg-card/75 p-5 shadow-xl backdrop-blur-2xl transition-all duration-300 dark:border-border/40 dark:border-t-white/10 dark:bg-card/60",
+        "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-white/20 p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-t-white/10",
         isUnlocked && categoryTheme.cardBorderHover,
         !isUnlocked
-          ? "border-dashed border-border/50 bg-muted/25 opacity-85 shadow-md select-none"
+          ? "border-border/50 bg-muted/25 border-dashed opacity-85 shadow-md select-none"
           : "hover:shadow-2xl"
       )}
     >
@@ -226,7 +231,7 @@ function GroupedSeriesCard({
             {/* Rarity & Tier Badge */}
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase backdrop-blur-md transition-colors",
+                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold uppercase backdrop-blur-md transition-colors",
                 tierConfig.bg
               )}
             >
@@ -236,8 +241,8 @@ function GroupedSeriesCard({
 
             {/* Ultra-Rare Diamond Pill */}
             {isUltraRare && (
-              <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-[9px] font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
-                <Diamond className="h-3 w-3 animate-pulse text-cyan-500 dark:text-cyan-300" />
+              <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-xs font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
+                <Diamond className="h-3 w-3 text-cyan-500 dark:text-cyan-300" />
                 <span>{activeLevel.globalUnlockPercent}% Ultra-Rare</span>
               </span>
             )}
@@ -246,7 +251,7 @@ function GroupedSeriesCard({
           {/* Category Tag with Icon */}
           <span
             className={cn(
-              "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-extrabold tracking-wider uppercase backdrop-blur-md",
+              "flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase backdrop-blur-md",
               categoryTheme.badge
             )}
           >
@@ -265,10 +270,10 @@ function GroupedSeriesCard({
               if (!isUnlocked) triggerLockedShake();
             }}
             className={cn(
-              "relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border shadow-inner backdrop-blur-md transition-all duration-300 select-none",
+              "relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
               isUnlocked
                 ? cn(categoryTheme.pedestal, "shadow-md group-hover:scale-105")
-                : "cursor-not-allowed border-dashed border-border/60 bg-muted/30 text-muted-foreground/50 opacity-70 backdrop-blur-md"
+                : "border-border/60 bg-muted/30 text-muted-foreground/50 cursor-not-allowed border-dashed opacity-70 backdrop-blur-md"
             )}
           >
             <JewelAchievementIcon
@@ -283,7 +288,7 @@ function GroupedSeriesCard({
             <div className="flex items-center gap-2">
               <h3
                 className={cn(
-                  "truncate text-sm font-extrabold tracking-tight transition-all",
+                  "truncate text-sm font-extrabold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   isUnlocked ? "text-foreground" : "text-muted-foreground/70 blur-[0.5px]"
                 )}
               >
@@ -294,7 +299,7 @@ function GroupedSeriesCard({
             {/* Blurred Locked Description (non-clickable) */}
             <p
               className={cn(
-                "line-clamp-2 text-xs leading-snug font-medium transition-all duration-300 select-none pointer-events-none",
+                "pointer-events-none line-clamp-2 text-xs leading-snug font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
                 isUnlocked
                   ? "text-muted-foreground"
                   : isSecret && !isRevealed
@@ -311,12 +316,12 @@ function GroupedSeriesCard({
       </div>
 
       {/* Interactive Level Stepper & Bottom Action Bar */}
-      <div className="relative z-10 mt-4 space-y-3.5 border-t border-border/40 pt-3.5">
+      <div className="border-border/40 relative z-10 mt-4 space-y-3.5 border-t pt-3.5">
         {item.isSeries && item.levels.length > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">Tiers:</span>
-              <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/40 p-0.5 shadow-inner backdrop-blur-md">
+              <span className="text-muted-foreground text-xs font-bold uppercase">Tiers:</span>
+              <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-xl border p-0.5 shadow-inner backdrop-blur-md">
                 {item.levels.map((lvl: any, idx: number) => {
                   const lvlUnlocked = lvl.isUnlocked;
                   const isCurrent = inspectedIndex === idx;
@@ -336,12 +341,12 @@ function GroupedSeriesCard({
                         setInspectedIndex(idx);
                       }}
                       className={cn(
-                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-[10px] font-bold transition-all select-none",
+                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
                         isCurrent
                           ? "bg-foreground text-background shadow-md"
                           : lvlUnlocked
-                            ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 active:scale-95 cursor-pointer dark:text-emerald-400"
-                            : "cursor-not-allowed border border-border/30 bg-muted/20 text-muted-foreground/40 opacity-50 hover:border-rose-500/40 hover:bg-rose-500/5 hover:text-rose-500/70"
+                            ? "cursor-pointer border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
+                            : "border-border/30 bg-muted/20 text-muted-foreground/40 cursor-not-allowed border opacity-50 hover:border-red-500/40 hover:bg-red-500/5 hover:text-red-500/70"
                       )}
                       title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "Unlocked - Click to view" : "Locked Tier (Immutable)"})`}
                     >
@@ -350,7 +355,7 @@ function GroupedSeriesCard({
                         <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       )}
                       {!lvlUnlocked && (
-                        <Lock className="absolute -top-0.5 -right-0.5 h-2 w-2 text-muted-foreground/50" />
+                        <Lock className="text-muted-foreground/50 absolute -top-0.5 -right-0.5 h-2 w-2" />
                       )}
                     </motion.button>
                   );
@@ -358,7 +363,7 @@ function GroupedSeriesCard({
               </div>
             </div>
 
-            <span className="font-mono text-[10px] font-semibold text-muted-foreground">
+            <span className="text-muted-foreground font-mono text-xs font-semibold">
               {item.unlockedCount} / {item.totalLevels} Mastered
             </span>
           </div>
@@ -374,7 +379,7 @@ function GroupedSeriesCard({
                   e.stopPropagation();
                   toggleSecretReveal(activeLevel.key);
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-muted/40 text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground active:scale-95"
+                className="border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 title={isRevealed ? "Hide Secret" : "Reveal Secret"}
               >
                 {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -384,16 +389,16 @@ function GroupedSeriesCard({
             {/* Clean Points Badge without '+' symbol */}
             <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs font-bold text-emerald-600 tabular-nums shadow-sm backdrop-blur-md select-none dark:text-emerald-400">
               <span>{activeLevel.points || 10}</span>
-              <span className="text-[9px] font-semibold tracking-wider text-emerald-600/80 uppercase dark:text-emerald-400/80">
+              <span className="text-xs font-semibold tracking-wider text-emerald-600/80 uppercase dark:text-emerald-400/80">
                 pts
               </span>
             </div>
           </div>
 
           {/* Date Details */}
-          <div className="text-right text-[10px] text-muted-foreground">
+          <div className="text-muted-foreground text-right text-xs">
             {isUnlocked && activeLevel.unlockedAt ? (
-              <span className="font-mono font-bold text-foreground tabular-nums">
+              <span className="text-foreground font-mono font-bold tabular-nums">
                 Unlocked{" "}
                 {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
                   month: "short",
@@ -401,7 +406,7 @@ function GroupedSeriesCard({
                 })}
               </span>
             ) : (
-              <span className="font-medium tracking-wide text-muted-foreground/60 uppercase">
+              <span className="text-muted-foreground/60 font-medium tracking-wide uppercase">
                 Locked
               </span>
             )}
@@ -437,9 +442,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
     const counts: Record<string, number> = { all: groupedItems.length };
     for (const r of rarities) {
       if (r === "all") continue;
-      counts[r] = groupedItems.filter((item) =>
-        item.levels.some((l) => l.rarity === r)
-      ).length;
+      counts[r] = groupedItems.filter((item) => item.levels.some((l) => l.rarity === r)).length;
     }
     return counts;
   }, [groupedItems]);
@@ -468,24 +471,24 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
   return (
     <div className="space-y-4">
       {/* Apple Frosted Glass Filter & Search Control Center */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/15 bg-card/75 p-3.5 shadow-xl backdrop-blur-2xl transition-all dark:border-border/40 dark:border-t-white/10 dark:bg-card/60">
+      <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-t-white/10">
         <TextureOverlay texture="dots" opacity={0.03} />
 
         <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Instant Search Field */}
           <div className="relative max-w-sm flex-1">
-            <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               type="text"
               placeholder="Search achievement series..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8.5 rounded-full border-border/60 bg-background/60 pr-8 pl-8 text-xs font-medium text-foreground backdrop-blur-md transition-all placeholder:text-muted-foreground focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
+              className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-8.5 rounded-full pr-8 pl-8 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -494,7 +497,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Enhanced Apple Rarity Segmented Control */}
-            <div className="flex items-center gap-1 overflow-x-auto rounded-full border border-border/60 bg-muted/40 p-1 shadow-inner backdrop-blur-md">
+            <div className="border-border/60 bg-muted/40 flex items-center gap-1 overflow-x-auto rounded-full border p-1 shadow-inner backdrop-blur-md">
               {rarities.map((r: string) => {
                 const isSelected = selectedRarity === r;
                 const config = RARITY_CONFIG[r] || {
@@ -513,7 +516,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     key={r}
                     onClick={() => setSelectedRarity(r)}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] font-bold capitalize transition-all duration-200 select-none active:scale-95",
+                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-bold capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
                       isSelected ? config.textColor : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -533,7 +536,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                     <span className="relative z-10">{config.label}</span>
                     <span
                       className={cn(
-                        "relative z-10 rounded-full px-1.5 py-0.2 font-mono text-[9px] font-bold tabular-nums transition-colors",
+                        "py-0.2 relative z-10 rounded-full px-1.5 font-mono text-xs font-bold tabular-nums transition-colors",
                         isSelected
                           ? "bg-background/80 text-foreground shadow-xs"
                           : "bg-muted/60 text-muted-foreground"
@@ -547,11 +550,11 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
             </div>
 
             {/* View Mode Switcher (Grid / List) */}
-            <div className="flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/40 p-0.5 shadow-inner backdrop-blur-md select-none">
+            <div className="border-border/60 bg-muted/40 flex items-center gap-0.5 rounded-full border p-0.5 shadow-inner backdrop-blur-md select-none">
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "grid"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -564,7 +567,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-[10px] font-bold transition-all active:scale-95",
+                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "list"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -585,7 +588,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
           <div
             key="series-view"
             className={cn(
-              "relative max-h-[620px] scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent overflow-y-auto pr-1.5 hover:scrollbar-thumb-border/70",
+              "scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 relative max-h-[620px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-1.5",
               viewMode === "grid"
                 ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
                 : "space-y-3"
@@ -602,14 +605,14 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
             ))}
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-3xl border border-border/60 border-t-white/15 bg-card/75 p-8 text-center shadow-xl backdrop-blur-2xl dark:border-border/40 dark:bg-card/60">
+          <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-8 text-center shadow-xl backdrop-blur-2xl">
             <TextureOverlay texture="dots" opacity={0.03} />
             <div className="relative z-10 mx-auto max-w-sm space-y-2">
               <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 shadow-md backdrop-blur-md dark:text-amber-400">
                 <Award className="h-5 w-5 text-amber-500 dark:text-amber-400" />
               </div>
-              <h3 className="text-xs font-bold text-foreground">No Matching Series</h3>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+              <h3 className="text-foreground text-xs font-bold">No Matching Series</h3>
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 Try adjusting your search query or rarity filter.
               </p>
             </div>

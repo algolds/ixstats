@@ -17,22 +17,6 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 
-/**
- * Vault transaction type enum for validation
- */
-const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
-
 export const vaultCollectionsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
@@ -93,7 +77,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting my collections:", error);
-        throw new Error("Failed to retrieve collections");
+        throw new Error("Failed to retrieve collections", { cause: error });
       }
     }),
 
@@ -131,7 +115,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error creating collection:", error);
-        throw new Error("Failed to create collection");
+        throw new Error("Failed to create collection", { cause: error });
       }
     }),
 
@@ -168,7 +152,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         return { success: true };
       } catch (error) {
         console.error("[Vault Router] Error updating collection:", error);
-        throw new Error("Failed to update collection");
+        throw new Error("Failed to update collection", { cause: error });
       }
     }),
 
@@ -190,7 +174,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         return { success: true };
       } catch (error) {
         console.error("[Vault Router] Error deleting collection:", error);
-        throw new Error("Failed to delete collection");
+        throw new Error("Failed to delete collection", { cause: error });
       }
     }),
 
@@ -252,7 +236,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         return { collections: enriched.slice(0, limit), total, hasMore: offset + limit < total };
       } catch (error) {
         console.error("[Vault Router] Error getting public collections:", error);
-        throw new Error("Failed to retrieve public collections");
+        throw new Error("Failed to retrieve public collections", { cause: error });
       }
     }),
 
@@ -312,7 +296,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting collection leaderboard:", error);
-        throw new Error("Failed to retrieve collection leaderboard");
+        throw new Error("Failed to retrieve collection leaderboard", { cause: error });
       }
     }),
 
@@ -353,7 +337,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error liking collection:", error);
-        throw new Error("Failed to like collection");
+        throw new Error("Failed to like collection", { cause: error });
       }
     }),
 
@@ -380,7 +364,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         return { success: true, comment };
       } catch (error) {
         console.error("[Vault Router] Error adding comment:", error);
-        throw new Error("Failed to add comment");
+        throw new Error("Failed to add comment", { cause: error });
       }
     }),
 
@@ -411,7 +395,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         return { comments, total, hasMore: input.offset + input.limit < total };
       } catch (error) {
         console.error("[Vault Router] Error getting comments:", error);
-        throw new Error("Failed to retrieve comments");
+        throw new Error("Failed to retrieve comments", { cause: error });
       }
     }),
 
@@ -472,11 +456,7 @@ export const vaultCollectionsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting collection details:", error);
-        throw new Error("Failed to retrieve collection details");
+        throw new Error("Failed to retrieve collection details", { cause: error });
       }
     }),
-
-  /**
-   * List all user vaults for admin credit controls
-   */
 });

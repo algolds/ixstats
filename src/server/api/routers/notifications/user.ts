@@ -9,8 +9,6 @@ import {
   lightMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { observable } from "@trpc/server/observable";
-import { notificationEmitter, emitNotificationEvent } from "~/lib/notifications/emitter";
 
 const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
 const NotificationType = z.enum([
@@ -71,7 +69,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -146,7 +144,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -204,7 +202,7 @@ export const notificationsUserRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
@@ -257,7 +255,7 @@ export const notificationsUserRouter = createTRPCRouter({
         where: {
           OR: [{ clerkUserId: userId }, { id: userId }],
         },
-        include: { country: true },
+        select: { id: true, clerkUserId: true, countryId: true },
       });
 
       const matchedUserId = userProfile?.id ?? userId;
@@ -326,16 +324,8 @@ export const notificationsUserRouter = createTRPCRouter({
         },
       });
 
-      // Emit real-time event
-      emitNotificationEvent(notification);
-
       return notification;
     }),
-
-  // Get notification preferences for user
-
-  // Update notification preferences
-  // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
 
   // Delete notification (admin only)
   deleteNotification: adminProcedure
@@ -357,140 +347,51 @@ export const notificationsUserRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Get notification stats (admin only)
-  getNotificationStats: publicProcedure
-    .input(
-      z.object({
-        adminUserId: z.string().optional(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      // Admin role verified by adminProcedure middleware
-
-      const [totalNotifications, unreadNotifications, typeBreakdown] = await Promise.all([
-        db.notification.count(),
-        db.notification.count({ where: { read: false } }),
-        db.notification.groupBy({
-          by: ["type"],
-          _count: { _all: true },
-        }),
-      ]);
-
-      return {
-        totalNotifications,
-        unreadNotifications,
-        readNotifications: totalNotifications - unreadNotifications,
-        typeBreakdown: typeBreakdown.map((item) => ({
-          type: item.type,
-          count: item._count._all,
-        })),
-      };
-    }),
-
-  // Real-time subscription for new notifications
-  onNotificationAdded: publicProcedure
-    .input(
-      z.object({
-        userId: z.string().optional(),
-      })
-    )
-    .subscription(({ input }) => {
-      return observable<{
-        id: string;
-        userId: string | null;
-        countryId: string | null;
-        title: string;
-        description: string | null;
-        message: string | null;
-        read: boolean;
-        dismissed: boolean;
-        href: string | null;
-        type: string | null;
-        category: string | null;
-        priority: string;
-        severity: string;
-        source: string | null;
-        actionable: boolean;
-        metadata: string | null;
-        relevanceScore: number | null;
-        deliveryMethod: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-      }>((emit) => {
-        const onNotification = (data: any) => {
-          // Filter by userId if provided
-          if (input.userId && data.userId !== input.userId) {
-            return;
-          }
-          emit.next(data);
-        };
-
-        notificationEmitter.on("notification", onNotification);
-
-        return () => {
-          notificationEmitter.off("notification", onNotification);
-        };
-      });
-    }),
-
   // Get unread count (for badge display)
-  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
-  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
-  getUnreadCount: publicProcedure
-    .input(
-      z
-        .object({
-          userId: z.string().optional(),
-        })
-        .optional()
-    )
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const userId = input?.userId || ctx.auth?.userId;
+  // Stays publicProcedure — called before auth completes and must gracefully handle
+  // unauthenticated users. Identity comes from ctx only (never input): an attacker-supplied
+  // userId would otherwise let anyone read another user's unread notification count.
+  getUnreadCount: publicProcedure.query(async ({ ctx }) => {
+    const { db } = ctx;
+    const userId = ctx.auth?.userId;
 
-      // Gracefully return 0 for unauthenticated users
-      if (!userId) {
-        return { count: 0 };
-      }
+    // Gracefully return 0 for unauthenticated users
+    if (!userId) {
+      return { count: 0 };
+    }
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: {
-          OR: [{ clerkUserId: userId }, { id: userId }],
-        },
-        include: { country: true },
-      });
+    // Get user profile to find their country
+    const userProfile = await db.user.findFirst({
+      where: {
+        OR: [{ clerkUserId: userId }, { id: userId }],
+      },
+      select: { id: true, clerkUserId: true, countryId: true },
+    });
 
-      const matchedUserId = userProfile?.id ?? userId;
-      const matchedClerkId = userProfile?.clerkUserId ?? userId;
+    const matchedUserId = userProfile?.id ?? userId;
+    const matchedClerkId = userProfile?.clerkUserId ?? userId;
 
-      // Build OR conditions - include all user id variations and countryId
-      const orConditions: any[] = [
-        { userId: matchedUserId },
-        { userId: matchedClerkId },
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        },
-      ];
+    // Build OR conditions - include all user id variations and countryId
+    const orConditions: any[] = [
+      { userId: matchedUserId },
+      { userId: matchedClerkId },
+      {
+        AND: [{ userId: null }, { countryId: null }],
+      },
+    ];
 
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
+    if (userProfile?.countryId) {
+      orConditions.push({ countryId: userProfile.countryId });
+    }
 
-      const count = await db.notification.count({
-        where: {
-          AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
-        },
-      });
+    const count = await db.notification.count({
+      where: {
+        AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
+      },
+    });
 
-      return { count };
-    }),
-
-  // Get user notification preferences
-
-  // Create or update user notification preferences
+    return { count };
+  }),
 
   // Delete user notification preferences (reset to defaults)
   // Delete all notifications (admin only)
@@ -509,31 +410,4 @@ export const notificationsUserRouter = createTRPCRouter({
 
       return { success: true, count: result.count };
     }),
-
-  // ---- Notification Event Config (Admin) ----
-
-  // Get all notification event configs
-
-  // Seed default event configs from registry
-
-  // Toggle a single event on/off
-
-  // Batch toggle events by filter
-
-  // Update event config (JSON config)
-
-  // ---- Admin Notification Browser ----
-
-  // Get all notifications with admin-level filters
-
-  // ---- Alert Thresholds ----
-
-  // Get all intelligence alert thresholds
-
-  // Create or update an alert threshold
-
-  // Delete an alert threshold
 });
-
-// Re-exported so the notifications barrel (index.ts) keeps exposing it unchanged.
-export { emitNotificationEvent };

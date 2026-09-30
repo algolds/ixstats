@@ -1,10 +1,9 @@
+"use client";
 /**
  * CraftingWorkbench Component
  * Main crafting interface for IxCards fusion and evolution
  * Phase 3: Crafting System
  */
-
-"use client";
 
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -76,10 +75,9 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   );
 
   // Fetch user vault balance
-  const { data: vaultBalance } = api.vault.getBalance.useQuery(
-    { userId: "" }, // Will be filled by protectedProcedure
-    { enabled: !!recipeId }
-  );
+  const { data: vaultBalance } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!recipeId,
+  });
 
   const craftMutation = api.crafting.craftCard.useMutation({
     onSuccess: (result) => {
@@ -102,6 +100,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         card: null,
         required: true,
       }));
+      // oxlint-disable-next-line
       setCardSlots(slots);
     }
   }, [recipeData]);
@@ -188,7 +187,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <div className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/90">
               {recipeData.recipeType}
             </div>
-            <div className="rounded-full bg-purple-500/20 px-3 py-1 font-semibold text-purple-300">
+            <div className="rounded-full bg-indigo-500/20 px-3 py-1 font-semibold text-indigo-300">
               {recipeData.resultRarity}
             </div>
           </div>
@@ -288,9 +287,9 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         <motion.button
           className={cn(
             "w-full rounded-xl py-4 text-lg font-bold tracking-tight",
-            "transition-all duration-300",
+            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             allSlotsFilled && hasEnoughCredits && !crafting
-              ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/50 hover:from-purple-600 hover:to-blue-600"
+              ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/50 hover:from-indigo-600 hover:to-blue-600"
               : "cursor-not-allowed bg-white/10 text-white/40"
           )}
           disabled={!allSlotsFilled || !hasEnoughCredits || crafting}

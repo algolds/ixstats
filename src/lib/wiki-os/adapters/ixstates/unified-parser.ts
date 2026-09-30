@@ -121,6 +121,8 @@ export interface UnifiedInfoboxData {
   patron_saint?: string;
   national_motto?: string;
   wikiIntro?: string;
+  categories?: string[];
+  rawWikitext?: string;
 
   // Raw infobox for interactive display
   rawInfobox?: Record<string, string>;
@@ -182,7 +184,7 @@ function processSwitcher(value: string): string {
 function processConvert(value: string): string {
   return value
     .replace(
-      /\{\{convert\|([^|]+)\|([^|]+)[\|]?[^}]*\}\}/g,
+      /\{\{convert\|([^|]+)\|([^|]+)[|]?[^}]*\}\}/g,
       (_m, num, unit) => `${num.trim()} ${unit.trim()}`
     )
     .replace(

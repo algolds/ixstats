@@ -2,7 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { Command, ArrowUpRight } from "lucide-react";
+import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
@@ -17,7 +17,10 @@ const EmbassiesAndRelationsPanel = dynamic(
     import("~/components/mycountry/domains/diplomacy/EmbassiesAndRelationsPanel").then((m) => ({
       default: m.EmbassiesAndRelationsPanel,
     })),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-white/5" /> }
+  {
+    ssr: false,
+    loading: () => <div className="bg-muted/40 h-96 animate-pulse rounded-2xl" />,
+  }
 );
 
 const DefenseCommandPanel = dynamic(
@@ -37,30 +40,30 @@ const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
 };
 
 const DOMAIN_GLOW: Record<V2Domain, string> = {
-  relations: "bg-teal-400",
+  relations: "bg-cyan-400",
   defense: "bg-red-400",
-  politics: "bg-purple-400",
+  politics: "bg-indigo-400",
   economy: "bg-emerald-400",
 };
 
 const DOMAIN_BORDER: Record<V2Domain, string> = {
-  relations: "border-t-teal-500/40",
+  relations: "border-t-cyan-500/40",
   defense: "border-t-red-500/40",
-  politics: "border-t-purple-500/40",
+  politics: "border-t-indigo-500/40",
   economy: "border-t-emerald-500/40",
 };
 
 /**
  * V2DomainSurface — the full-page v2 surface for the four domain routes
  * (/mycountry/diplomacy, /defense, /politics, /executive). Renders the v2 chrome
- * (nav pill lives in V2CommandSurface) plus a themed domain hero and the domain's
- * v2 drill content inline as the primary body, with the shared v2 rail alongside.
- * Defense stays premium-gated via PremiumPreviewFrame.
+ * plus a themed domain hero and the domain's drill content inline as the primary body,
+ * with the shared rail alongside. Defense stays premium-gated via PremiumPreviewFrame.
  */
 export interface DomainSurfaceProps {
   countryId: string;
   section: string;
   onDeclare?: (prefilled?: string) => void;
+  onNavigate?: (section: string) => void;
 }
 
 export type V2DomainSurfaceProps = DomainSurfaceProps;
@@ -122,7 +125,7 @@ function DomainSurfaceComponent({
           <button
             type="button"
             onClick={() => onDeclare?.(meta.prefilledGoal)}
-            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+            className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs font-bold text-amber-500 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
           >
             <span className="flex h-5 w-5 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10">
               <Command className="h-3 w-3" />

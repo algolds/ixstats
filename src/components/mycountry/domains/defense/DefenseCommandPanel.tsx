@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Shield, Target, Swords, Flame, Users, Loader2 } from "lucide-react";
+import {
+  Shield,
+  Archery as Target,
+  Tournament as Swords,
+  FireFlame as Flame,
+  Group as Users,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
 
 // Lazy-load heavy panels per active tab
 const CommandPanel = dynamic(
@@ -36,7 +44,7 @@ const BorderThreatPanel = dynamic(
   }
 );
 
-const AssetManager = dynamic<any>(
+const AssetManager = dynamic(
   () =>
     import("~/components/mycountry/domains/defense/AssetManager").then((m) => ({
       default: m.AssetManager,
@@ -106,9 +114,13 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            data-cuelume-press="soft"
+            onClick={() => {
+              soundEffects.press();
+              setActiveTab(id);
+            }}
             className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all active:scale-95",
+              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
               activeTab === id
                 ? "border border-red-500/40 bg-red-500/20 text-red-400 shadow-sm"
                 : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"

@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { type Metadata } from "next";
-import { Flame, ArrowLeft } from "lucide-react";
-import {
-  PLATFORM_VERSION,
-  RELEASE_NAME,
-  CHANNEL,
-  CHANNEL_CONFIG,
-} from "~/lib/buildVersion";
+import { FireFlame as Flame, ArrowLeft } from "iconoir-react";
+import { PLATFORM_VERSION, RELEASE_NAME, CHANNEL, CHANNEL_CONFIG } from "~/lib/buildVersion";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import { cn } from "~/lib/utils";
 import { ChangelogFeed, type Release } from "./_components/ChangelogFeed";
@@ -20,7 +15,7 @@ export const metadata: Metadata = {
 const RELEASES: Release[] = [
   {
     version: "1.4.0",
-    releaseName: "Ogma",
+    releaseName: "Lobster Crosby",
     date: "August 2026",
     channel: "Release Candidate",
     isCurrent: true,
@@ -191,8 +186,8 @@ export default function ChangelogPage() {
     <div className="bg-background text-foreground relative min-h-screen">
       {/* Background Ambient Glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="from-primary/10 via-blue-500/5 absolute -top-[20%] left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b to-transparent blur-3xl" />
-        <div className="via-purple-500/5 absolute top-[40%] -left-[10%] h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-transparent to-transparent blur-3xl" />
+        <div className="from-primary/10 absolute -top-[20%] left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-b via-blue-500/5 to-transparent blur-3xl" />
+        <div className="absolute top-[40%] -left-[10%] h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-transparent via-purple-500/5 to-transparent blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -200,7 +195,7 @@ export default function ChangelogPage() {
         <div className="mb-8 flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="group text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium backdrop-blur-md transition-all duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
+            className="group text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/[0.08] active:scale-[0.97]"
           >
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             <span>Back to Dashboard</span>
@@ -228,10 +223,13 @@ export default function ChangelogPage() {
           </div>
 
           <h1 className="text-foreground mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
-            What's New in <span className="bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 bg-clip-text text-transparent">IxStates</span>
+            What's New in{" "}
+            <span className="bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
+              IxStates
+            </span>
           </h1>
 
-          <p className="text-muted-foreground mt-3 max-w-2xl text-sm sm:text-base leading-relaxed">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-relaxed sm:text-base">
             Follow the latest platform features, simulation updates, engine upgrades, and polish
             across the nation-building ecosystem.
           </p>

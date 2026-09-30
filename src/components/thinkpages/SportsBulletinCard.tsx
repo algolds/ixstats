@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Trophy, ChevronRight, Shield, Sparkles } from "lucide-react";
+import { Trophy, NavArrowRight as ChevronRight, Shield, Flash as Zap } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
@@ -42,7 +42,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
   return (
     <div
       className={cn(
-        "group relative my-3.5 overflow-hidden rounded-3xl border border-black/10 bg-white/70 shadow-xl backdrop-blur-2xl transition-all duration-300 hover:border-black/15 hover:shadow-2xl dark:border-border dark:bg-card/85 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] dark:hover:border-border-secondary",
+        "group dark:border-border dark:bg-card/85 dark:hover:border-border-secondary relative my-3.5 overflow-hidden rounded-3xl border border-black/10 bg-white/70 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-black/15 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         className
       )}
     >
@@ -53,7 +53,11 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
       <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-black/[0.02] px-4 py-3.5 dark:border-white/10 dark:bg-white/[0.02]">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 shadow-xs dark:bg-amber-500/15">
-            <span className="text-xl select-none">{sportEmoji || "🏆"}</span>
+            {sportEmoji ? (
+              <span className="text-xl select-none">{sportEmoji}</span>
+            ) : (
+              <Trophy className="h-5 w-5 text-amber-500" aria-hidden="true" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -61,12 +65,12 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                 {league.name}
               </h4>
               {isChampionBulletin && (
-                <Badge className="border-amber-500/30 bg-amber-500/15 text-[9px] font-bold tracking-wide text-amber-600 uppercase dark:text-amber-400">
+                <Badge className="border-amber-500/30 bg-amber-500/15 text-xs font-bold tracking-wide text-amber-600 uppercase dark:text-amber-400">
                   Champion Crowned
                 </Badge>
               )}
             </div>
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-tight tabular-nums">
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-tight tabular-nums">
               {isChampionBulletin ? (
                 <span>Final Season Standings</span>
               ) : isPlayoffBulletin ? (
@@ -86,7 +90,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
             <button
               onClick={() => setActiveTab("matches")}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                 activeTab === "matches"
                   ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                   : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -98,7 +102,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <button
                 onClick={() => setActiveTab("movers")}
                 className={cn(
-                  "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                  "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                   activeTab === "movers"
                     ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -111,7 +115,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               <button
                 onClick={() => setActiveTab("summary")}
                 className={cn(
-                  "rounded-lg px-2.5 py-1 text-[11px] font-bold tracking-tight transition-all duration-150 active:scale-[0.96]",
+                  "rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                   activeTab === "summary"
                     ? "border border-black/10 bg-white text-slate-900 shadow-xs dark:border-white/10 dark:bg-white/15 dark:text-white"
                     : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
@@ -129,21 +133,19 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
         <div className="m-3.5 flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 shadow-lg backdrop-blur-md dark:bg-amber-500/15">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/40 bg-amber-400/20 text-amber-500 shadow-sm dark:text-amber-300">
-              <Trophy className="h-6 w-6 animate-pulse" />
+              <Trophy className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-[10px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">
+              <span className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400/90">
                 League Champion
               </span>
-              <h3 className="text-foreground text-base font-bold tracking-tight">
-                {championName}
-              </h3>
+              <h3 className="text-foreground text-base font-bold tracking-tight">{championName}</h3>
             </div>
           </div>
           {championId && (
             <Link
               href={`/myclub/${championId}`}
-              className="inline-flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-700 shadow-xs transition-all hover:bg-amber-500/30 active:scale-[0.96] dark:text-amber-300"
+              className="inline-flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-700 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-[0.96] dark:text-amber-300"
             >
               <span>View Club</span>
               <ChevronRight className="h-3.5 w-3.5" />
@@ -164,7 +166,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               return (
                 <div
                   key={idx}
-                  className="group/match relative flex items-center justify-between rounded-2xl border border-black/5 bg-black/[0.02] p-3 shadow-xs transition-all duration-150 hover:border-black/15 hover:bg-black/[0.04] active:scale-[0.98] dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-white/15 dark:hover:bg-white/[0.06]"
+                  className="group/match relative flex items-center justify-between rounded-2xl border border-black/5 bg-black/[0.02] p-3 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-black/15 hover:bg-black/[0.04] active:scale-[0.98] dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-white/15 dark:hover:bg-white/[0.06]"
                 >
                   {/* Teams Column */}
                   <div className="min-w-0 flex-1 space-y-1.5 pr-2">
@@ -244,8 +246,8 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                   {/* Score Pill & Indicators */}
                   <div className="flex shrink-0 items-center gap-2">
                     {res.isUpset && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-                        <Sparkles className="h-2.5 w-2.5" />
+                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                        <Zap className="h-2.5 w-2.5" />
                         UPSET
                       </span>
                     )}
@@ -276,7 +278,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
               return (
                 <div
                   key={idx}
-                  className="group/rank flex items-center justify-between rounded-2xl border border-black/5 bg-black/[0.02] px-3.5 py-2.5 shadow-xs transition-all duration-150 hover:border-black/15 hover:bg-black/[0.04] active:scale-[0.98] dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-white/15 dark:hover:bg-white/[0.06]"
+                  className="group/rank flex items-center justify-between rounded-2xl border border-black/5 bg-black/[0.02] px-3.5 py-2.5 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-black/15 hover:bg-black/[0.04] active:scale-[0.98] dark:border-white/5 dark:bg-white/[0.03] dark:hover:border-white/15 dark:hover:bg-white/[0.06]"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     {/* Rank Number Badge (UFC style) */}
@@ -287,7 +289,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                     {/* Rank Delta Movement Indicator */}
                     <div
                       className={cn(
-                        "flex h-5 items-center gap-0.5 rounded-lg border px-1.5 text-[10px] font-bold tracking-tight tabular-nums",
+                        "flex h-5 items-center gap-0.5 rounded-lg border px-1.5 text-xs font-bold tracking-tight tabular-nums",
                         isUp
                           ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                           : isDown
@@ -336,7 +338,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
         <div className="flex items-center justify-end border-t border-black/5 bg-black/[0.02] px-4 py-2.5 dark:border-white/10 dark:bg-white/[0.02]">
           <Link
             href={leagueHref}
-            className="text-foreground inline-flex items-center gap-1 rounded-xl border border-black/10 bg-white/80 px-3 py-1 text-xs font-bold tracking-tight transition-all hover:bg-black/5 active:scale-[0.96] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            className="text-foreground inline-flex items-center gap-1 rounded-xl border border-black/10 bg-white/80 px-3 py-1 text-xs font-bold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5 active:scale-[0.96] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
             <span>Open League</span>
             <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />

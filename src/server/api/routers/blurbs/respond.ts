@@ -12,10 +12,6 @@ import { TRPCError } from "@trpc/server";
 
 export const blurbsRespondRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
-  // Public endpoints
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
   // Protected endpoints (authenticated users)
   // ---------------------------------------------------------------------------
 
@@ -155,45 +151,6 @@ export const blurbsRespondRouter = createTRPCRouter({
       return response;
     }),
 
-  /** Update own response (within 24h). */
-  updateResponse: protectedProcedure
-    .input(
-      z.object({
-        responseId: z.string().min(1),
-        content: z.string().min(1).max(1000),
-        linkedArticles: z
-          .array(z.object({ title: z.string(), url: z.string() }))
-          .max(5)
-          .optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = requireWikiUserId(ctx);
-      const user = await findWikiUserByAuthId(userId);
-      if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
-
-      const response = await db.blurbResponse.findUnique({
-        where: { id: input.responseId },
-      });
-      if (!response || response.userId !== user.id) throw new TRPCError({ code: "NOT_FOUND" });
-
-      // 24h edit window
-      const editWindow = 24 * 60 * 60 * 1000;
-      if (Date.now() - response.createdAt.getTime() > editWindow)
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Edit window (24h) has expired",
-        });
-
-      return db.blurbResponse.update({
-        where: { id: input.responseId },
-        data: {
-          content: input.content,
-          linkedArticles: input.linkedArticles ?? undefined,
-        },
-      });
-    }),
-
   /** User-submitted prompt (goes to DRAFT for admin review). */
   submitPrompt: protectedProcedure
     .input(
@@ -223,10 +180,6 @@ export const blurbsRespondRouter = createTRPCRouter({
         },
       });
     }),
-
-  // ---------------------------------------------------------------------------
-  // Admin endpoints
-  // ---------------------------------------------------------------------------
 });
 
 // ---------------------------------------------------------------------------

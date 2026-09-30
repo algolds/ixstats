@@ -15,7 +15,7 @@
  */
 
 import { useRef, useCallback, useState } from "react";
-import { Settings2, List, BookOpen } from "lucide-react";
+import { Settings as Settings2, List } from "iconoir-react";
 
 type MobileTab = "properties" | "features";
 
@@ -46,6 +46,7 @@ export function MobileEditorSheet({
   title,
   maxHeight = "70vh",
   featureListContent,
+  // oxlint-disable-next-line eslint/no-unused-vars
   wikiContent,
   isEditMode = true,
 }: MobileEditorSheetProps) {
@@ -88,11 +89,11 @@ export function MobileEditorSheet({
 
       {/* Sheet */}
       <div
-        className="absolute inset-x-0 bottom-0"
-        style={{
-          animation:
-            dragDelta === 0 && !isDragging ? "editorSheetSlideUp 0.25s ease-out" : undefined,
-        }}
+        className={`absolute inset-x-0 bottom-0 ${
+          dragDelta === 0 && !isDragging
+            ? "animate-in slide-in-from-bottom duration-250 ease-out"
+            : ""
+        }`}
       >
         <div
           className="bg-card rounded-t-2xl shadow-xl"
@@ -157,17 +158,6 @@ export function MobileEditorSheet({
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes editorSheetSlideUp {
-          from {
-            transform: translateY(100%);
-          }
-          to {
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

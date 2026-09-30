@@ -153,10 +153,7 @@ export function parseStashItemNote(note: string | null, contentType?: string): P
 /**
  * Map a database StashItem to a unified NameBankEntryOutput.
  */
-export function mapStashItemToEntry(
-  item: StashItemRecord,
-  userId: string
-): NameBankEntryOutput {
+export function mapStashItemToEntry(item: StashItemRecord, userId: string): NameBankEntryOutput {
   const parsed = parseStashItemNote(item.note, item.contentType);
   let values = parsed.values;
   if (item.contentType === "name" && values.length === 0) {

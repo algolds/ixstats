@@ -5,6 +5,7 @@
  * Prevents API abuse and ensures fair resource allocation
  */
 
+import type { Redis } from "ioredis";
 import { env } from "~/env";
 
 interface RateLimitResult {
@@ -18,6 +19,10 @@ interface RateLimitConfig {
   windowMs: number;
 }
 
+function fullWindow(cfg: RateLimitConfig, now: number): RateLimitResult {
+  return { success: true, remaining: cfg.maxRequests, resetAt: new Date(now + cfg.windowMs) };
+}
+
 // In-memory store for development/fallback
 const inMemoryStore = new Map<
   string,
@@ -27,11 +32,11 @@ const inMemoryStore = new Map<
   }
 >();
 
-class RateLimiter {
+export class RateLimiter {
   private readonly enabled: boolean;
   private readonly redisEnabled: boolean;
   private readonly config: RateLimitConfig;
-  private redisClient: any = null;
+  private redisClient: Redis | null = null;
 
   constructor() {
     this.enabled = env.RATE_LIMIT_ENABLED === "true";
@@ -54,13 +59,12 @@ class RateLimiter {
   private async initRedis() {
     try {
       // Dynamically import ioredis only if Redis is enabled
-      const Redis = (await import("ioredis")).default;
-      this.redisClient = new Redis(env.REDIS_URL!);
+      const IORedis = (await import("ioredis")).default;
+      this.redisClient = new IORedis(env.REDIS_URL!);
 
+      // ioredis reconnects on its own; checks use in-memory limits while the client is not ready.
       this.redisClient.on("error", (error: Error) => {
         console.error("[Rate Limiter] Redis error:", error);
-        console.log("[Rate Limiter] Falling back to in-memory rate limiting");
-        this.redisClient = null;
       });
 
       this.redisClient.on("connect", () => {
@@ -80,19 +84,27 @@ class RateLimiter {
   }
 
   /**
+   * The Redis client, or null when it is missing or not currently connected
+   */
+  private readyClient(): Redis | null {
+    return this.redisClient?.status === "ready" ? this.redisClient : null;
+  }
+
+  /**
    * Check rate limit using Redis
    */
-  private async checkRedis(key: string): Promise<RateLimitResult> {
-    if (!this.redisClient) {
-      return this.checkInMemory(key);
+  private async checkRedis(key: string, cfg: RateLimitConfig): Promise<RateLimitResult> {
+    const client = this.readyClient();
+    if (!client) {
+      return this.checkInMemory(key, cfg);
     }
 
     try {
       const now = Date.now();
-      const windowStart = now - this.config.windowMs;
+      const windowStart = now - cfg.windowMs;
 
       // Use Redis sorted set to track requests in time window
-      const multi = this.redisClient.multi();
+      const multi = client.multi();
 
       // Remove old entries
       multi.zremrangebyscore(key, 0, windowStart);
@@ -104,26 +116,26 @@ class RateLimiter {
       multi.zcard(key);
 
       // Set expiry
-      multi.expire(key, Math.ceil(this.config.windowMs / 1000));
+      multi.expire(key, Math.ceil(cfg.windowMs / 1000));
 
       const results = await multi.exec();
       const count = results?.[2]?.[1] as number;
 
-      const success = count <= this.config.maxRequests;
-      const remaining = Math.max(0, this.config.maxRequests - count);
-      const resetAt = new Date(now + this.config.windowMs);
+      const success = count <= cfg.maxRequests;
+      const remaining = Math.max(0, cfg.maxRequests - count);
+      const resetAt = new Date(now + cfg.windowMs);
 
       return { success, remaining, resetAt };
     } catch (error) {
       console.error("[Rate Limiter] Redis check failed, falling back to in-memory:", error);
-      return this.checkInMemory(key);
+      return this.checkInMemory(key, cfg);
     }
   }
 
   /**
    * Check rate limit using in-memory store
    */
-  private checkInMemory(key: string): RateLimitResult {
+  private checkInMemory(key: string, cfg: RateLimitConfig): RateLimitResult {
     const now = Date.now();
     const entry = inMemoryStore.get(key);
 
@@ -138,19 +150,19 @@ class RateLimiter {
 
     if (!entry || entry.resetAt < now) {
       // Create new window
-      const resetAt = now + this.config.windowMs;
+      const resetAt = now + cfg.windowMs;
       inMemoryStore.set(key, { count: 1, resetAt });
       return {
         success: true,
-        remaining: this.config.maxRequests - 1,
+        remaining: cfg.maxRequests - 1,
         resetAt: new Date(resetAt),
       };
     }
 
     // Increment counter
     entry.count++;
-    const success = entry.count <= this.config.maxRequests;
-    const remaining = Math.max(0, this.config.maxRequests - entry.count);
+    const success = entry.count <= cfg.maxRequests;
+    const remaining = Math.max(0, cfg.maxRequests - entry.count);
 
     return {
       success,
@@ -164,24 +176,20 @@ class RateLimiter {
    *
    * @param identifier - Unique identifier (e.g., user ID, IP address, API key)
    * @param namespace - Optional namespace to separate different rate limit buckets
+   * @param limits - Per-call limits; defaults to the RATE_LIMIT_* env config
    * @returns Rate limit result
    */
-  async check(identifier: string, namespace: string = "default"): Promise<RateLimitResult> {
+  async check(
+    identifier: string,
+    namespace: string = "default",
+    limits?: RateLimitConfig
+  ): Promise<RateLimitResult> {
+    const cfg = limits ?? this.config;
     if (!this.enabled) {
-      return {
-        success: true,
-        remaining: this.config.maxRequests,
-        resetAt: new Date(Date.now() + this.config.windowMs),
-      };
+      return fullWindow(cfg, Date.now());
     }
 
-    const key = `ratelimit:${namespace}:${identifier}`;
-
-    if (this.redisClient) {
-      return this.checkRedis(key);
-    }
-
-    return this.checkInMemory(key);
+    return this.checkRedis(`ratelimit:${namespace}:${identifier}`, cfg);
   }
 
   /**
@@ -189,10 +197,11 @@ class RateLimiter {
    */
   async reset(identifier: string, namespace: string = "default"): Promise<void> {
     const key = `ratelimit:${namespace}:${identifier}`;
+    const client = this.readyClient();
 
-    if (this.redisClient) {
+    if (client) {
       try {
-        await this.redisClient.del(key);
+        await client.del(key);
       } catch (error) {
         console.error("[Rate Limiter] Failed to reset Redis key:", error);
       }
@@ -204,28 +213,30 @@ class RateLimiter {
   /**
    * Get current rate limit status without incrementing
    */
-  async getStatus(identifier: string, namespace: string = "default"): Promise<RateLimitResult> {
+  async getStatus(
+    identifier: string,
+    namespace: string = "default",
+    limits?: RateLimitConfig
+  ): Promise<RateLimitResult> {
+    const cfg = limits ?? this.config;
     if (!this.enabled) {
-      return {
-        success: true,
-        remaining: this.config.maxRequests,
-        resetAt: new Date(Date.now() + this.config.windowMs),
-      };
+      return fullWindow(cfg, Date.now());
     }
 
     const key = `ratelimit:${namespace}:${identifier}`;
+    const client = this.readyClient();
 
-    if (this.redisClient) {
+    if (client) {
       try {
         const now = Date.now();
-        const windowStart = now - this.config.windowMs;
+        const windowStart = now - cfg.windowMs;
 
         // Count requests in window without adding new one
-        const count = await this.redisClient.zcount(key, windowStart, now);
+        const count = await client.zcount(key, windowStart, now);
 
-        const success = count < this.config.maxRequests;
-        const remaining = Math.max(0, this.config.maxRequests - count);
-        const resetAt = new Date(now + this.config.windowMs);
+        const success = count < cfg.maxRequests;
+        const remaining = Math.max(0, cfg.maxRequests - count);
+        const resetAt = new Date(now + cfg.windowMs);
 
         return { success, remaining, resetAt };
       } catch (error) {
@@ -238,16 +249,12 @@ class RateLimiter {
     const now = Date.now();
 
     if (!entry || entry.resetAt < now) {
-      return {
-        success: true,
-        remaining: this.config.maxRequests,
-        resetAt: new Date(now + this.config.windowMs),
-      };
+      return fullWindow(cfg, now);
     }
 
     return {
-      success: entry.count < this.config.maxRequests,
-      remaining: Math.max(0, this.config.maxRequests - entry.count),
+      success: entry.count < cfg.maxRequests,
+      remaining: Math.max(0, cfg.maxRequests - entry.count),
       resetAt: new Date(entry.resetAt),
     };
   }

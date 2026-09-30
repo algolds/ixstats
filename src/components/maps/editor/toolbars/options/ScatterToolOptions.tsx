@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Move } from "lucide-react";
+import { Sparks as Sparkles } from "iconoir-react";
 import { PopoverContent } from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 
@@ -27,7 +27,7 @@ export function CityScatterPopover({
   return (
     <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-3 p-3">
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Scatter Count
         </Label>
         <div className="flex items-center gap-2">
@@ -39,17 +39,17 @@ export function CityScatterPopover({
             onChange={(e) => setCount(Number(e.target.value))}
             className="accent-primary h-4 flex-1"
           />
-          <span className="w-8 text-right text-[11px] font-semibold">{count}</span>
+          <span className="w-8 text-right text-xs font-semibold">{count}</span>
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           City Type
         </Label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
+          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-xs outline-none focus:ring-1"
         >
           {CITY_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -59,20 +59,20 @@ export function CityScatterPopover({
         </select>
       </div>
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Name Prefix
         </Label>
         <input
           type="text"
           value={prefix}
           onChange={(e) => setPrefix(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-[11px] outline-none focus:ring-1"
+          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-xs outline-none focus:ring-1"
         />
       </div>
       <button
         type="button"
         onClick={() => onScatter(count, type, prefix)}
-        className="bg-primary hover:bg-primary/90 flex h-7 w-full items-center justify-center gap-1 rounded text-[11px] font-medium text-white transition-colors"
+        className="bg-primary hover:bg-primary/90 flex h-7 w-full items-center justify-center gap-1 rounded text-xs font-medium text-white transition-colors"
       >
         <Sparkles className="h-3 w-3" /> Scatter Cities
       </button>
@@ -92,7 +92,7 @@ export function TransformGeometryPopover({
   return (
     <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Simplify Tolerance
         </Label>
         <div className="flex items-center gap-2">
@@ -108,26 +108,26 @@ export function TransformGeometryPopover({
           <button
             type="button"
             onClick={() => onApply("simplify", simplifyVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-xs"
           >
             Apply
           </button>
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Smooth Geometry
         </Label>
         <button
           type="button"
           onClick={() => onApply("smooth", 1)}
-          className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-7 w-full rounded text-[11px]"
+          className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-7 w-full rounded text-xs"
         >
           Smooth Path (Chaikin)
         </button>
       </div>
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Rotate (° degrees)
         </Label>
         <div className="flex items-center gap-2">
@@ -139,18 +139,18 @@ export function TransformGeometryPopover({
             onChange={(e) => setRotateVal(Number(e.target.value))}
             className="accent-primary h-4 flex-1"
           />
-          <span className="w-8 text-right text-[11px] font-semibold">{rotateVal}°</span>
+          <span className="w-8 text-right text-xs font-semibold">{rotateVal}°</span>
           <button
             type="button"
             onClick={() => onApply("rotate", rotateVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-xs"
           >
             Apply
           </button>
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Scale Factor
         </Label>
         <div className="flex items-center gap-2">
@@ -163,11 +163,11 @@ export function TransformGeometryPopover({
             onChange={(e) => setScaleVal(Number(e.target.value))}
             className="accent-primary h-4 flex-1"
           />
-          <span className="w-8 text-right text-[11px] font-semibold">{scaleVal}x</span>
+          <span className="w-8 text-right text-xs font-semibold">{scaleVal}x</span>
           <button
             type="button"
             onClick={() => onApply("scale", scaleVal)}
-            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-[10px]"
+            className="bg-primary/10 text-primary hover:bg-primary/20 h-6 rounded px-2 text-xs"
           >
             Apply
           </button>
@@ -192,7 +192,7 @@ export function CityTransformationsPopover({
   return (
     <PopoverContent className="bg-popover border-border/50 text-foreground w-64 space-y-4 p-3">
       <div className="space-y-1">
-        <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
           Scale Population
         </Label>
         <div className="flex items-center gap-2">
@@ -208,17 +208,17 @@ export function CityTransformationsPopover({
           <button
             type="button"
             onClick={() => onScalePopulation(scaleVal)}
-            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
+            className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-xs text-white"
           >
             Apply
           </button>
         </div>
-        <div className="text-muted-foreground text-[9px]">Factor: {scaleVal.toFixed(1)}x</div>
+        <div className="text-muted-foreground text-xs">Factor: {scaleVal.toFixed(1)}x</div>
       </div>
 
       {selectedCitiesCount > 1 && (
         <div className="space-y-1">
-          <Label className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <Label className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
             Rotate Group (Degrees)
           </Label>
           <div className="flex items-center gap-2">
@@ -233,12 +233,12 @@ export function CityTransformationsPopover({
             <button
               type="button"
               onClick={() => onRotateCities(rotateVal)}
-              className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-[10px] text-white"
+              className="bg-primary hover:bg-primary/95 h-6 rounded px-2 text-xs text-white"
             >
               Apply
             </button>
           </div>
-          <div className="text-muted-foreground text-[9px]">Angle: {rotateVal}°</div>
+          <div className="text-muted-foreground text-xs">Angle: {rotateVal}°</div>
         </div>
       )}
     </PopoverContent>

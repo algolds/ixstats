@@ -8,7 +8,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle } from "iconoir-react";
 import { PolicyDistributionChart } from "../charts/PolicyDistributionChart";
 import { BudgetImpactChart } from "../charts/BudgetImpactChart";
 import { GlassTooltip } from "../charts/GlassTooltip";
@@ -51,7 +51,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             onExportPDF={() => exportToPDF("policy-distribution-chart", "Policy Distribution")}
           />
 
-          <Card className="glass-hierarchy-child">
+          <Card className="facet-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
@@ -80,9 +80,9 @@ export const PolicySection = React.memo<PolicySectionProps>(
                     <p className="text-muted-foreground mb-1 text-xs">Active Policies</p>
                     <p className="text-2xl font-bold text-blue-600">24</p>
                   </div>
-                  <div className="rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                  <div className="rounded-lg bg-indigo-50 p-3 dark:bg-indigo-950/20">
                     <p className="text-muted-foreground mb-1 text-xs">Inactive</p>
-                    <p className="text-2xl font-bold text-purple-600">6</p>
+                    <p className="text-2xl font-bold text-indigo-600">6</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -128,7 +128,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
         />
 
         {/* Cost-Benefit Analysis */}
-        <Card className="glass-hierarchy-child">
+        <Card className="facet-hierarchy-child">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Cost-Benefit Analysis</CardTitle>
           </CardHeader>
@@ -147,14 +147,14 @@ export const PolicySection = React.memo<PolicySectionProps>(
                 <p className="text-muted-foreground mt-2 text-xs">Implementation and maintenance</p>
               </div>
             </div>
-            <div className="mt-4 rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:from-purple-950/20 dark:to-indigo-950/20">
+            <div className="mt-4 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-50 p-4 dark:from-indigo-950/20 dark:to-indigo-950/20">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">Net Benefit Ratio</p>
-                <Badge variant="default" className="bg-purple-600">
+                <Badge variant="default" className="bg-indigo-600">
                   Excellent
                 </Badge>
               </div>
-              <p className="mt-2 text-4xl font-bold text-purple-600">1.52:1</p>
+              <p className="mt-2 text-4xl font-bold text-indigo-600">1.52:1</p>
               <p className="text-muted-foreground mt-2 text-xs">Return on policy investment</p>
             </div>
           </CardContent>

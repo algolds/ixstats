@@ -8,6 +8,7 @@ interface ExportDialogProps {
 }
 
 export default function ExportDialog({ onClose }: ExportDialogProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { blazon, composition } = useVexelEditor();
   const [exporting, setExporting] = useState(false);
 
@@ -97,49 +98,49 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
         <div className="space-y-4">
           {/* Format selection */}
           <div className="space-y-2">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase">Download Vectors</span>
+            <span className="text-xs font-bold text-zinc-500 uppercase">Download Vectors</span>
             <button
               onClick={handleDownloadSvg}
-              className="flex w-full items-center justify-between rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 text-left font-semibold transition-all outline-none hover:border-white/10 hover:bg-zinc-700"
+              className="flex w-full items-center justify-between rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 text-left font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none hover:border-white/10 hover:bg-zinc-700"
             >
               <span>Download Vector SVG</span>
-              <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400">
+              <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-xs text-emerald-400">
                 SVG
               </span>
             </button>
           </div>
 
           <div className="space-y-2">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase">
+            <span className="text-xs font-bold text-zinc-500 uppercase">
               Download Raster Images
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => handleDownloadPng(256)}
                 disabled={exporting}
-                className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 font-semibold transition-all hover:border-white/10 hover:bg-zinc-700 disabled:opacity-50"
+                className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 hover:bg-zinc-700 disabled:opacity-50"
               >
                 <span>Small PNG</span>
-                <span className="font-mono text-[9px] text-zinc-500">256 x 256 px</span>
+                <span className="font-mono text-xs text-zinc-500">256 x 256 px</span>
               </button>
 
               <button
                 onClick={() => handleDownloadPng(1024)}
                 disabled={exporting}
-                className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 font-semibold transition-all hover:border-white/10 hover:bg-zinc-700 disabled:opacity-50"
+                className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-zinc-800 px-4 py-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 hover:bg-zinc-700 disabled:opacity-50"
               >
                 <span>Large PNG</span>
-                <span className="font-mono text-[9px] text-zinc-500">1024 x 1024 px</span>
+                <span className="font-mono text-xs text-zinc-500">1024 x 1024 px</span>
               </button>
             </div>
           </div>
 
           {/* Commons attribution notice */}
           {customChargesUsed.length > 0 && (
-            <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3 text-[10px] leading-relaxed text-amber-400/90">
+            <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3 text-xs leading-relaxed text-amber-400/90">
               <span className="mb-1 block font-bold">📢 ATTRIBUTION REQUIRED</span>
               This composition includes charges imported from Wikimedia Commons:
-              <ul className="mt-1 list-disc space-y-0.5 pl-4 font-mono text-[9px] text-zinc-400">
+              <ul className="mt-1 list-disc space-y-0.5 pl-4 font-mono text-xs text-zinc-400">
                 {customChargesUsed.map((c, i) => (
                   <li key={i}>{c.chargeId}</li>
                 ))}

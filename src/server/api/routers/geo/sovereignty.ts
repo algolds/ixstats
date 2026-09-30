@@ -10,15 +10,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  rateLimitedPublicProcedure,
-  cachedPublicProcedure,
-  adminProcedure,
-  countryOwnerProcedure,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -31,26 +23,6 @@ import { clearLayerCache } from "./core";
 // ──────────────────────────────────────────────
 
 export const geoSovereigntyRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
   // ──────────────────────────────────────────────
   // Sovereignty / dependency management
   // ──────────────────────────────────────────────
@@ -259,30 +231,4 @@ export const geoSovereigntyRouter = createTRPCRouter({
       broadcastMapUpdate("sovereignty");
       return { success: true };
     }),
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

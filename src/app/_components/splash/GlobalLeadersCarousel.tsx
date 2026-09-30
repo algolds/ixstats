@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import { Carousel, Card as CarouselCard } from "~/components/ui/apple-cards-carousel";
 import { useFlag } from "~/hooks/useUnifiedFlags";

@@ -1,0 +1,214 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "unicorn", "import", "oxc", "jest", "nextjs", "jsx-a11y"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "options": { "maxWarnings": 2100 },
+  "rules": {
+    // Unused vars - replaces eslint-plugin-unused-imports (auto-fixable, respects ^_)
+    "eslint/no-unused-vars": "off",
+    "typescript/no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnore": true
+      }
+    ],
+    // TS relaxed
+    "typescript/no-explicit-any": "off",
+    "typescript/no-empty-function": "off",
+    "typescript/ban-ts-comment": "warn",
+    "typescript/no-require-imports": "off",
+    // React hooks correctness — keep rules-of-hooks as error (only 3 fixed), rest warn via categories
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/set-state-in-effect": "warn",
+    // React 19 new JSX runtime - React import not required
+    "react/react-in-jsx-scope": "off",
+    // Next.js handles <a> etc - relax a11y/next for now (was off in ESLint, keep pre-existing)
+    "jsx-a11y/click-events-have-key-events": "off",
+    "jsx-a11y/no-static-element-interactions": "off",
+    "jsx-a11y/label-has-associated-control": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/control-has-associated-label": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/no-noninteractive-element-interactions": "off",
+    "jsx-a11y/img-redundant-alt": "off",
+    "jsx-a11y/role-has-required-aria-props": "off",
+    "jsx-a11y/role-supports-aria-props": "off",
+    "jsx-a11y/heading-has-content": "off",
+    "jsx-a11y/media-has-caption": "off",
+    "jsx-a11y/anchor-has-content": "off",
+    "nextjs/no-img-element": "off",
+    // Pedantic noise downgraded — ~650 diags without code touch (Phase 0 ratchet)
+    "eslint/no-underscore-dangle": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-reverse": "off",
+    "unicorn/no-useless-fallback-in-spread": "off",
+    "unicorn/no-new-array": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    "typescript/no-extraneous-class": "off",
+    "react/refs": "warn",
+    "react/purity": "warn",
+    "react/immutability": "off",
+    "react/hooks": "off",
+    "react/static-components": "off",
+    "react/preserve-manual-memoization": "off",
+    "react/use-memo": "off",
+    "oxc/only-used-in-recursion": "off",
+    // General
+    "eslint/no-console": "off",
+    "eslint/prefer-const": "warn",
+    "eslint/no-var": "error",
+    "eslint/eqeqeq": ["warn", "always", { "null": "ignore" }],
+    "eslint/no-useless-escape": "off",
+    "eslint/no-control-regex": "off",
+    "eslint/no-misleading-character-class": "off",
+    "eslint/no-constant-binary-expression": "off",
+    "eslint/no-unassigned-vars": "off",
+    // Import hygiene - warn only (import plugin heavier)
+    "import/no-cycle": "off",
+    "import/no-unassigned-import": "off"
+  },
+  "settings": {
+    "jsx-a11y": { "components": { "Link": "a", "Button": "button" } }
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "builtin": true
+  },
+  "ignorePatterns": [
+    ".next/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "out/**",
+    ".next/types/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "tests/**",
+    "prisma/**",
+    "*.config.js",
+    "*.config.ts",
+    "*.config.mjs",
+    "server.mjs",
+    "coverage/**",
+    "public/**"
+  ],
+  "overrides": [
+    {
+      "files": ["src/**/*.test.ts", "src/**/*.test.tsx", "**/__tests__/**"],
+      "plugins": ["jest"],
+      "rules": {
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error"
+      }
+    },
+    {
+      "files": ["src/components/**"],
+      "rules": {
+        "typescript/no-unused-vars": "off",
+        "react/purity": "off",
+        "react/no-unstable-nested-components": "off",
+        "react/memo-dependencies": "off",
+        "eslint/no-shadow": "off",
+        "react/refs": "off",
+        "react/exhaustive-deps": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react/jsx-no-comment-textnodes": "off",
+        "react/capitalized-calls": "off",
+        "eslint/no-new": "off",
+        "import/no-named-as-default": "off",
+        "eslint/prefer-const": "off",
+        "eslint/no-unneeded-ternary": "off",
+        "react/iframe-missing-sandbox": "off",
+        "unicorn/no-useless-length-check": "off",
+        "jsx-a11y/anchor-is-valid": "off",
+        "jsx-a11y/no-noninteractive-tabindex": "off",
+        "oxc/const-comparisons": "off",
+        "oxc/erasing-op": "off",
+        "eslint/no-duplicate-case": "off",
+        "eslint/no-unmodified-loop-condition": "off",
+        "eslint/no-constant-condition": "off",
+        "nextjs/no-html-link-for-pages": "off",
+        "react/incompatible-library": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/admin/calculations/CalculationEditor.tsx",
+        "src/app/labs/onoma/components/shared/LinguisticProfile.tsx"
+      ],
+      "rules": {
+        "react/set-state-in-effect": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react-hooks/exhaustive-deps": "off"
+      }
+    },
+    {
+      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorRouter.tsx"],
+      "rules": {
+        "react/iframe-missing-sandbox": "off"
+      }
+    },
+    {
+      "files": [
+        "src/app/**",
+        "src/hooks/**",
+        "src/lib/**",
+        "src/stores/**",
+        "src/context/**",
+        "src/trpc/**",
+        "src/server/**",
+        "src/proxy.ts"
+      ],
+      "rules": {
+        "react/set-state-in-effect": "off",
+        "react/refs": "off",
+        "react/purity": "off",
+        "react/memo-dependencies": "off",
+        "react/no-unstable-nested-components": "off",
+        "react/exhaustive-effect-dependencies": "off",
+        "react/exhaustive-deps": "off",
+        "react-hooks/exhaustive-deps": "off",
+        "eslint/no-unneeded-ternary": "off",
+        "eslint/no-unmodified-loop-condition": "off",
+        "eslint/no-duplicate-case": "off",
+        "eslint/no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": [
+        "src/trpc/query-client.ts",
+        "src/trpc/react.tsx",
+        "src/app/labs/onoma/**",
+        "src/lib/websocket/intelligence-websocket-client.ts",
+        "src/app/builder/components/enhanced/EconomicArchetypeDisplay.tsx",
+        "src/app/builder/utils/governmentValidation.ts",
+        "src/lib/flags/png-to-svg.ts",
+        "src/lib/maps/story-pin-icons.ts",
+        "src/lib/maps/map-engine.ts"
+      ],
+      "rules": {
+        "import/no-named-as-default": "off",
+        "import/no-named-as-default-member": "off",
+        "unicorn/require-post-message-target-origin": "off",
+        "unicorn/no-useless-length-check": "off",
+        "oxc/const-comparisons": "off",
+        "oxc/erasing-op": "off",
+        "nextjs/no-assign-module-variable": "off",
+        "eslint/no-eval": "off",
+        "eslint/no-unused-expressions": "off",
+        "eslint/no-unmodified-loop-condition": "off"
+      }
+    }
+  ]
+}

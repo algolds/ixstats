@@ -2,17 +2,17 @@
 
 import { memo } from "react";
 import {
-  TrendingUp,
-  Landmark,
-  Users,
+  StatUp as TrendingUp,
+  Bank as Landmark,
+  Group as Users,
   Shield,
   Globe,
   Building,
   Leaf,
-  AlertTriangle,
+  WarningTriangle as AlertTriangle,
   Clock,
-  Flame,
-} from "lucide-react";
+  FireFlame as Flame,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { IxTime } from "~/lib/ixtime";
 
@@ -42,7 +42,7 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; color: string; la
   },
   political: {
     icon: Landmark,
-    color: "text-purple-500",
+    color: "text-indigo-500",
     label: "Political",
   },
   social: { icon: Users, color: "text-blue-500", label: "Social" },
@@ -97,6 +97,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   let isUrgent = false;
   if (hasDeadline) {
     const deadlineReal = IxTime.convertFromIxTime(issue.deadlineIxTime!);
+    // oxlint-disable-next-line
     const nowReal = Date.now();
     const remaining = deadlineReal - nowReal;
     const daysRemaining = remaining / (24 * 60 * 60 * 1000);
@@ -116,7 +117,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   return (
     <div
       onClick={() => onView(issue.id)}
-      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-all hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
+      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
     >
       <div className="flex items-start gap-3">
         <div className={`mt-0.5 rounded-full bg-white/10 p-1.5 ${domainConfig.color}`}>
@@ -131,7 +132,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
             {isNew && (
               <Badge
                 variant="outline"
-                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-[10px] text-amber-400"
+                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-xs text-amber-400"
               >
                 NEW
               </Badge>
@@ -143,14 +144,14 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${badgeStyle}`}>
+            <Badge variant="outline" className={`px-1.5 py-0 text-xs ${badgeStyle}`}>
               {issue.severity.toUpperCase()}
             </Badge>
-            <span className={`text-[10px] ${domainConfig.color}`}>{domainConfig.label}</span>
+            <span className={`text-xs ${domainConfig.color}`}>{domainConfig.label}</span>
 
             {hasDeadline && (
               <span
-                className={`flex items-center gap-1 text-[10px] ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
+                className={`flex items-center gap-1 text-xs ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
               >
                 {isUrgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 {timeRemainingText}
@@ -169,7 +170,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
                     e.stopPropagation();
                     onDismiss(issue.id);
                   }}
-                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-slate-300 transition-all hover:border-white/30 hover:bg-white/10"
+                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/30 hover:bg-white/10"
                 >
                   Delegate (-15 CivCap)
                 </button>
@@ -178,7 +179,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
         </div>
 
         {(issue.severity === "critical" || issue.severity === "CRITICAL") && (
-          <AlertTriangle className="h-4 w-4 shrink-0 animate-pulse text-red-400" />
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
         )}
       </div>
     </div>

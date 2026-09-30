@@ -9,7 +9,10 @@ export * from "./unified-parser";
 export * from "./infobox-mapper";
 export * from "./lore-card-generator";
 export * from "./ixworld-mapper";
-export * from "./eligible-country-service";
+export {
+  type EligibleCountryResult,
+  getEligibleCountries,
+} from "./eligible-country-service";
 export {
   type WikiSection,
   type WikiTable,
@@ -17,12 +20,8 @@ export {
   type WikiExtractedContent,
   extractWikiContent,
 } from "./content-extractor";
-export * from "./content-analyzer";
 export * from "./entity-parser";
-export * from "./roster-parser";
-export * from "./prose-generator";
 export * from "./user-sync";
-export * from "./factbook-routes";
 export * from "./integration";
 export {
   cleanWikitextForDisplay,

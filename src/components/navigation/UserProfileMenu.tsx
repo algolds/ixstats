@@ -2,12 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { User, Crown, Home, ChevronDown, LogOut, AlertCircle, Settings, Link2 } from "lucide-react";
+import {
+  User,
+  Crown,
+  HomeSimple as Home,
+  NavArrowDown as ChevronDown,
+  LogOut,
+  WarningCircle as AlertCircle,
+  Settings,
+  Link as Link2,
+} from "iconoir-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { getNationUrl } from "~/lib/utils";
-import { isStandaloneClient } from "~/lib/system/standalone-detection";
 
 interface UserProfileMenuProps {
   user: any;
@@ -22,6 +30,7 @@ export function UserProfileMenu({
   userProfile,
   setupStatus,
   userCountryFlag,
+  // oxlint-disable-next-line eslint/no-unused-vars
   flagsLoading,
 }: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);
@@ -29,7 +38,7 @@ export function UserProfileMenu({
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200">
+        <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden text-sm md:block">Sign In with IxnayID</span>
@@ -49,7 +58,7 @@ export function UserProfileMenu({
             className="border-border h-8 w-8 rounded-full object-cover"
           />
         ) : (
-          <div className="border-border flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-medium text-white">
+          <div className="border-border flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-medium text-white">
             {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
           </div>
         )}
@@ -75,7 +84,7 @@ export function UserProfileMenu({
                   className="border-border h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="border-border flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-medium text-white">
+                <div className="border-border flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-medium text-white">
                   {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
                 </div>
               )}

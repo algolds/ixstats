@@ -1,11 +1,9 @@
+"use client";
 // src/app/admin/_components/AdminHeader.tsx
 // Shared admin page header with title, description, and optional actions
-"use client";
-
-import type { LucideIcon } from "lucide-react";
 
 interface AdminHeaderProps {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   children?: React.ReactNode;

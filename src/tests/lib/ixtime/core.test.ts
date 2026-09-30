@@ -1,16 +1,14 @@
-import { IxTime } from "../../../lib/ixtime";
-
-
+import { IxTime } from "~/lib/ixtime";
 
 describe("IxTime Core Chronometry & Temporal Engine", () => {
   beforeEach(() => {
-    IxTime.clearTimeOverride();
     IxTime.clearMultiplierOverride();
+    IxTime.clearTimeOverride();
   });
 
   afterEach(() => {
-    IxTime.clearTimeOverride();
     IxTime.clearMultiplierOverride();
+    IxTime.clearTimeOverride();
   });
 
   describe("Epochs and Constants", () => {
@@ -51,8 +49,8 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
       const ixDateAtPivot = new Date(ixTimeAtPivot);
       expect(ixDateAtPivot.toISOString()).toBe("2040-01-01T00:00:00.000Z");
 
-      // 6 months (182.625 days) after pivot real-time -> 1 full IxTime year (2041)
-      const realPlusHalfYear = realPivot + 182.625 * 24 * 60 * 60 * 1000;
+      // ~6 months (183.5 days) after pivot real-time -> 367 IxDays -> full IxTime year (2041, accounting for 2040 leap year)
+      const realPlusHalfYear = realPivot + 183.5 * 24 * 60 * 60 * 1000;
       const ixTimePlusYear = IxTime.convertToIxTime(realPlusHalfYear);
       const ixDatePlusYear = new Date(ixTimePlusYear);
       expect(ixDatePlusYear.getUTCFullYear()).toBe(2041);
@@ -99,6 +97,15 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
   });
 
   describe("Overrides and Pause Mechanics", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it("should honor time and multiplier overrides", () => {
       const overrideTime = new Date("2050-01-01T00:00:00.000Z").getTime();
       IxTime.setTimeOverride(overrideTime);
@@ -150,5 +157,36 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
       expect(IxTime.toDate(null)).toBeNull();
       expect(IxTime.toIsoString(null)).toBeNull();
     });
+  });
+});
+
+import { getPrimeMeridianWeather } from "~/lib/ixtime/weather";
+
+describe("getPrimeMeridianWeather", () => {
+  it("calculates Summer weather for August dates", () => {
+    const date = new Date("2042-08-22T14:30:00Z");
+    const weather = getPrimeMeridianWeather(date);
+
+    expect(weather.season).toBe("Summer");
+    expect(weather.tempC).toBeGreaterThan(15);
+    expect(weather.diurnalPhase).toBe("Afternoon");
+    expect(weather.summary).toContain("Prime Meridian");
+  });
+
+  it("calculates Winter weather for January dates", () => {
+    const date = new Date("2042-01-15T04:00:00Z");
+    const weather = getPrimeMeridianWeather(date);
+
+    expect(weather.season).toBe("Winter");
+    expect(weather.tempC).toBeLessThan(10);
+    expect(weather.diurnalPhase).toBe("Night");
+  });
+
+  it("calculates Spring weather for April dates", () => {
+    const date = new Date("2042-04-10T10:00:00Z");
+    const weather = getPrimeMeridianWeather(date);
+
+    expect(weather.season).toBe("Spring");
+    expect(weather.tempC).toBeGreaterThan(5);
   });
 });

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles } from "lucide-react";
+import { Sparks as Sparkles } from "iconoir-react";
 import { IxCreditsSymbol } from "./IxCreditsSymbol";
 
 export interface VaultParticle {
@@ -34,9 +34,13 @@ export function VaultParticleExplosionModal({
     if (!open) return [];
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
+      // oxlint-disable-next-line
       x: (Math.random() - 0.5) * 360,
+      // oxlint-disable-next-line
       y: (Math.random() - 0.5) * 300 - 100,
+      // oxlint-disable-next-line
       rotate: Math.random() * 360,
+      // oxlint-disable-next-line
       scale: 0.6 + Math.random() * 0.7,
     }));
   }, [open, count]);
@@ -51,7 +55,7 @@ export function VaultParticleExplosionModal({
               <motion.div
                 key={p.id}
                 className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-amber-300 bg-gradient-to-br from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.5)] select-none"
-                initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                 animate={{
                   x: p.x,
                   y: p.y,

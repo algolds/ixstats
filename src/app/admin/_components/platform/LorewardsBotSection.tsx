@@ -1,5 +1,5 @@
-// src/app/admin/_components/platform/LorewardsBotSection.tsx
 "use client";
+// src/app/admin/_components/platform/LorewardsBotSection.tsx
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -9,27 +9,23 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import {
-  Search,
-  RefreshCw,
-  Loader2,
-  AlertTriangle,
+  Refresh as RefreshCw,
+  SystemRestart as Loader2,
   Play,
   Square,
   Terminal,
-  Sliders,
+  ControlSlider as Sliders,
   Database,
-  Trash2,
-  Award,
-  Info,
-  Zap,
-  Calendar,
-  Shield,
-  ChevronsUpDown,
-  Ban,
-  Save,
+  Trash as Trash2,
+  Trophy as Award,
+  InfoCircle as Info,
+  Flash as Zap,
+  ArrowSeparateVertical as ChevronsUpDown,
+  Prohibition as Ban,
+  FloppyDisk as Save,
   CheckCircle,
-} from "lucide-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+} from "iconoir-react";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import {
   Command,
@@ -408,7 +404,7 @@ export function LorewardsBotSection() {
               <select
                 value={selectedProcess}
                 onChange={(e) => setSelectedProcess(e.target.value as any)}
-                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
               >
                 <option value="ixwiki-discord-bot">Discord Bot</option>
                 <option value="ixstats-ixtwitter">IxTwitter Feed</option>
@@ -416,7 +412,7 @@ export function LorewardsBotSection() {
               <select
                 value={logType}
                 onChange={(e) => setLogType(e.target.value as any)}
-                className="bg-background border-border/50 text-foreground rounded-lg border px-2.5 py-1 text-xs"
+                className="bg-background border-border/40 text-foreground rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
               >
                 <option value="out">Stdout (info)</option>
                 <option value="err">Stderr (errors)</option>
@@ -655,7 +651,7 @@ export function LorewardsBotSection() {
               </div>
               <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">
+                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
                     Bot Result:
                   </h6>
                   <p>
@@ -667,7 +663,7 @@ export function LorewardsBotSection() {
                   </p>
                 </div>
                 <div>
-                  <h6 className="text-muted-foreground mb-1 text-[10px] font-bold uppercase">
+                  <h6 className="text-muted-foreground mb-1 text-xs font-bold uppercase">
                     WikiOS Core Result:
                   </h6>
                   <p>
@@ -684,7 +680,7 @@ export function LorewardsBotSection() {
 
           {/* Recent validation history list */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Recent Cross-Validation History:
             </h6>
             <div className="border-border/40 bg-muted/20 divide-border/20 divide-y overflow-hidden rounded-xl border text-xs">
@@ -695,7 +691,7 @@ export function LorewardsBotSection() {
                     className="hover:bg-muted/50 flex items-center justify-between p-3 transition-colors"
                   >
                     <span className="font-mono font-semibold">{r.date}</span>
-                    <div className="flex items-center gap-3 text-[11px]">
+                    <div className="flex items-center gap-3 text-xs">
                       <span>
                         Bot: <strong>{r.botWinner || "None"}</strong>
                       </span>
@@ -704,7 +700,7 @@ export function LorewardsBotSection() {
                       </span>
                       <span
                         className={cn(
-                          "py-0.2 rounded px-1.5 text-[10px] font-bold",
+                          "py-0.2 rounded px-1.5 text-xs font-bold",
                           r.winnersAgree
                             ? "bg-emerald-500/10 text-emerald-500"
                             : "bg-destructive/10 text-destructive"
@@ -740,7 +736,7 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              <label className="text-muted-foreground text-xs font-bold uppercase">
                 Username
               </label>
               <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
@@ -802,7 +798,7 @@ export function LorewardsBotSection() {
                                   />
                                   {user.username}
                                 </div>
-                                <span className="text-muted-foreground font-mono text-[10px]">
+                                <span className="text-muted-foreground font-mono text-xs">
                                   {user.editCount} edits
                                 </span>
                               </CommandItem>
@@ -829,13 +825,13 @@ export function LorewardsBotSection() {
               </Popover>
             </div>
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">
+              <label className="text-muted-foreground text-xs font-bold uppercase">
                 Duration
               </label>
               <select
                 value={blacklistDuration}
                 onChange={(e) => setBlacklistDuration(e.target.value)}
-                className="border-border/50 bg-background text-foreground h-9 w-full rounded-md border px-2.5 text-xs focus:outline-none"
+                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
               >
                 <option value="permanent">Permanent</option>
                 <option value="7days">7 Days</option>
@@ -845,14 +841,14 @@ export function LorewardsBotSection() {
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[10px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Expiry Date
                 </label>
                 <Input
                   type="date"
                   value={blacklistExpiry}
                   onChange={(e) => setBlacklistExpiry(e.target.value)}
-                  className="h-9 text-xs"
+                  className="h-9 rounded-xl text-xs"
                 />
               </div>
             )}
@@ -860,14 +856,14 @@ export function LorewardsBotSection() {
           <Button
             onClick={handleAddBlacklist}
             disabled={updateBlacklistMutation.isPending}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 w-full text-xs font-bold sm:w-auto"
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 w-full rounded-xl text-xs font-bold active:scale-[0.98] sm:w-auto"
           >
             Add to Blacklist
           </Button>
 
           {/* Active Blacklisted Users List */}
           <div className="space-y-2">
-            <h6 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+            <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
               Active Blacklisted Users:
             </h6>
             <div className="border-border/40 bg-muted/20 divide-border/20 max-h-48 divide-y overflow-hidden overflow-y-auto rounded-xl border text-xs">
@@ -882,7 +878,7 @@ export function LorewardsBotSection() {
                       {user}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground font-mono text-[10px]">
+                      <span className="text-muted-foreground font-mono text-xs">
                         Expires: {date ? String(date).slice(0, 10) : "Permanent"}
                       </span>
                       <button
@@ -922,20 +918,20 @@ export function LorewardsBotSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">Date</label>
+              <label className="text-muted-foreground text-xs font-bold uppercase">Date</label>
               <Input
                 type="date"
                 value={overrideDate}
                 onChange={(e) => setOverrideDate(e.target.value)}
-                className="h-9 text-xs"
+                className="h-9 rounded-xl text-xs"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-muted-foreground text-[10px] font-bold uppercase">Type</label>
+              <label className="text-muted-foreground text-xs font-bold uppercase">Type</label>
               <select
                 value={overrideType}
                 onChange={(e) => setOverrideType(e.target.value)}
-                className="border-border/50 bg-background text-foreground h-9 w-full rounded-md border px-2.5 text-xs focus:outline-none"
+                className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs focus:outline-none"
               >
                 <option value="daily">Daily Loreward</option>
                 <option value="weekly">Weekly Loreward</option>
@@ -946,12 +942,12 @@ export function LorewardsBotSection() {
 
           {/* Winner details */}
           <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-[10px] font-black tracking-wider text-amber-500 uppercase">
+            <span className="text-xs font-black tracking-wider text-amber-500 uppercase">
               1. Winner Details
             </span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Username
                 </label>
                 <Input
@@ -962,7 +958,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Page Title
                 </label>
                 <Input
@@ -975,7 +971,7 @@ export function LorewardsBotSection() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Score
                 </label>
                 <Input
@@ -987,7 +983,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Bytes Added
                 </label>
                 <Input
@@ -1003,12 +999,12 @@ export function LorewardsBotSection() {
 
           {/* Runner up details */}
           <div className="border-border/20 space-y-2 border-t pt-2">
-            <span className="text-muted-foreground text-[10px] font-black tracking-wider uppercase">
+            <span className="text-muted-foreground text-xs font-black tracking-wider uppercase">
               2. Runner-up Details
             </span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Username
                 </label>
                 <Input
@@ -1019,7 +1015,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Page Title
                 </label>
                 <Input
@@ -1032,7 +1028,7 @@ export function LorewardsBotSection() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Score
                 </label>
                 <Input
@@ -1044,7 +1040,7 @@ export function LorewardsBotSection() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground text-[9px] font-bold uppercase">
+                <label className="text-muted-foreground text-xs font-bold uppercase">
                   Bytes Added
                 </label>
                 <Input

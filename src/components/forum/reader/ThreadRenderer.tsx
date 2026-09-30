@@ -1,11 +1,10 @@
+"use client";
 // src/components/forum/reader/ThreadRenderer.tsx
 // Full thread view with posts, pagination, and reply composer.
 // Client-side pagination for hybrid routing pattern.
 
-"use client";
-
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Lock, Eye, MessageSquare } from "lucide-react";
+import { Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { PostCard } from "~/components/forum/reader/PostCard";

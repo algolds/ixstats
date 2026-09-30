@@ -1,8 +1,8 @@
-// src/hooks/useInternalStability.ts
 "use client";
+// src/hooks/useInternalStability.ts
 
 import React from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { StatUp as TrendingUp, StatDown as TrendingDown, Minus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 

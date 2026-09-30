@@ -1,15 +1,14 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSProfileWidget.tsx
 // Sidebar profile widget — pipes the signed-in user's linked wiki profile
 // (username, join date, edits, rank, lorescore/lorewards) into the WikiOS rail.
 // Renders as a glass card when expanded, and as an avatar + rank badge when the
 // rail is collapsed. Nothing renders when signed out.
 
-"use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
-import { Calendar, FileText, Trophy, Scroll } from "lucide-react";
+import { Calendar, Page as FileText, Trophy, OpenBook as Scroll } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -34,6 +33,7 @@ export function WikiOSProfileWidget({
   const { user, isSignedIn } = useWikiAuth();
   const { themeColors } = useWikiContext();
   const [imgError, setImgError] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const showExpanded = expanded || isLocalHoverExpanded;
   const hoverBorderColor = themeColors?.primary ?? "var(--wikios-accent)";
 
@@ -73,7 +73,7 @@ export function WikiOSProfileWidget({
       )}
       {withBadge && rank != null && (
         <span
-          className="absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border border-[var(--wikios-border)] px-0.5 text-[8px] leading-[14px] font-bold text-white shadow-sm"
+          className="absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border border-[var(--wikios-border)] px-0.5 text-xs leading-[14px] font-bold text-white shadow-sm"
           style={{ backgroundColor: hoverBorderColor }}
         >
           #{rank}
@@ -91,7 +91,7 @@ export function WikiOSProfileWidget({
         <TooltipTrigger asChild>
           <Link
             href={profileHref}
-            className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-all"
+            className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             {renderAvatar(true)}
           </Link>
@@ -109,7 +109,7 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={profileHref}
-        className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out outline-none"
+        className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
       >
         {renderAvatar(true)}
         <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
@@ -123,7 +123,7 @@ export function WikiOSProfileWidget({
   return (
     <Link
       href={profileHref}
-      className="group bg-foreground/[0.03] hover:bg-foreground/[0.06] relative block w-full overflow-hidden rounded-xl border border-[var(--wikios-border)] p-2 transition-all hover:border-[var(--hover-border-color)]"
+      className="group bg-foreground/[0.03] hover:bg-foreground/[0.06] relative block w-full overflow-hidden rounded-xl border border-[var(--wikios-border)] p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[var(--hover-border-color)]"
       style={
         {
           "--hover-border-color": hoverBorderColor,
@@ -138,7 +138,7 @@ export function WikiOSProfileWidget({
             {displayName}
           </div>
           {rank != null && (
-            <div className="text-[10px] font-semibold" style={{ color: hoverBorderColor }}>
+            <div className="text-xs font-semibold" style={{ color: hoverBorderColor }}>
               Rank #{rank}
             </div>
           )}
@@ -147,7 +147,7 @@ export function WikiOSProfileWidget({
 
       <div className="relative z-10 mt-2 flex flex-col gap-1 border-t border-[var(--wikios-border)] pt-2">
         {registration && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <Calendar className="h-3 w-3 shrink-0 text-[var(--wikios-text-muted)]" />
             <span className="truncate">
               Joined{" "}
@@ -159,19 +159,19 @@ export function WikiOSProfileWidget({
           </div>
         )}
         {editCount != null && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <FileText className="h-3 w-3 shrink-0 text-[var(--wikios-text-dim)]" />
             <span className="truncate">{editCount.toLocaleString()} edits</span>
           </div>
         )}
         {lorescore > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
-            <Scroll className="h-3 w-3 shrink-0 text-purple-500 dark:text-purple-400/90" />
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
+            <Scroll className="h-3 w-3 shrink-0 text-indigo-500 dark:text-indigo-400/90" />
             <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
           </div>
         )}
         {lorewards > 0 && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--wikios-text-muted)]">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
             <Trophy className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400/90" />
             <span className="truncate">
               {lorewards.toLocaleString()} Loreward{lorewards !== 1 ? "s" : ""} won

@@ -1,22 +1,25 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   Hexagon,
   Copy,
-  Scissors,
-  Sparkles,
-  Sliders,
-  PaintBucket,
-} from "lucide-react";
+  Cut as Scissors,
+  Sparks as Sparkles,
+  ControlSlider as Sliders,
+} from "iconoir-react";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import {
-  CityScatterPopover,
-  TransformGeometryPopover,
-} from "./ScatterToolOptions";
+  SNAP_LAYER_TYPES,
+  getDisabledSnapLayers,
+  setSnapLayerEnabled,
+  type SnapLayerType,
+} from "~/lib/maps/editor-prefs";
+import { CityScatterPopover, TransformGeometryPopover } from "./ScatterToolOptions";
 import {
   ToolLabel,
   btnClass,
+  activeBtnClass,
   labelClass,
   dividerClass,
   selectClass,
@@ -31,6 +34,47 @@ const SUBDIVISION_TYPES = [
   { value: "county", label: "County" },
   { value: "department", label: "Department" },
 ];
+
+const SNAP_LAYER_LABELS: Record<SnapLayerType, string> = {
+  rivers: "Rivers",
+  lakes: "Lakes",
+  background: "Coast",
+  altitudes: "Elevation",
+  climate: "Climate",
+};
+
+/** Per-layer terrain snap toggles, persisted in editor prefs and read at snap time. */
+function SnapLayerToggles() {
+  const [disabled, setDisabled] = useState(getDisabledSnapLayers);
+
+  const toggle = (layer: SnapLayerType) => {
+    setSnapLayerEnabled(layer, disabled.has(layer));
+    setDisabled(getDisabledSnapLayers());
+  };
+
+  return (
+    <>
+      <div className={dividerClass} />
+      <span className={labelClass}>Snap to</span>
+      {SNAP_LAYER_TYPES.map((layer) => {
+        const on = !disabled.has(layer);
+        const label = SNAP_LAYER_LABELS[layer];
+        return (
+          <button
+            key={layer}
+            type="button"
+            onClick={() => toggle(layer)}
+            className={on ? activeBtnClass : btnClass}
+            aria-pressed={on}
+            title={`Snap to ${label.toLowerCase()} (when Snap is on and the layer is visible)`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </>
+  );
+}
 
 interface SubdivisionOptionsProps {
   isEditMode?: boolean;
@@ -82,6 +126,7 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
         onChange={(e) => onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
         className={`${selectClass} w-12 text-center`}
       />
+      <SnapLayerToggles />
 
       {isEditMode && (
         <>

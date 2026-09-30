@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useBulkFlags, useFlag } from "../../hooks/useUnifiedFlags";
+import { useBulkFlags, useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 
 // Mock trpc react
@@ -11,7 +11,8 @@ jest.mock("~/trpc/react", () => ({
           useQuery: jest.fn().mockImplementation(({ countryNames }: { countryNames: string[] }) => {
             const data: Record<string, string | null> = {};
             for (const name of countryNames || []) {
-              data[name] = name === "Unknown" ? null : `https://example.com/flags/${name.toLowerCase()}.svg`;
+              data[name] =
+                name === "Unknown" ? null : `https://example.com/flags/${name.toLowerCase()}.svg`;
             }
             return {
               data,

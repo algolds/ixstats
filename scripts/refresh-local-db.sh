@@ -12,8 +12,21 @@ else
 fi
 
 echo "Restoring database to local container..."
-# Ensure the ixstats_readonly role exists in the postgres cluster so pg_restore doesn't fail on permissions
-$DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'ixstats_readonly') THEN CREATE ROLE ixstats_readonly WITH LOGIN PASSWORD 'Q9ul7FneYGI4vT/s1/jkIokTH97nuZ8Xk9qnmIVMgVs='; END IF; END \$\$;"
+# Ensure the ixstats_readonly role exists in the local postgres cluster so pg_restore doesn't fail on
+# grants. The password comes from IXSTATS_READONLY_PASSWORD (set it to the one in your .env.local.dev
+# DATABASE_URL if you connect as ixstats_readonly); without it the role is created without login.
+# When the password is supplied, an existing role (e.g. one created earlier without login) is
+# updated to it.
+READONLY_PASSWORD="${IXSTATS_READONLY_PASSWORD:-}"
+if [ -n "$READONLY_PASSWORD" ]; then
+    READONLY_ROLE_OPTS="LOGIN PASSWORD '${READONLY_PASSWORD//\'/\'\'}'"
+    READONLY_EXISTING="ALTER ROLE ixstats_readonly WITH $READONLY_ROLE_OPTS;"
+else
+    READONLY_ROLE_OPTS="NOLOGIN"
+    READONLY_EXISTING="NULL;"
+    echo "ℹ️  IXSTATS_READONLY_PASSWORD not set: a missing ixstats_readonly role is created without login."
+fi
+$DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'ixstats_readonly') THEN CREATE ROLE ixstats_readonly WITH $READONLY_ROLE_OPTS; ELSE $READONLY_EXISTING END IF; END \$\$;"
 
 $DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "DROP DATABASE IF EXISTS ixstats WITH (FORCE);"
 $DOCKER_CMD exec -i ixstats-postgres psql -U postgres -d postgres -c "CREATE DATABASE ixstats;"
@@ -27,11 +40,11 @@ echo "✓ Static assets synced."
 
 # Ensure local database schema is aligned with the codebase (Prisma 6 CLI doesn't autoload env with config files)
 echo "🚀 Syncing database schema with codebase..."
-if [ -f ".env" ]; then
-    set -a
-    source .env
-    set +a
-fi
 bun run db:push:force
+
+# Verify and auto-heal WikiOS articles and categories in PostgreSQL
+echo "📚 Verifying WikiOS database persistence..."
+bun run scripts/setup/check-wikios-db.ts
+
 
 

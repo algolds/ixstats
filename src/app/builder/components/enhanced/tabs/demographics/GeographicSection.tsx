@@ -5,14 +5,30 @@ import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from "lucide-react";
+import {
+  City as Building2,
+  MapPin,
+  Plus,
+  Minus,
+  Settings,
+  Group as Users,
+  Archery as Target,
+} from "iconoir-react";
 import type { DemographicsConfiguration, RegionDistribution } from "~/types/economy-builder";
 import { Input } from "~/components/ui/input";
 
 interface GeographicSectionProps {
   demographics: DemographicsConfiguration;
-  onChange: (parentField: keyof DemographicsConfiguration, field: string, value: any) => void;
-  onRegionChange: (regionIndex: number, field: keyof RegionDistribution, value: any) => void;
+  onChange: (
+    parentField: keyof DemographicsConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
+  onRegionChange: <K extends keyof RegionDistribution>(
+    regionIndex: number,
+    field: K,
+    value: RegionDistribution[K]
+  ) => void;
   onAddRegion: () => void;
   onRemoveRegion: (index: number) => void;
 }

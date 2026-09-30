@@ -2,24 +2,23 @@
 
 import React from "react";
 import { motion } from "motion/react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import {
-  MoreHorizontal,
+  MoreHoriz as MoreHorizontal,
   Pin,
   Bookmark,
-  BookOpen,
-  Flag,
-  Edit,
-  Trash2,
-  Crown,
-  Newspaper,
-  Users,
-  Repeat2,
-  MessageCircle,
-} from "lucide-react";
+  OpenBook as BookOpen,
+  WhiteFlag as Flag,
+  EditPencil as Edit,
+  Trash as Trash2,
+  Journal as Newspaper,
+  Group as Users,
+  Refresh as Repeat2,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { useRelativeTime } from "~/hooks/useRelativeTime";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -38,7 +37,7 @@ import { RepostCard } from "./RepostCard";
 import { ReactionPills } from "./ReactionPills";
 import { ThreadReplies } from "./ThreadReplies";
 import { LiveDataCard } from "../LiveDataCard";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -148,7 +147,9 @@ export function StandardPostView({
   showReplies,
   setShowReplies,
   threadQuery,
+  // oxlint-disable-next-line eslint/no-unused-vars
   showMoreOptions,
+  // oxlint-disable-next-line eslint/no-unused-vars
   setShowMoreOptions,
   showReplyComposer,
   setShowReplyComposer,
@@ -193,10 +194,10 @@ export function StandardPostView({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "glass-hierarchy-child hover:glass-hierarchy-interactive shadow-sm transition-all duration-300 hover:bg-white/5 dark:hover:bg-white/5",
+        "group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md",
         compact ? "p-3" : "p-4",
         post.pinned &&
-          "border-amber-500/30 bg-amber-500/5 dark:border-amber-500/20 dark:bg-amber-500/5"
+          "border-amber-500/40 bg-amber-500/5 shadow-amber-500/5 dark:border-amber-500/30 dark:bg-amber-500/5"
       )}
     >
       {post.pinned && (
@@ -249,13 +250,13 @@ export function StandardPostView({
       )}
 
       {blurbMeta.isBlurb && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-purple-400">
+        <div className="mb-3 flex items-center gap-2 text-sm text-blue-400">
           <BookOpen className="h-4 w-4" />
           <span className="font-medium">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
             <Link
               href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
-              className="text-purple-400/70 transition-colors hover:text-purple-300"
+              className="text-blue-400/70 transition-colors hover:text-blue-300"
             >
               View prompt →
             </Link>
@@ -384,7 +385,7 @@ export function StandardPostView({
             return null;
           })()}
 
-          {post.hashtags && post.hashtags.length > 0 && (
+          {Array.isArray(post.hashtags) && post.hashtags.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1">
               {post.hashtags.map((hashtag: string, index: number) => (
                 <button key={index} className="text-sm text-blue-500 hover:underline">
@@ -435,25 +436,7 @@ export function StandardPostView({
             onLike={onLike}
             onRepost={onRepost}
             onReply={() => handleReply()}
-            onShare={() => {
-              const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
-              if (navigator.share) {
-                navigator
-                  .share({
-                    title: `Post by @${post.account?.username}`,
-                    text: post.content.substring(0, 100),
-                    url: postUrl,
-                  })
-                  .catch(() => {
-                    navigator.clipboard.writeText(postUrl);
-                    notify.success("Post link copied to clipboard!");
-                  });
-              } else {
-                navigator.clipboard.writeText(postUrl);
-                notify.success("Post link copied to clipboard!");
-              }
-              onShare?.(post.id);
-            }}
+            onShare={onShare}
             onReaction={onReaction}
             showCounts={true}
             size="md"
@@ -540,6 +523,11 @@ export function StandardPostView({
             setReplyText={setReplyText}
             handleSubmitReply={handleSubmitReply}
             isReplyPending={createPostMutation.isPending}
+            currentUserAccountId={currentUserAccountId}
+            accounts={accounts}
+            onAccountSelect={onAccountSelect}
+            onCreateAccount={onCreateAccount}
+            isOwner={isOwner}
             proxyDiscordUrl={proxyDiscordUrl}
           />
 

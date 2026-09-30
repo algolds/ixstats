@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, User, PenLine } from "lucide-react";
+import { OpenBook as BookOpen, User, EditPencil as PenLine } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 
 /**
@@ -165,13 +164,4 @@ export function formatCanonContext(ctx: CanonContext): string {
   if (ctx.canonSource) lines.push(`Canonical source: wiki page "${ctx.canonSource}"`);
 
   return lines.join("\n");
-}
-
-/**
- * Stable short hash of the canon facts. Include in cache keys so narration
- * self-invalidates when the underlying canon changes (fixes the 14-day stale
- * card problem) without invalidating on irrelevant churn.
- */
-export function canonContextHash(ctx: CanonContext): string {
-  return createHash("sha1").update(JSON.stringify(ctx)).digest("hex").slice(0, 12);
 }

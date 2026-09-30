@@ -1,7 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
-import { generateSchedule } from "../../lib/sports/scheduler";
-import { resolveMatch, resolveRace } from "../../lib/sports/resolver";
-import type { TeamRatingVector } from "../../lib/sports/resolver";
+import { generateSchedule } from "~/lib/sports/scheduler";
+import { resolveMatch, resolveRace } from "~/lib/sports/resolver";
+import type { TeamRatingVector, EventTraceStep, ExtendedMatchResult } from "~/lib/sports/types";
 
 describe("MyLeague Sports Engine", () => {
   describe("generateSchedule fallback for division_conference", () => {
@@ -172,7 +172,7 @@ describe("MyLeague Sports Engine", () => {
 
       expect(result.trace.length).toBeGreaterThan(0);
       const hasFreeThrows = result.trace.some(
-        (t) =>
+        (t: EventTraceStep) =>
           t.description.toLowerCase().includes("free throw") ||
           t.description.toLowerCase().includes("ft:")
       );
@@ -191,7 +191,7 @@ describe("MyLeague Sports Engine", () => {
       });
 
       expect(result.trace.length).toBeGreaterThan(0);
-      const hasPitchingChange = result.trace.some((t) =>
+      const hasPitchingChange = result.trace.some((t: EventTraceStep) =>
         t.description.toLowerCase().includes("pitching change")
       );
       expect(hasPitchingChange).toBe(true);
@@ -199,7 +199,7 @@ describe("MyLeague Sports Engine", () => {
 
     it("simulates soccer extra time in bracket archetype", () => {
       // Loop to find a seed that results in a regulation draw
-      let result: any = null;
+      let result: ExtendedMatchResult | null = null;
       let hasExtraTime = false;
       for (let seed = 1; seed <= 500; seed++) {
         result = resolveMatch({
@@ -211,13 +211,13 @@ describe("MyLeague Sports Engine", () => {
           homeRoster: mockRoster("Home"),
           awayRoster: mockRoster("Away"),
         });
-        hasExtraTime = result.trace.some((t: any) =>
+        hasExtraTime = result.trace.some((t: EventTraceStep) =>
           t.description.toLowerCase().includes("extra time")
         );
         if (hasExtraTime) break;
       }
       expect(hasExtraTime).toBe(true);
-      expect(result.trace.length).toBeGreaterThan(0);
+      expect(result?.trace.length).toBeGreaterThan(0);
     });
   });
 
@@ -257,5 +257,53 @@ describe("MyLeague Sports Engine", () => {
       expect(result.positions[0]).toHaveProperty("finishPosition");
       expect(result.positions[0]).toHaveProperty("points");
     });
+  });
+});
+
+import { playerWage, teamWageBill } from "~/lib/sports/team-rating";
+import { matchIntervalMs, raceIntervalMs } from "~/lib/sports/scheduler";
+
+describe("MyClub wages", () => {
+  it("scales wage with overall rating (monotonic)", () => {
+    expect(playerWage({ overall: 99 })).toBeGreaterThan(playerWage({ overall: 50 }));
+    expect(playerWage({ overall: 50 })).toBeGreaterThan(0);
+  });
+
+  it("falls back to averaging attributes when no overall present", () => {
+    expect(playerWage({ pace: 60, shooting: 60 })).toBe(playerWage({ overall: 60 }));
+  });
+
+  it("sums only active players in the wage bill", () => {
+    const players = [
+      { isActive: true, ratings: { overall: 80 } },
+      { isActive: false, ratings: { overall: 80 } },
+      { isActive: true, ratings: { overall: 80 } },
+    ];
+    expect(teamWageBill(players)).toBe(playerWage({ overall: 80 }) * 2);
+  });
+});
+
+describe("matchIntervalMs & raceIntervalMs", () => {
+  const IXDAY = 86_400_000;
+
+  it("defaults to 1 IxDay when unset/invalid", () => {
+    expect(matchIntervalMs(null)).toBe(IXDAY);
+    expect(matchIntervalMs({})).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: 0 })).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: -5 })).toBe(IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: "7" as any })).toBe(IXDAY);
+  });
+
+  it("honors a valid override (weekly = 7 IxDays)", () => {
+    expect(matchIntervalMs({ matchIntervalDays: 7 })).toBe(7 * IXDAY);
+    expect(matchIntervalMs({ matchIntervalDays: 3 })).toBe(3 * IXDAY);
+  });
+
+  it("raceIntervalMs defaults to 3 IxDays", () => {
+    expect(raceIntervalMs(null)).toBe(3 * IXDAY);
+  });
+
+  it("raceIntervalMs honors a valid override", () => {
+    expect(raceIntervalMs({ raceIntervalDays: 5 })).toBe(5 * IXDAY);
   });
 });

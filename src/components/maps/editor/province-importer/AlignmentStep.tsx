@@ -1,17 +1,17 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import {
-  Crosshair,
-  Wand2,
-  Move,
-  RotateCw,
+  Archery as Crosshair,
+  MagicWand as Wand2,
+  ArrowSeparate as Move,
+  Refresh as RotateCw,
   ZoomIn,
-  Loader2,
-  Trash2,
+  SystemRestart as Loader2,
+  Trash as Trash2,
   Check,
   Magnet,
-} from "lucide-react";
+} from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { AlignmentMode } from "~/lib/maps/province-importer/types";
 
@@ -68,7 +68,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               }`}
             >
               <Icon className="h-4 w-4" />
-              <span className="text-[10px] font-medium">{m.label}</span>
+              <span className="text-xs font-medium">{m.label}</span>
             </button>
           );
         })}
@@ -87,7 +87,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               {importer.referencePoints.map((pt, i) => (
                 <div
                   key={i}
-                  className="bg-accent flex items-center justify-between rounded px-2 py-1 text-[10px]"
+                  className="bg-accent flex items-center justify-between rounded px-2 py-1 text-xs"
                 >
                   <span>
                     Point {i + 1}: [{pt.source[0]?.toFixed(2)}, {pt.source[1]?.toFixed(2)}] → [
@@ -157,7 +157,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
             <Magnet className="h-3.5 w-3.5" />
             Snap to Country Border
           </button>
-          <p className="text-muted-foreground text-[10px]">
+          <p className="text-muted-foreground text-xs">
             Clips provinces to the border, snaps outer vertices, and aligns shared edges. You can
             re-adjust and snap again.
           </p>
@@ -189,7 +189,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               }
               className="w-full"
             />
-            <div className="text-muted-foreground flex justify-between text-[10px]">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>-5°</span>
               <span className="text-foreground font-mono font-medium">
                 {importer.manualTransform.translate[0].toFixed(2)}°
@@ -217,7 +217,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               }
               className="w-full"
             />
-            <div className="text-muted-foreground flex justify-between text-[10px]">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>-5°</span>
               <span className="text-foreground font-mono font-medium">
                 {importer.manualTransform.translate[1].toFixed(2)}°
@@ -245,7 +245,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               }
               className="w-full"
             />
-            <div className="text-muted-foreground flex justify-between text-[10px]">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>-45°</span>
               <span className="text-foreground font-mono font-medium">
                 {importer.manualTransform.rotate.toFixed(1)}°
@@ -273,7 +273,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               }
               className="w-full"
             />
-            <div className="text-muted-foreground flex justify-between text-[10px]">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>0.5x</span>
               <span className="text-foreground font-mono font-medium">
                 {importer.manualTransform.scale.toFixed(2)}x

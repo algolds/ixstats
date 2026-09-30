@@ -27,9 +27,6 @@ import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
-import { useGeoWorker } from "~/hooks/useGeoWorker";
-
-import { getMinArea, filterByArea, PROGRESSIVE_THRESHOLDS } from "./utils/map-core-helpers";
 
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
@@ -161,9 +158,6 @@ const IxWorldMap = memo(
     ref
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { filterByArea: workerFilterByArea } = useGeoWorker();
-    const workerFilterRef = useRef(workerFilterByArea);
-    workerFilterRef.current = workerFilterByArea;
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [debugError, setDebugError] = useState<string | null>(null);
@@ -243,6 +237,7 @@ const IxWorldMap = memo(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
       try {
+        // oxlint-disable-next-line
         const newStyle = buildBaseStyle(theme, projectionMode);
         map.setStyle(newStyle as any, { diff: true });
       } catch (err) {
@@ -252,61 +247,79 @@ const IxWorldMap = memo(
 
     // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {
-      if (!containerRef.current) return;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        setDebugError(`Container has zero size: ${rect.width}x${rect.height}`);
-        return;
-      }
+      const el = containerRef.current;
+      if (!el) return;
 
       // Borrow the persistent "world" instance (kept warm across navigation).
-      const handle = acquireSurface("world", {
-        container: containerRef.current,
-        initialCenter: initialCenter || MAP_DEFAULTS.center,
-        initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
-        minZoom: MAP_DEFAULTS.minZoom,
-        maxZoom: MAP_DEFAULTS.maxZoom,
-        theme,
-        projectionMode,
-        interactive: true,
-        onCreate: (map, maplibregl) => {
-          map.__mlgl = maplibregl;
-          map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-        },
-        onReady: (map) => {
-          mapRef.current = map;
+      const init = () => {
+        const handle = acquireSurface("world", {
+          container: el,
+          initialCenter: initialCenter || MAP_DEFAULTS.center,
+          initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
+          minZoom: MAP_DEFAULTS.minZoom,
+          maxZoom: MAP_DEFAULTS.maxZoom,
+          theme,
+          projectionMode,
+          interactive: true,
+          onCreate: (map, maplibregl) => {
+            map.__mlgl = maplibregl;
+            map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+          },
+          onReady: (map) => {
+            mapRef.current = map;
 
-          // Remove stale zoomend handlers to prevent setData zoom thrashing
-          if (map.__ixZoomHandler) {
-            map.off("zoomend", map.__ixZoomHandler);
-            map.__ixZoomHandler = undefined;
-          }
+            // Remove stale zoomend handlers to prevent setData zoom thrashing
+            if (map.__ixZoomHandler) {
+              map.off("zoomend", map.__ixZoomHandler);
+              map.__ixZoomHandler = undefined;
+            }
 
-          // Tooltip popup lives on the persistent instance; reuse across mounts.
-          if (!map.__ixTooltip) {
-            map.__ixTooltip = new map.__mlgl.Popup({
-              closeButton: false,
-              closeOnClick: false,
-              className: "ixmap-feature-tooltip",
-              offset: 12,
-              maxWidth: "220px",
-            });
-          }
-          tooltipPopupRef.current = map.__ixTooltip;
+            // Tooltip popup lives on the persistent instance; reuse across mounts.
+            if (!map.__ixTooltip) {
+              map.__ixTooltip = new map.__mlgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                className: "ixmap-feature-tooltip",
+                offset: 12,
+                maxWidth: "220px",
+              });
+            }
+            tooltipPopupRef.current = map.__ixTooltip;
 
-          setIsLoaded(true);
-          onReady?.();
-        },
-      });
+            setIsLoaded(true);
+            onReady?.();
+          },
+        });
 
-      handle.ready.catch((err) => {
-        console.error("[IxWorldMap] init error:", err);
-        setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
-      });
+        handle.ready.catch((err) => {
+          console.error("[IxWorldMap] init error:", err);
+          setDebugError(`Load error: ${err instanceof Error ? err.message : String(err)}`);
+        });
+        return handle;
+      };
+
+      // A 0×0 container (hidden tab, collapsed panel, unsettled layout) can't host a map yet —
+      // wait for it to get a size instead of giving up.
+      let handle: ReturnType<typeof acquireSurface> | null = null;
+      let ro: ResizeObserver | null = null;
+      const hasSize = () => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      };
+      if (hasSize()) {
+        handle = init();
+      } else {
+        ro = new ResizeObserver(() => {
+          if (handle || !hasSize()) return;
+          ro?.disconnect();
+          handle = init();
+        });
+        ro.observe(el);
+      }
 
       return () => {
-        handle.release();
+        ro?.disconnect();
+        handle?.release();
         mapRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * useEconomicModel Hook
  *
@@ -7,8 +9,6 @@
  *
  * @module useEconomicModel
  */
-
-"use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNotify } from "~/hooks/useNotify";

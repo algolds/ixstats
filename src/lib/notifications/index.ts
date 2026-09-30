@@ -3,7 +3,6 @@
  */
 
 export * from "./api";
-export * from "./emitter";
 export * from "./guard";
 export * from "./events-registry";
 export * from "./hooks";

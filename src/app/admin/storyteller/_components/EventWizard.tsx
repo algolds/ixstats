@@ -1,9 +1,10 @@
+"use client";
 // src/app/admin/storyteller/_components/EventWizard.tsx
 // 5-step wizard for creating world events
-"use client";
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -13,22 +14,22 @@ import { Textarea } from "~/components/ui/textarea";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { CountrySelector } from "./CountrySelector";
 import {
-  TrendingDown,
-  Swords,
+  StatDown as TrendingDown,
+  Tournament as Swords,
   Wind,
-  Scale,
+  ScaleFrameEnlarge as Scale,
   Cpu,
   Heart,
-  Flame,
-  Wand2,
-  ChevronRight,
-  ChevronLeft,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
+  FireFlame as Flame,
+  MagicWand as Wand2,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  SystemRestart as Loader2,
+  CheckCircle as CheckCircle2,
+  WarningTriangle as AlertTriangle,
   Globe,
-  Sparkles,
-} from "lucide-react";
+  Sparks as Sparkles,
+} from "iconoir-react";
 
 // ── Event Types ──────────────────────────────────────────────────────────────
 
@@ -343,7 +344,7 @@ function Step1EventType({
             <button
               key={type.value}
               onClick={() => onSelect(type.value)}
-              className={`rounded-xl border p-4 text-left transition-all ${
+              className={`rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 isSelected
                   ? `${type.bg} border-2 shadow-sm`
                   : "border-border/50 hover:border-border hover:bg-muted/20"
@@ -581,13 +582,6 @@ function Step4Preview({
     );
   }
 
-  const fmtBig = (n: number) => {
-    if (Math.abs(n) >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
-    return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-  };
-
   return (
     <div>
       <h3 className="text-foreground mb-1 text-lg font-semibold">Impact Preview</h3>
@@ -617,7 +611,7 @@ function Step4Preview({
         <div className="border-border/50 rounded-lg border p-3 text-center">
           <div className="text-muted-foreground text-xs">GDP at Risk</div>
           <div className="text-foreground text-lg font-bold">
-            {fmtBig(simulation.summary.totalGdpAtRisk)}
+            {formatCurrency(simulation.summary.totalGdpAtRisk)}
           </div>
         </div>
       </div>

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * useMapLiveSync — Real-time map data synchronization via Server-Sent Events.
  *
@@ -10,8 +12,6 @@
  * Usage: Call this hook at the top level of any map-viewing component.
  * It is a no-op if SSE is not supported or if the connection fails.
  */
-
-"use client";
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";

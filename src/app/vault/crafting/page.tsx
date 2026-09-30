@@ -45,14 +45,14 @@ export default function VaultCraftingPage() {
   return (
     <div className="space-y-4">
       {/* Recipe list */}
-      <div className="glass-hierarchy-child space-y-2 rounded-xl border p-4">
+      <div className="facet-hierarchy-child space-y-2 rounded-xl border p-4">
         <h3 className="text-sm font-bold text-white">Select Crafting Recipe</h3>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {recipes?.map((recipe) => (
             <button
               key={recipe.id}
               onClick={() => setSelectedRecipeId(recipe.id)}
-              className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition-all ${
+              className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                 selectedRecipeId === recipe.id
                   ? "border-purple-400/50 bg-purple-500/20 text-purple-400"
                   : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10"

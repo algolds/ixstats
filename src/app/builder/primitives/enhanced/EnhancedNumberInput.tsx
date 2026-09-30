@@ -2,13 +2,20 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useMotionTemplate } from "motion/react";
-import { Minus, Plus, RotateCcw, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Undo as RotateCcw,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
 import { useFormattedAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils";
 import { parseNumberInput } from "~/lib/utils";
 import type { EnhancedInputProps } from "./types";
-import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
+import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
+import { ChangedFieldDot } from "../ChangedFieldDot";
 
 interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "onChange"> {
   value: number | string;
@@ -18,7 +25,7 @@ interface EnhancedNumberInputProps extends Omit<EnhancedInputProps, "value" | "o
   showReset?: boolean;
   resetValue?: number | string;
   placeholder?: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
   acceptText?: boolean; // Allow text input for names, etc.
   helpContent?: React.ReactNode;
   helpTitle?: string;
@@ -131,6 +138,7 @@ export function EnhancedNumberInput({
 
   // Safely handle all numeric parameters
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const safeMax = typeof max === "number" && !isNaN(max) ? max : Infinity;
   const safeStep = typeof step === "number" && !isNaN(step) ? step : 1;
 
@@ -144,6 +152,7 @@ export function EnhancedNumberInput({
   const isNumeric = typeof value === "number" && !acceptText;
 
   // Animated value for smooth transitions (only for numeric values)
+  // oxlint-disable-next-line eslint/no-unused-vars
   const animatedValue = useFormattedAnimatedValue(numericValue, isNumeric ? format : undefined, {
     ...DEFAULT_ANIMATIONS.numberFlow,
     duration: animationDuration,
@@ -155,6 +164,7 @@ export function EnhancedNumberInput({
     lg: "text-lg px-5 py-4 h-14",
   };
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const buttonSizeClasses = {
     sm: "w-8 h-8",
     md: "w-10 h-10",
@@ -169,11 +179,16 @@ export function EnhancedNumberInput({
 
       // If value is an object, try to extract a number from it
       if (typeof value === "object" && value !== null) {
-        // Try common object properties that might contain the actual value
-        if ("value" in value) processedValue = (value as any).value;
-        else if ("amount" in value) processedValue = (value as any).amount;
-        else if ("number" in value) processedValue = (value as any).number;
-        else processedValue = 0; // fallback
+        const valRecord = value as Record<string, number | string | boolean | undefined>;
+        if (typeof valRecord.value === "number" || typeof valRecord.value === "string") {
+          processedValue = valRecord.value;
+        } else if (typeof valRecord.amount === "number" || typeof valRecord.amount === "string") {
+          processedValue = valRecord.amount;
+        } else if (typeof valRecord.number === "number" || typeof valRecord.number === "string") {
+          processedValue = valRecord.number;
+        } else {
+          processedValue = 0;
+        }
       }
 
       // Convert to number if not acceptText mode
@@ -230,6 +245,7 @@ export function EnhancedNumberInput({
       onChange(displayValue);
     } else {
       // Use smart number parser to handle "1.5M", "50k", "1,000,000", etc.
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'numericValue' is intentional in this scope
       const numericValue = parseNumberInput(displayValue);
 
       if (!isNaN(numericValue)) {
@@ -427,6 +443,7 @@ export function EnhancedNumberInput({
             <label className="text-foreground flex items-center gap-2 text-sm font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
+              <ChangedFieldDot name={label} value={value} />
               {required && <span className="text-red-400">*</span>}
               {helpContent && <FieldHelpTooltip content={helpContent} title={helpTitle || label} />}
             </label>
@@ -440,7 +457,7 @@ export function EnhancedNumberInput({
         <div
           className={cn(
             "relative w-full",
-            "rounded-lg transition-all duration-200 ease-out",
+            "rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
             "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
             "hover:border-white/[0.12] hover:bg-white/[0.04] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.03]",
             "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
@@ -499,7 +516,7 @@ export function EnhancedNumberInput({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "flex items-center justify-center rounded transition-all",
+                    "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
@@ -516,7 +533,7 @@ export function EnhancedNumberInput({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={cn(
-                    "flex items-center justify-center rounded transition-all",
+                    "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
@@ -534,7 +551,7 @@ export function EnhancedNumberInput({
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={cn(
-                      "flex items-center justify-center rounded transition-all",
+                      "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
                       "h-6 w-6",
                       "disabled:cursor-not-allowed disabled:opacity-20",

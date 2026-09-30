@@ -26,8 +26,8 @@ program — the wider server (`ixwiki`) hosts several connected systems. You'll 
 
 **The stack** (you don't need to know all of it yet — just recognize the words):
 Next.js 16 + React 19 (frontend), tRPC (API), Prisma + PostgreSQL (database), Tailwind CSS v4
-(styling), TypeScript everywhere. Read `README.md` and `arch.md` in the project root once for the
-big picture.
+(styling), TypeScript everywhere. Read `README.md` in the project root and the guides in
+`docs/architecture/` once for the big picture.
 
 > New to web development as a whole? Read **§12 How web dev works** first — it explains what
 > JavaScript, bun, packages, frontend/backend, and the request lifecycle actually are, mapped onto
@@ -128,8 +128,8 @@ You'll rarely deploy, but you should be able to look around production.
    - `cd /ixwiki/public/projects/ixstats` — the project on the server.
    - `pm2 list` — see running production processes.
 3. **Read-only mindset.** Don't run build/db/delete commands on the server unless the lead is walking you
-   through it. Production has live data for 80+ nations. The project `CLAUDE.md` lists the destructive
-   commands that are blocked for a reason.
+   through it. Production has live data for 80+ nations. The `db:*` scripts in `package.json` show the
+   destructive commands that are blocked for a reason.
 
 ---
 
@@ -143,8 +143,8 @@ mkdir -p ~/projects && cd ~/projects
 git clone <repo-ssh-url> ixstats
 cd ixstats
 
-# 2. Use the active branch
-git checkout v2
+# 2. Use the active integration branch
+git checkout rose-garden
 
 # 3. Drop in the .env.local the lead gave you (into the project root)
 
@@ -168,10 +168,10 @@ troubleshooting section (Docker not running, tunnel auth, port conflicts).
 
 ## 8. The daily git workflow
 
-Never commit straight to `v2`. Every change is a branch → PR.
+Never commit straight to `rose-garden` (the integration branch). Every change is a branch → PR.
 
 ```bash
-git checkout v2 && git pull          # start from latest
+git checkout rose-garden && git pull # start from latest
 git checkout -b feat/my-thing        # new branch, descriptive name
 
 # ...edit code in VS Code...
@@ -191,18 +191,18 @@ See **[Contributing Guide](contributing.md)** for the full PR checklist and code
 
 ## 9. Hard rules (memorize these)
 
-These come from `CLAUDE.md` — breaking them can crash the server or production data.
+These come from the project rules (`CLAUDE.md`, which is git-ignored — ask the lead for a copy) — breaking them can crash the server or production data.
 
 - **Use `bun` only.** Never `npm`, `yarn`, or `pnpm`. The lockfile is `bun.lock`.
-- **Never run a global typecheck** — `tsc --noEmit`, `bun run typecheck:full`, or `bun run check`. They
-  can eat all the RAM and crash the machine. Use the scoped ones (`bun run typecheck:ui`, etc.) or just
-  rely on `bun run dev`'s live errors.
+- **Prefer scoped typechecks** — use `bun run typecheck:ui`, `typecheck:server`, `typecheck:trpc` or
+  `typecheck:db` (`bun run typecheck` / `bun run check` run all four in sequence). Avoid a bare
+  `tsc --noEmit` on the root `tsconfig.json`: it pulls the whole graph into one process.
 - **Database write commands are guarded.** `db:migrate`, `db:push`, `db:reset` are blocked. Don't reach
   for the `:force` variants on production unless the lead is directing you.
 - **Code lives in the WSL/Linux filesystem**, never `/mnt/c/...`.
 - **Secrets never go in git.** `.env*` files are ignored — keep them that way.
 - **The middleware file is `src/proxy.ts`** (not `middleware.ts`) — surprises people; don't "fix" it.
-- **Active branch is `v2`**, not `main`.
+- **Active integration branch is `rose-garden`**, not `main` (older docs may still say `v2`).
 
 ---
 
@@ -210,19 +210,19 @@ These come from `CLAUDE.md` — breaking them can crash the server or production
 
 | You want to… | Look at |
 |---|---|
-| Understand the architecture | `arch.md`, `docs/architecture/` |
-| Understand the project rules | `CLAUDE.md` (project root) — read it fully |
+| Understand the architecture | `docs/architecture/` (the old root `arch.md` is no longer in git) |
+| Understand the project rules | `CLAUDE.md` (git-ignored; ask the lead) — read it fully |
 | Set up the dev environment in detail | [docs/operations/local-dev-setup.md](../operations/local-dev-setup.md) |
 | Know PR / test expectations | [docs/processes/contributing.md](contributing.md) |
 | Find an API endpoint | `src/server/api/routers/` (registered in `root.ts`) |
 | Find UI components | `src/components/` |
-| Understand "IxTime" (game time) | `src/lib/ixtime.ts` |
+| Understand "IxTime" (game time) | `src/lib/ixtime/` (`core.ts`, `sync.ts`) |
 | See how deploys work (later) | [docs/operations/deployment.md](../operations/deployment.md) |
 
 ### Your first week, suggested order
 1. Get the app running (§7) and click around the real UI at localhost:3000.
 2. Read `CLAUDE.md` and `README.md` end to end.
-3. Skim `arch.md` to learn the import-direction rules (UI → API → domain → infra).
+3. Skim `docs/architecture/` (start with `frontend.md`, `backend.md`, `ts-graph-isolation.md`) to learn the import-direction rules (UI → API → domain → infra).
 4. Pick a tiny starter issue from the lead, make the change, open your first PR (§8).
 5. Ask questions early and often in Discord — that's expected, not a failure.
 
@@ -415,5 +415,5 @@ else is detail you'll pick up by reading code.
 
 ---
 
-*Last updated: June 2026. If a step here is wrong or out of date, fix it in the same PR as your work —
+*Last updated: September 2026. If a step here is wrong or out of date, fix it in the same PR as your work —
 keeping onboarding accurate is everyone's job.*

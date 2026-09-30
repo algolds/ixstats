@@ -1,9 +1,16 @@
+"use client";
 // src/app/admin/_components/platform/TimeControlCard.tsx
 // Refactored with premium glassmorphism styles and visual updates
-"use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Pause, Play, RotateCcw, Loader2, Calendar } from "lucide-react";
+import {
+  Clock,
+  Pause,
+  Play,
+  Undo as RotateCcw,
+  SystemRestart as Loader2,
+  Calendar,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -106,7 +113,7 @@ export function TimeControlCard({
   };
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
@@ -123,7 +130,7 @@ export function TimeControlCard({
           <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
             <Label
               htmlFor="time-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
             >
               Advanced
             </Label>
@@ -139,7 +146,7 @@ export function TimeControlCard({
       <CardContent className="space-y-4">
         {/* Live IxTime Display */}
         <div className="space-y-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-blue-400 uppercase">
+          <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-400 uppercase">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
@@ -149,7 +156,7 @@ export function TimeControlCard({
           <div className="font-mono text-sm leading-tight font-bold break-words text-blue-500">
             {formattedIxTime}
           </div>
-          <div className="text-muted-foreground grid grid-cols-1 gap-2 border-t border-blue-500/10 pt-2 text-[10px] font-medium sm:grid-cols-2">
+          <div className="text-muted-foreground grid grid-cols-1 gap-2 border-t border-blue-500/10 pt-2 text-xs font-medium sm:grid-cols-2">
             <div>
               <span className="text-foreground font-semibold">1 real day</span> = {ixDaysPerRealDay}{" "}
               IX days
@@ -185,7 +192,7 @@ export function TimeControlCard({
             step={0.1}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
             <span>Paused</span>
             <span>2x (Default)</span>
             <span>4x</span>
@@ -206,7 +213,7 @@ export function TimeControlCard({
                 size="sm"
                 onClick={() => onTimeMultiplierChange(preset.value)}
                 className={cn(
-                  "flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:scale-102",
+                  "flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102",
                   isSelected ? "bg-primary/10 border-primary/30 text-primary" : preset.color
                 )}
               >
@@ -219,7 +226,7 @@ export function TimeControlCard({
             variant="outline"
             size="sm"
             onClick={onResetToRealTime}
-            className="border-border/30 bg-muted/20 text-foreground hover:bg-muted/30 col-span-2 flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-all duration-200 hover:scale-102 sm:col-span-1"
+            className="border-border/30 bg-muted/20 text-foreground hover:bg-muted/30 col-span-2 flex h-9 items-center justify-center gap-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102 sm:col-span-1"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset Flow</span>
@@ -245,12 +252,12 @@ export function TimeControlCard({
                       size="sm"
                       disabled={isPast}
                       onClick={() => handleJumpToYear(year)}
-                      className="border-border/30 bg-card/20 hover:bg-muted/20 flex h-9 items-center justify-center gap-1 text-xs font-semibold transition-all duration-200 hover:scale-102"
+                      className="border-border/30 bg-card/20 hover:bg-muted/20 flex h-9 items-center justify-center gap-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-102"
                     >
                       <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{year}</span>
                       {isPast && (
-                        <span className="text-muted-foreground/60 ml-0.5 text-[9px] font-normal">
+                        <span className="text-muted-foreground/60 ml-0.5 text-xs font-normal">
                           (past)
                         </span>
                       )}
@@ -269,7 +276,7 @@ export function TimeControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="custom-date"
-                    className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                   >
                     Date
                   </Label>
@@ -284,7 +291,7 @@ export function TimeControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="custom-time"
-                    className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase"
+                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
                   >
                     Time
                   </Label>
@@ -300,7 +307,7 @@ export function TimeControlCard({
               <Button
                 onClick={onSetCustomTime}
                 disabled={!customDate || !customTime || setTimePending}
-                className="h-10 w-full text-xs font-bold transition-all duration-250 hover:scale-[1.01]"
+                className="h-10 w-full text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 hover:scale-[1.01]"
               >
                 {setTimePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {setTimePending ? "Setting..." : "Apply Custom Time"}

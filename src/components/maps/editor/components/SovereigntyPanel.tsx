@@ -1,31 +1,29 @@
 "use client";
 
 import React from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, EditPencil as Edit, Trash as Trash2 } from "iconoir-react";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
+import type {
+  SovereigntyRelation,
+  SovereigntyFormData,
+  PropertiesPanelCountry,
+} from "../types/editor-state";
 
 interface SovereigntyPanelProps {
-  filteredRelations: any[];
+  filteredRelations: SovereigntyRelation[];
   showSovereigntyForm: boolean;
   setShowSovereigntyForm: (show: boolean) => void;
   resetSovereigntyForm: () => void;
   editingSovereigntyId: string | null;
-  sovereigntyForm: {
-    sovereignId: string;
-    subjectId: string;
-    relationshipType: string;
-    autonomyLevel: number;
-    description: string;
-    establishedDate: string;
-  };
-  setSovereigntyForm: (form: any) => void;
-  countries: any[];
-  createSovereignty: any;
-  updateSovereignty: any;
+  sovereigntyForm: SovereigntyFormData;
+  setSovereigntyForm: React.Dispatch<React.SetStateAction<SovereigntyFormData>> | ((form: SovereigntyFormData) => void);
+  countries: PropertiesPanelCountry[];
+  createSovereignty: { isPending: boolean };
+  updateSovereignty: { isPending: boolean };
   handleCreateSovereignty: () => void;
   handleUpdateSovereignty: () => void;
   handleDeleteSovereignty: (id: string) => void;
-  handleEditSovereignty: (rel: any) => void;
+  handleEditSovereignty: (rel: SovereigntyRelation) => void;
   sovereigntySearch: string;
   setSovereigntySearch: (s: string) => void;
   sovereigntyTypeFilter: string;
@@ -33,7 +31,7 @@ interface SovereigntyPanelProps {
   relationsLoading: boolean;
 }
 
-export function SovereigntyPanel({
+export const SovereigntyPanel = React.memo(function SovereigntyPanel({
   filteredRelations,
   showSovereigntyForm,
   setShowSovereigntyForm,
@@ -66,7 +64,7 @@ export function SovereigntyPanel({
               resetSovereigntyForm();
               setShowSovereigntyForm(true);
             }}
-            className="flex items-center gap-1 rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+            className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
           >
             <Plus className="h-3 w-3" /> New Relation
           </button>
@@ -75,7 +73,7 @@ export function SovereigntyPanel({
 
       {showSovereigntyForm && (
         <div className="bg-muted/40 border-border/50 space-y-2.5 rounded-lg border p-3">
-          <h4 className="text-foreground border-border/30 border-b pb-1 text-[10px] font-semibold tracking-wider uppercase">
+          <h4 className="text-foreground border-border/30 border-b pb-1 text-xs font-semibold tracking-wider uppercase">
             {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
           </h4>
           <div className="space-y-2 text-xs">
@@ -87,10 +85,10 @@ export function SovereigntyPanel({
                   setSovereigntyForm({ ...sovereigntyForm, sovereignId: e.target.value })
                 }
                 disabled={!!editingSovereigntyId}
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs"
+                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">Select parent...</option>
-                {countries.map((c: any) => (
+                {countries.map((c: PropertiesPanelCountry) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
@@ -105,12 +103,12 @@ export function SovereigntyPanel({
                   setSovereigntyForm({ ...sovereigntyForm, subjectId: e.target.value })
                 }
                 disabled={!!editingSovereigntyId}
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs"
+                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="">Select subject...</option>
                 {countries
-                  .filter((c: any) => c.id !== sovereigntyForm.sovereignId)
-                  .map((c: any) => (
+                  .filter((c: PropertiesPanelCountry) => c.id !== sovereigntyForm.sovereignId)
+                  .map((c: PropertiesPanelCountry) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -124,7 +122,7 @@ export function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, relationshipType: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs"
+                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 {SOVEREIGNTY_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -148,7 +146,7 @@ export function SovereigntyPanel({
                     autonomyLevel: parseInt(e.target.value),
                   })
                 }
-                className="w-full accent-blue-500"
+                className="w-full accent-primary"
               />
             </div>
             <div>
@@ -160,7 +158,7 @@ export function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, establishedDate: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs"
+                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -172,7 +170,7 @@ export function SovereigntyPanel({
                 onChange={(e) =>
                   setSovereigntyForm({ ...sovereigntyForm, description: e.target.value })
                 }
-                className="border-border bg-background w-full rounded border px-2 py-1 text-xs"
+                className="border-border bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -185,13 +183,13 @@ export function SovereigntyPanel({
                 !sovereigntyForm.sovereignId ||
                 !sovereigntyForm.subjectId
               }
-              className="rounded bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+              className="rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-primary/90 active:scale-[0.98]"
             >
               Save
             </button>
             <button
               onClick={resetSovereigntyForm}
-              className="text-muted-foreground hover:text-foreground text-xs"
+              className="text-muted-foreground hover:text-foreground text-xs active:scale-[0.98]"
             >
               Cancel
             </button>
@@ -205,12 +203,12 @@ export function SovereigntyPanel({
           placeholder="Search relations..."
           value={sovereigntySearch}
           onChange={(e) => setSovereigntySearch(e.target.value)}
-          className="bg-background border-border w-full rounded border px-2 py-1 text-xs"
+          className="bg-background border-border w-full rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <select
           value={sovereigntyTypeFilter}
           onChange={(e) => setSovereigntyTypeFilter(e.target.value)}
-          className="bg-background border-border rounded border px-2 py-1 text-xs"
+          className="bg-background border-border rounded border px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
         >
           <option value="all">All Types</option>
           {SOVEREIGNTY_TYPES.map((t) => (
@@ -245,10 +243,10 @@ export function SovereigntyPanel({
                     {rel.sovereignName}
                   </span>
                 </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-1 pl-6 text-[10px]">
+                <div className="text-muted-foreground mt-0.5 flex items-center gap-1 pl-6 text-xs">
                   <span>➔</span>
                   <span>{rel.subjectName}</span>
-                  <span className="ml-1 rounded-sm bg-indigo-500/10 px-1 text-[9px] text-indigo-500">
+                  <span className="ml-1 rounded-sm bg-primary/10 px-1 text-xs text-primary">
                     {typeLabel(rel.relationshipType)}
                   </span>
                 </div>
@@ -256,13 +254,13 @@ export function SovereigntyPanel({
               <div className="ml-1 flex shrink-0 items-center gap-1">
                 <button
                   onClick={() => handleEditSovereignty(rel)}
-                  className="rounded p-0.5 text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
+                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent hover:text-foreground active:scale-[0.98]"
                 >
                   <Edit className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => handleDeleteSovereignty(rel.id)}
-                  className="rounded p-0.5 text-red-500 hover:bg-red-500/10 hover:text-red-600"
+                  className="rounded p-0.5 text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-destructive/15 hover:text-destructive active:scale-[0.98]"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -273,4 +271,4 @@ export function SovereigntyPanel({
       </div>
     </div>
   );
-}
+});

@@ -1,14 +1,22 @@
+"use client";
 // src/components/forum/composer/ReplyComposer.tsx
 // Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
-"use client";
-
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2 } from "lucide-react";
+import { Send, SystemRestart as Loader2 } from "iconoir-react";
+import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import type { GlassPlateEditorRef } from "~/components/shared/editor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-20 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ReplyComposerProps {
   threadId: number;
@@ -62,10 +70,11 @@ export function ReplyComposer({
     setBbcode(code);
   }, []);
 
-  const canSubmit = (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
+  const canSubmit =
+    (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
 
   return (
-    <div className="forum-composer rounded-2xl border border-white/10 bg-black/20 p-2 backdrop-blur-xl transition-all">
+    <div className="forum-composer rounded-2xl border border-white/10 bg-black/20 p-2 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       {createPost.error && (
         <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
           {createPost.error.message}
@@ -87,8 +96,10 @@ export function ReplyComposer({
         />
 
         <div className="flex items-center justify-between border-t border-white/5 pt-2">
-          <span className="text-[11px] text-[var(--forum-text-dim)]">
-            Press <kbd className="rounded bg-white/10 px-1 py-0.5 text-[10px] text-zinc-300">Enter</kbd> to reply
+          <span className="text-xs text-[var(--forum-text-dim)]">
+            Press{" "}
+            <kbd className="rounded bg-white/10 px-1 py-0.5 text-xs text-zinc-300">Enter</kbd>{" "}
+            to reply
           </span>
 
           <Button
@@ -96,7 +107,7 @@ export function ReplyComposer({
             onClick={handleSubmit}
             disabled={!canSubmit}
             className={cn(
-              "h-8 gap-1.5 rounded-xl px-4 text-xs font-semibold transition-all duration-200 active:scale-95",
+              "h-8 gap-1.5 rounded-xl px-4 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
               canSubmit
                 ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
                 : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"

@@ -1,10 +1,13 @@
-# Defense & Security System
+# 🏛️ MyCountry Defense & Security Domain (Premium)
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
-**Hierarchy:** Subsystem of MyCountry (`MYCOUNTRY_VERSION = 5`). Part of the Military & Security domain group.
+**Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
+**Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
+**Primary Action:** `SECURE` | **Domain Accent:** Crimson Red (`text-red-500`, `DOMAIN_META.defense`)  
+**Route:** `/mycountry/defense` (also serves `/mycountry/intelligence`) | **Status:** 💎 Premium-gated  
 
-Defense capabilities model national readiness, crisis response, military operations, equipment procurement, and strategic defense initiative (SDI) postures.
+> **⚠️ Access Note:** Defense is a premium MyCountry section (`ability.can("access", "MyCountryFeature", "defense")` in `src/lib/auth/ability.ts`). Non-premium users see it locked behind `PremiumPreviewFrame`. The sidebar hides it unless an admin enables the teaser toggle (`api.admin.getNavigationSettings().showDefenseTab`). All defense mutations use `premiumProcedure`.
+
+Defense capabilities model military branches and assets, force readiness, operational deployments, PvP/PvNPC conflicts, border security, internal stability, and equipment catalogs.
 
 ---
 
@@ -13,28 +16,30 @@ Defense capabilities model national readiness, crisis response, military operati
 Under MyCountry's Command Surface architecture (`CommandSurface.tsx`), defense is integrated as a first-class domain mode:
 
 ### UI Surfaces
-- `src/components/mycountry/DomainSurface.tsx` (Defense Domain) – Executive readiness view, operational posture, branch allocations, and threat level indicators
-- `src/components/mycountry/DrillSheets.tsx` – Slide-over defense inspection and policy tuning sheet
-- `src/components/defense/` – Defense modules, equipment inventory, readiness cards
-- `src/components/defense/OperationsPanel.tsx` – Military operations management
-- `src/components/defense/operations/` – `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
+- `src/components/mycountry/shell/DomainSurface.tsx` (Defense Domain) – Lazy-loads `DefenseCommandPanel` inside `PremiumPreviewFrame`
+- `src/components/mycountry/shell/rails/DefenseRail.tsx` – Defense context rail
+- `src/components/mycountry/domains/defense/` – `DefenseCommandPanel`, `CommandPanel`, `AssetManager`, `OperationsPanel`, `StabilityPanel`, `BorderThreatPanel`
+- `src/components/mycountry/domains/defense/command/` – `ReadinessOverviewCard` (DEFCON posture), `BudgetManagementCard`
+- `src/components/mycountry/domains/defense/assets/` – Asset cards/dialogs and `EquipmentBrowser`
+- `src/components/mycountry/domains/defense/operations/` – `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
+- `src/components/mycountry/domains/defense/stability/` – Stability metrics and security events
 
 ### Backend Routers
-- `src/server/api/routers/security/` (`index.ts`, `overview.ts`, `threats.ts`) – National security posture, threat detection hooks, SDI defense module configs
-- `src/server/api/routers/militaryEquipment/` – Military hardware and equipment catalog (aircraft, naval, armor)
+- `src/server/api/routers/security/` (`assessment.ts`, `borders.ts`, `conflicts.ts`, `defense.ts`, `military.ts`, `operations.ts`, `stability.ts`) – Security assessment, border security, PvP/PvNPC conflicts, defense budget, branches & assets, operations, internal stability & security events
+- `src/server/api/routers/militaryEquipment/` – Military hardware catalog, manufacturers, analytics (aircraft, naval, armor)
 - `src/server/api/routers/smallArmsEquipment/` – Infantry weapons and manufacturer catalogs
-- `src/server/api/routers/crisis-events.ts` – Dynamic crisis and security incident management
-- `src/server/api/routers/intelligence/` – Security feeds and threat assessment overlays
 
 ---
 
 ## Data Models
 
-Defined in `prisma/schema/military.prisma` and `prisma/schema/core.prisma`:
-- `DefenseModule`: Installed defense infrastructure, radar, and SDI assets
-- `DefenseReadiness`: Readiness score (0–100), alert level, branch readiness splits
-- `DefenseIncident`: Active/historical border clashes, security breaches, and incursions
-- `MilitaryEquipment` / `SmallArmsEquipment`: Comprehensive equipment catalogs with stats, unit costs, and maintenance upkeep
+Defined in `prisma/schema/military.prisma`:
+- `MilitaryBranch`, `MilitaryUnit`, `MilitaryAsset`: Force structure, unit readiness, and owned hardware
+- `DefenseBudget`: Defense spending allocation
+- `SecurityThreat`, `ThreatIncident`, `SecurityAssessment`, `NeighborThreatAssessment`, `BorderSecurity`: Threat and border posture
+- `InternalStabilityMetrics`, `SecurityEvent`: Domestic stability and incidents
+- `MilitaryOperation`, `Deployment`, `MilitaryConflict`: Operations, deployments, and PvP/PvNPC conflicts
+- `MilitaryEquipmentCatalog` / `DefenseManufacturer` / `SmallArmsEquipment` / `SmallArmsManufacturer` / `WeaponEra`: Equipment catalogs
 
 ---
 
@@ -42,20 +47,19 @@ Defined in `prisma/schema/military.prisma` and `prisma/schema/core.prisma`:
 
 ```mermaid
 graph TD
-    A[Threat / Incident Detected] --> B[Security Alert Triggered]
-    B --> C[Defense Domain on Command Surface]
-    C --> D{Player Action}
-    D -->|Adjust Readiness| E[Update Defense Posture]
-    D -->|Deploy Forces| F[Launch Operation Wizard]
-    D -->|Procure Hardware| G[Equipment Catalog Order]
-    E & F & G --> H[Logged to Country Event Spine]
-    H --> I[Narrator / ThinkPages News Broadcast]
+    A[Threat / Incident / Conflict Proposal] --> B[Defense Domain on Command Surface]
+    B --> C{Player Action}
+    C -->|Manage Assets| D[security.create/update/deleteMilitaryAsset]
+    C -->|Deploy Forces| E[DeploymentWizard → security.createOperation]
+    C -->|PvP / PvNPC Conflict| F[security.proposePvPConflict / resolvePvNPCConflict]
+    C -->|Resolve Incident| G[security.resolveSecurityEvent]
+    F --> H[Notification + ThinkPages News]
 ```
 
-1. **Posture & Readiness**: Players tune readiness posture across branches (Army, Navy, Air Force, Cyber, SDI), consuming budget allocation.
-2. **Operations & Deployments**: Players plan deployments or peacekeeping missions with automated success probability factoring equipment and readiness.
-3. **Equipment Management**: Procurement from domestic and international catalogs directly modifies military strength ratings on Nation Cards.
-4. **Crisis Response**: Security incidents trigger alerts in the Command Surface briefing rail, with decisions logged via the `CountryEventSpine`.
+1. **Posture & Readiness**: DEFCON-style posture and branch/unit readiness; deployments drain unit readiness (−10) and recalls restore part of it (+5 per unit).
+2. **Operations & Deployments**: Peacekeeping, defense pact, blockade, intervention, and training operations deploy units/assets and carry a daily operating cost (personnel × $200/day + 1.5× asset maintenance) while active.
+3. **Equipment Management**: Assets are added from the equipment catalogs via `EquipmentBrowser`.
+4. **Conflicts & Crises**: PvP conflict proposals notify the defender and publish news; security events are resolved from the stability panel. Defense actions are not yet routed through `CountryEventSpine`.
 
 ---
 
@@ -64,4 +68,4 @@ graph TD
 - [MyCountry Command Suite](./mycountry.md)
 - [Intelligence System](./intelligence.md)
 - [Crisis Events Guide](./crisis-events.md)
-- [API Reference: Security & Military Routers](../reference/api-complete.md#security-router)
+- [API Reference: Security & Military Routers](../reference/api-complete.md#defense--security)

@@ -42,7 +42,7 @@ export function IIWikiBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-600 shadow-xs backdrop-blur-md dark:text-emerald-300",
+        "inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-xs font-bold text-emerald-600 shadow-xs backdrop-blur-md dark:text-emerald-300",
         className
       )}
       title="IIWiki Card"

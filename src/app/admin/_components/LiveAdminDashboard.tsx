@@ -1,5 +1,5 @@
-// src/app/admin/_components/LiveAdminDashboard.tsx
 "use client";
+// src/app/admin/_components/LiveAdminDashboard.tsx
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -12,20 +12,20 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import {
-  LayoutDashboard,
+  Dashboard as LayoutDashboard,
   Settings,
-  Gamepad2,
-  Users,
+  Gamepad as Gamepad2,
+  Group as Users,
   Package,
-  Layers,
+  Component as Layers,
   Coins,
-  BookOpen,
+  OpenBook as BookOpen,
   Database,
   Activity,
-  Vote,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+  CheckSquare as Vote,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 
 interface LiveAdminDashboardProps {
   onNavigate?: (section: string) => void;
@@ -46,8 +46,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Settings,
         label: "General Settings",
         description: "Time, economy & general parameters",
-        href: "/admin/settings",
-        section: "settings",
+        href: "/admin/platform",
+        section: "platform",
         color: "blue",
       },
       {
@@ -62,8 +62,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Users,
         label: "User Management",
         description: "User list & country binders",
-        href: "/admin/user-management",
-        section: "user-management",
+        href: "/admin/users",
+        section: "users",
         color: "emerald",
       },
       {
@@ -118,8 +118,8 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         icon: Activity,
         label: "User Logs",
         description: "Audit trail & terminal outputs",
-        href: "/admin/user-logs",
-        section: "user-logs",
+        href: "/admin/logs",
+        section: "logs",
         color: "indigo",
       },
       {
@@ -175,46 +175,48 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
         <TooltipProvider delayDuration={150}>
           {quickActionsCollapsed ? (
-            <div className="glass-surface border-border/40 flex flex-wrap items-center gap-3.5 rounded-xl p-3.5 shadow-sm">
+            <div className="border-border/30 bg-card/25 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 shadow-xs backdrop-blur-md">
               {QUICK_ACTIONS.map((action) => (
                 <Tooltip key={action.label}>
                   <TooltipTrigger asChild>
                     <Link
                       href={action.href}
                       onClick={(e) => handleActionClick(e, action.href, action.section)}
-                      className="bg-primary/5 border-border/30 hover:border-primary/30 hover:bg-primary/10 text-primary group block rounded-xl border p-3 transition-all duration-200 hover:scale-108 hover:shadow-md"
+                      className="bg-primary/5 border-border/30 hover:border-primary/30 hover:bg-primary/10 text-primary group block rounded-xl border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.95]"
                     >
-                      <action.icon className="h-5 w-5 transition-transform group-hover:rotate-6" />
+                      <action.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="bg-card/95 border-border/40 max-w-xs p-2.5 text-left shadow-md"
+                    className="bg-card/95 border-border/40 max-w-xs p-2.5 text-left shadow-md backdrop-blur-md"
                   >
                     <p className="text-foreground text-xs font-bold">{action.label}</p>
-                    <p className="text-muted-foreground mt-0.5 text-[10px]">{action.description}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">{action.description}</p>
                   </TooltipContent>
                 </Tooltip>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {QUICK_ACTIONS.map((action) => (
                 <Link
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="glass-surface border-border/40 hover:border-primary/30 group flex items-center justify-between rounded-xl p-4 transition-all duration-250 hover:scale-[1.015] hover:shadow-md"
+                  className="border-border/30 bg-card/25 hover:border-primary/40 group flex items-center justify-between rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="bg-primary/5 border-border/30 group-hover:bg-primary/10 rounded-xl border p-2.5 transition-colors">
-                      <action.icon className="text-primary h-5 w-5" />
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 border-border/20 group-hover:bg-primary/20 text-primary rounded-xl border p-2 transition-colors">
+                      <action.icon className="h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="text-foreground group-hover:text-primary text-sm font-semibold transition-colors">
+                      <h3 className="text-foreground group-hover:text-primary text-xs font-bold transition-colors">
                         {action.label}
                       </h3>
-                      <p className="text-muted-foreground mt-0.5 text-xs">{action.description}</p>
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        {action.description}
+                      </p>
                     </div>
                   </div>
                 </Link>

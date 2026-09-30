@@ -9,6 +9,8 @@ import { db, isDatabaseReadOnly } from "~/server/db";
 import { Cache } from "~/lib/cache";
 import { UnauthorizedError } from "~/lib/app-error";
 import { UserManagementService, isSystemOwner } from "~/lib/auth";
+import { decidePlayAs, isRequesterStaff, recordPlayAsAudit } from "./impersonation";
+import { resolveRateLimitIdentifier } from "./rate-limit-identity";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
@@ -36,7 +38,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
   try {
     // Try to get auth from request first (for app router)
     if (opts.req) {
-      auth = getAuth(opts.req);
+      auth = (opts.req as any).auth ?? getAuth(opts.req);
     }
 
     // If no auth from request, try to get it from authorization header (for API routes)
@@ -72,46 +74,81 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     if (auth?.userId) {
       try {
         const playAsUserHeader = opts.headers.get("x-play-as-user");
-        let activeUserId = auth.userId;
+        const realUserId = auth.userId;
+        let activeUserId = realUserId;
 
-        if (playAsUserHeader && playAsUserHeader !== auth.userId) {
-          // Look up the admin user requesting the play-as mode
-          let impersonator = getCachedUserContext(auth.userId);
+        if (playAsUserHeader && playAsUserHeader !== realUserId) {
+          // Look up the user requesting the play-as mode (existing cached lookup)
+          let impersonator = getCachedUserContext(realUserId);
           if (!impersonator) {
             impersonator = await db.user.findUnique({
-              where: { clerkUserId: auth.userId },
+              where: { clerkUserId: realUserId },
               include: {
                 role: true,
               },
             });
             if (impersonator) {
-              setCachedUserContext(auth.userId, impersonator);
+              setCachedUserContext(realUserId, impersonator);
             }
           }
 
-          if (impersonator) {
-            const isSystemOwnerUser = isSystemOwner(auth.userId);
-            const roleLevel = impersonator.role?.level ?? 999;
-            const roleName = impersonator.role?.name || "NO_ROLE";
-            const isAdmin =
-              isSystemOwnerUser ||
-              ["owner", "admin", "staff"].includes(roleName) ||
-              roleLevel <= 20;
+          const requesterRole = impersonator?.role
+            ? { name: impersonator.role.name, level: impersonator.role.level }
+            : null;
 
-            if (isAdmin) {
-              activeUserId = playAsUserHeader;
-              impersonatorId = auth.userId;
-              auth = { ...auth, userId: activeUserId };
-              if (VERBOSE) {
-                console.log(
-                  `[TRPC Context] Admin ${impersonatorId} playing as user ${activeUserId}`
-                );
-              }
-            } else {
-              console.warn(
-                `[TRPC Context] Unauthorized impersonation attempt: User ${auth.userId} tried to play as ${playAsUserHeader}`
+          // Only look up the target when the requester passes the staff check — avoids an extra
+          // DB round-trip for the common case of a non-staff user with a stale play-as header.
+          const target = isRequesterStaff(realUserId, requesterRole, isSystemOwner)
+            ? await db.user.findUnique({
+                where: { clerkUserId: playAsUserHeader },
+                include: { role: true },
+              })
+            : null;
+
+          const decision = decidePlayAs({
+            realUserId,
+            requestedUserId: playAsUserHeader,
+            requesterRole,
+            target,
+            isSystemOwner,
+          });
+
+          // Trusted IP sources only (see resolveRateLimitIdentifier) — never a client-controlled
+          // forwarding header, so a spoofed value can't pollute the audit trail either.
+          const auditIp = opts.headers.get("cf-connecting-ip") || opts.headers.get("x-real-ip");
+          const auditUserAgent = opts.headers.get("user-agent");
+
+          if (decision.kind === "granted") {
+            activeUserId = decision.targetUserId;
+            impersonatorId = realUserId;
+            // Rebuild `auth` from scratch — do NOT spread the old `auth` — this drops the
+            // impersonator's `sessionClaims` so downstream role checks evaluate the target user,
+            // not the impersonator's own session.
+            auth = { userId: activeUserId };
+            if (VERBOSE) {
+              console.log(
+                `[TRPC Context] ${impersonatorId} playing as user ${activeUserId}`
               );
             }
+            await recordPlayAsAudit(db, {
+              realUserId,
+              requestedUserId: playAsUserHeader,
+              kind: "granted",
+              ip: auditIp,
+              userAgent: auditUserAgent,
+            });
+          } else if (decision.kind === "denied") {
+            console.warn(
+              `[TRPC Context] Denied impersonation attempt: User ${realUserId} tried to play as ${playAsUserHeader} (${decision.reason})`
+            );
+            await recordPlayAsAudit(db, {
+              realUserId,
+              requestedUserId: playAsUserHeader,
+              kind: "denied",
+              reason: decision.reason,
+              ip: auditIp,
+              userAgent: auditUserAgent,
+            });
           }
         }
 
@@ -136,9 +173,10 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
               membershipTier: true,
               wikiUsername: true,
               wikiUserId: true,
+              lastSeenAt: true,
               createdAt: true,
               updatedAt: true,
-              country: { select: { id: true, name: true, flag: true } },
+              country: { select: { id: true, name: true, flag: true, realmId: true } },
               role: { select: { id: true, name: true, level: true } },
             },
           });
@@ -178,12 +216,13 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     console.warn("[TRPC Context] Auth extraction failed:", error);
   }
 
-  // Get rate limit identifier from headers (set by middleware)
-  const rateLimitIdentifier =
-    opts.headers.get("x-ratelimit-identifier") ||
-    opts.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    opts.headers.get("x-real-ip") ||
-    "anonymous";
+  // Rate limit identity comes from trusted sources only (never a client-supplied header) — see
+  // resolveRateLimitIdentifier for the trust model. Keyed on the *real* (pre-impersonation)
+  // identity so play-as can't give an admin a fresh rate-limit bucket.
+  const rateLimitIdentifier = resolveRateLimitIdentifier(
+    opts.headers,
+    impersonatorId ?? auth?.userId ?? null
+  );
 
   return {
     db,
@@ -191,6 +230,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     user,
     rateLimitIdentifier,
     impersonatorId,
+    realUserId: impersonatorId ?? auth?.userId ?? null,
     ...opts,
   };
 };

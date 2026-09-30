@@ -2,13 +2,21 @@
 
 import React from "react";
 import Link from "next/link";
-import { TrendingUp, Users, BarChart3, Crown, Activity, Sparkles } from "lucide-react";
-import { ExternalLink } from "lucide-react";
+import {
+  StatUp as TrendingUp,
+  Group as Users,
+  StatsReport as BarChart3,
+  Crown,
+  Activity,
+  Sparks as Sparkles,
+} from "iconoir-react";
+import { OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 /** Country row from getAll — intentionally loose for carousel display */
 export function CountryShowcaseCard({ country }: { country: Record<string, unknown> }) {
@@ -126,7 +134,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
           {coatOfArmsUrl && (
-            <div className="glass-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
+            <div className="facet-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
               <img
                 src={coatOfArmsUrl}
                 alt={`${displayName} coat of arms`}
@@ -139,10 +147,10 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {identity && (identity.capitalCity || identity.currency || identity.demonym) && (
-          <div className="glass-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
+          <div className="facet-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
             {identity.capitalCity && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Capital
                 </div>
                 <div className="text-foreground text-xs font-medium">{identity.capitalCity}</div>
@@ -150,7 +158,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.currency && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Currency
                 </div>
                 <div className="text-foreground text-xs font-medium">
@@ -162,7 +170,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.demonym && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
                   Demonym
                 </div>
                 <div className="text-foreground text-xs font-medium">{identity.demonym}</div>
@@ -172,7 +180,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         )}
 
         {wikiIntro && (
-          <div className="glass-hierarchy-child space-y-3 rounded-xl p-4">
+          <div className="facet-hierarchy-child space-y-3 rounded-xl p-4">
             <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
               {wikiIntro}
             </p>
@@ -197,47 +205,47 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <Eyebrow>
                   Total GDP
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatCurrency(currentTotalGdp)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <Eyebrow>
                   Population
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatPopulation(currentPopulation)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <Eyebrow>
                   Per Capita
-                </span>
+                </Eyebrow>
               </div>
               <div className={`text-lg font-bold ${splashGold.text}`}>
                 {formatCurrency(currentGdpPerCapita)}
               </div>
             </div>
-            <div className="glass-hierarchy-child rounded-xl p-3">
+            <div className="facet-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                <Eyebrow>
                   Growth
-                </span>
+                </Eyebrow>
               </div>
               <div
                 className={`text-lg font-bold ${growthPositive ? splashGold.text : "text-destructive"}`}
@@ -248,10 +256,10 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
 
-          <div className="glass-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
+          <div className="facet-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
             {landArea != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Land Area</div>
+                <div className="text-muted-foreground text-xs">Land Area</div>
                 <div className="text-foreground text-xs font-semibold">
                   {landArea > 1000000
                     ? `${(landArea / 1000000).toFixed(2)}M km²`
@@ -263,7 +271,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {populationDensity != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Density</div>
+                <div className="text-muted-foreground text-xs">Density</div>
                 <div className="text-foreground text-xs font-semibold">
                   {populationDensity.toFixed(0)}/km²
                 </div>
@@ -271,7 +279,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {unemploymentRate != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Unemployment</div>
+                <div className="text-muted-foreground text-xs">Unemployment</div>
                 <div className="text-foreground text-xs font-semibold">
                   {(unemploymentRate * 100).toFixed(1)}%
                 </div>
@@ -279,7 +287,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {lifeExpectancy != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-[10px]">Life Exp.</div>
+                <div className="text-muted-foreground text-xs">Life Exp.</div>
                 <div className="text-foreground text-xs font-semibold">
                   {lifeExpectancy.toFixed(1)} yrs
                 </div>
@@ -289,7 +297,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {(leader || identity?.motto) && (
-          <div className="glass-hierarchy-child rounded-xl p-3">
+          <div className="facet-hierarchy-child rounded-xl p-3">
             {leader && (
               <div className="flex items-center gap-2">
                 <Crown className="text-muted-foreground h-3.5 w-3.5" />
@@ -360,13 +368,13 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           ];
 
           return (
-            <div className={`glass-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
+            <div className={`facet-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  <Eyebrow>
                     Country Health
-                  </span>
+                  </Eyebrow>
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className={`text-2xl font-bold ${healthColor}`}>{overallHealth}</span>
@@ -381,17 +389,17 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="space-y-2">
                 {indicators.map((ind) => (
                   <div key={ind.label} className="flex items-center gap-3">
-                    <span className="text-muted-foreground w-20 text-[10px]">{ind.label}</span>
+                    <span className="text-muted-foreground w-20 text-xs">{ind.label}</span>
                     <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-all duration-500 dark:from-amber-500 dark:to-yellow-400"
+                        className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 dark:from-amber-500 dark:to-yellow-400"
                         style={{
                           width: `${Math.min(100, ind.value)}%`,
                           opacity: ind.value >= 70 ? 1 : ind.value >= 45 ? 0.85 : 0.65,
                         }}
                       />
                     </div>
-                    <span className="text-foreground w-8 text-right text-[10px] font-medium">
+                    <span className="text-foreground w-8 text-right text-xs font-medium">
                       {Math.round(ind.value)}
                     </span>
                   </div>

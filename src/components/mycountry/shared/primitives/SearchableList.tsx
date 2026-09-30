@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Search, Inbox } from "lucide-react";
+import {
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  Search,
+  MailIn as Inbox,
+} from "iconoir-react";
 
 export interface SearchableListProps<T> {
   /** Section title shown in the header (e.g. "Cities"). */
@@ -72,7 +77,7 @@ export function SearchableList<T>({
     if (!q) return items;
     return items.filter((item) =>
       searchKeys.some((key) => {
-        const value = typeof key === "function" ? key(item) : (item as any)[key];
+        const value = typeof key === "function" ? key(item) : item[key];
         return typeof value === "string" && value.toLowerCase().includes(q);
       })
     );
@@ -100,7 +105,7 @@ export function SearchableList<T>({
           {title}
         </span>
         <span
-          className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${accent.badge}`}
+          className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${accent.badge}`}
         >
           {items.length}
         </span>
@@ -123,14 +128,14 @@ export function SearchableList<T>({
           )}
 
           {isEmpty && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-xs">
               <Inbox className="h-3 w-3" />
               {emptyMessage}
             </div>
           )}
 
           {isFilteredEmpty && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-4 text-xs">
               <Inbox className="h-3 w-3" />
               {noMatchMessage}
             </div>
@@ -138,11 +143,17 @@ export function SearchableList<T>({
 
           {!isEmpty && !isFilteredEmpty && (
             <div className="space-y-2">
-              {filtered.map((item, index) => (
-                <div key={(item as any).id ?? index} className={itemClassName}>
-                  {renderItem(item, index)}
-                </div>
-              ))}
+              {filtered.map((item, index) => {
+                const itemId =
+                  typeof item === "object" && item !== null && "id" in item
+                    ? String((item as { id: string | number }).id)
+                    : index;
+                return (
+                  <div key={itemId} className={itemClassName}>
+                    {renderItem(item, index)}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

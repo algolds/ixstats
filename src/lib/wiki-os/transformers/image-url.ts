@@ -1,18 +1,172 @@
 // src/lib/wiki-os/image-url.ts
 // Canonical Client-safe Wiki and Wikimedia Commons image URL resolution utilities.
 
+import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
 import { DEFAULT_MEDIAWIKI_URL, type WikiSource } from "../config";
 
 export type ExtendedWikiSource = WikiSource | "commons";
 
 /**
- * Get file/image URL for an IxWiki file.
+ * Checks if a filename or image path corresponds to a maintenance/WIP template,
+ * notice badge, icon, or system utility asset that should NOT be used as a lead article image.
+ */
+export function isNoticeOrUtilityIcon(filenameOrPath: string | null | undefined): boolean {
+  if (!filenameOrPath || typeof filenameOrPath !== "string") return true;
+
+  if (
+    filenameOrPath.includes("<!--") ||
+    filenameOrPath.includes("-->") ||
+    filenameOrPath.startsWith("<") ||
+    filenameOrPath.includes("[[")
+  ) {
+    return true;
+  }
+
+  const clean = filenameOrPath
+    .replace(/^https?:\/\/[^/]+/i, "")
+    .replace(/^(?:File|Image|file|image):/i, "")
+    .replace(/^.*?\/([^/?#]+)(?:[?#].*)?$/, "$1")
+    .replace(/^(\d+px-)/i, "")
+    .toLowerCase()
+    .trim();
+
+  const blockedTerms = [
+    "ambox",
+    "red_piston",
+    "piston",
+    "underconstruction",
+    "under_construction",
+    "under-construction",
+    "construction",
+    "road_works",
+    "roadworks",
+    "road-works",
+    "work_in_progress",
+    "wip",
+    "stub",
+    "cleanup",
+    "padlock",
+    "lock-",
+    "edit-",
+    "magnify-clip",
+    "nuvola",
+    "gnome",
+    "crystal_clear",
+    "crystal_",
+    "commons-logo",
+    "wikimedia",
+    "wikipedia",
+    "disambig",
+    "question_book",
+    "wiki_letter",
+    "symbol_",
+    "information_icon",
+    "info_icon",
+    "info-icon",
+    "flag_of_none",
+    "no_flag",
+    "traffic_cone",
+    "barrier",
+    "caution",
+    "maintenance",
+    "inuse",
+    "in_use",
+    "in-use",
+    "spanner",
+    "wrench",
+    "shovel",
+    "worker",
+    "merge",
+    "split",
+    "dialog-",
+    "system-",
+    "emblem-",
+    "p_vip",
+    "portal-",
+    "star_icon",
+    "green_check",
+    "cross_icon",
+    "trash",
+    "delete",
+    "clock_",
+    "arrow",
+    "external-link",
+  ];
+
+  for (const term of blockedTerms) {
+    if (
+      clean.startsWith(term) ||
+      clean.includes(`_${term}`) ||
+      clean.includes(`-${term}`) ||
+      clean === `${term}.svg` ||
+      clean === `${term}.png`
+    ) {
+      return true;
+    }
+  }
+
+  // Generic 12-24px icon names
+  if (
+    /(?:^|[_\-.])(icon|button|bullet|spacer|blank|pixel|trans|transparent)(?:[_\-.]|$)/i.test(clean)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Fast synchronous MD5 implementation for standard MediaWiki shard computation.
+ */
+function md5(input: string): string {
+  return createHash("md5").update(input).digest("hex");
+}
+
+/**
+ * Calculate standard MediaWiki MD5 shard path
+ * e.g. "Caphiria_flag.svg" -> shard "8/8c", path "8/8c/Caphiria_flag.svg"
+ */
+export function getMd5ShardPath(filename: string): {
+  shard: string;
+  fullPath: string;
+  cleanName: string;
+} {
+  let decoded = filename;
+  try {
+    decoded = decodeURIComponent(filename);
+  } catch {
+    // malformed percent-encoding — use the raw filename
+  }
+
+  let cleanName = decoded
+    .replace(/^(?:File|Image):/i, "")
+    .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "")
+    .replace(/\s+/g, "_")
+    .trim();
+
+  // MediaWiki canonicalization: first letter is uppercase
+  if (cleanName.length > 0) {
+    cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+  }
+
+  const hash = md5(cleanName);
+  const shard = `${hash[0]}/${hash.slice(0, 2)}`;
+  return {
+    shard,
+    fullPath: `${shard}/${encodeURI(cleanName)}`,
+    cleanName,
+  };
+}
+
+/**
+ * Get direct file/image URL for an IxWiki file via MD5 shard static storage with proxy fallback.
  */
 export function getImageUrl(filename: string): string {
-  const clean = filename.replace(/^File:/, "").replace(/ /g, "_");
+  const { fullPath } = getMd5ShardPath(filename);
   const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
-  return `${base}/wiki/Special:FilePath/${encodeURIComponent(clean)}`;
+  const directUrl = `${base}/images/${fullPath}`;
+  return normalizeWikiImageUrl(directUrl) || directUrl;
 }
 
 /**
@@ -69,6 +223,165 @@ export function getCommonsProxyUrl(url: string): string {
 }
 
 /**
+ * Normalizes any raw image URL from MediaWiki HTML or SQL to ensure it loads reliably on all clients.
+ */
+export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+
+  let url = rawUrl.trim();
+  if (!url) return null;
+
+  // Protocol-relative URL
+  if (url.startsWith("//")) {
+    url = "https:" + url;
+  }
+
+  // Handle Wikimedia Commons proxying
+  if (isWikimediaCommonsUrl(url)) {
+    return getCommonsProxyUrl(url);
+  }
+
+  // Proxy ixwiki images to avoid direct hotlinking/CORS failures
+  if (url.startsWith("https://ixwiki.com/") || url.startsWith("http://ixwiki.com/")) {
+    const subpath = url.replace(/^https?:\/\/ixwiki\.com\//i, "");
+    return withBasePath(`/api/mediawiki/ixwiki/${subpath}`);
+  }
+
+  // Relative path on IxWiki
+  if (url.startsWith("/")) {
+    if (url.startsWith("/api/mediawiki/")) {
+      return url;
+    }
+    const cleanPath = url.replace(/^\/+/, "");
+    return withBasePath(`/api/mediawiki/ixwiki/${cleanPath}`);
+  }
+
+  return url;
+}
+
+/**
+ * Extracts the genuine lead image URL from MediaWiki / Parsoid article HTML.
+ * Strictly ignores maintenance notices, WIP badges, template icons, and grabs
+ * images from the Infobox first, then the first real content thumbnail/figure.
+ */
+export function extractLeadImageFromHtml(html: string | null | undefined): string | null {
+  if (!html || typeof html !== "string") return null;
+
+  // 1. Strip out all known maintenance / notice / ambox blocks
+  const cleanHtml = html
+    .replace(
+      /<table[^>]*class=["'][^"']*\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b[^"']*["'][\s\S]*?<\/table>/gi,
+      ""
+    )
+    .replace(
+      /<div[^>]*class=["'][^"']*\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b[^"']*["'][\s\S]*?<\/div>/gi,
+      ""
+    )
+    .replace(/<aside[^>]*class=["'][^"']*\b(?:notice|ambox)\b[^"']*["'][\s\S]*?<\/aside>/gi, "");
+
+  // 2. First priority: Infobox image (<table class="infobox">, <aside class="portable-infobox">, .infobox-image)
+  const infoboxMatch = cleanHtml.match(
+    /<(?:table|aside)[^>]*class=["'][^"']*\b(?:infobox|portable-infobox)\b[^"']*["'][\s\S]*?<\/(?:table|aside)>/i
+  );
+  if (infoboxMatch) {
+    const infoboxHtml = infoboxMatch[0];
+    const infoboxImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let imgMatch: RegExpExecArray | null;
+    while ((imgMatch = infoboxImgRegex.exec(infoboxHtml)) !== null) {
+      const fullTag = imgMatch[0] || "";
+      const src = imgMatch[1] || "";
+      if (src && !isNoticeOrUtilityIcon(src)) {
+        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
+          const normalized = normalizeWikiImageUrl(src);
+          if (normalized) return normalized;
+        }
+      }
+    }
+  }
+
+  // 3. Second priority: Figure or Thumbimage (<figure>, <div class="thumb">, <img class="thumbimage">)
+  const figureRegex =
+    /<(?:figure|div)[^>]*class=["'][^"']*\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b[^"']*["'][\s\S]*?<\/(?:figure|div)>/gi;
+  let figMatch: RegExpExecArray | null;
+  while ((figMatch = figureRegex.exec(cleanHtml)) !== null) {
+    const figHtml = figMatch[0];
+    const figImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let imgMatch: RegExpExecArray | null;
+    while ((imgMatch = figImgRegex.exec(figHtml)) !== null) {
+      const fullTag = imgMatch[0] || "";
+      const src = imgMatch[1] || "";
+      if (src && !isNoticeOrUtilityIcon(src)) {
+        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
+          const normalized = normalizeWikiImageUrl(src);
+          if (normalized) return normalized;
+        }
+      }
+    }
+  }
+
+  // 4. Third priority: Scan all remaining <img> tags in document order
+  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = imgRegex.exec(cleanHtml)) !== null) {
+    const fullTag = match[0] || "";
+    const rawSrc = match[1] || "";
+    if (!rawSrc) continue;
+
+    if (isNoticeOrUtilityIcon(rawSrc)) continue;
+
+    if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
+      const normalized = normalizeWikiImageUrl(rawSrc);
+      if (normalized) return normalized;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extracts the genuine lead image from raw wikitext (checking infobox parameters first,
+ * skipping notice templates, and grabbing the first body [[File:...]]).
+ */
+export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
+  if (!wikitext || typeof wikitext !== "string") return null;
+
+  // 1. Check all standard Infobox fields (Priority 1)
+  const infoboxFieldMatch = wikitext.match(
+    /\|\s*(?:image|logo|company_logo|flag|image_flag|coat_of_arms|image_coat|seal|image_seal|map|image_map|photo|image_photo|portrait|image_portrait|album_cover|cover|poster|emblem|badge|insignia|picture|header_image|leader_image|flag_image|symbol)\s*=\s*([^|\n}]+)/i
+  );
+  if (infoboxFieldMatch && infoboxFieldMatch[1]) {
+    const rawFile = infoboxFieldMatch[1]
+      .replace(/\[\[(?:File|Image):/gi, "")
+      .replace(/\]\]/g, "")
+      .split(/[|\]}\n]/)[0]!
+      .replace(/^(?:File|Image|file|image):/i, "")
+      .trim();
+
+    if (rawFile && !isNoticeOrUtilityIcon(rawFile)) {
+      return getImageUrl(rawFile);
+    }
+  }
+
+  // 2. Strip top-level notice / maintenance templates
+  const cleanWikitext = wikitext.replace(
+    /^\{\{(?:Underconstruction|under_construction|WIP|work_in_progress|Stub|Cleanup|Ambox|Notice|Disambig|About|Short description)\b[\s\S]*?\}\}/gim,
+    ""
+  );
+
+  // 3. Match first content [[File:...]] or [[Image:...]]
+  const fileRegex = /\[\[(?:File|Image):([^|\]\n]+)[^\]]*\]\]/gi;
+  let match: RegExpExecArray | null;
+  while ((match = fileRegex.exec(cleanWikitext)) !== null) {
+    const rawFile = match[1]?.trim();
+    if (rawFile && !isNoticeOrUtilityIcon(rawFile)) {
+      return getImageUrl(rawFile);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Resolve an image filename to its canonical proxied or direct URL based on wiki source.
  */
 export function resolveImageUrl(
@@ -87,7 +400,7 @@ export function resolveImageUrl(
     if (isWikimediaCommonsUrl(cleanName)) {
       return getCommonsProxyUrl(cleanName);
     }
-    return cleanName;
+    return normalizeWikiImageUrl(cleanName) ?? cleanName;
   }
 
   const normalized = cleanName.replace(/ /g, "_");
@@ -98,9 +411,7 @@ export function resolveImageUrl(
     );
   }
   if (wikiSource === "ixwiki") {
-    return withBasePath(
-      `/api/mediawiki/ixwiki/wiki/Special:FilePath/${encodeURIComponent(normalized)}`
-    );
+    return getImageUrl(cleanName);
   }
   if (wikiSource === "iiwiki") {
     return withBasePath(

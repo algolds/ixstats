@@ -71,27 +71,25 @@ export function CorpusSelector({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label && (
-        <label className="text-muted-foreground text-xs font-semibold select-none">
-          {label}
-        </label>
+        <label className="text-muted-foreground text-xs font-semibold select-none">{label}</label>
       )}
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="border-border/60 bg-background/60 hover:bg-background/90 text-foreground flex h-9.5 w-full items-center justify-between rounded-xl border px-3 text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-[#0091ff]">
+        <SelectTrigger className="border-border/60 bg-background/60 hover:bg-background/90 text-foreground focus:ring-onoma-primary flex h-9.5 w-full items-center justify-between rounded-xl border px-3 text-xs transition-colors focus:ring-1 focus:outline-none">
           <SelectValue placeholder="Select language profile or corpus…" />
         </SelectTrigger>
         <SelectContent className="border-border/40 bg-background/95 max-h-[340px] rounded-2xl border shadow-xl backdrop-blur-2xl">
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
-            <div className="border-b border-border/30 pb-1">
-              <div className="text-[#ec4899] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="border-border/30 border-b pb-1">
+              <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                 Active Studio Session
               </div>
               <SelectItem
                 value="studio-active"
-                className="focus:bg-[#ec4899]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:bg-onoma-primary/10 focus:text-foreground cursor-pointer text-xs"
               >
                 <div className="flex items-center gap-2">
-                  <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#ec4899" />
+                  <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#0091ff" />
                   <span className="font-semibold">Active Studio Lexicon</span>
                   <span className="text-muted-foreground/70 font-mono text-[10px]">
                     ({studioWords.length} words)
@@ -103,19 +101,19 @@ export function CorpusSelector({
 
           {/* User's Stashed Custom Dictionaries */}
           {stashDictionaries.length > 0 && (
-            <div className="border-b border-border/30 pb-1">
-              <div className="text-[#6366f1] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="border-border/30 border-b pb-1">
+              <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
                 Custom Stash Dictionaries ({stashDictionaries.length})
               </div>
               {stashDictionaries.map((dict) => (
                 <SelectItem
                   key={dict.id}
                   value={dict.id}
-                  className="focus:bg-[#6366f1]/10 focus:text-foreground text-xs cursor-pointer"
+                  className="focus:text-foreground cursor-pointer text-xs focus:bg-indigo-500/10"
                 >
                   <div className="flex items-center gap-2">
                     <OnomaGlyph name="memory-dataset" size="xs" accentColor="#6366f1" />
-                    <span className="font-medium truncate max-w-[180px]">{dict.title}</span>
+                    <span className="max-w-[180px] truncate font-medium">{dict.title}</span>
                     <span className="text-muted-foreground/70 font-mono text-[10px]">
                       ({dict.values.length} words)
                     </span>
@@ -127,14 +125,14 @@ export function CorpusSelector({
 
           {/* Natural Language Profiles */}
           <div>
-            <div className="text-[#0091ff] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
               Natural Language Profiles ({NATURAL_PROFILES.length})
             </div>
             {NATURAL_PROFILES.map((p) => (
               <SelectItem
                 key={p.value}
                 value={p.value}
-                className="focus:bg-[#0091ff]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:bg-onoma-primary/10 focus:text-foreground cursor-pointer text-xs"
               >
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="sound-acoustic" size="xs" accentColor="#0091ff" />
@@ -145,18 +143,18 @@ export function CorpusSelector({
           </div>
 
           {/* Fantasy & Lineage Templates */}
-          <div className="border-t border-border/30 pt-1">
-            <div className="text-[#8b5cf6] px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+          <div className="border-border/30 border-t pt-1">
+            <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
               Fantasy & Lineage Templates ({templateProfiles.length})
             </div>
             {templateProfiles.map((t) => (
               <SelectItem
                 key={t.id}
                 value={t.id}
-                className="focus:bg-[#8b5cf6]/10 focus:text-foreground text-xs cursor-pointer"
+                className="focus:text-foreground cursor-pointer text-xs focus:bg-indigo-500/10"
               >
                 <div className="flex items-center gap-2">
-                  <OnomaGlyph name="emerge-branch" size="xs" accentColor="#8b5cf6" />
+                  <OnomaGlyph name="emerge-branch" size="xs" accentColor="#6366f1" />
                   <span>{t.name}</span>
                 </div>
               </SelectItem>

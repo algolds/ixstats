@@ -1,16 +1,17 @@
-// src/app/admin/_components/SystemLogs.tsx
 "use client";
+// src/app/admin/_components/SystemLogs.tsx
 
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Activity, ExternalLink, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Activity, OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
+import { useNotify } from "~/hooks/useNotify";
 
 export function SystemLogs() {
+  const notify = useNotify();
   const [limit] = useState(100);
 
   // Fetch actual logs from the database
@@ -28,11 +29,11 @@ export function SystemLogs() {
 
   const clearLogsMutation = api.admin.clearSystemLogs.useMutation({
     onSuccess: () => {
-      toast.success("System logs cleared successfully");
+      notify.success("System logs cleared successfully");
       void refetch();
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to clear logs");
+      notify.error(err.message || "Failed to clear logs");
     },
   });
 
@@ -76,7 +77,7 @@ export function SystemLogs() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild className="h-8 gap-1 text-xs">
-            <Link href="/admin/user-logs">
+            <Link href="/admin/logs">
               <ExternalLink className="h-3.5 w-3.5" />
               Dedicated View
             </Link>

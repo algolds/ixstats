@@ -2,24 +2,23 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  TrendingUp,
-  Landmark,
-  Users,
+  StatUp as TrendingUp,
+  Bank as Landmark,
+  Group as Users,
   Shield,
   Globe,
   Building,
   Leaf,
   Clock,
-  Flame,
-  AlertTriangle,
+  FireFlame as Flame,
+  WarningTriangle as AlertTriangle,
   CheckCircle,
   ArrowUpRight,
-  Command,
-  Sliders,
-  X,
-  Calendar,
-  CalendarClock,
-} from "lucide-react";
+  KeyCommand as Command,
+  ControlSlider as Sliders,
+  Xmark as X,
+  CalendarRotate as CalendarClock,
+} from "iconoir-react";
 import { motion } from "motion/react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
@@ -37,6 +36,20 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> 
   infrastructure: { icon: Building, label: "Infrastructure" },
   environmental: { icon: Leaf, label: "Environmental" },
 };
+
+interface ReconRevealItem {
+  targetField: string;
+  value?: number | null;
+  operation?: string;
+  state?: "greyed" | "questioned" | "revealed" | string;
+  reason?: string | null;
+}
+
+interface ReconOptionItem {
+  optionId: string;
+  label: string;
+  reveals: ReconRevealItem[];
+}
 
 interface ResponseOption {
   id: string;
@@ -78,7 +91,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const utils = api.useUtils();
   const issueQuery = api.nationalIssues.getIssue.useQuery({ id: issueId }, { enabled: !!issueId });
   const respondM = api.nationalIssues.respond.useMutation({
-    onSuccess: async (res: any) => {
+    onSuccess: async (res: { recommendedDirective?: string }) => {
       setShowOutcome(true);
       setConfirmingOptionId(null);
       setLocalDirective(res?.recommendedDirective);
@@ -86,7 +99,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       await utils.nationalIssues.getMyIssues.invalidate();
       await utils.nationalIssues.getPendingCount.invalidate();
     },
-    onError: (e: any) => notify.error("Failed to submit response", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to submit response", e?.message),
   });
   const dismissM = api.nationalIssues.dismiss.useMutation({
     onSuccess: () => {
@@ -95,7 +108,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void utils.nationalIssues.getPendingCount.invalidate();
       onClose?.();
     },
-    onError: (e: any) => notify.error("Failed to delegate issue", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to delegate issue", e?.message),
   });
 
   const scheduleMeetingM = api.quickActions.createMeeting.useMutation({
@@ -104,7 +117,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void utils.nationalIssues.getMyIssues.invalidate();
       onClose?.();
     },
-    onError: (e: any) => notify.error("Failed to schedule meeting", e?.message),
+    onError: (e: { message?: string }) => notify.error("Failed to schedule meeting", e?.message),
   });
 
   const reconQuery = api.nationalIssues.getReconReveal.useQuery(
@@ -116,7 +129,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       void reconQuery.refetch();
       notify.success("Cabinet research commissioned — findings will land shortly.");
     },
-    onError: (e: any) => notify.error("Could not commission research", e?.message),
+    onError: (e: { message?: string }) => notify.error("Could not commission research", e?.message),
   });
 
   const [localDirective, setLocalDirective] = useState<string | undefined>(undefined);
@@ -200,15 +213,15 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   return (
     <div className="space-y-5 pb-4">
       {/* Issue Hero */}
-      <FacetCard depth={1} className="bg-card/40 flex flex-col gap-3 p-5 backdrop-blur-md">
+      <FacetCard depth={1} surface="solid" className="flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="border-border/40 bg-muted/20 text-muted-foreground flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase">
+          <span className="border-border/40 bg-muted/20 text-muted-foreground flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase">
             <DomainIcon className="h-3 w-3" />
             {domain.label}
           </span>
           <span
             className={cn(
-              "rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase",
+              "rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase",
               issue.severity === "critical" || issue.severity === "CRITICAL"
                 ? "border-red-500/30 bg-red-500/10 text-red-400"
                 : issue.severity === "high" || issue.severity === "HIGH"
@@ -221,7 +234,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           {hasDeadline && !isResolved && (
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold",
+                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold",
                 isUrgent
                   ? "border-red-500/30 bg-red-500/10 text-red-400"
                   : "border-border/40 bg-muted/20 text-muted-foreground"
@@ -238,7 +251,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             {issue.title}
           </h2>
           {issue.intentId && (
-            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-400">
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-extrabold text-indigo-400">
               <Command className="h-3 w-3" />
               Linked to an active directive
             </span>
@@ -259,7 +272,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {(isResolved || showOutcome) && (issue.consequenceLog || options.length > 0) && (
         <FacetCard
           depth={1}
-          className="flex flex-col gap-2.5 border-emerald-500/20 bg-emerald-500/5 p-4 backdrop-blur-md"
+          surface="solid"
+          className="flex flex-col gap-2.5 border-emerald-500/20 bg-emerald-500/5 p-4"
         >
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-emerald-400" />
@@ -267,7 +281,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
             </span>
             {issue.ixCreditsAwarded > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-400">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-extrabold text-amber-400">
                 +{issue.ixCreditsAwarded}
                 <IxCreditsSymbol className="h-3 w-3 shrink-0" />
               </span>
@@ -289,7 +303,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 onClose?.();
                 onDeclare(chosenDirective);
               }}
-              className="mt-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-extrabold text-amber-800 shadow-xs transition-all hover:bg-amber-500/20 dark:text-amber-300"
+              className="mt-1 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-extrabold text-amber-800 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 dark:text-amber-300"
             >
               <Command className="h-4 w-4" />
               <span>Declare Follow-Up Directive →</span>
@@ -303,15 +317,16 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
         <FacetCard
           depth={1}
-          className="flex flex-col gap-2.5 border-sky-500/20 bg-sky-500/[0.03] p-4 backdrop-blur-md"
+          surface="solid"
+          className="flex flex-col gap-2.5 border-cyan-500/20 bg-cyan-500/[0.03] p-4"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
             <Sliders className="h-4 w-4" />
             <span>Cabinet Research</span>
           </div>
           {reconQuery.data.status === "none" && (
             <div className="flex items-center justify-between gap-3">
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 Commission a meeting to reveal the hard projected effects behind each option. Costs
                 administrative capacity.
               </p>
@@ -319,15 +334,15 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 type="button"
                 onClick={() => commissionRecon.mutate({ issueId: issue.id })}
                 disabled={commissionRecon.isPending}
-                className="shrink-0 cursor-pointer rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-[11px] font-bold text-sky-400 transition-all hover:bg-sky-500/20"
+                className="shrink-0 cursor-pointer rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20"
               >
                 {commissionRecon.isPending ? "..." : "Commission"}
               </button>
             </div>
           )}
           {reconQuery.data.status === "pending" && (
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-              <Clock className="h-3.5 w-3.5 animate-pulse text-sky-400" />
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <Clock className="h-3.5 w-3.5 text-cyan-400" />
               Your team is researching — findings land in{" "}
               {Math.max(
                 1,
@@ -340,7 +355,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           )}
           {reconQuery.data.status === "ready" && (
             <div className="space-y-2">
-              {reconQuery.data.options.map((o: any) => (
+              {(reconQuery.data.options as ReconOptionItem[]).map((o: ReconOptionItem) => (
                 <div
                   key={o.optionId}
                   className="border-border/40 bg-card/30 rounded-lg border p-2.5"
@@ -348,11 +363,11 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   <p className="text-foreground/90 mb-1 text-xs font-semibold">{o.label}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {o.reveals.length === 0 && (
-                      <span className="text-muted-foreground/60 text-[10px]">
+                      <span className="text-muted-foreground/60 text-xs">
                         No measurable effects.
                       </span>
                     )}
-                    {o.reveals.map((r: any, i: number) => {
+                    {o.reveals.map((r: ReconRevealItem, i: number) => {
                       const field = r.targetField
                         .replace(/([A-Z])/g, " $1")
                         .replace(/^./, (c: string) => c.toUpperCase());
@@ -374,7 +389,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         <span
                           key={i}
                           title={r.reason ?? undefined}
-                          className={cn("rounded bg-white/[0.04] px-1.5 py-0.5 text-[10px]", cls)}
+                          className={cn("rounded bg-white/[0.04] px-1.5 py-0.5 text-xs", cls)}
                         >
                           {field}: {val}
                           {r.state === "questioned" ? " ?" : ""}
@@ -384,7 +399,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   </div>
                 </div>
               ))}
-              <p className="text-muted-foreground/50 text-[9px]">
+              <p className="text-muted-foreground/50 text-xs">
                 Greyed = your government can&apos;t assess it · &ldquo;?&rdquo; = may be inaccurate.
               </p>
             </div>
@@ -402,7 +417,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                 Executive Issue Resolution
               </h4>
-              <span className="text-muted-foreground/70 font-mono text-[10px] font-bold">
+              <span className="text-muted-foreground/70 font-mono text-xs font-bold">
                 4 Action Pathways
               </span>
             </div>
@@ -414,11 +429,11 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   type="button"
                   onClick={() => dismissM.mutate({ id: issue.id })}
                   disabled={dismissM.isPending}
-                  className="bg-muted/20 hover:bg-muted/40 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-white/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all active:scale-95"
+                  className="bg-muted/20 hover:bg-muted/40 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-white/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out active:scale-[0.98]"
                 >
                   <Users className="text-muted-foreground h-4 w-4" />
-                  <span className="text-foreground text-[11px] font-bold">Delegate</span>
-                  <span className="text-muted-foreground/70 font-mono text-[9px]">-15 CivCap</span>
+                  <span className="text-foreground text-xs font-bold">Delegate</span>
+                  <span className="text-muted-foreground/70 font-mono text-xs">-15 CivCap</span>
                 </button>
               ) : (
                 <button
@@ -427,8 +442,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   className="border-border/30 bg-muted/10 flex cursor-not-allowed flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center opacity-50"
                 >
                   <Users className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground text-[11px] font-bold">Delegate</span>
-                  <span className="text-muted-foreground/50 text-[9px]">Unavailable</span>
+                  <span className="text-muted-foreground text-xs font-bold">Delegate</span>
+                  <span className="text-muted-foreground/50 text-xs">Unavailable</span>
                 </button>
               )}
 
@@ -439,13 +454,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   const el = document.getElementById("issue-brief-options");
                   el?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-cyan-500/20 active:scale-95 dark:border-cyan-400/25 dark:bg-cyan-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-cyan-500/20 active:scale-[0.98] dark:border-cyan-400/25 dark:bg-cyan-400/10"
               >
                 <Sliders className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
-                <span className="text-[11px] font-bold text-cyan-950 dark:text-cyan-200">
+                <span className="text-xs font-bold text-cyan-950 dark:text-cyan-200">
                   Resolve Brief
                 </span>
-                <span className="text-[9px] text-cyan-800/70 dark:text-cyan-300/70">
+                <span className="text-xs text-cyan-800/70 dark:text-cyan-300/70">
                   Base 3 Options
                 </span>
               </button>
@@ -455,13 +470,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 type="button"
                 onClick={handleSetMeeting}
                 disabled={scheduleMeetingM.isPending}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-blue-500/30 bg-blue-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-blue-500/20 active:scale-95 dark:border-blue-400/25 dark:bg-blue-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-blue-500/30 bg-blue-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-blue-500/20 active:scale-[0.98] dark:border-blue-400/25 dark:bg-blue-400/10"
               >
                 <CalendarClock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                <span className="text-[11px] font-bold text-blue-950 dark:text-blue-200">
+                <span className="text-xs font-bold text-blue-950 dark:text-blue-200">
                   {scheduleMeetingM.isPending ? "Scheduling..." : "Set Meeting"}
                 </span>
-                <span className="text-[9px] text-blue-800/70 dark:text-blue-300/70">
+                <span className="text-xs text-blue-800/70 dark:text-blue-300/70">
                   +7d Agenda
                 </span>
               </button>
@@ -473,13 +488,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   onClose?.();
                   onDeclare?.(issue.title);
                 }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-all hover:bg-amber-500/20 active:scale-95 dark:border-amber-400/25 dark:bg-amber-400/10"
+                className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center shadow-xs backdrop-blur-md transition-[transform,opacity,background-color,border-color] duration-150 ease-out hover:bg-amber-500/20 active:scale-[0.98] dark:border-amber-400/25 dark:bg-amber-400/10"
               >
                 <Command className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200">
+                <span className="text-xs font-bold text-amber-950 dark:text-amber-200">
                   Make Directive
                 </span>
-                <span className="text-[9px] text-amber-800/70 dark:text-amber-300/70">
+                <span className="text-xs text-amber-800/70 dark:text-amber-300/70">
                   Custom Tune
                 </span>
               </button>
@@ -493,8 +508,9 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 <FacetCard
                   key={option.id}
                   depth={1}
+                  surface="solid"
                   className={cn(
-                    "flex items-start justify-between gap-3 p-4 backdrop-blur-md transition-all",
+                    "flex items-start justify-between gap-3 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                     isConfirming
                       ? option.isRisky
                         ? "border-red-500/50 bg-red-500/10"
@@ -515,7 +531,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     </h4>
                     <p className="text-muted-foreground mb-2 text-xs">{option.description}</p>
 
-                    <div className="flex flex-wrap gap-2 text-[10px]">
+                    <div className="flex flex-wrap gap-2 text-xs">
                       {option.previewEffects.publicApproval != null &&
                         option.previewEffects.publicApproval !== 0 && (
                           <EffectBadge
@@ -545,7 +561,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     </div>
 
                     {option.recommendedDirective && (
-                      <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5 text-[10px] font-semibold text-purple-400/90">
+                      <div className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2.5 py-1.5 text-xs font-semibold text-indigo-400/90">
                         <Command className="h-3 w-3 shrink-0" />
                         <span className="line-clamp-2">
                           Recommended directive: &ldquo;{option.recommendedDirective}&rdquo;
@@ -555,8 +571,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
                     {option.isRisky && (
                       <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
-                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
-                        <span className="text-[10px] leading-snug">
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span className="text-xs leading-snug">
                           Risky choice — carries risk of negative outcomes or stability backlash.
                         </span>
                       </div>
@@ -569,7 +585,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         <button
                           type="button"
                           onClick={() => setConfirmingOptionId(null)}
-                          className="border-border/50 text-muted-foreground hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border transition-all"
+                          className="border-border/50 text-muted-foreground hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -580,7 +596,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                           }
                           disabled={respondM.isPending}
                           className={cn(
-                            "h-7 cursor-pointer rounded-lg px-3 text-xs font-bold text-white transition-all",
+                            "h-7 cursor-pointer rounded-lg px-3 text-xs font-bold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                             option.isRisky
                               ? "bg-red-600 hover:bg-red-700"
                               : "bg-amber-600 hover:bg-amber-700"
@@ -594,7 +610,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                         type="button"
                         onClick={() => setConfirmingOptionId(option.id)}
                         className={cn(
-                          "h-7 cursor-pointer rounded-lg border px-3 text-xs font-bold transition-all",
+                          "h-7 cursor-pointer rounded-lg border px-3 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                           option.isRisky
                             ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
                             : "border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/20"

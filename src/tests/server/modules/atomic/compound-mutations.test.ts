@@ -8,7 +8,7 @@ import {
   removeTaxComponentTx,
   bulkUpdateTaxComponentsTx,
   createBudgetScenarioTx,
-} from "../../../../server/modules/atomic/services/component-mutations";
+} from "~/server/modules/atomic/services/component-mutations";
 
 class MockPrismaTxState {
   economicComponents: any[] = [];
@@ -80,7 +80,10 @@ class MockPrismaTxState {
             throw new Error("Simulated budgetScenarioCategory write failure");
           }
           for (const item of data) {
-            self.budgetScenarioCategories.push({ id: `cat_${self.budgetScenarioCategories.length + 1}`, ...item });
+            self.budgetScenarioCategories.push({
+              id: `cat_${self.budgetScenarioCategories.length + 1}`,
+              ...item,
+            });
           }
           return { count: data.length };
         },

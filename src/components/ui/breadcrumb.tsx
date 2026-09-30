@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
-import { ChevronRight, MoreHorizontal } from "lucide-react";
+import { NavArrowRight as ChevronRight, MoreHoriz as MoreHorizontal } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
@@ -68,7 +68,7 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn("[&>svg]:size-3.5", className)}
+      className={cn("[:where(&)>svg]:size-3.5", className)}
       {...props}
     >
       {children ?? <ChevronRight />}

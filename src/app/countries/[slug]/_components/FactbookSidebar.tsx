@@ -11,17 +11,17 @@ import { HealthRing } from "~/components/ui/health-ring";
 import type { RingConfig } from "~/components/mycountry/shared/primitives/VitalityRings";
 import {
   Building,
-  Users,
+  Group as Users,
   Globe,
-  TrendingUp,
+  StatUp as TrendingUp,
   Activity,
   Trophy,
-  MessageSquare,
+  ChatBubble as MessageSquare,
   ArrowRight,
   Clock,
-  DollarSign,
+  Dollar as DollarSign,
   Shield,
-} from "lucide-react";
+} from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
@@ -151,8 +151,9 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
           {vitalityRings.map((ring) => (
             <div
               key={ring.key}
+              data-cuelume-press="soft"
               onClick={() => handleRingClick(ring.key)}
-              className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-md transition-all duration-150 ease-out hover:scale-[1.02] hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.98]"
+              className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out hover:scale-[1.02] hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.98]"
             >
               <HealthRing
                 value={ring.value}
@@ -163,7 +164,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                 className="shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground/80 truncate text-[9px] font-extrabold tracking-wider uppercase">
+                <div className="text-muted-foreground/80 truncate text-xs font-extrabold tracking-wider uppercase">
                   {ring.label}
                 </div>
                 <div className="text-xs leading-tight font-extrabold" style={{ color: ring.color }}>
@@ -192,14 +193,14 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             />
           </CardContent>
           <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium">
+            <span className="text-muted-foreground text-xs font-medium">
               {country.currentPopulation
                 ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                 : ""}
             </span>
             <a
               href={createUrl(`/maps?country=${country.id}`)}
-              className="text-[11px] font-semibold text-blue-500 transition-colors hover:text-blue-400"
+              className="text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400"
             >
               Open full map →
             </a>
@@ -296,11 +297,11 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                         <p className="truncate text-xs font-semibold">{activity.title}</p>
                       </div>
                       {activity.source === "thinkpages" && (
-                        <Badge variant="outline" className="mt-1 h-4 text-[10px] font-bold">
+                        <Badge variant="outline" className="mt-1 h-4 text-xs font-bold">
                           ThinkPages
                         </Badge>
                       )}
-                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-[10px]">
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-2.5 w-2.5" />
                           {formatDistanceToNow(new Date(activity.timestamp), {

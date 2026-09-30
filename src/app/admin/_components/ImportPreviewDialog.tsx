@@ -1,19 +1,19 @@
-// src/app/admin/_components/ImportPreviewDialog.tsx
 "use client";
+// src/app/admin/_components/ImportPreviewDialog.tsx
 
 import { useState } from "react";
 import {
-  X,
+  Xmark as X,
   Plus,
-  RefreshCw,
+  Refresh as RefreshCw,
   CheckCircle,
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
-  Info,
-  Loader2,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
   Clock,
-} from "lucide-react";
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import type { BaseCountryData } from "~/types/ixstats";

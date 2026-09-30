@@ -1,10 +1,16 @@
+"use client";
 // src/components/shared/editor/EditorToolbar.tsx
 // Formatting toolbar for GlassPlateEditor with Facet glass physics styling.
 
-"use client";
-
 import { useState } from "react";
-import { Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  List,
+  NumberedListLeft as ListOrdered,
+  Link as LinkIcon,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
@@ -49,10 +55,10 @@ export function EditorToolbar({
         type="button"
         onClick={() => onToggleMark("bold")}
         className={cn(
-          "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
+          "rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.92]",
           activeMarks.bold
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
-            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
+            : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Bold"
       >
@@ -64,10 +70,10 @@ export function EditorToolbar({
         type="button"
         onClick={() => onToggleMark("italic")}
         className={cn(
-          "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
+          "rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.92]",
           activeMarks.italic
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
-            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
+            : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Italic"
       >
@@ -79,10 +85,10 @@ export function EditorToolbar({
         type="button"
         onClick={() => onToggleMark("underline")}
         className={cn(
-          "rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]",
+          "rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.92]",
           activeMarks.underline
-            ? "bg-purple-500/20 text-purple-600 dark:text-purple-300"
-            : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white"
+            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
+            : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 dark:hover:text-white"
         )}
         title="Underline"
       >
@@ -95,7 +101,7 @@ export function EditorToolbar({
       <button
         type="button"
         onClick={() => onToggleList("ul")}
-        className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
+        className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-black/5 active:scale-[0.92] dark:hover:bg-white/10 dark:hover:text-white"
         title="Bullet List"
       >
         <List className="h-4 w-4" />
@@ -105,7 +111,7 @@ export function EditorToolbar({
       <button
         type="button"
         onClick={() => onToggleList("ol")}
-        className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
+        className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-black/5 active:scale-[0.92] dark:hover:bg-white/10 dark:hover:text-white"
         title="Numbered List"
       >
         <ListOrdered className="h-4 w-4" />
@@ -118,7 +124,7 @@ export function EditorToolbar({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10 dark:hover:text-white rounded-lg p-1.5 transition-all duration-150 active:scale-[0.92]"
+            className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-black/5 active:scale-[0.92] dark:hover:bg-white/10 dark:hover:text-white"
             title="Insert Link"
           >
             <LinkIcon className="h-4 w-4" />
@@ -140,7 +146,7 @@ export function EditorToolbar({
               size="sm"
               onClick={handleAddLink}
               disabled={!linkUrl.trim()}
-              className="w-full bg-purple-600 text-xs font-semibold text-white hover:bg-purple-500"
+              className="w-full bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-500"
             >
               Add Link
             </Button>

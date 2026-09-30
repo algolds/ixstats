@@ -45,7 +45,7 @@ export function ReactionPills({
           <div
             key={type}
             className={cn(
-              "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-all duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
+              "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.03] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20 dark:hover:bg-white/10"
             )}
             onClick={onOpenReactionsDialog}
           >
@@ -57,7 +57,7 @@ export function ReactionPills({
               />
             ) : REACTION_ICONS[type] ? (
               React.createElement(REACTION_ICONS[type]!, {
-                className: "h-3.5 w-3.5 text-purple-400",
+                className: "h-3.5 w-3.5 text-blue-400",
               })
             ) : (
               <span className="text-sm">{type}</span>

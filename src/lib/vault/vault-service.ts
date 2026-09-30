@@ -5,11 +5,18 @@
  * complete backwards compatibility for all tRPC routers and background workers.
  */
 
-import { type PrismaClient, type VaultTransactionType } from "@prisma/client";
+import { Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
+import { syncUserToForum } from "~/server/modules/forum";
 import {
   checkDailyCap as ledgerCheckDailyCap,
   earnCredits as ledgerEarnCredits,
   spendCredits as ledgerSpendCredits,
+  earnCreditsTx as ledgerEarnCreditsTx,
+  spendCreditsTx as ledgerSpendCreditsTx,
+  LedgerError,
+  type LedgerEarnInput,
+  type LedgerSpendInput,
   getBalance as ledgerGetBalance,
   getTransactionHistory as ledgerGetTransactionHistory,
   getEarningsSummary as ledgerGetEarningsSummary,
@@ -38,6 +45,68 @@ import {
 
 export type { VaultEffectPerks, VaultEffectItem, VaultConfig };
 export { getVaultConfig, invalidateVaultConfigCache };
+export { LedgerError };
+export type { LedgerEarnInput, LedgerSpendInput };
+
+export interface EarnOnceResult {
+  success: boolean;
+  alreadyApplied: boolean;
+  newBalance: number;
+  message?: string;
+}
+
+/**
+ * Earn IxCredits at most once per `idempotencyKey`.
+ *
+ * Inside one transaction: a ledger row already carrying the key means the grant
+ * was applied before, so nothing is written; otherwise the row is written with
+ * the key. The unique index on `vault_transactions.idempotencyKey` is the
+ * backstop for a concurrent duplicate: the losing insert raises P2002, which
+ * aborts and rolls back that whole transaction (balance included), and is
+ * reported here as `alreadyApplied`. Through `~/server/db` the violation
+ * surfaces as `ConflictError`; through a raw client as
+ * `PrismaClientKnownRequestError` P2002 — both are recognised. Never catch the
+ * duplicate inside the transaction callback (Postgres rejects further
+ * statements in an aborted transaction).
+ */
+export async function earnCreditsOnce(
+  db: PrismaClient,
+  input: LedgerEarnInput & { idempotencyKey: string }
+): Promise<EarnOnceResult> {
+  try {
+    const r = await db.$transaction(async (tx) => {
+      const existing = await tx.vaultTransaction.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        select: { balanceAfter: true },
+      });
+      if (existing) return { newBalance: existing.balanceAfter, alreadyApplied: true };
+      const { newBalance } = await ledgerEarnCreditsTx(tx, input);
+      return { newBalance, alreadyApplied: false };
+    });
+    if (!r.alreadyApplied) syncUserToForum(input.userId).catch(() => {});
+    return { success: true, alreadyApplied: r.alreadyApplied, newBalance: r.newBalance };
+  } catch (error) {
+    const duplicate =
+      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") ||
+      error instanceof ConflictError;
+    if (duplicate) return { success: true, alreadyApplied: true, newBalance: 0 };
+    if (error instanceof LedgerError) {
+      return {
+        success: false,
+        alreadyApplied: false,
+        newBalance: error.balance,
+        message: error.message,
+      };
+    }
+    console.error(`[Vault Service] Failed idempotent earn ${input.idempotencyKey}:`, error);
+    return {
+      success: false,
+      alreadyApplied: false,
+      newBalance: 0,
+      message: "Failed to earn credits",
+    };
+  }
+}
 
 export class VaultService {
   checkDailyCap(userId: string, earnType: "EARN_ACTIVE" | "EARN_SOCIAL", db: PrismaClient) {
@@ -65,6 +134,21 @@ export class VaultService {
     metadata?: Record<string, unknown>
   ) {
     return ledgerSpendCredits(userId, amount, type, source, db, metadata);
+  }
+
+  /** Earn inside the caller's transaction; throws LedgerError (rolls the transaction back). */
+  earnCreditsTx(tx: Prisma.TransactionClient, input: LedgerEarnInput) {
+    return ledgerEarnCreditsTx(tx, input);
+  }
+
+  /** Earn at most once per idempotencyKey; a duplicate reports { alreadyApplied: true }. */
+  earnCreditsOnce(db: PrismaClient, input: LedgerEarnInput & { idempotencyKey: string }) {
+    return earnCreditsOnce(db, input);
+  }
+
+  /** Spend inside the caller's transaction; throws LedgerError (rolls the transaction back). */
+  spendCreditsTx(tx: Prisma.TransactionClient, input: LedgerSpendInput) {
+    return ledgerSpendCreditsTx(tx, input);
   }
 
   getBalance(userId: string, db: PrismaClient) {

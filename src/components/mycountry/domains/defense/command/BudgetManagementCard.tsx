@@ -1,19 +1,19 @@
-// src/components/defense/command/BudgetManagementCard.tsx
 "use client";
+// src/components/defense/command/BudgetManagementCard.tsx
 
 import React from "react";
 import {
-  DollarSign,
-  Users,
+  Dollar as DollarSign,
+  Group as Users,
   Wrench,
   Package,
   Microscope,
   Building,
-  Edit,
-  Save,
+  EditPencil as Edit,
+  FloppyDisk as Save,
   HelpCircle,
-  Info,
-} from "lucide-react";
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -63,7 +63,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   currentYear,
 }: BudgetManagementCardProps) {
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>

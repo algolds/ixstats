@@ -4,7 +4,7 @@
  * Phase 1: Card Display Components
  */
 
-import { CardRarity, type CardType } from "./enums";
+import { CardRarity } from "./enums";
 import type {
   CardInstance,
   FormattedStats,
@@ -15,7 +15,6 @@ import type {
 } from "~/types/cards-display";
 import {
   getBaseStatDefs,
-  getBaseStatDef,
   getSpecialStatsForType,
   STAT_PROGRESSION,
   LEGACY_KEY_MAP,
@@ -23,6 +22,7 @@ import {
   formatCompactValue,
 } from "./stat-config";
 import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
+import { rgbToHex } from "~/lib/color";
 
 /**
  * Rarity constants (matching database string values)
@@ -51,6 +51,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-sm",
     borderColor: "border-slate-500/20",
     label: "Common",
+    rgb: "148,163,184",
+    badgeStyle: "border-slate-500/20 text-slate-400 bg-slate-500/5",
   },
   [CARD_RARITIES.UNCOMMON]: {
     color: "text-emerald-400",
@@ -58,6 +60,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-md",
     borderColor: "border-emerald-500/30",
     label: "Uncommon",
+    rgb: "16,185,129",
+    badgeStyle: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
   },
   [CARD_RARITIES.RARE]: {
     color: "text-blue-400",
@@ -65,6 +69,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-lg",
     borderColor: "border-blue-500/40",
     label: "Rare",
+    rgb: "59,130,246",
+    badgeStyle: "border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10",
   },
   [CARD_RARITIES.ULTRA_RARE]: {
     color: "text-cyan-400",
@@ -72,6 +78,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-xl",
     borderColor: "border-cyan-500/50",
     label: "Ultra Rare",
+    rgb: "6,182,212",
+    badgeStyle: "border-cyan-500/30 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
   },
   [CARD_RARITIES.EPIC]: {
     color: "text-purple-400",
@@ -79,6 +87,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-2xl",
     borderColor: "border-purple-500/60",
     label: "Epic",
+    rgb: "168,85,247",
+    badgeStyle: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
   },
   [CARD_RARITIES.LEGENDARY]: {
     color: "text-amber-400",
@@ -86,6 +96,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-2xl",
     borderColor: "border-amber-400/70",
     label: "Legendary",
+    rgb: "234,179,8",
+    badgeStyle: "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10",
   },
   [CARD_RARITIES.MYTHIC]: {
     color: "text-rose-400",
@@ -93,6 +105,8 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-2xl",
     borderColor: "border-rose-500/80",
     label: "Mythic",
+    rgb: "244,63,94",
+    badgeStyle: "border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/10",
   },
   [CARD_RARITIES.DIVINE]: {
     color: "text-yellow-200",
@@ -100,8 +114,56 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
     glowIntensity: "shadow-2xl",
     borderColor: "border-yellow-200/90",
     label: "Divine",
+    rgb: "254,240,138",
+    badgeStyle: "border-yellow-200/40 text-yellow-700 dark:text-yellow-200 bg-yellow-200/10",
   },
 };
+
+/** Canonical rarity key from any casing; unknown values fall back to COMMON. */
+export function normalizeRarity(rarity?: string | null): CardRarityType {
+  const upper = rarity?.toUpperCase();
+  return upper && upper in RARITY_COLORS ? (upper as CardRarityType) : CARD_RARITIES.COMMON;
+}
+
+/** `rgba()` glow colour for inline styles (IxVault cards, auction rows). */
+export function getRarityGlowRgba(rarity?: string | null): string {
+  return `rgba(${RARITY_COLORS[normalizeRarity(rarity)]!.rgb},0.25)`;
+}
+
+/** `rgba()` border colour for inline styles. */
+export function getRarityBorderRgba(rarity?: string | null): string {
+  return `rgba(${RARITY_COLORS[normalizeRarity(rarity)]!.rgb},0.35)`;
+}
+
+/**
+ * Inline-style theme for a rarity (glow/border rgba strings plus text and badge classes).
+ * Replaces the second palette that lived in `components/vault/vault-theme.ts`.
+ */
+export function getRarityTheme(rarity?: string | null): {
+  glow: string;
+  border: string;
+  text: string;
+  badgeStyle: string;
+} {
+  const config = RARITY_COLORS[normalizeRarity(rarity)]!;
+  return {
+    glow: getRarityGlowRgba(rarity),
+    border: getRarityBorderRgba(rarity),
+    text: config.color,
+    badgeStyle: config.badgeStyle,
+  };
+}
+
+/** `#rrggbb` rarity colour for effects that append a hex alpha (pack-opening glows, particles). */
+export function getRarityHex(rarity?: string | null): string {
+  const [r = 0, g = 0, b = 0] = RARITY_COLORS[normalizeRarity(rarity)]!.rgb.split(",").map(Number);
+  return rgbToHex(r, g, b);
+}
+
+/** Rank in schema order: 1 (COMMON) … 6 (LEGENDARY); 0 for anything else. */
+export function getRarityTier(rarity?: string | null): number {
+  return (Object.values(CardRarity) as string[]).indexOf(rarity ?? "") + 1;
+}
 
 /**
  * Get Tailwind color class for card rarity

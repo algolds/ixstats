@@ -12,9 +12,18 @@
  */
 
 import { useState, useRef, useCallback } from "react";
-import { Search, Link2, Unlink, Loader2, Check, ExternalLink, AlertTriangle } from "lucide-react";
+import {
+  Search,
+  Link as Link2,
+  LinkSlash as Unlink,
+  SystemRestart as Loader2,
+  Check,
+  OpenNewWindow as ExternalLink,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
+import { distanceKm } from "~/lib/maps/geo-math";
 
 export interface WikiImportableFields {
   population?: number;
@@ -126,15 +135,7 @@ export function WikiLinkWizard({
   // Coordinate distance warning
   const coordDistance = (() => {
     if (!infobox?.coordinates || !currentCoords) return null;
-    const [lng1, lat1] = currentCoords;
-    const [lng2, lat2] = infobox.coordinates;
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-    return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+    return Math.round(distanceKm(currentCoords, infobox.coordinates));
   })();
 
   // Linked state — show linked page with unlink option
@@ -190,7 +191,7 @@ export function WikiLinkWizard({
 
             {infobox?.hasInfobox && (
               <>
-                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {infobox.templateName}
                 </div>
                 <div className="mt-1 max-h-32 space-y-0.5 overflow-y-auto">
@@ -198,7 +199,7 @@ export function WikiLinkWizard({
                     .filter((f) => f.cleanValue && f.fieldType !== "unknown")
                     .slice(0, 12)
                     .map((f, i) => (
-                      <div key={i} className="flex items-center gap-1.5 text-[11px]">
+                      <div key={i} className="flex items-center gap-1.5 text-xs">
                         <span className="text-muted-foreground w-24 shrink-0 truncate">
                           {f.key}
                         </span>
@@ -208,7 +209,7 @@ export function WikiLinkWizard({
                 </div>
 
                 {coordDistance !== null && coordDistance > 50 && (
-                  <div className="mt-1.5 flex items-center gap-1.5 rounded bg-amber-50 px-2 py-1 text-[10px] text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                  <div className="mt-1.5 flex items-center gap-1.5 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
                     Wiki coords are {coordDistance.toLocaleString()} km from map position
                   </div>
@@ -261,7 +262,7 @@ export function WikiLinkWizard({
               <div className="min-w-0">
                 <div className="text-foreground truncate font-medium">{r.title}</div>
                 {r.description && (
-                  <div className="text-muted-foreground truncate text-[10px]">{r.description}</div>
+                  <div className="text-muted-foreground truncate text-xs">{r.description}</div>
                 )}
               </div>
             </button>
@@ -274,7 +275,7 @@ export function WikiLinkWizard({
         searchResults.results.length === 0 &&
         debouncedQuery.length >= 2 &&
         !searchLoading && (
-          <div className="text-muted-foreground mt-1 text-[10px]">
+          <div className="text-muted-foreground mt-1 text-xs">
             No wiki pages found for &ldquo;{debouncedQuery}&rdquo;
           </div>
         )}
@@ -286,7 +287,7 @@ export function WikiLinkWizard({
             setIsSearching(false);
             onChange(undefined);
           }}
-          className="text-muted-foreground hover:text-foreground mt-1 text-[10px]"
+          className="text-muted-foreground hover:text-foreground mt-1 text-xs"
         >
           Skip wiki linking
         </button>

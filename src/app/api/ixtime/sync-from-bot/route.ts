@@ -1,6 +1,8 @@
 // src/app/api/ixtime/sync-from-bot/route.ts
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
+import type { BotTimeResponse } from "~/types/ixstats";
+import { bearerMatches } from "~/lib/security/safe-equal";
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
 
     // Require valid Bearer token if secret is configured, or if in production
     if (botSecret || isProduction) {
-      if (!authHeader || authHeader !== `Bearer ${botSecret}`) {
+      if (!botSecret || !bearerMatches(authHeader, botSecret)) {
         console.warn(
           `[SECURITY] Unauthorized bot sync access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
         );
@@ -27,19 +29,18 @@ export async function POST(request: Request) {
       }
     }
 
-    let botData;
-
     // Try to parse request body first (for auto-sync)
     try {
-      const body = await request.json();
-      if (body.ixTimeMs || body.multiplier !== undefined) {
-        // Direct sync from bot command
-        if (body.ixTimeMs) {
-          IxTime.setTimeOverride(body.ixTimeMs);
-        }
-        if (typeof body.multiplier === "number") {
-          IxTime.setMultiplierOverride(body.multiplier);
-        }
+      const body = (await request.json()) as {
+        ixTimeMs?: number | null;
+        multiplier?: number | null;
+      };
+      const ixTimeMs = typeof body.ixTimeMs === "number" ? body.ixTimeMs : null;
+      const multiplier = typeof body.multiplier === "number" ? body.multiplier : null;
+      if (ixTimeMs !== null || multiplier !== null) {
+        // Direct sync from a bot command: `/time set` sends its time with multiplier null
+        // (keep the speed); `/time speed` sends its current time and new speed
+        IxTime.adoptBotClock(ixTimeMs, multiplier);
 
         const currentState = {
           ixTimeTimestamp: IxTime.getCurrentIxTime(),
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
       "http://localhost:3001";
 
     // Check if bot is available first
-    let response;
+    let response: Response | undefined;
     try {
       response = await fetch(`${BOT_URL}/health`, {
         method: "GET",
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
       if (!response.ok) {
         throw new Error(`Discord bot health check failed: ${response.status}`);
       }
-    } catch (healthError) {
+    } catch {
       // Bot is not available, return graceful fallback
       console.warn("Discord bot is not available, using local time state");
       const currentState = {
@@ -109,17 +110,20 @@ export async function POST(request: Request) {
       throw new Error(`Discord bot API returned ${response.status}`);
     }
 
-    // eslint-disable-next-line prefer-const
-    botData = await response.json();
+    const botData = (await response.json()) as Partial<BotTimeResponse>;
 
-    // Apply bot's current time and multiplier to IxStats (always sync to match bot)
-    if (botData.ixTimeTimestamp) {
-      IxTime.setTimeOverride(botData.ixTimeTimestamp);
+    if (typeof botData.ixTimeTimestamp !== "number" || typeof botData.multiplier !== "number") {
+      throw new Error("Discord bot returned an invalid time status");
     }
 
-    if (botData.multiplier) {
-      IxTime.setMultiplierOverride(botData.multiplier);
-    }
+    // The bot is the source of truth: adopt its clock the same way IxTime.syncWithBot does
+    IxTime.applyBotState({
+      ixTimeTimestamp: botData.ixTimeTimestamp,
+      multiplier: botData.multiplier,
+      isPaused: botData.isPaused === true,
+      hasTimeOverride: botData.hasTimeOverride === true,
+      hasMultiplierOverride: botData.hasMultiplierOverride === true,
+    });
 
     // Get the current state after sync
     const currentState = {

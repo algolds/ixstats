@@ -3,11 +3,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { ActivityGenerator } from "~/lib/activity";
 import {
   cleanRawValues,
@@ -182,6 +179,8 @@ export const onomaNameBankRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // An entry may be tagged to a country only by someone who may write to that country.
+      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const { db } = ctx;
       const userId = ctx.auth.userId;
       const cleanValues = cleanRawValues(input.values);
@@ -189,8 +188,15 @@ export const onomaNameBankRouter = createTRPCRouter({
       // Handle standalone save mode if explicitly requested
       if (input.stashId === "standalone") {
         if (input.id) {
+          const owned = await db.nameBank.findFirst({
+            where: { id: input.id, userId: ctx.user.id },
+            select: { id: true },
+          });
+          if (!owned) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Entry not found" });
+          }
           const updated = await db.nameBank.update({
-            where: { id: input.id },
+            where: { id: owned.id },
             data: {
               title: input.title,
               values: cleanValues,
@@ -230,9 +236,17 @@ export const onomaNameBankRouter = createTRPCRouter({
         };
       }
 
-      // 1. Get or create the stash folder
+      // 1. Get or create the stash folder (a caller-supplied stash must be the caller's own)
       let targetStashId = input.stashId;
-      if (!targetStashId) {
+      if (targetStashId) {
+        const ownStash = await db.stash.findFirst({
+          where: { id: targetStashId, userId },
+          select: { id: true },
+        });
+        if (!ownStash) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this stash" });
+        }
+      } else {
         let defaultStash = await db.stash.findFirst({
           where: { userId, isDefault: true },
         });

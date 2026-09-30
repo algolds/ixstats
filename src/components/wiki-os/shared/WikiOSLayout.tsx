@@ -1,7 +1,6 @@
+"use client";
 // src/components/wiki-os/shared/WikiOSLayout.tsx
 // WikiOS content wrapper with standard DashboardSidebarLayout.
-
-"use client";
 
 import { type ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
@@ -27,23 +26,62 @@ import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
+import { WikiOSLogomark } from "./WikiOSLogomark";
+import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
+const RESERVED_WIKI_SLUGS = new Set([
+  "lorewards",
+  "diff",
+  "watchlist",
+  "search",
+  "random",
+  "repository",
+  "recent-changes",
+  "categories",
+  "whatlinkshere",
+  "user",
+  "history",
+  "contributions",
+  "utilities",
+  "templates",
+  "sandbox",
+]);
+
+/**
+ * A path that is NOT an editable wiki article: the reserved /wiki/* tool routes, the Special: namespace, and
+ * anything not under /wiki/<slug> (util, library and other routes). Article pages (/wiki/<Title> and their
+ * /edit, /talk sub-routes) are NOT special, so the page tools (Edit / Talk / History / What Links Here) render
+ * for them. NOTE: previously this matched every "/wiki/" path, which hid page tools on all articles.
+ */
+function isNonArticlePath(cleanPath: string): boolean {
+  const wikiSlug = cleanPath.match(/^\/wiki\/([^/]+)/)?.[1];
+  if (!wikiSlug) return true;
+  const slug = decodeURIComponent(wikiSlug);
+  return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
+}
+
 export function WikiOSLayout({
   title,
+  // oxlint-disable-next-line eslint/no-unused-vars
   sidebarVariant = "wiki",
   hideTitleHeading = false,
+  showUtilitiesRibbon,
   sections,
+  readOnly,
   children,
 }: {
   title?: string;
   sidebarVariant?: "wiki" | "dashboard";
   hideTitleHeading?: boolean;
+  showUtilitiesRibbon?: boolean;
   sections?: TocEntry[];
+  /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
+  readOnly?: boolean;
   children: ReactNode;
 }) {
-  useWikiOSShortcuts();
+  useWikiOSShortcuts(readOnly);
   useWikiPrefetch();
   const { articleTitle, setActiveModal } = useWikiContext();
   const pathname = usePathname();
@@ -55,21 +93,10 @@ export function WikiOSLayout({
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("create") === "true" || params.get("action") === "create-page") {
+        // oxlint-disable-next-line
         setCreatePageOpen(true);
       }
     }
-  }, []);
-
-  // Global Cmd+K to open search
-  useEffect(() => {
-    const handleKey = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
   const activeTitle = title || articleTitle || "";
@@ -110,54 +137,26 @@ export function WikiOSLayout({
     const p = stripBasePath(pathname);
     if (p.includes("/talk")) return "talk";
     if (p.includes("/edit")) return "edit";
-    if (p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/wiki/lorewards")) return "lorewards";
+    if (p.includes("/util/categories") || p.includes("/wiki/categories")) return "categories";
+    if (p.includes("/util/recent") || p.includes("/wiki/recent")) return "recent";
+    if (p.includes("/util/templates") || p.includes("/wiki/templates")) return "templates";
+    if (p === "/util" || p.startsWith("/util") || p.includes("/wiki/utilities")) return "utilities";
+    if (p.includes("/util/lorewards") || p.includes("/wiki/lorewards")) return "lorewards";
     if (p.includes("/blurbs")) return "blurbs";
     if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/wiki/repository")) return "images";
-    if (p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/wiki/random")) return "random";
-    if (p.includes("/wiki/search")) return "search";
-    if (p.includes("/wiki/history")) return "history";
-    if (p === "/wiki/Main_Page") return "main";
+    if (p.includes("/util/repository") || p.includes("/wiki/repository")) return "images";
+    if (p.includes("/util/watchlist") || p.includes("/wiki/watchlist")) return "stashes";
+    if (p.includes("/util/random") || p.includes("/wiki/random")) return "random";
+    if (p.includes("/util/search") || p.includes("/wiki/search")) return "search";
+    if (p.includes("/util/history") || p.includes("/wiki/history")) return "history";
+    if (p === "/wiki/Main_Page" || p === "/wiki") return "main";
     return null;
   };
 
   const activeId = getActiveId();
 
-  // A "special page" is anything that is NOT an editable wiki article — the Main Page,
-  // the reserved /wiki/* tool routes, the Special: namespace, and non-article library
-  // routes. Article pages (/wiki/<Title> and their /edit, /talk sub-routes) are NOT
-  // special, so the page-tools (Edit / Talk / History / What Links Here) render for them.
-  // NOTE: previously this matched every "/wiki/" path, which hid page tools on all
-  // articles since every article lives under /wiki/.
-  const RESERVED_WIKI_SLUGS = new Set([
-    "lorewards",
-    "diff",
-    "watchlist",
-    "search",
-    "random",
-    "repository",
-    "recent-changes",
-    "categories",
-    "whatlinkshere",
-    "user",
-    "history",
-    "contributions",
-  ]);
-  const cleanPath = stripBasePath(pathname);
-  const wikiSlugMatch = cleanPath.match(/^\/wiki\/([^/]+)/);
-  const wikiSlug = wikiSlugMatch ? decodeURIComponent(wikiSlugMatch[1]) : null;
-  const isReservedWikiPage = !!wikiSlug && RESERVED_WIKI_SLUGS.has(wikiSlug);
-  const isSpecialNamespace = !!wikiSlug && /^special:/i.test(wikiSlug);
-  const isLibraryRoute =
-    cleanPath === "/blurbs" ||
-    cleanPath.startsWith("/blurbs/") ||
-    cleanPath === "/stashes" ||
-    cleanPath.startsWith("/stashes/");
-  // Not under /wiki/<slug> at all → not an article either.
-  const isSpecialPage =
-    isMainPage || isReservedWikiPage || isSpecialNamespace || isLibraryRoute || !wikiSlug;
+  // A "special page" has no page tools: the Main Page, a non-article path, or another wiki's page (read-only).
+  const isSpecialPage = readOnly || isMainPage || isNonArticlePath(stripBasePath(pathname));
 
   const sidebarContent = (
     <WikiOSUnifiedSidebar
@@ -188,29 +187,44 @@ export function WikiOSLayout({
         disableGlobalHover={true}
       >
         <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
+          {/*{(showUtilitiesRibbon ?? isSpecialPage) && (
+          //  <WikiUtilitiesRibbon
+          //    onSearchClick={() => setSearchOpen(true)}
+          //    onCreatePageClick={() => setCreatePageOpen(true)}
+          //  />
+          )}*/}
           {children}
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
-      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3 border-t border-white/5 pt-6 pb-8 text-center text-xs">
-        <div className="flex items-center justify-center gap-1.5">
-          <span>Powered by</span>
-          <Popover>
-            <PopoverTrigger className="cursor-pointer font-bold text-[var(--wikios-text)] underline decoration-dotted transition-colors select-none hover:text-blue-400">
-              WikiOS
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4 text-left">
-              <PopoverTitle className="mb-1 text-sm font-bold text-[var(--wikios-text)]">
-                About WikiOS
-              </PopoverTitle>
-              <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
-                WikiOS is a next-generation wiki platform built for worldbuilding communities. 
-              </PopoverDescription>
-            </PopoverContent>
-          </Popover>
-          <span>v{WIKIOS_VERSION}</span>
-        </div>
-        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-[11px]">
+      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs font-[var(--wikios-font-brand)]">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-95">
+              <WikiOSLogomark className="h-7 w-auto text-zinc-900 transition-transform duration-300 group-hover:scale-105 dark:text-zinc-100" />
+              <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-xs font-[var(--wikios-font-brand)] font-medium tracking-wide">
+                <span className="text-foreground/80 group-hover:text-foreground font-semibold">
+                  Powered by wikiOS
+                </span>
+                <span className="text-muted-foreground/40">•</span>
+                <span className="text-muted-foreground/60 font-medium tabular-nums">
+                  v{WIKIOS_VERSION}
+                </span>
+              </div>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4 text-left font-[var(--wikios-font-ui)]">
+            <PopoverTitle className="mb-1 text-sm font-[var(--wikios-font-brand)] font-bold text-[var(--wikios-text)]">
+              About WikiOS
+            </PopoverTitle>
+            <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+              WikiOS is the next-generation sovereign wiki engine and reading environment for
+              IxStates and worldbuilding communities.
+            </PopoverDescription>
+          </PopoverContent>
+        </Popover>
+
+        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-xs font-[var(--wikios-font-ui)]">
           <Link href="/terms" className="transition-colors hover:text-amber-400">
             Terms of Service
           </Link>

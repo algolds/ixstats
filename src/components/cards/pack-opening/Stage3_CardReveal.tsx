@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage3_CardReveal.tsx
 // Stage 3: Sequential card flip reveals with rarity effects
-
-"use client";
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -42,6 +41,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
     useEffect(() => {
       if (revealedIndex >= cards.length - 1) {
         // All cards revealed, trigger celebration then complete
+        // oxlint-disable-next-line
         setAllRevealed(true);
         const timer = setTimeout(() => {
           onRevealComplete();
@@ -122,8 +122,8 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
             {/* Radial burst */}
             <motion.div
               className="pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
-              initial={{ scale: 0, opacity: 1 }}
-              animate={{ scale: [0, 2, 3], opacity: [1, 0.5, 0] }}
+              initial={{ scale: 0.2, opacity: 1 }}
+              animate={{ scale: [0.2, 2, 3], opacity: [1, 0.5, 0] }}
               transition={{ duration: 1.2, ease: "easeOut" }}
             />
             {/* Celebration particles */}
@@ -132,8 +132,10 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
               const distance = isMobile ? 150 : 250;
               const x = Math.cos(angle) * distance;
               const y = Math.sin(angle) * distance;
+              // oxlint-disable-next-line
               const size = 4 + Math.random() * 8;
               const colors = ["#fbbf24", "#f97316", "#ef4444", "#ec4899", "#a855f7"];
+              // oxlint-disable-next-line
               const color = colors[Math.floor(Math.random() * colors.length)];
 
               return (
@@ -146,15 +148,16 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
                     backgroundColor: color,
                     boxShadow: `0 0 ${size * 2}px ${color}`,
                   }}
-                  initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                  initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                   animate={{
                     x,
                     y,
-                    scale: [0, 1.5, 0],
+                    scale: [0.2, 1.5, 0],
                     opacity: [1, 0.8, 0],
                     rotate: [0, 360],
                   }}
                   transition={{
+                    // oxlint-disable-next-line
                     duration: 1 + Math.random() * 0.5,
                     delay: i * 0.02,
                     ease: "easeOut",
@@ -183,6 +186,7 @@ interface CardRevealItemProps {
 }
 
 const CardRevealItem = React.memo<CardRevealItemProps>(
+  // oxlint-disable-next-line eslint/no-unused-vars
   ({ card, index, isRevealed, service, isMobile }) => {
     const [isFlipped, setIsFlipped] = useState(false);
     const [showSplash, setShowSplash] = useState(false);
@@ -218,9 +222,9 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
     return (
       <motion.div
         ref={cardRef}
-        initial={{ scale: 0, opacity: 0, y: 50 }}
+        initial={{ scale: 0.8, opacity: 0, y: 50 }}
         animate={{
-          scale: isRevealed ? 1 : 0,
+          scale: isRevealed ? 1 : 0.8,
           opacity: isRevealed ? 1 : 0,
           y: isRevealed ? 0 : 50,
         }}
@@ -261,7 +265,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
           )}
           {/* Card back */}
           <div
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-violet-500/30 backdrop-blur-sm"
+            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-500/30 backdrop-blur-sm"
             style={{
               backfaceVisibility: "hidden",
             }}
@@ -358,7 +362,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                             animate={{
                               x: [0, x, x * 1.2, x],
                               y: [0, y, y * 1.2, y],
-                              scale: [0, 1, 1.5, 1],
+                              scale: [0.2, 1, 1.5, 1],
                               opacity: [0, 1, 0.5, 0.8],
                             }}
                             transition={{

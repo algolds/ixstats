@@ -2,7 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { BookOpen, Image as ImageIcon, ExternalLink } from "lucide-react";
+import {
+  OpenBook as BookOpen,
+  MediaImage as ImageIcon,
+  OpenNewWindow as ExternalLink,
+} from "iconoir-react";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -42,7 +46,7 @@ export function CountryInfoTab({
           {wikiRichIntro.paragraphs.length > 2 && (
             <button
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+              className="text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
             >
               {introExpanded ? "Show less" : "Read more..."}
             </button>
@@ -58,7 +62,7 @@ export function CountryInfoTab({
           const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/wiki/");
           return (
             <div>
-              <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                 <BookOpen className="h-3 w-3" />
                 Table of Contents ({wikiSections.filter((s) => s.level === 2).length})
               </div>
@@ -91,7 +95,7 @@ export function CountryInfoTab({
                             </a>
                           )}
                           {"preview" in section && section.preview && (
-                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10px] leading-snug">
+                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-snug">
                               {section.preview as string}
                             </p>
                           )}
@@ -102,7 +106,7 @@ export function CountryInfoTab({
                       <Link
                         key={`${section.anchor}-${i}`}
                         href={sectionUrl}
-                        className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
+                        className="text-foreground/50 block truncate pl-3 text-xs transition-colors hover:text-blue-600"
                       >
                         {section.line}
                       </Link>
@@ -112,7 +116,7 @@ export function CountryInfoTab({
                         href={sectionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-foreground/50 block truncate pl-3 text-[10px] transition-colors hover:text-blue-600"
+                        className="text-foreground/50 block truncate pl-3 text-xs transition-colors hover:text-blue-600"
                       >
                         {section.line}
                       </a>
@@ -126,7 +130,7 @@ export function CountryInfoTab({
       {/* Media Gallery */}
       {wikiImages && wikiImages.length > 0 && (
         <div>
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <ImageIcon className="h-3 w-3" />
             Media ({wikiImages.length})
           </div>

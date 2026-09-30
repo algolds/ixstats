@@ -1,10 +1,9 @@
+"use client";
 /**
  * CardDisplay Component - PREMIUM EDITION
  * Yu-Gi-Oh style digital trading card with holographic effects
  * Phase 1.5: Premium UI/UX Refactor with Glass Physics
  */
-
-"use client";
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -42,13 +41,13 @@ import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 const FONT_SIZES = {
   small: {
     title: "text-xs",
-    type: "text-[10px]",
-    stats: "text-[10px]",
+    type: "text-xs",
+    stats: "text-xs",
   },
   sm: {
     title: "text-xs",
-    type: "text-[10px]",
-    stats: "text-[10px]",
+    type: "text-xs",
+    stats: "text-xs",
   },
   medium: {
     title: "text-sm",
@@ -244,7 +243,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           widthClass,
           heightClass,
           onClick && "cursor-pointer",
-          "transition-all duration-300",
+          "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           className
         )}
         rotateDepth={enable3D && !performanceMode ? 12 : 0}
@@ -459,17 +458,40 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 {card.title}
               </motion.h3>
 
-              {/* Subtitle line */}
-              <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/80 uppercase">
-                <span>
-                  {card.subcategory ||
-                    (effectiveCategory ? getCategoryLabel(effectiveCategory) : "Chronicles")}
-                </span>
-                <span className="text-white/40">•</span>
-                <span className="font-semibold tracking-wide text-amber-400">
-                  {designMeta.customSubtitle || card.rarity}
-                </span>
-              </p>
+              {/* Subtitle line — NS cards use NationStates badge, so suppress "NS Import" text label */}
+              {(() => {
+                const isNsImportLabel = cardTypeStr === "NS_IMPORT" || Boolean(card.nsCardId);
+                const categoryLabel =
+                  card.subcategory ||
+                  (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
+                  (isLoreCard && card.cardType !== "NS_IMPORT"
+                    ? getCardTypeLabel(card.cardType)
+                    : null);
+                // For NS imports with badge, never show "NS Import" text — badge already signals it
+                const showLabel =
+                  categoryLabel && !(isNsImportLabel && categoryLabel === "NS Import");
+                const hideLabel = isNsImportLabel && !categoryLabel;
+                if (hideLabel) {
+                  return (
+                    <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-400 uppercase">
+                      <span>{designMeta.customSubtitle || card.rarity}</span>
+                    </p>
+                  );
+                }
+                return (
+                  <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-white/80 uppercase">
+                    {showLabel ? (
+                      <>
+                        <span>{categoryLabel}</span>
+                        <span className="text-white/40">•</span>
+                      </>
+                    ) : null}
+                    <span className="font-semibold tracking-wide text-amber-400">
+                      {designMeta.customSubtitle || card.rarity}
+                    </span>
+                  </p>
+                );
+              })()}
 
               {/* Country name (if available) */}
               {card.country && (
@@ -491,7 +513,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                       <div key={key} className="flex-1 space-y-0.5">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                           <div
-                            className="h-full rounded-full transition-all duration-500"
+                            className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
                             style={{
                               width: `${stat.value}%`,
                               backgroundColor: stat.def.color,
@@ -509,11 +531,11 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
               {/* Bottom Lore Excerpt Box */}
               {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
-                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-all duration-300">
-                  <div className="line-clamp-2 text-[10px] leading-snug text-white/90">
+                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+                  <div className="line-clamp-2 text-xs leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-[8px] text-white/50">
+                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-xs text-white/50">
                     <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>
@@ -575,9 +597,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               style={{
                 textShadow: "0 1px 2px rgba(0,0,0,0.3)",
               }}
-              initial={{ scale: 0, rotate: -180 }}
+              initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
               animate={{
                 scale: 1,
+                opacity: 1,
                 rotate: 0,
               }}
               transition={{ duration: 0.5, type: "spring" }}

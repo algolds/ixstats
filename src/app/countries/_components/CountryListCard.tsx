@@ -1,25 +1,24 @@
-// src/app/countries/_components/CountryListCard.tsx
 "use client";
+// src/app/countries/_components/CountryListCard.tsx
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Users,
-  TrendingUp,
+  Group as Users,
+  StatUp as TrendingUp,
   Globe as GlobeIcon,
   ArrowRight,
-  Scaling,
-  LocateFixed,
-  Flag as FlagIcon,
-  ExternalLink,
-  BookOpen,
-} from "lucide-react";
+  Expand as Scaling,
+  Pin as LocateFixed,
+  WhiteFlag as FlagIcon,
+  OpenNewWindow as ExternalLink,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { CardFooter } from "~/components/ui/card";
+import { Card, CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { GlassCard } from "~/components/ui/enhanced-card";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
@@ -101,11 +100,9 @@ export function CountryListCard({
   };
 
   return (
-    <GlassCard
-      variant="diplomatic"
-      hover="none"
+    <Card
       className={cn(
-        "group glass-floating glass-refraction glass-interactive flex h-full cursor-pointer flex-col overflow-hidden transition-all duration-200",
+        "group facet-card relative flex h-full cursor-pointer flex-col overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg active:scale-[0.98]",
         dominantColor && "border-l-2"
       )}
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
@@ -162,7 +159,7 @@ export function CountryListCard({
                 {country.name}
               </h3>
               {(country.continent || country.region) && (
-                <div className="text-muted-foreground mt-0.5 flex items-center truncate text-[10px]">
+                <div className="text-muted-foreground mt-0.5 flex items-center truncate text-xs">
                   <LocateFixed className="text-primary/70 mr-1 h-3 w-3" />
                   <span className="truncate">
                     {country.continent || "—"}
@@ -186,7 +183,7 @@ export function CountryListCard({
             >
               <BookOpen className="text-muted-foreground h-3.5 w-3.5" />
             </Button>
-            <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-all group-hover:translate-x-0.5" />
+            <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:translate-x-0.5" />
           </div>
         </div>
 
@@ -220,8 +217,8 @@ export function CountryListCard({
       </div>
 
       <CardFooter className="country-card-content relative z-20 flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
-        <Badge className="px-2 py-0.5 text-[10px]">{country.economicTier ?? "—"}</Badge>
-        <Badge variant="outline" className="px-2 py-0.5 text-[10px]">
+        <Badge className="px-2 py-0.5 text-xs">{country.economicTier ?? "—"}</Badge>
+        <Badge variant="outline" className="px-2 py-0.5 text-xs">
           {country.populationTier ?? "—"}
         </Badge>
       </CardFooter>
@@ -235,13 +232,13 @@ export function CountryListCard({
         }
 
         /* Hover enhancements for flag and color overlays */
-        .glass-interactive:hover .flag-background-accent {
+        .facet-interactive:hover .flag-background-accent {
           opacity: 0.5;
         }
-        .glass-interactive:hover .color-accent-overlay {
+        .facet-interactive:hover .color-accent-overlay {
           opacity: 0.7;
         }
       `}</style>
-    </GlassCard>
+    </Card>
   );
 }

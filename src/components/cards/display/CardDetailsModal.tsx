@@ -1,21 +1,20 @@
+"use client";
 /**
  * CardDetailsModal Component
  * Enhanced expanded card view with 3D viewer, tabs, market history, and social features
  */
 
-"use client";
-
 import React, { useMemo, useState } from "react";
 import {
-  X,
-  TrendingUp,
-  BarChart3,
-  Info,
-  BookOpen,
-  ArrowRightLeft,
-  Share2,
+  Xmark as X,
+  StatUp as TrendingUp,
+  StatsReport as BarChart3,
+  InfoCircle as Info,
+  OpenBook as BookOpen,
+  ArrowSeparate as ArrowRightLeft,
+  ShareAndroid as Share2,
   Download,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
@@ -152,13 +151,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
         <DialogContent
           showCloseButton={false}
           className={cn(
-            "border-border/40 bg-card/85 border-border/50 flex h-auto max-h-[95vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur-2xl transition-all duration-300",
+            "border-border/40 bg-card/85 border-border/50 flex h-auto max-h-[95vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
             isTakedownModalOpen && "pointer-events-none scale-[0.98] blur-sm brightness-75"
           )}
         >
           <DialogTitle className="sr-only">{card.title} Details</DialogTitle>
 
-          <DialogClose className="hover:bg-accent/80 text-muted-foreground focus:ring-ring absolute top-4 right-4 z-50 rounded-full p-2 transition-all hover:scale-110 focus:ring-2 focus:outline-none">
+          <DialogClose className="hover:bg-accent/80 text-muted-foreground focus:ring-ring absolute top-4 right-4 z-50 rounded-full p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 focus:ring-2 focus:outline-none">
             <X className="h-5 w-5" />
             <span className="sr-only">Close</span>
           </DialogClose>

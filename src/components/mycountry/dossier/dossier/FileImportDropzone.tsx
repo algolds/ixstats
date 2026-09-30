@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { Upload, FileText, Check, AlertCircle, Sparkles, X } from "lucide-react";
+import {
+  Upload,
+  Page as FileText,
+  Check,
+  WarningCircle as AlertCircle,
+  Xmark as X,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
@@ -135,7 +141,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all",
+            "mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             isDragging
               ? "scale-[0.99] border-blue-500 bg-blue-500/10"
               : "border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]"
@@ -186,7 +192,7 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                 setParsedSections([]);
                 setFileName(null);
               }}
-              className="h-6 text-[10px]"
+              className="h-6 text-xs"
             >
               Choose different file
             </Button>
@@ -208,14 +214,14 @@ export function FileImportDropzone({ onImportSections, onCancel }: FileImportDro
                         prev.map((s, i) => (i === idx ? { ...s, classification: val } : s))
                       );
                     }}
-                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-[10px]"
+                    className="text-muted-foreground rounded border border-white/10 bg-black/40 px-2 py-0.5 text-xs"
                   >
                     <option value="PUBLIC">PUBLIC</option>
                     <option value="ALLIANCE">ALLIANCE</option>
                     <option value="PRIVATE">PRIVATE</option>
                   </select>
                 </div>
-                <p className="text-muted-foreground line-clamp-2 font-mono text-[11px]">
+                <p className="text-muted-foreground line-clamp-2 font-mono text-xs">
                   {sec.content}
                 </p>
               </div>

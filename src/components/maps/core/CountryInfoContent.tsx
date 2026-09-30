@@ -11,6 +11,7 @@ import type { useCountryInfoPanelState } from "./hooks/useCountryInfoPanelState"
 import { CountryOverviewTab } from "./components/CountryOverviewTab";
 import { CountryInfoTab } from "./components/CountryInfoTab";
 import { UnclaimedTerritoryView } from "./components/UnclaimedTerritoryView";
+import { formatCompactCurrency, formatCompactNumber } from "~/lib/utils/format-utils";
 
 const GeoProfileContent = dynamic(
   () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
@@ -156,20 +157,11 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
         <h3 className="text-foreground truncate text-sm font-semibold">{state.displayName}</h3>
         {state.summary && (
           <div className="text-muted-foreground flex gap-3 text-xs">
-            <span>GDP: {formatCompact(state.summary.totalGdp ?? (state.summary as any).gdp)}</span>
-            <span>Pop: {formatCompact(state.summary.population)}</span>
+            <span>GDP: {formatCompactCurrency(state.summary.totalGdp ?? (state.summary as any).gdp, "—")}</span>
+            <span>Pop: {formatCompactNumber(state.summary.population, "—")}</span>
           </div>
         )}
       </div>
     </div>
   );
-}
-
-function formatCompact(n: number | null | undefined): string {
-  if (n == null) return "—";
-  if (n >= 1_000_000_000_000) return `$${(n / 1_000_000_000_000).toFixed(1)}T`;
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(1)}B`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString();
 }

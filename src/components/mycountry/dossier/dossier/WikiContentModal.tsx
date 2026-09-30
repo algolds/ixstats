@@ -6,7 +6,7 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
-import { BookOpen, ExternalLink, X } from "lucide-react";
+import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { parseWikiContent } from "~/lib/builder";
 
 interface WikiContentModalProps {
@@ -15,15 +15,14 @@ interface WikiContentModalProps {
   section: {
     title: string;
     content: string;
-    id: string;
+    id?: string;
   } | null;
   handleWikiLinkClick: (page: string) => void;
-  flagColors: {
+  flagColors?: {
     primary: string;
     secondary: string;
     accent: string;
   };
-  enableIxWiki: boolean;
 }
 
 const WikiContentModal: React.FC<WikiContentModalProps> = ({
@@ -31,8 +30,6 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
   onClose,
   section,
   handleWikiLinkClick,
-  flagColors,
-  enableIxWiki,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -47,7 +44,7 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
                 {section?.title}
               </DialogTitle>
               <p className="text-muted-foreground text-xs">
-                Full section content from {enableIxWiki ? "IxWiki" : "MediaWiki"} database
+                Full section content from WikiOS knowledge base
               </p>
             </div>
           </div>

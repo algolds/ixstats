@@ -14,7 +14,7 @@
  * accidental point selection when clicking a region.
  */
 
-import type { Map as MapLibreMap, PointLike } from "maplibre-gl";
+import type { Map as MapLibreMap, PointLike, MapGeoJSONFeature } from "maplibre-gl";
 
 export type HitLayerKind = "point" | "label" | "polygon" | "gap";
 
@@ -24,7 +24,7 @@ export interface HitResult {
   kind: HitLayerKind;
   /** Pixel distance from the cursor to the feature's anchor (points/labels), or 0 for containment. */
   distance: number;
-  feature: any;
+  feature: MapGeoJSONFeature;
 }
 
 export interface HitTestOptions {
@@ -81,7 +81,7 @@ function layerKind(layerId: string): HitLayerKind {
   return "point";
 }
 
-function getAnchorCoords(feature: any): [number, number] | null {
+function getAnchorCoords(feature: MapGeoJSONFeature): [number, number] | null {
   const geom = feature?.geometry;
   if (!geom) return null;
   if (geom.type === "Point" && Array.isArray(geom.coordinates)) {
@@ -93,7 +93,11 @@ function getAnchorCoords(feature: any): [number, number] | null {
   return null;
 }
 
-function pixelDistance(map: MapLibreMap, point: { x: number; y: number }, feature: any): number {
+function pixelDistance(
+  map: MapLibreMap,
+  point: { x: number; y: number },
+  feature: MapGeoJSONFeature
+): number {
   const coords = getAnchorCoords(feature);
   if (!coords) return Number.POSITIVE_INFINITY;
   try {

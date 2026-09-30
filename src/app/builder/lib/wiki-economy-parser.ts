@@ -185,7 +185,7 @@ export function parseEconomyAttributes(
   }
 
   // Major exports
-  const exportsPattern = /(?:major|primary|main) exports (?:include|are) ([^\.]+)\./gi;
+  const exportsPattern = /(?:major|primary|main) exports (?:include|are) ([^.]+)\./gi;
   result.majorExports = collectAllMatches(
     combinedContent,
     exportsPattern,
@@ -193,7 +193,7 @@ export function parseEconomyAttributes(
   );
 
   // Major imports
-  const importsPattern = /(?:major|primary|main) imports (?:include|are) ([^\.]+)\./gi;
+  const importsPattern = /(?:major|primary|main) imports (?:include|are) ([^.]+)\./gi;
   result.majorImports = collectAllMatches(
     combinedContent,
     importsPattern,
@@ -201,7 +201,7 @@ export function parseEconomyAttributes(
   );
 
   // Trade partners
-  const tradePattern = /(?:largest|main|primary) trading partners (?:include|are) ([^\.]+)\./gi;
+  const tradePattern = /(?:largest|main|primary) trading partners (?:include|are) ([^.]+)\./gi;
   result.tradePartners = collectAllMatches(
     combinedContent,
     tradePattern,

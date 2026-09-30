@@ -562,6 +562,7 @@ export class NPCCulturalParticipation {
   private static generateAlternativeProposal(
     context: NPCParticipationContext,
     personality: NPCPersonality,
+    // oxlint-disable-next-line typescript/no-unused-vars
     reasoning: string[]
   ): NPCParticipationDecision["alternativeProposal"] {
     // NPC suggests alternative that better fits their personality
@@ -673,6 +674,7 @@ export class NPCCulturalParticipation {
     targetCountry: string,
     proposalType: string,
     personality: NPCPersonality,
+    // oxlint-disable-next-line typescript/no-unused-vars
     relationshipStrength: number
   ): string {
     const tone =
@@ -702,6 +704,7 @@ export class NPCCulturalParticipation {
   private static calculateExpectedBenefits(
     personality: NPCPersonality,
     proposalType: string,
+    // oxlint-disable-next-line typescript/no-unused-vars
     relationshipStrength: number
   ): NPCInitiatedProposal["expectedBenefits"] {
     const baseBenefits: Record<string, { cultural: number; diplomatic: number; economic: number }> =
@@ -791,6 +794,7 @@ export class NPCCulturalParticipation {
 
   private static generateSpecialRequests(
     personality: NPCPersonality,
+    // oxlint-disable-next-line typescript/no-unused-vars
     proposalType: string
   ): string[] {
     const requests: string[] = [];

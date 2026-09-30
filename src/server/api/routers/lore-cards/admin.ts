@@ -17,7 +17,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
 import type { WikiSource } from "~/lib/wiki-os/config";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
@@ -400,58 +399,4 @@ export const loreCardsAdminRouter = createTRPCRouter({
       });
     }
   }),
-
-  /**
-   * Suggest category, rarity, and artwork source for a wiki article (admin preview)
-   */
-  suggestWikiSignals: adminProcedure
-    .input(
-      z.object({
-        articleTitle: z.string().min(1),
-        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-      })
-    )
-    .query(async ({ input }) => {
-      try {
-        const metadata = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-          [input.articleTitle],
-          input.wikiSource as any
-        );
-
-        const first = metadata[0];
-        if (!first) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Article "${input.articleTitle}" not found on ${input.wikiSource}`,
-          });
-        }
-
-        const signals = {
-          wordCount: Math.round(first.length / 5),
-          inboundLinks: 10,
-          outboundLinks: 10,
-          editCount: 5,
-          categoryNames: [],
-          hasImages: first.hasImage,
-        };
-
-        const analysis = analyzeWikiSignals(input.articleTitle, signals);
-
-        return {
-          articleTitle: input.articleTitle,
-          wikiSource: input.wikiSource,
-          hasImage: first.hasImage,
-          imageUrl: first.imageUrl,
-          excerpt: first.extract,
-          analysis,
-        };
-      } catch (error) {
-        console.error("[Lore Cards] Error in suggestWikiSignals:", error);
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to analyze wiki article signals",
-        });
-      }
-    }),
 });

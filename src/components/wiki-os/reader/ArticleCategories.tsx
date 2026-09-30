@@ -21,7 +21,7 @@ export function CategoriesBar({ categories }: { categories: string[] }) {
         {visible.map((cat) => (
           <li key={cat}>
             <Link
-              href={withBasePath(`/wiki/Category:${encodeURIComponent(cat.replace(/ /g, "_"))}`)}
+              href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.replace(/ /g, "_"))}`)}
               className="wikios-category-link"
             >
               {cat.replace(/_/g, " ")}

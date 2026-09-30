@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Plus, Users, Trash2, Pencil } from "lucide-react";
+import { Plus, Group as Users, Trash as Trash2, EditPencil as Pencil } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { ColorPickerInput } from "~/components/ui/color-picker";
@@ -143,7 +143,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     IDEOLOGY_OPTIONS.find((o) => o.value === ideology)?.label ?? ideology;
 
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
@@ -291,7 +291,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                       )}
                     </div>
                     <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {ideologyLabel(party.ideology)}
                       </Badge>
                       {party.leaderName && <span>Led by {party.leaderName}</span>}
@@ -301,7 +301,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <div className="text-sm font-semibold">{party.currentSupport.toFixed(1)}%</div>
-                    <div className="text-muted-foreground text-[10px]">support</div>
+                    <div className="text-muted-foreground text-xs">support</div>
                   </div>
                   <Button
                     variant="ghost"

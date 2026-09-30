@@ -3,6 +3,7 @@
 
 export const DEFAULT_USER_AGENT = "IxStats-Builder";
 export const DEFAULT_MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
+export const MEDIAWIKI_TARGET_VERSION = "1.45.1";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 
@@ -94,6 +95,29 @@ export function getWikiUserAgent(_source: WikiSource = "ixwiki"): string {
   return DEFAULT_USER_AGENT;
 }
 
+function isWikiSource(value: string): value is WikiSource {
+  return Object.hasOwn(WIKI_SOURCES, value);
+}
+
+/** A `?source=` value as a wiki source; anything else reads as ixwiki. */
+export function parseWikiSource(value: string | null | undefined): WikiSource {
+  return value && isWikiSource(value) ? value : "ixwiki";
+}
+
+/** `wikios.getArticleHtml` input: an IxWiki page by title alone, so the reader and hover prefetch share one cache key. */
+export function articleHtmlInput(
+  title: string,
+  source: WikiSource
+): { title: string; wikiSource?: WikiSource } {
+  return source === "ixwiki" ? { title } : { title, wikiSource: source };
+}
+
+/** The WikiOS reader path for a page; a page of another wiki carries `?source=`. */
+export function wikiReaderPath(title: string, source: WikiSource = "ixwiki"): string {
+  const path = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  return source === "ixwiki" ? path : `${path}?source=${source}`;
+}
+
 /**
  * Get the appropriate MediaWiki API URL based on context and wiki source
  */
@@ -116,8 +140,13 @@ export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
 /**
  * Builds a full MediaWiki API URL with query parameters.
  */
-export function buildApiUrl(baseUrl: string, params: Record<string, string | number | boolean>): string {
-  const cleanBase = baseUrl.endsWith("/api.php") ? baseUrl : `${baseUrl.replace(/\/+$/, "")}/api.php`;
+export function buildApiUrl(
+  baseUrl: string,
+  params: Record<string, string | number | boolean>
+): string {
+  const cleanBase = baseUrl.endsWith("/api.php")
+    ? baseUrl
+    : `${baseUrl.replace(/\/+$/, "")}/api.php`;
   const url = new URL(cleanBase);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {

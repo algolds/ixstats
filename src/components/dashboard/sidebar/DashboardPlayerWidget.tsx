@@ -3,25 +3,24 @@
 import Link from "next/link";
 import {
   Mail,
-  AlertTriangle,
-  ChevronUp,
-  ClipboardList,
+  WarningTriangle as AlertTriangle,
+  NavArrowUp as ChevronUp,
+  TaskList as ClipboardList,
   CalendarCheck,
-  Users,
-  DollarSign,
+  Group as Users,
+  Dollar as DollarSign,
   Map as MapIcon,
-} from "lucide-react";
+} from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as LucideIcons from "lucide-react";
-import { motion } from "motion/react";
+import * as IconoirIcons from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import {
   CutoutCard,
@@ -41,7 +40,7 @@ interface DashboardPlayerWidgetProps {
 export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: DashboardPlayerWidgetProps) {
   const { user, isSignedIn } = useUser();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -121,7 +120,9 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   const issueCount = pendingIssues?.total ?? 0;
   const urgentCount = pendingIssues?.urgent ?? 0;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const totalPolicies = policies?.length ?? 0;
   const pendingActions =
     meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
@@ -130,7 +131,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     <CutoutCard
       className={cn(
         cutoutCardSurfaceClassName,
-        "group relative w-48 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-all duration-200 dark:border-white/10 dark:bg-white/[0.02] dark:shadow-black/40"
+        "group relative w-48 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.02] dark:shadow-black/40"
       )}
       trackPointerHover={false}
       texture="dots"
@@ -197,7 +198,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <span
                 key={ach.key}
                 title={ach.description}
-                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
+                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-xs font-medium tracking-wide text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>
@@ -217,7 +218,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {heroCollapsed && (
           <>
             <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                   <Users className="h-3 w-3 text-blue-600 dark:text-blue-400" /> Pop
                 </span>
@@ -225,7 +226,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                   <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> GDP
                 </span>
@@ -234,7 +235,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 </span>
               </div>
               {(country as any)?.newStats?.landArea && (
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
                     <MapIcon className="h-3 w-3 text-amber-600 dark:text-amber-400" /> Area
                   </span>
@@ -246,7 +247,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             </div>
             <button
               onClick={onHeroExpand}
-              className="dark:text-muted-foreground flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 py-1 text-[9px] font-medium tracking-normal text-slate-700 backdrop-blur-md transition-all hover:bg-slate-200 active:scale-[0.97] dark:border-white/5 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
+              className="dark:text-muted-foreground flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 py-1 text-xs font-medium tracking-normal text-slate-700 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-slate-200 active:scale-[0.97] dark:border-white/5 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
             >
               <ChevronUp className="h-3 w-3 rotate-180" />
               Expand
@@ -260,7 +261,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {/* Messages */}
           <Link
             href="/messages"
-            className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-1.5 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] hover:bg-indigo-500/25 active:scale-[0.94] dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
+            className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-1.5 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-indigo-500/25 active:scale-[0.94] dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
@@ -269,11 +270,11 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           >
             <Mail className="h-4 w-4 text-indigo-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-indigo-400" />
             {totalUnreadMessages > 0 && (
-              <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[8px] font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
+              <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-xs font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
                 {totalUnreadMessages}
               </span>
             )}
-            <span className="mt-1.5 text-[9px] font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
+            <span className="mt-1.5 text-xs font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
               Mail
             </span>
           </Link>
@@ -281,29 +282,30 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {/* Directives */}
           {hasCountry ? (
             <Link
-              href={createUrl("/mycountry/executive")}
-              className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              href={createUrl("/mycountry/executive?focus=directives")}
+              data-cuelume-press="soft"
+              className="group/icon relative flex flex-col items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/15 px-1 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
               <ClipboardList className="h-4 w-4 text-amber-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-amber-400" />
               {(issueCount > 0 || urgentCount > 0) && (
                 <span
                   className={cn(
-                    "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-semibold text-white tabular-nums shadow-md",
-                    urgentCount > 0 ? "animate-pulse bg-red-600" : "bg-amber-600 dark:bg-amber-500"
+                    "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold text-white tabular-nums shadow-md",
+                    urgentCount > 0 ? "bg-red-600" : "bg-amber-600 dark:bg-amber-500"
                   )}
                 >
                   {urgentCount > 0 ? urgentCount : issueCount}
                 </span>
               )}
-              <span className="mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal text-amber-800 dark:text-amber-300">
+              <span className="mt-1.5 max-w-full truncate text-xs font-medium tracking-normal text-amber-800 dark:text-amber-300">
                 Directives
               </span>
             </Link>
           ) : (
             <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
               <ClipboardList className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal">
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
                 Directives
               </span>
             </div>
@@ -312,9 +314,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {/* Agenda */}
           {hasCountry ? (
             <Link
-              href={createUrl("/mycountry/executive")}
+              href={createUrl("/mycountry/executive?focus=agenda")}
+              data-cuelume-press="soft"
               className={cn(
-                "group/icon relative flex flex-col items-center justify-center rounded-xl px-1 py-2.5 backdrop-blur-md transition-all duration-150 hover:scale-[1.03] active:scale-[0.94]",
+                "group/icon relative flex flex-col items-center justify-center rounded-xl px-1 py-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] active:scale-[0.94]",
                 pendingActions > 0
                   ? "border border-orange-500/35 bg-orange-500/15 hover:bg-orange-500/25 dark:border-orange-500/25 dark:bg-orange-500/10 dark:hover:bg-orange-500/20"
                   : "border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
@@ -341,7 +344,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               />
               <span
                 className={cn(
-                  "mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal",
+                  "mt-1.5 max-w-full truncate text-xs font-medium tracking-normal",
                   pendingActions > 0
                     ? "text-orange-900 dark:text-orange-400"
                     : "text-emerald-900 dark:text-emerald-400"
@@ -353,7 +356,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           ) : (
             <div className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 px-1 py-2.5 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
               <CalendarCheck className="text-muted-foreground h-4 w-4" />
-              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-[9px] font-medium tracking-normal">
+              <span className="text-muted-foreground mt-1.5 max-w-full truncate text-xs font-medium tracking-normal">
                 Agenda
               </span>
             </div>
@@ -365,10 +368,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <div className="mt-1 border-t border-red-500/20 pt-2">
             <Link
               href={createUrl("/mycountry/executive")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-[9px] font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-all duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-xs font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
               title={`${crisesCount} active crises! Click to view.`}
             >
-              <AlertTriangle className="h-3.5 w-3.5 animate-pulse text-red-600 dark:text-red-400" />
+              <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
               <span>{crisesCount} Crises Active</span>
             </Link>
           </div>

@@ -1,12 +1,10 @@
+"use client";
 // src/hooks/marketplace/useAuctionWebSocket.ts
 // React hook for real-time auction updates via WebSocket
-
-"use client";
 
 import { useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
 import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-client";
-import type { MarketWebSocketMessage } from "~/types/marketplace";
 
 /**
  * React hook that subscribes to real-time marketplace WebSocket events

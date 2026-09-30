@@ -1,45 +1,42 @@
 "use client";
 
 import { useState, useMemo, memo } from "react";
-import Link from "next/link";
 import {
-  AlertTriangle,
-  Clock,
-  ExternalLink,
+  WarningTriangle as AlertTriangle,
+  OpenNewWindow as ExternalLink,
   Globe,
-  Landmark,
+  Bank as Landmark,
   Map as MapIcon,
-  Rss,
+  RssFeed as Rss,
   Shield,
-  TrendingUp,
+  StatUp as TrendingUp,
   Trophy,
-  Users,
-  BookOpen,
-  MessageCircle,
-  ChevronDown,
-} from "lucide-react";
-import { api } from "~/trpc/react";
+  Group as Users,
+  OpenBook as BookOpen,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { Badge } from "~/components/ui/badge";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import {
   WikiLinkPreview,
   ForumLinkPreview,
   WikiHtmlContent,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { resolveImageUrl, getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
-import { formatTimeAgo } from "~/lib/utils";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { cn } from "~/lib/utils";
 import { WikiAuthorPopover } from "./WikiAuthorPopover";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
 import { InlineWikiArticlePreview, parseWikitextToHtml } from "./feed/InlineWikiArticlePreview";
+import { WikiFeedCard } from "./feed/WikiFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 
-export { parseWikitextToHtml, InlineWikiArticlePreview };
+export { parseWikitextToHtml, InlineWikiArticlePreview, WikiFeedCard };
 
 export const SOURCE_CONFIG: Record<
   string,
@@ -48,12 +45,12 @@ export const SOURCE_CONFIG: Record<
   activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "Activity" },
   thinkpages: {
     icon: Users,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
     label: "Social",
   },
-  wiki: { icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/10", label: "Wiki" },
-  forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
+  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
+  forum: { icon: MessageCircle, color: "text-orange-400", bg: "bg-orange-500/10", label: "Forum" },
 };
 
 export function getActivityLabel(activity: any): {
@@ -115,7 +112,7 @@ export function getActivityLabel(activity: any): {
     title.includes("politic") ||
     title.includes("election")
   )
-    return { label: "Politics", icon: Landmark, color: "text-purple-400", bg: "bg-purple-500/10" };
+    return { label: "Politics", icon: Landmark, color: "text-indigo-400", bg: "bg-indigo-500/10" };
   if (cat === "crisis" || title.includes("crisis"))
     return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
   if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
@@ -131,6 +128,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   const source = activity.source ?? "activity";
   const isWiki = source === "wiki";
   const isGrouped = !!activity._grouped;
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [expanded, setExpanded] = useState(false);
 
   // Dynamic badge for IxStats activities
@@ -175,22 +173,23 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
 
   const sportsBulletin = useMemo(() => parseSportsBulletin(rawContentText), [rawContentText]);
 
+  // For wiki activities, render the dedicated cohesive WikiFeedCard
+  if (isWiki) {
+    return <WikiFeedCard activity={activity} />;
+  }
+
   return (
-    <div className="group relative rounded-2xl border border-border/40 bg-card/60 p-3.5 shadow-xs transition-all duration-200 hover:border-border hover:bg-card/90 backdrop-blur-xl">
+    <div className="group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md">
       <div className="flex items-start gap-3">
         {/* Source icon — wiki uses the W logo */}
         <div
           className={cn(
             "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105",
-            isWiki ? "border-teal-500/20 bg-teal-500/10" : cn(resolvedConfig.bg, "border-border/30")
+            isWiki ? "border-wiki/30 bg-wiki/10" : cn(resolvedConfig.bg, "border-border/30")
           )}
         >
           {isWiki ? (
-            <img
-              src="https://cdn.simpleicons.org/wikipedia/teal"
-              alt="Wiki"
-              className="h-4.5 w-4.5"
-            />
+            <WikiOSLogomark className="h-4.5 w-4.5 text-wiki" />
           ) : (
             <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
           )}
@@ -286,7 +285,7 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>

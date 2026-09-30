@@ -8,7 +8,7 @@
  */
 
 import React, { useMemo } from "react";
-import { Crown } from "lucide-react";
+import { Crown } from "iconoir-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { PreText } from "~/components/ui/pretext";
 import { MyCountryActionsView, MyCountryView } from "./views";

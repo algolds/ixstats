@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Badge } from "~/components/ui/badge";
@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { IxCreditsSymbol } from "../../../IxCreditsSymbol";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { getRarityTheme } from "~/components/vault/vault-theme";
+import { getRarityTheme } from "~/lib/cards/display-utils";
 import type { MarketAuctionItem } from "./types";
 
 export function AuctionCardItem({
@@ -34,6 +34,7 @@ export function AuctionCardItem({
   const currentBid = auction.currentBid ?? auction.startingPrice;
   const bidCount = auction.bidCount ?? auction.AuctionBid?.length ?? 0;
   const endTime = new Date(auction.endTime);
+  // oxlint-disable-next-line
   const msLeft = endTime.getTime() - Date.now();
   const minsLeft = Math.max(0, Math.floor(msLeft / 60000));
   const isUrgent = minsLeft < 10;
@@ -43,7 +44,7 @@ export function AuctionCardItem({
   const theme = getRarityTheme(rarity);
 
   return (
-    <div className="glass-surface border-border/50 bg-muted/30 relative flex gap-3 overflow-hidden rounded-xl border p-3 backdrop-blur-md dark:bg-black/20">
+    <div className="facet-surface border-border/50 bg-muted/30 relative flex gap-3 overflow-hidden rounded-xl border p-3 backdrop-blur-md dark:bg-black/20">
       <TextureOverlay texture="dots" opacity={0.015} />
 
       {/* Artwork thumbnail — click to view details */}
@@ -73,19 +74,19 @@ export function AuctionCardItem({
           <span className="text-foreground truncate text-xs font-bold">{title}</span>
           <Badge
             variant="outline"
-            className={cn("shrink-0 px-1 py-0 text-[8px] font-bold uppercase", theme.badgeStyle)}
+            className={cn("shrink-0 px-1 py-0 text-xs font-bold uppercase", theme.badgeStyle)}
           >
             {rarity}
           </Badge>
         </div>
-        <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
+        <div className="text-muted-foreground flex items-center gap-3 text-xs">
           <span>
             {bidCount} bid{bidCount !== 1 ? "s" : ""}
           </span>
           <span
             className={cn(
               "flex items-center gap-0.5 font-medium",
-              isUrgent ? "text-rose-600 dark:text-rose-400" : "text-muted-foreground"
+              isUrgent ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
             )}
           >
             <Clock className="h-3 w-3" />
@@ -97,7 +98,7 @@ export function AuctionCardItem({
       {/* Bidding Actions */}
       <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
         <div className="text-right">
-          <span className="text-muted-foreground block text-[9px] leading-none font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground block text-xs leading-none font-medium tracking-wider uppercase">
             Current Bid
           </span>
           <span className="mt-0.5 flex items-center justify-end gap-0.5 text-sm leading-none font-bold text-amber-600 tabular-nums dark:text-amber-400">
@@ -114,13 +115,13 @@ export function AuctionCardItem({
               min={minNextBid}
               value={customAmount}
               onChange={(e) => setCustomAmount(parseInt(e.target.value) || minNextBid)}
-              className="border-border/60 bg-background text-foreground h-6 w-16 border px-1 font-mono text-[10px]"
+              className="border-border/60 bg-background text-foreground h-6 w-16 border px-1 font-mono text-xs"
             />
             <Button
               size="sm"
               onClick={() => onBid(auction.id, customAmount)}
               disabled={isBidding || customAmount < minNextBid}
-              className="border-border/60 bg-muted/60 text-foreground hover:bg-muted h-6 border px-2 text-[10px] font-semibold"
+              className="border-border/60 bg-muted/60 text-foreground hover:bg-muted h-6 border px-2 text-xs font-semibold"
             >
               {isBidding ? "..." : "Bid"}
             </Button>
@@ -130,7 +131,7 @@ export function AuctionCardItem({
               size="sm"
               onClick={() => onBuyout(auction.id)}
               disabled={isBuyingOut}
-              className="h-6 border-none bg-gradient-to-r from-amber-600 to-yellow-600 px-2 text-[10px] font-bold text-white hover:from-amber-500 hover:to-yellow-500 active:scale-95"
+              className="h-6 border-none bg-gradient-to-r from-amber-600 to-yellow-600 px-2 text-xs font-bold text-white hover:from-amber-500 hover:to-yellow-500 active:scale-95"
             >
               Buy {auction.buyoutPrice.toLocaleString()}
             </Button>

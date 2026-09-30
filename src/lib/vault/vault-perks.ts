@@ -230,7 +230,9 @@ export async function getPurchasedItemsEffects(
       if (typeof meta === "string") {
         try {
           meta = JSON.parse(meta);
-        } catch {}
+        } catch {
+          // non-JSON metadata — treated as no item match
+        }
       }
       if (meta && typeof meta === "object") {
         const metaObj = meta as Record<string, unknown>;
@@ -341,7 +343,9 @@ export async function getLoreTokensBalance(userId: string, db: PrismaClient): Pr
     if (typeof meta === "string") {
       try {
         meta = JSON.parse(meta);
-      } catch {}
+      } catch {
+        // non-JSON metadata — treated as no item match
+      }
     }
     if (meta && typeof meta === "object") {
       const metaObj = meta as Record<string, unknown>;

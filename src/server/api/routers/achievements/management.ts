@@ -1,23 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
-  // Get recent achievements for a country
-
-  // Get all achievements for a country
-
-  // Get achievement leaderboard
-
-  // Get current user's achievement progress statistics
-
-  // Admin action: Manually trigger baseline sync
-  adminSync: adminProcedure.mutation(async ({ ctx }) => {
-    const { syncAchievements } = await import("~/lib/achievements/sync");
-    await syncAchievements(ctx.db);
-    return { success: true };
-  }),
-
   // User action: Retroactively sync collector achievements and titles
   syncMyCollectorAchievements: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.user.clerkUserId;
@@ -32,8 +17,9 @@ export const achievementsManagementRouter = createTRPCRouter({
     return { success: true, unlocked };
   }),
 
-  // Unlock achievement (internal use & backward compatibility)
-  unlock: protectedProcedure
+  // Admin: grant a specific achievement to a user. Admin-only because it takes an
+  // arbitrary userId and pays the achievement's reward.
+  unlock: adminProcedure
     .input(
       z.object({
         userId: z.string(),

@@ -1,49 +1,41 @@
 "use client";
 
+import {
+  Building,
+  Book,
+  Suitcase,
+  Cutlery,
+  Gamepad,
+  Trophy,
+  MediaImage,
+  MagicWand,
+  GitFork,
+  Planet,
+  Compass,
+  Shield,
+  WarningTriangle,
+  Brightness,
+  User,
+  Crown,
+} from "iconoir-react";
+
 // src/app/labs/onoma/components/shared/onoma-icon-families.tsx
 // Onoma Lab — Remix Icons Domain Iconography Architecture
 // High-precision vector mapping for dictionary taxonomies, categories, and subtypes
 
 import React from "react";
-import {
-  RiPlanetLine,
-  RiVipCrownLine,
-  RiGitForkLine,
-  RiNodeTree,
-  RiSunLine,
-  RiSkull2Line,
-  RiGhostLine,
-  RiAncientGateLine,
-  RiAncientPavilionLine,
-  RiBuilding4Line,
-  RiCommunityLine,
-  RiLandscapeLine,
-  RiCompass3Line,
-  RiShieldStarLine,
-  RiFlagLine,
-  RiBriefcase4Line,
-  RiHandCoinLine,
-  RiUser3Line,
-  RiSwordLine,
-  RiShieldCrossLine,
-  RiSailboatLine,
-  RiShipLine,
-  RiGobletLine,
-  RiRestaurantLine,
-  RiGamepadLine,
-  RiMagicLine,
-  RiBook2Line,
-} from "react-icons/ri";
 
 export type IconComponent = React.ComponentType<{ className?: string }>;
 
 /**
  * Resolves the thematic Remix Icon for a dictionary or domain taxonomy subtype.
  */
-export function getDomainIconByFamily(
-  dict?: { id?: string; category?: string; title?: string }
-): IconComponent {
-  if (!dict) return RiBook2Line;
+export function getDomainIconByFamily(dict?: {
+  id?: string;
+  category?: string;
+  title?: string;
+}): IconComponent {
+  if (!dict) return Book;
 
   const id = (dict.id || "").toLowerCase();
   const cat = (dict.category || "").toLowerCase();
@@ -61,7 +53,7 @@ export function getDomainIconByFamily(
     title.includes("star") ||
     title.includes("moon")
   ) {
-    return RiPlanetLine;
+    return Planet;
   }
 
   // 2. Rulers, Emperors, Monarchs, Sovereign Governance
@@ -77,7 +69,7 @@ export function getDomainIconByFamily(
     title.includes("ruler") ||
     title.includes("caesar")
   ) {
-    return RiVipCrownLine;
+    return Crown;
   }
 
   // 3. Lineages, Gens, Clans, Dynasties (Genealogy & Family Trees)
@@ -96,7 +88,7 @@ export function getDomainIconByFamily(
     title.includes("surname") ||
     title.includes("family")
   ) {
-    return RiNodeTree;
+    return GitFork;
   }
 
   // 4. Angels, Heralds, Celestial Messengers
@@ -107,7 +99,7 @@ export function getDomainIconByFamily(
     title.includes("seraph") ||
     title.includes("cherub")
   ) {
-    return RiSunLine;
+    return Brightness;
   }
 
   // 5. Demons, Monsters, Fiends, Mythological Creatures, Beasts
@@ -127,7 +119,7 @@ export function getDomainIconByFamily(
     title.includes("devil") ||
     title.includes("fiend")
   ) {
-    return RiSkull2Line;
+    return WarningTriangle;
   }
 
   // 6. Deities, Gods, Goddesses, Cults, Mythology, Temples
@@ -145,7 +137,7 @@ export function getDomainIconByFamily(
     title.includes("pantheon") ||
     title.includes("cult")
   ) {
-    return RiAncientGateLine;
+    return Building;
   }
 
   // 7. Military, Armed Units, Regiments, Mercenaries, Operations
@@ -161,7 +153,7 @@ export function getDomainIconByFamily(
     title.includes("brigade") ||
     title.includes("mercenary")
   ) {
-    return RiSwordLine;
+    return Shield;
   }
 
   // 8. Naval Ships, Fleets, Vessels, Submarines
@@ -176,7 +168,7 @@ export function getDomainIconByFamily(
     title.includes("fleet") ||
     title.includes("submarine")
   ) {
-    return RiSailboatLine;
+    return Compass;
   }
 
   // 9. Taverns, Inns, Brew Houses, Establishments
@@ -188,7 +180,7 @@ export function getDomainIconByFamily(
     title.includes("inn") ||
     title.includes("brew")
   ) {
-    return RiGobletLine;
+    return Trophy;
   }
 
   // 10. Cuisine, Foods, Traditional Dining
@@ -199,7 +191,7 @@ export function getDomainIconByFamily(
     title.includes("cuisine") ||
     title.includes("food")
   ) {
-    return RiRestaurantLine;
+    return Cutlery;
   }
 
   // 11. Sports, Games, Contests
@@ -210,10 +202,10 @@ export function getDomainIconByFamily(
     title.includes("sport") ||
     title.includes("game")
   ) {
-    return RiGamepadLine;
+    return Gamepad;
   }
 
-  // 12. Magic, Arcane Orders, Mystics
+  // 12. MagicWand, Arcane Orders, Mystics
   if (
     cat.includes("magic") ||
     cat.includes("arcane") ||
@@ -224,7 +216,7 @@ export function getDomainIconByFamily(
     title.includes("mystic") ||
     title.includes("spell")
   ) {
-    return RiMagicLine;
+    return MagicWand;
   }
 
   // 13. Geography, Landmarks, Mountains, Rivers, Islands
@@ -242,7 +234,7 @@ export function getDomainIconByFamily(
     title.includes("lake") ||
     title.includes("landmark")
   ) {
-    return RiLandscapeLine;
+    return MediaImage;
   }
 
   // 14. Cities, Towns, Settlements, Colonies, Administrative Places
@@ -259,7 +251,7 @@ export function getDomainIconByFamily(
     title.includes("colony") ||
     title.includes("toponym")
   ) {
-    return RiBuilding4Line;
+    return Building;
   }
 
   // 15. States, Polities, Nations, Kingdoms, Empires
@@ -276,7 +268,7 @@ export function getDomainIconByFamily(
     title.includes("republic") ||
     title.includes("nation")
   ) {
-    return RiShieldStarLine;
+    return Shield;
   }
 
   // 16. Guilds, Companies, Corporations, Trade, Merchants
@@ -292,7 +284,7 @@ export function getDomainIconByFamily(
     title.includes("company") ||
     title.includes("merchant")
   ) {
-    return RiBriefcase4Line;
+    return Suitcase;
   }
 
   // 17. General People, Given Names, Characters
@@ -308,11 +300,10 @@ export function getDomainIconByFamily(
     title.includes("given") ||
     title.includes("first name")
   ) {
-    return RiUser3Line;
+    return User;
   }
 
-  return RiBook2Line;
+  return Book;
 }
 
 export const getOnomaDomainIcon = getDomainIconByFamily;
-

@@ -1,12 +1,5 @@
-import { forumBridge as activeForumBridge } from "../../../server/modules/forum";
-import { forumBridge as moduleForumBridge } from "../../../server/modules/forum/services/forum-bridge";
-
-// Mock XenForo client calls
-jest.mock("~/lib/xenforo/client", () => ({
-  xfFetchAsUser: jest.fn(),
-  xfPostAsUser: jest.fn(),
-  xfFetch: jest.fn(),
-}));
+import { forumBridge as activeForumBridge } from "~/server/modules/forum";
+import { forumBridge as moduleForumBridge } from "~/server/modules/forum/services/forum-bridge";
 
 jest.mock("~/server/modules/forum/services/xenforo-service", () => ({
   xfFetchAsUser: jest.fn(),
@@ -38,7 +31,7 @@ describe("forum-bridge characterization contract", () => {
     });
 
     it("attributes unresolved external authors to forum:username key in active bridge", async () => {
-      const { xfFetchAsUser } = require("~/lib/xenforo/client");
+      const { xfFetchAsUser } = require("~/server/modules/forum/services/xenforo-service");
 
       const mockDb = {
         user: {
@@ -64,7 +57,7 @@ describe("forum-bridge characterization contract", () => {
       };
 
       xfFetchAsUser.mockImplementation(async (endpoint: string) => {
-        if (endpoint === "/conversations") {
+        if (endpoint.startsWith("/conversations") && !endpoint.includes("/messages")) {
           return {
             conversations: [
               {
@@ -106,7 +99,7 @@ describe("forum-bridge characterization contract", () => {
     });
 
     it("skips duplicate messages by sourceMessageId", async () => {
-      const { xfFetchAsUser } = require("~/lib/xenforo/client");
+      const { xfFetchAsUser } = require("~/server/modules/forum/services/xenforo-service");
 
       const mockDb = {
         user: {
@@ -130,7 +123,7 @@ describe("forum-bridge characterization contract", () => {
       };
 
       xfFetchAsUser.mockImplementation(async (endpoint: string) => {
-        if (endpoint === "/conversations") {
+        if (endpoint.startsWith("/conversations") && !endpoint.includes("/messages")) {
           return { conversations: [{ conversation_id: 501, title: "Test" }] };
         }
         if (endpoint.includes("/messages")) {
@@ -184,7 +177,7 @@ describe("forum-bridge characterization contract", () => {
       };
 
       xfFetchAsUser.mockImplementation(async (endpoint: string) => {
-        if (endpoint === "/conversations") {
+        if (endpoint.startsWith("/conversations") && !endpoint.includes("/messages")) {
           return {
             conversations: [
               {
@@ -214,11 +207,10 @@ describe("forum-bridge characterization contract", () => {
       const result = await moduleForumBridge.syncInbound(userId, mockDb as any);
 
       expect(result.messagesCreated).toBe(1);
-      // Module bridge fallback attributes to syncing userId
       expect(mockDb.thinkshareMessage.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            userId: userId,
+            userId: "forum:another_user",
             source: "forum",
             sourceMessageId: "8001",
           }),

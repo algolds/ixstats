@@ -1,17 +1,25 @@
+"use client";
 // src/components/forum/composer/ThreadComposer.tsx
 // Full-page new thread composer with title, forum selector, and unified GlassPlateEditor.
 
-"use client";
-
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Send, ArrowLeft, Loader2 } from "lucide-react";
+import { Send, ArrowLeft, SystemRestart as Loader2 } from "iconoir-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/shared/editor";
+import type { GlassPlateEditorRef } from "~/components/shared/editor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-48 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ThreadComposerProps {
   /** Pre-select a forum if navigated from a specific forum */
@@ -87,7 +95,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
         <select
           value={selectedForumId ?? ""}
           onChange={(e) => setSelectedForumId(e.target.value ? Number(e.target.value) : null)}
-          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] transition-colors outline-none focus:border-[var(--forum-accent)]"
         >
           <option value="">Select a forum...</option>
           {forumNodes.map((forum) => (
@@ -108,7 +116,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter thread title..."
-          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] outline-none transition-colors placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
+          className="w-full rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2.5 text-sm text-[var(--forum-text)] transition-colors outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
           maxLength={200}
         />
       </div>
@@ -133,12 +141,14 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
       {/* Submit */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[var(--forum-text-dim)]">⌘+Enter / Ctrl+Enter to submit</span>
+        <span className="text-xs text-[var(--forum-text-dim)]">
+          ⌘+Enter / Ctrl+Enter to submit
+        </span>
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit}
           className={cn(
-            "h-9 gap-1.5 rounded-xl px-5 text-xs font-semibold transition-all duration-200 active:scale-95",
+            "h-9 gap-1.5 rounded-xl px-5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
             canSubmit
               ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
               : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"

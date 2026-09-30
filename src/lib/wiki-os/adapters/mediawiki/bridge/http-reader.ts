@@ -40,7 +40,10 @@ export function markExternalHostOffline(hostname: string) {
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
  * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-export async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promise<Response | null> {
+export async function fetchExternalWiki(
+  url: string,
+  timeoutMs: number = 12000
+): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
     return null;
@@ -175,6 +178,153 @@ export async function iiwikiSearch(query: string, limit: number = 10): Promise<W
   }
 }
 
+export async function httpGetCategoryMembers(
+  category: string,
+  limit: number = 50,
+  type?: "page" | "subcat" | "file",
+  wiki: WikiSource = "ixwiki"
+): Promise<{
+  members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }>;
+}> {
+  const cleanCat = category.replace(/^Category:/i, "");
+  const base =
+    wiki === "iiwiki"
+      ? getIiwikiApiBaseUrl()
+      : wiki === "althistory"
+        ? ALTHISTORY_API
+        : DEFAULT_MEDIAWIKI_URL;
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("list", "categorymembers");
+  url.searchParams.set("cmtitle", `Category:${cleanCat}`);
+  url.searchParams.set("cmlimit", String(Math.min(limit, 100)));
+  url.searchParams.set("format", "json");
+  if (type) {
+    url.searchParams.set("cmtype", type);
+  }
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { members: [] };
+    const data = (await res.json()) as {
+      query?: {
+        categorymembers?: Array<{ pageid: number; title: string; ns: number }>;
+      };
+    };
+    const members = (data.query?.categorymembers ?? []).map((m) => ({
+      pageid: m.pageid,
+      title: m.title,
+      type: (m.ns === 14 ? "subcat" : m.ns === 6 ? "file" : "page") as "page" | "subcat" | "file",
+    }));
+    return { members };
+  } catch (err) {
+    console.error(`[WikiBridge] Error fetching category members for ${category} on ${wiki}:`, err);
+    return { members: [] };
+  }
+}
+
+/**
+ * Fetch full revision lineage from MediaWiki to accurately identify the original page creator,
+ * creation timestamp, latest editor, and all historical contributors.
+ */
+export async function fetchMediaWikiPageAuthorsAndRevisions(
+  title: string,
+  wiki: WikiSource = "ixwiki",
+  limit: number = 250
+): Promise<{
+  creator: { username: string; timestamp: string; avatar?: string | null } | null;
+  lastEditor: { username: string; timestamp: string; avatar?: string | null } | null;
+  revisions: Array<{
+    revid: number;
+    timestamp: string;
+    user: string;
+    comment: string;
+    size: number;
+  }>;
+  contributors: Array<{ username: string; editCount: number; lastContributedAt?: string }>;
+  totalContributors: number;
+} | null> {
+  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
+  const rawBase =
+    wiki === "iiwiki"
+      ? getIiwikiApiBaseUrl()
+      : wiki === "althistory"
+        ? ALTHISTORY_API
+        : DEFAULT_MEDIAWIKI_URL;
+  const base = rawBase.replace(/\/+$/, "");
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("prop", "revisions");
+  url.searchParams.set("titles", cleanTitle);
+  url.searchParams.set("rvprop", "ids|timestamp|user|comment|size");
+  url.searchParams.set("rvlimit", String(Math.min(limit, 500)));
+  url.searchParams.set("rvdir", "older"); // newest to oldest
+  url.searchParams.set("format", "json");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as any;
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+
+    const pageKey = Object.keys(pages)[0];
+    if (!pageKey || pageKey === "-1") return null;
+
+    const revList = pages[pageKey]?.revisions;
+    if (!Array.isArray(revList) || revList.length === 0) return null;
+
+    const newest = revList[0];
+    const oldest = revList[revList.length - 1];
+
+    const counts = new Map<string, { editCount: number; lastContributedAt: string }>();
+    const formattedRevs = revList.map((r: any) => {
+      const user = r.user || "MediaWiki Contributor";
+      const ts = r.timestamp || new Date().toISOString();
+      const existing = counts.get(user);
+      if (existing) {
+        existing.editCount += 1;
+      } else {
+        counts.set(user, { editCount: 1, lastContributedAt: ts });
+      }
+      return {
+        revid: r.revid || 0,
+        timestamp: ts,
+        user,
+        comment: r.comment || "",
+        size: r.size || 0,
+      };
+    });
+
+    const contributors = Array.from(counts.entries())
+      .map(([username, val]) => ({
+        username,
+        editCount: val.editCount,
+        lastContributedAt: val.lastContributedAt,
+      }))
+      .sort((a, b) => b.editCount - a.editCount);
+
+    return {
+      creator: oldest ? { username: oldest.user, timestamp: oldest.timestamp } : null,
+      lastEditor: newest ? { username: newest.user, timestamp: newest.timestamp } : null,
+      revisions: formattedRevs,
+      contributors,
+      totalContributors: counts.size,
+    };
+  } catch (err) {
+    console.error(`[WikiBridge] Error fetching revisions for "${title}" on ${wiki}:`, err);
+    return null;
+  }
+}
+
 // ──────────────────────────────────────────────
 // AltHistory Wiki HTTP API
 // ──────────────────────────────────────────────
@@ -235,7 +385,10 @@ export async function althistoryGetWikitext(title: string): Promise<WikiArticle 
   }
 }
 
-export async function althistorySearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
+export async function althistorySearch(
+  query: string,
+  limit: number = 10
+): Promise<WikiSearchResult[]> {
   try {
     const data = await althistoryApiCall({
       action: "opensearch",
@@ -385,9 +538,7 @@ export async function fetchMediaWikiImageBatch(
   const chunkSize = 25;
   for (let i = 0; i < fileTitles.length; i += chunkSize) {
     const chunk = fileTitles.slice(i, i + chunkSize);
-    const titlesParam = chunk
-      .map((t) => (t.startsWith("File:") ? t : `File:${t}`))
-      .join("|");
+    const titlesParam = chunk.map((t) => (t.startsWith("File:") ? t : `File:${t}`)).join("|");
     const thumbParam = options?.thumbWidth ? `&iiurlwidth=${options.thumbWidth}` : "";
     const url = `${endpoint}?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(titlesParam)}&prop=imageinfo&iiprop=url${thumbParam}`;
 

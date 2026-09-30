@@ -1,10 +1,10 @@
-# The Complete Lore Lifecycle in IxStates: Ideation to Canon
+# 📖 The Complete Lore Lifecycle in IxStates: Ideation to Canon
 
-**Document Version:** 1.0.0  
-**Last Updated:** August 2026  
+**Document Version:** 1.4.0  
+**Last Updated:** September 2026  
 **Status:** Canonical System Guide  
-**Subsystems Involved:** ThinkTanks (`/thinktanks`), Lore Stashes (`/stashes`), Blurbs (`/blurbs`), WikiOS (`/wiki`), Commons Repository (`/wiki/repository`), Lorewards (`/wiki/lorewards`), IxVault (`/vault`)  
-**Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Glass Physics  
+**Subsystems Involved:** ThinkTanks (`/thinktanks`), Stash System (`/stashes`), Sovereign Feed (`/thinkpages`), WikiOS (`/wiki`), Margin (`/wiki/[slug]?margin=threads`), Image Repository (`/util/repository`), Lorewards (`/util/lorewards`), Vault (`/vault`)  
+**Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Design System (`/facet-design-system`)  
 
 ---
 
@@ -17,8 +17,8 @@ In IxStates, worldbuilding is an active, collaborative ecosystem. Lore does not 
 │                                    THE IXSTATES LORE LIFECYCLE                                   │
 │                                                                                                  │
 │   [ 1. IDEATE ] ──────► [ 2. DRAFT ] ──────► [ 3. PUBLISH ] ──────► [ 4. REVIEW ] ──────► [ 5. REVISE ] │
-│   ThinkTanks &          Working Papers &       WikiOS Instant         Split-Canvas           Revisions & │
-│   Lore Stashes          Media Repository       Editor Bridge          Inspector & Pins       Lorewards   │
+│   ThinkTanks &          Working Papers &       WikiOS Canvas          Margin Inspector &     Revisions & │
+│   Stash System          Image Repository       Editor Bridge          Gutter Pins            Lorewards   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -32,28 +32,28 @@ stateDiagram-v2
     
     state "1. Ideation & Research" as Phase1 {
         ThinkTankChat: ThinkTank Brainstorming & Chat
-        BlurbsPrompt: Topic Prompts & Micro-Lore (/blurbs)
-        LoreStash: Lore Stash Clippings & Quotations
+        BlurbsPrompt: Topic Prompts & Micro-Lore (/thinkpages)
+        Stash: Stash Article & Quote Collection
         Repository: Media Repository Image Collection
         
-        ThinkTankChat --> LoreStash
-        BlurbsPrompt --> LoreStash
-        Repository --> LoreStash
+        ThinkTankChat --> Stash
+        BlurbsPrompt --> Stash
+        Repository --> Stash
     }
     
     state "2. Collaborative Drafting" as Phase2 {
         WorkingDoc: ThinkTank Collaborative Working Paper
         TemplateConfig: Infobox, Map Coords & Stat Config
-        LocalDraft: IndexedDB Auto-Saved Local Draft
+        LocalDraft: localStorage Auto-Saved Local Draft
         
-        LoreStash --> WorkingDoc
+        Stash --> WorkingDoc
         WorkingDoc --> LocalDraft
         TemplateConfig --> LocalDraft
     }
     
     state "3. Authoring & Publishing" as Phase3 {
         VisualEditor: WikiOS Visual / Source Editor
-        MediaWikiSave: Dual-Write (MediaWiki + Postgres Shadow)
+        MediaWikiSave: Postgres Save + Async MediaWiki Export
         ArticleLive: Article Live at /wiki/[slug]
         
         LocalDraft --> VisualEditor
@@ -72,12 +72,12 @@ stateDiagram-v2
     }
     
     state "5. Gamification & Evolution" as Phase5 {
-        Lorewards: Lorewards Streaks & Leaderboards
+        WikiAwards: Lorewards Streaks & Article Awards
         LoreCards: Collectible Lore Cards in IxVault
         RevisionSync: Side-by-Side Diffs & Revision History
         
         Inspector --> RevisionSync
-        ArticleLive --> Lorewards
+        ArticleLive --> WikiAwards
         ArticleLive --> LoreCards
         RevisionSync --> Phase4
     }
@@ -88,21 +88,21 @@ stateDiagram-v2
 ## 3. Detailed Stage Breakdown
 
 ### Stage 1: Ideation & Research (The Seed)
-* **Active Routes:** `/thinktanks`, `/stashes`, `/blurbs`, `/wiki/repository`
+* **Active Routes:** `/thinktanks`, `/stashes`, `/blurbs`, `/util/repository`
 * **Workflow:**
   1. **Collaborative Brainstorming**: Writers discuss historical events, cultural movements, or geopolitical pacts in a **ThinkTank** chat channel.
-  2. **Clipping & Research**: While reading existing articles, users select text to reveal the **Origin-Aware Selection Capsule** and click `📑 Stash` to save quotes, map coordinates, and factbook figures into a dedicated, color-coded **Lore Stash** collection (e.g. *"Northern War Research"*).
-  3. **Visual Asset Curation**: Sourcing coats of arms, battle maps, flags, and photographs from the **Commons Repository** (`/wiki/repository`).
+  2. **Clipping & Research**: While reading existing articles, users select text to reveal the **Origin-Aware Selection Capsule** and click `📑 Stash` to save the quote into a color-coded **Stash** collection (e.g. *"Northern War Research"*).
+  3. **Visual Asset Curation**: Sourcing coats of arms, battle maps, flags, and photographs from the **Commons Repository** (`/util/repository`).
   4. **Micro-Lore Prompts**: Responding to Topic-Tuesday writing prompts in `/blurbs`, linking initial concepts.
 
 ---
 
 ### Stage 2: Collaborative Drafting (The Workshop)
-* **Active Routes:** ThinkTank Papers Tab (`CollaborativeDoc`), `/stashes`
+* **Active Routes:** ThinkTank Papers Tab (`ThinktankPapersTab`), `/stashes`
 * **Workflow:**
   1. **Working Paper Collaboration**: Team members co-author long-form text in a shared ThinkTank collaborative document with live version history.
   2. **Data Placeholders**: Embedding live national simulation tags (e.g. `{{MyCountry:GDP}}`, `{{CountryData:population}}`, map coordinate pills) so the article stays synchronized with game engine data.
-  3. **Local-First Draft Storage**: Automatic offline persistence via IndexedDB (`draft-store.ts`) ensures zero loss of work if a tab is accidentally closed.
+  3. **Local-First Draft Storage**: Automatic persistence in `localStorage` (`src/lib/wiki-os/editor/draft-store.ts`, keys `wikios_draft:<source>:<title>`) keeps work if a tab is accidentally closed.
 
 ---
 
@@ -110,11 +110,11 @@ stateDiagram-v2
 * **Active Routes:** WikiOS Editor Bridge (`WikiEditBridge` at `/wiki/[slug]/edit` or in-place modal)
 * **Workflow:**
   1. **Visual & Source Editing**:
-     - Switch seamlessly between the WYSIWYG rich text editor and the **CodeMirror 6** wikitext source editor.
-     - Insert templates using modular dialogs (`InfoboxCountryModal`, `BusinessStatsModal`, `MapCoordsModal`).
+     - Switch between the Plate visual editor and the **CodeMirror 6** wikitext source editor.
+     - Insert templates from the slash menu or modular dialogs (`InfoboxCountryModal`, `CountryStatsModal`, `BusinessStatsModal`, `MapCoordsModal`).
   2. **1-Click Publishing**:
-     - Saves through a resilient **dual-write pipeline**: writes canonically to MediaWiki while immediately updating the local PostgreSQL shadow (`WikiArticle` & `WikiRevision`).
-     - Triggers instant cache warmup and announces the publication with rich previews on **ThinkPages** social feeds.
+     - Saves to PostgreSQL first (`ArticleRepository.saveArticle` → `WikiArticle` & `WikiRevision`, link graph, media registry), then mirrors the edit to classic MediaWiki in the background (`MediaWikiExportWorker`).
+     - Purges the Cloudflare edge cache for the page; wiki activity appears in the dashboard feed (`WikiFeedCard`).
 
 ---
 
@@ -124,26 +124,26 @@ stateDiagram-v2
   1. **Ambient Spatial Reading**: As readers explore the article, **Margin Gutter Pins** glow beside paragraphs and infobox sections that have open notes or debates.
   2. **Contextual Text Markup**: Selecting any text reveals the **Origin-Aware Selection Capsule**:
      ```
-              ┌───────────────────────────────────────────────────┐
-              │  [🟡 🟢 🔵]  │  💬 Comment  │  📑 Stash  │  🔗 Link  │
-              └─────────────────────────┬─────────────────────────┘
-                                        ▼
+              ┌─────────────────────────────────────────────────────────────┐
+              │  [6 colors] │ Comment │ Suggest │ Stash │ Share │ Copy      │
+              └──────────────────────────────┬──────────────────────────────┘
+                                             ▼
      "The treaty established a demilitarized frontier along the river..."
      ```
-  3. **Slide-Over Inspector Workspace**: Clicking a gutter pin or pressing hotkey `T` slides out the **Split-Canvas Inspector**:
-     - **💬 Discussions**: Structured threads anchored to specific headings to resolve historical ambiguities or suggest revisions.
-     - **✏️ Markup**: Highlighting passages and proposing exact replacement wikitext.
-     - **📑 Stash**: Personal and team bookmark management.
-  4. **Hold-to-Resolve**: Once editors agree on a clarification, they hold the `[ Hold to Resolve ]` button (with progress fill animation) to close the thread and update the text.
+  3. **Slide-Over Inspector Workspace**: Clicking a gutter pin or pressing hotkey `T` (or `I`) slides out the **Split-Canvas Inspector**:
+     - **💬 Threads**: Structured threads anchored to specific headings; replies can carry a suggested replacement.
+     - **✏️ Markup**: Highlights and notes on passages.
+     - Stashing is done from the selection capsule; the drawer has no Stash tab.
+  4. **Hold-to-Resolve**: Once editors agree on a clarification, they hold the `[ Hold to Resolve ]` button (with progress fill animation) to close the thread. Article text is edited separately in the editor.
 
 ---
 
 ### Stage 5: Gamification, Evolution & Canonization (The Legacy)
-* **Active Routes:** `/wiki/lorewards`, `/vault`, `/wiki/history/[slug]`, `/wiki/diff`
+* **Active Routes:** `/util/lorewards`, `/vault`, `/util/history/[slug]`, `/util/diff`
 * **Workflow:**
-  1. **Lorewards Scoring**: The automated scoring engine evaluates the article based on prose quality, structural completeness, citations, and reader engagement, awarding daily/weekly medals and streak increments.
-  2. **IxVault Lore Cards**: Outstanding articles unlock collectible **Lore Cards** that can be minted, traded, or slotted into national government portfolios to provide passive economic or diplomatic boosts.
-  3. **Continuous Revision History**: Revisions are tracked with high-resolution visual diffs (`/wiki/diff`), allowing rollbacks and transparent audit trails as world lore evolves.
+  1. **Lorewards Scoring**: The scoring engine (`src/lib/lorewards/scoring.ts`) weighs bytes added, prose ratio, edit depth, new-article novelty, inbound-link importance, and cross-country collaboration. Daily/weekly/monthly results and streaks are synced from the Discord Lorewards bot.
+  2. **IxVault Lore Cards**: Wiki articles can be turned into collectible **Lore Cards** (`lore-cards` router) that are collected and traded in IxVault. *(Slotting cards into government portfolios for passive boosts is not implemented.)*
+  3. **Continuous Revision History**: Revisions are tracked with visual diffs (`/util/diff`), allowing rollbacks and transparent audit trails as world lore evolves.
 
 ---
 
@@ -152,10 +152,10 @@ stateDiagram-v2
 | Phase | Apple Interaction Principle | Tactile Implementation in WikiOS |
 | :--- | :--- | :--- |
 | **Ideation** | Direct Manipulation & Restraint | 1-click selection capsule (`scale(0.95) -> 1.0`) with zero unnecessary menus |
-| **Drafting** | Spatial Consistency & Safety | Seamless IndexedDB draft persistence with zero-lag live preview |
-| **Publishing** | Feedback & Predictability | Sub-300ms transition with instant `soundEffects.success()` audio feedback |
+| **Drafting** | Spatial Consistency & Safety | localStorage draft persistence with live preview |
+| **Publishing** | Feedback & Predictability | Sub-300ms transition with instant save feedback |
 | **Review** | Fluid Continuity & Translucency | Slide-over inspector (`backdrop-filter: blur(24px)`) that never hides the article |
-| **Resolution** | Forgiveness & Tactile Commits | 1.2s progressive hold-to-resolve with interruptible release fallback |
+| **Resolution** | Forgiveness & Tactile Commits | 0.9s progressive hold-to-resolve with interruptible release fallback and `soundEffects.success()` |
 
 ---
 
@@ -165,7 +165,7 @@ stateDiagram-v2
 [ ThinkTank Working Paper ]
              │ (Export Draft)
              ▼
-[ WikiEditBridge (Visual/Source) ] ──► [ Dual-Write (MediaWiki + Postgres) ]
+[ WikiEditBridge (Visual/Source) ] ──► [ Postgres Save + Async MediaWiki Export ]
                                                        │
                                                        ▼
                                             [ WikiArticle (Postgres) ]

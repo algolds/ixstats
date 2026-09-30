@@ -1,38 +1,30 @@
+"use client";
 // src/app/admin/cards/NSImportSuiteAdmin.tsx
 // Dedicated NationStates Import Suite Admin Module
-"use client";
 
 import { useState, useMemo } from "react";
 import {
-  RefreshCw,
+  Refresh as RefreshCw,
   Database,
   Globe,
   MapPin,
   Search,
-  Users,
+  Group as Users,
   Play,
   Pause,
   Square,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
+  WarningTriangle as AlertTriangle,
   Filter,
-  X,
-  Layers,
-  Calendar,
+  Xmark as X,
+  Component as Layers,
   Clock,
   ArrowRight,
-  Tag,
-  Eye,
-  Sparkles,
-  ExternalLink,
-  Image as ImageIcon,
-  FileText,
-  Check,
-} from "lucide-react";
+  Sparks as Sparkles,
+  Page as FileText,
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
-import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/ui/log-viewer";
+import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/admin/log-viewer";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
@@ -49,36 +41,14 @@ import {
 } from "~/components/ui/alert-dialog";
 import { RarityBadge } from "~/components/cards/display/RarityBadge";
 import type { CardRarity } from "@prisma/client";
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "COMPLETED":
-    case "SUCCESS":
-      return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30";
-    case "IN_PROGRESS":
-      return "text-blue-600 dark:text-blue-400 bg-blue-500/15 border border-blue-500/30";
-    case "PAUSED":
-      return "text-amber-600 dark:text-amber-400 bg-amber-500/15 border border-amber-500/30";
-    case "FAILED":
-      return "text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30";
-    default:
-      return "text-muted-foreground bg-muted border border-border";
-  }
-}
-
-function formatDuration(ms: number | null) {
-  if (!ms) return "N/A";
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-  return `${seconds}s`;
-}
+import {
+  getJobStatusBadgeColor as getStatusColor,
+  formatDurationMs as formatDuration,
+} from "~/lib/admin/admin-formatters";
 
 export function NSImportSuiteAdmin() {
   const notify = useNotify();
-  const [refreshInterval, setRefreshInterval] = useState<number | null>(10000);
+  const [refreshInterval, _setRefreshInterval] = useState<number | null>(10000);
   const [regionNames, setRegionNames] = useState("greater_ixnay");
   const [syncTypeFilter, setSyncTypeFilter] = useState<"all" | "region">("all");
   const [discoveredRegions, setDiscoveredRegions] = useState<
@@ -98,8 +68,8 @@ export function NSImportSuiteAdmin() {
   const [confirmStopJobId, setConfirmStopJobId] = useState<string | null>(null);
 
   const {
-    data: healthStats,
-    isLoading: loadingHealth,
+    data: _healthStats,
+    isLoading: _loadingHealth,
     refetch: refetchHealth,
   } = api.nsImport.getSyncHealth.useQuery(undefined, {
     refetchInterval: refreshInterval ?? false,
@@ -312,14 +282,14 @@ export function NSImportSuiteAdmin() {
                         {job.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(job.status)}`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(job.status)}`}
                       >
                         {job.status}
                       </span>
                     </div>
                     <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
                       <div
-                        className="h-full bg-blue-500 transition-all duration-300"
+                        className="h-full bg-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -338,7 +308,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => pauseJobMutation.mutate({ syncLogId: job.id })}
                         disabled={pauseJobMutation.isPending}
                         size="sm"
-                        className="border border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
+                        className="border border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-300"
                       >
                         <Pause className="mr-1 h-3.5 w-3.5" /> Pause
                       </Button>
@@ -348,7 +318,7 @@ export function NSImportSuiteAdmin() {
                         onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                         disabled={resumeJobMutation.isPending}
                         size="sm"
-                        className="border border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+                        className="border border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                       >
                         <Play className="mr-1 h-3.5 w-3.5" /> Resume
                       </Button>
@@ -356,7 +326,7 @@ export function NSImportSuiteAdmin() {
                     <Button
                       onClick={() => setConfirmStopJobId(job.id)}
                       size="sm"
-                      className="border border-rose-500/30 bg-rose-500/20 text-xs text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-300"
+                      className="border border-rose-500/30 bg-rose-500/20 text-xs text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/30 active:scale-95 dark:text-rose-300"
                     >
                       <Square className="mr-1 h-3.5 w-3.5" /> Stop
                     </Button>
@@ -393,13 +363,13 @@ export function NSImportSuiteAdmin() {
               value={regionNames}
               onChange={(e) => setRegionNames(e.target.value)}
               placeholder="Region name(s) (e.g. greater_ixnay, the_pacific)"
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground h-24 w-full rounded-xl border p-3 text-xs transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground h-24 w-full rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
             <div className="flex justify-end">
               <Button
                 onClick={() => setConfirmFetchRegions(regionNames)}
                 disabled={!regionNames.trim() || fetchRegionMutation.isPending}
-                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-200"
+                className="h-9 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-200"
               >
                 {fetchRegionMutation.isPending ? (
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -434,24 +404,24 @@ export function NSImportSuiteAdmin() {
             <select
               value={discoveryTag}
               onChange={(e) => setDiscoveryTag(e.target.value)}
-              className="border-border bg-card text-foreground hover:bg-accent h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 flex-1 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             >
-              <option value="gargantuan" className="bg-card text-card-foreground">
+              <option value="gargantuan" className="bg-background text-foreground">
                 Largest Regions
               </option>
-              <option value="Role Player" className="bg-card text-card-foreground">
+              <option value="Role Player" className="bg-background text-foreground">
                 Roleplay Communities
               </option>
-              <option value="Democratic" className="bg-card text-card-foreground">
+              <option value="Democratic" className="bg-background text-foreground">
                 Democratic / Legislative
               </option>
-              <option value="Totalitarian" className="bg-card text-card-foreground">
+              <option value="Totalitarian" className="bg-background text-foreground">
                 Totalitarian / Dictatorships
               </option>
-              <option value="Communist" className="bg-card text-card-foreground">
+              <option value="Communist" className="bg-background text-foreground">
                 Communist / Leftist
               </option>
-              <option value="Capitalist" className="bg-card text-card-foreground">
+              <option value="Capitalist" className="bg-background text-foreground">
                 Capitalist / Trade
               </option>
               <option value="Monarchist" className="bg-card text-card-foreground">
@@ -464,7 +434,7 @@ export function NSImportSuiteAdmin() {
             <Button
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
               disabled={discoverRegionsMutation.isPending}
-              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 shadow-xs transition-all hover:bg-purple-500/30 active:scale-95 dark:text-purple-200"
+              className="h-9 rounded-xl border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/30 active:scale-95 dark:text-purple-200"
             >
               {discoverRegionsMutation.isPending ? (
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -481,7 +451,7 @@ export function NSImportSuiteAdmin() {
               enableRefraction={true}
               className="border-border bg-card/60 overflow-hidden rounded-xl border backdrop-blur-md"
             >
-              <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-[10px] font-semibold tracking-wider uppercase">
+              <div className="border-border text-muted-foreground flex items-center justify-between border-b px-4 py-2 text-xs font-semibold tracking-wider uppercase">
                 <span>Top {discoveredRegions.length} Regions</span>
                 <span>
                   {discoveredRegions.reduce((sum, r) => sum + r.numnations, 0).toLocaleString()}{" "}
@@ -495,14 +465,14 @@ export function NSImportSuiteAdmin() {
                     className="hover:bg-accent/40 flex items-center justify-between px-4 py-2 transition-colors"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-muted-foreground w-5 text-right font-mono text-[10px]">
+                      <span className="text-muted-foreground w-5 text-right font-mono text-xs">
                         {i + 1}
                       </span>
                       <div className="min-w-0">
                         <p className="text-foreground truncate text-xs font-semibold">
                           {region.name}
                         </p>
-                        <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                        <p className="text-muted-foreground flex items-center gap-1 text-xs">
                           <Users className="h-3 w-3" />
                           {region.numnations.toLocaleString()} nations
                         </p>
@@ -513,7 +483,7 @@ export function NSImportSuiteAdmin() {
                       variant="outline"
                       onClick={() => setConfirmFetchRegions(region.id)}
                       disabled={fetchRegionMutation.isPending}
-                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-600 transition-all hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
+                      className="h-7 rounded-lg border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-300"
                     >
                       <Globe className="mr-1 h-3 w-3" /> Fetch
                     </Button>
@@ -547,7 +517,7 @@ export function NSImportSuiteAdmin() {
         <Button
           onClick={() => filterCTENationsMutation.mutate()}
           disabled={filterCTENationsMutation.isPending}
-          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-all hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
+          className="h-9 rounded-xl border border-amber-500/30 bg-amber-500/20 text-xs font-semibold text-amber-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/30 active:scale-95 dark:text-amber-200"
         >
           {filterCTENationsMutation.isPending ? (
             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -569,7 +539,7 @@ export function NSImportSuiteAdmin() {
             <div className="flex items-center gap-2">
               <h2 className="text-foreground text-lg font-bold">Sync Operations & Import Runs</h2>
               {selectedSyncLog && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
                   <Filter className="h-3 w-3" /> Filtered View
                 </span>
               )}
@@ -582,8 +552,8 @@ export function NSImportSuiteAdmin() {
           <div className="flex flex-wrap items-center gap-2">
             {/* Import run selector dropdown */}
             <div className="flex items-center gap-1.5">
-              <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold">
-                <Layers className="h-3 w-3 text-blue-500" /> Import:
+              <label className="text-muted-foreground flex items-center gap-1 text-xs font-semibold">
+                <Layers className="text-primary h-3 w-3" /> Import:
               </label>
               <select
                 value={selectedSyncLogId || "ALL"}
@@ -593,10 +563,9 @@ export function NSImportSuiteAdmin() {
                   if (val) setActiveLogTab("cards");
                   else setActiveLogTab("logs");
                 }}
-
-                className="border-border bg-card text-foreground hover:bg-accent h-8.5 max-w-[240px] truncate rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
+                className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 max-w-[240px] truncate rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
               >
-                <option value="ALL" className="bg-card text-card-foreground">
+                <option value="ALL" className="bg-background text-foreground">
                   All Imports ({rawLogsData?.length ?? 0} runs)
                 </option>
                 {(rawLogsData ?? []).map((log) => {
@@ -608,7 +577,7 @@ export function NSImportSuiteAdmin() {
                     minute: "2-digit",
                   });
                   return (
-                    <option key={log.id} value={log.id} className="bg-card text-card-foreground">
+                    <option key={log.id} value={log.id} className="bg-background text-foreground">
                       [{log.status}] {label} — {dateStr} (+{log.cardsCreated})
                     </option>
                   );
@@ -620,12 +589,12 @@ export function NSImportSuiteAdmin() {
             <select
               value={syncTypeFilter}
               onChange={(e) => setSyncTypeFilter(e.target.value as "all" | "region")}
-              className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-2.5 text-xs font-semibold transition-all focus:outline-none"
+              className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             >
-              <option value="all" className="bg-card text-card-foreground">
+              <option value="all" className="bg-background text-foreground">
                 All Types
               </option>
-              <option value="region" className="bg-card text-card-foreground">
+              <option value="region" className="bg-background text-foreground">
                 Region Only
               </option>
             </select>
@@ -634,7 +603,7 @@ export function NSImportSuiteAdmin() {
               variant="outline"
               size="sm"
               onClick={handleRefreshAll}
-              className="border-border bg-card/80 text-foreground hover:bg-accent h-8.5 rounded-xl border text-xs shadow-xs transition-all active:scale-95"
+              className="border-border bg-card/80 text-foreground hover:bg-accent h-8.5 rounded-xl border text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
             </Button>
@@ -654,7 +623,7 @@ export function NSImportSuiteAdmin() {
                   {selectedSyncLog.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                 </span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(selectedSyncLog.status)}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(selectedSyncLog.status)}`}
                 >
                   {selectedSyncLog.status}
                 </span>
@@ -668,7 +637,7 @@ export function NSImportSuiteAdmin() {
                 <div className="border-border bg-card/80 flex rounded-lg border p-0.5">
                   <button
                     onClick={() => setActiveLogTab("logs")}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       activeLogTab === "logs"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -678,7 +647,7 @@ export function NSImportSuiteAdmin() {
                   </button>
                   <button
                     onClick={() => setActiveLogTab("cards")}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                       activeLogTab === "cards"
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "text-muted-foreground hover:text-foreground"
@@ -686,7 +655,7 @@ export function NSImportSuiteAdmin() {
                   >
                     <Sparkles className="h-3 w-3" />
                     <span>Imported Cards</span>
-                    <span className="bg-primary-foreground/20 py-0.2 ml-1 rounded-full px-1.5 font-mono text-[10px]">
+                    <span className="bg-primary-foreground/20 py-0.2 ml-1 rounded-full px-1.5 font-mono text-xs">
                       {syncLogCardsData?.total ?? selectedSyncLog.cardsProcessed}
                     </span>
                   </button>
@@ -709,32 +678,32 @@ export function NSImportSuiteAdmin() {
             {/* Metrics row */}
             <div className="grid grid-cols-2 gap-2 pt-1 text-xs sm:grid-cols-4 lg:grid-cols-6">
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Processed</span>
+                <span className="text-muted-foreground block text-xs">Processed</span>
                 <span className="text-foreground font-mono font-bold">
                   {selectedSyncLog.cardsProcessed} cards
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Created</span>
+                <span className="text-muted-foreground block text-xs">Created</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                   +{selectedSyncLog.cardsCreated} new
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Updated</span>
+                <span className="text-muted-foreground block text-xs">Updated</span>
                 <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                   +{selectedSyncLog.cardsUpdated}
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Duration</span>
+                <span className="text-muted-foreground block text-xs">Duration</span>
                 <span className="text-foreground font-mono font-bold">
                   {formatDuration(selectedSyncLog.duration)}
                 </span>
               </div>
               <div className="bg-card/60 border-border/60 col-span-2 rounded-lg border p-2">
-                <span className="text-muted-foreground block text-[10px]">Started / Completed</span>
-                <span className="text-foreground block truncate font-mono text-[11px]">
+                <span className="text-muted-foreground block text-xs">Started / Completed</span>
+                <span className="text-foreground block truncate font-mono text-xs">
                   {new Date(selectedSyncLog.startedAt).toLocaleString([], {
                     dateStyle: "short",
                     timeStyle: "medium",
@@ -764,21 +733,21 @@ export function NSImportSuiteAdmin() {
                             selectedSyncLog.syncType.replace("NS_REGION_", "").toLowerCase()
                           )
                         }
-                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-[11px] text-rose-600 transition-all hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
+                        className="h-6.5 rounded-lg border-rose-500/40 bg-rose-500/20 text-xs text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/30 active:scale-95 dark:text-rose-200"
                       >
                         <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
                       </Button>
                     )}
                     <button
                       onClick={() => setShowErrorDetails(!showErrorDetails)}
-                      className="cursor-pointer text-[11px] font-medium text-rose-600 underline hover:no-underline dark:text-rose-400"
+                      className="cursor-pointer text-xs font-medium text-rose-600 underline hover:no-underline dark:text-rose-400"
                     >
                       {showErrorDetails ? "Hide Nations" : `View Nations (${parsedErrors.count})`}
                     </button>
                   </div>
                 </div>
 
-                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   {parsedErrors.isRateLimit
                     ? "The upstream NationStates API rate-limited card fetch requests for these nations. All cards that were successfully imported are safely stored in your database."
                     : parsedErrors.raw}
@@ -789,10 +758,10 @@ export function NSImportSuiteAdmin() {
                     {parsedErrors.nations.map((n, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/20 px-2 py-0.5 font-mono text-[10px] text-rose-600 dark:text-rose-300"
+                        className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/20 px-2 py-0.5 font-mono text-xs text-rose-600 dark:text-rose-300"
                       >
                         {n.nation}
-                        {n.reason && <span className="text-[9px] opacity-70">({n.reason})</span>}
+                        {n.reason && <span className="text-xs opacity-70">({n.reason})</span>}
                       </span>
                     ))}
                   </div>
@@ -810,7 +779,7 @@ export function NSImportSuiteAdmin() {
                   <Clock className="h-3.5 w-3.5 text-blue-500" /> Recent Import Runs (Click to
                   inspect cards & logs)
                 </span>
-                <span className="font-mono text-[11px]">{rawLogsData.length} records</span>
+                <span className="font-mono text-xs">{rawLogsData.length} records</span>
               </div>
               <FacetContainer
                 depth={1}
@@ -833,7 +802,7 @@ export function NSImportSuiteAdmin() {
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusColor(log.status)}`}
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${getStatusColor(log.status)}`}
                           >
                             {log.status}
                           </span>
@@ -841,7 +810,7 @@ export function NSImportSuiteAdmin() {
                             <p className="text-foreground truncate text-xs font-semibold">
                               {typeLabel}
                             </p>
-                            <p className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                            <p className="text-muted-foreground flex items-center gap-2 text-xs">
                               <span>
                                 {new Date(log.startedAt).toLocaleString([], {
                                   dateStyle: "short",
@@ -859,7 +828,7 @@ export function NSImportSuiteAdmin() {
                             <span className="text-foreground font-mono font-bold">
                               {log.cardsProcessed} cards
                             </span>
-                            <div className="text-muted-foreground text-[10px]">
+                            <div className="text-muted-foreground text-xs">
                               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                 +{log.cardsCreated}
                               </span>
@@ -872,7 +841,7 @@ export function NSImportSuiteAdmin() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-7 px-2 text-[11px] text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
+                            className="h-7 px-2 text-xs text-blue-500 hover:bg-blue-500/10 hover:text-blue-600"
                           >
                             Filter <ArrowRight className="ml-1 h-3 w-3" />
                           </Button>
@@ -928,7 +897,7 @@ export function NSImportSuiteAdmin() {
                       key={card.id}
                       depth={1}
                       interactive="hover"
-                      className="group border-border bg-card/60 hover:border-primary/40 flex flex-col justify-between space-y-2 rounded-xl border p-3 backdrop-blur-md transition-all"
+                      className="group border-border bg-card/60 hover:border-primary/40 flex flex-col justify-between space-y-2 rounded-xl border p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="space-y-2">
                         <div className="border-border/40 relative aspect-3/2 w-full overflow-hidden rounded-lg border bg-black/40">
@@ -946,7 +915,7 @@ export function NSImportSuiteAdmin() {
                           </div>
 
                           {card.season && (
-                            <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-1.5 py-0.5 font-mono text-[9px] font-bold text-white">
+                            <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/70 px-1.5 py-0.5 font-mono text-xs font-bold text-white">
                               S{card.season}
                             </div>
                           )}
@@ -959,7 +928,7 @@ export function NSImportSuiteAdmin() {
                             {card.title}
                           </p>
                           {region && (
-                            <p className="text-muted-foreground flex items-center gap-1 truncate text-[10px]">
+                            <p className="text-muted-foreground flex items-center gap-1 truncate text-xs">
                               <MapPin className="h-2.5 w-2.5 text-emerald-500" />
                               {region}
                             </p>
@@ -967,7 +936,7 @@ export function NSImportSuiteAdmin() {
                         </div>
                       </div>
 
-                      <div className="border-border/40 flex items-center justify-between border-t pt-2 text-[10px]">
+                      <div className="border-border/40 flex items-center justify-between border-t pt-2 text-xs">
                         <span className="text-muted-foreground font-mono">
                           ID: {card.nsCardId ? `#${card.nsCardId}` : card.id.slice(0, 10)}
                         </span>
@@ -1038,7 +1007,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={fetchRegionMutation.isPending}
-              className="bg-emerald-500 font-semibold text-black transition-all hover:bg-emerald-400 active:scale-95"
+              className="bg-emerald-500 font-semibold text-black transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-400 active:scale-95"
             >
               {fetchRegionMutation.isPending ? "Starting..." : "Start Fetch"}
             </Button>
@@ -1067,7 +1036,7 @@ export function NSImportSuiteAdmin() {
                 }
               }}
               disabled={stopJobMutation.isPending}
-              className="bg-rose-500 font-semibold text-white transition-all hover:bg-rose-600 active:scale-95"
+              className="bg-rose-500 font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-600 active:scale-95"
             >
               {stopJobMutation.isPending ? "Stopping..." : "Stop Job"}
             </Button>

@@ -4,7 +4,12 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { X, Repeat2, Newspaper, Vote } from "lucide-react";
+import {
+  Xmark as X,
+  Refresh as Repeat2,
+  Journal as Newspaper,
+  CheckSquare as Vote,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -19,7 +24,8 @@ import { ComposerActionBar } from "./composer/ComposerActionBar";
 import { ComposerPollModal } from "./composer/ComposerPollModal";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -45,6 +51,7 @@ export function GlassCanvasComposer({
   account,
   accounts,
   onAccountSelect,
+  // oxlint-disable-next-line eslint/no-unused-vars
   onAccountSettings,
   onCreateAccount,
   isOwner,
@@ -52,6 +59,7 @@ export function GlassCanvasComposer({
   placeholder = "What's happening?",
   countryId,
   repostData,
+  // oxlint-disable-next-line eslint/no-unused-vars
   isSignedIn = true,
   hasCountry = true,
 }: GlassCanvasComposerProps) {
@@ -76,6 +84,7 @@ export function GlassCanvasComposer({
     isUploadingImage,
     postToDiscord,
     setPostToDiscord,
+    // oxlint-disable-next-line eslint/no-unused-vars
     isEditorFocused,
     setIsEditorFocused,
     pollDraft,
@@ -139,7 +148,7 @@ export function GlassCanvasComposer({
 
   if (accounts.length === 0) {
     return (
-      <Card className="glass-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
+      <Card className="facet-hierarchy-child border-poll/35 bg-poll/5 relative gap-0 overflow-hidden p-5">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="flex items-start justify-between gap-5">
           <div className="flex items-start gap-3">
@@ -150,7 +159,7 @@ export function GlassCanvasComposer({
               <h4 className="text-foreground text-xs font-semibold">
                 Create a ThinkPages Account to post
               </h4>
-              <p className="text-muted-foreground mt-0.5 text-[11px] leading-normal">
+              <p className="text-muted-foreground mt-0.5 text-xs leading-normal">
                 Set up a ThinkPages Account to publish articles and participate in global community
                 discussions.
               </p>
@@ -159,7 +168,7 @@ export function GlassCanvasComposer({
           <Button
             size="sm"
             onClick={onCreateAccount}
-            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-all active:scale-95"
+            className="bg-poll hover:bg-poll/90 h-8 shrink-0 cursor-pointer border-0 text-xs text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             Create Account
           </Button>
@@ -170,7 +179,7 @@ export function GlassCanvasComposer({
 
   if (!hasCountry || !account) {
     return (
-      <Card className="glass-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
+      <Card className="facet-hierarchy-child relative animate-pulse gap-0 overflow-hidden border-blue-500/10 bg-blue-500/5 p-4">
         <TextureOverlay texture="paperGrain" opacity={0.06} />
         <div className="mb-4 flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-white/10" />
@@ -197,7 +206,7 @@ export function GlassCanvasComposer({
       layout
       ref={composerRef}
       className={cn(
-        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-all duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+        "dark:border-border dark:bg-card/80 relative flex flex-col gap-0 rounded-2xl border border-black/10 bg-white/70 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-2xl dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       )}
       transition={{
         type: "spring",
@@ -235,14 +244,14 @@ export function GlassCanvasComposer({
                     src={repostData.originalPost.account?.profileImageUrl}
                     alt={repostData.originalPost.account?.displayName}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-[0.6rem] font-semibold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-xs font-semibold text-white">
                     {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-xs font-semibold">
                   {repostData.originalPost.account?.displayName || "Unknown"}
                 </span>
-                <span className="text-muted-foreground text-[0.65rem]">
+                <span className="text-muted-foreground text-xs">
                   @{repostData.originalPost.account?.username || "unknown"}
                 </span>
               </div>
@@ -326,7 +335,7 @@ export function GlassCanvasComposer({
                   <p className="text-foreground truncate text-xs font-semibold">
                     {pollDraft.question || "Untitled Poll"}
                   </p>
-                  <p className="text-muted-foreground text-[10px]">
+                  <p className="text-muted-foreground text-xs">
                     {pollDraft.pollType === "choice" ? "Choice Poll" : "Feature Poll"} •{" "}
                     {pollDraft.options.filter((o) => o.trim()).length} options
                   </p>
@@ -338,7 +347,7 @@ export function GlassCanvasComposer({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
-                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-[10px] font-semibold transition-all active:scale-95"
+                  className="border-poll/30 text-poll hover:bg-poll/10 h-7 cursor-pointer px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 >
                   Edit Poll
                 </Button>

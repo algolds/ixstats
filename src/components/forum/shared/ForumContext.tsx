@@ -1,8 +1,7 @@
+"use client";
 // src/components/forum/shared/ForumContext.tsx
 // Context for passing forum state to the DynamicIsland and other global components.
 // Mirrors WikiContext.tsx pattern.
-
-"use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 
@@ -61,6 +60,7 @@ export function ForumContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem("forum:recentThreads");
+      // oxlint-disable-next-line
       if (stored) setRecentThreads(JSON.parse(stored));
     } catch {
       /* SSR or private browsing */

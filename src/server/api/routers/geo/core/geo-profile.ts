@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import type { Geometry } from "geojson";
 import {
   buildGeoProfile,
   computeEconomicGeoModifiers,
@@ -33,6 +32,7 @@ export const geoProfileProcedures = {
           coastlineKm: true,
           landArea: true,
           areaSqMi: true,
+          realmId: true,
         },
       });
 
@@ -51,10 +51,11 @@ export const geoProfileProcedures = {
         });
       }
 
-      // 2. Get intersecting map layers for climate and altitude analysis
+      // 2. Get intersecting map layers for climate and altitude analysis — the country's own realm's
+      const realmId = country.realmId;
       const [climateLayers, altitudeLayers] = await Promise.all([
         ctx.db.mapLayer.findMany({
-          where: { layerType: "climate", isActive: true },
+          where: { layerType: "climate", isActive: true, realmId },
           select: {
             featureId: true,
             geometry: true,
@@ -64,7 +65,7 @@ export const geoProfileProcedures = {
           },
         }),
         ctx.db.mapLayer.findMany({
-          where: { layerType: "altitudes", isActive: true },
+          where: { layerType: "altitudes", isActive: true, realmId },
           select: {
             featureId: true,
             geometry: true,
@@ -135,7 +136,9 @@ export const geoProfileProcedures = {
       }
 
       // Normalize climate percentages
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
       const totalClimateArea = climateDistribution.reduce((s, z) => s + z.areaSqKm, 0);
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
       for (const z of climateDistribution) {
         z.percentArea =
           totalClimateArea > 0 ? Math.round((z.areaSqKm / totalClimateArea) * 100 * 10) / 10 : 0;
@@ -191,7 +194,9 @@ export const geoProfileProcedures = {
       }
 
       // Normalize elevation percentages
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
       const totalElevArea = elevationProfile.reduce((s, z) => s + z.areaSqKm, 0);
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'z' is intentional in this scope
       for (const z of elevationProfile) {
         z.percentArea =
           totalElevArea > 0 ? Math.round((z.areaSqKm / totalElevArea) * 100 * 10) / 10 : 0;
@@ -210,7 +215,7 @@ export const geoProfileProcedures = {
         >(
           `
           WITH country AS (
-            SELECT id,
+            SELECT id, "realmId",
               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
             FROM "Country"
             WHERE id = $1
@@ -228,6 +233,7 @@ export const geoProfileProcedures = {
             ), 0) / 1000 as length_km
           FROM country c
           JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true
+            AND ml."worldId" = c."realmId"
           WHERE ST_Intersects(
             ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
             c.geom
@@ -242,7 +248,7 @@ export const geoProfileProcedures = {
         const lakeStats = await ctx.db.$queryRawUnsafe<Array<{ count: number; area_sqkm: number }>>(
           `
           WITH country AS (
-            SELECT id,
+            SELECT id, "realmId",
               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
             FROM "Country"
             WHERE id = $1
@@ -260,6 +266,7 @@ export const geoProfileProcedures = {
             ), 0) / 1e6 as area_sqkm
           FROM country c
           JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true
+            AND ml."worldId" = c."realmId"
           WHERE ST_Intersects(
             ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
             c.geom
@@ -274,7 +281,7 @@ export const geoProfileProcedures = {
         console.warn("PostGIS hydro query failed, falling back to bbox estimation:", err);
         const [fallbackRivers, fallbackLakes] = await Promise.all([
           ctx.db.mapLayer.findMany({
-            where: { layerType: "rivers", isActive: true },
+            where: { layerType: "rivers", isActive: true, realmId },
             select: {
               featureId: true,
               geometry: true,
@@ -283,7 +290,7 @@ export const geoProfileProcedures = {
             },
           }),
           ctx.db.mapLayer.findMany({
-            where: { layerType: "lakes", isActive: true },
+            where: { layerType: "lakes", isActive: true, realmId },
             select: {
               featureId: true,
               geometry: true,
@@ -344,7 +351,7 @@ export const geoProfileProcedures = {
         const neighborRows = await ctx.db.$queryRawUnsafe<PostGISNeighborRow[]>(
           `
           WITH country AS (
-            SELECT id, name,
+            SELECT id, name, "realmId",
               ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) as geom
             FROM "Country"
             WHERE id = $1
@@ -363,7 +370,7 @@ export const geoProfileProcedures = {
             AND ml."isActive" = true
             AND ml."countryId" IS NOT NULL
             AND ml."countryId" != c.id
-          JOIN "Country" c2 ON c2.id = ml."countryId"
+          JOIN "Country" c2 ON c2.id = ml."countryId" AND c2."realmId" = c."realmId"
           WHERE ST_Intersects(
             ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(ml.geometry::text), 4326)),
             c.geom
@@ -553,10 +560,4 @@ export const geoProfileProcedures = {
         crisisRisk,
       };
     }),
-
-  /**
-   * Admin endpoint: Recalculate and persist geographic profiles for all countries
-   * (or a single country). Stores results in CountryGeoProfile table for use
-   * by the economic engine and NPC personality drift.
-   */
 };

@@ -2,22 +2,22 @@
 
 import React from "react";
 import {
-  TrendingUp,
+  StatUp as TrendingUp,
   Globe,
   Trophy,
   Activity,
-  MessageSquare,
+  ChatBubble as MessageSquare,
   Heart,
-  Share2,
+  ShareAndroid as Share2,
   Eye,
   Clock,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
-import { FeedPollWidget } from "~/components/ui/FeedPollWidget";
+import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 
 interface ActivityData {
   id: string;
@@ -90,7 +90,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const IconComponent = config.icon;
 
   return (
-    <div className="glass-hierarchy-child group rounded-lg p-4 transition-all hover:scale-[1.01] sm:p-6">
+    <div className="facet-hierarchy-child group rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01] sm:p-6">
       {/* Header */}
       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}

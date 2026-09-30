@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { MapPin, Layers, AlertTriangle, Users, Crosshair } from "lucide-react";
+import {
+  MapPin,
+  Component as Layers,
+  WarningTriangle as AlertTriangle,
+  Group as Users,
+  Archery as Crosshair,
+} from "iconoir-react";
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/maps/border-editor";
 
@@ -48,7 +54,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
           <h3 className="text-foreground text-sm font-semibold">{displayName || featureId}</h3>
           <p className="text-muted-foreground text-xs">{featureId}</p>
           {isDirty && (
-            <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-500">
+            <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-500">
               Modified
             </span>
           )}
@@ -144,7 +150,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
                 }
                 className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
                   brushTargetId === n.featureId
-                    ? "bg-purple-500/30 text-purple-500 ring-1 ring-purple-500/40"
+                    ? "bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/40"
                     : "text-muted-foreground hover:bg-muted"
                 }`}
               >
@@ -152,7 +158,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
               </button>
             ))}
           </div>
-          <p className="text-muted-foreground/50 mt-1 text-[10px]">
+          <p className="text-muted-foreground/50 mt-1 text-xs">
             Click and drag on the map to paint territory into the selected neighbor.
           </p>
         </div>

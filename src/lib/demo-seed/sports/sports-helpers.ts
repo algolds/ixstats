@@ -19,7 +19,7 @@ export async function downloadImageForSeed(imageUrl: string): Promise<string> {
     try {
       const decodedUrl = decodeURIComponent(imageUrl);
       const commonsMatch = decodedUrl.match(
-        /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^\/]+)/i
+        /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/i
       );
       if (commonsMatch && commonsMatch[1]) {
         const filename = commonsMatch[1];

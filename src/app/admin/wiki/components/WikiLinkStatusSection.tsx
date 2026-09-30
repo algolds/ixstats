@@ -1,14 +1,12 @@
+"use client";
 // src/app/admin/wiki/components/WikiLinkStatusSection.tsx
 // Wiki Link Status table & filtering overview.
 
-"use client";
-
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Search, Link2, CheckCircle, XCircle } from "lucide-react";
+import { Search, Link as Link2, CheckCircle, XmarkCircle as XCircle } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { FilterTab } from "./types";
 
@@ -65,118 +63,105 @@ export function WikiLinkStatusSection({
   ];
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Link2 className="h-5 w-5 text-emerald-500" />
-            Wiki Link Status
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setFilter(tab.key)}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  filter === tab.key
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted/50"
-                )}
-              >
-                {tab.label}
-                <span className="ml-1 opacity-60">({tab.count})</span>
-              </button>
-            ))}
-          </div>
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-emerald-400" />
+          <h3 className="text-foreground text-xs font-bold">Wiki Link Status</h3>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-          <Input
-            placeholder="Search countries..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="bg-card/40 border-border/40 flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={cn(
+                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+                filter === tab.key
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab.label}
+              <span className="ml-1 opacity-70">({tab.count})</span>
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg" />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-muted-foreground py-8 text-center text-sm">
-            No countries match your filters.
-          </div>
-        ) : (
-          <div className="border-border/30 max-h-[28rem] overflow-y-auto rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
-                <tr className="border-border/30 border-b">
-                  <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
-                    Country
-                  </th>
-                  <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
-                    Wiki Page
-                  </th>
-                  <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium sm:table-cell">
-                    Source
-                  </th>
-                  <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium md:table-cell">
-                    Last Synced
-                  </th>
-                  <th className="text-muted-foreground px-4 py-2.5 text-right font-medium">
-                    Status
-                  </th>
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+        <Input
+          placeholder="Search countries..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+        />
+      </div>
+
+      {/* Table */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-muted-foreground py-8 text-center text-xs">
+          No countries match your filters.
+        </div>
+      ) : (
+        <div className="border-border/30 bg-card/25 max-h-[28rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
+              <tr>
+                <th className="px-4 py-2.5 text-left font-medium">Country</th>
+                <th className="px-4 py-2.5 text-left font-medium">Wiki Page</th>
+                <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">Source</th>
+                <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                  Last Synced
+                </th>
+                <th className="px-4 py-2.5 text-right font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-border/15 divide-y">
+              {filtered.map((country) => (
+                <tr key={country.id} className="hover:bg-foreground/[0.02] transition-colors">
+                  <td className="text-foreground px-4 py-2.5 font-semibold">{country.name}</td>
+                  <td className="text-muted-foreground max-w-[12rem] truncate px-4 py-2.5">
+                    {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
+                  </td>
+                  <td className="hidden px-4 py-2.5 sm:table-cell">
+                    {country.wikiSource ? (
+                      <Badge variant="outline" className="text-xs">
+                        {country.wikiSource}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground opacity-50">—</span>
+                    )}
+                  </td>
+                  <td className="text-muted-foreground hidden px-4 py-2.5 font-mono text-xs md:table-cell">
+                    {country.wikiLastSynced
+                      ? new Date(country.wikiLastSynced).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {country.wikiPageTitle ? (
+                      <CheckCircle className="ml-auto h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <XCircle className="ml-auto h-4 w-4 text-red-400" />
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-border/20 divide-y">
-                {filtered.map((country) => (
-                  <tr key={country.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="text-foreground px-4 py-2.5 font-medium">{country.name}</td>
-                    <td className="text-muted-foreground max-w-[12rem] truncate px-4 py-2.5">
-                      {country.wikiPageTitle ?? (
-                        <span className="italic opacity-50">Not linked</span>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-2.5 sm:table-cell">
-                      {country.wikiSource ? (
-                        <Badge variant="outline" className="text-xs">
-                          {country.wikiSource}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground opacity-50">—</span>
-                      )}
-                    </td>
-                    <td className="text-muted-foreground hidden px-4 py-2.5 text-xs md:table-cell">
-                      {country.wikiLastSynced
-                        ? new Date(country.wikiLastSynced).toLocaleDateString()
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {country.wikiPageTitle ? (
-                        <CheckCircle className="ml-auto h-4 w-4 text-emerald-500" />
-                      ) : (
-                        <XCircle className="ml-auto h-4 w-4 text-red-400" />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-        <p className="text-muted-foreground text-xs">
-          {linkedCount} of {countries.length} countries linked to wiki pages
-        </p>
-      </CardContent>
-    </Card>
+      <p className="text-muted-foreground text-xs">
+        {linkedCount} of {countries.length} countries linked to wiki pages
+      </p>
+    </div>
   );
 }

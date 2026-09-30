@@ -48,7 +48,9 @@ export function withBasePath(path: string): string {
       if (host.startsWith("maps.")) {
         return normalizedPath;
       }
-    } catch {}
+    } catch {
+      // window.location unavailable — keep the base path
+    }
 
     if (!window.location.pathname.startsWith(basePath)) {
       return normalizedPath; // App is running at root, don't prepend

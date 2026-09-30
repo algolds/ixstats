@@ -1,8 +1,8 @@
-# ⟨ONOMA⟩ Linguistic Engine Brand Guide
+# 🧪 ⟨ONOMA⟩ Linguistic Studio — Labs Brand Guide
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — Onoma v4  
-**Hierarchy:** Core Feature System (`ONOMA_VERSION = 4` in Version Registry).
+**Parent Layer:** Labs (Experimental & Incubation Studio) (`ONOMA_VERSION = 4`)  
+**Primary Action:** `SYNTHESIZE` | **Domain Accent:** Electric Azure & Deep Indigo (`#0091FF` / `#6366F1`)  
+**Route:** `/labs/onoma` | **Status:** 🧪 Labs Preview  
 
 ---
 
@@ -74,16 +74,18 @@ A foundational rule of Onoma design:
 | :---: | :--- | :--- | :---: | :--- |
 | **1** | **Fluid** | **Cyan** | `#06b6d4` | Broad linguistic patterns; high phonetic variation and exploratory sound combinations |
 | **2** | **Organic** *(Recommended)* | **Azure** | `#0091ff` | Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion |
-| **3** | **Faithful** | **Violet** | `#8b5cf6` | Strong structural fidelity; generates forms closely echoing seed language roots |
+| **3** | **Faithful** | **Indigo** | `#6366f1` | Strong structural fidelity; generates forms closely echoing seed language roots |
 | **4** | **Strict** | **Amber** | `#f59e0b` | High pattern constraints; closely preserves literal word structures from training data |
 
 ---
 
 # 04 — The Product Model
 
-- **CREATE**: Make language useful (Places, People, Organizations, Cultures, Names).
-- **STUDIO**: Build the system (Workshop, Phonology, Acoustics, Sound Shifts, Lexicon).
-- **EXPLORE**: Understand the language (Entropy, Frequency, Lexical Diversity, Phonotactics, Formants, Historical Change).
+- **CREATE**: Make language useful (Sandbox quick generator, Places, People, Factions, Culture).
+- **STUDIO**: Build the system (Workshop, Path Visualizer, Name Sets, Sound Shifts & Loanwords).
+- **EXPLORE**: Understand the language (Acoustics & IPA, Grammar & Roots, Writing Systems, Community Packs).
+
+Utility sections outside the three pillars: **Stash** (saved names, dictionaries, generation history) and **Settings** (voice preferences, voice sandbox, local data manager).
 
 ---
 
@@ -91,4 +93,4 @@ A foundational rule of Onoma design:
 
 - [Onoma Glyph Specification](./onoma-glyph-spec.md)
 - [Onoma Voice & Kokoro TTS Guide](./onoma-voice-guide.md)
-- [API Reference: Onoma Router](../reference/api-complete.md#onoma-router)
+- [API Reference: Onoma Router](../reference/api-complete.md)

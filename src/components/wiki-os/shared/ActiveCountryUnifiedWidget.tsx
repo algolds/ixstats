@@ -1,14 +1,13 @@
+"use client";
 // src/components/wiki-os/shared/ActiveCountryUnifiedWidget.tsx
 // Active Country context widget displaying flag, status, and detail popovers.
 
-"use client";
-
 import { useState, useEffect, useRef } from "react";
-import { cn } from "~/lib/utils";
+import { cn, formatCurrency } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 
 export interface ActiveCountryData {
@@ -67,14 +66,6 @@ export function ActiveCountryUnifiedWidget({
 
   if (!activeCountry) return null;
 
-  const formatGdp = (n: number) => {
-    if (!n) return "...";
-    if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
-    if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    return n.toLocaleString();
-  };
-
   const viewerCountryId = userProfile?.countryId ?? undefined;
   const isOwnCountry = myCountry?.id === activeCountry.id;
   const countryName = activeCountry.name ?? "Active Country";
@@ -101,8 +92,8 @@ export function ActiveCountryUnifiedWidget({
           (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
             ?.currentGdpPerCapita != null
         ? Number(
-            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } }).calculatedStats
-              ?.currentGdpPerCapita
+            (activeCountry as { calculatedStats?: { currentGdpPerCapita?: number } })
+              .calculatedStats?.currentGdpPerCapita
           )
         : null;
 
@@ -124,7 +115,7 @@ export function ActiveCountryUnifiedWidget({
     <div className="relative w-full" ref={popoverRef}>
       <div
         className={cn(
-          "group relative flex items-center rounded-xl px-2.5 py-1 transition-all duration-300 ease-in-out outline-none",
+          "group relative flex items-center rounded-xl px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
           isLocalHoverExpanded
             ? "z-50 w-max border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] pr-4 shadow-lg backdrop-blur-md"
             : "hover:bg-foreground/5 w-full border-transparent bg-transparent"
@@ -139,7 +130,7 @@ export function ActiveCountryUnifiedWidget({
             }
           }}
           className={cn(
-            "wikios-sidebar-icon-box relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-md transition-all active:scale-95",
+            "wikios-sidebar-icon-box relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             popoverOpen ? "border-amber-500/50 bg-amber-500/15" : "hover:border-amber-500/30"
           )}
           title={`Country Context: ${countryName} ${isCollapsed ? "(Click for details)" : "(Click for actions)"}`}
@@ -151,7 +142,7 @@ export function ActiveCountryUnifiedWidget({
         <button
           onClick={() => setActionsMenuOpen(true)}
           className={cn(
-            "flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-300 ease-in-out outline-none",
+            "flex-1 overflow-hidden text-left whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
             isRowCollapsed ? "pointer-events-none w-0 opacity-0" : "w-auto pl-3 opacity-100"
           )}
           style={transitionStyle}
@@ -160,7 +151,7 @@ export function ActiveCountryUnifiedWidget({
           <span className="block truncate text-xs font-semibold text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]">
             {countryName}
           </span>
-          <span className="block text-[9px] leading-tight text-[var(--wikios-text-dim)]">
+          <span className="block text-xs leading-tight text-[var(--wikios-text-dim)]">
             {isOwnCountry ? "MyCountry" : "MyCountry Actions"}
           </span>
         </button>
@@ -177,7 +168,7 @@ export function ActiveCountryUnifiedWidget({
               <h4 className="text-foreground truncate text-xs leading-tight font-bold">
                 {countryName}
               </h4>
-              <p className="text-muted-foreground text-[9px] leading-tight">
+              <p className="text-muted-foreground text-xs leading-tight">
                 {activeCountry.continent ? String(activeCountry.continent) : ""}{" "}
                 {isOwnCountry ? "(MyCountry)" : "(MyCountry Actions)"}
               </p>
@@ -185,7 +176,7 @@ export function ActiveCountryUnifiedWidget({
           </div>
 
           {/* Base Stats */}
-          <div className="space-y-1.5 text-[10px]">
+          <div className="space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Population:</span>
               <span className="text-foreground font-semibold">
@@ -201,7 +192,7 @@ export function ActiveCountryUnifiedWidget({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total GDP:</span>
               <span className="text-foreground font-semibold">
-                {totalGdpVal != null ? `$${formatGdp(totalGdpVal)}` : "..."}
+                {totalGdpVal != null ? formatCurrency(totalGdpVal) : "..."}
               </span>
             </div>
 
@@ -233,13 +224,13 @@ export function ActiveCountryUnifiedWidget({
           {/* Vitality Summary */}
           {rings && (
             <div className="mt-2.5 border-t border-white/5 pt-2.5">
-              <div className="mb-1.5 text-[9px] font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
+              <div className="mb-1.5 text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
                 Vitality Indices
               </div>
-              <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+              <div className="grid grid-cols-2 gap-1.5 text-xs">
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Econ:</span>
-                  <span className="font-bold text-green-400">{rings.economicVitality}</span>
+                  <span className="font-bold text-emerald-400">{rings.economicVitality}</span>
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Well:</span>
@@ -247,11 +238,11 @@ export function ActiveCountryUnifiedWidget({
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Diplo:</span>
-                  <span className="font-bold text-purple-400">{rings.diplomaticStanding}</span>
+                  <span className="font-bold text-cyan-400">{rings.diplomaticStanding}</span>
                 </div>
                 <div className="bg-foreground/[0.04] flex justify-between rounded px-1.5 py-1">
                   <span className="text-muted-foreground">Gov:</span>
-                  <span className="font-bold text-amber-400">{rings.governmentalEfficiency}</span>
+                  <span className="font-bold text-indigo-400">{rings.governmentalEfficiency}</span>
                 </div>
               </div>
             </div>
@@ -264,7 +255,7 @@ export function ActiveCountryUnifiedWidget({
                 setPopoverOpen(false);
                 setActionsMenuOpen(true);
               }}
-              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-300 transition-all hover:bg-amber-500/20 active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
               type="button"
             >
               {isOwnCountry ? "Manage Country" : "Country Actions"}

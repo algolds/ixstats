@@ -8,20 +8,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import {
-  X,
+  Xmark as X,
   Globe,
   Fingerprint,
   Shield,
   Coins,
-  Sparkles,
-  Info,
-  Zap,
-  BookOpen,
-  Save,
-  Smile,
-} from "lucide-react";
+  Sparks as Sparkles,
+  InfoCircle as Info,
+  OpenBook as BookOpen,
+  FloppyDisk as Save,
+  Emoji as Smile,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 
@@ -66,30 +65,30 @@ const ADVANCED_TIPS = [
   {
     icon: Save,
     color: "text-amber-400",
-    title: "Autosave",
+    title: "Continuous Autosave",
     description:
-      "Your progress is automatically saved as you go. A green save indicator on the top right shows when changes are successfully backed up.",
+      "Your progress is automatically saved to your account and local session as you work. The studio header displays real-time sync status.",
   },
   {
     icon: Sparkles,
     color: "text-purple-400",
-    title: "Live Preview Panel",
+    title: "Halo & Dynamic Guidance",
     description:
-      "The panel on the left sidebar shows a live preview of your country, including its flag, name, and current stats. It updates instantly as you make changes.",
+      "The floating Halo and Studio Header provide context-aware guidance and validation feedback for every step of statecraft.",
   },
   {
     icon: Info,
     color: "text-cyan-400",
-    title: "Vitality Rings",
+    title: "Real-Time Synthesis",
     description:
-      "Watch the rings on the preview panel. They show your country's Economic Health, Market Activity, and Development Index, indicating how your policies are performing.",
+      "Every slider, institution, and budget change recalculates your projected GDP, tax revenue, stability, and demographic breakdown in real time.",
   },
   {
     icon: Smile,
     color: "text-pink-400",
     title: "Experiment & Have Fun",
     description:
-      "Feel free to try wild ideas! You can always change your symbols, government blocks, and policies in the editor later.",
+      "Feel free to explore bold ideas! You can always fine-tune your institutions, ministries, and economic parameters in the editor later.",
   },
 ];
 
@@ -137,7 +136,9 @@ export function BuilderWelcomeModal({
     onOpenChange?.(false);
     try {
       localStorage.setItem(STORAGE_KEY, BUILDER_VERSION);
-    } catch {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onOpenChange]);
 
   const TABS = ["Getting Started", "Build Process", "Tips", "FAQ Guide"];
@@ -191,7 +192,7 @@ export function BuilderWelcomeModal({
                       </p>
                     </div>
                   </div>
-                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-[10px]">
+                  <span className="bg-muted border-border text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
                     v{BUILDER_VERSION}
                   </span>
                 </div>
@@ -204,7 +205,7 @@ export function BuilderWelcomeModal({
                     key={tab}
                     onClick={() => setActiveTab(i)}
                     className={cn(
-                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-all",
+                      "relative cursor-pointer border-b-2 px-3 py-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       activeTab === i
                         ? "border-amber-500 font-bold text-amber-500"
                         : "text-muted-foreground hover:text-foreground border-transparent"
@@ -245,7 +246,7 @@ export function BuilderWelcomeModal({
                       </div>
 
                       <div
-                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-all duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
+                        className="force-gpu relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.06] to-black/[0.02] p-3 shadow-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-white/20 dark:from-white/15 dark:to-white/5"
                         style={{
                           backdropFilter: "blur(20px) saturate(145%)",
                           WebkitBackdropFilter: "blur(20px) saturate(145%)",
@@ -262,14 +263,6 @@ export function BuilderWelcomeModal({
                           <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-black/15 to-transparent dark:via-white/35" />
                           {/* Right Highlight Edge */}
                           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-black/10 to-transparent dark:via-white/25" />
-                          {/* Inner shimmer pulsing */}
-                          <div
-                            className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-black/5 to-transparent dark:via-white/10"
-                            style={{
-                              animationDuration: "3s",
-                              animationTimingFunction: "ease-in-out",
-                            }}
-                          />
                         </div>
 
                         {/* Content */}
@@ -280,7 +273,7 @@ export function BuilderWelcomeModal({
                               How It Works
                             </span>
                           </div>
-                          <p className="text-muted-foreground text-[11px] leading-relaxed">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             Every decision applies real-time modifiers to your GDP growth, stability
                             index, and currency value. All components and sliders can be customized
                             and re-allocated at any time without penalty once your nation is active.
@@ -312,7 +305,7 @@ export function BuilderWelcomeModal({
                                 {step.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {step.description}
                             </p>
                           </div>
@@ -345,7 +338,7 @@ export function BuilderWelcomeModal({
                                 <h4 className="text-foreground/90 text-xs font-semibold">
                                   {item.title}
                                 </h4>
-                                <p className="text-muted-foreground text-[10px] leading-normal">
+                                <p className="text-muted-foreground text-xs leading-normal">
                                   {item.description}
                                 </p>
                               </div>
@@ -389,7 +382,7 @@ export function BuilderWelcomeModal({
                               <span className="font-black text-amber-500">Q:</span>
                               {faq.q}
                             </h4>
-                            <p className="text-muted-foreground pl-4 text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground pl-4 text-xs leading-relaxed">
                               {faq.a}
                             </p>
                           </div>

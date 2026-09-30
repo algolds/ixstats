@@ -18,7 +18,11 @@ const initParticles = async (engine: Engine): Promise<void> => {
   await loadSlim(engine);
 };
 
-export function CosmeticParticlesCanvas({ style, containerType, className }: CosmeticParticlesProps) {
+export function CosmeticParticlesCanvas({
+  style,
+  containerType,
+  className,
+}: CosmeticParticlesProps) {
   const uniqueId = useId();
 
   // Map cosmetic style keys to custom SVG paths (memoized)

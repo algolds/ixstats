@@ -1,6 +1,6 @@
+"use client";
 // src/app/admin/storyteller/_components/WorldTimeline.tsx
 // Visual timeline of all world events
-"use client";
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
@@ -9,22 +9,22 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { formatDistanceToNow, format } from "date-fns";
 import {
-  TrendingDown,
-  Swords,
+  StatDown as TrendingDown,
+  Tournament as Swords,
   Wind,
-  Scale,
+  ScaleFrameEnlarge as Scale,
   Cpu,
   Heart,
-  Flame,
-  Wand2,
-  Sparkles,
+  FireFlame as Flame,
+  MagicWand as Wand2,
+  Sparks as Sparkles,
   Clock,
-  Users,
-  ChevronDown,
-  ChevronUp,
-  Power,
-  PowerOff,
-} from "lucide-react";
+  Group as Users,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  OffTag as Power,
+  OffTag as PowerOff,
+} from "iconoir-react";
 import { useState } from "react";
 
 const EVENT_ICONS: Record<string, typeof TrendingDown> = {
@@ -133,7 +133,7 @@ export function WorldTimeline() {
 
               {/* Event card */}
               <div
-                className={`rounded-xl border p-4 transition-all ${
+                className={`rounded-xl border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   isActive
                     ? `${colors.border} ${colors.bg}`
                     : "border-border/30 bg-muted/10 opacity-60"

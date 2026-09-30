@@ -20,18 +20,17 @@ import {
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import {
-  FileText,
-  FlaskConical,
-  Globe2,
+  Page as FileText,
+  Flask as FlaskConical,
+  Globe as Globe2,
   Heart,
-  Landmark,
-  LifeBuoy,
-  ChevronDown,
-  ChevronRight,
+  Bank as Landmark,
+  HelpCircle as LifeBuoy,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
   Shield,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { ComponentType } from "~/lib/enums";
 
 export interface GovernmentTemplate {
@@ -52,7 +51,7 @@ type TemplateGroupId =
 interface TemplateGroupConfig {
   id: TemplateGroupId;
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string }>;
   iconClassName: string;
   keywords: string[];
 }
@@ -112,7 +111,7 @@ const TEMPLATE_GROUP_CONFIG: readonly TemplateGroupConfig[] = [
     id: "social",
     label: "Social & Welfare",
     icon: Heart,
-    iconClassName: "text-rose-600 dark:text-rose-400",
+    iconClassName: "text-red-600 dark:text-red-400",
     keywords: [
       "welfare",
       "social_",
@@ -196,6 +195,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
       try {
         const stored = window.sessionStorage.getItem(COLLAPSED_GROUPS_STORAGE_KEY);
         if (!stored) {
+          // oxlint-disable-next-line
           setCollapsedGroups(new Set(DEFAULT_COLLAPSED_GROUPS));
           setHasHydratedCollapsedState(true);
           return;
@@ -300,7 +300,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {group.templates.length}
                       </Badge>
                       <div className="text-muted-foreground/80">

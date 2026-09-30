@@ -1,29 +1,29 @@
 "use client";
 
 import React, { useRef, useCallback } from "react";
-import { formatExactCurrency } from "~/lib/utils";
-import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
+import { formatExactCurrency, formatNumber } from "~/lib/utils";
+import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { IxTime } from "~/lib/ixtime";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { cn } from "~/lib/utils";
-import { GlassCard } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard } from "~/components/ui/facet-container";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
+  Dollar as DollarSign,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  WarningTriangle as AlertTriangle,
   CheckCircle,
   Clock,
   Calculator,
-  ChevronDown,
-  ChevronRight,
-  HelpCircle,
-} from "lucide-react";
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
+import { BUDGET_YEAR_MAX, BUDGET_YEAR_MIN } from "~/types/government";
 import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
 
 interface BudgetAllocationFormProps {
@@ -90,21 +90,21 @@ export function BudgetAllocationForm({
   totalBudgetRef.current = totalBudget;
 
   const handleChange = useCallback(
-    (field: keyof BudgetAllocationInput, value: any) => {
-      const updatedData = {
-        ...dataRef.current,
-        [field]: value,
-      };
+    <K extends keyof BudgetAllocationInput>(field: K, value: BudgetAllocationInput[K]) => {
+      const updatedData: BudgetAllocationInput = { ...dataRef.current };
+      updatedData[field] = value;
 
       // Auto-calculate percentage when amount changes
       if (field === "allocatedAmount" && totalBudgetRef.current > 0) {
         updatedData.allocatedPercent =
-          Math.round((value / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
+          Math.round((updatedData.allocatedAmount / totalBudgetRef.current) * 100 * 1000) / 1000; // Round to 3 decimal places
       }
 
       // Auto-calculate amount when percentage changes
       if (field === "allocatedPercent") {
-        updatedData.allocatedAmount = Math.round((totalBudgetRef.current * value) / 100); // Round to nearest dollar
+        updatedData.allocatedAmount = Math.round(
+          (totalBudgetRef.current * updatedData.allocatedPercent) / 100
+        ); // Round to nearest dollar
       }
 
       onChange(updatedData);
@@ -114,13 +114,6 @@ export function BudgetAllocationForm({
 
   const formatCurrency = (amount: number) => {
     return formatExactCurrency(amount, currency);
-  };
-
-  const formatNumber = (num: number) => {
-    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-    return num.toFixed(0);
   };
 
   const utilizationRate =
@@ -140,17 +133,14 @@ export function BudgetAllocationForm({
   const StatusIcon = statusConfig.icon;
 
   const cardElement = (
-    <GlassCard
-      depth="base"
-      theme="teal"
+    <FacetCard
+      depth={1}
       className={cn(
-        "relative overflow-hidden border-zinc-200/50 transition-all duration-200 dark:border-white/5",
+        "facet-surface facet-refraction relative overflow-hidden bg-card/60 backdrop-blur-md border-zinc-200/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/5",
         isCollapsed
           ? "hover:border-cyan-500/20 hover:bg-zinc-50/50 dark:hover:bg-white/[0.01]"
           : "border-cyan-500/20 shadow-lg dark:border-cyan-500/10"
       )}
-      texture="chevron"
-      textureOpacity={0.03}
     >
       {/* Header Row: Always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -183,7 +173,7 @@ export function BudgetAllocationForm({
                 {departmentName}
                 {parentName && (
                   <span
-                    className="rounded border px-1.5 py-0.5 text-[9px] font-medium"
+                    className="rounded border px-1.5 py-0.5 text-xs font-medium"
                     style={{
                       backgroundColor: `${parentColor}11`,
                       borderColor: `${parentColor}22`,
@@ -194,7 +184,7 @@ export function BudgetAllocationForm({
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {utilizationRate > 0 ? `Utilization: ${utilizationRate.toFixed(0)}%` : "Unfunded"}
               </span>
             </div>
@@ -205,7 +195,7 @@ export function BudgetAllocationForm({
         <div className="flex flex-wrap items-center gap-4 lg:mr-4 lg:ml-auto">
           {/* Allocated Amount */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Amount
             </span>
             <div className="relative w-36 sm:w-40">
@@ -226,7 +216,7 @@ export function BudgetAllocationForm({
 
           {/* Allocation Share (Percentage) */}
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <span className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Share
             </span>
             <div className="flex items-center gap-2">
@@ -254,7 +244,7 @@ export function BudgetAllocationForm({
                   step="0.1"
                   className="w-full rounded border border-zinc-200 bg-white py-1 pr-4 pl-1.5 text-right text-xs font-semibold text-zinc-900 focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20 focus:outline-none disabled:opacity-50 dark:border-white/10 dark:bg-zinc-950/60 dark:text-white"
                 />
-                <span className="absolute top-1.5 right-1 text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
+                <span className="absolute top-1.5 right-1 text-xs font-bold text-zinc-600 dark:text-zinc-400">
                   %
                 </span>
               </div>
@@ -272,7 +262,7 @@ export function BudgetAllocationForm({
             <div className="text-xs font-extrabold text-zinc-800 dark:text-zinc-300">
               {formatCurrency(data.allocatedAmount)}
             </div>
-            <div className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+            <div className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
               Calculated Outflow
             </div>
           </div>
@@ -309,13 +299,12 @@ export function BudgetAllocationForm({
                       onChange={(e) =>
                         handleChange(
                           "budgetYear",
-                          parseInt(e.target.value) ||
-                            new Date(IxTime.getCurrentIxTime()).getFullYear()
+                          parseInt(e.target.value) || currentBudgetYear()
                         )
                       }
                       disabled={isReadOnly}
-                      min="2020"
-                      max="2035"
+                      min={BUDGET_YEAR_MIN}
+                      max={BUDGET_YEAR_MAX}
                       className="h-8 border-zinc-200 bg-white text-zinc-900 focus:border-cyan-500/30 focus:ring-cyan-500/20 dark:border-white/10 dark:bg-zinc-950/40 dark:text-white"
                     />
                   </div>
@@ -346,7 +335,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 5)}
-                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
+                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 5%
                       </Button>
@@ -354,7 +343,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 10)}
-                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
+                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 10%
                       </Button>
@@ -362,7 +351,7 @@ export function BudgetAllocationForm({
                         variant="outline"
                         size="sm"
                         onClick={() => handleChange("allocatedPercent", 15)}
-                        className="h-7 border-zinc-200 text-[10px] text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
+                        className="h-7 border-zinc-200 text-xs text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:border-white/10 dark:text-zinc-400 dark:hover:bg-transparent dark:hover:text-white"
                       >
                         Reset to 15%
                       </Button>
@@ -385,7 +374,7 @@ export function BudgetAllocationForm({
 
                     <div className="relative h-2 w-full overflow-hidden rounded-full border border-zinc-200/50 bg-zinc-200 dark:border-white/5 dark:bg-zinc-950">
                       <div
-                        className="h-full rounded-full transition-all duration-300"
+                        className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                         style={{
                           width: `${utilizationRate}%`,
                           backgroundColor: departmentColor,
@@ -399,7 +388,7 @@ export function BudgetAllocationForm({
                         <div className="text-xs font-bold text-zinc-800 dark:text-white">
                           {formatNumber(data.allocatedAmount)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                           Allocated
                         </div>
                       </div>
@@ -407,7 +396,7 @@ export function BudgetAllocationForm({
                         <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
                           {formatNumber(data.allocatedAmount * 0.9)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                           Utilized
                         </div>
                       </div>
@@ -415,7 +404,7 @@ export function BudgetAllocationForm({
                         <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
                           {formatNumber(data.allocatedAmount * 0.1)}
                         </div>
-                        <div className="text-[8px] font-bold text-zinc-500 uppercase dark:text-zinc-400">
+                        <div className="text-xs font-bold text-zinc-500 uppercase dark:text-zinc-400">
                           Remaining
                         </div>
                       </div>
@@ -430,25 +419,25 @@ export function BudgetAllocationForm({
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
-                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           Share of Budget
                         </div>
                         <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
                           {data.allocatedPercent.toFixed(1)}%
                         </div>
-                        <div className="mt-1 text-[9px] leading-normal text-zinc-500 dark:text-zinc-400">
+                        <div className="mt-1 text-xs leading-normal text-zinc-500 dark:text-zinc-400">
                           of {formatNumber(totalBudget)} total outflow
                         </div>
                       </div>
 
                       <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-zinc-100/50 p-3 dark:border-white/5 dark:bg-zinc-950/20">
-                        <div className="text-[9px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                           Per Capita Cost
                         </div>
                         <div className="mt-2 text-base font-extrabold text-zinc-800 dark:text-white">
                           {formatNumber(data.allocatedAmount / 100000)}
                         </div>
-                        <div className="mt-1 text-[9px] leading-normal text-zinc-500 dark:text-zinc-400">
+                        <div className="mt-1 text-xs leading-normal text-zinc-500 dark:text-zinc-400">
                           estimated per citizen
                         </div>
                       </div>
@@ -460,7 +449,7 @@ export function BudgetAllocationForm({
           </motion.div>
         )}
       </AnimatePresence>
-    </GlassCard>
+    </FacetCard>
   );
 
   // Render parent nesting curve line if sub-department

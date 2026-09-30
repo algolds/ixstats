@@ -6,16 +6,13 @@
  *
  * Domains:
  *  - query:     read-only public queries (list, by id, by archetype, by country)
- *  - diplomacy: diplomatic simulation (scenario response, tone, usage tracking)
  *  - admin:     admin-only CRUD, country assignment, and aggregate stats
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { npcPersonalitiesQueryRouter } from "./query";
-import { npcPersonalitiesDiplomacyRouter } from "./diplomacy";
 import { npcPersonalitiesAdminRouter } from "./admin";
 
 export const npcPersonalitiesRouter = mergeRouters(
   npcPersonalitiesQueryRouter,
-  npcPersonalitiesDiplomacyRouter,
   npcPersonalitiesAdminRouter
 );

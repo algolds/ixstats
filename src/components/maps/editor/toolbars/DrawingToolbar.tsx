@@ -18,7 +18,7 @@ export function DrawingToolbar({
   if (drawVertices.length === 0) return null;
 
   return (
-    <div className="border-border bg-card/90 absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-200">
+    <div className="border-border bg-card/90 absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border px-4 py-2 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
       <span className="text-foreground mr-2 text-xs font-semibold select-none">
         Drawing Subdivision:{" "}
         <span className="text-primary font-bold tabular-nums">{drawVertices.length}</span>{" "}

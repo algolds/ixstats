@@ -17,9 +17,15 @@ fi
 if [ "$(pwd)" = "/ixwiki/public/projects/ixstats" ]; then
     echo "🔄 Production VPS directory detected. Force-syncing with the latest git commit..."
     if command -v git &> /dev/null; then
-        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "development")
+        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "master")
         if [ -z "$CURRENT_BRANCH" ]; then
-            CURRENT_BRANCH="development"
+            CURRENT_BRANCH="master"
+        fi
+        # Production deploys master (rose-garden is nightly, development is stable-experimental;
+        # see docs/processes/contributing.md#branches). Override only on purpose.
+        if [ "$CURRENT_BRANCH" != "master" ] && [ "${ALLOW_NON_MASTER_DEPLOY:-}" != "1" ]; then
+            echo "❌ Refusing to deploy branch '$CURRENT_BRANCH' to production: check out master, or set ALLOW_NON_MASTER_DEPLOY=1"
+            exit 1
         fi
         echo "📄 Fetching $CURRENT_BRANCH from master and resetting --hard to FETCH_HEAD..."
         git fetch master "$CURRENT_BRANCH"
@@ -142,6 +148,15 @@ bun install --frozen-lockfile
 # Generate Prisma client
 echo "🗄️ Generating Prisma client..."
 bun run db:generate
+
+# Back up the database before the schema sync; never push the schema without a dump
+echo "💾 Backing up production database (backups/ixstats-<UTC timestamp>.dump)..."
+if bun run db:backup; then
+    echo "✅ Database backup completed"
+else
+    echo "❌ Database backup failed - aborting deployment before the schema sync"
+    exit 1
+fi
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."

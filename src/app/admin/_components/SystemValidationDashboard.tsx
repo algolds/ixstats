@@ -1,6 +1,12 @@
 "use client";
 
-import { Play, CheckCircle, AlertTriangle, XCircle, Clock } from "lucide-react";
+import {
+  Play,
+  CheckCircle,
+  WarningTriangle as AlertTriangle,
+  XmarkCircle as XCircle,
+  Clock,
+} from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -8,6 +14,7 @@ import { useSystemValidation } from "~/hooks/useSystemValidation";
 import { getStatusColor, getStatusBgColor } from "~/lib/system/system-validation";
 import { ValidationCategory } from "./validation/ValidationCategory";
 import { AuditProgressBar } from "./validation/AuditProgressBar";
+import { Eyebrow } from "~/components/ui/eyebrow";
 
 export function SystemValidationDashboard() {
   const {
@@ -27,7 +34,7 @@ export function SystemValidationDashboard() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <Card className="glass-surface border-border/40">
+      <Card className="facet-surface border-border/40">
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -98,7 +105,7 @@ export function SystemValidationDashboard() {
         </div>
       ) : (
         !isRunning && (
-          <Card className="glass-surface border-border/40">
+          <Card className="facet-surface border-border/40">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Clock className="text-muted-foreground/30 mb-4 h-12 w-12" />
               <h3 className="text-foreground mb-1 text-lg font-medium">No Audit Results</h3>
@@ -113,13 +120,13 @@ export function SystemValidationDashboard() {
 
       {/* Summary */}
       {summary && (
-        <Card className="glass-surface border-border/40">
+        <Card className="facet-surface border-border/40">
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
               <div>
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <Eyebrow className="block">
                   Total Checks
-                </p>
+                </Eyebrow>
                 <p className="text-foreground text-2xl font-bold tabular-nums">
                   {summary.totalChecks}
                 </p>
@@ -137,7 +144,7 @@ export function SystemValidationDashboard() {
                 <p className="text-2xl font-bold text-red-400 tabular-nums">{summary.failures}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">Duration</p>
+                <Eyebrow className="block">Duration</Eyebrow>
                 <p className="text-foreground text-2xl font-bold tabular-nums">
                   {summary.duration}ms
                 </p>

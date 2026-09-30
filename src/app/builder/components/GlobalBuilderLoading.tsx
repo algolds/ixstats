@@ -3,7 +3,16 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Building2, Users, DollarSign, Globe, Heart, Shield, Crown, Sparkles } from "lucide-react";
+import {
+  City as Building2,
+  Group as Users,
+  Dollar as DollarSign,
+  Globe,
+  Heart,
+  Shield,
+  Crown,
+  Sparks as Sparkles,
+} from "iconoir-react";
 
 interface GlobalBuilderLoadingProps {
   message?: string;
@@ -29,6 +38,7 @@ export function GlobalBuilderLoading({
   variant = "full",
   showSubsystems = true,
 }: GlobalBuilderLoadingProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const sizeClass =
     variant === "minimal" ? "w-6 h-6" : variant === "compact" ? "w-12 h-12" : "w-16 h-16";
 
@@ -220,7 +230,7 @@ export function GlobalBuilderLoading({
                 transition={{ delay: 0.8 + index * 0.1 }}
                 className="flex flex-col items-center gap-2"
               >
-                <div className="glass-hierarchy-child border-border/40 rounded-lg border p-3">
+                <div className="facet-hierarchy-child border-border/40 rounded-lg border p-3">
                   <subsystem.icon className={cn("h-6 w-6", subsystem.color)} />
                 </div>
                 <div className="text-muted-foreground text-center text-xs">{subsystem.label}</div>
@@ -346,6 +356,23 @@ export function BuilderStepLoading({
         </div>
 
         <p className="text-muted-foreground">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * TabLoadingFallback - Skeleton loader for tab content
+ * Used as fallback for lazy-loaded tab components
+ */
+export function TabLoadingFallback() {
+  return (
+    <div className="animate-pulse space-y-4">
+      <div className="h-8 w-1/3 rounded bg-muted" />
+      <div className="space-y-3">
+        <div className="h-20 rounded bg-muted" />
+        <div className="h-20 rounded bg-muted" />
+        <div className="h-20 rounded bg-muted" />
       </div>
     </div>
   );

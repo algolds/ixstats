@@ -1,17 +1,17 @@
 import React from "react";
 import {
-  Smile,
-  Angry,
+  Emoji as Smile,
+  Emoji as Angry,
   ThumbsUp,
   ThumbsDown,
-  Flame,
+  FireFlame as Flame,
   Heart,
   Crown,
-  Newspaper,
-  Users,
-} from "lucide-react";
-import { withBasePath } from "../../../lib/base-path";
-import { useRelativeTime } from "../../../hooks/useRelativeTime";
+  Journal as Newspaper,
+  Group as Users,
+} from "iconoir-react";
+import { withBasePath } from "~/lib/base-path";
+import { useRelativeTime } from "~/hooks/useRelativeTime";
 
 export const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
   government: Crown,
@@ -70,12 +70,12 @@ export function proxyDiscordUrl(url: string): string {
     if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
       return withBasePath(`/api/proxy-discord-image?url=${encodeURIComponent(url as string)}`);
     }
-  } catch {}
+  } catch {
+    // not an absolute URL — handled as a path below
+  }
   if (url.startsWith("/")) {
     let cleanPath = url;
-    if (cleanPath.startsWith("/projects/ixstates/")) {
-      cleanPath = cleanPath.slice("/projects/ixstates".length);
-    } else if (cleanPath.startsWith("/projects/ixstates")) {
+    if (cleanPath.startsWith("/projects/ixstates")) {
       cleanPath = cleanPath.slice("/projects/ixstates".length);
     }
     if (cleanPath.includes("/images/discord/")) {

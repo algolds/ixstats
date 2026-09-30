@@ -28,7 +28,7 @@ export interface PackageVersions {
   trpc: string;
   tailwindcss: string;
   zod: string;
-  eslint: string;
+  oxlint: string;
   jest: string;
   express: string;
   typescript: string;
@@ -94,6 +94,9 @@ export const IN_SCOPE_DOCS = [
   "scripts/README.md",
 ];
 
+/** Git-ignored agent guides: synced and link-checked when present locally, never required. */
+const LOCAL_ONLY_DOCS = new Set(["AGENTS.md", "CLAUDE.md"]);
+
 /**
  * 1. Extract Package & Runtime Versions
  */
@@ -111,7 +114,7 @@ export function getPackageVersions(rootDir = DEFAULT_ROOT): PackageVersions {
     trpc: clean(deps["@trpc/server"] || deps["@trpc/client"]),
     tailwindcss: clean(deps["@tailwindcss/postcss"] || deps["tailwindcss"]),
     zod: clean(deps["zod"]),
-    eslint: clean(deps["eslint"]),
+    oxlint: clean(deps["oxlint"]),
     jest: clean(deps["jest"]),
     express: clean(deps["express"]),
     typescript: clean(deps["typescript"]),
@@ -176,7 +179,10 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
     if (def && absTarget) importMap.set(def.getText(), absTarget);
   }
 
-  const routerMap = new Map<string, { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> }>();
+  const routerMap = new Map<
+    string,
+    { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> }
+  >();
   const duplicates: string[] = [];
   const unresolved: string[] = [];
 
@@ -300,57 +306,71 @@ export function extractApiInventory(rootDir = DEFAULT_ROOT): ApiInventoryResult 
           if (prop.isKind(SyntaxKind.PropertyAssignment)) {
             const routerKey = prop.getName();
             const propInit = prop.getInitializer();
-            const routerInfo: { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> } = {
-              sourceFiles: new Set<string>(),
-              procedures: new Map<string, ProcedureInfo>(),
-            };
+            const routerInfo: { sourceFiles: Set<string>; procedures: Map<string, ProcedureInfo> } =
+              {
+                sourceFiles: new Set<string>(),
+                procedures: new Map<string, ProcedureInfo>(),
+              };
 
-            // Inspect safeRouter("name", () => routerExpression)
-            if (propInit && propInit.isKind(SyntaxKind.CallExpression)) {
-              const safeArgs = propInit.getArguments();
-              if (safeArgs.length >= 2) {
-                const fnArg = safeArgs[1];
-                if (fnArg && (fnArg.isKind(SyntaxKind.ArrowFunction) || fnArg.isKind(SyntaxKind.FunctionExpression))) {
-                  const body = fnArg.getBody();
-                  if (body) {
-                    const bodyText = body.getText().replace(/^{?\s*return\s+|\s*}?$/g, "").trim();
+            // The initializer is a bare router identifier or `mergeRouters(a, b)`.
+            // (The legacy `safeRouter("name", () => expr)` wrapper is still unwrapped
+            // for older checkouts.)
+            let bodyText: string | null = null;
+            if (
+              propInit &&
+              propInit.isKind(SyntaxKind.CallExpression) &&
+              propInit.getExpression().getText() === "safeRouter"
+            ) {
+              const fnArg = propInit.getArguments()[1];
+              if (
+                fnArg &&
+                (fnArg.isKind(SyntaxKind.ArrowFunction) ||
+                  fnArg.isKind(SyntaxKind.FunctionExpression))
+              ) {
+                const body = fnArg.getBody();
+                if (body) {
+                  bodyText = body
+                    .getText()
+                    .replace(/^{?\s*return\s+|\s*}?$/g, "")
+                    .trim();
+                }
+              }
+            } else if (propInit) {
+              bodyText = propInit.getText().trim();
+            }
 
-                    // Check if body is mergeRouters(a, b)
-                    const mergeMatch = bodyText.match(/^mergeRouters\((.+)\)$/);
-                    const symbolsToResolve = mergeMatch
-                      ? mergeMatch[1]!.split(",").map((s) => s.trim())
-                      : [bodyText];
+            if (bodyText) {
+              // Check if body is mergeRouters(a, b)
+              const mergeMatch = bodyText.match(/^mergeRouters\((.+)\)$/);
+              const symbolsToResolve = mergeMatch
+                ? mergeMatch[1]!.split(",").map((s) => s.trim())
+                : [bodyText];
 
-                    for (const sym of symbolsToResolve) {
-                      const targetFile = importMap.get(sym);
-                      if (targetFile) {
-                        routerInfo.sourceFiles.add(
-                          path.relative(rootDir, targetFile).replace(/\\/g, "/")
-                        );
-                        const sf = proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
-                        const fileProcs = resolveSymbolProcedures(sym, sf);
-                        if (fileProcs.length === 0) {
-                          // Fallback to resolving entire file
-                          const allInFile = resolveRouterFile(targetFile);
-                          for (const p of allInFile) {
-                            if (routerInfo.procedures.has(p.name)) {
-                              duplicates.push(`${routerKey}.${p.name}`);
-                            }
-                            routerInfo.procedures.set(p.name, p);
-                          }
-                        } else {
-                          for (const p of fileProcs) {
-                            if (routerInfo.procedures.has(p.name)) {
-                              duplicates.push(`${routerKey}.${p.name}`);
-                            }
-                            routerInfo.procedures.set(p.name, p);
-                          }
-                        }
-                      } else {
-                        unresolved.push(`${routerKey} -> ${sym}`);
+              for (const sym of symbolsToResolve) {
+                const targetFile = importMap.get(sym);
+                if (targetFile) {
+                  routerInfo.sourceFiles.add(path.relative(rootDir, targetFile).replace(/\\/g, "/"));
+                  const sf = proj.getSourceFile(targetFile) ?? proj.addSourceFileAtPath(targetFile);
+                  const fileProcs = resolveSymbolProcedures(sym, sf);
+                  if (fileProcs.length === 0) {
+                    // Fallback to resolving entire file
+                    const allInFile = resolveRouterFile(targetFile);
+                    for (const p of allInFile) {
+                      if (routerInfo.procedures.has(p.name)) {
+                        duplicates.push(`${routerKey}.${p.name}`);
                       }
+                      routerInfo.procedures.set(p.name, p);
+                    }
+                  } else {
+                    for (const p of fileProcs) {
+                      if (routerInfo.procedures.has(p.name)) {
+                        duplicates.push(`${routerKey}.${p.name}`);
+                      }
+                      routerInfo.procedures.set(p.name, p);
                     }
                   }
+                } else {
+                  unresolved.push(`${routerKey} -> ${sym}`);
                 }
               }
             }
@@ -423,7 +443,7 @@ export function generateVersionMatrixMarkdown(): string {
     `<!-- BEGIN_DOCS:VERSION_MATRIX -->`,
     `| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |`,
     `| :--- | :--- | :---: | :--- |`,
-    `| **Platform** | **IxStates (Ogma)** | **${p.major}.${p.minor}.${p.patch} "${p.release}"** | **${p.channel}** |`,
+    `| **Platform** | **IxStates (${p.release})** | **${p.major}.${p.minor}.${p.patch} "${p.release}"** | **${p.channel}** |`,
     `| **Apps** | IxWorld | v${a.ixworld} | Standalone & Embedded Maps Engine |`,
     `| | WikiOS | v${a.wikios} | Headless Wiki & Canvas Architecture |`,
     `| | IxVault | v${a.ixvault} | Cards, Credits & Marketplace |`,
@@ -455,7 +475,7 @@ export function generateFrameworkMatrixMarkdown(pkgs = getPackageVersions()): st
     `| **tRPC** | ${pkgs.trpc} | Domain-split modular routers |`,
     `| **Tailwind CSS** | ${pkgs.tailwindcss} | v4 CSS-first theme configuration |`,
     `| **Zod** | ${pkgs.zod} | Schema validation |`,
-    `| **ESLint** | ${pkgs.eslint} | Flat config with architecture guard |`,
+    `| **Oxlint** | ${pkgs.oxlint} | Flat config, TS 7 native (50-100× faster) |`,
     `| **Jest** | ${pkgs.jest} | Unit and characterization suites |`,
     `| **Runtime** | Bun ${pkgs.bun} | Native concurrency & virtual store |`,
     `<!-- END_DOCS:FRAMEWORK_MATRIX -->`,
@@ -489,12 +509,16 @@ export function generateApiInventoryTableMarkdown(api = extractApiInventory()): 
 /**
  * 4. Link, Anchor & Repository Path Validator
  */
-export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOCS): LinkValidationIssue[] {
+export function validateDocLinks(
+  rootDir = DEFAULT_ROOT,
+  docFiles = IN_SCOPE_DOCS
+): LinkValidationIssue[] {
   const issues: LinkValidationIssue[] = [];
 
   for (const relFile of docFiles) {
     const absFile = path.join(rootDir, relFile);
     if (!fs.existsSync(absFile)) {
+      if (LOCAL_ONLY_DOCS.has(relFile)) continue;
       issues.push({
         file: relFile,
         line: 1,
@@ -556,7 +580,11 @@ export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOC
         }
 
         // Skip web URLs
-        if (target.startsWith("http://") || target.startsWith("https://") || target.startsWith("mailto:")) {
+        if (
+          target.startsWith("http://") ||
+          target.startsWith("https://") ||
+          target.startsWith("mailto:")
+        ) {
           continue;
         }
 
@@ -591,11 +619,14 @@ export function validateDocLinks(rootDir = DEFAULT_ROOT, docFiles = IN_SCOPE_DOC
 /**
  * 5. Document Synchronization and Verification Engine
  */
-export function syncDocumentContent(content: string, options: {
-  versionMatrix?: string;
-  frameworkMatrix?: string;
-  apiInventory?: string;
-}): { newContent: string; changed: boolean } {
+export function syncDocumentContent(
+  content: string,
+  options: {
+    versionMatrix?: string;
+    frameworkMatrix?: string;
+    apiInventory?: string;
+  }
+): { newContent: string; changed: boolean } {
   let updated = content;
 
   if (options.versionMatrix && updated.includes("<!-- BEGIN_DOCS:VERSION_MATRIX -->")) {
@@ -669,12 +700,16 @@ export function runCLI(): void {
   if (result.issues.length > 0) {
     console.error(`✗ Found ${result.issues.length} documentation link/path issue(s):`);
     for (const issue of result.issues) {
-      console.error(`  • ${issue.file}:${issue.line} [${issue.linkText}](${issue.target}) -> ${issue.reason}`);
+      console.error(
+        `  • ${issue.file}:${issue.line} [${issue.linkText}](${issue.target}) -> ${issue.reason}`
+      );
     }
   }
 
   if (isCheck && result.staleFiles.length > 0) {
-    console.error(`✗ Stale generated reference blocks found in ${result.staleFiles.length} file(s):`);
+    console.error(
+      `✗ Stale generated reference blocks found in ${result.staleFiles.length} file(s):`
+    );
     for (const f of result.staleFiles) {
       console.error(`  • ${f} (run 'bun run docs:sync' to regenerate)`);
     }
@@ -684,7 +719,9 @@ export function runCLI(): void {
     if (isCheck) {
       console.log("✓ All canonical reference documents and links are up to date.");
     } else {
-      console.log(`✓ Reference documentation synchronized successfully across ${IN_SCOPE_DOCS.length} files.`);
+      console.log(
+        `✓ Reference documentation synchronized successfully across ${IN_SCOPE_DOCS.length} files.`
+      );
     }
     process.exit(0);
   } else {

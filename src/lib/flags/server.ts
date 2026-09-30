@@ -1,9 +1,6 @@
 import "server-only";
 
-export {
-  ServerFlagResolver,
-  serverFlagResolver,
-} from "./flag-resolver.server";
+export { ServerFlagResolver, serverFlagResolver } from "./flag-resolver.server";
 
 export type {
   FlagSource,

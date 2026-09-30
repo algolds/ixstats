@@ -4,7 +4,7 @@ import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-import { MapPin, Mountain, Loader2 } from "lucide-react";
+import { MapPin, ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
@@ -37,7 +37,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
   setIsPickingLocation,
 }: CityPropertyFormProps) {
   const activeCoords = form.coordinates ?? pendingCoordinates;
-  const subdivisions = (allFeatures ?? []).filter((f) => f.type === "subdivision");
+  const subdivisions = React.useMemo(
+    () => (allFeatures ?? []).filter((f) => f.type === "subdivision"),
+    [allFeatures]
+  );
 
   const sampleTerrain = api.countryGeo.sampleTerrainAt.useQuery(
     { lng: form.coordinates?.[0] ?? 0, lat: form.coordinates?.[1] ?? 0 },
@@ -83,10 +86,10 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           <button
             type="button"
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none ${
+            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
               isPickingLocation
-                ? "animate-pulse font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
-                : "text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                ? "font-bold text-amber-500 hover:text-amber-400"
+                : "text-emerald-500 hover:text-emerald-400"
             }`}
           >
             <MapPin className="h-3.5 w-3.5" />
@@ -112,7 +115,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           <div className="flex items-center justify-between">
             <label className={labelClasses}>Elevation (m)</label>
             {derivedFromZone && sampleTerrain.data && (
-              <span className="text-muted-foreground text-[10px]">
+              <span className="text-muted-foreground text-xs">
                 from zone: {sampleTerrain.data.zoneName}
               </span>
             )}
@@ -141,7 +144,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
                   elevation: sampleTerrain.data?.midpoint ?? form.elevation,
                 })
               }
-              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-colors disabled:opacity-50"
+              className="border-border bg-background text-foreground hover:bg-muted flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors disabled:opacity-50"
             >
               {sampleTerrain.isFetching ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

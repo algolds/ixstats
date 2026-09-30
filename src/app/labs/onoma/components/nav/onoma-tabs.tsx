@@ -1,13 +1,13 @@
 "use client";
 
+import { Flash } from "iconoir-react";
+
 // src/app/labs/onoma/components/nav/onoma-tabs.tsx
 // Tab definitions, color schemas, feature descriptions, and Onoma Glyphs for Onoma navigation
 // Product Model: CREATE · STUDIO · EXPLORE (Apple SF Symbols × IPA × Linguistic Notation)
 
 import React from "react";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
-import { ArrowLeft } from "iconoir-react";
-import { RiFlashlightLine } from "react-icons/ri";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaGlyphName } from "../glyphs/onoma-glyphs-catalog";
 
@@ -57,12 +57,12 @@ export const exploreSubTabLabel = (t: ExploreSubTab): string => {
 export const SECTION_COLORS: Record<OnomaSection, string> = {
   overview: "#0091ff",
   places: "#10b981",
-  people: "#a855f7",
+  people: "#6366f1",
   organizations: "#f59e0b",
   culture: "#06b6d4",
-  marketplace: "#f97316",
-  studio: "#ec4899",
-  explore: "#8b5cf6",
+  marketplace: "#0091ff",
+  studio: "#0091ff",
+  explore: "#6366f1",
   bank: "#6366f1",
   settings: "#0091ff",
 };
@@ -75,7 +75,7 @@ const createGlyphAdapter = (name: OnomaGlyphName) => {
 };
 
 // Linguistic Glyph Adapters for backward-compatibility with downstream components
-export const ScienceGameIcon = (props: { className?: string }) => <RiFlashlightLine {...props} />;
+export const ScienceGameIcon = (props: { className?: string }) => <Flash {...props} />;
 export const GeographyGameIcon = createGlyphAdapter("sound-vowel-quad");
 export const PeopleGameIcon = createGlyphAdapter("sound-articulation");
 export const GovernmentGameIcon = createGlyphAdapter("struct-syntax");
@@ -95,36 +95,35 @@ export const ONOMA_PILLAR_TABS = [
     label: "Create",
     icon: createGlyphAdapter("emerge-synthesis"),
     themeColor: "#0091ff",
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff] font-semibold",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light font-semibold",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "studio",
     label: "Studio",
     icon: createGlyphAdapter("emerge-branch"),
-    themeColor: "#ec4899",
-    glowClassName: "bg-pink-500/20 dark:bg-pink-500/10",
+    themeColor: "#0091ff",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-pink-500/10 border-pink-500/30 text-pink-600 dark:text-pink-400 shadow-xs",
-    activeTextClassName: "text-pink-600 dark:text-pink-400 font-semibold",
-    activeIconClassName: "text-pink-500 dark:text-pink-400",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light font-semibold",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "explore",
     label: "Explore",
     icon: createGlyphAdapter("sound-acoustic"),
-    themeColor: "#8b5cf6",
-    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+    themeColor: "#6366f1",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-violet-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400 shadow-xs",
-    activeTextClassName: "text-violet-600 dark:text-violet-400 font-semibold",
-    activeIconClassName: "text-violet-500 dark:text-violet-400",
+      "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-xs",
+    activeTextClassName: "text-indigo-600 dark:text-indigo-400 font-semibold",
+    activeIconClassName: "text-indigo-500 dark:text-indigo-400",
   },
 ];
-
 
 /**
  * Domain category tabs displayed in the CREATE pillar alongside the Quick Generator anchor.
@@ -136,7 +135,7 @@ export const CREATE_DOMAIN_TABS = [
     notation: "Geography",
     icon: createGlyphAdapter("sound-vowel-quad"),
     themeColor: "#10b981",
-    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+    glowClassName: "",
     activeIndicatorClassName:
       "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 shadow-2xs",
     activeTextClassName: "text-emerald-700 dark:text-emerald-300",
@@ -147,12 +146,12 @@ export const CREATE_DOMAIN_TABS = [
     label: "People",
     notation: "Characters",
     icon: createGlyphAdapter("sound-articulation"),
-    themeColor: "#a855f7",
-    glowClassName: "bg-purple-500/20 dark:bg-purple-500/10",
+    themeColor: "#6366f1",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-purple-500/10 border-purple-500/30 text-purple-700 dark:text-purple-300 shadow-2xs",
-    activeTextClassName: "text-purple-700 dark:text-purple-300",
-    activeIconClassName: "text-purple-600 dark:text-purple-400",
+      "bg-indigo-500/10 border-indigo-500/30 text-indigo-700 dark:text-indigo-300 shadow-2xs",
+    activeTextClassName: "text-indigo-700 dark:text-indigo-300",
+    activeIconClassName: "text-indigo-600 dark:text-indigo-400",
   },
   {
     id: "organizations",
@@ -160,7 +159,7 @@ export const CREATE_DOMAIN_TABS = [
     notation: "Organizations",
     icon: createGlyphAdapter("struct-syntax"),
     themeColor: "#f59e0b",
-    glowClassName: "bg-amber-500/20 dark:bg-amber-500/10",
+    glowClassName: "",
     activeIndicatorClassName:
       "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-2xs",
     activeTextClassName: "text-amber-700 dark:text-amber-300",
@@ -172,7 +171,7 @@ export const CREATE_DOMAIN_TABS = [
     notation: "Traditions",
     icon: createGlyphAdapter("compose-morphology"),
     themeColor: "#06b6d4",
-    glowClassName: "bg-cyan-500/20 dark:bg-cyan-500/10",
+    glowClassName: "",
     activeIndicatorClassName:
       "bg-cyan-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-300 shadow-2xs",
     activeTextClassName: "text-cyan-700 dark:text-cyan-300",
@@ -189,11 +188,11 @@ export const ONOMA_TABS = [
     icon: createGlyphAdapter("emerge-engine"),
     themeColor: "#0091ff",
 
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-2xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   ...CREATE_DOMAIN_TABS,
 ];
@@ -207,12 +206,12 @@ export const getStudioTabs = () => [
     label: "Workshop",
     notation: "Model",
     icon: createGlyphAdapter("emerge-branch"),
-    themeColor: "#ec4899",
-    glowClassName: "bg-pink-500/20 dark:bg-pink-500/10",
+    themeColor: "#0091ff",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-pink-500/10 border-pink-500/30 text-pink-600 dark:text-pink-400 shadow-2xs",
-    activeTextClassName: "text-pink-600 dark:text-pink-400",
-    activeIconClassName: "text-pink-500 dark:text-pink-400",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "visualizer",
@@ -220,35 +219,35 @@ export const getStudioTabs = () => [
     notation: "Graph",
     icon: createGlyphAdapter("struct-syntax"),
     themeColor: "#0091ff",
-    glowClassName: "bg-[#0091ff]/20 dark:bg-[#0091ff]/10",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-[#0091ff]/10 border-[#0091ff]/30 text-[#0091ff] dark:text-[#33a7ff] shadow-2xs",
-    activeTextClassName: "text-[#0091ff] dark:text-[#33a7ff]",
-    activeIconClassName: "text-[#0091ff] dark:text-[#33a7ff]",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
   {
     id: "namesets",
     label: "Name Sets",
     notation: "Sets",
     icon: createGlyphAdapter("memory-dataset"),
-    themeColor: "#8b5cf6",
-    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+    themeColor: "#6366f1",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-violet-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400 shadow-2xs",
-    activeTextClassName: "text-violet-600 dark:text-violet-400",
-    activeIconClassName: "text-violet-500 dark:text-violet-400",
+      "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-2xs",
+    activeTextClassName: "text-indigo-600 dark:text-indigo-400",
+    activeIconClassName: "text-indigo-500 dark:text-indigo-400",
   },
   {
     id: "shifts",
     label: "Sound Shifts",
     notation: "Rules",
     icon: createGlyphAdapter("transform-shift"),
-    themeColor: "#ec4899",
-    glowClassName: "bg-pink-500/20 dark:bg-pink-500/10",
+    themeColor: "#0091ff",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-pink-500/10 border-pink-500/30 text-pink-600 dark:text-pink-400 shadow-2xs",
-    activeTextClassName: "text-pink-600 dark:text-pink-400",
-    activeIconClassName: "text-pink-500 dark:text-pink-400",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
 ];
 
@@ -261,24 +260,24 @@ export const getExploreTabs = () => [
     label: "Acoustics & IPA",
     notation: "Phonetics",
     icon: createGlyphAdapter("sound-acoustic"),
-    themeColor: "#8b5cf6",
-    glowClassName: "bg-violet-500/20 dark:bg-violet-500/10",
+    themeColor: "#6366f1",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-violet-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400 shadow-2xs",
-    activeTextClassName: "text-violet-600 dark:text-violet-400",
-    activeIconClassName: "text-violet-500 dark:text-violet-400",
+      "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-2xs",
+    activeTextClassName: "text-indigo-600 dark:text-indigo-400",
+    activeIconClassName: "text-indigo-500 dark:text-indigo-400",
   },
   {
     id: "grammar",
     label: "Grammar & Roots",
     notation: "Grammar",
     icon: createGlyphAdapter("struct-syntax"),
-    themeColor: "#d946ef",
-    glowClassName: "bg-fuchsia-500/20 dark:bg-fuchsia-500/10",
+    themeColor: "#6366f1",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-fuchsia-500/5 border-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 shadow-[inset_0_1px_0_rgba(217,70,239,0.15)]",
-    activeTextClassName: "text-fuchsia-600 dark:text-fuchsia-400",
-    activeIconClassName: "text-fuchsia-500 dark:text-fuchsia-400",
+      "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-2xs",
+    activeTextClassName: "text-indigo-600 dark:text-indigo-400",
+    activeIconClassName: "text-indigo-500 dark:text-indigo-400",
   },
   {
     id: "writing",
@@ -286,9 +285,9 @@ export const getExploreTabs = () => [
     notation: "Glyphs",
     icon: createGlyphAdapter("system-writing"),
     themeColor: "#10b981",
-    glowClassName: "bg-emerald-500/20 dark:bg-emerald-500/10",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)]",
+      "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-2xs",
     activeTextClassName: "text-emerald-600 dark:text-emerald-400",
     activeIconClassName: "text-emerald-500 dark:text-emerald-400",
   },
@@ -297,11 +296,11 @@ export const getExploreTabs = () => [
     label: "Community Packs",
     notation: "Packs",
     icon: createGlyphAdapter("system-pack"),
-    themeColor: "#f97316",
-    glowClassName: "bg-orange-500/20 dark:bg-orange-500/10",
+    themeColor: "#0091ff",
+    glowClassName: "",
     activeIndicatorClassName:
-      "bg-orange-500/5 border-orange-500/20 text-orange-600 dark:text-orange-400 shadow-[inset_0_1px_0_rgba(249,115,22,0.15)]",
-    activeTextClassName: "text-orange-600 dark:text-orange-400",
-    activeIconClassName: "text-orange-500 dark:text-orange-400",
+      "bg-onoma-primary/10 border-onoma-primary/30 text-onoma-primary dark:text-onoma-primary-light shadow-2xs",
+    activeTextClassName: "text-onoma-primary dark:text-onoma-primary-light",
+    activeIconClassName: "text-onoma-primary dark:text-onoma-primary-light",
   },
 ];

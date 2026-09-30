@@ -6,13 +6,18 @@
  */
 
 import { z } from "zod";
+import { IxTime } from "~/lib/ixtime";
 import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
-import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache, invalidateCatalogCache } from "~/server/shared/layer-cache";
+import { invalidateCache, globalCache } from "~/lib/cache";
+import { clearLayerCache } from "~/server/shared/layer-cache";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import {
   countryEconomicInputsSchema,
   countryGovernmentComponentSchema,
+  countryTaxSystemInputSchema,
+  countryGovernmentStructureInputSchema,
+  countryEconomyBuilderStateSchema,
 } from "~/server/shared/country-payload-builder";
 import {
   syncNationalIdentity,
@@ -24,7 +29,6 @@ import {
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
 
-
 export const managementUpdateProcedures = {
   updateCountry: protectedProcedure
     .input(
@@ -33,9 +37,9 @@ export const managementUpdateProcedures = {
         name: z.string(),
         economicInputs: countryEconomicInputsSchema,
         governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
-        taxSystemData: z.any().optional(),
-        governmentStructure: z.any().optional(),
-        economyBuilderState: z.any().optional(),
+        taxSystemData: countryTaxSystemInputSchema.nullish(),
+        governmentStructure: countryGovernmentStructureInputSchema.nullish(),
+        economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -44,14 +48,7 @@ export const managementUpdateProcedures = {
         throw new Error("User not authenticated");
       }
 
-      const user = await ctx.db.user.findUnique({
-        where: { clerkUserId: userId },
-        include: { role: true },
-      });
-
-      if (!user) {
-        throw new Error("User not found");
-      }
+      await assertCountryWriteAccess(ctx, input.id);
 
       const existingCountry = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -61,27 +58,19 @@ export const managementUpdateProcedures = {
         throw new Error("Country not found");
       }
 
-      if (
-        user.countryId !== input.id &&
-        user.role?.name !== "admin" &&
-        user.role?.name !== "system-owner"
-      ) {
-        throw new Error("You do not have permission to update this country");
-      }
+      const econ = input.economicInputs;
+      const coreIndicators = econ?.coreIndicators;
+      const laborEmployment = econ?.laborEmployment;
+      const fiscalSystem = econ?.fiscalSystem;
+      const demographics = econ?.demographics;
+      const incomeWealth = econ?.incomeWealth;
+      const governmentSpending = econ?.governmentSpending;
+      const nationalIdentity = econ?.nationalIdentity;
+      const geography = econ?.geography;
 
-      const econ = input.economicInputs || {};
-      const coreIndicators = (econ.coreIndicators || {}) as any;
-      const laborEmployment = (econ.laborEmployment || {}) as any;
-      const fiscalSystem = (econ.fiscalSystem || {}) as any;
-      const demographics = (econ.demographics || {}) as any;
-      const incomeWealth = (econ.incomeWealth || {}) as any;
-      const governmentSpending = (econ.governmentSpending || {}) as any;
-      const nationalIdentity = (econ.nationalIdentity || {}) as any;
-      const geography = (econ.geography || {}) as any;
-
-      const population = coreIndicators.totalPopulation || existingCountry.baselinePopulation;
-      const gdpPerCapita = coreIndicators.gdpPerCapita || existingCountry.baselineGdpPerCapita;
-      const nominalGDP = coreIndicators.nominalGDP || population * gdpPerCapita;
+      const population = coreIndicators?.totalPopulation || existingCountry.baselinePopulation;
+      const gdpPerCapita = coreIndicators?.gdpPerCapita || existingCountry.baselineGdpPerCapita;
+      const nominalGDP = coreIndicators?.nominalGDP || population * gdpPerCapita;
       const totalGdp = population * gdpPerCapita;
 
       const slug = input.name
@@ -99,168 +88,174 @@ export const managementUpdateProcedures = {
             data: {
               name: input.name,
               slug,
-              continent: geography.continent || existingCountry.continent,
-              region: geography.region || existingCountry.region,
+              continent: geography?.continent || existingCountry.continent,
+              region: geography?.region || existingCountry.region,
               governmentType:
-                nationalIdentity.governmentType ||
+                nationalIdentity?.governmentType ||
                 input.governmentStructure?.governmentType ||
                 existingCountry.governmentType,
-              religion: nationalIdentity.nationalReligion || existingCountry.religion,
-              leader: nationalIdentity.leader || existingCountry.leader,
-              flag: econ.flagUrl || existingCountry.flag || undefined,
-              coatOfArms: econ.coatOfArmsUrl || existingCountry.coatOfArms || undefined,
+              religion: nationalIdentity?.nationalReligion || existingCountry.religion,
+              leader: nationalIdentity?.leader || existingCountry.leader,
+              flag: econ?.flagUrl || existingCountry.flag || undefined,
+              coatOfArms: econ?.coatOfArmsUrl || existingCountry.coatOfArms || undefined,
               baselinePopulation: existingCountry.baselinePopulation,
               baselineGdpPerCapita: existingCountry.baselineGdpPerCapita,
               currentPopulation: population,
               currentGdpPerCapita: gdpPerCapita,
               currentTotalGdp: totalGdp,
               adjustedGdpGrowth:
-                coreIndicators.realGDPGrowthRate !== undefined
+                coreIndicators?.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.adjustedGdpGrowth,
               populationGrowthRate:
-                demographics.populationGrowthRate !== undefined
+                demographics?.populationGrowthRate !== undefined
                   ? demographics.populationGrowthRate / 100
                   : existingCountry.populationGrowthRate,
               actualGdpGrowth:
-                coreIndicators.realGDPGrowthRate !== undefined
+                coreIndicators?.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.actualGdpGrowth,
               economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
               populationTier: getPopulationTierFromPopulation(population),
               nominalGDP,
               realGDPGrowthRate:
-                coreIndicators.realGDPGrowthRate !== undefined
+                coreIndicators?.realGDPGrowthRate !== undefined
                   ? coreIndicators.realGDPGrowthRate / 100
                   : existingCountry.realGDPGrowthRate,
               inflationRate:
-                coreIndicators.inflationRate !== undefined
+                coreIndicators?.inflationRate !== undefined
                   ? coreIndicators.inflationRate / 100
                   : existingCountry.inflationRate,
               currencyExchangeRate:
-                coreIndicators.currencyExchangeRate !== undefined
+                coreIndicators?.currencyExchangeRate !== undefined
                   ? coreIndicators.currencyExchangeRate
                   : existingCountry.currencyExchangeRate,
               laborForceParticipationRate:
-                laborEmployment.laborForceParticipationRate !== undefined
+                laborEmployment?.laborForceParticipationRate !== undefined
                   ? laborEmployment.laborForceParticipationRate
                   : existingCountry.laborForceParticipationRate,
               employmentRate:
-                laborEmployment.employmentRate !== undefined
+                laborEmployment?.employmentRate !== undefined
                   ? laborEmployment.employmentRate
                   : existingCountry.employmentRate,
               unemploymentRate:
-                laborEmployment.unemploymentRate !== undefined
+                laborEmployment?.unemploymentRate !== undefined
                   ? laborEmployment.unemploymentRate
                   : existingCountry.unemploymentRate,
-              totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
+              totalWorkforce: laborEmployment?.totalWorkforce || Math.round(population * 0.65),
               averageWorkweekHours:
-                laborEmployment.averageWorkweekHours !== undefined
+                laborEmployment?.averageWorkweekHours !== undefined
                   ? laborEmployment.averageWorkweekHours
                   : existingCountry.averageWorkweekHours,
               minimumWage:
-                laborEmployment.minimumWage !== undefined
+                laborEmployment?.minimumWage !== undefined
                   ? laborEmployment.minimumWage
                   : existingCountry.minimumWage,
               averageAnnualIncome:
-                laborEmployment.averageAnnualIncome !== undefined
+                laborEmployment?.averageAnnualIncome !== undefined
                   ? laborEmployment.averageAnnualIncome
                   : existingCountry.averageAnnualIncome,
               taxRevenueGDPPercent:
-                fiscalSystem.taxRevenueGDPPercent !== undefined
+                fiscalSystem?.taxRevenueGDPPercent !== undefined
                   ? fiscalSystem.taxRevenueGDPPercent
-                  : (input.taxSystemData as any)?.totalTaxRate !== undefined
-                    ? (input.taxSystemData as any).totalTaxRate
+                  : input.taxSystemData?.totalTaxRate !== undefined
+                    ? input.taxSystemData.totalTaxRate
                     : existingCountry.taxRevenueGDPPercent,
               governmentRevenueTotal:
-                fiscalSystem.governmentRevenueTotal !== undefined
+                fiscalSystem?.governmentRevenueTotal !== undefined
                   ? fiscalSystem.governmentRevenueTotal
                   : existingCountry.governmentRevenueTotal,
               taxRevenuePerCapita:
-                fiscalSystem.taxRevenuePerCapita !== undefined
+                fiscalSystem?.taxRevenuePerCapita !== undefined
                   ? fiscalSystem.taxRevenuePerCapita
                   : existingCountry.taxRevenuePerCapita,
               governmentBudgetGDPPercent:
-                fiscalSystem.governmentBudgetGDPPercent !== undefined
+                fiscalSystem?.governmentBudgetGDPPercent !== undefined
                   ? fiscalSystem.governmentBudgetGDPPercent
                   : existingCountry.governmentBudgetGDPPercent,
               budgetDeficitSurplus:
-                fiscalSystem.budgetDeficitSurplus !== undefined
+                fiscalSystem?.budgetDeficitSurplus !== undefined
                   ? fiscalSystem.budgetDeficitSurplus
                   : existingCountry.budgetDeficitSurplus,
               internalDebtGDPPercent:
-                fiscalSystem.internalDebtGDPPercent !== undefined
+                fiscalSystem?.internalDebtGDPPercent !== undefined
                   ? fiscalSystem.internalDebtGDPPercent
                   : existingCountry.internalDebtGDPPercent,
               externalDebtGDPPercent:
-                fiscalSystem.externalDebtGDPPercent !== undefined
+                fiscalSystem?.externalDebtGDPPercent !== undefined
                   ? fiscalSystem.externalDebtGDPPercent
                   : existingCountry.externalDebtGDPPercent,
               totalDebtGDPRatio:
-                fiscalSystem.totalDebtGDPRatio !== undefined
+                fiscalSystem?.totalDebtGDPRatio !== undefined
                   ? fiscalSystem.totalDebtGDPRatio
                   : existingCountry.totalDebtGDPRatio,
               debtPerCapita:
-                fiscalSystem.debtPerCapita !== undefined
+                fiscalSystem?.debtPerCapita !== undefined
                   ? fiscalSystem.debtPerCapita
                   : existingCountry.debtPerCapita,
               interestRates:
-                fiscalSystem.interestRates !== undefined
+                fiscalSystem?.interestRates !== undefined
                   ? fiscalSystem.interestRates
                   : existingCountry.interestRates,
               debtServiceCosts:
-                fiscalSystem.debtServiceCosts !== undefined
+                fiscalSystem?.debtServiceCosts !== undefined
                   ? fiscalSystem.debtServiceCosts
                   : existingCountry.debtServiceCosts,
               povertyRate:
-                incomeWealth.povertyRate !== undefined
+                incomeWealth?.povertyRate !== undefined
                   ? incomeWealth.povertyRate
                   : existingCountry.povertyRate,
               incomeInequalityGini:
-                incomeWealth.incomeInequalityGini !== undefined
+                incomeWealth?.incomeInequalityGini !== undefined
                   ? incomeWealth.incomeInequalityGini
-                  : incomeWealth.giniIndex !== undefined
+                  : incomeWealth?.giniIndex !== undefined
                     ? incomeWealth.giniIndex / 100
                     : existingCountry.incomeInequalityGini,
               socialMobilityIndex:
-                incomeWealth.socialMobilityIndex !== undefined
+                incomeWealth?.socialMobilityIndex !== undefined
                   ? incomeWealth.socialMobilityIndex
                   : existingCountry.socialMobilityIndex,
               totalGovernmentSpending:
-                governmentSpending.totalSpending !== undefined
+                governmentSpending?.totalSpending !== undefined
                   ? governmentSpending.totalSpending
                   : existingCountry.totalGovernmentSpending,
               spendingGDPPercent:
-                governmentSpending.spendingGDPPercent !== undefined
+                governmentSpending?.spendingGDPPercent !== undefined
                   ? governmentSpending.spendingGDPPercent
                   : existingCountry.spendingGDPPercent,
               spendingPerCapita:
-                governmentSpending.spendingPerCapita !== undefined
+                governmentSpending?.spendingPerCapita !== undefined
                   ? governmentSpending.spendingPerCapita
                   : existingCountry.spendingPerCapita,
               lifeExpectancy:
-                demographics.lifeExpectancy !== undefined
+                demographics?.lifeExpectancy !== undefined
                   ? demographics.lifeExpectancy
                   : existingCountry.lifeExpectancy,
               urbanPopulationPercent:
-                demographics.urbanRuralSplit?.urban !== undefined
+                demographics?.urbanRuralSplit?.urban !== undefined
                   ? demographics.urbanRuralSplit.urban
                   : existingCountry.urbanPopulationPercent,
               ruralPopulationPercent:
-                demographics.urbanRuralSplit?.rural !== undefined
+                demographics?.urbanRuralSplit?.rural !== undefined
                   ? demographics.urbanRuralSplit.rural
                   : existingCountry.ruralPopulationPercent,
               literacyRate:
-                demographics.literacyRate !== undefined
+                demographics?.literacyRate !== undefined
                   ? demographics.literacyRate
                   : existingCountry.literacyRate,
-              lastCalculated: new Date(),
+              lastCalculated: new Date(IxTime.getCurrentIxTime()),
             },
           });
 
           await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
           await syncDemographics(tx, country.id, demographics);
-          await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
+          await syncIncomeAndSpending(
+            tx,
+            country.id,
+            incomeWealth,
+            governmentSpending,
+            fiscalSystem
+          );
           await syncTaxSystem(tx, country.id, input.taxSystemData);
           await syncGovernmentStructure(tx, country.id, input.name, input.governmentStructure);
           await syncGovernmentComponents(tx, country.id, input.governmentComponents);
@@ -271,13 +266,14 @@ export const managementUpdateProcedures = {
 
         await invalidateCache(["countries."]);
         clearLayerCache("political");
-        invalidateCatalogCache(`gov-components:${input.id}`);
+        globalCache.delete(`user_profile:${userId}`);
 
         return result;
       } catch (error) {
         console.error("[updateCountry] Transaction failed:", error);
         throw new Error(
-          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
         );
       }
     }),

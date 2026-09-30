@@ -2,6 +2,8 @@
 
 This document outlines the **10-phase roadmap** for Onoma—the Language & Naming Engine of IxStates—matching the v2.0 Product Requirements Document against the current codebase.
 
+> **Status as of September 2026 (Onoma v4, platform 1.4.0 RC):** Phases 1–3 and 7 are complete; Phases 4, 5, 8 and 9 are partially shipped (see the table); Phases 6 and 10 have no implementation. The Gantt chart below reflects the original June 2026 plan and is kept for history.
+
 ---
 
 ## 1. Executive Status Dashboard
@@ -28,15 +30,15 @@ gantt
 
 | Phase | Objective | Status | Core Source Files / Modules |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Foundation** | **100% Completed** | [markov-chain.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/markov-chain.ts), [useOnomaGenerator.ts](file:///home/jxsig/projects/ixstats/src/hooks/useOnomaGenerator.ts), [GeneratorPanel.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/GeneratorPanel.tsx), [OnomaRouter.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/OnomaRouter.tsx) |
-| **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
-| **Phase 3** | **Linguistics Engine** | **100% Completed** | [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts), [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts), [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts), [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx), [StudioPhonology.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx) |
-| **Phase 4** | **Living Languages** | *Planned* | Evolution engine, timelines, loanword/dialect tracking. |
-| **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, card border refractions). ⏳ TF-IDF semantic search, lexicon gap recommender. |
-| **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. |
-| **Phase 7** | **Voice** | **100% Completed** | [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts), [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts), [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx), [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml), [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) |
-| **Phase 8** | **Translation Engine** | *Planned* | Grammar-aware English <=> conlang translators. |
-| **Phase 9** | **Language Studio** | *In Progress* | ✅ Visual Naming Conventions editor and Presets simulator ([StudioNameSets.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioNameSets.tsx)). ⏳ Visual grammar/alphabet editor. |
+| **Phase 1** | **Foundation** | **100% Completed** | [markov-chain.ts](../../src/lib/onoma/markov-chain.ts), [useOnomaGenerator.ts](../../src/hooks/useOnomaGenerator.ts), [QuickGeneratorControls.tsx](../../src/app/labs/onoma/components/sections/QuickGeneratorControls.tsx), [OnomaRouter.tsx](../../src/app/labs/onoma/components/OnomaRouter.tsx) |
+| **Phase 2** | **Corpus Intelligence** | **100% Completed** | [lexicon-analytics.ts](../../src/lib/onoma/lexicon-analytics.ts), [LexiconExplorer.tsx](../../src/app/labs/onoma/components/sections/LexiconExplorer.tsx), [MarkovVisualizer.tsx](../../src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) |
+| **Phase 3** | **Linguistics Engine** | **100% Completed** | [phonology.ts](../../src/lib/onoma/phonology.ts), [morphology.ts](../../src/lib/onoma/morphology.ts), [orthography.ts](../../src/lib/onoma/orthography.ts), [StudioLexicon.tsx](../../src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx), [StudioPhonology.tsx](../../src/app/labs/onoma/components/sections/studio/StudioPhonology.tsx) |
+| **Phase 4** | **Living Languages** | *Partial* | ✅ Sound change engine ([sound-shifts.ts](../../src/lib/onoma/sound-shifts.ts), 4 historical presets, multi-epoch [StudioSoundShifts.tsx](../../src/app/labs/onoma/components/sections/studio/StudioSoundShifts.tsx) with per-step evolution trace). ✅ Loanword contact channels & borrowing (`onoma/loanwords.ts`, `LoanwordsSection.tsx`). ⏳ Slider-based vocabulary timeline viewer, language family tree visualization. |
+| **Phase 5** | **ML Layer** | *In Progress* | ✅ Phonotactic perplexity scorer (`perplexity.ts`, card border refractions). ✅ Profile comparator (Jaccard/cosine phoneme similarity, `comparator.ts`). ⏳ TF-IDF / embedding semantic search, lexicon gap recommender. |
+| **Phase 6** | **AI Linguist** | *Planned* | Local LLM-backed dictionary writing & etymologies. (A manual root/derivation etymology editor ships under Explore → Grammar & Roots via `onoma/etymology.ts`; no LLM integration exists.) |
+| **Phase 7** | **Voice** | **100% Completed** | [browser-speech.ts](../../src/lib/onoma/browser-speech.ts), [branding-utils.ts](../../src/lib/onoma/branding-utils.ts), [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx), [`/api/onoma/tts`](../../src/app/api/onoma/tts/route.ts), [verify-environment.ts](../../scripts/deployment/verify-environment.ts) |
+| **Phase 8** | **Translation Engine** | *Partial* | ✅ Template sentence builder (`SyntaxSection.tsx` / `SyntaxSentenceBuilder.tsx`: SVO/SOV word order, case & tense suffixes, articles, dictionary lookup; profiles saved via `onoma/syntax.ts`). ⏳ Free-text grammar-aware English <=> conlang translation. |
+| **Phase 9** | **Language Studio** | *In Progress* | ✅ Visual Naming Conventions editor and Presets simulator ([StudioNameSets.tsx](../../src/app/labs/onoma/components/sections/studio/StudioNameSets.tsx)). ✅ Visual alphabet editor (Writing Systems: [GlyphForgeCanvas.tsx](../../src/app/labs/onoma/components/sections/writing/GlyphForgeCanvas.tsx), glyph map registry, orthography sandbox; saved via `onoma/writing.ts`). ✅ Community pack forking (`onoma/marketplace.ts`). ⏳ Dialect branch merging. |
 | **Phase 10**| **Onoma AI** | *Planned* | Generative language simulation agents. |
 
 ---
@@ -46,36 +48,36 @@ gantt
 ### Phase 1: Foundation (Naming Engine)
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Markov Chains & Backoff**: Rebuilt the character & syllable training algorithms. Features multi-order lookback models that automatically back off to order $N-1$ down to $1$ when tight constraints cannot be met. Implemented in [markov-chain.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/markov-chain.ts).
-  - **Culture Classifier**: A Naive-Bayes bigram classifier in [culture-classifier.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon/culture-classifier.ts) that groups training inputs into single cultures or compound blends (e.g. `celtic+germanic`).
-  - **Wiki Extractors & Cleaning**: Automation scripts under [scripts/onoma/](file:///home/jxsig/projects/ixstats/scripts/onoma/) that pull, clean, and bucket over 28,000 wiki names.
-  - **Custom Studio Workspace**: Paste-in text areas, drag-and-drop file upload streams, and local-storage session caching implemented in [StudioWorkshop.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx) and [useStudioState.ts](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/hooks/useStudioState.ts).
+  - **Markov Chains & Backoff**: Rebuilt the character & syllable training algorithms. Features multi-order lookback models that automatically back off to order $N-1$ down to $1$ when tight constraints cannot be met. Implemented in [markov-chain.ts](../../src/lib/onoma/markov-chain.ts).
+  - **Culture Classifier**: A Naive-Bayes bigram classifier in [culture-classifier.ts](../../src/lib/onoma/lexicon/culture-classifier.ts) that groups training inputs into single cultures or compound blends (e.g. `celtic+germanic`).
+  - **Wiki Extractors & Cleaning**: Automation scripts under [scripts/onoma/](../../scripts/onoma/) that pull, clean, and bucket over 28,000 wiki names.
+  - **Custom Studio Workspace**: Paste-in text areas, drag-and-drop file upload streams, and local-storage session caching implemented in [StudioWorkshop.tsx](../../src/app/labs/onoma/components/sections/studio/StudioWorkshop.tsx) and [useStudioState.ts](../../src/app/labs/onoma/hooks/useStudioState.ts).
 
 ### Phase 2: Corpus Intelligence
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Lexicon Analytics**: Functions in [lexicon-analytics.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/lexicon-analytics.ts) calculate Shannon entropy (phonetic diversity), letter density arrays, and bigram/trigram frequencies.
-  - **Visualizer Graph Canvas**: Interactive center-panning graph using `@xyflow/react` in [MarkovVisualizer.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) demonstrating next-token transition pathways and executing weighted random walks.
+  - **Lexicon Analytics**: Functions in [lexicon-analytics.ts](../../src/lib/onoma/lexicon-analytics.ts) calculate Shannon entropy (phonetic diversity), letter density arrays, and bigram/trigram frequencies.
+  - **Visualizer Graph Canvas**: Interactive center-panning graph using `@xyflow/react` in [MarkovVisualizer.tsx](../../src/app/labs/onoma/components/sections/MarkovVisualizer.tsx) demonstrating next-token transition pathways and executing weighted random walks.
   - **Dictionary Health Auditing**: Real-time quality audits that flag duplicates, punctuation errors, length outliers, and compute a `Corpus Quality Score (0-100)` before model compilation.
 
 ### Phase 3: Linguistics Engine
 - **Status**: Complete (Core UI/UX & Primitives).
 - **Architectural Delivery**:
-  - **Grapheme-to-IPA Parser**: Custom sound rules mapping graphemes to IPA transcriptions across all 8 cultures, including a consonant-onset stress stress heuristic (`ˈ`). Implemented in [phonology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/phonology.ts).
-  - **Orthography script mapping**: Transcribes IPA characters to Cyrillic, Greek, and Arabic (RTL-rendered) scripts in [orthography.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/orthography.ts).
-  - **Morphological Declensions**: Calculates grammatical gender (masculine, feminine, neuter) and plural/singular cases (Nominative, Genitive, Accusative, Dative, Ablative) in [morphology.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/morphology.ts).
+  - **Grapheme-to-IPA Parser**: Custom sound rules mapping graphemes to IPA transcriptions across 12 culture rule sets, including a consonant-onset stress stress heuristic (`ˈ`). Implemented in [phonology.ts](../../src/lib/onoma/phonology.ts).
+  - **Orthography script mapping**: Transcribes IPA characters to Cyrillic, Greek, and Arabic (RTL-rendered) scripts in [orthography.ts](../../src/lib/onoma/orthography.ts).
+  - **Morphological Declensions**: Calculates grammatical gender (masculine, feminine, neuter) and plural/singular cases (Nominative, Genitive, Accusative, Dative, Ablative) in [morphology.ts](../../src/lib/onoma/morphology.ts).
   - **UI Integrations**:
-    - Interactive audio pronunciation player badges in [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx).
-    - Split-screen Lexicon Dictionary and terms catalog editor in [StudioLexicon.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx).
+    - Interactive audio pronunciation player badges in [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx).
+    - Split-screen Lexicon Dictionary and terms catalog editor in [StudioLexicon.tsx](../../src/app/labs/onoma/components/sections/studio/StudioLexicon.tsx).
 
 ### Phase 7: Voice (Audio Synthesis)
 - **Status**: Complete.
 - **Architectural Delivery**:
-  - **Browser Native Speech Synthesis**: Implemented [browser-speech.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
-  - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](file:///home/jxsig/projects/ixstats/src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
-  - **Three-Tier Fallback Playback**: Refactored [NameResultCard.tsx](file:///home/jxsig/projects/ixstats/src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback $\rightarrow$ client-side meSpeak.
-  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in [docker-compose.yml](file:///home/jxsig/projects/ixstats/docker-compose.yml) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
-  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](file:///home/jxsig/projects/ixstats/scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](file:///home/jxsig/projects/ixstats/scripts/deploy-ixworld.sh).
+  - **Browser Native Speech Synthesis**: Implemented [browser-speech.ts](../../src/lib/onoma/browser-speech.ts) wrapping `window.speechSynthesis` with custom pronunciation mapping and accent culture classification (e.g. German voice for Germanic names).
+  - **Phonetic IPA spelling translation**: Built `ipaToSpeechSpelling` in [branding-utils.ts](../../src/lib/onoma/branding-utils.ts) translating raw IPA text to readable phonetic English syllables with stressed capitalization (e.g. `/ʃəˈnoʊmə/` $\rightarrow$ `shuh-NOH-muh`).
+  - **Fallback Playback**: Refactored [NameResultCard.tsx](../../src/app/labs/onoma/components/shared/NameResultCard.tsx) to execute natural voice priorities: Kokoro TTS $\rightarrow$ Browser Native fallback. (The original third tier, client-side meSpeak, was removed on 2026-06-26.)
+  - **Production Docker Configuration**: Configured the self-hosted `kokoro` service container in a host-local `docker-compose.yml` (untracked since March 2026 — see [Onoma Voice Guide](./onoma-voice-guide.md#3-local-development--docker-configuration) for the `docker run` equivalents) mapped to localhost port 3004, enforcing API key authentication via environment variable `KW_SECRET_API_KEY`, mounting persistent model volume cache, and configuring CPU/memory quotas and logging limits.
+  - **Environment Verification Integration**: Added Kokoro connectivity checks to [verify-environment.ts](../../scripts/deployment/verify-environment.ts) and wired the validation runner before builds start in the IxWorld maps standalone deployment script [deploy-ixworld.sh](../../scripts/deploy-ixworld.sh).
 
 ---
 
@@ -108,28 +110,28 @@ gantt
 ### Phase 4: Living Languages (Linguistic Evolution)
 - **Objective**: Procedural simulation of conlang sound shifts, grammar updates, and vocabulary drift across epochs (1000 BC $\rightarrow$ 2033 AD).
 - **Backlog Items**:
-  - **Sound Change Engine**: Build a rule parser applying phonetic shift laws (e.g. Grimm's Law, vowel shifts, final-consonant erosion) over time intervals.
-  - **Vocabulary Timeline Viewer**: A slider-based interface showing how a word evolves (e.g. *Imperium* $\rightarrow$ *Empyre* $\rightarrow$ *Empire*).
-  - **Language Family Trees**: Visual generation of linguistic descent trees (Proto $\rightarrow$ dialect branches).
+  - **Sound Change Engine** — ✅ *shipped*: Build a rule parser applying phonetic shift laws (e.g. Grimm's Law, vowel shifts, final-consonant erosion) over time intervals.
+  - **Vocabulary Timeline Viewer** — ⏳ *partial*: A slider-based interface showing how a word evolves (e.g. *Imperium* $\rightarrow$ *Empyre* $\rightarrow$ *Empire*). The Sound Shifts studio shows a per-epoch step trace; there is no slider/timeline UI.
+  - **Language Family Trees** — ⏳ *not started*: Visual generation of linguistic descent trees (Proto $\rightarrow$ dialect branches).
 
 ### Phase 5: Machine Learning Layer
 - **Objective**: Replace basic filters with deep scoring models, semantic search, and similarity checks.
 - **Backlog Items**:
-  - **Phonotactic Perplexity Scorer**: Train a statistical N-gram probability model scoring conlang word "naturalness" and pronounceability percentages.
-  - **Semantic Embeddings**: Vectorize conlang vocab definitions using sentence embeddings to support semantic mapping (e.g. searching "Empire" returns conlang roots for *Realm*, *Dominion*, and *Kingdom*).
-  - **Corpus Recommendation**: Suggestions flagging phonetic gaps in dictionaries.
+  - **Phonotactic Perplexity Scorer** — ✅ *shipped* (`perplexity.ts`): Train a statistical N-gram probability model scoring conlang word "naturalness" and pronounceability percentages.
+  - **Semantic Embeddings** — ⏳ *not started*: Vectorize conlang vocab definitions using sentence embeddings to support semantic mapping (e.g. searching "Empire" returns conlang roots for *Realm*, *Dominion*, and *Kingdom*).
+  - **Corpus Recommendation** — ⏳ *not started*: Suggestions flagging phonetic gaps in dictionaries.
 
 ### Phase 6: AI Linguist
 - **Objective**: Integrate LLM inference to compose etymologies, examples, and idioms strictly bound to procedural conlang roots.
 - **Backlog Items**:
-  - **Etymology Composers**: Connect LLMs via tRPC prompt templates that consume conlang root constants and definitions and output consistent in-world etymologies.
-  - **No-Hallucination Guardrails**: Restrict LLM translation inputs to only utilize vocabulary defined in the procedural database.
+  - **Etymology Composers** — ⏳ *not started*: Connect LLMs via tRPC prompt templates that consume conlang root constants and definitions and output consistent in-world etymologies.
+  - **No-Hallucination Guardrails** — ⏳ *not started*: Restrict LLM translation inputs to only utilize vocabulary defined in the procedural database.
 
 ### Phase 7: Voice
 - **Objective**: Audio voice synthesis matching conlang dialect constraints.
 - **Framing — two distinct buttons, not one speaker**:
-  - **🔊 Pronounce** (Completed): client-side Web Speech API + meSpeak fallback. Badges and IPA transcriptions read using BCP-47 culture mapping accents (e.g. German voice for Germanic names).
-  - **🎙 Read Naturally** (Completed — Upgraded to System v2): self-hosted secure Kokoro TTS engine running in a separate Docker container with three-tier fallback (Kokoro -> Browser Native -> meSpeak).
+  - **🔊 Pronounce** (Completed): client-side Web Speech API (the former meSpeak fallback was removed). Badges and IPA transcriptions read using BCP-47 culture mapping accents (e.g. German voice for Germanic names).
+  - **🎙 Read Naturally** (Completed — Upgraded to System v2): self-hosted secure Kokoro TTS engine running in a separate Docker container with fallback (Kokoro -> Browser Native).
 - **Architectural Delivery (Onoma System v2)**:
   - **Phoneme-Native API Synthesis**: Added support for `kokoro-fastapi` mapping/normalization of IPA transcriptions down to raw misaki-en tokens with a robust custom fallback to `kokoro-web`.
   - **G2P Suggestion Tooling**: Integrated thin tRPC endpoints triggering fastapi `/dev/phonemize` to auto-suggest IPA strings in the name editor cards.
@@ -142,18 +144,18 @@ gantt
 ### Phase 8: Translation Engine
 - **Objective**: Context-aware conlang translators.
 - **Backlog Items**:
-  - **Grammar-Aware Translators**: Multi-step pipeline that maps input words, applies case declensions and verb conjugations, arranges syntax (SVO vs SOV), and returns the conlang phrase.
+  - **Grammar-Aware Translators** — ⏳ *partial* (template S/V/O sentence builder only): Multi-step pipeline that maps input words, applies case declensions and verb conjugations, arranges syntax (SVO vs SOV), and returns the conlang phrase.
 
 ### Phase 9: Language Studio
 - **Objective**: visual UI suite for user-created dialects and custom alphabets.
 - **Backlog Items**:
-  - **Visual Alphabet Editor**: Canvas tool mapping glyph shapes and sound rules.
-  - **Dialect Branch Forking**: Git-style forking and merging of custom dictionaries.
+  - **Visual Alphabet Editor** — ✅ *shipped* (Writing Systems / `GlyphForgeCanvas.tsx`): Canvas tool mapping glyph shapes and sound rules.
+  - **Dialect Branch Forking** — ⏳ *partial*: Git-style forking and merging of custom dictionaries. Community packs can be forked (`marketplace.fork`); merging is not implemented.
 
 ### Phase 10: Onoma AI
 - **Objective**: Fully agentic language generation assistants.
 - **Backlog Items**:
-  - **Linguistic Simulation Agents**: Prompt-driven conlang setups ("Generate a maritime republic dialect with Greek sound rules, simulate 500 years of sound shifts, and write its vocabulary").
+  - **Linguistic Simulation Agents** — ⏳ *not started*: Prompt-driven conlang setups ("Generate a maritime republic dialect with Greek sound rules, simulate 500 years of sound shifts, and write its vocabulary").
 
 ---
 
@@ -167,6 +169,8 @@ gantt
        [IxWiki]   [MyCountry]          [IxMaps]    [NPC Engine]
      (Etymologies) (Demonyms)          (Toponyms)   (Dynasties)
 ```
+
+> **Status:** Onoma's `markov-naming.ts` + `language-families.ts` already name cultures and settlements in the procedural worldgen (`src/lib/worldgen/v2/politics.ts`), and the Onoma "Use Name" dialog deep-links a generated name into the Map Editor, Defense, or WikiOS page creation. The three integrations below are otherwise not started.
 
 1.  **NPC Engine (Dynasties & Call-signs)**:
     *   Inject the conlang etymologies generator into character name builders.

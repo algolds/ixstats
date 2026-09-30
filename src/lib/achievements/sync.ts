@@ -4,6 +4,9 @@ import { getCardRewardForAchievement } from "./card-rewards";
 import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./scaling";
 
 export async function syncAchievements(db: PrismaClient): Promise<void> {
+  if (!db?.achievement?.upsert) {
+    return;
+  }
   console.log("[Achievement Sync] Starting baseline synchronization...");
   let syncedCount = 0;
 

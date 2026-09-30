@@ -8,7 +8,7 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
 // Extracted subcomponents, hooks, and helpers
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
@@ -99,6 +99,7 @@ export function CountryMapEmbed({
         className="absolute inset-0"
         style={{ width: "100%", height: "100%" }}
       />
+      // oxlint-disable-next-line
       {!state.mapReady && (
         <div className="bg-muted absolute inset-0 flex items-center justify-center">
           <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />

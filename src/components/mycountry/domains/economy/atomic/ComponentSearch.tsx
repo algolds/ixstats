@@ -1,3 +1,4 @@
+"use client";
 /**
  * Component Search
  *
@@ -5,11 +6,9 @@
  * Optimized with React.memo for performance.
  */
 
-"use client";
-
 import React from "react";
 import { Input } from "~/components/ui/input";
-import { Search, X } from "lucide-react";
+import { Search, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
 export interface ComponentSearchProps {

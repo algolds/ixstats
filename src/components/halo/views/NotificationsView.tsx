@@ -11,20 +11,20 @@ import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContex
 import { useUser } from "~/context/auth-context";
 import {
   Bell,
-  BellRing,
-  X,
+  BellNotification as BellRing,
+  Xmark as X,
   CheckCircle,
-  ChevronRight,
-  Maximize2,
-  Minimize2,
-  MessageCircle,
-} from "lucide-react";
+  NavArrowRight as ChevronRight,
+  Expand as Maximize2,
+  Compress as Minimize2,
+  ChatBubble as MessageCircle,
+} from "iconoir-react";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
-import { SwipeableGroup } from "~/components/ui/facet/swipeable";
+import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
+import { SwipeableGroup } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { MessageTrayItem, type MessageTrayConversation } from "./tray/MessageTrayItem";
 import { NotificationRow } from "./tray/NotificationRow";
 import {
@@ -74,16 +74,16 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     markAllAsRead: markAllExecutiveAsRead,
   } = useExecutiveNotifications();
 
-  const { data: notificationsData, refetch: refetchNotifications } =
-    api.notifications.getUserNotifications.useQuery(
-      { limit: 8, unreadOnly: false },
-      {
-        enabled: !!user?.id,
-        staleTime: 5 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
-      }
-    );
+  const utils = api.useUtils();
+  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
+    { limit: 8, unreadOnly: false },
+    {
+      enabled: !!user?.id,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }
+  );
 
   const { data: messagesData, refetch: refetchMessages } =
     api.messages.getConversationsByFolder.useQuery(
@@ -95,16 +95,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       }
     );
 
+  // No input → invalidates every getUserNotifications list size (Halo, dashboard, messages).
+  const invalidateNotifications = () => {
+    void utils.notifications.getUserNotifications.invalidate();
+    void utils.notifications.getUnreadCount.invalidate();
+  };
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
-    onSuccess: () => void refetchNotifications(),
+    onSettled: invalidateNotifications,
   });
   const dismissMutation = api.notifications.dismissNotification.useMutation({
-    onSuccess: () => void refetchNotifications(),
+    onSettled: invalidateNotifications,
   });
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
-    onSuccess: () => {
-      void refetchNotifications();
-    },
+    onSettled: invalidateNotifications,
   });
   const markAllMessagesMutation = api.messages.markAllAsRead.useMutation({
     onSuccess: () => {
@@ -116,9 +119,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const totalAlertsUnreadCount =
-    unreadNotifications +
-    (isExecutiveMode ? executiveUnreadCount : 0) +
-    enhancedUnreadCount;
+    unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
   const totalUnreadCount = totalAlertsUnreadCount + messageUnreadCount;
 
   // Default active tab to whichever has unread, defaulting to alerts
@@ -126,6 +127,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
   // ─── Merge & group ─────────────────────────────────────────────────────
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { allAlerts, groups } = useMemo(() => {
     const standardList: NotificationItem[] = (notificationsData?.notifications || [])
       .filter((n) => !n.dismissed && !locallyDismissedIds.has(n.id))
@@ -162,6 +164,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     };
 
     for (const n of alerts) {
+      // oxlint-disable-next-line
       const hrs = (Date.now() - new Date(n.timestamp ?? n.createdAt ?? 0).getTime()) / 3600000;
       if (hrs < 1) buckets.Recent.push(n);
       else if (hrs < 24) buckets["Earlier Today"].push(n);
@@ -273,7 +276,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white shadow-xs"
+              className="min-w-[18px] rounded-full bg-amber-500 px-1.5 py-0.5 text-center text-xs font-bold text-white shadow-xs"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -285,7 +288,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             <button
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-40"
               title="Mark all notifications and messages as read"
             >
               <CheckCircle className="h-3 w-3 text-emerald-400" />
@@ -309,7 +312,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="mb-3 flex items-center gap-1 rounded-xl border border-border/40 bg-accent/10 p-1">
+      <div className="mb-3 flex items-center gap-1 rounded-xl border border-black/[0.06] bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isSelected = activeTab === tab.id;
@@ -320,16 +323,16 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 px-3 text-xs font-semibold transition-all select-none active:scale-[0.97]",
+                "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
                 isSelected
                   ? "text-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               )}
             >
               {isSelected && (
                 <motion.div
                   layoutId="halo-notif-tab-indicator"
-                  className="absolute inset-0 rounded-lg border border-border/60 bg-card shadow-xs"
+                  className="absolute inset-0 rounded-lg border border-black/[0.08] bg-white/90 shadow-xs backdrop-blur-md dark:border-white/15 dark:bg-white/[0.12]"
                   transition={{ type: "spring", stiffness: 420, damping: 38 }}
                 />
               )}
@@ -337,7 +340,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 <Icon className={cn("h-3.5 w-3.5", isSelected && "text-amber-400")} />
                 <span>{tab.label}</span>
                 {tab.unread > 0 && (
-                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow-2xs">
+                  <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-amber-500 px-1 text-xs font-bold text-white shadow-2xs">
                     {tab.unread > 9 ? "9+" : tab.unread}
                   </span>
                 )}
@@ -350,7 +353,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       {/* Main Content Area */}
       <div
         className={cn(
-          "space-y-2 overflow-y-auto pr-0.5 transition-all duration-300",
+          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           isUltra ? "max-h-[540px]" : "max-h-80"
         )}
         style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
@@ -377,7 +380,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 <p className="text-muted-foreground text-xs font-semibold">No recent messages</p>
                 <Link
                   href="/messages"
-                  className="text-primary hover:underline mt-2 inline-block text-[11px] font-semibold"
+                  className="text-primary mt-2 inline-block text-xs font-semibold hover:underline"
                 >
                   Start a diplomatic conversation →
                 </Link>
@@ -405,13 +408,13 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                           <ChevronRight className="text-muted-foreground/60 h-3 w-3" />
                         </motion.div>
                         <PreText
-                          className="text-muted-foreground/90 text-[11px] font-semibold tracking-wider uppercase"
+                          className="text-muted-foreground/90 text-xs font-semibold tracking-wider uppercase"
                           whiteSpace="nowrap"
                         >
                           {group.label}
                         </PreText>
                       </div>
-                      <PreText className="text-muted-foreground/70 text-[10px]" whiteSpace="nowrap">
+                      <PreText className="text-muted-foreground/70 text-xs" whiteSpace="nowrap">
                         {String(group.items.length)}
                       </PreText>
                     </button>
@@ -476,19 +479,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       </div>
 
       {/* Expand / Minimize DI Size Toggle */}
-      <div className="mt-3 flex justify-center border-t border-border/30 pt-2">
+      <div className="border-border/30 mt-3 flex justify-center border-t pt-2">
         <button
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border border-border/40 shadow-xs transition-all hover:bg-accent/15 active:scale-[0.98]"
+          className="text-muted-foreground hover:text-foreground border-border/40 hover:bg-accent/15 flex h-7 w-7 items-center justify-center rounded-full border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           title={isUltra ? "Standard View" : "Expanded View"}
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
           {isUltra ? (
-            <Minimize2 className="h-3.5 w-3.5 text-foreground/70" />
+            <Minimize2 className="text-foreground/70 h-3.5 w-3.5" />
           ) : (
-            <Maximize2 className="h-3.5 w-3.5 text-foreground/70" />
+            <Maximize2 className="text-foreground/70 h-3.5 w-3.5" />
           )}
         </button>
       </div>

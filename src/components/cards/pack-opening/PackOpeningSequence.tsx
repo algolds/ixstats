@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/PackOpeningSequence.tsx
 // Main orchestrator for 4-stage pack opening animation sequence
-
-"use client";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -48,6 +47,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
     // Junk cards mutation
     const junkCardsMutation = api.cards.junkCards.useMutation({
+      // oxlint-disable-next-line eslint/no-unused-vars
       onSuccess: (data) => {
         utils.vault.getBalance.invalidate();
         utils.cards.getMyCards.invalidate();

@@ -3,9 +3,9 @@
  */
 
 import { describe, expect, it } from "@jest/globals";
-import { ParserFunctionEvaluator } from "../../../lib/wiki-os/core/parser-functions";
-import { LinkGraphService } from "../../../lib/wiki-os/core/link-graph-service";
-import { toArticleSlug } from "../../../lib/wiki-os/core/domain-types";
+import { ParserFunctionEvaluator } from "~/lib/wiki-os/core/parser-functions";
+import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
+import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 
 describe("WikiOS Domain Types & Slugifier", () => {
   it("normalizes article titles into slugs correctly", () => {
@@ -17,7 +17,8 @@ describe("WikiOS Domain Types & Slugifier", () => {
 
 describe("WikiOS LinkGraphService", () => {
   it("extracts internal wikitext links with labels and section anchors", () => {
-    const wikitext = "The [[Treaty of Oakhaven|peace treaty]] was signed in [[Vesper#Constitution|the capital]].";
+    const wikitext =
+      "The [[Treaty of Oakhaven|peace treaty]] was signed in [[Vesper#Constitution|the capital]].";
     const links = LinkGraphService.extractLinks(wikitext);
 
     expect(links).toHaveLength(2);

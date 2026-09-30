@@ -6,7 +6,6 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
-import { makeRng } from "~/lib/worldgen/rng";
 
 // ──────────────────────────────────────────────
 // Types
@@ -99,7 +98,10 @@ export function getVertices(geometry: Polygon | MultiPolygon): VertexRef[] {
 }
 
 /** Helper to shallow-clone rings array and copy only the target ring for mutation (Copy-on-Write) */
-function cloneRingsWithTarget(geometry: Polygon | MultiPolygon, targetRingIndex: number): Position[][] | null {
+function cloneRingsWithTarget(
+  geometry: Polygon | MultiPolygon,
+  targetRingIndex: number
+): Position[][] | null {
   const allRings = getAllRings(geometry);
   if (targetRingIndex < 0 || targetRingIndex >= allRings.length) return null;
   const rings = [...allRings];
@@ -1184,7 +1186,7 @@ export function insertVertexIfOnSegment(
   point: Position,
   tolerance: number = 1e-7
 ): { geometry: Polygon | MultiPolygon; modified: boolean } {
-  const rings = getAllRings(geometry).map((r) => [...r.map((c) => [...c])]);
+  const rings = getAllRings(geometry).map((r) => r.map((c) => [...c]));
   let modified = false;
 
   for (let ri = 0; ri < rings.length; ri++) {
@@ -1288,6 +1290,7 @@ export function alignSharedVertices(
  */
 export function sanitizeRegionShape(
   geometry: Polygon | MultiPolygon,
+  // oxlint-disable-next-line typescript/no-unused-vars
   countryBorder: Polygon | MultiPolygon
 ): { geometry: Polygon | MultiPolygon; issues: string[] } {
   const issues: string[] = [];

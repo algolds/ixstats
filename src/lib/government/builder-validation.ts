@@ -259,7 +259,7 @@ export function checkDuplicateDepartmentNames(
     nameCount.get(normalizedName)!.push(index);
   });
 
-  nameCount.forEach((indices, name) => {
+  nameCount.forEach((indices, _name) => {
     if (indices.length > 1) {
       indices.forEach((index) => {
         if (!errors.has(index)) {

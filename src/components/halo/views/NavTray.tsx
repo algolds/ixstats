@@ -5,30 +5,30 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  BarChart3,
+  StatsReport as BarChart3,
   Compass,
   Crown,
   Globe,
-  MessageSquare,
-  MoreHorizontal,
-} from "lucide-react";
-import { FaWikipediaW } from "react-icons/fa";
+  ChatBubble as MessageSquare,
+  MoreHoriz as MoreHorizontal,
+} from "iconoir-react";
+import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 
-// ─── Section color mapping (matches NAV_COLORS from navigation.tsx) ──────────
+// ─── Section color mapping ─────────────────────────────────────────────────────
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "#10b981", bg: "bg-emerald-500/15", label: "Dashboard" },
   "/mycountry": { accent: "#f59e0b", bg: "bg-amber-500/15", label: "MyCountry" },
-  "/countries": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Explore" },
-  "/leaderboards": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Explore" },
+  "/countries": { accent: "#6366f1", bg: "bg-indigo-500/15", label: "Explore" },
+  "/leaderboards": { accent: "#6366f1", bg: "bg-indigo-500/15", label: "Explore" },
   "/maps": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Maps" },
   "/w": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Wiki" },
   "/forum": { accent: "#f97316", bg: "bg-orange-500/15", label: "Forum" },
   "/vault": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Cards" },
   "/thinkpages": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "ThinkPages" },
   "/admin": { accent: "#ef4444", bg: "bg-red-500/15", label: "Admin" },
-  "/feed": { accent: "#8b5cf6", bg: "bg-purple-500/15", label: "Feed" },
+  "/feed": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Feed" },
 };
 
 export function getSectionForPath(pathname: string): { accent: string; bg: string; label: string } {
@@ -58,7 +58,7 @@ const PRIMARY_NAV: NavTrayItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, accent: "#10b981" },
   { name: "MyCountry", href: "/mycountry", icon: Crown, accent: "#f59e0b" },
   { name: "Explore", href: "/countries", icon: Globe, accent: "#8b5cf6" },
-  { name: "Wiki", href: "/w", icon: FaWikipediaW, accent: "#3b82f6" },
+  { name: "Wiki", href: "/w", icon: WikiOSLogomark, accent: "#3b82f6" },
   { name: "Maps", href: "/maps", icon: Compass, accent: "#06b6d4" },
   { name: "Forum", href: "/forum", icon: MessageSquare, accent: "#f97316" },
 ];
@@ -111,17 +111,12 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
             transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.8 }}
           >
             <div
-              className="overflow-hidden rounded-2xl border border-white/20 shadow-2xl dark:border-white/10"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-              }}
+              className="dynamic-island-shell overflow-hidden rounded-2xl shadow-2xl"
+              data-expanded="true"
             >
               {/* Refraction edges */}
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                <div className="absolute top-0 left-0 h-[1.5px] w-full bg-gradient-to-r from-transparent via-white/50 to-transparent dark:via-white/25" />
                 <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
               </div>
 
@@ -149,14 +144,14 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                         onClick={onClose}
                         data-cuelume-hover="tick"
                         data-cuelume-press="press"
-                        className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+                        className={`group flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                           active
                             ? "bg-foreground/10 text-foreground shadow-sm"
                             : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground"
                         }`}
                       >
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${
                             active ? "shadow-sm" : "bg-foreground/5 group-hover:bg-foreground/10"
                           }`}
                           style={active ? { backgroundColor: `${item.accent}30` } : undefined}
@@ -194,7 +189,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       onClick={onClose}
                       data-cuelume-hover="tick"
                       data-cuelume-press="press"
-                      className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                      className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                         isActive(item.href)
                           ? "bg-foreground/10 text-foreground"
                           : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"

@@ -6,21 +6,21 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ChevronRight,
-  ChevronLeft,
-  ChevronUp,
-  ChevronDown,
-  Settings2,
-  Layers,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
+  Settings as Settings2,
+  Component as Layers,
   List,
-  BookOpen,
+  OpenBook as BookOpen,
   Search,
   Globe,
   Link as LinkIcon,
-  Layout,
-  History,
-  Inbox,
-} from "lucide-react";
+  ViewGrid as Layout,
+  ClockRotateRight as History,
+  MailIn as Inbox,
+} from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
 
@@ -32,7 +32,7 @@ const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 export type TabId =
   "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
 
-const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<any> }> = {
+const TAB_DEFS: Record<TabId, { label: string; Icon: React.ComponentType<{ className?: string; title?: string }> }> = {
   layers: { label: "Layers", Icon: Layers },
   features: { label: "Features", Icon: List },
   properties: { label: "Properties", Icon: Settings2 },
@@ -116,6 +116,7 @@ export function EditorPanel({
   // Sync tab if overridden
   useEffect(() => {
     if (activeTabOverride) {
+      // oxlint-disable-next-line
       setActiveTab(activeTabOverride);
     }
   }, [activeTabOverride]);
@@ -123,6 +124,7 @@ export function EditorPanel({
   // Keep activeTab in sync with available tabs in this panel
   useEffect(() => {
     if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      // oxlint-disable-next-line
       setActiveTab(tabs[0]);
     }
   }, [tabs, activeTab]);
@@ -142,13 +144,10 @@ export function EditorPanel({
     return stored ? Math.min(500, Math.max(120, parseInt(stored))) : 240;
   });
 
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(panelWidth));
-  }, [panelWidth]);
-
-  useEffect(() => {
-    localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(panelHeight));
-  }, [panelHeight]);
+  const panelWidthRef = useRef(panelWidth);
+  panelWidthRef.current = panelWidth;
+  const panelHeightRef = useRef(panelHeight);
+  panelHeightRef.current = panelHeight;
 
   const isDragging = useRef(false);
 
@@ -158,32 +157,65 @@ export function EditorPanel({
       isDragging.current = true;
       const startX = e.clientX;
       const startY = e.clientY;
-      const startW = panelWidth;
-      const startH = panelHeight;
+      const startW = panelWidthRef.current;
+      const startH = panelHeightRef.current;
+
+      let pendingW = startW;
+      let pendingH = startH;
+      let rafId: number | null = null;
 
       const onMove = (me: MouseEvent) => {
         if (!isDragging.current) return;
         if (placement === "bottom") {
           const delta = startY - me.clientY;
-          const newH = Math.min(500, Math.max(120, startH + delta));
-          setPanelHeight(newH);
+          pendingH = Math.min(500, Math.max(120, startH + delta));
         } else {
           const delta = placement === "left" ? me.clientX - startX : startX - me.clientX;
-          const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
-          setPanelWidth(newW);
+          pendingW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
+        }
+
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            if (placement === "bottom") {
+              setPanelHeight(pendingH);
+            } else {
+              setPanelWidth(pendingW);
+            }
+          });
         }
       };
 
       const onUp = () => {
         isDragging.current = false;
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
+
+        if (placement === "bottom") {
+          setPanelHeight(pendingH);
+          try {
+            localStorage.setItem(`${PANEL_STORAGE_KEY}-height`, String(pendingH));
+          } catch {
+            // Ignore localStorage errors (e.g. quota, private mode)
+          }
+        } else {
+          setPanelWidth(pendingW);
+          try {
+            localStorage.setItem(`${PANEL_STORAGE_KEY}-width`, String(pendingW));
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
       };
 
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
     },
-    [panelWidth, panelHeight, placement]
+    [placement]
   );
 
   // Auto-switch tabs based on mode (for properties tab)
@@ -191,6 +223,7 @@ export function EditorPanel({
     if (userOverrideRef.current) return;
     if (mode.startsWith("add-") || mode.startsWith("edit-")) {
       if (tabs.includes("properties")) {
+        // oxlint-disable-next-line
         setActiveTab("properties");
       }
     }
@@ -281,7 +314,7 @@ export function EditorPanel({
             onTabDrop(tabId);
           }
         }}
-        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-[11px] backdrop-blur-sm transition-colors`}
+        className={`border-border/40 bg-card/20 text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-xs backdrop-blur-sm transition-colors`}
         style={{
           width: placement === "bottom" ? "100%" : 140,
           height: placement === "bottom" ? 80 : "100%",
@@ -380,7 +413,7 @@ export function EditorPanel({
                           }
                     }
                     onClick={() => handleTabClick(tabId)}
-                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-[10px] font-medium transition-colors sm:text-[11px] ${
+                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-xs font-medium transition-colors sm:text-xs ${
                       isActive
                         ? "border-primary bg-card/40 text-foreground border-b-2"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
@@ -389,7 +422,7 @@ export function EditorPanel({
                     <tabDef.Icon className="h-3 w-3" />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
-                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-[9px] tabular-nums">
+                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-xs tabular-nums">
                         {featureCount}
                       </span>
                     )}
@@ -442,8 +475,7 @@ export function EditorPanel({
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <div
               key={activeTab}
-              className="flex h-full min-h-0 flex-col"
-              style={{ animation: "editorTabFadeIn 150ms ease" }}
+              className="animate-in fade-in flex h-full min-h-0 flex-col duration-150"
             >
               {activeTab === "properties" && propertiesContent && (
                 <div className="h-full overflow-y-auto px-3 py-3">{propertiesContent}</div>
@@ -485,17 +517,6 @@ export function EditorPanel({
               )}
             </div>
           </div>
-
-          <style jsx>{`
-            @keyframes editorTabFadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
-            }
-          `}</style>
         </div>
       )}
 

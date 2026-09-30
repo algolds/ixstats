@@ -12,12 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { JsonViewer } from "~/components/ui/json-viewer";
-import { Plus, Pencil, Trash2, Check } from "lucide-react";
-import {
-  type ChoiceFormData,
-  RISK_LEVELS,
-} from "~/lib/admin/diplomatic-scenario-transforms";
+import { JsonViewer } from "~/components/shared/json-viewer";
+import { Plus, EditPencil as Pencil, Trash as Trash2, Check } from "iconoir-react";
+import { type ChoiceFormData, RISK_LEVELS } from "~/lib/admin/diplomatic-scenario-transforms";
 
 interface DiplomaticChoiceEditorProps {
   responseOptions: ChoiceFormData[];
@@ -73,7 +70,7 @@ export function DiplomaticChoiceEditor({
         ) : (
           <div className="space-y-2">
             {responseOptions.map((choice, index) => (
-              <Card key={choice.id || index} className="glass-card-child p-3">
+              <Card key={choice.id || index} className="facet-card-child p-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
@@ -100,13 +97,13 @@ export function DiplomaticChoiceEditor({
                       (choice.predictedOutcomes &&
                         Object.keys(choice.predictedOutcomes).length > 0)) && (
                       <details className="mt-2">
-                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-[10px] font-semibold tracking-wider uppercase select-none">
+                        <summary className="text-muted-foreground hover:text-foreground mb-1 cursor-pointer text-xs font-semibold tracking-wider uppercase select-none">
                           View Effects & Outcomes
                         </summary>
                         <div className="mt-1.5 grid grid-cols-1 gap-3 md:grid-cols-2">
                           {choice.effects && Object.keys(choice.effects).length > 0 && (
                             <div>
-                              <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                              <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                                 Effects
                               </span>
                               <JsonViewer
@@ -119,7 +116,7 @@ export function DiplomaticChoiceEditor({
                           {choice.predictedOutcomes &&
                             Object.keys(choice.predictedOutcomes).length > 0 && (
                               <div>
-                                <span className="text-muted-foreground mb-1 block text-[10px] font-medium uppercase">
+                                <span className="text-muted-foreground mb-1 block text-xs font-medium uppercase">
                                   Predicted Outcomes
                                 </span>
                                 <JsonViewer
@@ -166,7 +163,7 @@ export function DiplomaticChoiceEditor({
 
       {/* Choice Editor Sub-Card */}
       {editingChoiceIndex !== null && (
-        <Card className="glass-card-parent border-2 border-red-500/30 p-4">
+        <Card className="facet-card-parent border-2 border-red-500/30 p-4">
           <h4 className="text-foreground mb-3 text-sm font-medium">
             {editingChoiceIndex < responseOptions.length ? "Edit Choice" : "Add New Choice"}
           </h4>
@@ -175,9 +172,7 @@ export function DiplomaticChoiceEditor({
               <label className="text-foreground mb-2 block text-sm font-medium">Label *</label>
               <Input
                 value={choiceFormData.label}
-                onChange={(e) =>
-                  setChoiceFormData((prev) => ({ ...prev, label: e.target.value }))
-                }
+                onChange={(e) => setChoiceFormData((prev) => ({ ...prev, label: e.target.value }))}
                 placeholder="e.g., Diplomatic Negotiation"
               />
             </div>

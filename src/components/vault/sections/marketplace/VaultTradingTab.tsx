@@ -3,7 +3,14 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "~/lib/utils";
-import { ArrowRightLeft, Plus, History, TrendingUp, Inbox, Send } from "lucide-react";
+import {
+  ArrowSeparate as ArrowRightLeft,
+  Plus,
+  ClockRotateRight as History,
+  StatUp as TrendingUp,
+  MailIn as Inbox,
+  Send,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
@@ -91,12 +98,12 @@ export function VaultTradingTab() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="glass-surface glass-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
+            className="facet-surface facet-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
           >
             <TextureOverlay texture="dots" opacity={0.03} />
             <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-[8px] font-semibold tracking-wider uppercase">
+              <p className="text-muted-foreground truncate text-xs font-semibold tracking-wider uppercase">
                 {stat.label}
               </p>
               <p
@@ -113,7 +120,7 @@ export function VaultTradingTab() {
       </div>
 
       {/* Tabs */}
-      <Card className="glass-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
+      <Card className="facet-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
             <TabsTrigger
@@ -122,7 +129,7 @@ export function VaultTradingTab() {
             >
               <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" /> Active Offer List
               {activeTrades && activeTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {activeTrades.length}
                 </span>
               )}
@@ -133,7 +140,7 @@ export function VaultTradingTab() {
             >
               <Inbox className="mr-1.5 h-3.5 w-3.5" /> Incoming Offers
               {incomingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {incomingTrades.length}
                 </span>
               )}
@@ -144,7 +151,7 @@ export function VaultTradingTab() {
             >
               <Send className="mr-1.5 h-3.5 w-3.5" /> Sent Offers
               {outgoingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-[8px] leading-none font-bold text-white">
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
                   {outgoingTrades.length}
                 </span>
               )}
@@ -160,7 +167,7 @@ export function VaultTradingTab() {
           <TabsContent value="active" className="space-y-3 outline-none">
             {activeLoading ? (
               <div className="flex items-center justify-center py-10">
-                <Skeleton className="h-20 w-full animate-pulse rounded-lg bg-white/5" />
+                <Skeleton className="h-20 w-full rounded-lg bg-white/5" />
               </div>
             ) : activeTrades && activeTrades.length > 0 ? (
               activeTrades.map((trade: ActiveTradeItem) => (
@@ -175,7 +182,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <ArrowRightLeft className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Active Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   Start trading by creating a new offer
                 </p>
                 <Button
@@ -203,7 +210,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <Inbox className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Incoming Trades</p>
-                <p className="text-muted-foreground mt-0.5 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   You don't have any trade offers to review
                 </p>
               </div>
@@ -224,7 +231,7 @@ export function VaultTradingTab() {
               <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
                 <Send className="text-muted-foreground/30 mb-3 h-10 w-10" />
                 <p className="text-foreground/80 text-xs font-bold">No Outgoing Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-[10px]">
+                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
                   You haven't sent any trade offers yet
                 </p>
                 <Button

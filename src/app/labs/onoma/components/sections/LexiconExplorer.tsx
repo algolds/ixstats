@@ -8,11 +8,11 @@ import {
   ShieldAlert,
   ShieldCheck,
   Activity,
-  Award,
-  AlertTriangle,
-  Layers,
-  BarChart3,
-} from "lucide-react";
+  Trophy as Award,
+  WarningTriangle as AlertTriangle,
+  Component as Layers,
+  StatsReport as BarChart3,
+} from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
   getLetterFrequencies,
@@ -88,7 +88,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       return {
         label: "Balanced Phonology",
         desc: "Consistent cultural face with decent variation.",
-        color: "text-[#0091ff] bg-[#0091ff]/5 border-[#0091ff]/20",
+        color: "text-onoma-primary bg-onoma-primary/5 border-onoma-primary/20",
         pct,
       };
     } else {
@@ -108,7 +108,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       {/* Header */}
       <div className="border-border/40 flex items-center justify-between border-b pb-3">
         <div>
-          <h3 className="flex items-center gap-1.5 text-sm font-bold tracking-tight text-[#0091ff]">
+          <h3 className="text-onoma-primary flex items-center gap-1.5 text-sm font-bold tracking-tight">
             <Activity className="h-4 w-4" />
             <span>Lexicon Explorer & Health</span>
           </h3>
@@ -198,7 +198,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
             </div>
             <div className="bg-secondary/60 h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className={`h-full rounded-full bg-[#0091ff] transition-all duration-300`}
+                className={`bg-onoma-primary h-full rounded-full transition-all duration-300`}
                 style={{ width: `${diversityInfo.pct}%` }}
               />
             </div>
@@ -211,7 +211,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         {/* Letter Frequencies */}
         <div className="space-y-2.5">
           <h4 className="text-muted-foreground border-border/40 flex items-center gap-1.5 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
-            <BarChart3 className="h-3.5 w-3.5 text-[#0091ff]" />
+            <BarChart3 className="text-onoma-primary h-3.5 w-3.5" />
             <span>Top Letter Densities</span>
           </h4>
 
@@ -229,7 +229,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
                   </div>
                   <div className="bg-secondary/50 h-1 w-full overflow-hidden rounded-full">
                     <div
-                      className="h-full rounded-full bg-[#0091ff]/60"
+                      className="bg-onoma-primary/60 h-full rounded-full"
                       style={{ width: `${frequency * 100}%` }}
                     />
                   </div>
@@ -242,7 +242,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         {/* N-Gram Frequencies (Bigrams/Trigrams Side-by-side or combined list) */}
         <div className="space-y-2.5">
           <h4 className="text-muted-foreground border-border/40 flex items-center gap-1.5 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
-            <Layers className="h-3.5 w-3.5 text-[#0091ff]" />
+            <Layers className="text-onoma-primary h-3.5 w-3.5" />
             <span>Frequent Substrings</span>
           </h4>
 

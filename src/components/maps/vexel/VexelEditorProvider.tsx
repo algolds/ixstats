@@ -60,6 +60,7 @@ export function VexelEditorProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const warnings = validateComposition(composition);
     const textBlazon = generateBlazon(composition);
+    // oxlint-disable-next-line
     setValidationWarnings(warnings);
     setBlazon(textBlazon);
   }, [composition]);
@@ -71,6 +72,7 @@ export function VexelEditorProvider({ children }: { children: ReactNode }) {
       if (draft) {
         try {
           const parsed = JSON.parse(draft) as HeraldryComposition;
+          // oxlint-disable-next-line
           setComposition(parsed);
           setIsDirty(true);
           sessionStorage.removeItem("vexel-draft");

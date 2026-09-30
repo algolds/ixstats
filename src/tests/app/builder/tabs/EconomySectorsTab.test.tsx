@@ -5,7 +5,11 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { EconomySectorsTab } from "~/app/builder/components/enhanced/tabs/EconomySectorsTab";
-import { mockEconomyBuilder, mockAtomicComponents, mockSectors } from "~/app/builder/__tests__/fixtures";
+import {
+  mockEconomyBuilder,
+  mockAtomicComponents,
+  mockSectors,
+} from "~/app/builder/__tests__/fixtures";
 import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 
 describe("EconomySectorsTab", () => {

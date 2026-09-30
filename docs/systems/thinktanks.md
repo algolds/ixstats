@@ -1,11 +1,11 @@
 # ThinkTanks — Collaborative Groups & Research Engine
 
 **Last updated:** August 2026  
-**Status:** Production Ready (Release Candidate) — ThinkTanks v2  
+**Status:** Production Ready (Release Candidate) — ThinkTanks v2 (Feed + Members live; Docs and Chat deferred)  
 **Route:** `/thinktanks` · `/thinktanks/[groupId]`  
 **Design System:** Facet Glass Physics & Apple Design (`/apple-design`)  
 
-ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#thinkshare-unified-messaging) platform.
+ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#4-thinkshare-real-time-messaging-messages) platform.
 
 ---
 
@@ -31,7 +31,7 @@ ThinkTanks is built as a direct sister interface to `/messages`, adhering to App
 │  [ My Groups | Discover ]   [+ New]  │  [ ◀ Back / Collapse ] 🕌 Levantine Lore Group   │
 │  🔍 Search groups...                 │  History & Lore · 21 members · [ Share | ⚙️ ]   │
 │  [ All · 6 | History · 3 | Diplo · 2] ├─────────────────────────────────────────────────┤
-│  ─────────────────────────────────── │  [ 📰 Feed ]  [ 💬 Chat ]  [ 📄 Docs ]  [ 👥 Members ]│
+│  ─────────────────────────────────── │  [ 📰 Feed ]  [ 👥 Members ]                     │
 │  • 🕌 Levantine Lore (21) [Active]   ├─────────────────────────────────────────────────┤
 │  • 🌐 Occident Forum (14)            │  Active Tab Canvas                              │
 │  • 🛡️ Vandarch Defense (8)           │  (Seamless full-height container)              │
@@ -86,8 +86,8 @@ ThinkTanks focuses on streamlined asynchronous lore collaboration and membership
 ---
 
 ### Roadmap Pillars (Deferred / Future Phases)
-- **Group Chat (`ThinktankChatTab.tsx`)**: Real-time synchronized messaging powered by the ThinkShare messaging infrastructure.
-- **Collaborative Docs (`ThinktankPapersTab.tsx`)**: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts.
+- **Group Chat (`ThinktankChatTab.tsx`)** — *not started*: Real-time synchronized messaging powered by the ThinkShare messaging infrastructure. Each group already gets a linked `ThinkshareConversation` (`conversationId`) and the `ThinktankMessage` model exists, but there is no chat tab component.
+- **Collaborative Docs (`ThinktankPapersTab.tsx`)** — *partial*: Split-view editor for creating, searching, editing, and versioning group articles and policy drafts. The component and the `getThinktankDocuments` / `create` / `update` / `deleteThinktankDocument` procedures exist, but the tab is not wired into `ThinktankWorkspace` (`ThinktankTab` is `"feed" | "roster"`).
 
 ---
 
@@ -147,7 +147,9 @@ ThinkTanks utilizes models defined across `prisma/schema/social.prisma`:
 | :--- | :--- |
 | **`ThinktankGroup`** | Group entity (`id`, `name`, `description`, `category`, `avatar`, `type`, `settings`, `memberCount`, `conversationId`, `createdBy`) |
 | **`ThinktankMember`** | User membership and role (`id`, `groupId`, `userId`, `role`: `owner` \| `admin` \| `member`, `isActive`, `joinedAt`) |
-| **`ThinktankCollaborativeDoc`** | Shared document (`id`, `groupId`, `title`, `content`, `authorId`, `isPublished`, `createdAt`, `updatedAt`) |
+| **`ThinktankMessage`** | Group chat message (reserved for the deferred Chat pillar) |
+| **`ThinktankInvite`** | Invitation record (`invitedBy`, `invitedUser`, `inviteCode`, `expiresAt`, `isUsed`) |
+| **`CollaborativeDoc`** | Shared document (`id`, `groupId`, `title`, `content`, `version`, `createdBy`, `lastEditBy`, `isPublic`, `createdAt`, `updatedAt`) |
 | **`ThinkshareConversation`** | Linked real-time chat channel for group discussions |
 
 ---
@@ -159,14 +161,16 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |
 | `api.thinkpages.getThinktanks` | Query | `{ userId?, type?: "all" \| "joined" \| "created" }` | Returns active groups with computed `isMember` and `userRole` |
+| `api.thinkpages.updateThinktank` / `deleteThinktank` | Mutation | `{ groupId, name?, description?, avatar?, type?, category?, tags? }` / `{ groupId }` | Edits group metadata / deletes the group and its linked conversation |
 | `api.thinkpages.getThinktankById` | Query | `{ groupId: string, userId?: string }` | Returns complete group details, member relations, and settings |
-| `api.thinkpages.createThinktank` | Mutation | `{ name, description?, category?, type?, avatar?, createdBy }` | Creates group, sets initial avatar, and assigns owner |
+| `api.thinkpages.createThinktank` | Mutation | `{ name, description?, category?, type?, avatar?, tags?, createdBy }` | Creates group, sets initial avatar, and assigns owner |
 | `api.thinkpages.joinThinktank` | Mutation | `{ groupId: string, userId: string }` | Joins a group and adds user to linked conversation participants |
 | `api.thinkpages.leaveThinktank` | Mutation | `{ groupId: string, userId: string }` | Leaves a group and updates membership counts |
-| `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules? }` | Updates group configurations and banner art |
+| `api.thinkpages.updateGroupSettings` | Mutation | `{ groupId, allowPersonaPosting?, bannerUrl?, rules?, themeAccent?, pinnedDocIds? }` | Updates group configurations and banner art |
 | `api.thinkpages.inviteToThinktank` | Mutation | `{ groupId, userIds, invitedBy }` | Dispatches group invitations to specified users |
-| `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number }` | Returns group timeline posts with author accounts and reactions |
-| `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, mediaUrls? }` | Publishes a note to the group feed |
+| `api.thinkpages.getGroupFeed` | Query | `{ groupId: string, limit?: number, cursor?: string }` | Returns group timeline posts with author accounts and reactions |
+| `api.thinkpages.createGroupPost` | Mutation | `{ groupId, accountId?, content, hashtags?, mediaUrls? }` | Publishes a note to the group feed |
+| `api.thinkpages.getThinktankDocuments` / `createThinktankDocument` / `updateThinktankDocument` / `deleteThinktankDocument` | Query / Mutation | `{ groupId }` / `{ groupId, title, createdBy, content?, isPublic? }` / … | Collaborative doc CRUD (backend for the deferred Docs pillar) |
 
 ---
 
@@ -175,4 +179,4 @@ All ThinkTank operations are exposed via the `thinkpages` tRPC router (`src/serv
 - [ThinkPages Social Backbone & ThinkShare](./social.md)
 - [WikiOS Engine Specification](./wikios/WIKIOS.md)
 - [Facet Design System Specification](../reference/facet-design-system.md)
-- [Complete API Catalog](../reference/api-complete.md#thinkpages-router)
+- [Complete API Catalog](../reference/api-complete.md)

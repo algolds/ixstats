@@ -1,4 +1,3 @@
-export { AnimatedTabContent, AnimatedTabTrigger, TabIndicator } from "./AnimatedTabContent";
 export {
   tabVariants,
   tabFadeVariants,
@@ -38,13 +37,6 @@ export {
   type SectorBreakdownCardProps,
 } from "./SectorBreakdownCard";
 export {
-  PolicyBadgeGrid,
-  createPoliciesFromSpending,
-  defaultPolicies,
-  type PolicyBadge,
-  type PolicyBadgeGridProps,
-} from "./PolicyBadgeGrid";
-export {
   StatGauge,
   StatGaugeGrid,
   DistributionBar,
@@ -53,9 +45,3 @@ export {
   type DistributionSegment,
   type DistributionBarProps,
 } from "./StatGauge";
-export {
-  InteractiveMetric,
-  MetricTooltip,
-  AnimatedValue,
-  type InteractiveMetricProps,
-} from "./InteractiveMetric";

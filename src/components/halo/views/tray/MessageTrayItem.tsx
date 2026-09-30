@@ -1,9 +1,14 @@
 "use client";
 
 import React from "react";
-import { MessageCircle, ChevronRight, Globe, X } from "lucide-react";
-import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import {
+  ChatBubble as MessageCircle,
+  NavArrowRight as ChevronRight,
+  Globe,
+  Xmark as X,
+} from "iconoir-react";
+import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
@@ -55,12 +60,10 @@ export function MessageTrayItem({
 
   const latestMessage = conversation.messages?.[0];
   const displayTitle =
-    conversation.title ||
-    otherParticipant?.name ||
-    otherParticipant?.countryName ||
-    "Dispatch";
+    conversation.title || otherParticipant?.name || otherParticipant?.countryName || "Dispatch";
 
   const excerpt = latestMessage?.content || "No messages yet";
+  // oxlint-disable-next-line
   const timestamp = conversation.lastMessageAt || latestMessage?.createdAt || Date.now();
 
   const isDiplomatic = conversation.source === "diplomatic" || conversation.type === "diplomatic";
@@ -108,10 +111,10 @@ export function MessageTrayItem({
         <div
           onClick={() => onClick(conversation)}
           className={cn(
-            "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-sm backdrop-blur-xl transition-all duration-200 active:scale-[0.985]",
+            "group relative flex w-full cursor-pointer flex-col overflow-hidden rounded-xl border p-3 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.985]",
             isUnread
-              ? "border-amber-500/30 bg-amber-500/[0.04] shadow-xs hover:border-amber-500/50"
-              : "border-border/50 bg-card/60 hover:border-border hover:bg-card/90"
+              ? "border-amber-500/30 bg-amber-500/[0.06] shadow-xs hover:border-amber-500/50"
+              : "border-black/[0.06] bg-black/[0.02] hover:border-black/10 hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07]"
           )}
         >
           <div className="flex items-start gap-3">
@@ -134,13 +137,17 @@ export function MessageTrayItem({
                 />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500 shadow-xs">
-                  {isDiplomatic ? <Globe className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                  {isDiplomatic ? (
+                    <Globe className="h-4 w-4" />
+                  ) : (
+                    <MessageCircle className="h-4 w-4" />
+                  )}
                 </div>
               )}
 
               {/* Status Dot */}
               {isUnread && (
-                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
+                <span className="ring-background absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2" />
               )}
             </div>
 
@@ -152,17 +159,17 @@ export function MessageTrayItem({
                     {displayTitle}
                   </span>
                   {isDiplomatic && (
-                    <span className="shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.2 text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase">
+                    <span className="py-0.2 shrink-0 rounded border border-amber-500/30 bg-amber-500/10 px-1 text-xs font-bold text-amber-600 uppercase dark:text-amber-400">
                       Dispatch
                     </span>
                   )}
                 </div>
-                <span className="text-muted-foreground/70 shrink-0 text-[9.5px] font-medium tabular-nums">
+                <span className="text-muted-foreground/70 shrink-0 text-xs font-medium tabular-nums">
                   {relativeTime(timestamp)}
                 </span>
               </div>
 
-              <p className="text-muted-foreground group-hover:text-foreground/90 line-clamp-1 text-[11px] leading-relaxed font-medium transition-colors">
+              <p className="text-muted-foreground group-hover:text-foreground/90 line-clamp-1 text-xs leading-relaxed font-medium transition-colors">
                 {excerpt}
               </p>
             </div>

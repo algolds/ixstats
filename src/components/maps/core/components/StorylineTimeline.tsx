@@ -65,7 +65,7 @@ export function StorylineTimeline({
                   {pin.title}
                 </p>
                 {pin.ixTimeYear != null && (
-                  <p className="text-muted-foreground/70 text-[10px]">
+                  <p className="text-muted-foreground/70 text-xs">
                     Year {pin.ixTimeYear}
                     {pin.eraLabel ? ` · ${pin.eraLabel}` : ""}
                   </p>
@@ -76,7 +76,7 @@ export function StorylineTimeline({
         })}
       </div>
       {pins.length > 1 && (
-        <p className="text-muted-foreground/60 mt-2 text-[10px]">
+        <p className="text-muted-foreground/60 mt-2 text-xs">
           Event {currentIdx + 1} of {pins.length}
         </p>
       )}

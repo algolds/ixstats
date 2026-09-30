@@ -7,12 +7,11 @@ import {
   LAYER_CONFIGS,
   WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
-  getProjectionSpec,
   MAP_LAYER_TYPES,
 } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
-import { getMinArea, filterByArea, COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
+import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 interface UseWorldMapLayersProps {
   map: MapLibreMap | null;
@@ -82,6 +81,7 @@ export function useWorldMapLayers({
 
       const oceanLabelsData = {
         type: "FeatureCollection" as const,
+        // oxlint-disable-next-line
         features: showOceanLabels
           ? WATER_BODY_LABELS.map((wb, i) => ({
               type: "Feature" as const,

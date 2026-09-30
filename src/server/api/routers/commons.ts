@@ -5,10 +5,12 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { Cache } from "~/lib/cache/cache";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
-const USER_AGENT = "IxStats/2.0 (https://ixwiki.com; WikiOS Commons Browser)";
+const USER_AGENT = DEFAULT_USER_AGENT;
 
 // ---------------------------------------------------------------------------
 // Shared fetch helper
@@ -82,14 +84,19 @@ function stripHtml(html: string): string {
 // Caching & Rate-limit/429 Handling
 // ---------------------------------------------------------------------------
 
-interface CachedImageInfo {
-  data: CommonsImage | null;
-  timestamp: number;
-}
-
-const imageInfoCache = new Map<string, CachedImageInfo>();
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const CACHE_MISS_TTL_MS = 1 * 60 * 60 * 1000; // 1 hour
+// Bounded LRU: public callers can submit arbitrary titles, and misses are cached too
+const imageInfoCache = new Cache<CommonsImage | null>({
+  maxSize: 5000,
+  defaultTtlMs: CACHE_TTL_MS,
+  namespace: "commons-imageinfo",
+});
+
+// Every procedure proxies the external Commons API; dedicated bucket so it doesn't drain "public"
+const commonsProcedure = publicProcedure.use(
+  createRateLimitMiddleware({ max: 100, windowMs: 60_000, namespace: "commons" })
+);
 
 function normalizeTitle(title: string): string {
   return title.replace(/_/g, " ").trim();
@@ -104,7 +111,7 @@ export const commonsRouter = createTRPCRouter({
    * Full-text search using generator pattern — returns thumbnails + metadata in one call.
    * Supports Commons search operators like `incategory:"Category Name"`.
    */
-  search: publicProcedure
+  search: commonsProcedure
     .input(
       z.object({
         query: z.string().min(1).max(500),
@@ -137,7 +144,7 @@ export const commonsRouter = createTRPCRouter({
    * Files in a Commons category — uses deepcat: for recursive search through all subcategories.
    * Returns files from the entire category tree with total count.
    */
-  getCategoryFiles: publicProcedure
+  getCategoryFiles: commonsProcedure
     .input(
       z.object({
         category: z.string().min(1).max(300),
@@ -170,10 +177,10 @@ export const commonsRouter = createTRPCRouter({
    * Get total recursive file count for categories using deepcat: search.
    * Batches up to 10 categories with individual queries (cached aggressively).
    */
-  getCategoryTotalCounts: publicProcedure
+  getCategoryTotalCounts: commonsProcedure
     .input(
       z.object({
-        categories: z.array(z.string().min(1).max(300)).min(1).max(10),
+        categories: z.array(z.string().min(1).max(300)).min(1).max(25),
       })
     )
     .query(async ({ input }) => {
@@ -203,7 +210,7 @@ export const commonsRouter = createTRPCRouter({
   /**
    * Subcategories of a Commons category.
    */
-  getSubcategories: publicProcedure
+  getSubcategories: commonsProcedure
     .input(
       z.object({
         category: z.string().min(1).max(300),
@@ -228,40 +235,9 @@ export const commonsRouter = createTRPCRouter({
     }),
 
   /**
-   * File/subcategory counts for up to 20 categories (batched).
-   */
-  getCategoryInfo: publicProcedure
-    .input(
-      z.object({
-        categories: z.array(z.string().min(1).max(300)).min(1).max(20),
-      })
-    )
-    .query(async ({ input }) => {
-      const titles = input.categories.map((c) => `Category:${c}`).join("|");
-
-      const data = await commonsApiFetch({
-        action: "query",
-        prop: "categoryinfo",
-        titles,
-      });
-
-      const result: Record<string, { files: number; subcats: number }> = {};
-      for (const page of data?.query?.pages ?? []) {
-        const name = String(page.title).replace(/^Category:/, "");
-        const info = page.categoryinfo ?? {};
-        result[name] = {
-          files: info.files ?? 0,
-          subcats: info.subcats ?? 0,
-        };
-      }
-
-      return result;
-    }),
-
-  /**
    * Category prefix autocomplete.
    */
-  autocompleteCategories: publicProcedure
+  autocompleteCategories: commonsProcedure
     .input(
       z.object({
         prefix: z.string().min(1).max(200),
@@ -284,7 +260,7 @@ export const commonsRouter = createTRPCRouter({
   /**
    * Get image info (thumbnails, dimensions, descriptions, license, etc) for a batch of file titles.
    */
-  getImageInfoByTitles: publicProcedure
+  getImageInfoByTitles: commonsProcedure
     .input(
       z.object({
         titles: z.array(z.string().min(1)).max(50),
@@ -293,23 +269,15 @@ export const commonsRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.titles.length === 0) return [];
 
-      const now = Date.now();
       const results: CommonsImage[] = [];
       const titlesToFetch: string[] = [];
 
       for (const title of input.titles) {
         const normKey = normalizeTitle(title);
         const cached = imageInfoCache.get(normKey);
-
-        if (cached) {
-          const isExpired =
-            now - cached.timestamp > (cached.data === null ? CACHE_MISS_TTL_MS : CACHE_TTL_MS);
-          if (!isExpired) {
-            if (cached.data !== null) {
-              results.push(cached.data);
-            }
-            continue;
-          }
+        if (cached !== undefined) {
+          if (cached !== null) results.push(cached);
+          continue;
         }
         titlesToFetch.push(title);
       }
@@ -329,14 +297,14 @@ export const commonsRouter = createTRPCRouter({
 
           for (const img of fetchedImages) {
             const normTitle = normalizeTitle(img.title);
-            imageInfoCache.set(normTitle, { data: img, timestamp: now });
+            imageInfoCache.set(normTitle, img, CACHE_TTL_MS);
             fetchedNormTitles.add(normTitle);
           }
 
           for (const rawTitle of titlesToFetch) {
             const normTitle = normalizeTitle(rawTitle);
             if (!fetchedNormTitles.has(normTitle)) {
-              imageInfoCache.set(normTitle, { data: null, timestamp: now });
+              imageInfoCache.set(normTitle, null, CACHE_MISS_TTL_MS);
             }
           }
         } catch (error) {
@@ -344,18 +312,14 @@ export const commonsRouter = createTRPCRouter({
           for (const rawTitle of titlesToFetch) {
             const normTitle = normalizeTitle(rawTitle);
             if (!imageInfoCache.has(normTitle)) {
-              imageInfoCache.set(normTitle, { data: null, timestamp: now });
+              imageInfoCache.set(normTitle, null, CACHE_MISS_TTL_MS);
             }
           }
         }
       }
 
       return input.titles
-        .map((title) => {
-          const normKey = normalizeTitle(title);
-          const cached = imageInfoCache.get(normKey);
-          return cached ? cached.data : null;
-        })
+        .map((title) => imageInfoCache.get(normalizeTitle(title)) ?? null)
         .filter((img): img is CommonsImage => img !== null);
     }),
 });

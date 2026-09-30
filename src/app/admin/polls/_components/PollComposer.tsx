@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -16,17 +17,17 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import {
-  Trash2,
+  Trash as Trash2,
   Plus,
   Send,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  Info,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Sparks as Sparkles,
+  InfoCircle as Info,
   CheckCircle,
-} from "lucide-react";
-import { toast } from "sonner";
+} from "iconoir-react";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 
 interface PollComposerProps {
@@ -34,6 +35,7 @@ interface PollComposerProps {
 }
 
 export function PollComposer({ onSuccess }: PollComposerProps) {
+  const notify = useNotify();
   // Wizard Step State
   const [step, setStep] = useState(1);
 
@@ -47,11 +49,14 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
   const [countryId, setCountryId] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
 
-  const { data: countriesData } = api.countries.getSelectList.useQuery({ limit: 250 });
+  const { data: countriesData } = api.countries.getSelectList.useQuery({
+    limit: 250,
+    realm: ALL_REALMS,
+  });
 
   const createMutation = api.polls.create.useMutation({
     onSuccess: () => {
-      toast.success("Poll created and broadcasted successfully!");
+      notify.success("Poll created and broadcasted successfully!");
       if (onSuccess) onSuccess();
       // Reset form
       setQuestion("");
@@ -65,7 +70,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
       setStep(1);
     },
     onError: (err) => {
-      toast.error(err.message || "Failed to create poll");
+      notify.error(err.message || "Failed to create poll");
     },
   });
 
@@ -86,11 +91,11 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
   const nextStep = () => {
     if (step === 1 && !question.trim()) {
-      toast.error("Please enter a question or topic");
+      notify.error("Please enter a question or topic");
       return;
     }
     if (step === 2 && targetScope === "country" && !countryId) {
-      toast.error("Please select a target country");
+      notify.error("Please select a target country");
       return;
     }
     setStep((prev) => Math.min(prev + 1, 3));
@@ -104,13 +109,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
     e.preventDefault();
 
     if (!question.trim()) {
-      toast.error("Please enter a question");
+      notify.error("Please enter a question");
       return;
     }
 
     const filteredOptions = options.map((opt) => opt.trim()).filter((opt) => opt.length > 0);
     if (filteredOptions.length < 2) {
-      toast.error("At least 2 options are required");
+      notify.error("At least 2 options are required");
       return;
     }
 
@@ -155,7 +160,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
           <CardHeader className="border-border/20 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Sparkles className="h-4 w-4 text-[#ff8a65]" />
+                <Sparkles className="text-poll h-4 w-4" />
                 Poll Wizard Composer
               </CardTitle>
               <span className="text-muted-foreground text-xs font-semibold">Step {step} of 3</span>
@@ -168,15 +173,15 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <div className="bg-muted/40 h-1 overflow-hidden rounded-full">
                     <div
                       className={cn(
-                        "h-full rounded-full transition-all duration-300",
-                        step >= s.number ? "bg-[#ff8a65]" : "bg-transparent"
+                        "h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+                        step >= s.number ? "bg-poll" : "bg-transparent"
                       )}
                     />
                   </div>
                   <span
                     className={cn(
-                      "text-[10px] font-bold tracking-tight transition-colors",
-                      step === s.number ? "font-extrabold text-[#ff8a65]" : "text-muted-foreground"
+                      "text-xs font-bold tracking-tight transition-colors",
+                      step === s.number ? "text-poll font-extrabold" : "text-muted-foreground"
                     )}
                   >
                     {s.label}
@@ -206,7 +211,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       placeholder="e.g., What should be our priority for the next national budget?"
                       value={question}
                       onChange={(e) => setQuestion(e.target.value)}
-                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+                      className="bg-background/40 border-border/60 focus-visible:ring-poll"
                       required
                     />
                   </div>
@@ -223,7 +228,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       placeholder="Provide additional details or context to help citizens make an informed choice..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="bg-background/40 border-border/60 focus-visible:ring-[#ff8a65]"
+                      className="bg-background/40 border-border/60 focus-visible:ring-poll"
                       rows={5}
                     />
                   </div>
@@ -340,7 +345,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                       variant="outline"
                       size="sm"
                       onClick={handleAddOption}
-                      className="h-8 cursor-pointer gap-1 border-[#ff8a65]/35 text-xs font-semibold text-[#ff8a65] hover:bg-[#ff8a65]/10 dark:text-[#ff8a65]"
+                      className="border-poll/35 text-poll hover:bg-poll/10 dark:text-poll h-8 cursor-pointer gap-1 text-xs font-semibold"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add Option
                     </Button>
@@ -377,7 +382,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     ))}
                   </div>
 
-                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-[#ff8a65]/20 bg-[#ff8a65]/5 p-3 text-xs text-[#ff8a65]">
+                  <div className="border-poll/20 bg-poll/5 text-poll mt-4 flex items-start gap-2 rounded-lg border p-3 text-xs">
                     <Info className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
                       Review all parameters. Clicking <strong>Create & Publish</strong> will record
@@ -403,7 +408,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <Button
                     type="button"
                     onClick={nextStep}
-                    className="h-9 cursor-pointer gap-1.5 bg-[#ff8a65] text-xs font-semibold text-white hover:bg-[#ff8a65]/90"
+                    className="bg-poll hover:bg-poll/90 h-9 cursor-pointer gap-1.5 text-xs font-semibold text-white"
                   >
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -411,7 +416,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   <Button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="h-9 cursor-pointer gap-1.5 bg-[#ff8a65] px-6 text-xs font-semibold text-white hover:bg-[#ff8a65]/90"
+                    className="bg-poll hover:bg-poll/90 h-9 cursor-pointer gap-1.5 px-6 text-xs font-semibold text-white"
                   >
                     {createMutation.isPending ? (
                       "Creating..."

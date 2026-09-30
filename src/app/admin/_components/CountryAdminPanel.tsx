@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -7,24 +8,26 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
-  Users,
-  Edit3,
-  Save,
-  X,
+  Group as Users,
+  EditPencil as Edit3,
+  FloppyDisk as Save,
+  Xmark as X,
   CheckCircle,
-  AlertCircle,
+  WarningCircle as AlertCircle,
   Search,
-  RefreshCw,
-  EyeOff,
-} from "lucide-react";
-import { GlassCard } from "~/components/ui/enhanced-card";
+  Refresh as RefreshCw,
+  EyeClosed as EyeOff,
+} from "iconoir-react";
 import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useNotify } from "~/hooks/useNotify";
 
 export function CountryAdminPanel() {
   const notify = useNotify();
   // Fetch all countries
-  const { data, isLoading, error, refetch } = api.countries.getAll.useQuery({ limit: 1000 });
+  const { data, isLoading, error, refetch } = api.countries.getAll.useQuery({
+    limit: 1000,
+    realm: ALL_REALMS,
+  });
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
@@ -115,7 +118,7 @@ export function CountryAdminPanel() {
   // Loading state
   if (isLoading) {
     return (
-      <GlassCard className="p-8">
+      <Card className="facet-card p-8">
         <div className="mb-6 flex items-center gap-3">
           <Users className="text-primary h-6 w-6" />
           <h2 className="text-2xl font-bold">Country Admin</h2>
@@ -133,23 +136,23 @@ export function CountryAdminPanel() {
             </Card>
           ))}
         </div>
-      </GlassCard>
+      </Card>
     );
   }
   if (error) {
     return (
-      <GlassCard className="p-8">
+      <Card className="facet-card p-8">
         <div className="mb-6 flex items-center gap-3">
           <AlertCircle className="h-6 w-6 text-red-500" />
           <h2 className="text-2xl font-bold text-red-600">Country Admin</h2>
         </div>
         <div className="text-red-600">Error loading countries: {error.message}</div>
-      </GlassCard>
+      </Card>
     );
   }
 
   return (
-    <GlassCard className="p-8">
+    <Card className="facet-card p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
           <Users className="text-primary h-6 w-6" />
@@ -363,6 +366,6 @@ export function CountryAdminPanel() {
       {countries.length === 0 && (
         <div className="text-muted-foreground py-12 text-center">No countries found.</div>
       )}
-    </GlassCard>
+    </Card>
   );
 }

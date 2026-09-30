@@ -1,10 +1,14 @@
 "use client";
 
+import { Globe } from "iconoir-react";
+
 import React from "react";
 import { motion } from "motion/react";
-import { CountryFocusCard, type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
+import {
+  CountryFocusCard,
+  type CountryCardData,
+} from "~/components/mycountry/dossier/CountryFocusCard";
 import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
-import { RiGlobalLine } from "react-icons/ri";
 import { cn } from "~/lib/utils";
 
 interface CountriesFocusGridModularProps {
@@ -79,7 +83,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
             <motion.div
               key={country.id}
               className={cn(
-                "relative transition-all duration-300",
+                "relative transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
                 isHovered ? "z-20" : isExpanded ? "z-30" : "z-10"
               )}
               initial={{ opacity: 0, y: 20 }}
@@ -113,13 +117,16 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
           <ProgressiveBlur>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="glass-surface glass-refraction h-60 animate-pulse md:h-80">
-                  <div className="space-y-4 p-6">
-                    <div className="bg-muted/30 h-6 rounded"></div>
-                    <div className="bg-muted/20 h-4 w-2/3 rounded"></div>
-                    <div className="mt-4 space-y-2">
-                      <div className="bg-muted/20 h-3 rounded"></div>
-                      <div className="bg-muted/20 h-3 w-3/4 rounded"></div>
+                <div
+                  key={i}
+                  className="facet-surface facet-refraction flex h-60 flex-col justify-end rounded-2xl border border-white/10 p-5 md:h-96"
+                >
+                  <div className="space-y-3">
+                    <div className="bg-muted/40 h-6 w-3/4 rounded-lg animate-pulse" />
+                    <div className="bg-muted/20 h-4 w-1/2 rounded-md animate-pulse" />
+                    <div className="mt-4 space-y-2 pt-2">
+                      <div className="bg-muted/15 h-3.5 w-full rounded animate-pulse" />
+                      <div className="bg-muted/15 h-3.5 w-4/5 rounded animate-pulse" />
                     </div>
                   </div>
                 </div>
@@ -134,7 +141,8 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
         <div className="mt-12 text-center">
           <button
             onClick={loadMore}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-8 py-3 font-medium transition-colors"
+            data-cuelume-press="tick"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 py-3 font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
           >
             Load More Countries
           </button>
@@ -144,8 +152,8 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction inline-block px-6 py-4">
-            <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>
+          <div className="facet-floating facet-refraction inline-block rounded-xl px-6 py-4">
+            <p className="text-muted-foreground text-sm font-medium">You've viewed all {countries.length} countries</p>
           </div>
         </div>
       )}
@@ -153,15 +161,16 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <div className="glass-floating glass-refraction mx-auto max-w-md p-12">
-            <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
-            <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className="facet-floating facet-refraction mx-auto max-w-md rounded-2xl p-12">
+            <Globe className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-xl font-bold tracking-tight">No Countries Found</h3>
+            <p className="text-muted-foreground mb-6 text-sm">
               Try adjusting your search or filter criteria
             </p>
             <button
               onClick={onClearFilters}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 py-2 transition-colors"
+              data-cuelume-press="tick"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 py-2.5 text-sm font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
             >
               Clear Filters
             </button>

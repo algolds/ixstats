@@ -1,3 +1,4 @@
+"use client";
 /**
  * DesignerStage3D Component
  *
@@ -7,10 +8,13 @@
  * ponytail: simplified single-source card rendering wrapper
  */
 
-"use client";
-
 import React, { useState, useMemo } from "react";
-import { RotateCcw, RotateCw, Maximize2, SlidersHorizontal } from "lucide-react";
+import {
+  Undo as RotateCcw,
+  Refresh as RotateCw,
+  Expand as Maximize2,
+  ControlSlider as SlidersHorizontal,
+} from "iconoir-react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";

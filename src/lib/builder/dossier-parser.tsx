@@ -111,9 +111,11 @@ export function parseWikiMarkup(markup: string, title: string = ""): ParsedWikiC
     const content = markup.substring(startIndex, endIndex).trim();
     const sectionId = sectionTitle.toLowerCase().replace(/\s+/g, "-");
     const sectionImageMatches = Array.from(content.matchAll(/\[\[File:([^\]|]+)/g)).map(
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'match' is intentional in this scope
       (match) => match[1]
     );
     const sectionLinkMatches = Array.from(content.matchAll(/\[\[([^\]|]+)/g))
+      // oxlint-disable-next-line eslint/no-shadow -- shadowed 'match' is intentional in this scope
       .map((match) => match[1])
       .filter((link) => !link.startsWith("File:") && !link.startsWith("Category:"));
 

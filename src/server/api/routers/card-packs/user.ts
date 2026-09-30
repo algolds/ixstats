@@ -15,10 +15,6 @@ import { globalCache } from "~/lib/cache";
  */
 export const cardPacksUserRouter = createTRPCRouter({
   // ============================================================
-  // PUBLIC ENDPOINTS
-  // ============================================================
-
-  // ============================================================
   // PROTECTED ENDPOINTS (Authenticated Users)
   // ============================================================
 
@@ -97,7 +93,9 @@ export const cardPacksUserRouter = createTRPCRouter({
             priority: "medium",
             metadata: { packId: input.packId },
           });
-        } catch {}
+        } catch (err) {
+          console.warn("[CardPacks] Purchase notification failed for pack", input.packId, err);
+        }
 
         await Promise.all([
           ...(ctx.auth?.userId
@@ -195,7 +193,13 @@ export const cardPacksUserRouter = createTRPCRouter({
             priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
             metadata: { cardCount: results.length, bestRarity },
           });
-        } catch {}
+        } catch (err) {
+          console.warn(
+            "[CardPacks] Reveal notification failed for user pack",
+            input.userPackId,
+            err
+          );
+        }
 
         await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
@@ -226,8 +230,4 @@ export const cardPacksUserRouter = createTRPCRouter({
         });
       }
     }),
-
-  // ============================================================
-  // ADMIN ENDPOINTS
-  // ============================================================
 });

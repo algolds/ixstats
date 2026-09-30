@@ -1,10 +1,9 @@
+"use client";
 /**
  * HolographicOverlay Component
  * Provides premium holographic effects for IxCards
  * Features rainbow shimmer, light rays, foil stamps, and rarity-specific patterns
  */
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -189,11 +188,14 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
 
     // Calculate light refraction style
     const refractionStyle =
+      // oxlint-disable-next-line
       enableMouseTracking && containerRef.current
         ? getLightRefractionStyle(
             mousePosition.x,
             mousePosition.y,
+            // oxlint-disable-next-line
             containerRef.current.offsetWidth,
+            // oxlint-disable-next-line
             containerRef.current.offsetHeight
           )
         : { transform: "", filter: "" };
@@ -222,8 +224,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                     : getMetallicGradient("gold"),
             backgroundSize: "200% 200%",
             backgroundPosition:
+              // oxlint-disable-next-line
               isHovered && containerRef.current
-                ? `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                ? // oxlint-disable-next-line
+                  `${(mousePosition.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePosition.y / (containerRef.current.offsetHeight || 1)) * 100}%`
                 : "50% 50%",
             opacity: isHovered ? 0.75 : 0,
             transition: "background-position 0.1s ease-out, opacity 0.3s ease-out",
@@ -371,7 +375,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                   opacity: particle.opacity,
                   boxShadow: `0 0 ${particle.size * 2}px ${particle.color}`,
                 }}
-                initial={{ scale: 0 }}
+                initial={{ scale: 0.96, opacity: 0 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}

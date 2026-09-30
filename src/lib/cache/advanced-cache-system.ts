@@ -3,10 +3,12 @@
  * Multi-layer caching with Redis, in-memory, and intelligent invalidation
  */
 
-import { Redis } from "ioredis";
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
+import superjson from "superjson";
+import type { SuperJSONResult } from "superjson";
 
 import { memoryConfig } from "~/lib/system/dev-memory-config";
+import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
 
 // In-memory cache for fallback
 class InMemoryCache {
@@ -50,7 +52,7 @@ class InMemoryCache {
   deleteByPattern(pattern: string): void {
     const isWildcard = pattern.includes("*");
     if (isWildcard) {
-      const regexStr = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+      const regexStr = pattern.replace(/[-/\\^$*+?.()|[\]{}]/g, (ch) =>
         ch === "*" ? ".*" : "\\" + ch
       );
       const regex = new RegExp(`^${regexStr}$`);
@@ -81,67 +83,38 @@ class InMemoryCache {
   }
 }
 
-// Redis cache interface
+// Redis cache interface (shared client; every key namespaced so clear() never touches other data)
+const KEY_PREFIX = "acs:";
+
 class RedisCache {
-  private redis: Redis | null = null;
-  private enabled = false;
-
-  constructor() {
-    this.initializeRedis();
-  }
-
-  private async initializeRedis(): Promise<void> {
-    try {
-      const redisUrl = process.env.REDIS_URL;
-      const redisEnabled = process.env.REDIS_ENABLED === "true";
-
-      if (redisUrl && redisEnabled) {
-        this.redis = new Redis(redisUrl, {
-          maxRetriesPerRequest: 3,
-          lazyConnect: true,
-        });
-
-        this.redis.on("error", (err) => {
-          console.warn("[RedisCache] Redis connection error:", err.message);
-        });
-
-        this.redis.on("connect", () => {
-          console.log("[RedisCache] Connected to Redis");
-        });
-
-        this.enabled = true;
-      } else if (process.env.NODE_ENV !== "test") {
-        console.warn("[RedisCache] Redis not configured or not enabled, using in-memory fallback");
-      }
-    } catch (error) {
-      console.error("[RedisCache] Failed to initialize:", error);
-    }
-  }
-
   isEnabled(): boolean {
-    return this.enabled;
+    return getSharedRedis() !== null;
   }
 
   isConnected(): boolean {
-    return this.redis?.status === "ready";
+    return isRedisReady(getSharedRedis());
   }
 
   async set(key: string, value: any, ttlSeconds = 300): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
+      await redis.setex(KEY_PREFIX + key, ttlSeconds, JSON.stringify(superjson.serialize(value)));
     } catch (error) {
       console.error("[RedisCache] Set failed:", error);
     }
   }
 
   async get(key: string): Promise<any | null> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return null;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return null;
 
     try {
-      const value = await this.redis.get(key);
-      return value ? JSON.parse(value as string) : null;
+      const raw = await redis.get(KEY_PREFIX + key);
+      if (raw === null) return null;
+      const payload: SuperJSONResult = JSON.parse(raw);
+      return superjson.deserialize(payload) ?? null;
     } catch (error) {
       console.error("[RedisCache] Get failed:", error);
       return null;
@@ -149,33 +122,33 @@ class RedisCache {
   }
 
   async delete(key: string): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.del(key);
+      await redis.del(KEY_PREFIX + key);
     } catch (error) {
       console.error("[RedisCache] Delete failed:", error);
     }
   }
 
   async deleteByPattern(pattern: string): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      const keys = await this.redis.keys(pattern);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-      }
+      await deleteKeysByPattern(redis, KEY_PREFIX + pattern);
     } catch (error) {
       console.error("[RedisCache] Delete by pattern failed:", error);
     }
   }
 
   async clear(): Promise<void> {
-    if (!this.enabled || !this.redis || !this.isConnected()) return;
+    const redis = getSharedRedis();
+    if (!isRedisReady(redis)) return;
 
     try {
-      await this.redis.flushdb();
+      await deleteKeysByPattern(redis, KEY_PREFIX + "*");
     } catch (error) {
       console.error("[RedisCache] Clear failed:", error);
     }
@@ -206,6 +179,9 @@ export interface AdvancedCacheStats {
   };
 }
 
+/** Memory-tier TTL cap while Redis is connected: bounds cross-process staleness after invalidation. */
+const L1_MAX_TTL_MS = 30_000;
+
 /**
  * Advanced multi-tier caching system
  */
@@ -229,13 +205,17 @@ export class AdvancedCacheSystem {
     const startTime = performance.now();
 
     try {
+      // oxlint-disable-next-line typescript/no-unused-vars
       const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
 
-      // Always set in memory cache
-      this.memoryCache.set(key, value, (ttl * 1000) as number);
+      // Redis holds critical and standard tiers (unless skipped) when connected
+      const toRedis =
+        !skipRedis && (tier === "critical" || tier === "standard") && this.redisCache.isConnected();
 
-      // Set in Redis for critical and standard tiers (unless skipped)
-      if (!skipRedis && (tier === "critical" || tier === "standard")) {
+      // Always set in memory cache; short-lived when Redis is the shared source of truth
+      this.memoryCache.set(key, value, toRedis ? Math.min(ttl * 1000, L1_MAX_TTL_MS) : ttl * 1000);
+
+      if (toRedis) {
         await this.redisCache.set(key, value, ttl);
       }
 
@@ -265,7 +245,7 @@ export class AdvancedCacheSystem {
       value = await this.redisCache.get(key);
       if (value !== null) {
         // Store back in memory for faster access
-        this.memoryCache.set(key, value, 300000); // 5 minutes
+        this.memoryCache.set(key, value, L1_MAX_TTL_MS);
         this.recordGetTime(performance.now() - startTime);
         return value;
       }

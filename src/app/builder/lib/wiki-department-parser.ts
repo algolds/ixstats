@@ -196,7 +196,7 @@ export function parseDepartments(pages: { title: string; content: string }[]): P
   const seenNames = new Set<string>();
 
   const ministryPattern =
-    /(?:ministry|department|secretariat|bureau|office)\s+(?:of\s+)?([A-Z][a-zA-Z\s,.'\-]+?)(?:,|\.|;|—|\band\b|$|\n)/gi;
+    /(?:ministry|department|secretariat|bureau|office)\s+(?:of\s+)?([A-Z][a-zA-Z\s,.'-]+?)(?:,|\.|;|—|\band\b|$|\n)/gi;
   let match;
 
   while ((match = ministryPattern.exec(combinedContent)) !== null) {

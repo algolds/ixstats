@@ -35,7 +35,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     onDeselect,
     isReadOnly = false,
     canSelectMore = true,
-    enableInlineScroll = false,
+    enableInlineScroll = true,
   }) => {
     const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -57,7 +57,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
       <div
         className={
           enableInlineScroll
-            ? "max-h-[60vh] scrollbar-thin scrollbar-thumb-zinc-800 overflow-y-auto pr-1 dark:scrollbar-thumb-zinc-800"
+            ? "max-h-[640px] xl:max-h-[720px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 scrollbar-track-transparent"
             : undefined
         }
       >

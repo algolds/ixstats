@@ -11,24 +11,6 @@ import { TRPCError } from "@trpc/server";
 
 export const nsImportVerificationRouter = createTRPCRouter({
   /**
-   * Verify that a NationStates nation exists
-   */
-  verifyNation: protectedProcedure
-    .input(
-      z.object({
-        nationName: z.string().min(1).max(100),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const exists = await nsApiClient.verifyNation(input.nationName);
-
-      return {
-        exists,
-        nationName: input.nationName,
-      };
-    }),
-
-  /**
    * Request verification for nation ownership
    * Returns the URL the user should visit to get their verification code
    */
@@ -144,10 +126,6 @@ export const nsImportVerificationRouter = createTRPCRouter({
         nationName: verification.nationName,
       };
     }),
-
-  // ─── Bulk Import Endpoints ────────────────────────────────────────
-
-  // ─── Pause / Play / Stop controls ───
 
   // ─── Region Discovery ────────────────────────────────────────────
 

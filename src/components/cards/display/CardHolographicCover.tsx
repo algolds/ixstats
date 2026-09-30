@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * CardHolographicCover — Universal procedural holographic fallback for ALL card types
  *
@@ -15,11 +17,9 @@
  *  6. Center label
  */
 
-"use client";
-
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import type { CardRarity, CardType } from "@prisma/client";
+import type { CardRarity } from "@prisma/client";
 import {
   getRainbowHolographicGradient,
   getSparkleGridGradient,
@@ -254,7 +254,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {/* Layer 2b: Custom Watermark Icon or Category Icon Watermark */}
         {designMetadata?.watermarkIcon ? (
           <div
-            className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden transition-all duration-300"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
             style={{
               opacity: designMetadata.watermarkOpacity ?? 0.35,
               transform: `scale(${designMetadata.watermarkScale ?? 1.2})`,
@@ -302,7 +302,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {designMetadata?.emblemIcon && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
             <div
-              className="relative flex items-center justify-center rounded-full p-6 transition-all duration-300"
+              className="relative flex items-center justify-center rounded-full p-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               style={{
                 transform: `scale(${designMetadata.emblemScale ?? 1.0})`,
                 background: "radial-gradient(circle, rgba(0,0,0,0.5) 0%, transparent 70%)",
@@ -341,8 +341,10 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
             backgroundImage: holoGradient,
             backgroundSize: "400% 400%",
             backgroundPosition:
+              // oxlint-disable-next-line
               isHovered && containerRef.current
-                ? `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
+                ? // oxlint-disable-next-line
+                  `${(mousePos.x / (containerRef.current.offsetWidth || 1)) * 100}% ${(mousePos.y / (containerRef.current.offsetHeight || 1)) * 100}%`
                 : "50% 50%",
             mixBlendMode: "overlay",
             opacity: holoOpacity,
@@ -407,10 +409,10 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {!resolvedCategory && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <div className="space-y-1 px-4 text-center">
-              <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
+              <p className="text-xs font-semibold tracking-[0.25em] text-white/25 uppercase">
                 {theme.label}
               </p>
-              <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">
+              <p className="text-xs tracking-[0.2em] text-white/15 uppercase">
                 {theme.sublabel}
               </p>
             </div>

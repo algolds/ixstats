@@ -1,19 +1,17 @@
+"use client";
 // src/app/admin/vault/VaultBonusAdmin.tsx
 // Metagame Economy Bonuses Configuration Suite for Vault Admin
-"use client";
 
 import React, { useEffect, useState } from "react";
 import {
   Gift,
-  RefreshCw,
-  Save,
-  Sparkles,
-  UserCheck,
+  Refresh as RefreshCw,
+  FloppyDisk as Save,
+  UserBadgeCheck as UserCheck,
   Globe,
   Trophy,
-  Award,
-  CheckCircle2,
-} from "lucide-react";
+  Trophy as Award,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
@@ -172,7 +170,7 @@ export function VaultBonusAdmin() {
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
                   <h3 className="text-foreground text-sm font-bold">{group.title}</h3>
-                  <p className="text-muted-foreground text-[11px]">{group.description}</p>
+                  <p className="text-muted-foreground text-xs">{group.description}</p>
                 </div>
               </div>
 
@@ -182,7 +180,7 @@ export function VaultBonusAdmin() {
                     <div className="flex items-center justify-between">
                       <label className="text-foreground text-xs font-semibold">{field.label}</label>
                       {field.hint && (
-                        <span className="text-muted-foreground hidden text-[10px] sm:inline">
+                        <span className="text-muted-foreground hidden text-xs sm:inline">
                           {field.hint}
                         </span>
                       )}
@@ -197,9 +195,9 @@ export function VaultBonusAdmin() {
                           setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
-                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-all focus:border-emerald-500 focus:outline-none"
+                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-emerald-500 focus:outline-none"
                       />
-                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-[10px] uppercase">
+                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-xs uppercase">
                         Credits
                       </span>
                     </div>
@@ -216,7 +214,7 @@ export function VaultBonusAdmin() {
         <Button
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
-          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-all hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
         >
           {saveMutation.isPending ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

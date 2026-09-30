@@ -1,24 +1,7 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  rateLimitedPublicProcedure,
-} from "~/server/api/trpc";
-import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { achievementService } from "~/lib/achievements/service";
+import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 export const achievementsProgressRouter = createTRPCRouter({
-  // Get recent achievements for a country
-
-  // Get all achievements for a country
-
-  // Get achievement leaderboard
-
-  // Get current user's achievement progress statistics
-  getProgress: protectedProcedure.query(async ({ ctx }) => {
-    return achievementService.getProgress(ctx.user.clerkUserId, ctx.db);
-  }),
-
   getAllWithStatus: rateLimitedPublicProcedure
     .input(
       z.object({
@@ -33,7 +16,7 @@ export const achievementsProgressRouter = createTRPCRouter({
         // If no user specified but countryId is provided, find country's owner/first user
         if (!targetUserId && input.countryId) {
           const user = await ctx.db.user.findFirst({
-            where: { countryId: input.countryId },
+            where: { ownedCountries: { some: { id: input.countryId } } },
             select: { clerkUserId: true },
           });
           if (user) targetUserId = user.clerkUserId;
@@ -99,7 +82,7 @@ export const achievementsProgressRouter = createTRPCRouter({
           if (m.rewardsJson) {
             try {
               rewards = JSON.parse(m.rewardsJson);
-            } catch (e) {
+            } catch {
               // ignore
             }
           }
@@ -168,27 +151,28 @@ export const achievementsProgressRouter = createTRPCRouter({
               })
             : [];
 
-        // Query 50k edits for all registered wiki users
+        // Query 50k edits for all registered wiki users via PostgreSQL
         const fiftyKEditsMap = new Map<string, number>();
         if (wikiUsernames.length > 0) {
           try {
-            const oolPool = getWikiDbPool();
-            const [rows] = (await oolPool.execute(
-              `SELECT a.actor_name, COUNT(DISTINCT SUBSTRING(r.rev_timestamp, 1, 8), r.rev_page) as cnt
-               FROM revision r
-               JOIN actor a ON a.actor_id = r.rev_actor
-               LEFT JOIN revision p2 ON p2.rev_id = r.rev_parent_id
-               WHERE a.actor_name IN (${wikiUsernames.map(() => "?").join(",")})
-                 AND (CAST(r.rev_len AS SIGNED) - COALESCE(CAST(p2.rev_len AS SIGNED), 0)) >= 50000
-               GROUP BY a.actor_name`,
-              wikiUsernames
-            )) as any[];
+            const bigRevs = await ctx.db.wikiRevision.findMany({
+              where: {
+                byteDelta: { gte: 50000 },
+                author: { in: wikiUsernames },
+              },
+              select: {
+                author: true,
+              },
+            });
 
-            for (const r of rows) {
-              fiftyKEditsMap.set(String(r.actor_name).toLowerCase(), Number(r.cnt) || 0);
+            for (const r of bigRevs) {
+              if (r.author) {
+                const lower = r.author.toLowerCase();
+                fiftyKEditsMap.set(lower, (fiftyKEditsMap.get(lower) ?? 0) + 1);
+              }
             }
           } catch (_err) {
-            // MySQL unavailable in development mode — skip 50k edit counts
+            // Skip 50k edit counts if revision table is unpopulated
           }
         }
 
@@ -383,7 +367,9 @@ export const achievementsProgressRouter = createTRPCRouter({
               if (typeof wa.recipientUsers === "string") {
                 try {
                   parsedRecipients = JSON.parse(wa.recipientUsers);
-                } catch (_) {}
+                } catch (err) {
+                  console.warn("[AchievementsProgress] Failed to parse recipientUsers JSON:", err);
+                }
               } else if (Array.isArray(wa.recipientUsers)) {
                 parsedRecipients = wa.recipientUsers as string[];
               }
@@ -433,10 +419,4 @@ export const achievementsProgressRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  // Admin action: Manually trigger baseline sync
-
-  // User action: Retroactively sync collector achievements and titles
-
-  // Unlock achievement (internal use & backward compatibility)
 });

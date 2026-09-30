@@ -6,16 +6,16 @@ import {
   Compass,
   Type,
   Globe,
-  Layers,
+  Component as Layers,
   Search,
-  Volume2,
+  SoundHigh as Volume2,
   GitBranch,
-  Split,
-  Binary,
+  GitBranch as Split,
+  Code as Binary,
   Bookmark,
-  Library,
+  BookStack as Library,
   Activity,
-} from "lucide-react";
+} from "iconoir-react";
 
 export interface WalkthroughStep {
   title: string;

@@ -7,70 +7,7 @@ import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/ad
 import { getForumTrendingThreads } from "~/server/modules/forum";
 
 // Input schemas
-const activityFilterSchema = z.object({
-  limit: z.number().min(1).max(80).default(20),
-  cursor: z.string().optional(),
-  filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
-    .default("all"),
-  category: z.enum(["all", "game", "platform", "social"]).default("all"),
-  userId: z.string().optional(),
-});
-
-const createActivitySchema = z.object({
-  type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
-  category: z.enum(["game", "platform", "social"]).default("game"),
-  userId: z.string().optional(),
-  countryId: z.string().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  metadata: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
-    )
-    .optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  visibility: z.enum(["public", "followers", "friends"]).default("public"),
-  relatedCountries: z.array(z.string()).optional(),
-});
-
-const engagementActionSchema = z.object({
-  activityId: z.string(),
-  action: z.string(),
-  userId: z.string(),
-});
-
-const commentActionSchema = z.object({
-  activityId: z.string(),
-  userId: z.string(),
-  content: z.string().min(1).max(2000),
-});
-
-const getUserEngagementSchema = z.object({
-  activityIds: z.array(z.string()),
-  userId: z.string(),
-});
-
 export const activitiesTrendingRouter = createTRPCRouter({
-  // Test mutation to debug parameter passing
-
-  // Get global activity feed
-
-  // Get feed from countries the user follows
-
-  // Get user-specific activity feed
-
-  // Create new activity
-
-  // Handle engagement actions (like, unlike, share, view)
-
-  // Add comment to activity
-
-  // Get comments for an activity
-
-  // Get user engagement state for activities
-
   // Get trending topics based on activity data
   getTrendingTopics: publicProcedure
     .input(
@@ -160,23 +97,6 @@ export const activitiesTrendingRouter = createTRPCRouter({
         return [];
       }
     }),
-
-  // Get activity statistics
-
-  // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
-
-  // Country Follow System
-  // Follow a country
-
-  // Unfollow a country
-
-  // Get countries that a country is following
-
-  // Get countries that follow a country (followers)
-
-  // Check if a country is following another
-
-  // Get follow statistics for a country
 
   /**
    * Unified trending — cross-platform trending topics scored by engagement.

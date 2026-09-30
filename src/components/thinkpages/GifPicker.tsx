@@ -1,12 +1,30 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Loader2 } from "lucide-react";
-import { MdGif as GifIcon } from "react-icons/md";
+import { Search, SystemRestart as Loader2 } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+
+function GifIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect x="3" y="4" width="18" height="16" rx="4" />
+      <path d="M7 12h2a1 1 0 0 0 1-1V9.5A1.5 1.5 0 0 0 8.5 8H7v8" />
+      <path d="M13 8v8" />
+      <path d="M16 8h3m-3 4h2m-2 4h1" />
+    </svg>
+  );
+}
 
 interface GiphyGif {
   id: string;
@@ -121,7 +139,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               placeholder="Search GIPHY..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-input bg-secondary text-foreground h-8 pl-8 text-xs focus:bg-secondary/80"
+              className="border-input bg-secondary text-foreground focus:bg-secondary/80 h-8 pl-8 text-xs"
             />
           </div>
 
@@ -143,7 +161,7 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                     key={gif.id}
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="border-border/40 hover:border-emerald-500/50 group relative aspect-video overflow-hidden rounded-lg border transition-all hover:scale-[1.02]"
+                    className="border-border/40 group relative aspect-video overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02] hover:border-emerald-500/50"
                   >
                     <img
                       src={gif.images.fixed_height.url}

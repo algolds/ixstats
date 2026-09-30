@@ -3,7 +3,12 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
-import { cloneRecords, cloneUniqueRecord, cloneParentChildren, stripRecord } from "../clone-helpers";
+import {
+  cloneRecords,
+  cloneUniqueRecord,
+  cloneParentChildren,
+  stripRecord,
+} from "../clone-helpers";
 import * as fallbacks from "../seed-fallbacks";
 
 type Prisma = PrismaClient;
@@ -101,17 +106,11 @@ export async function cloneGeography(
     count++;
   }
 
-  const { count: cityCount } = await cloneRecords(
-    prisma,
-    "city",
-    sourceCountryId,
-    demoCountryId,
-    {
-      transforms: {
-        subdivisionId: (old: string | null) => (old ? (subIdMap.get(old) ?? null) : null),
-      },
-    }
-  );
+  const { count: cityCount } = await cloneRecords(prisma, "city", sourceCountryId, demoCountryId, {
+    transforms: {
+      subdivisionId: (old: string | null) => (old ? (subIdMap.get(old) ?? null) : null),
+    },
+  });
   count += cityCount;
 
   const { count: poiCount } = await cloneRecords(
@@ -203,13 +202,9 @@ export async function cloneHistory(
 
   const historyModels = ["vitalityHistory", "historicalDataPoint"] as const;
   for (const modelName of historyModels) {
-    const { count: c } = await cloneRecords(
-      prisma,
-      modelName,
-      sourceCountryId,
-      demoCountryId,
-      { take: 50 }
-    );
+    const { count: c } = await cloneRecords(prisma, modelName, sourceCountryId, demoCountryId, {
+      take: 50,
+    });
     count += c;
   }
 
@@ -222,16 +217,10 @@ export async function cloneOrSeedActivityFeed(
   demoCountryId: string,
   userId: string
 ): Promise<number> {
-  const { count } = await cloneRecords(
-    prisma,
-    "activityFeed",
-    sourceCountryId,
-    demoCountryId,
-    {
-      take: 20,
-      transforms: { userId: () => userId },
-    }
-  );
+  const { count } = await cloneRecords(prisma, "activityFeed", sourceCountryId, demoCountryId, {
+    take: 20,
+    transforms: { userId: () => userId },
+  });
   if (count > 0) return count;
   return fallbacks.seedActivityFeed(prisma, demoCountryId, userId);
 }

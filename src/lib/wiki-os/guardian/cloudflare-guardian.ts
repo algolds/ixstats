@@ -16,10 +16,7 @@ export class CloudflareGuardian {
   /**
    * Verify Cloudflare Turnstile challenge token
    */
-  static async verifyTurnstile(
-    token?: string,
-    clientIp?: string
-  ): Promise<TurnstileVerifyResult> {
+  static async verifyTurnstile(token?: string, clientIp?: string): Promise<TurnstileVerifyResult> {
     const secretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
 
     // In local development or if no secret key configured, bypass verification
@@ -71,10 +68,7 @@ export class CloudflareGuardian {
     if (!apiToken || !zoneId) return;
 
     const publicUrl = process.env.NEXT_PUBLIC_APP_URL || DEFAULT_MEDIAWIKI_URL;
-    const purgeUrls = [
-      `${publicUrl}/wiki/${slug}`,
-      `${publicUrl}/projects/ixstates/wiki/${slug}`,
-    ];
+    const purgeUrls = [`${publicUrl}/wiki/${slug}`, `${publicUrl}/projects/ixstates/wiki/${slug}`];
 
     try {
       await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {

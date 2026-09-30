@@ -1,5 +1,9 @@
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl, getImageUrl } from "./image-url";
+import { parseInfoboxToHtml } from "./infobox-parser";
+import { splitBalancedPipes } from "../wikitext/parameter-parser";
+import { findMatchingClosingBrackets } from "../wikitext/link-parser";
+import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
 
 /**
  * Strips recursively nested templates (e.g. {{Infobox ... {{flag|...}} ... }})
@@ -35,7 +39,7 @@ function stripWikitextTemplates(input: string): string {
     (_match, target: string) => {
       const t = target.trim();
       const route = titleToWikiOSRoute(t);
-      return `\n\n<p class="text-[11px] italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
+      return `\n\n<p class="text-xs italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
     }
   );
 
@@ -131,20 +135,22 @@ function parseWikitables(input: string): string {
           html += '<tr class="border-b border-border/40 bg-muted/30">';
           inRow = true;
         }
-        const cells = trimmed.substring(1).split("!!");
+        const cells = splitBalancedDoubleTokens(trimmed.substring(1), "!!");
         for (const cell of cells) {
-          const cleanCell = cell.replace(/^[^|]*\|/, "").trim(); // strip cell attributes like style="..." if present
-          html += `<th class="p-2 font-bold text-foreground bg-muted/20 border-r border-border/20 last:border-r-0">${cleanCell}</th>`;
+          const { attributes, content: cellContent } = extractTableCellContent(cell);
+          const attrStr = attributes ? ` ${attributes}` : "";
+          html += `<th class="p-2 font-bold text-foreground bg-muted/20 border-r border-border/20 last:border-r-0"${attrStr}>${cellContent}</th>`;
         }
       } else if (trimmed.startsWith("|")) {
         if (!inRow) {
           html += '<tr class="border-b border-border/30 hover:bg-muted/20 transition-colors">';
           inRow = true;
         }
-        const cells = trimmed.substring(1).split("||");
+        const cells = splitBalancedDoubleTokens(trimmed.substring(1), "||");
         for (const cell of cells) {
-          const cleanCell = cell.replace(/^[^|]*\|/, "").trim(); // strip cell attributes
-          html += `<td class="p-2 text-muted-foreground border-r border-border/20 last:border-r-0">${cleanCell}</td>`;
+          const { attributes, content: cellContent } = extractTableCellContent(cell);
+          const attrStr = attributes ? ` ${attributes}` : "";
+          html += `<td class="p-2 text-muted-foreground border-r border-border/20 last:border-r-0"${attrStr}>${cellContent}</td>`;
         }
       }
     }
@@ -153,6 +159,103 @@ function parseWikitables(input: string): string {
     html += "</table></div>\n\n";
     return html;
   });
+}
+
+/**
+ * Converts wikitext file and image tags to HTML figure/img elements,
+ * properly handling nested links and balanced brackets in captions.
+ */
+function convertWikitextImages(text: string, wikiSource: string): string {
+  let result = "";
+  let i = 0;
+
+  while (i < text.length) {
+    const prefix = text.slice(i, i + 8).toLowerCase();
+    if (prefix.startsWith("[[file:") || prefix.startsWith("[[image:")) {
+      const closeIdx = findMatchingClosingBrackets(text, i);
+      if (closeIdx !== -1) {
+        const raw = text.slice(i, closeIdx + 2);
+        const inner = raw.slice(2, -2);
+        const colonIdx = inner.indexOf(":");
+        const content = inner.slice(colonIdx + 1);
+        const parts = splitBalancedPipes(content).map((p) => p.trim());
+
+        if (parts.length > 0 && parts[0]) {
+          const rawFileName = parts[0];
+          const imageUrl =
+            resolveImageUrl(rawFileName, wikiSource as any) ?? getImageUrl(rawFileName);
+
+          if (imageUrl) {
+            const captionParts = parts.slice(1).filter((p) => {
+              const lower = p.toLowerCase();
+              return !(
+                lower === "thumb" ||
+                lower === "thumbnail" ||
+                lower === "frame" ||
+                lower === "framed" ||
+                lower === "frameless" ||
+                lower === "border" ||
+                lower === "left" ||
+                lower === "right" ||
+                lower === "center" ||
+                lower === "none" ||
+                /^\d+px$/i.test(lower) ||
+                /^upright(=[\d.]+)?$/i.test(lower) ||
+                lower.startsWith("alt=") ||
+                lower.startsWith("link=")
+              );
+            });
+
+            const caption = captionParts.join(" | ");
+
+            result += `\n\n<figure class="my-3 overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-xs backdrop-blur-md">
+      <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy" />
+      ${
+        caption
+          ? `<figcaption class="p-2 text-xs text-muted-foreground font-medium bg-muted/20 border-t border-border/40 leading-tight">${caption}</figcaption>`
+          : ""
+      }
+    </figure>\n\n`;
+          }
+        }
+        i = closeIdx + 2;
+        continue;
+      }
+    }
+
+    result += text[i];
+    i++;
+  }
+
+  return result;
+}
+
+/**
+ * Strips wikitext file, image, and media links, properly handling nested brackets.
+ */
+export function stripWikitextFiles(text: string): string {
+  let result = "";
+  let i = 0;
+
+  while (i < text.length) {
+    const prefix = text.slice(i, i + 8).toLowerCase();
+    if (
+      prefix.startsWith("[[file:") ||
+      prefix.startsWith("[[image:") ||
+      prefix.startsWith("[[media:")
+    ) {
+      const closeIdx = findMatchingClosingBrackets(text, i);
+      if (closeIdx !== -1) {
+        i = closeIdx + 2;
+        continue;
+      }
+    }
+
+    result += text[i];
+    i++;
+  }
+
+  return result;
 }
 
 /**
@@ -176,9 +279,25 @@ export function parseWikitextToHtml(
   // 3. Strip MediaWiki magic words & behavior switches
   text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
 
-  // 4. Strip ref tags: <ref>...</ref> or <ref ... />
-  text = text.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>/gi, "");
-  text = text.replace(/<ref\b[^>]*\/>/gi, "");
+  // 4. Parse references / footnotes (<ref>...</ref>)
+  const references: string[] = [];
+  const refMap = new Map<string, number>();
+
+  text = text.replace(
+    /<ref(?:\s+name=["']?([^"'>\s]+)["']?)?(?:\s*\/>|>(.*?)<\/ref>)/gis,
+    (_match, name, content) => {
+      const cleanName = name ? name.trim() : "";
+      if (cleanName && refMap.has(cleanName)) {
+        const idx = refMap.get(cleanName)!;
+        return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
+      }
+      const idx = references.length + 1;
+      if (cleanName) refMap.set(cleanName, idx);
+      const refContent = (content || "").trim();
+      references.push(refContent || cleanName);
+      return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
+    }
+  );
 
   // 5. Strip galleries & math tags
   text = text.replace(/<gallery\b[^>]*>[\s\S]*?<\/gallery>/gi, "");
@@ -186,6 +305,9 @@ export function parseWikitextToHtml(
 
   // 6. Convert wikitables to responsive HTML tables
   text = parseWikitables(text);
+
+  // 6b. Extract and convert Infobox template to HTML table before stripping
+  const infoboxHtml = parseInfoboxToHtml(text);
 
   // 7. Strip recursively nested templates: {{...}}
   text = stripWikitextTemplates(text);
@@ -200,45 +322,7 @@ export function parseWikitextToHtml(
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
-  text = text.replace(/\[\[(?:File|Image):([^\]]+)\]\]/gi, (_match, content: string) => {
-    const parts = content.split("|").map((p) => p.trim());
-    if (parts.length === 0 || !parts[0]) return "";
-
-    const rawFileName = parts[0];
-    const imageUrl = resolveImageUrl(rawFileName, wikiSource as any) ?? getImageUrl(rawFileName);
-    if (!imageUrl) return "";
-
-    const captionParts = parts.slice(1).filter((p) => {
-      const lower = p.toLowerCase();
-      return !(
-        lower === "thumb" ||
-        lower === "thumbnail" ||
-        lower === "frame" ||
-        lower === "framed" ||
-        lower === "frameless" ||
-        lower === "border" ||
-        lower === "left" ||
-        lower === "right" ||
-        lower === "center" ||
-        lower === "none" ||
-        /^\d+px$/i.test(lower) ||
-        /^upright(=[\d.]+)?$/i.test(lower) ||
-        lower.startsWith("alt=") ||
-        lower.startsWith("link=")
-      );
-    });
-
-    const caption = captionParts.join(" | ");
-
-    return `\n\n<figure class="my-3 overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-xs backdrop-blur-md">
-      <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy" />
-      ${
-        caption
-          ? `<figcaption class="p-2 text-[11px] text-muted-foreground font-medium bg-muted/20 border-t border-border/40 leading-tight">${caption}</figcaption>`
-          : ""
-      }
-    </figure>\n\n`;
-  });
+  text = convertWikitextImages(text, wikiSource);
 
   // 10. Convert wikitext headings
   text = text.replace(
@@ -323,7 +407,7 @@ export function parseWikitextToHtml(
   // 20. Convert code/tt: <code>text</code>, <tt>text</tt>
   text = text.replace(/<code>([\s\S]*?)<\/code>|<tt>([\s\S]*?)<\/tt>/gi, (_m, g1, g2) => {
     const inner = g1 || g2 || "";
-    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px] text-primary">${inner}</code>`;
+    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
   });
 
   // 21. Convert pre blocks: <pre>text</pre>
@@ -355,6 +439,27 @@ export function parseWikitextToHtml(
     /\[(https?:\/\/[^\s\]]+)\]/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[link]</a>'
   );
+
+  // 25b. Expand references list
+  if (references.length > 0) {
+    const reflistHtml = `\n\n<ol class="references text-xs space-y-1 my-3 pl-5 list-decimal text-muted-foreground">${references
+      .map(
+        (ref, i) =>
+          `<li id="cite_note-${i + 1}" class="leading-relaxed"><span class="mw-cite-backlink"><a href="#cite_ref-${i + 1}" class="text-wiki mr-1">↑</a></span>${ref}</li>`
+      )
+      .join("")}</ol>\n\n`;
+
+    if (/<references\b[^>]*\/?>/i.test(text)) {
+      text = text.replace(/<references\b[^>]*\/?>/gi, reflistHtml);
+    } else if (/\{\{[Rr]eflist[^}]*\}\}/i.test(text)) {
+      text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, reflistHtml);
+    } else {
+      text += `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
+    }
+  } else {
+    text = text.replace(/<references\b[^>]*\/?>/gi, "");
+    text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, "");
+  }
 
   // 26. Format Paragraphs
   const rawParagraphs = text.split(/\n\s*\n+/);
@@ -390,47 +495,7 @@ export function parseWikitextToHtml(
   }
 
   const htmlOutput = formattedParagraphs.join("\n\n").trim();
-  // Auto-link entity names in plain text descriptions if explicit wikitext links were not present
-  if (!wikitext.includes("[[")) {
-    return autoLinkEntityNames(htmlOutput);
-  }
-  return htmlOutput;
-}
-
-/**
- * Auto-links entity names (countries, continents, regions) in plain text descriptions
- * when explicit [[wikitext]] links are not already present.
- */
-function autoLinkEntityNames(html: string): string {
-  const ENTITY_NAMES = [
-    "Urcea",
-    "Levantia",
-    "Burgundie",
-    "Lapody",
-    "Rhotia",
-    "Camland",
-    "Avonia",
-    "Jindao",
-    "Shangea",
-    "Senria",
-    "Coius",
-    "Caelum",
-    "Guanu",
-    "Vesperia",
-    "Odoneru Ocean",
-    "Ionian Mountains",
-  ];
-
-  let result = html;
-  for (const name of ENTITY_NAMES) {
-    const route = titleToWikiOSRoute(name);
-    const regex = new RegExp(`\\b(${name})\\b(?![^<]*>|[^<>]*<\\/a>)`, "g");
-    result = result.replace(
-      regex,
-      `<a href="${route}" class="text-primary font-semibold hover:underline">$1</a>`
-    );
-  }
-  return result;
+  return infoboxHtml ? `${infoboxHtml}\n\n${htmlOutput}` : htmlOutput;
 }
 
 /**
@@ -460,7 +525,7 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = text.replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, "");
 
   // 6. Strip file/image links: [[File:...]], [[Image:...]]
-  text = text.replace(/\[\[(?:File|Image|Media):[^\]]+\]\]/gi, "");
+  text = stripWikitextFiles(text);
 
   // 7. Strip category links: [[Category:...]]
   text = text.replace(/\[\[(?:Category|category):[^\]]+\]\]/gi, "");
@@ -470,14 +535,7 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Iteratively strip nested templates: {{...}}
-  let prev;
-  let depth = 0;
-  do {
-    prev = text;
-    text = text.replace(/\{\{[^{}]*\}\}/g, "");
-    depth++;
-  } while (text !== prev && depth < 20);
-  text = text.replace(/\{\{[^}]+\}\}/g, "");
+  text = stripWikitextTemplates(text);
 
   // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
   text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
@@ -514,4 +572,14 @@ export function cleanWikitextExcerpt(
   maxLength: number = 300
 ): string {
   return cleanWikiMarkup(rawText, maxLength);
+}
+
+/** Alias for cleanWikiMarkup / cleanWikitextExcerpt */
+export const cleanExcerpt = cleanWikiMarkup;
+
+/**
+ * Calculates raw text byte size
+ */
+export function calculateRawTextBytes(text: string | null | undefined): number {
+  return Buffer.byteLength(text || "", "utf8");
 }

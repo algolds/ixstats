@@ -1,46 +1,80 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
+import { useNotify } from "~/hooks/useNotify";
 import {
   ArrowLeft,
   Map,
-  ChevronRight,
-  Undo2,
-  Redo2,
-  Grid3X3,
-  Crosshair,
-  Minimize2,
-  Droplets,
-  Mountain as MountainIcon,
+  NavArrowRight as ChevronRight,
+  Undo as Undo2,
+  Redo as Redo2,
+  ViewGrid as Grid3X3,
+  Archery as Crosshair,
+  Compress as Minimize2,
+  Droplet as Droplets,
+  ModernTv as MountainIcon,
   Train,
-  RefreshCw,
+  Refresh as RefreshCw,
   Settings,
-  FileUp,
+  Upload as FileUp,
   HelpCircle,
-  Network,
   Magnet,
   Eye,
-} from "lucide-react";
-import { cn } from "~/lib/utils";
+} from "iconoir-react";
+import { cn } from "~/lib/utils/cn";
+import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "~/components/ui/dialog";
-import { RouteNetworkView } from "~/components/maps/RouteNetworkView";
+
+import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
+import type { MapEditorInstance, EditorFeature } from "../types/editor-state";
+import type { RouteType } from "~/lib/economy/transport-generator";
+
+interface SimplifyAllMutation {
+  isPending: boolean;
+  mutateAsync: (args: { countryId: string; targetVerticesPerProvince?: number }) => Promise<{
+    updated: number;
+    total: number;
+    verticesBefore: number;
+    verticesAfter: number;
+    reduction: number;
+  }>;
+}
+
+interface TransportMutation {
+  isPending: boolean;
+  mutateAsync: (args: {
+    countryId: string;
+    routeTypes?: RouteType[];
+    clearExisting?: boolean;
+    force?: boolean;
+  }) => Promise<{ routesCreated: number; hubsCreated?: number; totalLengthKm: number }>;
+}
+
+interface RecalculateGeoMutation {
+  isPending: boolean;
+  mutateAsync: (args?: { countryId?: string } | void) => Promise<{
+    processed: number;
+    failed: number;
+    total: number;
+    errors: string[];
+  } | { success?: boolean } | void>;
+}
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
   activeEditorMode: "view" | "border_edit";
   isWorldMode: boolean;
   activeCountryId: string | null;
-  editor: any;
+  editor: MapEditorInstance;
   showGrid: boolean;
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
-  mapRef: React.RefObject<any>;
+  mapRef: React.RefObject<EditorMapRef | null>;
   isAdmin: boolean;
   editorVisibleLayers: Set<string>;
   toggleEditorLayer: (layer: string) => void;
-  generateTransport: any;
-  recalculateGeo: any;
-  simplifyAll: any;
+  generateTransport: TransportMutation;
+  recalculateGeo: RecalculateGeoMutation;
+  simplifyAll: SimplifyAllMutation;
   handleRequestExit: () => void;
   onShowHelp?: () => void;
   countryId?: string | null;
@@ -52,7 +86,7 @@ interface EditorHeaderProps {
   setPanelsLocked: (v: boolean) => void;
 }
 
-export function EditorHeader({
+export const EditorHeader = React.memo(function EditorHeader({
   countryInfo,
   activeEditorMode,
   isWorldMode,
@@ -77,14 +111,32 @@ export function EditorHeader({
   panelsLocked,
   setPanelsLocked,
 }: EditorHeaderProps) {
+  const notify = useNotify();
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
+  const resolvedCountryName = useMemo(() => {
+    return (
+      countryInfo?.name ||
+      editor.countryGeo?.country?.name ||
+      editor.countryGeo?.displayName ||
+      (activeCountryId ? featureIdToDisplayName(activeCountryId) : "") ||
+      (countryId ? featureIdToDisplayName(countryId) : "") ||
+      "…"
+    );
+  }, [
+    countryInfo?.name,
+    editor.countryGeo?.country?.name,
+    editor.countryGeo?.displayName,
+    activeCountryId,
+    countryId,
+  ]);
+
   return (
-    <div className="border-border/60 bg-card/85 z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-xl shadow-xs">
+    <div className="border-border/60 bg-card/85 pointer-events-auto z-20 flex h-10 shrink-0 items-center gap-2 border-b px-3 shadow-xs backdrop-blur-xl">
       {/* Exit button */}
       <button
         onClick={handleRequestExit}
-        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-all active:scale-95 duration-100 ease-out"
+        className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]"
         title="Exit Editor (Esc)"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -99,18 +151,18 @@ export function EditorHeader({
             {activeCountryId && (
               <>
                 <ChevronRight className="h-3 w-3" />
-                <span className="text-foreground font-semibold">{countryInfo?.name ?? "…"}</span>
+                <span className="text-foreground font-semibold">{resolvedCountryName}</span>
               </>
             )}
             <ChevronRight className="h-3 w-3" />
-            <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-blue-500">
+            <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-semibold text-blue-500">
               {activeEditorMode === "border_edit" ? "BORDER EDIT" : "VIEW"}
             </span>
           </>
         ) : (
           <>
             <Map className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-foreground font-semibold">{countryInfo?.name ?? "…"}</span>
+            <span className="text-foreground font-semibold">{resolvedCountryName}</span>
             <ChevronRight className="h-3 w-3" />
             <span>Map Editor</span>
           </>
@@ -123,7 +175,7 @@ export function EditorHeader({
           <button
             disabled={!editor.historyCanUndo}
             onClick={() => editor.undo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all active:scale-95 duration-100 disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title="Undo (Ctrl+Z)"
           >
             <Undo2 className="h-3.5 w-3.5" />
@@ -131,7 +183,7 @@ export function EditorHeader({
           <button
             disabled={!editor.historyCanRedo}
             onClick={() => editor.redo()}
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-all active:scale-95 duration-100 disabled:pointer-events-none disabled:opacity-30"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30"
             title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="h-3.5 w-3.5" />
@@ -141,10 +193,10 @@ export function EditorHeader({
 
       {/* Save indicator */}
       {editor.isMutating && (
-        <span className="ml-2 animate-pulse text-[10px] text-amber-500">Saving…</span>
+        <span className="ml-2 animate-pulse text-xs text-amber-500">Saving…</span>
       )}
       {!editor.isMutating && editor.lastSavedAt && (
-        <span className="ml-2 text-[10px] text-emerald-500">Saved</span>
+        <span className="ml-2 text-xs text-emerald-500">Saved</span>
       )}
 
       <div className="ml-auto" />
@@ -191,23 +243,6 @@ export function EditorHeader({
             <Eye className="h-3.5 w-3.5" />
           </button>
 
-          {/* Route network view (opens a Dialog with the React Flow graph) */}
-          {countryId && (
-            <Dialog>
-              <DialogTrigger
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 w-6 items-center justify-center rounded-md transition-colors"
-                title="Route network view"
-              >
-                <Network className="h-3.5 w-3.5" />
-              </DialogTrigger>
-              <DialogContent className="h-[80vh] max-w-5xl p-0">
-                <DialogTitle className="sr-only">Route Network</DialogTitle>
-                <div className="h-full w-full">
-                  <RouteNetworkView countryId={countryId} />
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
 
           {/* Snap toggle (tolerance lives in the Settings popover below) */}
           <button
@@ -286,7 +321,7 @@ export function EditorHeader({
               align="end"
             >
               <div className="flex flex-col gap-3">
-                <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase select-none">
+                <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
                   Map Editor Settings
                 </div>
 
@@ -305,7 +340,7 @@ export function EditorHeader({
                   </button>
 
                   {/* Simplify All */}
-                  {editor.allFeatures.some((f: any) => f.type === "subdivision") && (
+                  {editor.allFeatures.some((f: EditorFeature) => f.type === "subdivision") && (
                     <button
                       onClick={async () => {
                         setIsSettingsOpen(false);
@@ -315,12 +350,11 @@ export function EditorHeader({
                             countryId: activeCountryId,
                             targetVerticesPerProvince: 100,
                           });
-                          alert(
-                            `Simplified ${result.updated}/${result.total} regions\n` +
-                              `Vertices: ${result.verticesBefore.toLocaleString()} → ${result.verticesAfter.toLocaleString()} (${result.reduction}% reduction)`
+                          notify.success(
+                            `Simplified ${result.updated}/${result.total} regions (${result.reduction}% vertex reduction)`
                           );
                         } catch (e) {
-                          alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                          notify.error(`Simplification error: ${e instanceof Error ? e.message : "Unknown"}`);
                         }
                       }}
                       disabled={simplifyAll.isPending || !activeCountryId}
@@ -329,7 +363,7 @@ export function EditorHeader({
                     >
                       <Minimize2
                         className={cn(
-                          "h-3.5 w-3.5 shrink-0 text-violet-500",
+                          "h-3.5 w-3.5 shrink-0 text-indigo-500",
                           simplifyAll.isPending && "animate-pulse"
                         )}
                       />
@@ -345,13 +379,13 @@ export function EditorHeader({
                     <div className="flex items-center justify-between px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
                         <Magnet className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Snap
                         </span>
                       </div>
                       <button
                         onClick={() => setSnapEnabled(!snapEnabled)}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                           snapEnabled
                             ? "bg-emerald-500/10 text-emerald-500"
                             : "bg-muted text-muted-foreground"
@@ -369,9 +403,9 @@ export function EditorHeader({
                           step="0.001"
                           value={snapTolerance}
                           onChange={(e) => setSnapTolerance(parseFloat(e.target.value))}
-                          className="h-1 flex-1 accent-blue-500"
+                          className="h-1 flex-1 accent-primary"
                         />
-                        <span className="text-muted-foreground w-10 text-right font-mono text-[10px] tabular-nums">
+                        <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
                           {snapTolerance.toFixed(3)}°
                         </span>
                       </div>
@@ -384,13 +418,13 @@ export function EditorHeader({
                     <div className="flex items-center justify-between px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
                         <Settings className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                           Lock Panels
                         </span>
                       </div>
                       <button
                         onClick={() => setPanelsLocked(!panelsLocked)}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
                           panelsLocked
                             ? "bg-amber-500/10 text-amber-500"
                             : "bg-muted text-muted-foreground"
@@ -405,7 +439,7 @@ export function EditorHeader({
                   {isAdmin && activeCountryId && (
                     <>
                       <div className="border-border/60 my-1 border-t" aria-hidden />
-                      <div className="text-muted-foreground/80 px-2 text-[9px] font-semibold tracking-wider uppercase select-none">
+                      <div className="text-muted-foreground/80 px-2 text-xs font-semibold tracking-wider uppercase select-none">
                         Admin
                       </div>
                       <button
@@ -417,11 +451,11 @@ export function EditorHeader({
                               routeTypes: ["rail", "highway"],
                               clearExisting: true,
                             });
-                            alert(
+                            notify.success(
                               `Generated ${result.routesCreated} routes (${result.totalLengthKm} km)`
                             );
                           } catch (e) {
-                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(`Transport generation error: ${e instanceof Error ? e.message : "Unknown"}`);
                           }
                         }}
                         disabled={generateTransport.isPending}
@@ -438,9 +472,9 @@ export function EditorHeader({
                           setIsSettingsOpen(false);
                           try {
                             await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                            alert("Geographic profile recalculated");
+                            notify.success("Geographic profile recalculated successfully");
                           } catch (e) {
-                            alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
+                            notify.error(`Recalculation error: ${e instanceof Error ? e.message : "Unknown"}`);
                           }
                         }}
                         disabled={recalculateGeo.isPending}
@@ -473,11 +507,11 @@ export function EditorHeader({
             if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
             await editor.bulkDeleteSelected();
           }}
-          className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-500/20 dark:text-red-400"
+          className="flex items-center gap-1 rounded-md bg-red-500/10 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/20 active:scale-[0.98] transition dark:text-red-400"
         >
           Delete {editor.selectedIds.size} Selected
         </button>
       )}
     </div>
   );
-}
+});

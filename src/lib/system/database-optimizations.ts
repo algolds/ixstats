@@ -80,6 +80,7 @@ export class OptimizedCountryQueries {
    */
   static async getCountriesByIds(
     ids: string[],
+    // oxlint-disable-next-line typescript/no-unused-vars
     options: OptimizedQueryOptions = {}
   ): Promise<any[]> {
     const startTime = performance.now();

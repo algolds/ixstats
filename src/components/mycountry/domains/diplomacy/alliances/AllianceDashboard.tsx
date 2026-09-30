@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Users, FileText, Vote, Crown, Eye, UserPlus, LogOut, Loader2 } from "lucide-react";
+import {
+  Group as Users,
+  Page as FileText,
+  CheckSquare as Vote,
+  Crown,
+  Eye,
+  UserPlus,
+  LogOut,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -20,6 +29,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
+import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
 
 interface AllianceDashboardProps {
@@ -72,13 +82,6 @@ export function AllianceDashboard({
   if (!alliance) return null;
 
   const canInvite = myRole === "founder" || myRole === "leader";
-  const formatNumber = (n: number) => {
-    if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-    return n.toLocaleString();
-  };
-
   const targetCountries = relationships
     ? [
         ...new Map(
@@ -106,10 +109,10 @@ export function AllianceDashboard({
           <div>
             <h3 className="font-semibold">{alliance.name}</h3>
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-xs">
                 {alliance.type}
               </Badge>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="text-xs">
                 {alliance.visibility}
               </Badge>
               <span>{alliance.memberCount} members</span>
@@ -185,7 +188,7 @@ export function AllianceDashboard({
           <p className="text-muted-foreground text-xs">Members</p>
         </div>
         <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalGdp)}</p>
+          <p className="text-lg font-bold">{formatCurrency(alliance.calculatedTotalGdp)}</p>
           <p className="text-muted-foreground text-xs">Combined GDP</p>
         </div>
         <div className="rounded-lg border p-2">
@@ -212,7 +215,7 @@ export function AllianceDashboard({
                     {m.country.name}
                   </span>
                 </div>
-                <Badge className={`text-[10px] ${roleBadge.color}`}>{roleBadge.label}</Badge>
+                <Badge className={`text-xs ${roleBadge.color}`}>{roleBadge.label}</Badge>
               </div>
             );
           })}
@@ -230,7 +233,7 @@ export function AllianceDashboard({
         </span>
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" />
-          {(alliance as any)._count?.documents ?? 0} documents
+          {alliance.documents.length} documents
         </span>
       </div>
     </div>

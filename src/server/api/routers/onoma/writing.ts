@@ -27,31 +27,6 @@ export const onomaWritingRouter = createTRPCRouter({
     }),
 
   /**
-   * Get a single writing system by ID.
-   */
-  getSystem: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-      const system = await ctx.db.writingSystem.findFirst({
-        where: { id: input.id, userId },
-      });
-
-      if (!system) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Writing system not found or unauthorized",
-        });
-      }
-
-      return system;
-    }),
-
-  /**
    * Save (create or update) a writing system.
    */
   saveSystem: protectedProcedure

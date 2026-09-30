@@ -3,20 +3,18 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X,
+  Xmark as X,
   Map,
-  Compass,
-  Layers,
-  Keyboard,
-  ChevronRight,
-  ChevronLeft,
+  Component as Layers,
+  Keyframe as Keyboard,
+  NavArrowRight as ChevronRight,
+  NavArrowLeft as ChevronLeft,
   Check,
-  Zap,
-  Globe,
+  Flash as Zap,
   MapPin,
   Hexagon,
-  Sparkles,
-} from "lucide-react";
+  Sparks as Sparkles,
+} from "iconoir-react";
 import { MAP_EDITOR_WELCOME_VERSION } from "~/lib/buildVersion";
 
 const STORAGE_KEY = "ixworld-editor-welcome-seen";
@@ -39,8 +37,8 @@ const TIPS = [
   },
   {
     icon: Hexagon,
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
     title: "Regions & Boundaries",
     description:
       "Forge provinces and regional borders. Use automatic vertex simplification to keep boundaries clean and low-poly.",
@@ -121,6 +119,7 @@ export function MapEditorWelcomeModal({
 
   useEffect(() => {
     if (forceShow) {
+      // oxlint-disable-next-line
       setShow(true);
       setCurrentPage(0);
       return;
@@ -132,7 +131,9 @@ export function MapEditorWelcomeModal({
         const timer = setTimeout(() => setShow(true), 500);
         return () => clearTimeout(timer);
       }
-    } catch (_) {}
+    } catch {
+      // storage unavailable (private mode) — welcome modal not shown
+    }
     return;
   }, [forceShow]);
 
@@ -141,7 +142,9 @@ export function MapEditorWelcomeModal({
     onClose?.();
     try {
       localStorage.setItem(STORAGE_KEY, MAP_EDITOR_WELCOME_VERSION);
-    } catch (_) {}
+    } catch {
+      // storage unavailable (private mode) — preference is not persisted
+    }
   }, [onClose]);
 
   const totalPages = 3; // Tips, Shortcuts, Changelog
@@ -186,14 +189,14 @@ export function MapEditorWelcomeModal({
               {/* Header */}
               <div className="relative px-6 pt-6 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-md">
                     <Map className="h-4.5 w-4.5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-foreground text-sm font-bold sm:text-base">
                       Map Editor Onboarding
                     </h2>
-                    <p className="text-muted-foreground text-[11px] sm:text-xs">
+                    <p className="text-muted-foreground text-xs sm:text-xs">
                       Forge the geography, borders, and features of IxWorld
                     </p>
                   </div>
@@ -225,7 +228,7 @@ export function MapEditorWelcomeModal({
                                 {tip.title}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10.5px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {tip.description}
                             </p>
                           </div>
@@ -253,10 +256,10 @@ export function MapEditorWelcomeModal({
                             key={s.action}
                             className="bg-muted/30 border-border/40 flex items-center justify-between rounded-lg border px-3 py-1.5"
                           >
-                            <span className="text-muted-foreground text-[11px] font-medium">
+                            <span className="text-muted-foreground text-xs font-medium">
                               {s.action}
                             </span>
-                            <kbd className="bg-muted text-foreground/90 border-border/50 inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-[10px]">
+                            <kbd className="bg-muted text-foreground/90 border-border/50 inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-xs">
                               {s.keys[0]}
                             </kbd>
                           </div>
@@ -285,14 +288,14 @@ export function MapEditorWelcomeModal({
                             className="bg-muted/20 border-border/30 flex flex-col gap-0.5 rounded-lg border p-2 text-left"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="text-foreground text-[11px] font-bold">
+                              <span className="text-foreground text-xs font-bold">
                                 {item.title}
                               </span>
-                              <span className="text-primary font-mono text-[9px] font-semibold">
+                              <span className="text-primary font-mono text-xs font-semibold">
                                 {item.version}
                               </span>
                             </div>
-                            <p className="text-muted-foreground text-[10px] leading-relaxed">
+                            <p className="text-muted-foreground text-xs leading-relaxed">
                               {item.desc}
                             </p>
                           </div>
@@ -311,7 +314,7 @@ export function MapEditorWelcomeModal({
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i)}
-                      className={`h-1.5 rounded-full transition-all ${
+                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                         i === currentPage
                           ? "bg-primary w-4"
                           : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-1.5"

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * AutosaveMonitoringDashboard Component
  *
@@ -8,8 +10,6 @@
  * @module AutosaveMonitoringDashboard
  */
 
-"use client";
-
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
@@ -17,14 +17,14 @@ import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import {
   Activity,
-  TrendingUp,
-  AlertTriangle,
-  Users,
+  StatUp as TrendingUp,
+  WarningTriangle as AlertTriangle,
+  Group as Users,
   CheckCircle,
-  XCircle,
-  RefreshCw,
+  XmarkCircle as XCircle,
+  Refresh as RefreshCw,
   Clock,
-} from "lucide-react";
+} from "iconoir-react";
 import {
   LineChart,
   Line,

@@ -3,16 +3,16 @@
 import { useState } from "react";
 import {
   Shield,
-  Crosshair,
-  Anchor,
-  Swords,
+  Archery as Crosshair,
+  SeaWaves as Anchor,
+  Tournament as Swords,
   GraduationCap,
-  DollarSign,
-  Users,
-  X,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+  Dollar as DollarSign,
+  Group as Users,
+  Xmark as X,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
+import { formatCurrency } from "~/lib/utils/format-utils";
 
 interface ActiveOperationsProps {
   countryId: string;
@@ -58,12 +59,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
   const endMutation = api.security.endOperation.useMutation({
     onSuccess: () => void refetch(),
   });
-
-  const formatCurrency = (val: number) => {
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
-    return `$${val.toLocaleString()}`;
-  };
 
   if (!operations || operations.length === 0) {
     return (
@@ -148,7 +143,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     {formatCurrency(op.dailyCost)}/day
                   </div>
                   {op.gdpDrain > 0 && (
-                    <span className="text-[10px] text-red-500">
+                    <span className="text-xs text-red-500">
                       {(op.gdpDrain * 100).toFixed(3)}% GDP drain
                     </span>
                   )}

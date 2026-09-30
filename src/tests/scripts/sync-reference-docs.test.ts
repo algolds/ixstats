@@ -29,7 +29,7 @@ describe("Reference Docs Synchronizer (Plan 169)", () => {
       const md = generateVersionMatrixMarkdown();
       expect(md).toContain("<!-- BEGIN_DOCS:VERSION_MATRIX -->");
       expect(md).toContain("<!-- END_DOCS:VERSION_MATRIX -->");
-      expect(md).toContain("IxStates (Ogma)");
+      expect(md).toContain("IxStates (Lobster Crosby)");
       expect(md).toContain("Release Candidate");
     });
 
@@ -85,7 +85,8 @@ describe("Reference Docs Synchronizer (Plan 169)", () => {
       ].join("\n");
 
       const res = syncDocumentContent(original, {
-        versionMatrix: "<!-- BEGIN_DOCS:VERSION_MATRIX -->\nnew matrix\n<!-- END_DOCS:VERSION_MATRIX -->",
+        versionMatrix:
+          "<!-- BEGIN_DOCS:VERSION_MATRIX -->\nnew matrix\n<!-- END_DOCS:VERSION_MATRIX -->",
       });
 
       expect(res.changed).toBe(true);
@@ -94,7 +95,8 @@ describe("Reference Docs Synchronizer (Plan 169)", () => {
 
       // Running again is idempotent
       const res2 = syncDocumentContent(res.newContent, {
-        versionMatrix: "<!-- BEGIN_DOCS:VERSION_MATRIX -->\nnew matrix\n<!-- END_DOCS:VERSION_MATRIX -->",
+        versionMatrix:
+          "<!-- BEGIN_DOCS:VERSION_MATRIX -->\nnew matrix\n<!-- END_DOCS:VERSION_MATRIX -->",
       });
       expect(res2.changed).toBe(false);
     });

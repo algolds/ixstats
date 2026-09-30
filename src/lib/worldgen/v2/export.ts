@@ -16,7 +16,7 @@ import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } fr
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
 import {
-  chaikinSmooth,
+  // oxlint-disable-next-line typescript/no-unused-vars
   chaikinSmoothLine,
   catmullRomSmooth,
   catmullRomSmoothLine,
@@ -352,6 +352,7 @@ function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon |
   };
 }
 
+// oxlint-disable-next-line typescript/no-unused-vars
 function filterSmallComponents(graph: WorldGraph, cellList: number[], minSize: number): number[] {
   const { cells } = graph;
   const cellSet = new Set(cellList);

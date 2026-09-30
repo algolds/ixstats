@@ -31,8 +31,8 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
         getTrendIcon={getTrendIcon}
       />
       <SecurityEventsCard
-        activeEvents={activeEvents as any}
-        resolveEvent={resolveEvent as any}
+        activeEvents={activeEvents}
+        resolveEvent={resolveEvent}
         getSeverityColor={getSeverityColor}
       />
     </div>

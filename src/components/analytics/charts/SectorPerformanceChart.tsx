@@ -17,7 +17,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { PieChart as PieChartIcon, FileSpreadsheet, Download } from "lucide-react";
+import { Reports as PieChartIcon, Table as FileSpreadsheet, Download } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
@@ -33,7 +33,7 @@ interface SectorPerformanceChartProps {
 export const SectorPerformanceChart = React.memo<SectorPerformanceChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-hierarchy-child" id="sector-performance-chart">
+      <Card className="facet-hierarchy-child" id="sector-performance-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

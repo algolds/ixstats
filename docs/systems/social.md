@@ -1,49 +1,48 @@
-# ThinkPages Social & Collaboration System
+# 💬 ThinkPages — Sovereign Feed, ThinkTanks & ThinkShare
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta) — ThinkPages v2  
-**Hierarchy:** Core Feature System (`THINKPAGES_VERSION = 2` in Version Registry). ThinkShare (messaging) is an integrated sub-system.
+**Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
+**Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
+**Primary Action:** `DELIBERATE` | **Domain Accent:** Emerald Jade (`#10B981` / `--color-emerald-500`)  
+**Routes:** `/dashboard` (feed), `/thinkpages` (account hub), `/thinkpages/post/[postId]`, `/hashtags/[tag]`, `/thinktanks`, `/messages` | **Status:** 📀 Gold Master (100% Ready)  
 
-ThinkPages is the collaborative storytelling, social feed, and communication backbone of IxStates. It provides activity feeds, ThinkTank research groups, post authoring, polling, and the **ThinkShare** unified messaging platform.
-
----
-
-## Architecture & Versioning
-
-ThinkPages v2 introduces full component modularization, domain sub-component suites, and centralized caching primitives.
-
-### UI Surfaces
-- `src/app/thinkpages/page.tsx` – Main exploration feed and post creation stream
-- `src/app/thinktanks/page.tsx` – ThinkTanks collaborative groups and research hub
-- `src/app/messages/page.tsx` – ThinkShare unified messaging hub
-- `src/components/thinktanks/` – Dual-column Apple workspace, 2-pillar group tabs (Feed, Members) with Media Repository branding
-- `src/components/thinkpages/` – Feed cards, authoring composers, hashtag explorers, and reaction trays
-- `src/components/thinkshare/` – Threaded messaging, encryption indicators, and classification badges
-- `src/components/polls/` – Interactive national polling widgets
-
-### Backend Routers
-- `src/server/api/routers/thinkpages/` (`index.ts`, `feed.ts`, `posts.ts`, `comments.ts`, `reactions.ts`, `thinktanks/`) – Core social and group CRUD
-- `src/server/api/routers/messages/` – ThinkShare messaging, conversations, and threads
-- `src/server/api/routers/activities/` (`index.ts`, `feed.ts`, `metrics.ts`) – Global activity log
-- `src/server/api/routers/polls/` – Polling creation, voting, and real-time result tallying
+ThinkPages is the real-time communications and publishing network of IxStates. It pairs public sovereign micro-publishing with multilateral ThinkTank working rooms, automated Discord distribution, and ThinkShare direct messaging.
 
 ---
 
-## ThinkShare Unified Messaging
+## 1. Sovereign Feed & Micro-Publishing (`/dashboard`)
 
-All messaging across the platform (personal DMs, diplomatic exchanges, official channels) runs on the unified ThinkShare infrastructure:
-- **Channels**: Personal 1:1 DMs, Diplomatic cables, Community discussions, pinned **System Messages**, and pinned **LoreBot** knowledge stream.
-- **Classification Levels**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`
-- **Priority Tiers**: `LOW`, `NORMAL`, `HIGH`, `URGENT`, `CRITICAL`
-- **Message Retention & Pruning**: Default users have an artificial capacity of **1,000 messages** before oldest messages are auto-pruned. Admins, system owners, and premium tiers are exempt.
-- **Security**: Digital signatures (`signature`), end-to-end encryption (`encryptedContent`), and audit logging.
+The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects there) is the public town square for national announcements, diplomatic communiqués, breaking news, and community polling:
+- **`[blurb:slug|Title]` Blurb Cross-Posts**: [Blurbs](../../src/app/blurbs/README.md) (Topic Tuesday) responses auto-cross-post to the feed with a `[blurb:slug|Title]` prefix and `#blurb` tag; the post card strips the prefix and renders a chip linking back to the prompt. Inline link previews cover Wiki, Forum, League, and Club URLs.
+- **Official Seals & Sovereign Identity**: Posts display sovereign state seals, leader titles, and verified nation tags to establish authority and status.
+- **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
+- **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
 
 ---
 
-## Caching Performance (`globalCache`)
+## 2. Account Manager & Discord Bridge
 
-- **Feed Retrieval**: Served via `globalCache` in **~1.4ms** (compared to ~2,350ms raw DB query time).
-- **Targeted Cache Invalidation**: Creating a new post or reaction triggers pattern invalidation (`thinkpages_feed:*`), guaranteeing immediate visibility on subsequent queries.
+- **Multi-Account Switching**: Each country owns multiple persona accounts (government, media, citizen) managed from the `/thinkpages` account hub; the composer switches identities with a single click without logging out.
+- **Automated Discord Syndication**: Publishing a public post autoposts it to the Discord IxTwitter channel (`postToDiscord`, default on) and mirrors it to the admin-configured `#thinkpages` Discord feed (`src/lib/discord/`).
+- **Discord → ThinkPages Sync**: IxTwitter channel messages are imported into the feed (`syncIxTwitterToThinkPages`), reactions mirror to Discord, and the feed reads the Discord channel topic and custom server emoji (`getDiscordChannelTopic`, `getDiscordEmojis`).
+
+---
+
+## 3. ThinkTanks Collaborative Workspaces (`/thinktanks`)
+
+ThinkTanks are dedicated research and policy drafting rooms for alliances, international coalitions, and co-authors:
+- **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
+- **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
+- **Joint Working Papers** *(pending)*: `CollaborativeDoc` CRUD procedures and a `ThinktankPapersTab` component exist, but the Docs tab is not yet mounted in the workspace. Real-time group chat is likewise deferred (see [ThinkTanks](./thinktanks.md#roadmap-pillars-deferred--future-phases)).
+
+---
+
+## 4. ThinkShare Real-Time Messaging (`/messages`)
+
+All platform direct messaging runs on the unified ThinkShare infrastructure:
+- **Message Types**: Personal 1:1 DMs, Diplomatic and official cables, Group rooms, and pinned **System / LoreBot** streams.
+- **Classification Tiers**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET` (metadata on diplomatic/official conversations and messages).
+- **Security**: The schema reserves `signature` and `encryptedContent` message fields and an `encrypted` conversation flag, but no signing or end-to-end encryption is implemented yet; access is enforced by participant checks.
+- **Caching**: Feed pages are cached in `globalCache` (15 s TTL) and invalidated by pattern (`thinkpages_feed:*`) on new posts.
 
 ---
 
@@ -52,4 +51,4 @@ All messaging across the platform (personal DMs, diplomatic exchanges, official 
 - [ThinkTanks Collaborative Groups Guide](./thinktanks.md)
 - [Diplomacy System Guide](./diplomacy.md)
 - [Forum Integration](./forum.md)
-- [API Reference: ThinkPages & Messages](../reference/api-complete.md#thinkpages-router)
+- [API Reference: ThinkPages & Messages](../reference/api-complete.md)

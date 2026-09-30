@@ -306,8 +306,4 @@ export const militaryEquipmentManufacturersRouter = createTRPCRouter({
       });
     }
   }),
-
-  // ==========================================
-  // IMAGE RESOLUTION ENDPOINTS
-  // ==========================================
 });

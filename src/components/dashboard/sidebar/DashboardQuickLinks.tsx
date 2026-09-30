@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BookOpen, Bookmark, Users, Compass } from "lucide-react";
+import { OpenBook as BookOpen, Bookmark, Group as Users, Compass } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import {
@@ -13,7 +13,7 @@ import {
   CHANNEL_CONFIG,
 } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
-import { FeedbackModal } from "~/components/ui/modals/FeedbackModal";
+import { FeedbackModal } from "~/components/dashboard/sidebar/FeedbackModal";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -76,7 +76,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     <CutoutCard
       className={cn(
         cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-all duration-200"
+        "w-48 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
       )}
       trackPointerHover={false}
       texture="dots"
@@ -92,7 +92,6 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
             Quick Links
           </span>
         </div>
-     
       </div>
       <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
         {/* Links */}
@@ -114,7 +113,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-[11px] font-normal tracking-normal transition-all duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
+                className="group text-muted-foreground hover:text-foreground flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-xs font-normal tracking-normal transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/[0.06] active:scale-[0.97]"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon
@@ -127,7 +126,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 </div>
 
                 {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-[9px] font-bold tracking-tight text-emerald-400 ring-1 ring-emerald-500/30 backdrop-blur-xs shadow-2xs transition-transform group-hover:scale-105">
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-xs font-bold tracking-tight text-emerald-400 shadow-2xs ring-1 ring-emerald-500/30 backdrop-blur-xs transition-transform group-hover:scale-105">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                   </span>
                 )}
@@ -139,7 +138,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         <div className="border-border/30 space-y-2 border-t pt-2">
           <Link
             href="/changelog"
-            className="group block transition-all duration-150 active:scale-[0.98]"
+            className="group block transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
             title="View Release Notes & Changelog"
           >
             <StatusIndicator
@@ -147,7 +146,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
               size="sm"
               className={cn(
-                "w-full justify-center text-[10px] font-medium tracking-tight tabular-nums transition-all group-hover:border-white/30 group-hover:shadow-xs",
+                "w-full justify-center text-xs font-medium tracking-tight tabular-nums transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:border-white/30 group-hover:shadow-xs",
                 channelTheme.borderColor,
                 channelTheme.bgColor
               )}
@@ -155,7 +154,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </Link>
 
           <div className="space-y-1 text-center">
-            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-[9.5px]">
+            <div className="text-muted-foreground/70 flex items-center justify-center gap-1.5 text-xs">
               <Link
                 href="/privacy"
                 className="hover:text-foreground transition-colors hover:underline"
@@ -181,8 +180,8 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 Terms
               </Link>
             </div>
-            <p className="text-muted-foreground/50 text-[8.5px] tracking-tight">
-              &copy; {new Date().getFullYear()} IxStates 
+            <p className="text-muted-foreground/50 text-xs tracking-tight">
+              &copy; {new Date().getFullYear()} IxStates
             </p>
           </div>
         </div>

@@ -1,15 +1,16 @@
+"use client";
 // src/app/admin/storyteller/_components/CountrySelector.tsx
 // Shared country multi-select for world events
-"use client";
 
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
+import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
-import { Search, X, Globe, CheckCircle2 } from "lucide-react";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Search, Xmark as X, Globe, CheckCircle as CheckCircle2 } from "iconoir-react";
 
 interface CountrySelectorProps {
   selectedIds: string[];
@@ -25,7 +26,7 @@ export function CountrySelector({
 }: CountrySelectorProps) {
   const [search, setSearch] = useState("");
   const { data } = api.countries.getSelectList.useQuery(
-    { limit: 250 },
+    { limit: 250, realm: ALL_REALMS },
     {
       refetchOnWindowFocus: false,
     }
@@ -88,6 +89,7 @@ export function CountrySelector({
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selectedIds.slice(0, 10).map((id) => {
+            // oxlint-disable-next-line eslint/no-shadow -- shadowed 'c' is intentional in this scope
             const c = countries.find((c) => c.id === id);
             if (!c) return null;
             return (

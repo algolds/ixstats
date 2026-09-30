@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, BarChart2, Loader2, Compass } from "lucide-react";
+import {
+  Xmark as X,
+  Search,
+  GraphUp as BarChart2,
+  SystemRestart as Loader2,
+  Compass,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Portal, type BaseModalProps } from "./types";
 
@@ -38,6 +44,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line
       setSearchQuery("");
       setSelectedCountry(null);
       setSelectedStat("population");
@@ -79,11 +86,11 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
         onClick={onClose}
       >
         <div
-          className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <BarChart2 className="h-5 w-5 text-amber-400" />
               Insert Country Stat
@@ -101,7 +108,9 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
           <div className="space-y-6 p-6">
             {/* Step 1: Select Country */}
             <div className="space-y-2">
-              <label className="text-foreground block text-xs font-semibold">1. Select Country</label>
+              <label className="text-foreground block text-xs font-semibold">
+                1. Select Country
+              </label>
               <div className="relative">
                 <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
                 <input
@@ -115,7 +124,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
               </div>
 
               {/* List Results */}
-              <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-32 divide-y overflow-y-auto rounded-lg border">
+              <div className="border-border divide-border bg-muted/20 max-h-32 scrollbar-thin divide-y overflow-y-auto rounded-lg border">
                 {isLoading && (
                   <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -144,14 +153,16 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                         {c.name}
                       </span>
                       {viewerCountryId && c.id === viewerCountryId && (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 uppercase">
+                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-bold text-emerald-400 uppercase">
                           My Country
                         </span>
                       )}
                     </button>
                   ))}
                 {!isLoading && countries?.length === 0 && (
-                  <div className="text-muted-foreground p-3 text-center text-xs">No countries found.</div>
+                  <div className="text-muted-foreground p-3 text-center text-xs">
+                    No countries found.
+                  </div>
                 )}
               </div>
             </div>
@@ -178,7 +189,11 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                 className="border-input bg-secondary text-foreground focus:ring-ring w-full cursor-pointer rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               >
                 {STAT_FIELDS.map((stat) => (
-                  <option key={stat.value} value={stat.value} className="bg-popover text-foreground">
+                  <option
+                    key={stat.value}
+                    value={stat.value}
+                    className="bg-popover text-foreground"
+                  >
                     {stat.label}
                   </option>
                 ))}
@@ -199,14 +214,14 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
             <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
               <button
                 onClick={onClose}
-                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-all active:scale-[0.97]"
+                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleInsertStat}
                 disabled={!selectedCountry}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-all hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Stat
               </button>

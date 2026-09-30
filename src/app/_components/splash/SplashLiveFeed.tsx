@@ -6,13 +6,13 @@ import { motion } from "motion/react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
-  BookOpen,
+  OpenBook as BookOpen,
   Globe,
-  MessageSquare,
-  TrendingUp,
+  ChatBubble as MessageSquare,
+  StatUp as TrendingUp,
   Trophy,
-  ChevronRight,
-} from "lucide-react";
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { Marquee } from "~/components/ui/magicui/marquee";
 import { api } from "~/trpc/react";
 import { splashGold } from "~/lib/splash/mycountry-gold";
@@ -126,13 +126,13 @@ export function SplashLiveFeed() {
                     )}
                   </motion.div>
                   <div className="min-w-0 text-left">
-                    <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                    <p className="text-muted-foreground mb-0.5 text-xs font-semibold tracking-wide uppercase">
                       {kind}
                     </p>
                     <p className="text-foreground line-clamp-2 text-xs leading-snug font-medium sm:text-sm">
                       {item.title || "Activity"}
                     </p>
-                    <p className="text-muted-foreground mt-0.5 text-[10px] tabular-nums sm:text-xs">
+                    <p className="text-muted-foreground mt-0.5 text-xs tabular-nums sm:text-xs">
                       {formatDistanceToNow(item.ts, { addSuffix: true })}
                     </p>
                   </div>

@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Loader2, RefreshCw, Database, Zap, AlertTriangle } from "lucide-react";
+import {
+  SystemRestart as Loader2,
+  Refresh as RefreshCw,
+  Database,
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 
 interface CacheStats {
   totalRequests: number;
@@ -91,134 +96,199 @@ export function UnifiedMediaServiceAdmin() {
 
   useEffect(() => {
     fetchStats();
+    // oxlint-disable-next-line
   }, []);
 
   const hitRate = stats ? (stats.hitRate * 100).toFixed(1) : "0";
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5" />
-          Unified Media Service
-        </CardTitle>
-        <CardDescription>Centralized flag and wiki data caching system</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats?.cacheSize ?? 0}</div>
-            <div className="text-muted-foreground text-sm">Cached Items</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{hitRate}%</div>
-            <div className="text-muted-foreground text-sm">Hit Rate</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {stats?.serviceStats?.flagRequests ?? 0}
-            </div>
-            <div className="text-muted-foreground text-sm">Flag Requests</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {stats?.serviceStats?.totalRequests ?? 0}
-            </div>
-            <div className="text-muted-foreground text-sm">Total Requests</div>
-          </div>
+    <div className="space-y-5">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Cached Items
+          </p>
+          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            {stats?.cacheSize ?? 0}
+          </p>
         </div>
 
-        {/* Status Indicators */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant={stats?.cacheSize ? "default" : "secondary"}>
-            Cache: {stats?.cacheSize ? "Active" : "Empty"}
-          </Badge>
-          <Badge variant={parseFloat(hitRate) > 80 ? "default" : "destructive"}>
-            Performance: {parseFloat(hitRate) > 80 ? "Good" : "Needs Improvement"}
-          </Badge>
-          {lastUpdated && (
-            <Badge variant="outline">Updated: {lastUpdated.toLocaleTimeString()}</Badge>
-          )}
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Hit Rate
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            {hitRate}%
+          </p>
+        </div>
+
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Flag Requests
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
+            {stats?.serviceStats?.flagRequests ?? 0}
+          </p>
+        </div>
+
+        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Total Requests
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            {stats?.serviceStats?.totalRequests ?? 0}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Controls Card */}
+      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Database className="h-4 w-4 text-blue-400" />
+            <div>
+              <h3 className="text-foreground text-xs font-bold">Media Service Controls</h3>
+              <p className="text-muted-foreground text-xs">
+                Centralized flag and wiki data caching system
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            <span
+              className={cn(
+                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
+                stats?.cacheSize
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-border/30 bg-background/50 text-muted-foreground"
+              )}
+            >
+              Cache: {stats?.cacheSize ? "Active" : "Empty"}
+            </span>
+            <span
+              className={cn(
+                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
+                parseFloat(hitRate) > 80
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+              )}
+            >
+              Health: {parseFloat(hitRate) > 80 ? "Optimal" : "Cold"}
+            </span>
+            {lastUpdated && (
+              <span className="border-border/20 bg-background/30 text-muted-foreground inline-block rounded-md border px-2 py-0.5 font-mono text-xs">
+                Synced {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Cache Health Warning */}
         {stats && stats.cacheSize === 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            <div className="text-sm text-yellow-800">
-              Cache is empty. Initialize the cache to improve performance.
+          <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+            <div>
+              <p className="font-semibold">Cache is currently uninitialized</p>
+              <p className="text-xs opacity-80">
+                Initialize the cache to index flags and improve UI response times.
+              </p>
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={fetchStats} disabled={isLoading} variant="outline" size="sm">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={fetchStats}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
             {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             )}
             Refresh Stats
           </Button>
 
-          <Button onClick={initializeCache} disabled={isInitializing} variant="default" size="sm">
+          <Button
+            onClick={initializeCache}
+            disabled={isInitializing}
+            size="sm"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
             {isInitializing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Zap className="mr-2 h-4 w-4" />
+              <Zap className="mr-1.5 h-3.5 w-3.5" />
             )}
             Initialize Cache
           </Button>
 
-          <Button onClick={clearCache} disabled={isLoading} variant="destructive" size="sm">
+          <Button
+            onClick={clearCache}
+            disabled={isLoading}
+            variant="destructive"
+            size="sm"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+          >
             Clear Cache
           </Button>
         </div>
 
         {/* Detailed Stats */}
         {stats && (
-          <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
-            <div>
-              <h4 className="mb-2 font-medium">Request Statistics</h4>
-              <div className="space-y-1 text-sm">
+          <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
+            <div className="border-border/20 bg-background/20 space-y-2 rounded-xl border p-3">
+              <h4 className="text-foreground text-xs font-bold">Request Statistics</h4>
+              <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span>Cache Hits:</span>
-                  <span>{stats.cacheHits}</span>
+                  <span className="text-muted-foreground">Cache Hits:</span>
+                  <span className="text-foreground font-mono font-semibold">{stats.cacheHits}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Cache Misses:</span>
-                  <span>{stats.cacheMisses}</span>
+                  <span className="text-muted-foreground">Cache Misses:</span>
+                  <span className="text-foreground font-mono font-semibold">
+                    {stats.cacheMisses}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Hit Ratio:</span>
-                  <span>{hitRate}%</span>
+                  <span className="text-muted-foreground">Hit Ratio:</span>
+                  <span className="font-mono font-semibold text-emerald-400">{hitRate}%</span>
                 </div>
               </div>
             </div>
 
-            <div>
-              <h4 className="mb-2 font-medium">Service Breakdown</h4>
-              <div className="space-y-1 text-sm">
+            <div className="border-border/20 bg-background/20 space-y-2 rounded-xl border p-3">
+              <h4 className="text-foreground text-xs font-bold">Service Breakdown</h4>
+              <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span>Flag Requests:</span>
-                  <span>{stats.serviceStats?.flagRequests ?? 0}</span>
+                  <span className="text-muted-foreground">Flag Requests:</span>
+                  <span className="text-foreground font-mono font-semibold">
+                    {stats.serviceStats?.flagRequests ?? 0}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Infobox Requests:</span>
-                  <span>{stats.serviceStats?.infoboxRequests ?? 0}</span>
+                  <span className="text-muted-foreground">Infobox Requests:</span>
+                  <span className="text-foreground font-mono font-semibold">
+                    {stats.serviceStats?.infoboxRequests ?? 0}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Service Requests:</span>
-                  <span>{stats.serviceStats?.totalRequests ?? 0}</span>
+                  <span className="text-muted-foreground">Total Service Requests:</span>
+                  <span className="text-foreground font-mono font-semibold">
+                    {stats.serviceStats?.totalRequests ?? 0}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

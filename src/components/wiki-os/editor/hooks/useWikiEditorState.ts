@@ -1,18 +1,13 @@
+"use client";
 // src/components/wiki-os/editor/hooks/useWikiEditorState.ts
 // Shared state management for WikiOS Visual and Source editors.
-
-"use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
-import type {
-  StashEntity,
-  StashItemEntity,
-  WikimediaImageMeta,
-  SaveActionType,
-} from "../types";
+import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
+import type { EditorModalState } from "../context/EditorModalContext";
 
 export interface UseWikiEditorStateProps {
   title: string;
@@ -41,7 +36,6 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   // Modals and popovers
   const [showImageSearch, setShowImageSearch] = useState(false);
-  const [showTemplateInserter, setShowTemplateInserter] = useState(false);
   const [showInfoboxModal, setShowInfoboxModal] = useState(false);
   const [showCountryStatsModal, setShowCountryStatsModal] = useState(false);
   const [showBusinessStatsModal, setShowBusinessStatsModal] = useState(false);
@@ -120,6 +114,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   const imageItems = useMemo(() => {
     return stashItems.filter((item) => item.pageTitle.startsWith("commons:"));
+    // oxlint-disable-next-line
   }, [stashItems]);
 
   const imageTitles = useMemo(() => {
@@ -188,6 +183,74 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     [title, notify]
   );
 
+  const modalContextValue: EditorModalState = useMemo(
+    () => ({
+      showImageSearch,
+      setShowImageSearch,
+      showInfoboxModal,
+      setShowInfoboxModal,
+      showCountryStatsModal,
+      setShowCountryStatsModal,
+      showBusinessStatsModal,
+      setShowBusinessStatsModal,
+      showMapCoordsModal,
+      setShowMapCoordsModal,
+      templatesOpen,
+      setTemplatesOpen,
+      stashesOpen,
+      setStashesOpen,
+      settingsOpen,
+      setSettingsOpen,
+      enableAutocomplete,
+      handleToggleAutocomplete,
+      showLineNumbers,
+      handleToggleLineNumbers,
+      enableWordWrap,
+      // oxlint-disable-next-line
+      handleToggleWordWrap,
+      summary,
+      setSummary,
+      minor,
+      setMinor,
+      saving,
+      showSavePanel,
+      setShowSavePanel,
+      saveDropdownOpen,
+      setSaveDropdownOpen,
+      saveActionType,
+      setSaveActionType,
+      stashes,
+      activeStashId,
+      setSelectedStashId,
+      imageItems,
+      imagesMap,
+    }),
+    [
+      showImageSearch,
+      showInfoboxModal,
+      showCountryStatsModal,
+      showBusinessStatsModal,
+      showMapCoordsModal,
+      templatesOpen,
+      stashesOpen,
+      settingsOpen,
+      enableAutocomplete,
+      showLineNumbers,
+      enableWordWrap,
+      summary,
+      minor,
+      saving,
+      showSavePanel,
+      saveDropdownOpen,
+      saveActionType,
+      // oxlint-disable-next-line
+      stashes,
+      activeStashId,
+      imageItems,
+      imagesMap,
+    ]
+  );
+
   return {
     notify,
     title,
@@ -195,6 +258,7 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     setIsDirty,
     wordCount,
     setWordCount,
+    modalContextValue,
     summary,
     setSummary,
     minor,
@@ -211,8 +275,6 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
     executeSaveDraft,
     showImageSearch,
     setShowImageSearch,
-    showTemplateInserter,
-    setShowTemplateInserter,
     showInfoboxModal,
     setShowInfoboxModal,
     showCountryStatsModal,

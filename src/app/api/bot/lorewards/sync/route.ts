@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { recomputeUserStats } from "~/lib/lorewards";
 import { invalidateCache } from "~/lib/cache";
+import { safeEqual } from "~/lib/security/safe-equal";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,11 +24,11 @@ export async function POST(request: Request) {
   let authorized = false;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7).trim();
-    if (token === expectedApiKey) {
+    if (safeEqual(token, expectedApiKey)) {
       authorized = true;
     }
   }
-  if (apiKeyHeader && apiKeyHeader.trim() === expectedApiKey) {
+  if (apiKeyHeader && safeEqual(apiKeyHeader.trim(), expectedApiKey)) {
     authorized = true;
   }
 

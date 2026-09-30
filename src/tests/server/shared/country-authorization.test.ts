@@ -1,9 +1,10 @@
 import {
+  assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
   getRoleName,
   isPrivilegedCountryWriter,
   COUNTRY_WRITE_ROLES,
-} from "../../../server/shared/country-authorization";
+} from "~/server/shared/country-authorization";
 import { TRPCError } from "@trpc/server";
 
 describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {
@@ -67,7 +68,9 @@ describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {
           },
         };
 
-        await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).resolves.toBeUndefined();
+        await expect(
+          assertCountryWriteAccess(ctx as any, targetCountryId)
+        ).resolves.toBeUndefined();
         expect(mockUserFindUnique).not.toHaveBeenCalled();
       }
     });
@@ -186,6 +189,58 @@ describe("Plan 149: Canonical Country-Write Authorization Matrix", () => {
       };
 
       await expect(assertCountryWriteAccess(ctx as any, targetCountryId)).rejects.toMatchObject({
+        code: "UNAUTHORIZED",
+      });
+    });
+  });
+  describe("assertCountryResourceWriteAccess", () => {
+    function ctxFor(role: string, countryId: string) {
+      return {
+        auth: { userId: "user_x" },
+        user: { clerkUserId: "user_x", countryId, role },
+        db: {
+          user: {
+            findUnique: jest.fn().mockResolvedValue({ countryId, role: { name: role } }),
+          },
+          country: { findUnique: jest.fn().mockResolvedValue({ id: targetCountryId }) },
+        },
+      };
+    }
+
+    it("delegates to the country check when the row has an owning country", async () => {
+      await expect(
+        assertCountryResourceWriteAccess(ctxFor("member", targetCountryId), targetCountryId, "Row")
+      ).resolves.toBeUndefined();
+      await expect(
+        assertCountryResourceWriteAccess(ctxFor("member", "other_country"), targetCountryId, "Row")
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("throws NOT_FOUND with the resource label for a member when the owner is unknown", async () => {
+      await expect(
+        assertCountryResourceWriteAccess(ctxFor("member", targetCountryId), null, "Meeting")
+      ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Meeting not found" });
+    });
+
+    it("allows a privileged caller when the owner is unknown", async () => {
+      await expect(
+        assertCountryResourceWriteAccess(ctxFor("admin", "other_country"), undefined, "Meeting")
+      ).resolves.toBeUndefined();
+    });
+
+    it("allows a caller promoted since the session was cached", async () => {
+      const ctx = ctxFor("member", "other_country");
+      ctx.db.user.findUnique.mockResolvedValue({
+        countryId: "other_country",
+        role: { name: "staff" },
+      });
+      await expect(assertCountryResourceWriteAccess(ctx, null, "Meeting")).resolves.toBeUndefined();
+      expect(ctx.db.user.findUnique).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws UNAUTHORIZED without auth", async () => {
+      const ctx = { auth: null, user: null, db: { user: { findUnique: jest.fn() } } };
+      await expect(assertCountryResourceWriteAccess(ctx, null, "Meeting")).rejects.toMatchObject({
         code: "UNAUTHORIZED",
       });
     });

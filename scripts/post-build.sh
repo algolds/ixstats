@@ -23,6 +23,16 @@ else
     echo "⚠️  Warning: .next/static directory not found"
 fi
 
+echo "📁 Copying markdown content (help/legal pages read it at request time)..."
+if [ -d "src/content" ]; then
+    mkdir -p .next/standalone/src
+    rm -rf .next/standalone/src/content
+    cp -r src/content .next/standalone/src/content
+    echo "✅ src/content copied"
+else
+    echo "⚠️  Warning: src/content directory not found"
+fi
+
 echo "📁 Copying public directory to standalone directory..."
 if [ -d "public" ]; then
     cp -r public .next/standalone/

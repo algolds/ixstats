@@ -1,8 +1,8 @@
 # Data & Database Architecture
 
-**Database Engine**: PostgreSQL 16 with PostGIS Extension  
-**ORM**: Prisma 6.19.3 (Multi-file Schema Architecture)  
-**Location**: `prisma/schema/*.prisma` (15 schema files, 296 models) · `src/server/db.ts`
+**Database Engine**: PostgreSQL with PostGIS Extension  
+**ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
+**Location**: `prisma/schema/*.prisma` (18 schema files, 332 models, 33 enums) · `src/server/db.ts`
 
 ---
 
@@ -13,37 +13,40 @@ The database backend is PostgreSQL with PostGIS extensions running inside Docker
 ```
 Container: ixstats-postgres
 Port: 5433
-Connection: postgresql://postgres:postgres@localhost:5433/ixstats
+Connection: postgresql://postgres:PASSWORD@localhost:5433/ixstats
 Spatial Engine: PostGIS 3.x (ST_AsGeoJSON, ST_Touches, ST_Centroid, ST_Area)
 ```
 
 ### Production Data Protection Rule:
 > [!CAUTION]
-> Direct database write commands (`db:migrate`, `db:push`, `db:reset`) are intentionally blocked by safety wrappers to protect 82 nations of live production data. Schema modifications must be reviewed and pushed using `bun run db:push:force`.
+> Direct database write commands (`db:migrate`, `db:push`, `db:reset`) are intentionally blocked by safety wrappers to protect 82 nations of live production data. Schema modifications must be reviewed and pushed using `bun run db:push:force` (or `db:migrate:force` / `db:migrate:deploy`); `db:reset` is permanently blocked. Setting `DATABASE_READONLY=true` makes `src/server/db.ts` block writes to all but an allow-list of models (vault/card tables).
 
 ---
 
 ## 2. Multi-File Schema Architecture (`prisma/schema/`)
 
-Prisma models are domain-isolated across 15 individual `.prisma` files:
+Prisma models are domain-isolated across 18 individual `.prisma` files:
 
 ```
 prisma/schema/
 ├── base.prisma           # Generator and datasource config (PostgreSQL provider)
-├── enums.prisma          # Shared Enums (Priority, Category, EconomicTier, Stance, Rarity)
-├── core.prisma           # User, Role, Permission, UserActivityLog, Session
-├── government.prisma     # GovernmentStructure, Department, Policy, Legislature, Intent, Issue
-├── economy.prisma        # EconomicHistory, TaxSystem, BudgetAllocation, SectorAnalysis
-├── diplomacy.prisma      # DiplomaticRelation, Embassy, ConcordState, Treaty, DiplomaticEvent
-├── intelligence.prisma   # CountryIntelligence, ThreatAssessment, VitalityScore
-├── maps.prisma           # Territory, Subdivision, City, PointOfInterest, GeoFeature (PostGIS)
-├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, LoreCard, Perk
-├── military.prisma       # MilitaryBranch, EquipmentCatalog, ForceDeployment, WarRoom
-├── social.prisma         # ThinkPage, ThinkPost, ThinkComment, DirectMessage, Poll
-├── wiki.prisma           # WikiArticle, WikiRevision, WikiInfoboxCache, WikiCategory
-├── sports.prisma         # League, Club, Match, Competition, PlayerRoster, Commentary
-├── activities.prisma     # ActivityStream, PublicNotification, AuditLogEntry
-└── ...
+├── enums.prisma          # Shared enums (Priority, Category, Trend, CardRarity, ThreatType, ...)
+├── core.prisma           # Country, User, Role, Permission, UserSession, AuditLog, SystemLog, Notification
+├── government.prisma     # GovernmentStructure, GovernmentDepartment, Policy, Legislature, Intent, NationalIssue, CountryChangeLog
+├── economy.prisma        # EconomicProfile, TaxSystem, FiscalSystem, EconomicComponent, EconomicArchetype
+├── diplomacy.prisma      # DiplomaticRelation, Embassy, Treaty, DiplomaticEvent, Alliance, CrisisEvent
+├── intelligence.prisma   # IntelligenceItem, IntelligenceBriefing, IntelligenceAlert, VitalitySnapshot
+├── maps.prisma           # Territory, Subdivision, City, PointOfInterest, Transport*, Realm, RealmClaim, RealmPage (PostGIS)
+├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, VaultTransaction, TradeOffer, CraftingRecipe
+├── exchange.prisma       # ExchangeWallet, Company, Shareholding, SectorIndex, Contract
+├── military.prisma       # MilitaryBranch, MilitaryUnit, MilitaryEquipmentCatalog, Deployment, MilitaryConflict
+├── social.prisma         # ThinkpagesAccount, ThinkpagesPost, ThinktankGroup, ThinkshareConversation, ActivityFeed, Poll
+├── wiki.prisma           # WikiArticle, WikiRevision, WikiCategory, Stash, LorewardEntry, BlurbPrompt
+├── sports.prisma         # SportLeague, SportTeam, SportPlayer, SportSeason, SportMatch, SportStanding
+├── onoma.prisma          # NameBank, LanguagePack, EtymologyRoot, GrammarProfile, WritingSystem
+├── heraldry.prisma       # HeraldryAchievement, HeraldryCharge, HeraldryRevision
+├── media.prisma          # MediaTrack, MediaPlaylist, PlaybackHistory
+└── c15t.prisma           # Consent-management tables (c15t)
 ```
 
 ---
@@ -51,24 +54,25 @@ prisma/schema/
 ## 3. Core Database Domains & Models
 
 ### 3.1 Core & Identity
-- **`User`**: Account identity (Clerk `userId`), email, display preferences, platform role (`USER`, `MODERATOR`, `ADMIN`, `SYSTEM_OWNER`).
-- **`Country`**: Geopolitical identity, slug, name, population, GDP per capita, government type, religion, leader, flag URL, realm tag (`realm="default"`).
+- **`User`**: Account identity (`clerkUserId`), linked `countryId`, `membershipTier`, and a relational `Role` (`roleId` → `Role` / `RolePermission` / `Permission`); system owners are resolved from config, not a role value.
+- **`Country`**: Geopolitical identity, slug, name, population, GDP per capita, government type, religion, leader, flag URL, and realm membership (`realmId`, default `"default"`; unique per `[realmId, name]`).
 
 ### 3.2 Statecraft & Executive Simulation
 - **`Intent`**: Player-declared strategic directive. Stores `goal`, `category`, `status`, `riskRating` (`stable` | `volatile` | `high-risk`), and `progress`.
 - **`NationalIssue`**: Dilemmas arriving in the executive inbox. Linked to `intentId` for grounded feedback loops.
-- **`Policy`**: Active government policies. Derives `civCapCost` and background volatility risk.
-- **`CountryEventSpine`**: Append-only ledger recording all statecraft actions, metric shifts, and narrative entries.
+- **`Policy`**: Active government policies. Carries `civCapCost`.
+- **`CountryChangeLog`**: Ledger written by the `CountryEventSpine` service (`src/lib/activity/event-spine.ts` — code, not a model) for statecraft actions and metric shifts; feed entries go to `ActivityFeed`.
 
 ### 3.3 Spatial & GIS Geometry (PostGIS)
-- **`Subdivision`**: Administrative provinces with PostGIS `geometry` MultiPolygon columns, area, and centroid coordinates.
-- **`City`**: Capital and regional settlements with PostGIS `Point` geometry, population tier, and elevation.
+- **`Territory` / `Subdivision`**: Country and administrative-division shapes (JSON `geometry` plus a PostGIS `geom_postgis` column with a GiST index).
+- **`City`**: Settlements with PostGIS geometry, population, and elevation.
 - **`PointOfInterest`**: Landmarks, naval bases, radar stations, and natural marvels.
+- **`Realm` / `RealmClaim` / `RealmPage`**: Realms Phase 1 — world registry, nation claims, and realm pages (`Country.realmId` scopes nations to a realm).
 
 ### 3.4 Cards, Vault & Economy
-- **`MyVault`**: Player card binder, level progression, and credit wallet.
-- **`Card` / `CardOwnership`**: Collectible trading cards with dynamic rarity (`COMMON`, `UNCOMMON`, `RARE`, `EPIC`, `LEGENDARY`, `MYTHIC`).
-- **`IxCredit`**: Virtual currency ledger with atomic conditional balance checks preventing negative race conditions.
+- **`MyVault`**: Per-user vault: IxCredits balance (`credits`), level/XP progression, login streak.
+- **`Card` / `CardOwnership`**: Collectible trading cards with rarity enum `CardRarity` (`COMMON`, `UNCOMMON`, `RARE`, `ULTRA_RARE`, `EPIC`, `LEGENDARY`).
+- **`VaultTransaction`**: IxCredits ledger. Balance and trade settlement use conditional `updateMany` writes (`src/lib/vault/vault-ledger.ts`, `trade-settlement.ts`) to prevent negative-balance races.
 
 ---
 
@@ -77,21 +81,29 @@ prisma/schema/
 Database queries are executed through a singleton Prisma client instance:
 
 ```typescript
-// src/server/db.ts
+// src/server/db.ts (simplified)
 import { PrismaClient } from "@prisma/client";
-import { env } from "~/env";
 
-const createPrismaClient = () =>
-  new PrismaClient({
-    log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
+const isReadOnlyMode = process.env.DATABASE_READONLY === "true";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+const createPrismaClient = () => {
+  // Dev: error-only logging. Prod: query events feed queryMonitor (slow-query tracking).
+  const baseClient = new PrismaClient({ log: isDevMode ? [...] : [...] });
+  if (!isReadOnlyMode) return baseClient;
+  // Read-only mode: $extends guard blocks writes except for WRITABLE_MODELS_IN_READONLY
+  return baseClient.$extends({ ... });
+};
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+export const db = globalForPrisma.prisma ??
+  createPrismaClient()
+    .$extends({ /* findMany without take/cursor is capped at 1000 rows */ })
+    .$extends({ /* Prisma errors are mapped to AppError (prismaErrorToAppError) */ });
 
 if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 ```
+
+> [!NOTE]
+> Unbounded `findMany` calls are silently capped at 1,000 rows. Pass an explicit `take` when a query genuinely needs more (e.g. full map layers).
 
 ---
 
@@ -107,9 +119,12 @@ bun run db:push:force
 # Launch Prisma Studio web interface on localhost:5555
 bun run db:studio
 
-# Sync production database snapshot to local dev container
-bun run db:sync
+# Refresh the local dev container from a production snapshot (pg_dump over SSH)
+./scripts/refresh-local-db.sh
 
-# Run database sub-project typecheck (4096MB safe heap)
+# Validate the schema
+bun run db:sync:check
+
+# Run database sub-project typecheck (tsconfig.db.json)
 bun run typecheck:db
 ```

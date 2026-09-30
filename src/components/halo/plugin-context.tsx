@@ -56,10 +56,12 @@ const DIPluginContext = createContext<DIPluginContextValue | null>(null);
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   const registryRef = useRef<DIPluginRegistry | null>(null);
+  // oxlint-disable-next-line
   if (!registryRef.current) {
     registryRef.current = new DIPluginRegistry();
   }
 
+  // oxlint-disable-next-line
   return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
 }
 
@@ -81,13 +83,13 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  *   accentColor: "#3b82f6",
  * });
  */
-export function useDIPlugin(plugin: DIPlugin) {
+export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
   const ctx = useContext(DIPluginContext);
   const registry = ctx?.registry;
 
   React.useEffect(() => {
     if (!registry) return;
-    registry.register(plugin);
+    registry.register(plugin as unknown as DIPlugin);
     return () => {
       registry.unregister(plugin.id);
     };

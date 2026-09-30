@@ -5,18 +5,15 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
+// oxlint-disable-next-line eslint/no-unused-vars
 import {
-  X,
-  Crown,
-  Newspaper,
-  Users,
-  Sparkles,
-  Check,
-  AlertCircle,
-  ArrowLeft,
-  Loader2,
+  Xmark as X,
+  Journal as Newspaper,
+  Sparks as Sparkles,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
   HelpCircle,
-} from "lucide-react";
+} from "iconoir-react";
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -26,7 +23,8 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -68,6 +66,7 @@ export function AccountCreationModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // oxlint-disable-next-line
     setMounted(true);
   }, []);
 
@@ -97,9 +96,11 @@ export function AccountCreationModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUnsplashSearch, setShowUnsplashSearch] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [imageSource, setImageSource] = useState<"unsplash" | "upload" | "wiki">("unsplash");
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
+  // oxlint-disable-next-line eslint/no-unused-vars
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const createAccountMutation = api.thinkpages.createAccount.useMutation({
@@ -129,6 +130,7 @@ export function AccountCreationModal({
     }
   );
 
+  // oxlint-disable-next-line eslint/no-unused-vars
   const { data: accountCountsByType, isLoading: isLoadingAccountCountsByType } =
     api.thinkpages.getAccountCountsByType.useQuery(
       { countryId },
@@ -138,6 +140,7 @@ export function AccountCreationModal({
   useEffect(() => {
     if (formData.username.length < 3) {
       // Too short to check
+      // oxlint-disable-next-line
       setIsUsernameAvailable(null);
       setIsCheckingUsername(false);
     } else if (!isValidUsernameFormat) {
@@ -169,6 +172,7 @@ export function AccountCreationModal({
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal is closed
+      // oxlint-disable-next-line
       setStep("type");
       setFormData({
         accountType: "citizen",
@@ -328,7 +332,7 @@ export function AccountCreationModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full p-2 text-[var(--color-text-muted)] transition-all duration-200 hover:rotate-90 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] active:scale-95"
+                  className="rounded-full p-2 text-[var(--color-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:rotate-90 hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text-primary)] active:scale-95"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -340,7 +344,7 @@ export function AccountCreationModal({
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span className="text-xs font-medium sm:text-sm">Account Limit Reached</span>
                   </div>
-                  <p className="mt-1 pl-6 text-[10px] text-[var(--color-error)]/80 sm:pl-7 sm:text-xs">
+                  <p className="mt-1 pl-6 text-xs text-[var(--color-error)]/80 sm:pl-7 sm:text-xs">
                     You have reached the maximum of {maxAccounts} accounts. Delete an existing
                     account to create a new one.
                   </p>
@@ -392,7 +396,7 @@ export function AccountCreationModal({
                         <button
                           type="button"
                           onClick={() => setShowAdvanced(!showAdvanced)}
-                          className="flex items-center gap-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-all hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
+                          className="flex items-center gap-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
                         >
                           <Sparkles
                             className={cn(
@@ -426,7 +430,7 @@ export function AccountCreationModal({
                                       postingFrequency: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="low"
@@ -460,7 +464,7 @@ export function AccountCreationModal({
                                       politicalLean: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="left"
@@ -494,7 +498,7 @@ export function AccountCreationModal({
                                       personality: e.target.value as any,
                                     }))
                                   }
-                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-all duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
+                                  className="block w-full rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-3 text-sm text-[var(--color-text-primary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--color-border-secondary)] focus:border-[var(--color-input-focus)] focus:bg-[var(--color-bg-secondary)] focus:ring-1 focus:ring-[var(--color-input-focus)]/30"
                                 >
                                   <option
                                     value="serious"
@@ -531,7 +535,7 @@ export function AccountCreationModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] active:scale-[0.98] sm:px-5 sm:text-sm"
+                    className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] px-4 py-2.5 text-xs font-semibold text-[var(--color-text-secondary)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] active:scale-[0.98] sm:px-5 sm:text-sm"
                   >
                     Cancel
                   </button>
@@ -540,7 +544,7 @@ export function AccountCreationModal({
                       type="button"
                       onClick={() => setStep("details")}
                       disabled={!canCreateMoreAccounts}
-                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       Continue
                     </button>
@@ -555,7 +559,7 @@ export function AccountCreationModal({
                         isCheckingUsername ||
                         createAccountMutation.isPending
                       }
-                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-x-2 rounded-xl border border-transparent bg-[var(--color-brand-primary)] px-4 py-2.5 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:bg-[var(--color-brand-primary)]/90 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 sm:px-5 sm:text-sm"
                     >
                       {createAccountMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

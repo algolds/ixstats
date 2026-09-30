@@ -1,8 +1,15 @@
-// src/app/admin/_components/platform/NotificationTestCard.tsx
 "use client";
+// src/app/admin/_components/platform/NotificationTestCard.tsx
 
 import { useState } from "react";
-import { Bell, Play, Sparkles, AlertTriangle, ShieldAlert, Award } from "lucide-react";
+import {
+  Bell,
+  Play,
+  Sparks as Sparkles,
+  WarningTriangle as AlertTriangle,
+  ShieldAlert,
+  Trophy as Award,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -149,7 +156,7 @@ export function NotificationTestCard() {
   };
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -165,7 +172,7 @@ export function NotificationTestCard() {
           <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
             <Label
               htmlFor="notif-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
             >
               Custom Builder
             </Label>
@@ -187,7 +194,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("crisis")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 transition-all hover:border-red-500/30 hover:bg-red-500/10 dark:text-red-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 dark:text-red-400"
             >
               <ShieldAlert className="h-5 w-5" />
               <span className="text-xs font-semibold">Crisis Alert</span>
@@ -195,7 +202,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("achievement")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-500 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/10 dark:text-emerald-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-emerald-500/30 hover:bg-emerald-500/10 dark:text-emerald-400"
             >
               <Award className="h-5 w-5" />
               <span className="text-xs font-semibold">Achievement</span>
@@ -203,7 +210,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("security")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-amber-500/20 bg-amber-500/5 text-amber-500 transition-all hover:border-amber-500/30 hover:bg-amber-500/10 dark:text-amber-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-amber-500/20 bg-amber-500/5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/30 hover:bg-amber-500/10 dark:text-amber-400"
             >
               <AlertTriangle className="h-5 w-5" />
               <span className="text-xs font-semibold">Security Intel</span>
@@ -211,7 +218,7 @@ export function NotificationTestCard() {
             <Button
               variant="outline"
               onClick={() => triggerPreset("trade")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-blue-500/20 bg-blue-500/5 text-blue-500 transition-all hover:border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
+              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-blue-500/20 bg-blue-500/5 text-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
             >
               <Sparkles className="h-5 w-5" />
               <span className="text-xs font-semibold">Trade Pact</span>
@@ -268,7 +275,7 @@ export function NotificationTestCard() {
                       id="notif-type"
                       value={type}
                       onChange={(e) => setType(e.target.value as ToastType)}
-                      className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                     >
                       {TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
@@ -289,7 +296,7 @@ export function NotificationTestCard() {
                       id="notif-priority"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                      className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -311,7 +318,7 @@ export function NotificationTestCard() {
                     id="notif-category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                    className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md px-3 py-2 text-sm focus:ring-1 focus-visible:outline-none"
+                    className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>

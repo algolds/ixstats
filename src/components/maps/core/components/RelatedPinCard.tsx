@@ -31,7 +31,7 @@ export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
       <div className="min-w-0">
         <p className="text-foreground truncate text-xs font-medium">{pin.title}</p>
         {pin.ixTimeYear != null && (
-          <p className="text-muted-foreground text-[10px]">Year {pin.ixTimeYear}</p>
+          <p className="text-muted-foreground text-xs">Year {pin.ixTimeYear}</p>
         )}
       </div>
     </button>

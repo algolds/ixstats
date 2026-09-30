@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Search } from "lucide-react";
+import { Search } from "iconoir-react";
 import {
   Select,
   SelectTrigger,
@@ -10,7 +10,7 @@ import {
   SelectContent,
   SelectItem,
 } from "~/components/ui/select";
-import { GlassCard } from "~/components/ui/enhanced-card";
+import { Card } from "~/components/ui/card";
 // import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
 
 export default function CountriesFilterSidebar({
@@ -61,7 +61,7 @@ export default function CountriesFilterSidebar({
   ];
 
   return (
-    <GlassCard variant="glass" className="space-y-4 p-4">
+    <Card className="facet-card space-y-4 p-4">
       {/* All content is now direct children of GlassCard. No nested Card/GlassCard. */}
       {hasFilters && (
         <div className="mb-2 flex flex-wrap gap-1">
@@ -182,6 +182,6 @@ export default function CountriesFilterSidebar({
         <Slider ... />
         */}
       </div>
-    </GlassCard>
+    </Card>
   );
 }

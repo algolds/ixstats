@@ -1,13 +1,18 @@
-// src/components/defense/command/ReadinessOverviewCard.tsx
 "use client";
+// src/components/defense/command/ReadinessOverviewCard.tsx
 
 import React from "react";
-import { Shield, Users, Target, Activity, HelpCircle, Info } from "lucide-react";
+import {
+  Shield,
+  Group as Users,
+  Archery as Target,
+  Activity,
+  HelpCircle,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +20,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { cn } from "~/lib/utils";
+import { soundEffects } from "~/lib/sound/cuelume";
+
+export interface DefconLevelInfo {
+  level: number;
+  label: string;
+  status: string;
+  costMod: string;
+  readinessMod: string;
+  cls: string;
+}
+
+export const DEFCON_LEVELS: DefconLevelInfo[] = [
+  { level: 5, label: "DEFCON 5", status: "Peacetime", costMod: "-10% Maint", readinessMod: "Baseline", cls: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  { level: 4, label: "DEFCON 4", status: "Nominal", costMod: "Base Maint", readinessMod: "+5% Alert", cls: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  { level: 3, label: "DEFCON 3", status: "Elevated", costMod: "+15% Maint", readinessMod: "+12% Alert", cls: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  { level: 2, label: "DEFCON 2", status: "High Alert", costMod: "+30% Maint", readinessMod: "+20% Alert", cls: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
+  { level: 1, label: "DEFCON 1", status: "Maximum", costMod: "+50% Maint", readinessMod: "+35% Alert", cls: "text-red-400 border-red-500/30 bg-red-500/10" },
+];
+
+export const PROJECTION_GOALS = [
+  { id: "territorial", label: "Territorial Defense", desc: "Homeland borders" },
+  { id: "regional", label: "Regional Deterrence", desc: "Frontier & littoral zones" },
+  { id: "expeditionary", label: "Expeditionary", desc: "Deploy task forces abroad" },
+  { id: "global", label: "Global Reach", desc: "Sustained global theater presence" },
+];
 
 interface Branch {
   id: string;
@@ -36,10 +67,14 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   averageReadiness,
   averageTechnology,
   averageMorale,
-  branches,
 }: ReadinessOverviewCardProps) {
+  const [defcon, setDefcon] = React.useState<number>(4);
+  const [projection, setProjection] = React.useState<string>("regional");
+
+  const activeDefcon = DEFCON_LEVELS.find((d) => d.level === defcon) || DEFCON_LEVELS[1]!;
+
   return (
-    <Card className="glass-hierarchy-child">
+    <Card className="facet-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-red-600" />
@@ -160,34 +195,76 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
           </div>
         </div>
 
-        {/* Strategic Defense Posture Summary */}
-        <div className="mt-4 grid grid-cols-2 gap-2.5 border-t border-white/10 pt-3">
-          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
-            <div>
-              <p className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
-                Defense Alert Level
-              </p>
-              <p className="mt-0.5 text-xs font-bold tracking-tight text-emerald-400">
-                DEFCON 4 — NOMINAL
-              </p>
+        {/* Strategic Defense Posture & DEFCON Selectors */}
+        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t border-white/10 pt-3 sm:grid-cols-2">
+          {/* DEFCON Level Selector */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                DEFCON Alert Status
+              </span>
+              <span className={cn("rounded-md border px-1.5 py-0.5 font-mono text-xs font-bold", activeDefcon.cls)}>
+                {activeDefcon.readinessMod} · {activeDefcon.costMod}
+              </span>
             </div>
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-400">
-              🛡️
-            </span>
+            <div className="grid grid-cols-5 gap-1">
+              {DEFCON_LEVELS.map((d) => (
+                <button
+                  key={d.level}
+                  type="button"
+                  data-cuelume-press="soft"
+                  onClick={() => {
+                    soundEffects.press();
+                    setDefcon(d.level);
+                  }}
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center justify-center rounded-lg border py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] text-center select-none active:scale-95",
+                    defcon === d.level
+                      ? `${d.cls} font-bold shadow-xs scale-[1.02]`
+                      : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                  )}
+                  title={`${d.label}: ${d.status} (${d.costMod}, ${d.readinessMod})`}
+                >
+                  <span className="text-xs font-mono font-bold leading-tight">{d.level}</span>
+                  <span className="text-xs font-medium leading-none opacity-80">{d.status}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 text-xs">
-            <div>
-              <p className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
-                Force Projection
-              </p>
-              <p className="mt-0.5 text-xs font-bold tracking-tight text-cyan-400">
-                REGIONAL DETERRENCE
-              </p>
+          {/* Force Projection Goal */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-xs">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                Force Projection Goal
+              </span>
+              <span className="text-cyan-400 font-mono text-xs font-bold">
+                {PROJECTION_GOALS.find((p) => p.id === projection)?.label}
+              </span>
             </div>
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-cyan-500/30 bg-cyan-500/10 text-[10px] font-bold text-cyan-400">
-              🎯
-            </span>
+            <div className="grid grid-cols-2 gap-1">
+              {PROJECTION_GOALS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  data-cuelume-press="soft"
+                  onClick={() => {
+                    soundEffects.press();
+                    setProjection(p.id);
+                  }}
+                  className={cn(
+                    "flex cursor-pointer flex-col items-start rounded-lg border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
+                    projection === p.id
+                      ? "border-cyan-500/40 bg-cyan-500/20 text-cyan-300 font-bold shadow-xs"
+                      : "border-white/5 bg-white/[0.02] text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                  )}
+                  title={p.desc}
+                >
+                  <span className="text-xs font-semibold leading-tight">{p.label}</span>
+                  <span className="text-xs opacity-70 truncate max-w-full">{p.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </CardContent>

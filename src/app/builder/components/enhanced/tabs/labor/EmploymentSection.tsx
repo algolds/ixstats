@@ -2,14 +2,21 @@
 
 import React from "react";
 import { SliderWithDirectInput } from "../../../../primitives/enhanced";
-import { TrendingDown, Clock, Briefcase } from "lucide-react";
+import { StatDown as TrendingDown, Clock, Suitcase as Briefcase } from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import type { LaborBounds } from "../utils/laborCalculations";
 
 interface EmploymentSectionProps {
   laborMarket: LaborConfiguration;
-  onChange: (field: keyof LaborConfiguration, value: any) => void;
-  onNestedChange: (parentField: keyof LaborConfiguration, field: string, value: any) => void;
+  onChange: <K extends keyof LaborConfiguration>(
+    field: K,
+    value: LaborConfiguration[K]
+  ) => void;
+  onNestedChange: (
+    parentField: keyof LaborConfiguration,
+    field: string,
+    value: number | string | boolean
+  ) => void;
   showAdvanced: boolean;
   componentBounds?: LaborBounds;
 }

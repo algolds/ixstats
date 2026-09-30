@@ -11,24 +11,24 @@
 
 import { useState } from "react";
 import {
-  Thermometer,
-  Mountain,
-  TrendingUp,
-  TrendingDown,
+  Dashboard as Thermometer,
+  ModernTv as Mountain,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
   Minus,
-  Wheat,
-  Anchor,
-  TreePine,
-  Gem,
-  Fuel,
+  Farm as Wheat,
+  SeaWaves as Anchor,
+  Tree as TreePine,
+  Crown as Gem,
+  Gas as Fuel,
   Fish,
   Droplet,
   MapPin,
-  AlertTriangle,
-  Loader2,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+  WarningTriangle as AlertTriangle,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ELEVATION_ZONES } from "~/lib/maps/geo-analytics";
 
@@ -90,7 +90,7 @@ function ModifierBadge({ label, value }: { label: string; value: number }) {
 
   return (
     <div className={`flex items-center gap-1.5 rounded-md ${bg} px-2 py-1.5`}>
-      <span className="text-muted-foreground text-[10px] font-medium">{label}</span>
+      <span className="text-muted-foreground text-xs font-medium">{label}</span>
       <span className={`text-xs font-semibold ${color}`}>x{value.toFixed(2)}</span>
       <Icon className={`h-3 w-3 ${color}`} />
     </div>
@@ -109,7 +109,7 @@ function RiskBadge({ type, score }: { type: string; score: number }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium ${color}`}
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${color}`}
     >
       {label}: {level}
     </span>
@@ -167,7 +167,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Key Stats ── */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
             <Wheat className="h-3 w-3" />
             Arable Land
           </div>
@@ -185,7 +185,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
 
         <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
             <Anchor className="h-3 w-3" />
             {profile.derived.isIsland
               ? "Island"
@@ -203,7 +203,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
 
         <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
             <Thermometer className="h-3 w-3" />
             Mean Temp
           </div>
@@ -213,7 +213,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         </div>
 
         <div className="bg-muted rounded-lg px-3 py-2">
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
             <Mountain className="h-3 w-3" />
             Mean Elev
           </div>
@@ -226,7 +226,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Neighbors ── */}
       {profile.neighbors && profile.neighbors.length > 0 && (
         <div>
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             <MapPin className="mr-1 inline h-3 w-3" />
             Borders ({profile.neighbors.length})
           </span>
@@ -235,7 +235,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               (n: { id: string; name: string; slug: string | null; sharedBorderKm: number }) => (
                 <span
                   key={n.id}
-                  className="bg-muted text-foreground/80 hover:text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors"
+                  className="bg-muted text-foreground/80 hover:text-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
                 >
                   {n.name}
                   {n.sharedBorderKm > 0 && (
@@ -257,11 +257,11 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           return (
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Climate
                 </span>
                 {climateZones.length > 1 && (
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     {climateZones.length} zones
                   </span>
                 )}
@@ -290,7 +290,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               {dominant && !climateExpanded && (
                 <button
                   onClick={() => setClimateExpanded(true)}
-                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-[10px] transition-colors"
+                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-xs transition-colors"
                 >
                   <span
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
@@ -310,7 +310,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               {climateExpanded && (
                 <div className="mt-1.5 space-y-0.5">
                   {climateZones.map((z, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                    <div key={i} className="flex items-center gap-2 text-xs">
                       <span
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                         style={{ backgroundColor: getClimateColor(z.type) }}
@@ -323,7 +323,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                   ))}
                   <button
                     onClick={() => setClimateExpanded(false)}
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[10px] transition-colors"
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
                   >
                     <ChevronDown className="h-3 w-3" /> Collapse
                   </button>
@@ -341,11 +341,11 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           return (
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   Elevation
                 </span>
                 {elevationZones.length > 1 && (
-                  <span className="text-muted-foreground text-[10px]">
+                  <span className="text-muted-foreground text-xs">
                     {elevationZones.length} zones
                   </span>
                 )}
@@ -374,7 +374,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               {dominant && !elevationExpanded && (
                 <button
                   onClick={() => setElevationExpanded(true)}
-                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-[10px] transition-colors"
+                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-xs transition-colors"
                 >
                   <span
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
@@ -397,7 +397,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               {elevationExpanded && (
                 <div className="mt-1.5 space-y-0.5">
                   {elevationZones.map((z, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                    <div key={i} className="flex items-center gap-2 text-xs">
                       <span
                         className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
                         style={{ backgroundColor: getElevationColor(z.name) }}
@@ -413,7 +413,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                   ))}
                   <button
                     onClick={() => setElevationExpanded(false)}
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[10px] transition-colors"
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
                   >
                     <ChevronDown className="h-3 w-3" /> Collapse
                   </button>
@@ -424,7 +424,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         })()}
 
       {/* ── Water ── */}
-      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px]">
+      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
         <span className="text-muted-foreground">
           {profile.hydro.riverCount} rivers · {profile.hydro.lakeCount} lakes ·{" "}
           {profile.climate.estAnnualPrecipMm} mm/yr precip
@@ -433,7 +433,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
       {/* ── Economic Modifiers ── */}
       <div>
-        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
           Geographic Modifiers
         </span>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -446,14 +446,14 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Resources ── */}
       {resources && resources.length > 0 && (
         <div>
-          <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Resources ({resources.length})
           </span>
           <div className="mt-1.5 space-y-1">
             {resources.map((r) => {
               const Icon = RESOURCE_ICONS[r.resourceType] ?? Gem;
               return (
-                <div key={r.id} className="flex items-center gap-2 text-[10px]">
+                <div key={r.id} className="flex items-center gap-2 text-xs">
                   <Icon className="text-muted-foreground h-3 w-3 shrink-0" />
                   <span className="text-foreground/80 flex-1 truncate">{r.name}</span>
                   <div className="flex items-center gap-1.5">
@@ -482,7 +482,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Crisis Risk ── */}
       {topRisks.length > 0 && (
         <div>
-          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
             <AlertTriangle className="h-3 w-3" />
             Risk Profile
           </div>
@@ -495,7 +495,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       )}
 
       {/* ── Dimensions (compact) ── */}
-      <div className="text-muted-foreground border-border/30 flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2 text-[10px]">
+      <div className="text-muted-foreground border-border/30 flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2 text-xs">
         <span>{profile.area.areaKm2.toLocaleString()} km²</span>
         <span>
           {profile.area.nsSpanKm} x {profile.area.ewSpanKm} km

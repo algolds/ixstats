@@ -1,16 +1,18 @@
+"use client";
 // src/app/admin/wiki/components/LorewardWeightsCard.tsx
 // Scoring parameter weights tuning & simulation preview.
 
-"use client";
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { SlidersHorizontal, Save, Loader2 } from "lucide-react";
+import {
+  ControlSlider as SlidersHorizontal,
+  FloppyDisk as Save,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export function LorewardWeightsCard() {
@@ -127,24 +129,24 @@ export function LorewardWeightsCard() {
   return (
     <div className="space-y-6">
       {/* Scoring Parameter Weights */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <SlidersHorizontal className="h-5 w-5 text-blue-500" />
-            Scoring Parameters Tuning
-          </CardTitle>
-          <CardDescription>
+      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 border-b pb-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-blue-400" />
+            <h3 className="text-foreground text-xs font-bold">Scoring Parameters Tuning</h3>
+          </div>
+          <p className="text-muted-foreground mt-0.5 text-xs">
             Tune the daily Loreward scoring engine weights in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
+        <div>
           {tempWeights ? (
-            <form onSubmit={handleSaveWeights} className="space-y-5">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground font-medium">Bytes Added Weight</span>
-                    <span className="font-mono font-semibold text-blue-500">
+            <form onSubmit={handleSaveWeights} className="space-y-4">
+              <div className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">Bytes Added Weight</span>
+                    <span className="font-mono font-bold text-blue-400">
                       {tempWeights.lorewardWeight_bytesAdded}
                     </span>
                   </div>
@@ -157,14 +159,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_bytesAdded", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground font-medium">Prose Ratio Weight</span>
-                    <span className="font-mono font-semibold text-blue-500">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">Prose Ratio Weight</span>
+                    <span className="font-mono font-bold text-blue-400">
                       {tempWeights.lorewardWeight_proseRatio}
                     </span>
                   </div>
@@ -177,14 +179,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_proseRatio", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground font-medium">Edit Depth Weight</span>
-                    <span className="font-mono font-semibold text-blue-500">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">Edit Depth Weight</span>
+                    <span className="font-mono font-bold text-blue-400">
                       {tempWeights.lorewardWeight_editDepth}
                     </span>
                   </div>
@@ -197,16 +199,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_editDepth", parseFloat(e.target.value))
                     }
-                    className="w-full accent-blue-500"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground font-medium">
-                      Collaboration Bonus Weight
-                    </span>
-                    <span className="font-mono font-semibold text-blue-500">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">Collaboration Bonus Weight</span>
+                    <span className="font-mono font-bold text-blue-400">
                       {tempWeights.lorewardWeight_collaborationBonus}
                     </span>
                   </div>
@@ -222,14 +222,14 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="w-full accent-blue-500"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground font-medium">New Article Bonus Weight</span>
-                    <span className="font-mono font-semibold text-blue-500">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-foreground">New Article Bonus Weight</span>
+                    <span className="font-mono font-bold text-blue-400">
                       {tempWeights.lorewardWeight_newArticleBonus}
                     </span>
                   </div>
@@ -245,7 +245,7 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="w-full accent-blue-500"
+                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
                   />
                 </div>
               </div>
@@ -253,51 +253,54 @@ export function LorewardWeightsCard() {
               <Button
                 type="submit"
                 disabled={saveWeightsMutation.isPending}
-                className="w-full gap-2"
+                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
               >
-                {saveWeightsMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                <Save className="h-4 w-4" />
+                {saveWeightsMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                <Save className="h-3.5 w-3.5" />
                 Save Weight Configuration
               </Button>
             </form>
           ) : (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="h-8 w-full rounded-lg" />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Weight Tuning Preview Console */}
-      <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <SlidersHorizontal className="h-5 w-5 text-indigo-500" />
-            Weight Tuning Preview
-          </CardTitle>
-          <CardDescription>Preview candidate ranks under simulated weights</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <div className="border-border/20 border-b pb-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
+            <h3 className="text-foreground text-xs font-bold">Weight Tuning Preview</h3>
+          </div>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Preview candidate ranks under simulated weights
+          </p>
+        </div>
+        <div className="space-y-4">
           <div className="flex items-end gap-2">
             <div className="flex-1 space-y-1.5">
-              <label className="text-foreground text-sm font-medium">Scoring Date</label>
+              <label className="text-foreground text-xs font-medium">Scoring Date</label>
               <Input
                 type="date"
                 value={previewDate}
                 onChange={(e) => setPreviewDate(e.target.value)}
+                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
               />
             </div>
             <Button
               onClick={handleRunPreview}
               disabled={isPreviewLoading || !tempWeights}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {isPreviewLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <SlidersHorizontal className="h-4 w-4" />
+                <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
               )}
               Preview Ranks
             </Button>
@@ -305,42 +308,40 @@ export function LorewardWeightsCard() {
 
           {isPreviewLoading ? (
             <div className="space-y-2 py-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="h-8 w-full rounded-lg" />
             </div>
           ) : rankDeltas.length > 0 ? (
-            <div className="border-border/30 max-h-80 overflow-y-auto rounded-lg border text-xs">
+            <div className="border-border/30 max-h-80 overflow-y-auto rounded-xl border text-xs">
               <table className="w-full">
-                <thead className="bg-muted/80 sticky top-0 font-medium backdrop-blur-sm">
-                  <tr className="border-border/30 border-b">
-                    <th className="text-muted-foreground w-16 px-3 py-2 text-left">Rank</th>
-                    <th className="text-muted-foreground px-3 py-2 text-left">Candidate</th>
-                    <th className="text-muted-foreground px-3 py-2 text-right">Curr Score</th>
-                    <th className="text-muted-foreground px-3 py-2 text-right font-semibold">
-                      Sim Score
-                    </th>
+                <thead className="bg-muted/30 border-border/30 text-muted-foreground sticky top-0 border-b font-medium backdrop-blur-md">
+                  <tr>
+                    <th className="w-16 px-3 py-2 text-left">Rank</th>
+                    <th className="px-3 py-2 text-left">Candidate</th>
+                    <th className="px-3 py-2 text-right">Curr Score</th>
+                    <th className="px-3 py-2 text-right font-semibold">Sim Score</th>
                   </tr>
                 </thead>
-                <tbody className="divide-border/20 divide-y">
+                <tbody className="divide-border/15 divide-y">
                   {rankDeltas.map((item: any, idx: number) => {
                     const delta = item.rankDelta;
                     return (
-                      <tr key={idx} className="hover:bg-muted/30">
+                      <tr key={idx} className="hover:bg-foreground/[0.02]">
                         <td className="px-3 py-2 font-mono">
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold">{item.simulatedRank}</span>
                             {delta > 0 && (
-                              <span className="font-bold text-emerald-500">▲{delta}</span>
+                              <span className="font-bold text-emerald-400">▲{delta}</span>
                             )}
                             {delta < 0 && (
-                              <span className="font-bold text-red-500">▼{Math.abs(delta)}</span>
+                              <span className="font-bold text-red-400">▼{Math.abs(delta)}</span>
                             )}
                           </div>
                         </td>
                         <td className="px-3 py-2">
                           <span className="text-foreground font-semibold">{item.user}</span>
-                          <span className="text-muted-foreground block text-[10px]">
+                          <span className="text-muted-foreground block text-xs">
                             {item.page}
                           </span>
                         </td>
@@ -352,8 +353,8 @@ export function LorewardWeightsCard() {
                           {item.scoreDelta !== 0 && (
                             <span
                               className={cn(
-                                "block text-[10px] font-medium",
-                                item.scoreDelta > 0 ? "text-emerald-500" : "text-red-500"
+                                "block text-xs font-medium",
+                                item.scoreDelta > 0 ? "text-emerald-400" : "text-red-400"
                               )}
                             >
                               {item.scoreDelta > 0 ? "+" : ""}
@@ -372,8 +373,8 @@ export function LorewardWeightsCard() {
               No edits or candidates qualified on {previewDate}.
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

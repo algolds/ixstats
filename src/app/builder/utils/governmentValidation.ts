@@ -102,10 +102,22 @@ export function validateGovernmentSpendingSource(
   };
 }
 
+export interface SpendingCategoryData {
+  category: string;
+  description?: string;
+  amount?: number;
+  percent?: number;
+  percentage?: number;
+  icon?: string;
+  color?: string;
+}
+
 /**
  * Check if spending categories are using default/template data
  */
-export function isUsingDefaultSpendingData(spendingCategories: any[]): boolean {
+export function isUsingDefaultSpendingData(
+  spendingCategories: SpendingCategoryData[]
+): boolean {
   if (!spendingCategories || spendingCategories.length === 0) {
     return false;
   }
@@ -148,27 +160,3 @@ export function getGovernmentBuilderUrl(): string {
   return "/builder?section=government";
 }
 
-/**
- * Create a standardized error component for missing government builder
- */
-export function createGovernmentBuilderErrorComponent(
-  validation: GovernmentValidationResult,
-  onNavigateToBuilder?: () => void
-) {
-  const handleNavigateToBuilder = () => {
-    if (onNavigateToBuilder) {
-      onNavigateToBuilder();
-    } else {
-      window.location.href = getGovernmentBuilderUrl();
-    }
-  };
-
-  return {
-    errorMessage: validation.errorMessage,
-    warningMessage: validation.warningMessage,
-    onNavigateToBuilder: handleNavigateToBuilder,
-    hasGovernmentBuilder: validation.hasGovernmentBuilder,
-    hasDepartments: validation.hasDepartments,
-    hasBudgetAllocations: validation.hasBudgetAllocations,
-  };
-}

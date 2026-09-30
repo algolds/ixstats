@@ -1,25 +1,29 @@
 import { useRef, useEffect, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Position } from "geojson";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import {
   getGeoJSONSource,
   updateSnapGuide,
-  haversineDistance,
   getFeatureCoords,
   EMPTY_FC,
 } from "../utils/map-helpers";
+import {
+  HYSTERESIS_PX,
+  exceedsHysteresis,
+  detectAxis,
+  axisLock,
+  type DragAxis,
+  type ScreenPoint,
+} from "./drag-utils";
 
 interface UseRouteEditProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
   mode: EditorMode;
   routeWaypoints?: [number, number][];
-  editingRouteId: string | null;
   editingRouteVertices?: [number, number][];
   onRouteVerticesUpdate?: (vertices: [number, number][]) => void;
-  onRouteEditCommit?: () => void;
-  onRouteEditCancel?: () => void;
 }
 
 export function useRouteEdit({
@@ -27,25 +31,31 @@ export function useRouteEdit({
   isLoaded,
   mode,
   routeWaypoints,
-  editingRouteId,
   editingRouteVertices,
   onRouteVerticesUpdate,
-  onRouteEditCommit,
-  onRouteEditCancel,
 }: UseRouteEditProps) {
   const routeDraggingRef = useRef<number | null>(null);
   const lastMousePointRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartPosRef = useRef<ScreenPoint | null>(null);
+  const dragStartCoordsRef = useRef<[number, number] | null>(null);
+  const dragInitialVerticesRef = useRef<[number, number][] | null>(null);
+  const isExceededHysteresisRef = useRef<boolean>(false);
+  const currentAxisRef = useRef<DragAxis | null>(null);
+  const liveDraggingVerticesRef = useRef<[number, number][] | null>(null);
 
   // Keep latest refs of parameters to avoid stale closure in event callbacks
   const routeWaypointsRef = useRef(routeWaypoints);
+  // oxlint-disable-next-line
   routeWaypointsRef.current = routeWaypoints;
   const editingRouteVerticesRef = useRef(editingRouteVertices);
+  // oxlint-disable-next-line
   editingRouteVerticesRef.current = editingRouteVertices;
   const onRouteVerticesUpdateRef = useRef(onRouteVerticesUpdate);
+  // oxlint-disable-next-line
   onRouteVerticesUpdateRef.current = onRouteVerticesUpdate;
 
-  const updateRouteEditVis = useCallback(() => {
-    const vertices = editingRouteVerticesRef.current;
+  const updateRouteEditVis = useCallback((overrideVertices?: [number, number][]) => {
+    const vertices = overrideVertices ?? editingRouteVerticesRef.current;
     if (!map || !vertices || vertices.length === 0) return;
 
     const lineFc = {
@@ -73,7 +83,7 @@ export function useRouteEdit({
     };
     getGeoJSONSource(map, "editor-route-edit-vertices")?.setData(vertFc);
 
-    const midFeatures: any[] = [];
+    const midFeatures: GeoJSON.Feature[] = [];
     for (let i = 0; i < vertices.length - 1; i++) {
       const a = vertices[i]!;
       const b = vertices[i + 1]!;
@@ -101,6 +111,7 @@ export function useRouteEdit({
 
   useEffect(() => {
     updateRouteEditVis();
+    // oxlint-disable-next-line
   }, [editingRouteVertices, updateRouteEditVis]);
 
   useEffect(() => {
@@ -125,7 +136,7 @@ export function useRouteEdit({
 
     const canvas = map.getCanvas();
 
-    const onRouteVertexMouseDown = (e: any) => {
+    const onRouteVertexMouseDown = (e: MapLayerMouseEvent) => {
       if (mode !== "edit-route") return;
       e.preventDefault();
       const f = e.features?.[0];
@@ -133,11 +144,20 @@ export function useRouteEdit({
 
       const idx = f.properties.vertexIndex as number;
       routeDraggingRef.current = idx;
+      dragStartPosRef.current = { x: e.point.x, y: e.point.y };
+      const currentVertices = editingRouteVerticesRef.current;
+      if (currentVertices && currentVertices[idx]) {
+        dragStartCoordsRef.current = currentVertices[idx]!;
+        dragInitialVerticesRef.current = [...currentVertices];
+        liveDraggingVerticesRef.current = [...currentVertices];
+      }
+      isExceededHysteresisRef.current = false;
+      currentAxisRef.current = null;
       map.dragPan.disable();
       map.getCanvas().style.cursor = "grabbing";
     };
 
-    const onRouteMidpointClick = (e: any) => {
+    const onRouteMidpointClick = (e: MapLayerMouseEvent) => {
       if (mode !== "edit-route") return;
       e.preventDefault();
       const f = e.features?.[0];
@@ -154,13 +174,39 @@ export function useRouteEdit({
       }
     };
 
-    const onRouteMouseMove = (e: any) => {
+    const onRouteMouseMove = (e: MapLayerMouseEvent) => {
       lastMousePointRef.current = { x: e.point.x, y: e.point.y };
 
       if (mode !== "edit-route" || routeDraggingRef.current === null) return;
       const idx = routeDraggingRef.current;
+
+      // 4px Hysteresis dead zone prevents accidental single-pixel jitter
+      if (!isExceededHysteresisRef.current) {
+        if (
+          dragStartPosRef.current &&
+          !exceedsHysteresis(dragStartPosRef.current, { x: e.point.x, y: e.point.y }, HYSTERESIS_PX)
+        ) {
+          return;
+        }
+        isExceededHysteresisRef.current = true;
+      }
+
       const lngLat = e.lngLat;
       let target: [number, number] = [lngLat.lng, lngLat.lat];
+
+      // Shift Axis Locking (horizontal / vertical / 45° diagonal)
+      const isShift = Boolean(e.originalEvent && e.originalEvent.shiftKey);
+      if (isShift && dragStartCoordsRef.current && dragStartPosRef.current) {
+        if (!currentAxisRef.current) {
+          currentAxisRef.current = detectAxis(
+            e.point.x - dragStartPosRef.current.x,
+            e.point.y - dragStartPosRef.current.y
+          );
+        }
+        target = axisLock(dragStartCoordsRef.current, target, currentAxisRef.current);
+      } else {
+        currentAxisRef.current = null;
+      }
 
       const snapLayers = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
       const bbox: [[number, number], [number, number]] = [
@@ -179,23 +225,59 @@ export function useRouteEdit({
       const didSnap = target[0] !== origTarget[0] || target[1] !== origTarget[1];
       updateSnapGuide(map, didSnap ? origTarget : null, didSnap ? target : null);
 
-      const vertices = editingRouteVerticesRef.current;
-      if (onRouteVerticesUpdateRef.current && vertices) {
-        const nextVertices = [...vertices];
+      const baseVertices = liveDraggingVerticesRef.current ?? editingRouteVerticesRef.current;
+      if (baseVertices) {
+        const nextVertices = [...baseVertices];
         nextVertices[idx] = target;
-        onRouteVerticesUpdateRef.current(nextVertices);
+        liveDraggingVerticesRef.current = nextVertices;
+        // Directly update map visual sources at 60fps without triggering React tree re-renders
+        updateRouteEditVis(nextVertices);
       }
     };
 
     const onRouteMouseUp = () => {
       if (routeDraggingRef.current === null) return;
+      if (
+        liveDraggingVerticesRef.current &&
+        onRouteVerticesUpdateRef.current &&
+        isExceededHysteresisRef.current
+      ) {
+        onRouteVerticesUpdateRef.current(liveDraggingVerticesRef.current);
+      }
       routeDraggingRef.current = null;
+      dragStartPosRef.current = null;
+      dragStartCoordsRef.current = null;
+      dragInitialVerticesRef.current = null;
+      liveDraggingVerticesRef.current = null;
+      isExceededHysteresisRef.current = false;
+      currentAxisRef.current = null;
       map.dragPan.enable();
       map.getCanvas().style.cursor = "";
       updateSnapGuide(map, null, null);
     };
 
-    const onRouteContextMenu = (e: any) => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && routeDraggingRef.current !== null) {
+        if (dragInitialVerticesRef.current) {
+          updateRouteEditVis(dragInitialVerticesRef.current);
+          if (onRouteVerticesUpdateRef.current) {
+            onRouteVerticesUpdateRef.current(dragInitialVerticesRef.current);
+          }
+        }
+        routeDraggingRef.current = null;
+        dragStartPosRef.current = null;
+        dragStartCoordsRef.current = null;
+        dragInitialVerticesRef.current = null;
+        liveDraggingVerticesRef.current = null;
+        isExceededHysteresisRef.current = false;
+        currentAxisRef.current = null;
+        map.dragPan.enable();
+        map.getCanvas().style.cursor = "";
+        updateSnapGuide(map, null, null);
+      }
+    };
+
+    const onRouteContextMenu = (e: MapLayerMouseEvent) => {
       if (mode !== "edit-route") return;
       const bbox: [[number, number], [number, number]] = [
         [e.point.x - 10, e.point.y - 10],
@@ -384,7 +466,8 @@ export function useRouteEdit({
     map.on("mouseenter", "editor-route-edit-vertices-layer", onRouteVertexEnter);
     map.on("mouseleave", "editor-route-edit-vertices-layer", onRouteVertexLeave);
     map.on("mouseenter", "editor-route-edit-midpoints-layer", onRouteMidpointEnter);
-    map.on("mouseleave", "editor-route-edit-midpoints-layer", onRouteMidpointLeave);
+    window.addEventListener("mouseup", onRouteMouseUp);
+    window.addEventListener("keydown", onKeyDown);
 
     canvas.addEventListener("touchstart", onRouteTouchStart, { passive: false });
     canvas.addEventListener("touchmove", onRouteTouchMove, { passive: false });
@@ -392,6 +475,8 @@ export function useRouteEdit({
 
     return () => {
       if (routeLongPressTimer) clearTimeout(routeLongPressTimer);
+      window.removeEventListener("mouseup", onRouteMouseUp);
+      window.removeEventListener("keydown", onKeyDown);
       map.off("mousedown", "editor-route-edit-vertices-layer", onRouteVertexMouseDown);
       map.off("click", "editor-route-edit-midpoints-layer", onRouteMidpointClick);
       map.off("mousemove", onRouteMouseMove);

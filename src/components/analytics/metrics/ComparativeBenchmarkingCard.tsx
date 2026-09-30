@@ -8,7 +8,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BarChart3 } from "lucide-react";
+import { StatsReport as BarChart3 } from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import type { ComparativeBenchmark } from "~/lib/utils";
 
@@ -19,7 +19,7 @@ interface ComparativeBenchmarkingCardProps {
 export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCardProps>(
   ({ data }) => {
     return (
-      <Card className="glass-hierarchy-child">
+      <Card className="facet-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-indigo-600" />
@@ -38,7 +38,7 @@ export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCar
                 <div className="flex items-center gap-2">
                   <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
                       initial={{ width: 0 }}
                       animate={{ width: `${item.value}%` }}
                       transition={{ delay: index * 0.1, duration: 0.5 }}

@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { withBasePath } from "~/lib/base-path";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
 export function injectPlaceholderElements(html: string): string {
   let processed = html;
@@ -86,7 +87,7 @@ export function injectPlaceholderElements(html: string): string {
 
   // 6. Process raw wikitext templates
   processed = processed.replace(
-    /\{\{((?:MyCountry|CountryData|BusinessData):[^\}\n]+?)\}\}/gi,
+    /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi,
     (_match, key) => {
       const safeKey = key.replace(/"/g, "&quot;");
       return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
@@ -102,17 +103,8 @@ export function calculateDistanceAndBearing(
   lat2: number,
   lng2: number
 ): { distanceKm: number; bearing: string } {
-  const R = 6371; // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distanceKm = Math.round(R * c);
+  const distanceKm = Math.round(distanceKmLatLng(lat1, lng1, lat2, lng2));
 
   const y = Math.sin(dLng) * Math.cos((lat2 * Math.PI) / 180);
   const x =
@@ -164,10 +156,10 @@ export function CoordsPill({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-all select-none hover:border-white/20 hover:bg-white/10">
-          <MapPin size={11} className="animate-pulse text-blue-400" />
+        <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:border-white/20 hover:bg-white/10">
+          <MapPin className="h-3 w-3 text-blue-400" />
           <span>{label}</span>
-          <span className="font-mono text-[10px] opacity-65">
+          <span className="text-xs tabular-nums opacity-65">
             ({lat.toFixed(2)}, {lng.toFixed(2)})
           </span>
         </span>
@@ -175,17 +167,17 @@ export function CoordsPill({
       <PopoverContent className="z-[10001] flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-zinc-200">{label}</span>
-          <span className="font-mono text-[10px] text-zinc-400">Zoom {zoom}</span>
+          <span className="text-xs text-zinc-400 tabular-nums">Zoom {zoom}</span>
         </div>
 
         <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
 
-        <div className="flex flex-col gap-0.5 text-[10px] font-medium text-zinc-400">
+        <div className="flex flex-col gap-0.5 text-xs font-medium text-zinc-400">
           <div>
-            Latitude: <span className="font-mono text-zinc-200">{lat.toFixed(4)}</span>
+            Latitude: <span className="text-zinc-200 tabular-nums">{lat.toFixed(4)}</span>
           </div>
           <div>
-            Longitude: <span className="font-mono text-zinc-200">{lng.toFixed(4)}</span>
+            Longitude: <span className="text-zinc-200 tabular-nums">{lng.toFixed(4)}</span>
           </div>
           {calc && (
             <div className="mt-1 font-semibold text-blue-400">
@@ -225,7 +217,7 @@ export function DynamicStatSpan({
   data?: DynamicStatData | null;
 }) {
   if (!data) {
-    return <span className="font-mono text-xs text-zinc-500">Loading...</span>;
+    return <span className="text-xs text-zinc-500">Loading...</span>;
   }
 
   const metadata = data.metadata;
@@ -233,12 +225,12 @@ export function DynamicStatSpan({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-stat-span cursor-pointer border-b border-dotted border-white/40 font-semibold text-zinc-200 transition-all select-none hover:border-white/90 hover:text-white">
+        <span className="wikios-stat-span cursor-pointer border-b border-dotted border-white/40 font-semibold text-zinc-200 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:border-white/90 hover:text-white">
           {data.value}
         </span>
       </PopoverTrigger>
       <PopoverContent className="z-[10001] flex w-60 flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl">
-        <div className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
           Simulation Metrics
         </div>
 
@@ -246,13 +238,13 @@ export function DynamicStatSpan({
           <span className="text-xs font-medium text-zinc-400">{metadata?.label || "Value"}</span>
           <span className="mt-0.5 text-xl leading-tight font-bold text-white">{data.value}</span>
           {metadata?.comparisonRank && (
-            <span className="mt-1 text-[10px] font-semibold text-blue-400">
+            <span className="mt-1 text-xs font-semibold text-blue-400">
               {metadata.comparisonRank}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-[10px] text-zinc-400">
+        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-xs text-zinc-400">
           {metadata?.countryName && (
             <div className="flex justify-between">
               <span>Country</span>
@@ -268,7 +260,7 @@ export function DynamicStatSpan({
           {metadata?.lastCalculated && (
             <div className="flex justify-between">
               <span>Updated</span>
-              <span className="font-mono text-zinc-200">
+              <span className="text-zinc-200 tabular-nums">
                 {new Date(metadata.lastCalculated).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -281,7 +273,7 @@ export function DynamicStatSpan({
         {metadata?.detailsUrl && (
           <Link
             href={withBasePath(metadata.detailsUrl)}
-            className="border-t border-white/5 pt-2 text-center text-[10px] font-bold text-blue-400 transition-colors hover:text-blue-300"
+            className="border-t border-white/5 pt-2 text-center text-xs font-bold text-blue-400 transition-colors hover:text-blue-300"
           >
             Analyze Dashboard &rarr;
           </Link>

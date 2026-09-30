@@ -2,33 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
 import {
-  Brain,
   Shield,
   Crown,
   Crown as CrownIcon,
-  Users,
-  Vote,
+  Group as Users,
+  CheckSquare as Vote,
   Lock,
-  Edit2,
-  TrendingUp,
-  LayoutDashboard,
-  ShieldCheck,
-  Map,
-} from "lucide-react";
+  EditPencil as Edit2,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { usePremium } from "~/hooks/usePremium";
 import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 
-/** Renders the standard Lucide icon for a section */
+/** Renders the standard Iconoir icon for a section */
 function NavIcon({
   fallback: Fallback,
   className,
 }: {
   id?: string;
-  fallback: LucideIcon;
+  fallback: React.ComponentType<{ className?: string }>;
   className?: string;
   size?: number;
 }) {
@@ -52,42 +47,47 @@ export const NAV_ITEMS: {
   href: string;
   icon: typeof Crown;
   title: string;
-  gradient: string;
-  activeGlow: string;
+  activeBg: string;
 }[] = [
   {
     id: "economy",
     href: "/mycountry/economy",
     icon: TrendingUp,
     title: "Economy",
-    gradient: "from-emerald-500 to-teal-600",
-    activeGlow: "shadow-emerald-500/20",
+    activeBg: "bg-emerald-500",
   },
   {
     id: "diplomacy",
     href: "/mycountry/diplomacy",
     icon: Users,
     title: "Diplomacy",
-    gradient: "from-cyan-500 to-cyan-600",
-    activeGlow: "shadow-cyan-500/20",
+    activeBg: "bg-cyan-500",
   },
   {
     id: "defense",
     href: "/mycountry/defense",
     icon: Shield,
     title: "Defense",
-    gradient: "from-red-500 to-red-600",
-    activeGlow: "shadow-red-500/20",
+    activeBg: "bg-red-500",
   },
   {
     id: "politics",
     href: "/mycountry/politics",
     icon: Vote,
     title: "Politics",
-    gradient: "from-indigo-500 to-indigo-600",
-    activeGlow: "shadow-indigo-500/20",
+    activeBg: "bg-indigo-500",
   },
 ];
+
+const SECTION_INDICATOR: Record<string, string> = {
+  overview: "bg-amber-300",
+  executive: "bg-amber-300",
+  diplomacy: "bg-cyan-300",
+  defense: "bg-red-300",
+  politics: "bg-indigo-300",
+  economy: "bg-emerald-300",
+  intelligence: "bg-blue-300",
+};
 
 export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   const pathname = stripBasePath(rawPathname);
@@ -95,6 +95,7 @@ export function getSectionFromPathname(rawPathname: string): MyCountrySection {
   if (pathname.startsWith("/mycountry/map-editor")) return "map-editor";
   if (pathname.startsWith("/mycountry/executive")) return "executive";
   if (pathname.startsWith("/mycountry/economy")) return "economy";
+  if (pathname.startsWith("/mycountry/intelligence")) return "defense";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
   }
@@ -143,10 +144,10 @@ export function MyCountrySidebarNav({
 
     const mobileLogoContent = (
       <>
-        <CrownIcon size={14} className="shrink-0 text-amber-500" />
+        <CrownIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="whitespace-nowrap">Overview</span>
         {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[9px] font-bold tracking-wider text-amber-500/90 uppercase">
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-xs font-bold tracking-wider text-amber-500/90 uppercase">
             Premium
           </span>
         )}
@@ -174,15 +175,15 @@ export function MyCountrySidebarNav({
     const mobileEditButton = (
       <Link
         href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded p-1 transition-all duration-150 hover:text-amber-500 active:scale-95"
+        className="text-muted-foreground/60 rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:text-amber-500 active:scale-95"
         title="Edit Country Profile"
       >
-        <Edit2 size={12} className="shrink-0" />
+        <Edit2 className="h-3 w-3 shrink-0" />
       </Link>
     );
 
     return (
-      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
+      <nav className="facet-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {mobileLogo}
           {mobileEditButton}
@@ -193,9 +194,9 @@ export function MyCountrySidebarNav({
             const noteCount = notifications?.[item.id] ?? 0;
             const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
             const cls = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
+              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
               isActive
-                ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient)
+                ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             );
             const dot = noteCount > 0 && !isActive && (
@@ -208,17 +209,7 @@ export function MyCountrySidebarNav({
                   <span
                     className={cn(
                       "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                      item.id === "executive"
-                        ? "bg-amber-300"
-                        : item.id === "diplomacy"
-                          ? "bg-cyan-300"
-                          : item.id === "politics"
-                            ? "bg-indigo-300"
-                            : item.id === "intelligence"
-                              ? "bg-blue-300"
-                              : item.id === "defense"
-                                ? "bg-red-300"
-                                : "bg-slate-300"
+                      SECTION_INDICATOR[item.id] ?? "bg-white/80"
                     )}
                   />
                 )}
@@ -264,10 +255,10 @@ export function MyCountrySidebarNav({
 
     const logoLinkContent = (
       <>
-        <CrownIcon size={16} className="shrink-0 text-amber-500" />
+        <CrownIcon className="h-4 w-4 shrink-0 text-amber-500" />
         <span className="truncate font-semibold">MyCountry</span>
         {isPremium && (
-          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-bold tracking-wider text-amber-500/95 uppercase">
+          <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 py-0.5 text-xs font-bold tracking-wider text-amber-500/95 uppercase">
             Premium
           </span>
         )}
@@ -293,10 +284,10 @@ export function MyCountrySidebarNav({
     const editButton = (
       <Link
         href="/mycountry/editor"
-        className="text-muted-foreground/60 rounded-md p-1.5 transition-all duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
+        className="text-muted-foreground/60 rounded-md p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-amber-500 active:scale-95 dark:hover:bg-white/5"
         title="Edit Country Profile"
       >
-        <Edit2 size={13} className="shrink-0" />
+        <Edit2 className="h-3.5 w-3.5 shrink-0" />
       </Link>
     );
 
@@ -311,15 +302,15 @@ export function MyCountrySidebarNav({
           const noteCount = notifications?.[item.id] ?? 0;
           const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
           const cls = cn(
-            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200 overflow-hidden",
+            "relative flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 overflow-hidden",
             isActive
-              ? cn("bg-gradient-to-r text-white shadow-lg pl-3.5", item.gradient, item.activeGlow)
+              ? cn(item.activeBg, "text-white shadow-sm pl-3.5")
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           );
           const badge = noteCount > 0 && (
             <span
               className={cn(
-                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] leading-none font-bold",
+                "ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-xs leading-none font-bold",
                 isActive ? "bg-white/25 text-white" : "bg-amber-500 text-white"
               )}
             >
@@ -333,17 +324,7 @@ export function MyCountrySidebarNav({
                 <span
                   className={cn(
                     "absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r",
-                    item.id === "executive"
-                      ? "bg-amber-300"
-                      : item.id === "diplomacy"
-                        ? "bg-cyan-300"
-                        : item.id === "politics"
-                          ? "bg-indigo-300"
-                          : item.id === "intelligence"
-                            ? "bg-blue-300"
-                            : item.id === "defense"
-                              ? "bg-red-300"
-                              : "bg-slate-300"
+                    SECTION_INDICATOR[item.id] ?? "bg-white/80"
                   )}
                 />
               )}
@@ -384,12 +365,12 @@ export function MyCountrySidebarNav({
 
   const logoRailContent = (
     <>
-      <CrownIcon size={16} className="text-amber-500 transition-transform duration-150" />
+      <CrownIcon className="h-4 w-4 text-amber-500 transition-transform duration-150" />
       {/* Tooltip ── appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/logo:opacity-100">
         <span>Overview</span>
         {isPremium && (
-          <span className="rounded bg-amber-500/15 px-1 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
+          <span className="rounded bg-amber-500/15 px-1 text-xs font-bold tracking-wider text-amber-500 uppercase">
             Premium
           </span>
         )}
@@ -420,10 +401,10 @@ export function MyCountrySidebarNav({
   const editRailIcon = (
     <Link
       href="/mycountry/editor"
-      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 hover:text-amber-500"
+      className="group/edit text-muted-foreground/65 hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:text-amber-500"
       aria-label="Edit Country Profile"
     >
-      <Edit2 size={16} className="transition-transform duration-150 group-hover/edit:scale-110" />
+      <Edit2 className="h-4 w-4 transition-transform duration-150 group-hover/edit:scale-110" />
       {/* Tooltip — appears to the right */}
       <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/edit:opacity-100">
         Edit Profile
@@ -445,9 +426,9 @@ export function MyCountrySidebarNav({
         const iconEl = (
           <div
             className={cn(
-              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-all duration-200",
+              "group/tip relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isActive
-                ? cn("bg-gradient-to-br pl-1 text-white shadow-lg", item.gradient, item.activeGlow)
+                ? cn(item.activeBg, "text-white shadow-sm")
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
@@ -455,17 +436,7 @@ export function MyCountrySidebarNav({
               <span
                 className={cn(
                   "absolute top-1 bottom-1 left-0 w-0.5 rounded-r-sm",
-                  item.id === "executive"
-                    ? "bg-amber-300"
-                    : item.id === "diplomacy"
-                      ? "bg-cyan-300"
-                      : item.id === "politics"
-                        ? "bg-indigo-300"
-                        : item.id === "intelligence"
-                          ? "bg-blue-300"
-                          : item.id === "defense"
-                            ? "bg-red-300"
-                            : "bg-slate-300"
+                  SECTION_INDICATOR[item.id] ?? "bg-white/80"
                 )}
               />
             )}

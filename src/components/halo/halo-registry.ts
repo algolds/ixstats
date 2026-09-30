@@ -1,13 +1,8 @@
-import type React from "react";
-// Iconoir icons
 import {
   Compass,
   Search,
   Globe,
-  HomeSimple,
   Settings,
-  LogIn,
-  LogOut,
   Book,
   Page,
   EditPencil,
@@ -19,44 +14,26 @@ import {
   CheckCircle,
   RefreshDouble,
   Palette,
-  Database,
   User,
   Shield,
+  MultiplePages,
+  Shop,
+  Hammer,
+  Map,
+  Trophy,
+  Medal,
+  SoccerBall,
+  BasketballField,
+  Building,
+  Coins,
+  BookmarkBook,
+  DiceFive,
+  TriangleFlag,
+  Flask,
 } from "iconoir-react";
 
-// Game Icons (react-icons/gi)
-import {
-  GiCardRandom,
-  GiCardPick,
-  GiShop,
-  GiAnvilImpact,
-  GiTreasureMap,
-  GiTrophy,
-  GiLaurelsTrophy,
-  GiSoccerBall,
-  GiSoccerField,
-  GiShieldBash,
-  GiRadarSweep,
-  GiCapitol,
-  GiWaxSeal,
-  GiCoins,
-  GiBookmarklet,
-  GiRollingDices,
-  GiFlagObjective,
-  GiMicroscope,
-  GiSpellBook,
-  GiMeshBall,
-} from "react-icons/gi";
-
 export type CommandCategory =
-  | "Statecraft"
-  | "Vault"
-  | "Geography"
-  | "Knowledge"
-  | "Community"
-  | "Sports"
-  | "Labs"
-  | "System";
+  "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
 export type SystemActionId =
   | "toggle-theme"
@@ -99,7 +76,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "MyCountry Command Center",
     path: "/mycountry",
-    icon: GiWaxSeal,
+    icon: CheckCircle,
     category: "Statecraft",
     description: "National executive command overview, vitality, and KPIs",
     keywords: ["overview", "executive", "vitality", "stats", "kpi", "government", "president"],
@@ -107,7 +84,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Executive Council & Directives",
     path: "/mycountry/executive",
-    icon: GiWaxSeal,
+    icon: CheckCircle,
     category: "Statecraft",
     description: "Issue national directives, executive orders, and cabinet meetings",
     keywords: ["directives", "decrees", "orders", "cabinet", "meetings", "executive", "council"],
@@ -131,7 +108,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "National Defense & Readiness",
     path: "/mycountry/defense",
-    icon: GiShieldBash,
+    icon: Shield,
     category: "Statecraft",
     description: "Force readiness, defense posture, and military operations",
     keywords: ["military", "army", "navy", "air force", "war", "defense", "security", "readiness"],
@@ -139,7 +116,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Strategic Intelligence & Recon",
     path: "/mycountry/intelligence",
-    icon: GiRadarSweep,
+    icon: Compass,
     category: "Statecraft",
     description: "Signals intelligence, economic trends, and predictive forecasting",
     keywords: ["intel", "recon", "spy", "signals", "projections", "forecasts", "trends"],
@@ -147,7 +124,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Fiscal & Economic Policy",
     path: "/mycountry/economy",
-    icon: GiCoins,
+    icon: Coins,
     category: "Statecraft",
     description: "National budget allocation, tax rates, and spending levers",
     keywords: ["economy", "budget", "tax", "spending", "treasury", "revenue", "fiscal"],
@@ -155,7 +132,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "National Legislature & Elections",
     path: "/mycountry/politics",
-    icon: GiCapitol,
+    icon: Building,
     category: "Statecraft",
     description: "Parliamentary seats, political parties, and election cycles",
     keywords: ["politics", "parliament", "congress", "voting", "parties", "elections", "senate"],
@@ -163,7 +140,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Territory & Borders Map Editor",
     path: "/mycountry/map-editor",
-    icon: GiTreasureMap,
+    icon: Map,
     category: "Statecraft",
     description: "Draw national boundary claims and provincial subdivisions",
     keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
@@ -173,7 +150,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "IxVault Trading Cards",
     path: "/vault/cards",
-    icon: GiCardRandom,
+    icon: MultiplePages,
     category: "Vault",
     description: "Card binder, player inventory, and rarity collection",
     keywords: ["cards", "binder", "inventory", "collection", "deck", "tcg"],
@@ -181,7 +158,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Open Card Packs",
     path: "/vault/packs",
-    icon: GiCardPick,
+    icon: Page,
     category: "Vault",
     description: "Open booster packs and unbox collectible lore cards",
     keywords: ["booster", "unbox", "packs", "pull", "gacha", "open cards"],
@@ -189,7 +166,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Marketplace & Auctions",
     path: "/vault/marketplace",
-    icon: GiShop,
+    icon: Shop,
     category: "Vault",
     description: "Buy, sell, and bid on collectible cards with credits",
     keywords: ["market", "auction", "trade", "buy", "sell", "credits", "bids"],
@@ -197,7 +174,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Card Crafting & Synthesis",
     path: "/vault/crafting",
-    icon: GiAnvilImpact,
+    icon: Hammer,
     category: "Vault",
     description: "Combine duplicate cards to synthesize higher tier cards",
     keywords: ["craft", "forge", "combine", "upgrade", "alchemy", "synthesis"],
@@ -213,7 +190,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "NationStates NS Deck",
     path: "/vault/ns-deck",
-    icon: GiCardRandom,
+    icon: MultiplePages,
     category: "Vault",
     description: "NationStates synced card collection and trading roster",
     keywords: ["ns", "deck", "nationstates", "sync", "cards"],
@@ -239,7 +216,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Global Leaderboards",
     path: "/leaderboards",
-    icon: GiTrophy,
+    icon: Trophy,
     category: "Geography",
     description: "World rankings across GDP, population, and stability",
     keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier"],
@@ -247,7 +224,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Found Nation Builder",
     path: "/builder",
-    icon: GiCapitol,
+    icon: Building,
     category: "Geography",
     description: "Found a new nation from custom or real-world templates",
     keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
@@ -273,7 +250,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Random Wiki Article",
     path: "#random-wiki",
-    icon: GiRollingDices,
+    icon: DiceFive,
     category: "Knowledge",
     actionId: "random-wiki",
     description: "Jump to a random nation or lore article",
@@ -290,7 +267,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Lore Stashes",
     path: "/stashes",
-    icon: GiBookmarklet,
+    icon: BookmarkBook,
     category: "Knowledge",
     description: "Curated bookmarks and saved lore collections",
     keywords: ["stashes", "bookmarks", "saved", "reading list", "collections"],
@@ -340,7 +317,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Achievements & Trophies",
     path: "/achievements",
-    icon: GiLaurelsTrophy,
+    icon: Medal,
     category: "Community",
     description: "Milestones, badges, and Loreward progression trophies",
     keywords: ["trophies", "badges", "rewards", "lorewards", "quests", "achievements"],
@@ -350,7 +327,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "MyLeague Standings & Fixtures",
     path: "/myleague",
-    icon: GiSoccerBall,
+    icon: SoccerBall,
     category: "Sports",
     description: "Simulated sports league tables, schedules, and live traces",
     keywords: ["myleague", "soccer", "football", "sports", "standings", "fixtures", "matches"],
@@ -358,7 +335,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "MyClub Squad & Roster",
     path: "/myclub",
-    icon: GiSoccerField,
+    icon: BasketballField,
     category: "Sports",
     description: "Manage club squad roster, tactics, and club operations",
     keywords: ["myclub", "team", "squad", "players", "tactics", "club"],
@@ -368,7 +345,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Onoma Linguistic Engine",
     path: "/labs/onoma",
-    icon: GiSpellBook,
+    icon: Book,
     category: "Labs",
     description: "Procedural language synthesis, loanwords, and naming generator",
     keywords: ["onoma", "language", "names", "linguistics", "phonetics", "words"],
@@ -376,7 +353,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Vexel Flag Studio",
     path: "/labs/vexel",
-    icon: GiFlagObjective,
+    icon: TriangleFlag,
     category: "Labs",
     description: "Procedural vector flag designer, symbols, and SVG export",
     keywords: ["vexel", "flags", "emblem", "heraldry", "designer", "banner"],
@@ -384,26 +361,10 @@ export const CORE_COMMANDS: CommandEntry[] = [
   {
     name: "Map Mesh Pipeline",
     path: "/labs/map-pipeline",
-    icon: GiMeshBall,
+    icon: Globe,
     category: "Labs",
     description: "Voronoi terrain mesh generator and spline topology inspector",
     keywords: ["mesh", "voronoi", "pipeline", "terrain", "splines", "map generator"],
-  },
-  {
-    name: "Simulation Sandbox",
-    path: "/labs/sandbox",
-    icon: GiMicroscope,
-    category: "Labs",
-    description: "Isolated sandbox to test economic dynamics and formulas",
-    keywords: ["sandbox", "test", "experiment", "sim", "model", "lab"],
-  },
-  {
-    name: "Facet Design Bible",
-    path: "/labs/design-bible",
-    icon: LayoutLeft,
-    category: "Labs",
-    description: "UI component showcase and glass physics design system",
-    keywords: ["design", "facet", "tokens", "components", "bible", "ui"],
   },
 
   // ─── 8. System & Settings ─────────────────────────────────────────────────
@@ -476,7 +437,7 @@ export const CORE_FEATURES: FeatureEntry[] = [
   {
     name: "Economic Dashboard",
     path: "/dashboard",
-    icon: GiCoins,
+    icon: Coins,
     category: "Statecraft",
     description: "Macroeconomic metrics, GDP per capita, and projections",
     keywords: ["economy", "gdp", "vitality", "analytics"],
@@ -484,7 +445,7 @@ export const CORE_FEATURES: FeatureEntry[] = [
   {
     name: "Global Rankings",
     path: "/leaderboards",
-    icon: GiTrophy,
+    icon: Trophy,
     category: "Geography",
     description: "Compare countries by economic tier and vitality",
     keywords: ["rankings", "leaderboards", "top"],
@@ -500,7 +461,7 @@ export const CORE_FEATURES: FeatureEntry[] = [
   {
     name: "Open Card Packs",
     path: "/vault/packs",
-    icon: GiCardPick,
+    icon: Page,
     category: "Vault",
     description: "Open booster packs and unbox collectible lore cards",
     keywords: ["packs", "cards", "booster"],
@@ -517,7 +478,7 @@ export const CORE_FEATURES: FeatureEntry[] = [
   {
     name: "Alert Center",
     path: "#notifications",
-    icon: GiRadarSweep,
+    icon: Compass,
     category: "System",
     description: "Open notifications and diplomatic inbox tray",
     keywords: ["notifications", "alerts", "inbox"],

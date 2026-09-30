@@ -33,7 +33,7 @@ import React, {
   useState,
 } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "motion/react";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { useSwipePhysics } from "./useSwipePhysics";
 import { GULP_SCALE, SPRING_PRESETS } from "./constants";
 
@@ -244,7 +244,9 @@ function SwipeableRowRoot({
         if (commitAction) {
           setIsCommitting(true);
           setCommitSide(side);
-          setCommitColor(commitAction.color ?? (side === "trailing" ? "#ef4444" : "#22c55e"));
+          setCommitColor(
+            commitAction.color ?? (side === "trailing" ? "var(--color-error)" : "#22c55e")
+          );
 
           // Execute commit after gulp animation
           setTimeout(() => {
@@ -299,7 +301,7 @@ function SwipeableRowRoot({
           if (trailingCommit) {
             setIsCommitting(true);
             setCommitSide("trailing");
-            setCommitColor(trailingCommit.color ?? "#ef4444");
+            setCommitColor(trailingCommit.color ?? "var(--color-error)");
             setTimeout(() => {
               trailingCommit.action();
               onCommit?.("trailing");
@@ -469,12 +471,12 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
   const childrenArray = React.Children.toArray(children);
   const total = childrenArray.length;
   const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
+    if (React.isValidElement<Record<string, unknown>>(child)) {
       return React.cloneElement(child, {
         _index: idx,
         _total: total,
         _side: "leading",
-      } as any);
+      });
     }
     return child;
   });
@@ -535,12 +537,12 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
   const childrenArray = React.Children.toArray(children);
   const total = childrenArray.length;
   const processedChildren = React.Children.map(children, (child, idx) => {
-    if (React.isValidElement(child)) {
+    if (React.isValidElement<Record<string, unknown>>(child)) {
       return React.cloneElement(child, {
         _index: idx,
         _total: total,
         _side: "trailing",
-      } as any);
+      });
     }
     return child;
   });
@@ -596,6 +598,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
     wasDrag,
     toggleExpand,
     isCommitting,
+    // oxlint-disable-next-line eslint/no-unused-vars
     isExpanded,
     springPreset,
     containerWidth,
@@ -772,7 +775,7 @@ export function SwipeActionButton({
   _side,
 }: SwipeActionButtonProps & { _index?: number; _total?: number; _side?: "leading" | "trailing" }) {
   // Determine if color is a CSS value or a Tailwind class name
-  const isCssColor = color.startsWith("#") || color.startsWith("rgb") || color.startsWith("hsl");
+  const isCssColor = /^(#|rgb|hsl|var\()/.test(color);
 
   const btnClass = isCssColor
     ? "bg-[color-mix(in_srgb,var(--btn-color)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--btn-color)_22%,transparent)] border border-[color-mix(in_srgb,var(--btn-color)_20%,transparent)] text-[color-mix(in_srgb,var(--btn-color)_85%,#0f172a)] dark:text-[color-mix(in_srgb,var(--btn-color)_85%,#f8fafc)]"
@@ -874,7 +877,7 @@ export function SwipeActionButton({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate text-[9px] font-bold">{label}</span>
+        <span className="truncate text-xs font-bold">{label}</span>
       </button>
     );
   }
@@ -908,7 +911,7 @@ export function SwipeActionButton({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
 
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate text-[9px] font-bold">{label}</span>
+      <span className="truncate text-xs font-bold">{label}</span>
     </motion.button>
   );
 }
@@ -931,13 +934,13 @@ export { SwipeableRow };
  * Find a specific compound child element by its component type.
  * Returns the element (with props accessible) or null.
  */
-function findChild(
+function findChild<P = Record<string, unknown>>(
   children: React.ReactNode,
-  type: React.ComponentType<any>
-): React.ReactElement<any> | null {
-  let found: React.ReactElement<any> | null = null;
+  type: React.ComponentType<P>
+): React.ReactElement<P> | null {
+  let found: React.ReactElement<P> | null = null;
   React.Children.forEach(children, (child) => {
-    if (React.isValidElement(child) && child.type === type) {
+    if (React.isValidElement<P>(child) && child.type === type) {
       found = child;
     }
   });

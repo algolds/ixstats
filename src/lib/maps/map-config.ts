@@ -13,7 +13,7 @@ import {
   CLIMATE_COLORS,
   type IxWorldClimate,
 } from "~/lib/worldgen/climate-system";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { hexToRgbArray, rgbToHex } from "~/lib/color";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
@@ -180,9 +180,6 @@ export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
   }
 }
 
-/** Ocean background color for the globe */
-export const OCEAN_COLOR = "#b3cde0";
-
 // ─── Route Styles (single source of truth) ───────────────────────────────────
 
 /**
@@ -199,25 +196,49 @@ export interface RouteStyle {
   width: number;
   /** Optional MapLibre line-dasharray (undefined = solid) */
   dash?: number[];
+  /** Zoom level at which this route type becomes visible */
+  minZoom: number;
 }
 
 export const ROUTE_STYLES: Record<string, RouteStyle> = {
-  rail: { label: "Rail", color: "#374151", width: 3 },
-  highway: { label: "Highway", color: "#f97316", width: 2.5 },
-  road: { label: "Road", color: "#92400e", width: 1.5 },
-  shipping_lane: { label: "Shipping", color: "#3b82f6", width: 2 },
-  canal: { label: "Canal", color: "#06b6d4", width: 1.5 },
-  air_corridor: { label: "Air", color: "#a855f7", width: 2, dash: [6, 4] },
-  ferry: { label: "Ferry", color: "#14b8a6", width: 1.5, dash: [4, 3] },
-  pipeline: { label: "Pipeline", color: "#eab308", width: 2 },
-  power_grid: { label: "Power", color: "#f59e0b", width: 1.5 },
-  fiber: { label: "Fiber", color: "#e5e7eb", width: 1 },
-  military_supply: { label: "Mil. Supply", color: "#dc2626", width: 2 },
-  military_naval: { label: "Mil. Naval", color: "#7f1d1d", width: 2 },
+  // Rail family
+  rail: { label: "Rail", color: "#374151", width: 3, minZoom: 0 },
+  high_speed_rail: { label: "High-Speed Rail", color: "#0ea5e9", width: 4, minZoom: 0 },
+  freight_rail: { label: "Freight Rail", color: "#6b7280", width: 2.5, minZoom: 6 },
+  commuter_rail: { label: "Commuter Rail", color: "#475569", width: 2, minZoom: 6 },
+
+  // Road family
+  motorway: { label: "Motorway", color: "#ea580c", width: 3.5, minZoom: 0 },
+  highway: { label: "Highway", color: "#f97316", width: 2.5, minZoom: 0 },
+  trunk: { label: "Trunk Road", color: "#d97706", width: 2, minZoom: 4 },
+  road: { label: "Road", color: "#92400e", width: 1.5, minZoom: 4 },
+  secondary: { label: "Secondary Road", color: "#a8a29e", width: 1, minZoom: 6 },
+
+  // Maritime
+  shipping_lane: { label: "Shipping", color: "#3b82f6", width: 2, minZoom: 0 },
+  canal: { label: "Canal", color: "#06b6d4", width: 1.5, minZoom: 4 },
+  ferry: { label: "Ferry", color: "#14b8a6", width: 1.5, minZoom: 4, dash: [4, 3] },
+
+  // Air
+  air_corridor: { label: "Air Route", color: "#a855f7", width: 2, minZoom: 0, dash: [6, 4] },
+
+  // Utility
+  pipeline: { label: "Pipeline", color: "#eab308", width: 2, minZoom: 6 },
+  power_grid: { label: "Power Grid", color: "#f59e0b", width: 1.5, minZoom: 6 },
+  fiber: { label: "Fiber", color: "#e5e7eb", width: 1, minZoom: 6 },
+
+  // Military
+  military_supply: { label: "Mil. Supply", color: "#dc2626", width: 2, minZoom: 4 },
+  military_naval: { label: "Mil. Naval", color: "#7f1d1d", width: 2, minZoom: 4 },
 };
 
 /** Ordered list of all route type keys for consistent UI rendering */
 export const ROUTE_TYPE_KEYS = Object.keys(ROUTE_STYLES) as (keyof typeof ROUTE_STYLES)[];
+
+/** Map of route types to hex colors */
+export const ROUTE_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(ROUTE_STYLES).map(([k, v]) => [k, v.color])
+);
 
 /** Distinct saturated colors for country fills (Google Maps-style) */
 export const DEFAULT_COUNTRY_COLORS = [
@@ -316,46 +337,10 @@ export const SOVEREIGNTY_TYPE_MAP = Object.fromEntries(
   SOVEREIGNTY_TYPES.map((t) => [t.value, t])
 ) as Record<SovereigntyType, (typeof SOVEREIGNTY_TYPES)[number]>;
 
-/** Parse hex color to [r, g, b]. Returns [0,0,0] if invalid. */
-function hexToRgb(hex: string): [number, number, number] {
-  if (!hex || typeof hex !== "string") return [0, 0, 0];
-  const h = hex.replace("#", "");
-  if (h.length !== 6 && h.length !== 3) return [0, 0, 0];
-
-  if (h.length === 3) {
-    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
-  }
-
-  return [
-    parseInt(h.substring(0, 2), 16) || 0,
-    parseInt(h.substring(2, 4), 16) || 0,
-    parseInt(h.substring(4, 6), 16) || 0,
-  ];
-}
-
-/** Convert [r, g, b] to hex string */
-function rgbToHex(r: number, g: number, b: number): string {
-  // Guard against NaN
-  const safeR = isNaN(r) ? 0 : r;
-  const safeG = isNaN(g) ? 0 : g;
-  const safeB = isNaN(b) ? 0 : b;
-
-  return (
-    "#" +
-    [safeR, safeG, safeB]
-      .map((v) =>
-        Math.round(Math.max(0, Math.min(255, v)))
-          .toString(16)
-          .padStart(2, "0")
-      )
-      .join("")
-  );
-}
-
 /** Interpolate between two hex colors. ratio=0 → color1, ratio=1 → color2 */
 export function blendColors(color1: string, color2: string, ratio: number): string {
-  const [r1, g1, b1] = hexToRgb(color1);
-  const [r2, g2, b2] = hexToRgb(color2);
+  const [r1, g1, b1] = hexToRgbArray(color1);
+  const [r2, g2, b2] = hexToRgbArray(color2);
   const safeRatio = isNaN(ratio) ? 0 : Math.max(0, Math.min(1, ratio));
 
   return rgbToHex(
@@ -692,123 +677,4 @@ export function buildBaseStyle(
   // editor map snaps back to the globe on every theme/style apply.
   base.projection = getProjectionSpec(projectionMode);
   return base;
-}
-
-// ── Framework: World-aware configuration ────────────────────────────
-
-/**
- * Resolved world configuration for rendering.
- * This is the shape that all map components consume.
- * Currently returns hardcoded IxWorld config; future versions will
- * read from the WorldConfig database table.
- */
-export interface WorldMapConfig {
-  worldId: string;
-  name: string;
-  wikiBaseUrl: string | null;
-  wikiApiPath: string;
-  mapProjection: ProjectionMode;
-  defaultCenter: [number, number];
-  defaultZoom: number;
-  layerTypes: MapLayerType[];
-  climateSystem: string;
-  oceanColor: string;
-  countryColors: string[];
-  waterBodyLabels: Array<{
-    name: string;
-    lng: number;
-    lat: number;
-    type: string;
-    areaMKm2: number;
-    avgDepthM: number;
-    maxDepthM: number;
-    borders?: string[];
-  }>;
-  layerConfigs: Record<MapLayerType, LayerConfig>;
-  sovereigntyTypes: typeof SOVEREIGNTY_TYPE_MAP;
-  elevationZones: readonly ElevationZoneConfig[];
-}
-
-/** Default IxWorld configuration (used as baseline for all worlds) */
-const IXWORLD_DEFAULTS: WorldMapConfig = {
-  worldId: "default",
-  name: "IxWorld",
-  wikiBaseUrl: DEFAULT_MEDIAWIKI_URL,
-  wikiApiPath: "/api.php",
-  mapProjection: "dynamic",
-  defaultCenter: MAP_DEFAULTS.center,
-  defaultZoom: MAP_DEFAULTS.zoom,
-  layerTypes: [...MAP_LAYER_TYPES],
-  climateSystem: "trewartha",
-  oceanColor: OCEAN_COLOR,
-  countryColors: DEFAULT_COUNTRY_COLORS,
-  waterBodyLabels: WATER_BODY_LABELS.map((l) => ({
-    name: l.name,
-    lng: l.coordinates[0],
-    lat: l.coordinates[1],
-    type: l.type,
-    areaMKm2: l.areaMKm2,
-    avgDepthM: l.avgDepthM,
-    maxDepthM: l.maxDepthM,
-    borders: l.borders,
-  })),
-  layerConfigs: { ...LAYER_CONFIGS },
-  sovereigntyTypes: SOVEREIGNTY_TYPE_MAP,
-  elevationZones: ELEVATION_ZONES,
-};
-
-/**
- * Load world configuration by worldId.
- *
- * Synchronous path: returns hardcoded IxWorld config for "default".
- * For custom realms, use loadRealmWorldConfig() which reads from DB.
- */
-export function loadWorldConfig(worldId: string = "default"): WorldMapConfig {
-  if (worldId === "default") {
-    return { ...IXWORLD_DEFAULTS };
-  }
-  // For non-default worlds without DB access, return defaults with worldId override
-  return { ...IXWORLD_DEFAULTS, worldId, name: worldId };
-}
-
-/**
- * Load world configuration from a database WorldConfig record.
- * Merges stored config with IxWorld defaults — any field not set
- * in the DB record falls back to the IxWorld baseline.
- */
-export function loadWorldConfigFromDB(dbConfig: {
-  worldId: string;
-  name: string;
-  description?: string | null;
-  wikiBaseUrl?: string | null;
-  wikiApiPath?: string;
-  mapProjection?: string;
-  defaultCenter?: unknown;
-  defaultZoom?: number;
-  layerTypes?: unknown;
-  climateSystem?: string;
-  elevationZones?: unknown;
-  waterBodyLabels?: unknown;
-  countryColors?: unknown;
-  sovereigntyTypes?: unknown;
-}): WorldMapConfig {
-  return {
-    ...IXWORLD_DEFAULTS,
-    worldId: dbConfig.worldId,
-    name: dbConfig.name,
-    wikiBaseUrl: dbConfig.wikiBaseUrl ?? IXWORLD_DEFAULTS.wikiBaseUrl,
-    wikiApiPath: dbConfig.wikiApiPath ?? IXWORLD_DEFAULTS.wikiApiPath,
-    mapProjection: (dbConfig.mapProjection as ProjectionMode) ?? IXWORLD_DEFAULTS.mapProjection,
-    defaultCenter: (dbConfig.defaultCenter as [number, number]) ?? IXWORLD_DEFAULTS.defaultCenter,
-    defaultZoom: dbConfig.defaultZoom ?? IXWORLD_DEFAULTS.defaultZoom,
-    layerTypes: (dbConfig.layerTypes as MapLayerType[]) ?? IXWORLD_DEFAULTS.layerTypes,
-    climateSystem: dbConfig.climateSystem ?? IXWORLD_DEFAULTS.climateSystem,
-    countryColors: (dbConfig.countryColors as string[]) ?? IXWORLD_DEFAULTS.countryColors,
-    waterBodyLabels:
-      (dbConfig.waterBodyLabels as WorldMapConfig["waterBodyLabels"]) ??
-      IXWORLD_DEFAULTS.waterBodyLabels,
-    elevationZones:
-      (dbConfig.elevationZones as readonly ElevationZoneConfig[]) ??
-      IXWORLD_DEFAULTS.elevationZones,
-  };
 }

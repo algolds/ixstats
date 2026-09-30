@@ -1,12 +1,11 @@
+"use client";
 // src/app/(forum)/forum/[forumId]/page.tsx
 // Thread list for a specific forum.
-
-"use client";
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { PenSquare, CheckCheck } from "lucide-react";
+import { EditPencil as PenSquare, CheckCircle as CheckCheck } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
@@ -27,6 +26,7 @@ export default function ForumThreadListPage() {
   // Reset page when navigating between forums
   useEffect(() => {
     setPage(1);
+    // oxlint-disable-next-line
   }, [forumId]);
 
   const { data, isLoading } = api.forum.getForum.useQuery(

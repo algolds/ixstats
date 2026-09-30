@@ -7,7 +7,7 @@ import {
   validateGeometryStructure,
   repairGeometryGeoJSON,
   resetPostGISCache,
-} from "../../lib/maps/geo-validation";
+} from "~/lib/maps/geo-validation";
 
 describe("validateGeometryStructure (pure)", () => {
   test("returns no errors for a valid closed square Polygon", () => {

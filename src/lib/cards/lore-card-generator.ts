@@ -1342,8 +1342,7 @@ export class WikiLoreCardGenerator {
 
       const data = await response.json();
       const page = Object.values(data.query?.pages ?? {})[0] as
-        | (MediaWikiPageItem & { original?: { source?: string } })
-        | undefined;
+        (MediaWikiPageItem & { original?: { source?: string } }) | undefined;
       return !!page?.original?.source;
     } catch {
       return false;

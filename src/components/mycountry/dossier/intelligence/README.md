@@ -1,29 +1,16 @@
-# Country Intelligence Components
+# Country Intelligence Components (removed)
 
-**Last updated:** May 2026
+**Last updated:** September 2026
 
-These components power country-level intelligence dashboards (MyCountry, country detail pages, admin views).
+This directory is empty. The components it used to describe were removed as dead code during the MyCountry v2 → Command Surface consolidation and the dead-code sweeps (`4663b564d`, `312b73018`): `VitalityMetricsPanel`, `IntelligenceSummary`, `WikiIntegrationPanel`, `StatusIndicators`, `charts/IntelligenceCharts`, and their `types`/`constants`/`utils`. The `useMyCountryIntelligence` hook and the `diplomatic-intelligence` router are gone as well.
 
-## Contents
-| Component | Description |
+Where the equivalents live now:
+
+| Need | Current code |
 | --- | --- |
-| `VitalityMetricsPanel.tsx` | Renders vitality rings + trend indicators |
-| `CountryMetricsGrid.tsx` | Categorised grid of intelligence metrics |
-| `IntelligenceSummary.tsx` | High-level summary cards and alert callouts |
-| `WikiIntegrationPanel.tsx` | Displays wiki content, coat of arms, and overview editing |
-| `StatusIndicators.tsx` | Classification badges, trend arrows, stability indicators |
-| `charts/IntelligenceCharts.tsx` | Collection of line/bar/area/radar charts tuned for intelligence data |
-| `charts/chartConfig.ts` | Reusable chart configuration (colors, gradients) |
-| `types.ts`, `constants.ts`, `utils.ts` | Shared types, thresholds, and helpers |
+| Vitality rings | `src/components/mycountry/shared/primitives/VitalityRings.tsx` |
+| Metric grid | `src/components/mycountry/shared/primitives/CountryMetricsGrid.tsx` |
+| Classification badges (dossier) | `src/components/mycountry/dossier/dossier/constants.ts`, `WikiSectionCard.tsx` |
+| Intel / recon / fog | See [`docs/systems/intelligence.md`](../../../../../docs/systems/intelligence.md) |
 
-## Data Flow
-- Components expect data produced by hooks/services such as `useMyCountryIntelligence` (see `src/app/mycountry/intelligence/_hooks`) and routers `diplomatic-intelligence.ts`, `intelligence.ts`
-- Ensure new metrics are exposed via types in `types.ts` and passed through `utils.ts` transforms before reaching UI components
-
-## Usage
-Import the pieces you need from the barrel export:
-```tsx
-import { VitalityMetricsPanel, IntelligenceSummary } from "~/components/countries/intelligence";
-```
-
-Keep `/docs/systems/intelligence.md` and `/help/intelligence/*` up to date when introducing new metrics or panels.
+This README can be deleted together with the directory.

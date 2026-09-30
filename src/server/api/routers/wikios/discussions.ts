@@ -12,6 +12,7 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/
 import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 interface HydratedComment {
   id: string;
@@ -90,40 +91,41 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
         }
       }
 
-      const users = userIds.size > 0
-        ? await db.user.findMany({
-            where: {
-              OR: [
-                { id: { in: Array.from(userIds) } },
-                { clerkUserId: { in: Array.from(userIds) } },
-                { wikiUsername: { in: Array.from(userIds) } },
-                { discordUserId: { in: Array.from(userIds) } },
-              ],
-            },
-            select: {
-              id: true,
-              clerkUserId: true,
-              wikiUsername: true,
-              discordUserId: true,
-              discordUsername: true,
-              role: {
-                select: {
-                  name: true,
-                  displayName: true,
+      const users =
+        userIds.size > 0
+          ? await db.user.findMany({
+              where: {
+                OR: [
+                  { id: { in: Array.from(userIds) } },
+                  { clerkUserId: { in: Array.from(userIds) } },
+                  { wikiUsername: { in: Array.from(userIds) } },
+                  { discordUserId: { in: Array.from(userIds) } },
+                ],
+              },
+              select: {
+                id: true,
+                clerkUserId: true,
+                wikiUsername: true,
+                discordUserId: true,
+                discordUsername: true,
+                role: {
+                  select: {
+                    name: true,
+                    displayName: true,
+                  },
+                },
+                country: {
+                  select: {
+                    id: true,
+                    name: true,
+                    flag: true,
+                  },
                 },
               },
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  flag: true,
-                },
-              },
-            },
-          })
-        : [];
+            })
+          : [];
 
-      const userMap = new Map<string, typeof users[0]>();
+      const userMap = new Map<string, (typeof users)[0]>();
       for (const u of users) {
         userMap.set(u.id, u);
         if (u.clerkUserId) userMap.set(u.clerkUserId, u);
@@ -145,7 +147,9 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
           resolver?.wikiUsername ||
           resolver?.discordUsername ||
           resolver?.country?.name ||
-          (t.resolvedBy && t.resolvedBy.startsWith("user_") ? t.resolvedBy.slice(0, 12) : t.resolvedBy) ||
+          (t.resolvedBy && t.resolvedBy.startsWith("user_")
+            ? t.resolvedBy.slice(0, 12)
+            : t.resolvedBy) ||
           "User";
 
         return {
@@ -228,6 +232,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      // Posting "as" a country is only allowed for a country the caller may write to.
+      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
       const effectiveUserId = dbUser?.id || authUserId;
       const effectiveCountryId = input.countryId || dbUser?.countryId || null;
@@ -281,6 +287,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
+      // Posting "as" a country is only allowed for a country the caller may write to.
+      if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
       const effectiveUserId = dbUser?.id || authUserId;
       const effectiveCountryId = input.countryId || dbUser?.countryId || null;
@@ -350,41 +358,6 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Toggle an emoji reaction on a comment.
-   */
-  toggleCommentReaction: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.string(),
-        emoji: z.string().min(1).max(10),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const _userId = requireWikiUserId(ctx);
-      const prismaClient = db as any;
-
-      const comment = await prismaClient.wikiDiscussionComment.findUnique({
-        where: { id: input.commentId },
-      });
-
-      if (!comment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Comment not found" });
-      }
-
-      const existingReactions = (comment.reactions as Record<string, number> | null) || {};
-      const currentCount = existingReactions[input.emoji] || 0;
-      const updatedReactions = {
-        ...existingReactions,
-        [input.emoji]: Math.max(0, currentCount + 1),
-      };
-
-      return prismaClient.wikiDiscussionComment.update({
-        where: { id: input.commentId },
-        data: { reactions: updatedReactions },
-      });
-    }),
-
-  /**
    * Delete a discussion thread (creator or admin only).
    */
   deleteThread: protectedProcedure
@@ -411,38 +384,6 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
 
       await prismaClient.wikiDiscussionThread.delete({
         where: { id: input.threadId },
-      });
-
-      return { success: true };
-    }),
-
-  /**
-   * Delete a discussion comment (author or admin only).
-   */
-  deleteComment: protectedProcedure
-    .input(z.object({ commentId: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
-      const admin = isWikiAdmin(ctx);
-      const prismaClient = db as any;
-
-      const comment = await prismaClient.wikiDiscussionComment.findUnique({
-        where: { id: input.commentId },
-      });
-
-      if (!comment) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Comment not found" });
-      }
-
-      if (comment.userId !== userId && !admin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to delete this comment.",
-        });
-      }
-
-      await prismaClient.wikiDiscussionComment.delete({
-        where: { id: input.commentId },
       });
 
       return { success: true };

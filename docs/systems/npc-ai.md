@@ -1,10 +1,10 @@
 # NPC Personality & Behavioral AI System
 
-**Last updated:** August 2026  
-**Status:** Production Ready (Beta)  
+**Last updated:** September 2026  
+**Status:** Partial — trait engine live for cultural-exchange responses; drift not wired  
 **Hierarchy:** Subsystem of Concord Living-World Engine (`CONCORD_ENGINE_VERSION = 2`).
 
-The NPC Personality and Behavioral AI system creates distinct, data-driven personalities for non-player nations based on observable database metrics. It drives autonomous diplomatic behavior, event responses, negotiation postures, and relationship evolution.
+The NPC Personality and Behavioral AI system creates distinct, data-driven personalities for non-player nations based on observable database metrics. It is designed to drive autonomous diplomatic behavior, event responses, negotiation postures, and relationship evolution. Today it powers NPC participation in cultural exchanges (`diplomaticCultural.getNPCCulturalResponses`).
 
 ---
 
@@ -29,30 +29,31 @@ All 8 traits are calculated dynamically from observable database data rather tha
 
 Calculated trait combinations determine an NPC nation's active behavioral archetype:
 
-1. **Aggressive Expansionist** (High Assertiveness, High Risk Tolerance, High Militarism, Low Cooperativeness)
-2. **Pragmatic Trader** (High Economic Focus, High Cooperativeness, Low Ideological Rigidity)
-3. **Cultural Diplomat** (High Cultural Openness, High Cooperativeness, Low Isolationism)
-4. **Defensive Isolationist** (High Isolationism, Low Risk Tolerance, Low Cooperativeness)
-5. **Ideological Crusader** (High Ideological Rigidity, High Assertiveness, Selective Cooperativeness)
-6. **Security Hawk** (High Militarism, High Assertiveness, Security-Focused Cooperativeness)
+1. **Aggressive Expansionist** (`aggressive_expansionist`: Assertiveness ≥ 70, Militarism ≥ 60, Risk Tolerance ≥ 65, Cooperativeness ≤ 40)
+2. **Peaceful Merchant** (`peaceful_merchant`: Economic Focus ≥ 70, Cooperativeness ≥ 60, Militarism ≤ 40, Isolationism ≤ 40)
+3. **Cautious Isolationist** (`cautious_isolationist`: Isolationism ≥ 65, Risk Tolerance ≤ 40, Cooperativeness 40–70)
+4. **Cultural Diplomat** (`cultural_diplomat`: Cultural Openness ≥ 70, Cooperativeness ≥ 70, Militarism ≤ 45, Assertiveness ≤ 60)
+5. **Ideological Hardliner** (`ideological_hardliner`: Ideological Rigidity ≥ 70, Assertiveness ≥ 50, Risk Tolerance ≥ 50, Cooperativeness ≤ 45)
+6. **Pragmatic Realist** (`pragmatic_realist`: the default for balanced profiles)
 
 ---
 
 ## Behavioral Response Prediction
 
-When a player proposes an action (embassy, trade pact, alliance, cultural exchange), `NPCPersonalitySystem.predictResponse()` evaluates:
+`NPCPersonalitySystem.predictResponse()` has scenario-specific predictors (alliance, trade dispute, cultural exchange, sanction, mediation, treaty, embassy, security pact, generic). Only the cultural-exchange path is called from live code (`src/lib/diplomacy/npc-cultural-participation.ts`). Each predictor evaluates:
 $$\text{Base Score} = \text{RelationshipStrength} + \sum(\text{TraitWeight} \times \text{TraitValue}) - \text{ConcessionPenalty} \pm \text{RiskModifier}$$
 
-The prediction outputs probabilities for:
-- **Accept**: Direct approval
-- **Counter**: Proposes modified terms or extra compensation
-- **Reject**: Flat refusal
+The prediction returns a `predictedAction` with confidence:
+- **accept**: Direct approval
+- **negotiate**: Proposes modified terms or extra compensation
+- **reject**: Flat refusal
+- **escalate** / **defer**: Hard-line or wait-and-see responses
 
 ---
 
 ## Personality Drift
 
-Personalities drift gradually over time (clamped to $\le \pm 2$ points per IxTime year per trait) based on recorded experiences:
+`NPCPersonalitySystem.applyPersonalityDrift()` implements gradual drift (at most $\pm 2$ points **total** per IxTime year across all traits) based on recorded experiences. **It has no callers yet**, so personalities do not currently drift:
 - Successful trade agreements increase Economic Focus and Cooperativeness.
 - Unprovoked sanctions or military conflicts increase Assertiveness and Militarism.
 - Peaceful conflict resolutions reduce Militarism and increase Cooperativeness.
@@ -60,10 +61,10 @@ Personalities drift gradually over time (clamped to $\le \pm 2$ points per IxTim
 ---
 
 ## Routers & Files
-- **Router**: `src/server/api/routers/npcPersonalities/` (`index.ts`, `query.ts`, `diplomacy.ts`, `admin.ts`)
-- **Core Library**: `src/lib/diplomatic-npc-personality.ts` (`NPCPersonalitySystem` class)
-- **Cultural Participation**: `src/lib/npc-cultural-participation.ts`
-- **Markov Engine**: `src/lib/diplomatic-markov-engine.ts`
+- **Router**: `src/server/api/routers/npcPersonalities/` (`index.ts`, `query.ts`, `admin.ts`) – `getAllPersonalities` plus admin `create` / `update` / `deletePersonality` and `assignPersonalityToCountry` (UI: `/admin/npc-personalities`)
+- **Core Library**: `src/lib/diplomacy/npc-personality.ts` (`NPCPersonalitySystem` class)
+- **Cultural Participation**: `src/lib/diplomacy/npc-cultural-participation.ts`, `src/server/api/routers/diplomacy/cultural/npc/`
+- **Markov Engine**: `src/lib/diplomacy/markov-engine.ts`
 
 ---
 
@@ -71,4 +72,4 @@ Personalities drift gradually over time (clamped to $\le \pm 2$ points per IxTim
 
 - [Diplomacy System Guide](./diplomacy.md)
 - [Crisis Events Guide](./crisis-events.md)
-- [API Reference: NPC Personalities](../reference/api-complete.md#npc-personalities-router)
+- [API Reference: NPC Personalities](../reference/api-complete.md#intelligence--diplomacy)

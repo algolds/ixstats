@@ -1,10 +1,10 @@
+"use client";
 // src/app/admin/cards/CardImportStudio.tsx
 // Unified Import Studio for Wiki Lore, NationStates Sync, and Commons Flags
-"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookOpen, Globe, Flag, Sparkles, RefreshCw, Layers } from "lucide-react";
+import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
@@ -120,7 +120,7 @@ export function CardImportStudio({
                 <button
                   key={tab.id}
                   onClick={() => setActiveSubtab(tab.id)}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
                     isActive
                       ? "bg-background border-border text-foreground border font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground hover:bg-card/60"
@@ -133,7 +133,7 @@ export function CardImportStudio({
                   {tab.badge && (
                     <Badge
                       variant={tab.badgeVariant || "secondary"}
-                      className="ml-0.5 px-1.5 py-0 font-mono text-[9px] font-medium"
+                      className="ml-0.5 px-1.5 py-0 font-mono text-xs font-medium"
                     >
                       {tab.badge}
                     </Badge>

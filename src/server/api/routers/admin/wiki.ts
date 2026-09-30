@@ -1,90 +1,23 @@
-// src/server/api/routers/admin.ts
-// FIXED: Complete admin router with proper functionality
-
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
-
 import { generateSlug } from "~/lib/utils";
 import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
 import type { ScoringWeights } from "~/lib/lorewards";
-import * as mysql from "mysql2/promise";
-import { getWikiDbPool } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { readConfigKeys, writeConfigKeys } from "./_config-kv";
+
+const LOREWARD_WEIGHT_DEFAULTS: Record<string, number> = {
+  lorewardWeight_bytesAdded: 1.0,
+  lorewardWeight_proseRatio: 1.5,
+  lorewardWeight_editDepth: 1.2,
+  lorewardWeight_collaborationBonus: 1.3,
+  lorewardWeight_newArticleBonus: 1.5,
+};
 
 export const adminWikiRouter = createTRPCRouter({
-  // Internal calculation formulas management
-  // Get global statistics for SDI interface
-
-  // Get stash statistics (real DB values)
-
-  // Get ThinkPages statistics (real DB values)
-
-  // Get system status
-
-  // Get bot status with health check
-
-  // Get system configuration (includes all economic control parameters)
-
-  // Save system configuration (all economic control parameters)
-
-  // Set custom time via bot or local override
-
-  // Bot control operations
-
-  // Get calculation logs
-
-  // Analyze import file
-
-  // Import roster data
-
-  // Sync epoch time with imported data
-
-  // Force recalculation of all countries
-
-  // Get system health
-
-  // --- Clerk User-Country Mapping Endpoints ---
-  // Note: User procedures are commented out until User model is properly configured
-
-  // Sync with Discord bot
-
-  // === ADMIN USER/COUNTRY MANAGEMENT ENDPOINTS ===
-
-  // List all users and their claimed countries
-
-  // List all countries and their assigned users
-
-  // Assign a user to a country (admin override)
-
-  // Unassign a user from a country (admin override)
-
-  // Get navigation settings (wiki/cards/labs visibility)
-
-  // Update navigation settings (wiki/cards/labs visibility)
-
-  // ============================================================================
-  // GOD MODE - DIRECT COUNTRY DATA MANIPULATION
-  // ============================================================================
-
-  // ============================================================================
-  // DIPLOMATIC OPTIONS MANAGEMENT
-  // ============================================================================
-
-  // ============================================================================
-  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
-  // ============================================================================
-
-  // ============================================================================
-  // STORYTELLER / WORLD EVENTS
-  // ============================================================================
-
-  // Event Chains
-
-  // ─── Wiki Link Management ──────────────────────────────────────────
-
   setWikiLink: adminProcedure
     .input(
       z.object({
@@ -137,60 +70,6 @@ export const adminWikiRouter = createTRPCRouter({
       );
       await invalidateCache(["countries."]);
       return { updated: results.length, countries: results };
-    }),
-
-  resyncWikiCache: adminProcedure
-    .input(z.object({ countryId: z.string().optional() }))
-    .mutation(async ({ ctx, input }) => {
-      if (input.countryId) {
-        const country = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          select: { name: true },
-        });
-        if (country) {
-          await ctx.db.wikiCache.deleteMany({ where: { countryName: country.name } });
-          await ctx.db.country.update({
-            where: { id: input.countryId },
-            data: { wikiLastSynced: new Date() },
-          });
-        }
-        await invalidateCache(["countries."]);
-        return { cleared: 1 };
-      }
-      // Clear all wiki cache
-      const result = await ctx.db.wikiCache.deleteMany();
-      await ctx.db.country.updateMany({
-        data: { wikiLastSynced: new Date() },
-      });
-      await invalidateCache(["countries."]);
-      return { cleared: result.count };
-    }),
-
-  createWikiArticleAward: adminProcedure
-    .input(
-      z.object({
-        pageTitle: z.string(),
-        category: z.string(),
-        name: z.string(),
-        description: z.string().optional(),
-        recipientUsers: z.array(z.string()).optional(),
-        metadata: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const award = await ctx.db.wikiArticleAward.create({
-        data: {
-          pageTitle: input.pageTitle,
-          pageSlug: generateSlug(input.pageTitle),
-          category: input.category,
-          name: input.name,
-          description: input.description ?? null,
-          recipientUsers: input.recipientUsers ? input.recipientUsers : undefined,
-          metadata: input.metadata ?? null,
-        },
-      });
-      await invalidateCache(["wiki."]);
-      return award;
     }),
 
   deleteWikiArticleAward: adminProcedure
@@ -372,29 +251,9 @@ export const adminWikiRouter = createTRPCRouter({
   }),
 
   getLorewardWeights: adminProcedure.query(async ({ ctx }) => {
-    const keys = [
-      "lorewardWeight_bytesAdded",
-      "lorewardWeight_proseRatio",
-      "lorewardWeight_editDepth",
-      "lorewardWeight_collaborationBonus",
-      "lorewardWeight_newArticleBonus",
-    ];
-    const configs = await ctx.db.systemConfig.findMany({
-      where: { key: { in: keys } },
-    });
-    const weights = configs.reduce(
-      (acc, config) => {
-        acc[config.key] = parseFloat(config.value);
-        return acc;
-      },
-      {
-        lorewardWeight_bytesAdded: 1.0,
-        lorewardWeight_proseRatio: 1.5,
-        lorewardWeight_editDepth: 1.2,
-        lorewardWeight_collaborationBonus: 1.3,
-        lorewardWeight_newArticleBonus: 1.5,
-      } as Record<string, number>
-    );
+    const stored = await readConfigKeys(ctx.db, Object.keys(LOREWARD_WEIGHT_DEFAULTS));
+    const weights: Record<string, number> = { ...LOREWARD_WEIGHT_DEFAULTS };
+    for (const [key, value] of Object.entries(stored)) weights[key] = parseFloat(value);
     return weights;
   }),
 
@@ -409,23 +268,8 @@ export const adminWikiRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({
-        key,
-        value: value.toString(),
-      }));
-      await ctx.db.$transaction(
-        updates.map((cfg) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: cfg.key },
-            update: { value: cfg.value, updatedAt: new Date() },
-            create: {
-              key: cfg.key,
-              value: cfg.value,
-              description: `Loreward weight parameter for ${cfg.key}`,
-            },
-          })
-        )
-      );
+      const updates = Object.entries(input).map(([key, value]) => ({ key, value: String(value) }));
+      await writeConfigKeys(ctx.db, updates, (key) => `Loreward weight parameter for ${key}`);
       invalidateConfigCache();
       return { success: true };
     }),
@@ -464,28 +308,22 @@ export const adminWikiRouter = createTRPCRouter({
   evaluateWikiMilestones: adminProcedure
     .input(z.object({ pageTitles: z.array(z.string()).optional() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getWikiDbPool();
-
-      let query = `
-        SELECT 
-          p.page_id, 
-          p.page_title, 
-          p.page_len, 
-          COUNT(r.rev_id) as edit_count, 
-          COUNT(DISTINCT r.rev_actor) as contributor_count
-        FROM page p
-        LEFT JOIN revision r ON r.rev_page = p.page_id
-        WHERE p.page_namespace = 0 AND p.page_is_redirect = 0
-      `;
-      const queryParams: any[] = [];
-      if (input.pageTitles && input.pageTitles.length > 0) {
-        const titles = input.pageTitles.map((t) => t.trim().replace(/ /g, "_"));
-        query += ` AND p.page_title IN (${titles.map(() => "?").join(",")}) `;
-        queryParams.push(...titles);
-      }
-      query += ` GROUP BY p.page_id, p.page_title, p.page_len `;
-
-      const [rows] = await db.execute<mysql.RowDataPacket[]>(query, queryParams);
+      const articles = await ctx.db.wikiArticle.findMany({
+        where: {
+          source: "ixwiki",
+          namespace: 0,
+          status: "PUBLISHED",
+          ...(input.pageTitles && input.pageTitles.length > 0
+            ? { title: { in: input.pageTitles } }
+            : {}),
+        },
+        select: {
+          title: true,
+          slug: true,
+          wordCount: true,
+          revisions: { select: { id: true, author: true } },
+        },
+      });
 
       const existingAwards = await ctx.db.wikiArticleAward.findMany({
         select: { pageTitle: true, category: true, name: true },
@@ -496,11 +334,11 @@ export const adminWikiRouter = createTRPCRouter({
 
       const createdAwards: any[] = [];
 
-      for (const row of rows) {
-        const pageTitle = String(row.page_title).replace(/_/g, " ");
-        const pageLen = Number(row.page_len);
-        const editCount = Number(row.edit_count);
-        const contributorCount = Number(row.contributor_count);
+      for (const row of articles) {
+        const pageTitle = row.title;
+        const pageLen = (row.wordCount || 0) * 6;
+        const editCount = row.revisions.length;
+        const contributorCount = new Set(row.revisions.map((r) => r.author).filter(Boolean)).size;
 
         const addAwardIfNew = async (name: string, category: string, description: string) => {
           const key = `${pageTitle}|${category}|${name}`;
@@ -621,18 +459,24 @@ export const adminWikiRouter = createTRPCRouter({
   syncWikiTemplatesByCategory: adminProcedure
     .input(z.object({ category: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      const db = getWikiDbPool();
-      const catKey = input.category.trim().replace(/ /g, "_");
+      const catKey = input.category.trim();
+      const articles = await ctx.db.wikiArticle.findMany({
+        where: {
+          source: "ixwiki",
+          namespace: 10,
+          categories: {
+            some: {
+              category: {
+                name: { equals: catKey, mode: "insensitive" },
+              },
+            },
+          },
+        },
+        select: { title: true },
+        take: 200,
+      });
 
-      const [rows] = await db.execute<mysql.RowDataPacket[]>(
-        `SELECT p.page_title 
-         FROM page p
-         JOIN categorylinks cl ON cl.cl_from = p.page_id
-         WHERE p.page_namespace = 10 AND cl.cl_to = ?`,
-        [catKey]
-      );
-
-      if (rows.length === 0) {
+      if (articles.length === 0) {
         return {
           synced: 0,
           total: 0,
@@ -640,7 +484,7 @@ export const adminWikiRouter = createTRPCRouter({
         };
       }
 
-      const names = rows.map((r) => String(r.page_title).replace(/_/g, " "));
+      const names = articles.map((r) => r.title.replace(/^Template:/i, ""));
       const tdMap = await fetchTemplateData(names);
       let syncedCount = 0;
 
@@ -672,71 +516,27 @@ export const adminWikiRouter = createTRPCRouter({
 
   searchMediaWikiTemplates: adminProcedure
     .input(z.object({ query: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       if (!input.query.trim()) return [];
-      const db = getWikiDbPool();
-      const searchKey = `%${input.query.trim().replace(/ /g, "_")}%`;
-      const [rows] = await db.execute<mysql.RowDataPacket[]>(
-        `SELECT page_title 
-         FROM page 
-         WHERE page_namespace = 10 AND page_is_redirect = 0 AND page_title LIKE ?
-         LIMIT 10`,
-        [searchKey]
-      );
-      return rows.map((r) => String(r.page_title).replace(/_/g, " "));
-    }),
+      const clean = input.query.trim();
+      const templates = await ctx.db.wikiTemplate.findMany({
+        where: {
+          name: { contains: clean, mode: "insensitive" },
+        },
+        take: 10,
+        select: { name: true },
+      });
+      if (templates.length > 0) return templates.map((t) => t.name);
 
-  getCronSchedules: adminProcedure.query(async ({ ctx }) => {
-    const keys = [
-      "cronSchedule_lorewardsScoring",
-      "cronSchedule_passiveIncome",
-      "cronSchedule_cardValue",
-    ];
-    const configs = await ctx.db.systemConfig.findMany({
-      where: { key: { in: keys } },
-    });
-    const schedules = configs.reduce(
-      (acc, config) => {
-        acc[config.key] = config.value;
-        return acc;
-      },
-      {
-        cronSchedule_lorewardsScoring: "0 6 * * *",
-        cronSchedule_passiveIncome: "0 0 * * *",
-        cronSchedule_cardValue: "0 */6 * * *",
-      } as Record<string, string>
-    );
-    return schedules;
-  }),
-
-  saveCronSchedules: adminProcedure
-    .input(
-      z.object({
-        cronSchedule_lorewardsScoring: z.string(),
-        cronSchedule_passiveIncome: z.string(),
-        cronSchedule_cardValue: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const updates = Object.entries(input).map(([key, value]) => ({
-        key,
-        value: value.trim(),
-      }));
-      await ctx.db.$transaction(
-        updates.map((cfg) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: cfg.key },
-            update: { value: cfg.value, updatedAt: new Date() },
-            create: {
-              key: cfg.key,
-              value: cfg.value,
-              description: `Cron schedule expression for ${cfg.key}`,
-            },
-          })
-        )
-      );
-      invalidateConfigCache();
-      return { success: true };
+      const articles = await ctx.db.wikiArticle.findMany({
+        where: {
+          namespace: 10,
+          title: { contains: clean, mode: "insensitive" },
+        },
+        take: 10,
+        select: { title: true },
+      });
+      return articles.map((a) => a.title.replace(/^Template:/i, ""));
     }),
 
   searchWikiUsers: adminProcedure
@@ -746,28 +546,37 @@ export const adminWikiRouter = createTRPCRouter({
         limit: z.number().min(1).max(50).default(10),
       })
     )
-    .query(async ({ input }) => {
-      const db = getWikiDbPool();
-      try {
-        const patternUnderscore = `%${input.query.trim().replace(/ /g, "_")}%`;
-        const patternSpace = `%${input.query.trim().replace(/_/g, " ")}%`;
-        const [rows] = await db.execute<mysql.RowDataPacket[]>(
-          `SELECT user_name, user_editcount 
-           FROM user 
-           WHERE user_name LIKE ? OR user_name LIKE ?
-           ORDER BY user_editcount DESC 
-           LIMIT ?`,
-          [patternUnderscore, patternSpace, input.limit]
-        );
-        return (rows ?? []).map((row) => ({
-          username: String(row.user_name),
-          editCount: Number(row.user_editcount) || 0,
-        }));
-      } catch (err) {
-        console.error("Failed to search MediaWiki users:", err);
-        return [];
+    .query(async ({ ctx, input }) => {
+      const clean = input.query.trim();
+      const users = await ctx.db.user.findMany({
+        where: {
+          wikiUsername: { contains: clean, mode: "insensitive" },
+        },
+        take: input.limit,
+        select: {
+          wikiUsername: true,
+        },
+      });
+
+      const stats = await ctx.db.lorewardUserStats.findMany({
+        where: {
+          username: { contains: clean, mode: "insensitive" },
+        },
+        take: input.limit,
+        select: { username: true, totalScore: true },
+      });
+
+      const resultsMap = new Map<string, number>();
+      for (const u of users) {
+        if (u.wikiUsername) resultsMap.set(u.wikiUsername, 0);
       }
+      for (const s of stats) {
+        resultsMap.set(s.username, s.totalScore);
+      }
+
+      return Array.from(resultsMap.entries()).map(([username, editCount]) => ({
+        username,
+        editCount,
+      }));
     }),
 });
-
-// getWikiDbPool is now imported from "~/lib/wiki-os/adapters/mediawiki/bridge"

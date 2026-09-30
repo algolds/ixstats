@@ -14,6 +14,8 @@
  *   - "info"    — pure observation (e.g. zero national capitals)
  */
 
+import { formatNumber } from "~/lib/utils/format-utils";
+
 export type ComplianceSeverity = "error" | "warning" | "info";
 
 export type ComplianceCategory =
@@ -323,10 +325,6 @@ function extractLngLat(raw: unknown): [number, number] | null {
     }
   }
   return null;
-}
-
-function formatNumber(n: number): string {
-  return n.toLocaleString("en-US");
 }
 
 /**

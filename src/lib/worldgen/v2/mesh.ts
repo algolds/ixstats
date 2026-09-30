@@ -12,6 +12,7 @@
 // @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
+import { distanceKmLatLng } from "~/lib/maps/geo-math";
 import { createEmptyWorldGraph, type WorldGraph } from "./types";
 
 // ──────────────────────────────────────────────
@@ -170,16 +171,7 @@ export function cellAreaKm2(graph: WorldGraph, i: number): number {
  * Haversine distance between two cells in km.
  */
 export function cellDistanceKm(graph: WorldGraph, a: number, b: number): number {
-  const R = 6371; // Earth radius in km
-  const lat1 = (cellLat(graph, a) * Math.PI) / 180;
-  const lat2 = (cellLat(graph, b) * Math.PI) / 180;
-  const dLat = lat2 - lat1;
-  const dLng = ((cellLng(graph, b) - cellLng(graph, a)) * Math.PI) / 180;
-
-  const sinDLat = Math.sin(dLat / 2);
-  const sinDLng = Math.sin(dLng / 2);
-  const h = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLng * sinDLng;
-  return 2 * R * Math.asin(Math.sqrt(h));
+  return distanceKmLatLng(cellLat(graph, a), cellLng(graph, a), cellLat(graph, b), cellLng(graph, b));
 }
 
 // ──────────────────────────────────────────────
@@ -200,6 +192,7 @@ function generateJitteredGrid(targetCount: number, rng: () => number): Float64Ar
   const cols = Math.round(Math.sqrt(targetCount * aspectRatio));
   const rows = Math.round(targetCount / cols);
 
+  // oxlint-disable-next-line typescript/no-unused-vars
   const cellW = 360 / cols;
   const cellH = 168 / rows; // from -84 to 84
 

@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Shield, DollarSign, Landmark, MapPin, Users } from "lucide-react";
+import {
+  Shield,
+  Dollar as DollarSign,
+  Bank as Landmark,
+  MapPin,
+  Group as Users,
+} from "iconoir-react";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 
 interface AllianceCreatorSheetProps {
@@ -82,20 +88,29 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
       onCreated?.();
     },
     onError: (error) => {
-      notify.error("Failed to create alliance", error.message);
+      let msg = error.message;
+      try {
+        const parsed = JSON.parse(error.message);
+        if (Array.isArray(parsed) && parsed[0]?.message) {
+          msg = parsed[0].message;
+        }
+      } catch {
+        // use raw message
+      }
+      notify.error("Failed to create alliance", msg);
     },
   });
 
   const handleSubmit = () => {
-    if (!name.trim()) {
-      notify.error("Alliance name is required");
+    if (name.trim().length < 2) {
+      notify.error("Invalid Alliance Name", "Alliance name must be at least 2 characters long.");
       return;
     }
     createAlliance.mutate({
-      name,
-      shortName: shortName || undefined,
+      name: name.trim(),
+      shortName: shortName.trim() || undefined,
       type,
-      description: description || undefined,
+      description: description.trim() || undefined,
       color,
       visibility,
       joinPolicy,

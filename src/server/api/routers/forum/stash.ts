@@ -4,40 +4,9 @@
 // and handles account linking + profile sync.
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import {
-  type XFPost,
-  type XFThread,
-  type XFForum,
-  getXfApiKey,
-  getXfApiUrl,
-  transformBBCode,
-} from "~/server/modules/forum";
 
 export const forumStashRouter = createTRPCRouter({
-  // =========================================================================
-  // Reader endpoints
-  // =========================================================================
-
-  // =========================================================================
-  // WRITE ENDPOINTS (require linked forum account)
-  // =========================================================================
-
-  // Conversations removed — all private messaging is centralized in ThinkShare.
-
-  // =========================================================================
-  // MODERATION ENDPOINTS (require admin / system owner)
-  // =========================================================================
-
-  // =========================================================================
-  // ALERT SYNC (surface XenForo alerts in IxStates UI)
-  // =========================================================================
-
-  // =========================================================================
-  // ACCOUNT LINKING (existing endpoints, kept intact)
-  // =========================================================================
-
   // =========================================================================
   // STASH ENDPOINTS (uses global Stash system for forum content)
   // =========================================================================

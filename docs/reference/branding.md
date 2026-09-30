@@ -1,17 +1,17 @@
 # IxStates Branding Reference
 
-**Last updated:** June 2026 — complete brand catalog covering all systems, icons, colors, symbols, and visual identity tokens across the platform.
+**Last updated:** June 2026 (paths, versions and infrastructure re-verified September 2026) — complete brand catalog covering all systems, icons, colors, symbols, and visual identity tokens across the platform.
 
 > **Naming note:** IxStates is the platform/ecosystem (future product). IxStats is the current dev codename used in the repository (`package.json` name: `ixstates`) and database. The two names coexist — code is `ixstats`, brand is IxStates.
 
-> **Versioning note:** All version numbers come from the **Version Registry** at `src/lib/buildVersion.ts` (the single source of truth) — see [`revision.md`](./revision.md). This doc intentionally does **not** quote version numbers; consult the registry, the About page, or the Developer panel for live values. The platform is **IxStates 1.1.1 "Ogma"** (channel: Alpha); Apps/Engines/Systems each carry a single capability integer.
+> **Versioning note:** All version numbers come from the **Version Registry** at `src/lib/buildVersion.ts` (the single source of truth) — see [`revision.md`](./revision.md). This doc intentionally does **not** quote version numbers; consult the registry, the About page, or the Developer panel for live values. The platform is **IxStates 1.4.0 "Lobster Crosby"** (channel: Release Candidate); Apps/Engines/Systems each carry a single capability integer.
 
 ---
 
 ## Brand Architecture
 
 ```
-IxStates (platform/ecosystem)         ← versioned: 1.1.1 "Ogma" (Major.Minor.Patch + epoch + channel)
+IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Major.Minor.Patch + epoch + channel)
 ├── dev codename: IxStats
 
 ├── Apps (own brand, ship/break independently — single integer)
@@ -66,7 +66,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.1.1 "Ogma" (Major.Minor.P
 | **Name**             | IxStates™ (platform/ecosystem)                                           |
 | **Dev codename**     | IxStats (repo, package, database)                                        |
 | **Project name**     | `ixstates` (`package.json`, Prisma schema headers)                       |
-| **Version**          | `APP_VERSION` (from registry) — platform **1.1.1 "Ogma"**, channel Alpha |
+| **Version**          | `APP_VERSION` (from registry) — platform **1.4.0 "Lobster Crosby"**, channel Release Candidate |
 | **Homepage**         | `https://ixwiki.com/projects/ixstats`                                    |
 | **Meta title**       | `IxStats — Nations, economy, lore`                                       |
 | **Meta description** | `Build your country from the ground up...`                               |
@@ -116,7 +116,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Accent hex**   | `#06b6d4` (cyan-500)                                                                                                                           |
 | **Standalone**   | IxWorld — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`)                                                                 |
 | **Prisma**       | `maps.prisma` (ProceduralWorld, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
-| **Key files**    | `src/app/maps/`, `src/components/maps/{core,editor,overlays,widgets}/`, `src/lib/map-*.ts`                                                     |
+| **Key files**    | `src/app/maps/`, `src/components/maps/{core,editor,overlays,pipeline,shared,widgets}/`, `src/lib/maps/`                                                     |
 | **Map overlays** | Choropleth, Geopolitical, RiskHeatmap, TradeRoute, Transport                                                                                   |
 | **Map widgets**  | CountryMapEmbed, DashboardMapWidget, MiniWorldMap                                                                                              |
 
@@ -127,10 +127,10 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Map Editor**        | Visual territory editor with border editing (`src/components/maps/editor/`)      |
 | **Forge Mode**        | Admin superpowers toggle in Map Editor (`MapEditorOverlay.tsx:2518`, admin-only) |
 | **Story Pins**        | 14 category × 3 importance levels = 42 canvas-generated map markers (see §7.3)   |
-| **Procedural World**  | Auto-generated territories (`src/lib/procedural-archive/`)                       |
-| **Geo Analytics**     | Spatial calculations, math, validation (`src/lib/geo-*.ts`)                      |
-| **Transport Network** | Routes & hubs with generator (`src/lib/transport-generator.ts`)                  |
-| **SVG Upload**        | Flag/map SVG management (`src/lib/svg-parser.ts`)                                |
+| **Procedural World**  | Auto-generated territories (`src/lib/worldgen/`)                       |
+| **Geo Analytics**     | Spatial calculations, math, validation (`src/lib/maps/geo-*.ts`)                      |
+| **Transport Network** | Routes & hubs with generator (`src/lib/economy/transport-generator.ts`)                  |
+| **SVG Upload**        | Flag/map SVG management (`src/lib/flags/svg-parser.ts`)                                |
 
 ### 2.2 IxForum (Community)
 
@@ -164,12 +164,12 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | Sub-system           | Description                                                                                               |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
-| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/budget-vault-calculator.ts`)       |
-| **Card Crafting**    | Card creation/combination with recipes. Prisma: `CraftingRecipe`, `CraftingHistory`. tRPC: `crafting.ts`. |
-| **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading.ts`.                               |
-| **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market.ts`.                  |
-| **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs.ts`. 🎁 emoji.                                        |
-| **Lore Cards**       | Wiki-generated narrative cards. Prisma: `LoreCardRequest`. tRPC: `lore-cards.ts`.                         |
+| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/economy/budget-vault-calculator.ts`)       |
+| **Card Crafting**    | Card creation/combination with recipes. Prisma: `CraftingRecipe`, `CraftingHistory`. tRPC: `crafting/`. |
+| **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
+| **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
+| **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs/`. 🎁 emoji.                                        |
+| **Lore Cards**       | Wiki-generated narrative cards. Prisma: `LoreCardRequest`. tRPC: `lore-cards/`.                         |
 | **NS Import / Sync** | NationStates data import and synchronization. Prisma: `NSImport`, `SyncLog`, `SyncCheckpoint`.            |
 
 #### Vault Sidebar Sections
@@ -199,7 +199,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | Sub-system           | Version                     | Description                                                                                                                                                                          |
 | -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **WikiOS**           | `WIKIOS_VERSION` (registry) | The **App** — next-gen wiki software that powers the IxWiki content, deprecating legacy MediaWiki to "Classic Mode."                                                                 |
-| **Canvas Editor**    | `CANVAS_VERSION` (registry) | WikiOS **sub-system** (nested sub-version): visual/contenteditable wiki editor (`src/components/wikios/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
+| **Canvas Editor**    | `CANVAS_VERSION` (registry) | WikiOS **sub-system** (nested sub-version): visual/contenteditable wiki editor (`src/components/wiki-os/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
 | **Image Repository** | —                           | WikiOS Commons Explorer at `/w/repository/`. Wikimedia Commons API proxy. tRPC: `commons.ts`.                                                                                        |
 
 #### WikiOS Special Pages
@@ -226,15 +226,15 @@ First-class systems within the IxStates platform.
 | **Shine**      | `["#f59e0b", "#eab308", "#fbbf24"]`                                                                            |
 | **Glow**       | `text-amber-400`                                                                                               |
 | **Glass var**  | `--glass-mycountry: #ca8a04` (yellow-600)                                                                      |
-| **Logo**       | Globe (amber bg) + Crown overlay + "MyCountry" text in amber gradient (`src/components/ui/mycountry-logo.tsx`) |
+| **Logo**       | Globe (amber bg) + Crown overlay + "MyCountry" text in amber gradient (`src/components/mycountry/shared/primitives/mycountry-logo.tsx`) |
 | **Route**      | `src/app/mycountry/` — single-page router pattern, 10+ sub-pages                                               |
 
 #### Military & Security
 
 | Sub-system                     | Gradient                  | Icon                     | Description                                                                                                                                |
 | ------------------------------ | ------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Defense**                    | `from-red-500 to-red-600` | Shield / ShieldCheckIcon | Military branches, units, equipment, assets. Prisma: `military.prisma` (19 models). tRPC: `militaryEquipment.ts`, `smallArmsEquipment.ts`. |
-| **Security**                   | —                         | ShieldAlert              | Threats, assessments, stability, border security. tRPC: `security.ts`.                                                                     |
+| **Defense**                    | `from-red-500 to-red-600` | Shield / ShieldCheckIcon | Military branches, units, equipment, assets. Prisma: `military.prisma` (19 models). tRPC: `militaryEquipment/`, `smallArmsEquipment/`. |
+| **Security**                   | —                         | ShieldAlert              | Threats, assessments, stability, border security. tRPC: `security/`.                                                                     |
 | **Small Arms & Manufacturers** | —                         | —                        | Infantry weapons catalog + manufacturer management. Admin: `/admin/military-equipment/{,small-arms,manufacturers,analytics}/`.             |
 
 **Equipment catalog icons:** Aircraft: Plane, Naval: Ship, Vehicle: Car, Missile: Rocket, Support: Wrench.
@@ -243,17 +243,17 @@ First-class systems within the IxStates platform.
 
 | Sub-system     | Gradient                        | Icon                 | Description                                                                                                                           |
 | -------------- | ------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Government** | —                               | Landmark / Building2 | Departments, budget allocation, officials. Prisma: `government.prisma` (33 models). tRPC: `government.ts`, `governmentComponents.ts`. |
-| **Elections**  | `from-indigo-500 to-indigo-600` | Vote / VoteIcon      | Political parties, candidates, D'Hondt/FPTP seat allocation, legislature config. tRPC: `elections.ts`.                                |
-| **Policies**   | —                               | FileText             | Policy creation, effects, scheduling. Prisma: `Policy`, `PolicyEffectLog`. tRPC: `policies.ts`.                                       |
+| **Government** | —                               | Landmark / Building2 | Departments, budget allocation, officials. Prisma: `government.prisma` (36 models). tRPC: `government/`, `governmentComponents/`. |
+| **Elections**  | `from-indigo-500 to-indigo-600` | Vote / VoteIcon      | Political parties, candidates, D'Hondt/FPTP seat allocation, legislature config. tRPC: `elections/`.                                |
+| **Policies**   | —                               | FileText             | Policy creation, effects, scheduling. Prisma: `Policy`, `PolicyEffectLog`. tRPC: `policies/`.                                       |
 
 #### Economy & Resources
 
 | Sub-system                | Gradient | Icon             | Description                                                                                                                      |
 | ------------------------- | -------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | **Economy**               | —        | TrendingUp       | Economic modeling, indicators, archetypes. Glass var: `--glass-eci: #4f46e5` (indigo-600). Prisma: `economy.prisma` (33 models). |
-| **Tax System**            | —        | —                | Brackets, deductions, exemptions. Prisma: `TaxSystem`, `TaxCategory`, `TaxBracket`. tRPC: `taxSystem.ts`, `atomicTax.ts`.        |
-| **Resources & Transport** | —        | Database / Truck | Nation resource management + transport routes/hubs. tRPC: `resources.ts`, `transport.ts`.                                        |
+| **Tax System**            | —        | —                | Brackets, deductions, exemptions. Prisma: `TaxSystem`, `TaxCategory`, `TaxBracket`. tRPC: `taxSystem/` (the former `atomicTax.ts` router was removed).        |
+| **Resources & Transport** | —        | Database / Truck | Nation resource management + transport routes/hubs. tRPC: `resources.ts`, `transport/`.                                        |
 
 #### Intelligence & Diplomacy
 
@@ -261,7 +261,7 @@ First-class systems within the IxStates platform.
 | ------------------------ | --------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Intelligence**         | `from-blue-500 to-blue-600` | Brain / BrainIcon | Briefings, alerts, recommendations, forecasting. Prisma: `intelligence.prisma`. tRPC: `intelligence/`. Shine: `["#6366f1", "#4f46e5", "#818cf8"]`, glow: `text-indigo-400`. |
 | **Diplomacy**            | `from-cyan-500 to-cyan-600` | Users / UsersIcon | Embassies, scenarios, cultural exchange, NPC personalities, Markov engine. Prisma: `diplomacy.prisma`. tRPC: `diplomacy/`.                                                  |
-| **Diplomatic WebSocket** | —                           | —                 | Real-time diplomatic events (`src/lib/diplomatic-websocket.ts`, 600 lines).                                                                                                 |
+| **Diplomatic WebSocket** | —                           | —                 | _Removed_ — there is no diplomatic WebSocket; see [`events.md`](./events.md) for the live channels.                                                                                                 |
 
 **Embassy emojis:** 🏛️ (establishment), 🎯 (mission), ✅ (success), ❌ (failed/severed).
 
@@ -271,8 +271,8 @@ First-class systems within the IxStates platform.
 | --------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
 | **National Issues**   | AlertTriangle | Configurable issue templates with consequences. Prisma: `NationalIssue`, `NationalIssueConsequence`. |
 | **Crisis Events**     | Zap           | Dynamic world events affecting nations. Prisma: `CrisisEvent`, `WorldEvent`, `EventChain`.           |
-| **National Identity** | Flag          | Cultural identity data (60 fields). tRPC: `nationalIdentity.ts`.                                     |
-| **Meetings**          | Calendar      | Cabinet meetings, agendas, decisions, action items. tRPC: `meetings.ts`.                             |
+| **National Identity** | Flag          | Cultural identity data (60 fields). tRPC: `countries/identity` (no standalone `nationalIdentity` router).                                     |
+| **Meetings**          | Calendar      | Cabinet meetings, agendas, decisions, action items. tRPC: `meetings/`.                             |
 
 ---
 
@@ -291,8 +291,8 @@ First-class systems within the IxStates platform.
 | Sub-system            | Description                                                                                                                                                     |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Builder Sections**  | 7 step-through sections: CoreIndicators, Demographics, Economy, FiscalSystem, GovernmentSpending, GovernmentStructure, LaborEmployment                          |
-| **Atomic Components** | Modular building system — AtomicEconomicComponents, AtomicGovernmentComponents, AtomicTaxComponents. Synergy/conflict system (`src/lib/synergy-calculator.ts`). |
-| **IIWiki Importer**   | Wiki data ingestion for country creation. tRPC: `wikiImporter.ts`.                                                                                              |
+| **Atomic Components** | Modular building system — AtomicEconomicComponents, AtomicGovernmentComponents, AtomicTaxComponents. Synergy/conflict system (`src/lib/government/synergy.ts`). |
+| **IIWiki Importer**   | Wiki data ingestion for country creation. tRPC: `countries/wiki` (`searchWiki`, `parseInfobox`; no standalone `wikiImporter` router).                                                                                              |
 
 ---
 
@@ -328,7 +328,7 @@ First-class systems within the IxStates platform.
 | **Default trophy**  | 🏆                                                                 |
 | **Featured**        | ⭐ / 📝                                                            |
 | **Locked**          | 🔒                                                                 |
-| **Definition file** | `src/lib/achievement-definitions.ts` (946 lines, 50+ achievements) |
+| **Definition file** | `src/lib/achievements/definitions.ts` (991 lines, 76 achievements) |
 | **Categories**      | Economic, Military, Diplomatic, Government, Social, General        |
 
 #### Category Icons
@@ -359,9 +359,9 @@ First-class systems within the IxStates platform.
 
 | Sub-system                    | Description                                                                                                                                                             |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Achievement Constellation** | Visual achievement display (`src/components/achievements/AchievementConstellation.tsx`)                                                                                 |
-| **Quest Paths**               | Achievement progression trees (`src/components/achievements/QuestPathCard.tsx`)                                                                                         |
-| **LoreWards**                 | Wiki scoring & medals system. Prisma: `LorewardEntry`, `LorewardUserStats`, `LorewardCrossValidation`. tRPC: `lorewards.ts`. Admin wiki icons: 🏆 🏅 👑 🛡️ 🎖️ 👥 ✔️ ✨. |
+| **Achievement Constellation** | _Removed_ (commit `290f7da08`); the achievements page now uses `FloatingRibbonRack.tsx` / `AchievementDecorations.tsx`                                                 |
+| **Quest Paths**               | _Removed_ (commit `290f7da08`)                                                                                                                                          |
+| **LoreWards**                 | Wiki scoring & medals system. Prisma: `LorewardEntry`, `LorewardUserStats`, `LorewardCrossValidation`. tRPC: `lorewards/`. Admin wiki icons: 🏆 🏅 👑 🛡️ 🎖️ 👥 ✔️ ✨. |
 
 ---
 
@@ -398,8 +398,8 @@ Global contextual UI overlay system with plugin architecture. _(Formerly "Dynami
 | ------------ | ------------------------------------- |
 | **Location** | `src/components/halo/`       |
 | **Plugins**  | Wiki, Forum, Maps, Builder, MyCountry |
-| **Views**    | CompactView, ExpandedView             |
-| **Docs**     | `docs/systems/dynamic-island.md`      |
+| **Views**    | CompactView, ExpandedView, NavTray, NotificationsView, SearchView, SettingsView |
+| **Docs**     | `docs/systems/halo.md`                |
 
 ---
 
@@ -444,7 +444,7 @@ Cross-cutting services without a user-facing product identity.
 
 | Token                | Value                                                                  |
 | -------------------- | ---------------------------------------------------------------------- |
-| **Class**            | `IxTime` in `src/lib/ixtime.ts` (642 lines)                            |
+| **Class**            | `IxTime` in `src/lib/ixtime/core.ts` (730 lines)                       |
 | **Multiplier**       | 4×/2× configurable                                                     |
 | **Real-world epoch** | October 2020                                                           |
 | **In-game epoch**    | January 2028                                                           |
@@ -453,7 +453,7 @@ Cross-cutting services without a user-facing product identity.
 
 ### 5.2 IxnayID
 
-Cross-platform identity linking service — unifies Forum, Wiki, and Discord identities. tRPC: `ixnayid.ts`.
+Cross-platform identity linking service — unifies Forum, Wiki, and Discord identities. tRPC: `ixnayid/`.
 
 ---
 
@@ -461,7 +461,7 @@ Cross-platform identity linking service — unifies Forum, Wiki, and Discord ide
 
 ### 6.1 Facet (Design System)
 
-The platform's design system — a glass / refraction / depth visual language used throughout all UI (independently versioned; `FACET_VERSION` in the registry). File: `src/styles/glass-refraction.css` (1379 lines). _(Formerly "Glass Physics". The CSS tokens/classes `--glass-*` / `glass-*` keep their names pending a separate mechanical rename.)_
+The platform's design system — a glass / refraction / depth visual language used throughout all UI (independently versioned; `FACET_VERSION` in the registry). Files: `src/styles/facet.css` plus `src/styles/facet/{core,components,physics}.css` (~2,200 lines). _(Formerly "Glass Physics". The CSS tokens/classes `--glass-*` / `glass-*` keep their names pending a separate mechanical rename.)_
 
 **Glass CSS Variables:**
 
@@ -476,7 +476,7 @@ The platform's design system — a glass / refraction / depth visual language us
 
 ### 6.2 Notifications
 
-Global notification center. Components: `GlobalNotificationSystem`, `LiveDataIntegration`, `NotificationBadgeProvider`, `UnifiedNotificationCenter`. tRPC: `notifications.ts`.
+Global notification center, shown in Halo (`src/components/halo/views/NotificationsView.tsx`). The unread count in the tab title comes from `useNotificationBadge` (`src/hooks/useLiveNotifications.ts`). tRPC: `notifications/` (`user`, `events`, `preferences`).
 
 ### 6.3 Help System
 
@@ -494,26 +494,13 @@ Multi-source flag resolution pipeline. Key files: `unified-flag-service.ts`, `fl
 
 | System                     | Status           | Key File                                                                   |
 | -------------------------- | ---------------- | -------------------------------------------------------------------------- |
-| **Intelligence WebSocket** | Production only  | `src/server/websocket-server.ts`                                           |
-| **Market WebSocket**       | Always enabled   | `src/lib/market-websocket-server.ts`, `src/lib/market-websocket-client.ts` |
-| **Diplomatic WebSocket**   | Production only  | `src/lib/diplomatic-websocket.ts`                                          |
-| **ThinkPages WebSocket**   | Live social feed | `src/hooks/useThinkPagesWebSocket.ts`                                      |
+| **ThinkPages WebSocket**   | `/ws/thinkpages` (`ws-backend.mjs`; `server.mjs` in production) | `src/lib/websocket/thinkpages-websocket-server.ts`, `src/server/websocket-server.ts`; client `src/hooks/useThinkPagesWebSocket.ts` |
+| **Market WebSocket**       | `/api/market-ws`, always enabled | `src/lib/websocket/market-websocket-server.ts`, `src/lib/websocket/market-websocket-client.ts` |
+| **Map updates (SSE)**      | `/api/sse/map-updates` | `src/app/api/sse/map-updates/route.ts` |
 
 ### 6.7 Cron Jobs
 
-Production-only scheduled jobs (`server.mjs` + `src/lib/*-cron.ts`).
-
-| Cron                        | Schedule        | Lib File                              |
-| --------------------------- | --------------- | ------------------------------------- |
-| Auction Completion          | Every minute    | `auction-completion-cron.ts`          |
-| Passive Income Distribution | Daily midnight  | `passive-income-distribution-cron.ts` |
-| Card Value Update           | Every 6 hours   | `nation-card-value-update-cron.ts`    |
-| Lore Card Generation        | Daily 02:00 UTC | `lore-card-generation-cron.ts`        |
-| Trade Expiry                | Every 5 minutes | `trade-expiry-cron.ts`                |
-| IxTwitter Discord Sync      | Hourly          | `discord-ixtwitter-sync.ts`           |
-| Lorewards Full Sync         | Daily 06:00     | `lorewards-sync.ts`                   |
-| Scheduled Changes           | On-tick         | `apply-scheduled-changes.ts`          |
-| Equipment Image Validation  | On-schedule     | `validate-equipment-images.ts`        |
+All scheduled jobs run only in `cron-runner.mjs` (PM2 app `ixstats-cron`); the 15 jobs are defined in `src/server/cron/jobs.ts` and enabled via `CRON_ENABLED_JOBS`. See [`events.md`](./events.md#scheduled--batch-jobs) for the full table (auction completion, passive income, card values, lore card generation, LoreWards full/state sync, trade expiry, sports season advance, scheduled changes, elections, politics drift, diplomatic drift, policy maintenance, national issues, wiki recent changes). IxTwitter Discord sync runs as its own PM2 process (`ixstats-ixtwitter`).
 
 ### 6.8 Caching / Rate Limiting / Auth
 
@@ -521,9 +508,9 @@ Production-only scheduled jobs (`server.mjs` + `src/lib/*-cron.ts`).
 | ---------------------- | ----------------------------------------------------------------------------- |
 | **Redis**              | Rate limiting + caching (ioredis). Falls back to in-memory if unavailable.    |
 | **External API Cache** | Multi-tier cache for MediaWiki, Unsplash, Wikimedia, FlagCDN, REST Countries. |
-| **Rate Limiter**       | Per-user and global rate limiting (`src/lib/rate-limiter.ts`).                |
+| **Rate Limiter**       | Per-user and global rate limiting (`src/lib/cache/rate-limiter.ts`).                |
 | **Clerk Auth**         | User authentication (`@clerk/nextjs`, `src/proxy.ts`).                        |
-| **Database**           | PostgreSQL + PostGIS via Prisma. 15 schema files, 296 models.                 |
+| **Database**           | PostgreSQL + PostGIS via Prisma. 18 schema files, 332 models.                 |
 
 ---
 
@@ -595,7 +582,9 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | natural     | `#059669` | teal-600   | Geographic/environmental  |
 | exploration | `#0891b2` | cyan-600   | Discovery, expeditions    |
 
-### 8.4 Wiki Country Section Icons (Remix Icons)
+### 8.4 Wiki Country Section Icons (Remix Icons — historical)
+
+> `react-icons` is no longer a dependency (icons were consolidated onto `iconoir-react`); the `Ri*` names below record the original mapping only.
 
 | Section      | Icon                    |
 | ------------ | ----------------------- |
@@ -617,7 +606,7 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 
 **Government component defaults**: Settings, Building2, Vote, Clock, TrendingUp, Cross, Scale, Flag, Cpu, DollarSign, Target, BarChart3, Brain, Monitor, Network, CheckCircle, BookOpen, Handshake, Microscope, Lightbulb, ArrowRightLeft, Copyright, MessageSquare, RefreshCw, Info, Upload
 
-(Resolved in `src/lib/resolve-lucide-icon.ts`)
+(Imported directly from `iconoir-react` under Lucide-style aliases, e.g. `City as Building2` in `src/lib/government/data/components-part*.ts`; the former `resolve-lucide-icon.ts` resolver no longer exists.)
 
 ---
 
@@ -625,13 +614,10 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 
 | Library                        | Package                    | Usage                                                                        |
 | ------------------------------ | -------------------------- | ---------------------------------------------------------------------------- |
-| **Lucide React**               | `lucide-react`             | Primary icon set — nav, sidebar, UI elements                                 |
-| **React Icons (Font Awesome)** | `react-icons/fa`           | Wiki nav (FaWikipediaW), Labs (FaLanguage)                                   |
-| **React Icons (Game Icons)**   | `react-icons/gi`           | Cards nav (GiCardRandom), Labs (GiSoapExperiment), Vexel (GiVibratingShield) |
-| **React Icons (Remix)**        | `react-icons/ri`           | Country wiki section labels                                                  |
-| **Custom Animated Icons**      | `src/components/ui/icons/` | 36 animated SVG components                                                   |
+| **Iconoir**                     | `iconoir-react`            | Primary icon set — nav, sidebar, UI elements                                 |
+| ~~Custom Animated Icons~~      | ~~`src/components/ui/icons/`~~ | Removed — the directory no longer exists; `react-icons` and `lucide-react` were also dropped |
 
-### Custom Animated Icon Catalog
+### Custom Animated Icon Catalog (historical — removed)
 
 Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Brain, Briefcase, ChartBar, ChartPie, Cog, Crown, CurrencyDollar, Eye, GlobeAlt, Heart, Landmark, Layers, LayoutDashboard, LockClosed, MagnifyingGlass, Map, MapPin, MousePointer, PaintBrush, Pencil, Plus, RocketLaunch, Scroll, ShieldCheck, Sparkles, Star, Target, Trash, Trophy, Users, Vote
 

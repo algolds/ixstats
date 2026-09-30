@@ -1,11 +1,11 @@
+"use client";
 // src/components/forum/reader/ForumCategoryCard.tsx
 // Renders a forum category/sub-forum card on the forum index page.
 
-"use client";
-
 import Link from "next/link";
-import { MessageSquare, Clock } from "lucide-react";
+import { ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
+import { timeAgo } from "~/lib/format/compact";
 
 interface ForumCategoryCardProps {
   nodeId: number;
@@ -21,16 +21,7 @@ interface ForumCategoryCardProps {
   children?: React.ReactNode;
 }
 
-function formatTimeAgo(unixTimestamp: number): string {
-  const now = Date.now() / 1000;
-  const diff = now - unixTimestamp;
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(unixTimestamp * 1000).toLocaleDateString();
-}
+const formatTimeAgo = (unixTimestamp: number) => timeAgo(unixTimestamp * 1000);
 
 export function ForumCategoryCard({
   nodeId,

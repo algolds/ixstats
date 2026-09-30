@@ -4,7 +4,8 @@
  * useMapData - Hook for fetching and managing world map layer data.
  *
  * Uses a two-tier cache strategy:
- * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL
+ * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL; per realm, read-only here
+ *    (useMapDataBatched writes it)
  * 2. React Query (in-memory) — instant during SPA navigation, 30min stale
  *
  * On first load: check IndexedDB → use as initialData → background refresh from server.
@@ -16,7 +17,8 @@ import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, setCachedMapLayers } from "~/lib/maps/map-idb-cache";
+import { getCachedMapLayers, type MapCacheScope } from "~/lib/maps/map-idb-cache";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 
 /** Layers that are always visible and cannot be toggled off */
 export const LOCKED_LAYERS: MapLayerType[] = ["background"];
@@ -34,6 +36,18 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
  * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
+/** Critical layers load first — altitudes are the terrain base, must render with map.
+ * Shared with useMapDataBatched so useMapPrefetch fills the exact bundle key /maps reads first. */
+export const CRITICAL_LAYERS: MapLayerType[] = [
+  "background",
+  "altitudes",
+  "political",
+  "country_labels",
+  "rivers",
+  "lakes",
+  "icecaps",
+];
+
 /** Shared query options for map data - long cache, no refetching */
 export const MAP_QUERY_OPTIONS = {
   staleTime: 30 * 60 * 1000, // 30 min - map data rarely changes
@@ -43,26 +57,35 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnReconnect: false,
 } as const;
 
-export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data (loaded once on mount)
+  // IndexedDB cached data for the realm this map shows (only in browser, once that realm is known).
+  // Read-only here: getWorldMap doesn't report the realm it resolved, so only useMapDataBatched —
+  // whose bundle does — writes entries.
+  const viewerRealmId = useViewerRealmId();
+  const cacheScope = useMemo<MapCacheScope>(
+    () => ({ realm, viewerRealmId }),
+    [realm, viewerRealmId]
+  );
   const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-  const idbLoadedRef = useRef(false);
 
-  // Load from IndexedDB on mount (only in browser)
   useEffect(() => {
-    if (idbLoadedRef.current) return;
-    idbLoadedRef.current = true;
-    getCachedMapLayers().then((cached) => {
-      if (cached) {
+    let cancelled = false;
+    setIdbData(null);
+    getCachedMapLayers(cacheScope).then((cached) => {
+      if (cached && !cancelled) {
         console.log("[useMapData] Loaded map data from IndexedDB cache");
         setIdbData(cached);
       }
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheScope]);
 
   // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
   const zoomBucket = useMemo(() => {
@@ -87,6 +110,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
       layers: allRequestedLayers,
       zoom:
         zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
+      realm,
     },
     {
       ...MAP_QUERY_OPTIONS,
@@ -94,18 +118,6 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
       placeholderData: (idbData as any) ?? undefined,
     }
   );
-
-  // Persist fresh server data to IndexedDB
-  const persistedRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!layerData) return;
-    // Only persist once per unique dataset (avoid re-writing on every render)
-    const keys = Object.keys(layerData).sort().join(",");
-    if (persistedRef.current === keys) return;
-    persistedRef.current = keys;
-    setCachedMapLayers(layerData as Record<string, unknown>);
-    console.log("[useMapData] Persisted map data to IndexedDB cache");
-  }, [layerData]);
 
   // Use server data if available, otherwise IDB cache
   const effectiveData = layerData ?? idbData;
@@ -166,18 +178,14 @@ export function useMapPrefetch() {
   const utils = api.useUtils();
   const warmedRef = useRef(false);
 
-  useEffect(() => {
-    // Fire-and-forget prefetch using batched bundle endpoint (single request)
-    utils.geoCore.getMapBundle.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
-    // Also prefetch individual endpoints for backward compatibility with non-batched consumers
-    utils.geoCore.getWorldMap.prefetch({ layers: ALL_PREFETCH_LAYERS }, MAP_QUERY_OPTIONS);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // After political layer is available, warm ALL per-country data
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ALL_PREFETCH_LAYERS },
+  // Same key useMapDataBatched requests first (zoom omitted = undefined), so /maps reads this entry.
+  const { data: bundle } = api.geoCore.getMapBundle.useQuery(
+    { layers: CRITICAL_LAYERS },
     { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
   );
+  const worldMap = bundle?.worldMap;
+
+  // After political layer is available, warm ALL per-country data
 
   useEffect(() => {
     if (warmedRef.current || !worldMap) return;

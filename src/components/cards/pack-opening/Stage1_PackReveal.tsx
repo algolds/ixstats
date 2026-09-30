@@ -1,7 +1,6 @@
+"use client";
 // src/components/cards/pack-opening/Stage1_PackReveal.tsx
 // Stage 1: Pack appearance with 3D rotation and pulsing glow
-
-"use client";
 
 import React from "react";
 import { motion } from "motion/react";

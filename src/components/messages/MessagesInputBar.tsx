@@ -1,11 +1,26 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { GlassPlateEditor, type GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
-import { Reply, X, BookmarkPlus, Send, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
+
+const GlassPlateEditor = dynamic(
+  () => import("~/components/thinkpages/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  {
+    loading: () => <div className="h-12 animate-pulse rounded-lg bg-white/5" />,
+    ssr: false,
+  }
+);
+import {
+  Reply,
+  Xmark as X,
+  Bookmark as BookmarkPlus,
+  Send,
+  SystemRestart as Loader2,
+} from "iconoir-react";
 import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 
 interface ReplyMessage {
   id: string;
@@ -93,10 +108,10 @@ export function MessagesInputBar({
   return (
     <div className="border-border/50 bg-background/60 shrink-0 border-t p-3">
       {replyingTo && (
-        <div className="mb-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5">
+        <div className="border-border/60 bg-muted/40 mb-2 flex items-center gap-2 rounded-xl border px-3 py-1.5">
           <Reply className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-[11px] font-medium">
+            <p className="text-muted-foreground text-xs font-medium">
               Replying to {replyingTo.account.displayName}
             </p>
             <p className="text-foreground/80 truncate text-xs">
@@ -116,7 +131,7 @@ export function MessagesInputBar({
         <button
           type="button"
           onClick={() => setIsStashModalOpen(true)}
-          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground mb-1 flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border/50 bg-card/50 shadow-2xs backdrop-blur-xs transition-all active:scale-95"
+          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/50 bg-card/50 mb-1 flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl border shadow-2xs backdrop-blur-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           title="Attach Lore Stash Link"
         >
           <BookmarkPlus className="h-4.5 w-4.5 text-indigo-400" />
@@ -143,18 +158,14 @@ export function MessagesInputBar({
           onClick={handleSend}
           disabled={!canSend}
           className={cn(
-            "mb-1 h-[44px] w-[44px] shrink-0 rounded-xl transition-all duration-200 active:scale-95",
+            "mb-1 h-[44px] w-[44px] shrink-0 rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
             canSend
               ? "bg-blue-600 text-white shadow-md hover:bg-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400"
-              : "border border-border/50 bg-muted/40 text-muted-foreground opacity-50"
+              : "border-border/50 bg-muted/40 text-muted-foreground border opacity-50"
           )}
           title="Send message (Enter)"
         >
-          {isSending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
+          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
 

@@ -1,8 +1,13 @@
 # Design Specification: Achievements & Ribbons Suite
 
 **Date**: 2026-08-10  
-**Status**: Approved  
+**Status**: Approved — **partially implemented** (verified 2026-09-29)  
 **Aesthetic Framework**: Apple Design Foundations & Emil Kowalski Design Engineering
+
+> **Implementation status (2026-09-29):**
+> - **Shipped (§3.1, without the tab wrapper):** `/achievements` renders a single page — header card with country flag wash, `NumberFlow` counters (Total Unlocked, Achievement Points, Global Rank) and a `/leaderboards` link; optional Showcase shelf; `AllAchievementsTab` with category pills, rarity filter, search with clear, grid/list toggle, secret-reveal eye toggle, points chips. Quest Trees and the Lorewards tab were removed (commit `fe55c1872`).
+> - **Differs from spec:** categories are `Economic / Diplomatic / Government / Military / Social / General` (not `Governance`); rarity filter uses `Common / Uncommon / Rare / Epic / Legendary` (no `Core`).
+> - **Pending (§2, §3.2):** `VaultSubTabNav` tab controller and `?tab=country|ribbons` sync; the entire Ribbons tab — user header with tenure pill and ribbon counter, 3-slot pinned Signature Shelf, Community Honor Ribbon Rack, and any user-bound ribbon data model/award logic. Only a decorative `FloatingRibbonRack` exists (static `FORUM_RIBBONS` defaults on `/countries/[slug]`).
 
 ---
 

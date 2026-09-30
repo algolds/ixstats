@@ -141,7 +141,7 @@ describe("useBuilderActions", () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it("advances government tabs sequentially", () => {
+    it("advances government tabs sequentially in expert mode", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
         step: "government",
@@ -152,6 +152,7 @@ describe("useBuilderActions", () => {
         useBuilderActions({
           builderState: state,
           setBuilderState: mockSetState,
+          viewMode: "expert",
         })
       );
 
@@ -160,6 +161,34 @@ describe("useBuilderActions", () => {
       });
 
       expect(mockSetState).toHaveBeenCalled();
+      const updateFn = mockSetState.mock.calls[0][0];
+      const nextState = updateFn(state);
+      expect(nextState.activeGovernmentTab).toBe("structure");
+    });
+
+    it("advances directly to economics from government in standard mode", () => {
+      const mockSetState = jest.fn();
+      const state = createMockState({
+        step: "government",
+        activeGovernmentTab: "components",
+      });
+
+      const { result } = renderHook(() =>
+        useBuilderActions({
+          builderState: state,
+          setBuilderState: mockSetState,
+          viewMode: "standard",
+        })
+      );
+
+      act(() => {
+        result.current.handleContinue();
+      });
+
+      expect(mockSetState).toHaveBeenCalled();
+      const updateFn = mockSetState.mock.calls[0][0];
+      const nextState = updateFn(state);
+      expect(nextState.step).toBe("economics");
     });
 
     it("advances from economics to preview", () => {

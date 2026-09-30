@@ -1,0 +1,676 @@
+"use client";
+
+/**
+ * Diplomatic Events Hub Component
+ *
+ * Interactive diplomatic events management system featuring:
+ * - Active events feed with scenario cards
+ * - Event response system with action buttons
+ * - Impact preview and outcome simulation
+ * - Event history log with filtering
+ * - Real-time countdown timers for urgent events
+ *
+ * @module DiplomaticEventsHub
+ */
+
+import React, { useState, useMemo, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Page as FileText,
+  Clock,
+  WarningCircle as AlertCircle,
+  CheckCircle,
+  XmarkCircle as XCircle,
+  ChatBubble as MessageSquare,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  ClockRotateRight as History,
+  Filter,
+  Eye,
+  Sparks as Sparkles,
+} from "iconoir-react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { cn } from "~/lib/utils";
+
+/** Fields this hub reads from a scenario's `responseOptions` (stored as untyped JSON). */
+interface ScenarioResponseOption {
+  id?: string;
+  label?: string;
+  description?: string;
+  difficulty?: string;
+  relationshipEffect?: number;
+  economicImpact?: number;
+  culturalImpact?: number;
+}
+
+type ScenarioRecord = RouterOutputs["diplomaticScenarios"]["getAllScenarios"]["scenarios"][number];
+type DiplomaticEvent = Omit<ScenarioRecord, "responseOptions"> & {
+  responseOptions: ScenarioResponseOption[];
+};
+
+interface DiplomaticEventsHubProps {
+  countryId: string;
+  countryName: string;
+}
+
+// Event type configuration
+const EVENT_TYPE_CONFIG: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
+  border_dispute: {
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
+    icon: <AlertCircle className="h-4 w-4" />,
+    label: "Border Dispute",
+  },
+  trade_renegotiation: {
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
+    icon: <TrendingUp className="h-4 w-4" />,
+    label: "Trade Negotiation",
+  },
+  cultural_misunderstanding: {
+    color: "bg-blue-500/15 text-blue-700 dark:text-blue-400 dark:bg-blue-500/20",
+    icon: <MessageSquare className="h-4 w-4" />,
+    label: "Cultural Issue",
+  },
+  intelligence_breach: {
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
+    icon: <Eye className="h-4 w-4" />,
+    label: "Intelligence Breach",
+  },
+  humanitarian_crisis: {
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
+    icon: <AlertCircle className="h-4 w-4" />,
+    label: "Humanitarian Crisis",
+  },
+  alliance_pressure: {
+    color: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 dark:bg-indigo-500/20",
+    icon: <Sparkles className="h-4 w-4" />,
+    label: "Alliance Pressure",
+  },
+  economic_sanctions_debate: {
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
+    icon: <TrendingDown className="h-4 w-4" />,
+    label: "Sanctions Debate",
+  },
+  technology_transfer_request: {
+    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
+    icon: <Sparkles className="h-4 w-4" />,
+    label: "Tech Transfer",
+  },
+  diplomatic_incident: {
+    color: "bg-amber-500/15 text-amber-700 dark:text-amber-400 dark:bg-amber-500/20",
+    icon: <AlertCircle className="h-4 w-4" />,
+    label: "Diplomatic Incident",
+  },
+  mediation_opportunity: {
+    color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-500/20",
+    icon: <CheckCircle className="h-4 w-4" />,
+    label: "Mediation Opportunity",
+  },
+  embassy_security_threat: {
+    color: "bg-red-500/15 text-red-700 dark:text-red-400 dark:bg-red-500/20",
+    icon: <AlertCircle className="h-4 w-4" />,
+    label: "Security Threat",
+  },
+  treaty_renewal: {
+    color: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 dark:bg-cyan-500/20",
+    icon: <FileText className="h-4 w-4" />,
+    label: "Treaty Renewal",
+  },
+};
+
+// Countdown timer component
+function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
+  const [timeLeft, setTimeLeft] = useState("");
+  const [urgency, setUrgency] = useState<"critical" | "warning" | "normal">("normal");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(expiresAt).getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(hours / 24);
+
+      if (hours < 24) {
+        setTimeLeft(`${hours}h remaining`);
+        setUrgency("critical");
+      } else if (days < 3) {
+        setTimeLeft(`${days}d remaining`);
+        setUrgency("warning");
+      } else {
+        setTimeLeft(`${days}d remaining`);
+        setUrgency("normal");
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "flex items-center gap-1",
+        urgency === "critical" && "border-red-500 text-red-700 dark:text-red-400",
+        urgency === "warning" && "border-yellow-500 text-yellow-700 dark:text-yellow-400",
+        urgency === "normal" && "border-blue-500 text-blue-700 dark:text-blue-400"
+      )}
+    >
+      <Clock className="h-3 w-3" />
+      {timeLeft}
+    </Badge>
+  );
+}
+
+// Impact preview component
+function ImpactPreview({
+  impact,
+}: {
+  impact: { relationship?: number; economic?: number; cultural?: number };
+}) {
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {impact.relationship !== undefined && (
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
+            {impact.relationship > 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
+            <span
+              className={cn(
+                "font-bold",
+                impact.relationship > 0 ? "text-green-600" : "text-red-600"
+              )}
+            >
+              {impact.relationship > 0 ? "+" : ""}
+              {impact.relationship}
+            </span>
+          </div>
+          <p className="text-muted-foreground text-xs">Relationship</p>
+        </div>
+      )}
+      {impact.economic !== undefined && (
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
+            {impact.economic > 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
+            <span
+              className={cn("font-bold", impact.economic > 0 ? "text-green-600" : "text-red-600")}
+            >
+              {impact.economic > 0 ? "+" : ""}
+              {impact.economic}%
+            </span>
+          </div>
+          <p className="text-muted-foreground text-xs">Economic</p>
+        </div>
+      )}
+      {impact.cultural !== undefined && (
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
+            {impact.cultural > 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            )}
+            <span
+              className={cn("font-bold", impact.cultural > 0 ? "text-green-600" : "text-red-600")}
+            >
+              {impact.cultural > 0 ? "+" : ""}
+              {impact.cultural}%
+            </span>
+          </div>
+          <p className="text-muted-foreground text-xs">Cultural</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
+  const [activeTab, setActiveTab] = useState("active");
+  const [selectedEvent, setSelectedEvent] = useState<DiplomaticEvent | null>(null);
+  const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<string>("all");
+
+  // Fetch active scenarios
+  const {
+    data: activeData,
+    isLoading: activeLoading,
+    refetch: refetchActive,
+  } = api.diplomaticScenarios.getAllScenarios.useQuery({
+    isActive: true,
+    country1Id: countryId,
+    limit: 50,
+  });
+
+  // Fetch scenario history (completed/expired)
+  const { data: historyData, isLoading: historyLoading } =
+    api.diplomaticScenarios.getAllScenarios.useQuery({
+      isActive: false,
+      country1Id: countryId,
+      limit: 100,
+    });
+
+  // Extract scenarios from API response
+  const activeScenarios: DiplomaticEvent[] = activeData?.scenarios || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scenarioHistory: DiplomaticEvent[] = historyData?.scenarios || [];
+
+  // Response mutation
+  const respondMutation = api.diplomaticScenarios.recordChoice.useMutation({
+    onSuccess: () => {
+      void refetchActive();
+      setIsResponseDialogOpen(false);
+      setSelectedEvent(null);
+    },
+  });
+
+  // Filter history
+  const filteredHistory = useMemo(() => {
+    if (!scenarioHistory) return [];
+    if (historyFilter === "all") return scenarioHistory;
+    return scenarioHistory.filter((s) => s.type === historyFilter);
+  }, [scenarioHistory, historyFilter]);
+
+  // Handle event response
+  const handleResponse = (action: "accept" | "reject" | "negotiate") => {
+    if (!selectedEvent) return;
+
+    // Find the appropriate response option based on action
+    const responseOptions = selectedEvent.responseOptions || [];
+    let selectedOption = responseOptions[0]; // Default to first option
+
+    if (action === "accept") {
+      selectedOption =
+        responseOptions.find(
+          (opt) =>
+            opt.label?.toLowerCase().includes("accept") ||
+            opt.label?.toLowerCase().includes("agree")
+        ) || responseOptions[0];
+    } else if (action === "reject") {
+      selectedOption =
+        responseOptions.find(
+          (opt) =>
+            opt.label?.toLowerCase().includes("reject") ||
+            opt.label?.toLowerCase().includes("decline")
+        ) || responseOptions[1];
+    } else if (action === "negotiate") {
+      selectedOption =
+        responseOptions.find(
+          (opt) =>
+            opt.label?.toLowerCase().includes("negotiate") ||
+            opt.label?.toLowerCase().includes("counter")
+        ) || responseOptions[2];
+    }
+
+    respondMutation.mutate({
+      scenarioId: selectedEvent.id,
+      countryId: countryId,
+      choiceId: selectedOption?.id || "default",
+      choiceLabel: selectedOption?.label || "Unknown Choice",
+    });
+  };
+
+  // Open response dialog
+  const openResponseDialog = (event: DiplomaticEvent) => {
+    setSelectedEvent(event);
+    setIsResponseDialogOpen(true);
+  };
+
+  if (activeLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <FileText className="mx-auto h-12 w-12 animate-pulse text-blue-600" />
+          <p className="text-muted-foreground">Loading diplomatic events...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="facet-hierarchy-child">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm">Active Events</p>
+                <p className="text-3xl font-bold">{activeScenarios?.length || 0}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="facet-hierarchy-child">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm">Urgent Events</p>
+                <p className="text-3xl font-bold">
+                  {activeScenarios?.filter((s) => {
+                    const hours = (new Date(s.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60);
+                    return hours < 24;
+                  }).length || 0}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="facet-hierarchy-child">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm">Total Resolved</p>
+                <p className="text-3xl font-bold">{scenarioHistory?.length || 0}</p>
+              </div>
+              <History className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Active Events ({activeScenarios?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Event History
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Active Events Tab */}
+        <TabsContent value="active" className="space-y-4">
+          {activeScenarios && activeScenarios.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {activeScenarios.map((event) => {
+                const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
+                  color: "bg-gray-100 text-gray-800",
+                  icon: <FileText className="h-4 w-4" />,
+                  label: event.type,
+                };
+
+                return (
+                  <Card
+                    key={event.id}
+                    className="facet-hierarchy-child transition-shadow hover:shadow-lg"
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Badge className={eventConfig.color}>
+                              {eventConfig.icon}
+                              <span className="ml-1">{eventConfig.label}</span>
+                            </Badge>
+                            <EventCountdown expiresAt={event.expiresAt} />
+                          </div>
+                          <CardTitle className="text-lg">{event.title}</CardTitle>
+                          {event.country2Name && (
+                            <p className="text-muted-foreground mt-1 text-sm">
+                              with {event.country2Name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
+                        {event.narrative}
+                      </p>
+
+                      {/* Quick Impact Preview */}
+                      {event.responseOptions && event.responseOptions.length > 0 && (
+                        <div className="mb-4">
+                          <p className="mb-2 text-xs font-semibold">Potential Impacts:</p>
+                          <ImpactPreview
+                            impact={{
+                              relationship: event.responseOptions[0]?.relationshipEffect || 0,
+                              economic: event.responseOptions[0]?.economicImpact || 0,
+                              cultural: event.responseOptions[0]?.culturalImpact || 0,
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1"
+                          onClick={() => openResponseDialog(event)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View & Respond
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="facet-hierarchy-child">
+              <CardContent className="flex min-h-[300px] items-center justify-center">
+                <div className="space-y-4 text-center">
+                  <CheckCircle className="mx-auto h-16 w-16 text-green-600 opacity-50" />
+                  <div>
+                    <h3 className="text-lg font-semibold">No Active Events</h3>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      You're all caught up! New diplomatic events will appear here.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Event History Tab */}
+        <TabsContent value="history" className="space-y-4">
+          {/* History Filter */}
+          <div className="flex items-center gap-3">
+            <Filter className="text-muted-foreground h-4 w-4" />
+            <Select value={historyFilter} onValueChange={setHistoryFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Events</SelectItem>
+                <SelectItem value="border_dispute">Border Disputes</SelectItem>
+                <SelectItem value="trade_renegotiation">Trade Negotiations</SelectItem>
+                <SelectItem value="cultural_misunderstanding">Cultural Issues</SelectItem>
+                <SelectItem value="alliance_pressure">Alliance Pressure</SelectItem>
+                <SelectItem value="treaty_renewal">Treaty Renewals</SelectItem>
+              </SelectContent>
+            </Select>
+            <Badge variant="outline">{filteredHistory.length} events</Badge>
+          </div>
+
+          {/* History List */}
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <History className="text-muted-foreground h-8 w-8 animate-pulse" />
+            </div>
+          ) : filteredHistory.length > 0 ? (
+            <div className="space-y-3">
+              {filteredHistory.map((event) => {
+                const eventConfig = EVENT_TYPE_CONFIG[event.type] || {
+                  color: "bg-gray-100 text-gray-800",
+                  icon: <FileText className="h-4 w-4" />,
+                  label: event.type,
+                };
+
+                return (
+                  <Card key={event.id} className="facet-hierarchy-child">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Badge variant="outline" className={eventConfig.color}>
+                              {eventConfig.icon}
+                              <span className="ml-1 text-xs">{eventConfig.label}</span>
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {event.status}
+                            </Badge>
+                          </div>
+                          <h4 className="text-sm font-semibold">{event.title}</h4>
+                          {event.country2Name && (
+                            <p className="text-muted-foreground text-xs">
+                              with {event.country2Name}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-muted-foreground text-right text-xs">
+                          {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="facet-hierarchy-child">
+              <CardContent className="flex min-h-[200px] items-center justify-center">
+                <div className="space-y-2 text-center">
+                  <History className="text-muted-foreground mx-auto h-12 w-12 opacity-50" />
+                  <p className="text-muted-foreground text-sm">No event history found</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Response Dialog */}
+      <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedEvent && EVENT_TYPE_CONFIG[selectedEvent.type]?.icon}
+              {selectedEvent?.title}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedEvent?.country2Name && `Diplomatic event with ${selectedEvent.country2Name}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedEvent && (
+            <div className="space-y-6">
+              {/* Event Details */}
+              <div>
+                <h4 className="mb-2 font-semibold">Situation</h4>
+                <p className="text-muted-foreground text-sm">{selectedEvent.narrative}</p>
+              </div>
+
+              {/* Response Options */}
+              {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
+                <div>
+                  <h4 className="mb-3 font-semibold">Response Options</h4>
+                  <div className="space-y-3">
+                    {selectedEvent.responseOptions.map((option, idx) => (
+                      <div key={idx} className="bg-muted/30 rounded-lg border p-4">
+                        <div className="mb-2 flex items-start justify-between">
+                          <h5 className="font-medium">{option.label || `Option ${idx + 1}`}</h5>
+                          <Badge variant="outline" className="text-xs">
+                            {option.difficulty || "moderate"}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mb-3 text-sm">
+                          {option.description || "No description available"}
+                        </p>
+                        <ImpactPreview
+                          impact={{
+                            relationship: option.relationshipEffect,
+                            economic: option.economicImpact,
+                            cultural: option.culturalImpact,
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsResponseDialogOpen(false)}
+              disabled={respondMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleResponse("reject")}
+              disabled={respondMutation.isPending}
+            >
+              <XCircle className="mr-2 h-4 w-4" />
+              Reject
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleResponse("negotiate")}
+              disabled={respondMutation.isPending}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Negotiate
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => handleResponse("accept")}
+              disabled={respondMutation.isPending}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Accept
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

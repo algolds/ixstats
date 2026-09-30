@@ -4,11 +4,17 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
-import { Activity, DollarSign, Users, Globe, Building, Heart, Shield, Zap } from "lucide-react";
+import {
+  Activity,
+  Dollar as DollarSign,
+  Group as Users,
+  Globe,
+  Building,
+} from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
-import type { LucideIcon } from "lucide-react";
-import { VitalityBreakdownModal } from "~/components/ui/modals/VitalityBreakdownModal";
+
+import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 
 export interface VitalityRing {
   id: string;
@@ -16,7 +22,7 @@ export interface VitalityRing {
   value: number; // 0-100
   target?: number;
   color: string;
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   description?: string;
   onClick?: () => void;
 }
@@ -137,7 +143,7 @@ export function VitalityRingsDisplay({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   return (
-    <Card className={cn("glass-hierarchy-child", className)}>
+    <Card className={cn("facet-hierarchy-child", className)}>
       {(title || subtitle) && (
         <CardHeader className="pb-2">
           {title && (
@@ -174,9 +180,11 @@ export function VitalityRingsDisplay({
                       }}
                     >
                       <IconComponent
-                        className="opacity-60"
+                        className={cn(
+                          "opacity-60",
+                          size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4"
+                        )}
                         style={{ color: ring.color }}
-                        size={size === "sm" ? 14 : size === "lg" ? 20 : 16}
                       />
                     </div>
                   )}
@@ -185,7 +193,7 @@ export function VitalityRingsDisplay({
                   <div className="mt-2 text-center">
                     <p className="text-foreground text-xs font-medium">{ring.label}</p>
                     {ring.description && size !== "sm" && (
-                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-[10px]">
+                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-xs">
                         {ring.description}
                       </p>
                     )}
@@ -248,7 +256,7 @@ export function QuickVitalityRings({
         type="button"
         onClick={() => setIsOpen(true)}
         className={cn(
-          "group flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-all hover:scale-[1.03] hover:bg-white/[0.06] active:scale-[0.98]",
+          "group flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.03] hover:bg-white/[0.06] active:scale-[0.98]",
           className
         )}
         title="Click for Vitality Index Breakdown"

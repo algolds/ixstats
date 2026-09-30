@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Check, AlertTriangle, FileCode } from "lucide-react";
+import { Check, WarningTriangle as AlertTriangle, Code as FileCode } from "iconoir-react";
 import {
   Sheet,
   SheetContent,
@@ -268,7 +268,7 @@ export function TemplateEditorSheet({
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Slug (Unique identifier)
                 </label>
                 <Input
@@ -283,7 +283,7 @@ export function TemplateEditorSheet({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Title
                 </label>
                 <Input
@@ -297,7 +297,7 @@ export function TemplateEditorSheet({
             </div>
 
             <div>
-              <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                 Description
               </label>
               <Textarea
@@ -311,7 +311,7 @@ export function TemplateEditorSheet({
             </div>
 
             <div>
-              <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                 Long Description (Optional)
               </label>
               <Textarea
@@ -326,7 +326,7 @@ export function TemplateEditorSheet({
             {/* Classification */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Domain
                 </label>
                 <Select value={domain} onValueChange={(val: any) => setDomain(val)}>
@@ -348,7 +348,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Category
                 </label>
                 <Select value={category} onValueChange={(val: any) => setCategory(val)}>
@@ -370,7 +370,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Severity
                 </label>
                 <Select value={baseSeverity} onValueChange={(val: any) => setBaseSeverity(val)}>
@@ -395,7 +395,7 @@ export function TemplateEditorSheet({
             {/* Mechanics parameters */}
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Urgency (0-100)
                 </label>
                 <Input
@@ -409,7 +409,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Deadline (Days)
                 </label>
                 <Input
@@ -425,7 +425,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Cooldown (Days)
                 </label>
                 <Input
@@ -438,7 +438,7 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   Max Active
                 </label>
                 <Input
@@ -477,13 +477,13 @@ export function TemplateEditorSheet({
             {/* JSON Code Blocks */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   <FileCode className="h-3.5 w-3.5 text-slate-400" />
                   Trigger Conditions (JSON Expression Tree)
                 </label>
                 <Badge
                   variant="outline"
-                  className={`px-1 py-0 text-[10px] ${triggerValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
+                  className={`px-1 py-0 text-xs ${triggerValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
                 >
                   {triggerValid ? <Check className="mr-0.5 inline-block h-3 w-3" /> : null}
                   {triggerValid ? "Valid JSON" : "Invalid JSON"}
@@ -499,7 +499,7 @@ export function TemplateEditorSheet({
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                   <FileCode className="h-3.5 w-3.5 text-slate-400" />
                   Response Options (JSON Option Array)
                 </label>
@@ -509,13 +509,13 @@ export function TemplateEditorSheet({
                     variant="ghost"
                     size="sm"
                     onClick={handlePrefillResponse}
-                    className="h-5 p-1 text-[9px] text-amber-400 hover:bg-white/10 hover:text-white"
+                    className="h-5 p-1 text-xs text-amber-400 hover:bg-white/10 hover:text-white"
                   >
                     Prefill Template
                   </Button>
                   <Badge
                     variant="outline"
-                    className={`px-1 py-0 text-[10px] ${responseValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
+                    className={`px-1 py-0 text-xs ${responseValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
                   >
                     {responseValid ? <Check className="mr-0.5 inline-block h-3 w-3" /> : null}
                     {responseValid ? "Valid JSON" : "Invalid JSON"}

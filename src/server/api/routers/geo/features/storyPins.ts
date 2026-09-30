@@ -16,6 +16,7 @@ import {
   standardMutationCountryOwnerProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
@@ -27,169 +28,11 @@ const coordinatesSchema = z
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
 
-function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-export { syncGeographicDemographics };
-
-export async function syncResourcePoolModifiers(db: any, countryId: string) {
-  // 1. Get all points of interest for this country with category "resource"
-  const resources = await db.pointOfInterest.findMany({
-    where: { countryId, category: "resource", status: "approved" },
-  });
-
-  // 2. Get all operational transport routes and hubs for this country
-  const routes = await db.transportRoute.findMany({
-    where: { countryId, status: "operational" },
-  });
-  const hubs = await db.transportHub.findMany({
-    where: { countryId },
-  });
-
-  for (const resource of resources) {
-    const resCoords = resource.coordinates as [number, number] | null;
-    if (!resCoords || !Array.isArray(resCoords) || resCoords.length < 2) continue;
-    const [resLng, resLat] = resCoords;
-
-    let isConnected = false;
-
-    // Check distance to hubs
-    for (const hub of hubs) {
-      const hubCoords = hub.coordinates as [number, number] | null;
-      if (hubCoords && Array.isArray(hubCoords) && hubCoords.length >= 2) {
-        const dist = calculateDistanceKm(resLat, resLng, hubCoords[1], hubCoords[0]);
-        if (dist <= 15) {
-          isConnected = true;
-          break;
-        }
-      }
-    }
-
-    // Check distance to routes
-    if (!isConnected) {
-      for (const route of routes) {
-        const geom = route.geometry as any;
-        const coords = geom?.coordinates as [number, number][] | undefined;
-        if (Array.isArray(coords)) {
-          for (const pt of coords) {
-            const dist = calculateDistanceKm(resLat, resLng, pt[1], pt[0]);
-            if (dist <= 15) {
-              isConnected = true;
-              break;
-            }
-          }
-        }
-        if (isConnected) break;
-      }
-    }
-
-    // 3. Update POI metadata with connection status
-    const existingMeta = (resource.metadata as Record<string, any>) || {};
-    const resourceType = existingMeta.resourceType || "minerals";
-    const quality = existingMeta.quality !== undefined ? Number(existingMeta.quality) : 0.5;
-
-    await db.pointOfInterest.update({
-      where: { id: resource.id },
-      data: {
-        metadata: {
-          ...existingMeta,
-          isConnected,
-          resourceType,
-          quality,
-        },
-      },
-    });
-
-    // 4. Create/update StorytellerEffect (DmInput)
-    const inputType = `resource_${resourceType}_output`;
-    const effectValue = isConnected ? quality * 100 : 0;
-    const description = `Resource output for ${resource.name} (${resourceType}, quality: ${quality.toFixed(2)}, connected: ${isConnected})`;
-
-    // Check if a StorytellerEffect already exists for this resource POI
-    const existingEffect = await db.storytellerEffect.findFirst({
-      where: {
-        countryId,
-        inputType,
-        createdBy: `resource_node_${resource.id}`,
-      },
-    });
-
-    if (existingEffect) {
-      await db.storytellerEffect.update({
-        where: { id: existingEffect.id },
-        data: {
-          value: effectValue,
-          description,
-          isActive: isConnected,
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    } else {
-      await db.storytellerEffect.create({
-        data: {
-          countryId,
-          inputType,
-          value: effectValue,
-          description,
-          isActive: isConnected,
-          createdBy: `resource_node_${resource.id}`,
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    }
-  }
-
-  // Deactivate storyteller effects for any deleted resource POIs
-  const activeResourcePoiIds = resources.map((r: any) => r.id);
-  const obsoleteEffects = await db.storytellerEffect.findMany({
-    where: {
-      countryId,
-      createdBy: { startsWith: "resource_node_" },
-      isActive: true,
-    },
-  });
-
-  for (const eff of obsoleteEffects) {
-    const poiId = eff.createdBy.replace("resource_node_", "");
-    if (!activeResourcePoiIds.includes(poiId)) {
-      await db.storytellerEffect.update({
-        where: { id: eff.id },
-        data: {
-          isActive: false,
-          value: 0,
-          description: "Resource POI deleted",
-          ixTimeTimestamp: new Date(),
-        },
-      });
-    }
-  }
-}
-
 // ──────────────────────────────────────────────
 // Router
 // ──────────────────────────────────────────────
 
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
-  // ──────────────────────────────────────────────
-  // Border Editor
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
   // ──────────────────────────────────────────────
   // Story Pins — Narrative markers on the map
   // ──────────────────────────────────────────────
@@ -398,18 +241,6 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       return { id: input.pinId, deleted: true };
     }),
 
-  getStoryPin: cachedPublicProcedure
-    .input(z.object({ pinId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.storyPin.findUnique({
-        where: { id: input.pinId },
-        include: {
-          country: { select: { name: true, slug: true } },
-          storyline: { select: { id: true, title: true, color: true } },
-        },
-      });
-    }),
-
   /** Full story pin data with wiki enrichment for the modal view. */
   getStoryPinFull: cachedPublicProcedure
     .input(z.object({ pinId: z.string() }))
@@ -481,15 +312,6 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       return { pin, wikiEnrichment, relatedPins };
     }),
 
-  getStoryPinsByCountry: cachedPublicProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      return ctx.db.storyPin.findMany({
-        where: { countryId: input.countryId, status: "approved" },
-        orderBy: { ixTimeYear: "asc" },
-      });
-    }),
-
   getAllStoryPins: cachedPublicProcedure
     .input(
       z
@@ -498,11 +320,15 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           minYear: z.number().int().optional(),
           maxYear: z.number().int().optional(),
           storylineId: z.string().optional(),
+          ...realmScopeInput.shape,
         })
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = { status: "approved" };
+      const where: Record<string, unknown> = {
+        status: "approved",
+        country: { realmId: await viewerRealmId(ctx, input?.realm) },
+      };
       if (input?.category) where.category = input.category;
       if (input?.storylineId) where.storylineId = input.storylineId;
       if (input?.minYear !== undefined || input?.maxYear !== undefined) {
@@ -542,42 +368,4 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           })),
       };
     }),
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

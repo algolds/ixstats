@@ -10,24 +10,15 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  rateLimitedPublicProcedure,
-  cachedPublicProcedure,
-  adminProcedure,
-  countryOwnerProcedure,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
-import { ActivityGenerator } from "~/lib/activity";
-import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
+import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 // ──────────────────────────────────────────────
 // Router
@@ -40,10 +31,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
   startBorderEditSession: adminProcedure
-    .input(z.object({ featureId: z.string() }))
+    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         select: {
           id: true,
           featureId: true,
@@ -77,6 +69,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
               layerType: "political",
               featureId: { not: input.featureId },
               isActive: true,
+              realmId,
             },
             select: {
               featureId: true,
@@ -172,11 +165,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
           .optional(),
         applyDirectly: z.boolean().default(false),
         reason: z.string().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         select: { id: true, geometry: true, countryId: true, displayName: true, areaSqKm: true },
       });
       if (!feature) {
@@ -206,6 +201,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
                   layerType: "political",
                   featureId: { in: neighborUpdates.map((n) => n.featureId) },
                   isActive: true,
+                  realmId,
                 },
                 select: { id: true, featureId: true, countryId: true, areaSqKm: true },
               })
@@ -317,11 +313,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         splitLine: z.array(z.tuple([z.number(), z.number()])),
         nameA: z.string(),
         nameB: z.string(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true },
+        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
       });
       if (!feature) {
         throw new TRPCError({
@@ -364,6 +362,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         await tx.mapLayer.createMany({
           data: [
             {
+              realmId,
               layerType: "political",
               featureId: featureIdA,
               displayName: input.nameA,
@@ -375,6 +374,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
               isActive: true,
             },
             {
+              realmId,
               layerType: "political",
               featureId: featureIdB,
               displayName: input.nameB,
@@ -419,11 +419,18 @@ export const geoEditorBordersRouter = createTRPCRouter({
       z.object({
         featureIds: z.array(z.string()).min(2),
         newName: z.string(),
+        ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input.realm);
       const features = await ctx.db.mapLayer.findMany({
-        where: { layerType: "political", featureId: { in: input.featureIds }, isActive: true },
+        where: {
+          layerType: "political",
+          featureId: { in: input.featureIds },
+          isActive: true,
+          realmId,
+        },
       });
 
       if (features.length !== input.featureIds.length) {
@@ -466,6 +473,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         // Create merged feature
         await tx.mapLayer.create({
           data: {
+            realmId,
             layerType: "political",
             featureId: newFeatureId,
             displayName: input.newName,
@@ -516,8 +524,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
    *  Requires PostGIS. Returns the number of features updated and pairs found.
    *  Safe to re-run; overwrites existing neighbors values. */
   rebuildAdjacency: adminProcedure
-    .input(z.object({ worldId: z.string().default("default") }))
-    .mutation(async ({ ctx }) => {
+    .input(z.object({ realmId: z.string().default(DEFAULT_REALM_ID) }))
+    .mutation(async ({ ctx, input }) => {
       const { isPostGISAvailable } = await import("~/lib/maps/geo-validation");
       if (!(await isPostGISAvailable(ctx.db))) return { features: 0, pairs: 0, skipped: true };
       const pairs = await ctx.db.$queryRawUnsafe<Array<{ a: string; b: string }>>(
@@ -527,9 +535,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
              ON a.id < b.id
             AND a."layerType" = 'political' AND a."isActive" = true
             AND b."layerType" = 'political' AND b."isActive" = true
+            AND a."worldId" = $1 AND b."worldId" = $1
             AND a.geom_postgis IS NOT NULL AND b.geom_postgis IS NOT NULL
             AND ST_Intersects(a.geom_postgis, b.geom_postgis)
-            AND NOT ST_Equals(a.geom_postgis, b.geom_postgis)`
+            AND NOT ST_Equals(a.geom_postgis, b.geom_postgis)`,
+        input.realmId
       );
       const adj = new Map<string, Set<string>>();
       for (const { a, b } of pairs) {
@@ -539,57 +549,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
       let updated = 0;
       for (const [featureId, set] of Array.from(adj.entries())) {
         await ctx.db.mapLayer.updateMany({
-          where: { layerType: "political", featureId, isActive: true },
+          where: { layerType: "political", featureId, isActive: true, realmId: input.realmId },
           data: { neighbors: Array.from(set) as any },
         });
         updated++;
       }
       return { features: updated, pairs: pairs.length };
     }),
-
-  // ──────────────────────────────────────────────
-  // User map editor endpoints (country owners)
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Story Pins — Narrative markers on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Storylines — Narrative chains connecting story pins
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Labels — Custom styled text on the map
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Sovereignty / dependency management
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Linkage validation & repair
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // SVG Upload & Processing Pipeline
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // World Template / Clone System (Phase 3)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────────────────────
-  // Procedural World Generation (Phase 4)
-  // ──────────────────────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Map Pipeline Endpoints
-  // ──────────────────────────────────────────────
-
-  // ──────────────────────────────────────────────
-  // Province Import Endpoints
-  // ──────────────────────────────────────────────
-
-  // ─── Phase 4: Visualization Overlay Endpoints ───────────────────────
 });

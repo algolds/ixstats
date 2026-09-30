@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { X, Map as MapIcon, Loader2, Compass } from "lucide-react";
+import { Xmark as X, Map as MapIcon, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Portal, type BaseModalProps } from "./types";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 type MapCoordsTab = "coords" | "mapembed";
 
@@ -23,9 +24,9 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
   // Map rendering refs/state
   const mapContainerRef = useRef<HTMLDivElement>(null);
-   
+
   const mapRef = useRef<any>(null);
-   
+
   const markerRef = useRef<any>(null);
   const [_mapLoaded, setMapLoaded] = useState(false);
   const labelInputRef = useRef<HTMLInputElement>(null);
@@ -101,160 +102,169 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   };
 
   // Initialize MapLibre
-  const initMapLibre = useCallback(async () => {
-    if (!mapContainerRef.current || !isOpen) return;
+  const initMapLibre = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!mapContainerRef.current || !isOpen) return;
 
-    const maplibregl = (await import("maplibre-gl")).default;
-    await import("maplibre-gl/dist/maplibre-gl.css");
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await loadMaplibre();
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      // Closed/unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
+      if (isCancelled() || !mapContainerRef.current) return;
 
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-     
-    const baseStyle = buildBaseStyle() as any;
-    delete baseStyle.projection; // Enforce Mercator projection
-
-    const mapCenterLat = parseFloat(lat) || (centroid ? centroid.lat : 0);
-    const mapCenterLng = parseFloat(lng) || (centroid ? centroid.lng : 0);
-
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: baseStyle,
-      center: [mapCenterLng, mapCenterLat],
-      zoom: centroid ? 5 : 2,
-      attributionControl: false,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // 1. Overlay world bounds and gray out non-owned countries
-      if (worldPolitical && worldPolitical.features && viewerCountryId) {
-        const otherCountries = {
-          type: "FeatureCollection",
-          features: worldPolitical.features.filter(
-            (f) => f.properties?._countryId !== viewerCountryId
-          ),
-        };
-         
-        map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
-        map.addLayer({
-          id: "other-countries-fill",
-          type: "fill",
-          source: "other-countries",
-          paint: {
-            "fill-color": "#475569",
-            "fill-opacity": 0.2,
-          },
-        });
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
-      // 2. Active Country borders
-      if (geometry && viewerCountryId) {
-        const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
-        const activeGeo = {
-          type: "FeatureCollection",
-           
-          features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
-        };
-         
-        map.addSource("active-country", { type: "geojson", data: activeGeo as any });
-        map.addLayer({
-          id: "active-country-stroke",
-          type: "line",
-          source: "active-country",
-          paint: {
-            "line-color": activeColor,
-            "line-width": 2,
-          },
-        });
+      const baseStyle = buildBaseStyle() as any;
+      delete baseStyle.projection; // Enforce Mercator projection
 
-        // 3. Subdivisions
-        if (subdivisions && subdivisions.length > 0) {
-          const subGeo = {
+      const mapCenterLat = parseFloat(lat) || (centroid ? centroid.lat : 0);
+      const mapCenterLng = parseFloat(lng) || (centroid ? centroid.lng : 0);
+
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: baseStyle,
+        center: [mapCenterLng, mapCenterLat],
+        zoom: centroid ? 5 : 2,
+        attributionControl: false,
+      });
+
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (isCancelled()) return;
+        // 1. Overlay world bounds and gray out non-owned countries
+        if (worldPolitical && worldPolitical.features && viewerCountryId) {
+          const otherCountries = {
             type: "FeatureCollection",
-            features: subdivisions
-               
-              .filter((s: any) => s.geometry)
-               
-              .map((s: any) => ({
-                type: "Feature",
-                properties: {},
-                 
-                geometry: s.geometry as any,
-              })),
+            features: worldPolitical.features.filter(
+              (f) => f.properties?._countryId !== viewerCountryId
+            ),
           };
-           
-          map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
+
+          map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
           map.addLayer({
-            id: "active-subdivisions-stroke",
-            type: "line",
-            source: "active-subdivisions",
+            id: "other-countries-fill",
+            type: "fill",
+            source: "other-countries",
             paint: {
-              "line-color": "#475569",
-              "line-width": 0.5,
-              "line-dasharray": [3, 2],
-              "line-opacity": 0.5,
+              "fill-color": "#475569",
+              "fill-opacity": 0.2,
             },
           });
         }
-      }
 
-      // 4. Fit bounds of owned country
-      if (bbox) {
-        map.fitBounds(
-          [
-            [bbox.minLng, bbox.minLat],
-            [bbox.maxLng, bbox.maxLat],
-          ],
-          { padding: 20, maxZoom: 8, duration: 0 }
-        );
-      }
+        // 2. Active Country borders
+        if (geometry && viewerCountryId) {
+          const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
+          const activeGeo = {
+            type: "FeatureCollection",
 
-      // 5. Place Marker at starting coordinates
-      const startMarker = new maplibregl.Marker({ color: "#f43f5e" })
-        .setLngLat([mapCenterLng, mapCenterLat])
-        .addTo(map);
-      markerRef.current = startMarker;
+            features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
+          };
 
-      // Click listener to grab coordinates
-       
-      map.on("click", (e: any) => {
-        const clickedLng = e.lngLat.lng;
-        const clickedLat = e.lngLat.lat;
+          map.addSource("active-country", { type: "geojson", data: activeGeo as any });
+          map.addLayer({
+            id: "active-country-stroke",
+            type: "line",
+            source: "active-country",
+            paint: {
+              "line-color": activeColor,
+              "line-width": 2,
+            },
+          });
 
-        setLat(clickedLat.toFixed(5));
-        setLng(clickedLng.toFixed(5));
+          // 3. Subdivisions
+          if (subdivisions && subdivisions.length > 0) {
+            const subGeo = {
+              type: "FeatureCollection",
+              features: subdivisions
 
-        if (markerRef.current) {
-          markerRef.current.setLngLat([clickedLng, clickedLat]);
+                .filter((s: any) => s.geometry)
+
+                .map((s: any) => ({
+                  type: "Feature",
+                  properties: {},
+
+                  geometry: s.geometry as any,
+                })),
+            };
+
+            map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
+            map.addLayer({
+              id: "active-subdivisions-stroke",
+              type: "line",
+              source: "active-subdivisions",
+              paint: {
+                "line-color": "#475569",
+                "line-width": 0.5,
+                "line-dasharray": [3, 2],
+                "line-opacity": 0.5,
+              },
+            });
+          }
         }
-      });
 
-      setMapLoaded(true);
-    });
+        // 4. Fit bounds of owned country
+        if (bbox) {
+          map.fitBounds(
+            [
+              [bbox.minLng, bbox.minLat],
+              [bbox.maxLng, bbox.maxLat],
+            ],
+            { padding: 20, maxZoom: 8, duration: 0 }
+          );
+        }
+
+        // 5. Place Marker at starting coordinates
+        const startMarker = new maplibregl.Marker({ color: "#f43f5e" })
+          .setLngLat([mapCenterLng, mapCenterLat])
+          .addTo(map);
+        markerRef.current = startMarker;
+
+        // Click listener to grab coordinates
+
+        map.on("click", (e: any) => {
+          const clickedLng = e.lngLat.lng;
+          const clickedLat = e.lngLat.lat;
+
+          setLat(clickedLat.toFixed(5));
+          setLng(clickedLng.toFixed(5));
+
+          if (markerRef.current) {
+            markerRef.current.setLngLat([clickedLng, clickedLat]);
+          }
+        });
+
+        setMapLoaded(true);
+      });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    centroid,
-    geometry,
-    worldPolitical,
-    bbox,
-    viewerCountryId,
-    fillColor,
-    featureId,
-    subdivisions,
-    isOpen,
-  ]);
+    [
+      centroid,
+      geometry,
+      worldPolitical,
+      bbox,
+      viewerCountryId,
+      fillColor,
+      featureId,
+      subdivisions,
+      isOpen,
+    ]
+  );
 
   // Load/Unload map
   useEffect(() => {
     if (isOpen && !isMapBundleLoading) {
+      let cancelled = false;
       const timer = setTimeout(() => {
-        initMapLibre();
+        void initMapLibre(() => cancelled);
       }, 100);
       return () => {
+        cancelled = true;
         clearTimeout(timer);
         if (mapRef.current) {
           mapRef.current.remove();
@@ -297,11 +307,11 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         onClick={onClose}
       >
         <div
-          className="relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 text-foreground shadow-2xl backdrop-blur-2xl dark:border-white/15 dark:bg-card/95"
+          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
               <MapIcon className="h-5 w-5 text-emerald-400" />
               Insert Map Coords &amp; Embeds
@@ -321,7 +331,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <div className="border-border bg-secondary flex shrink-0 rounded-lg border p-0.5">
                 <button
                   onClick={() => setActiveTab("coords")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     activeTab === "coords"
                       ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -331,7 +341,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab("mapembed")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-all active:scale-[0.98] ${
+                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                     activeTab === "mapembed"
                       ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
@@ -344,13 +354,13 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               {/* Coordinates status */}
               <div className="border-border bg-muted/30 grid shrink-0 grid-cols-2 gap-3 rounded-lg border p-3">
                 <div>
-                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold uppercase">
                     Latitude (Y)
                   </span>
                   <span className="text-foreground font-mono text-sm font-semibold">{lat}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px] font-bold uppercase">
+                  <span className="text-muted-foreground block text-xs font-bold uppercase">
                     Longitude (X)
                   </span>
                   <span className="text-foreground font-mono text-sm font-semibold">{lng}</span>
@@ -362,7 +372,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 <label className="text-foreground block text-xs font-semibold">
                   Quick Select Existing Marker
                 </label>
-                <div className="scrollbar-thin border-border divide-border bg-muted/20 max-h-36 divide-y overflow-y-auto rounded-lg border text-xs">
+                <div className="border-border divide-border bg-muted/20 max-h-36 scrollbar-thin divide-y overflow-y-auto rounded-lg border text-xs">
                   {isMapBundleLoading && (
                     <div className="text-muted-foreground flex items-center gap-1.5 p-3">
                       <Loader2 className="h-3 w-3 animate-spin text-emerald-400" /> Loading
@@ -370,7 +380,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                     </div>
                   )}
                   {!isMapBundleLoading &&
-                     
                     cities.map((c: any) => (
                       <button
                         key={`city-${c.id}`}
@@ -378,16 +387,15 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
+                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground font-semibold">{c.name}</span>
-                        <span className="text-muted-foreground text-[9px] font-bold uppercase">
+                        <span className="text-muted-foreground text-xs font-bold uppercase">
                           {c.isNationalCapital ? "Capital" : "City"}
                         </span>
                       </button>
                     ))}
                   {!isMapBundleLoading &&
-                     
                     pois.map((p: any) => (
                       <button
                         key={`poi-${p.id}`}
@@ -395,10 +403,10 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         onClick={() =>
                           handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)
                         }
-                        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors hover:bg-muted/50"
+                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
                       >
                         <span className="text-foreground">{p.name}</span>
-                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-[9px] capitalize">
+                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-xs capitalize">
                           {p.category}
                         </span>
                       </button>
@@ -444,7 +452,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                         mapRef.current.setZoom(newZ);
                       }
                     }}
-                    className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-emerald-500"
+                    className="bg-muted h-1 w-full cursor-pointer appearance-none rounded-lg accent-emerald-500"
                   />
                 </div>
               </div>
@@ -464,7 +472,9 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-foreground block text-xs font-semibold">Embed Width</label>
+                    <label className="text-foreground block text-xs font-semibold">
+                      Embed Width
+                    </label>
                     <input
                       type="text"
                       value={embedWidth}
@@ -477,7 +487,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                       type="checkbox"
                       checked={embedInteractive}
                       onChange={(e) => setEmbedInteractive(e.target.checked)}
-                      className="border-input bg-secondary text-emerald-600 focus:ring-emerald-500 rounded"
+                      className="border-input bg-secondary rounded text-emerald-600 focus:ring-emerald-500"
                     />
                     <span className="text-foreground text-xs">Interactive panning / zoom</span>
                   </label>
@@ -485,7 +495,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               )}
 
               {/* Syntax preview */}
-              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-[11px] text-emerald-400">
+              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-xs text-emerald-400">
                 {activeTab === "coords" ? (
                   <span>
                     [[Coords:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
@@ -505,7 +515,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <button
                 onClick={handleInsertLink}
                 disabled={activeTab === "coords" && !label.trim()}
-                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
+                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
               >
                 Insert Map Feature
               </button>

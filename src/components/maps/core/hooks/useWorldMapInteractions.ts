@@ -29,7 +29,9 @@ export function useWorldMapInteractions({
   map,
   isLoaded,
   layers,
+  // oxlint-disable-next-line eslint/no-unused-vars
   overlayVisibility,
+  // oxlint-disable-next-line eslint/no-unused-vars
   labelsVisible,
   geographyFilter,
   topCountryNames,
@@ -49,12 +51,16 @@ export function useWorldMapInteractions({
 
   // Keep latest refs to avoid stale callbacks
   const onCountryClickRef = useRef(onCountryClick);
+  // oxlint-disable-next-line
   onCountryClickRef.current = onCountryClick;
   const onCountryHoverRef = useRef(onCountryHover);
+  // oxlint-disable-next-line
   onCountryHoverRef.current = onCountryHover;
   const onMapClickRef = useRef(onMapClick);
+  // oxlint-disable-next-line
   onMapClickRef.current = onMapClick;
   const onFeatureClickRef = useRef(onFeatureClick);
+  // oxlint-disable-next-line
   onFeatureClickRef.current = onFeatureClick;
 
   const updateDistanceFade = useCallback(() => {
@@ -127,10 +133,17 @@ export function useWorldMapInteractions({
     (pt: { x: number; y: number }): boolean => {
       if (!map) return false;
       try {
-        if (map.transform && typeof (map.transform as any).isPointOnMapSurface === "function") {
-          return (map.transform as any).isPointOnMapSurface(pt);
+        // `transform` is an undocumented internal that MapLibre 6 no longer
+        // exposes on the public Map type (removed along with the Camera
+        // refactor); still probed defensively at runtime, with the geometric
+        // fallback below covering both the "missing" and "removed" cases.
+        const mapTransform = (map as any).transform;
+        if (mapTransform && typeof mapTransform.isPointOnMapSurface === "function") {
+          return mapTransform.isPointOnMapSurface(pt);
         }
-      } catch (_) {}
+      } catch (err) {
+        console.debug("[useWorldMapInteractions] Point surface check error:", err);
+      }
 
       // Fallback for flat projection / high zoom or missing transform method
       if (map.getZoom() >= 4.5) return true;
@@ -297,7 +310,9 @@ export function useWorldMapInteractions({
               { source: "source-political", id: hoveredFeatureIdRef.current },
               { hover: false }
             );
-          } catch (_) {}
+          } catch (err) {
+            console.debug("[useWorldMapInteractions] Reset hover state error:", err);
+          }
         }
 
         hoveredFeatureIdRef.current = nextFeatureId;
@@ -309,7 +324,9 @@ export function useWorldMapInteractions({
                 { source: "source-political", id: nextFeatureId },
                 { hover: true }
               );
-            } catch (_) {}
+            } catch (err) {
+              console.debug("[useWorldMapInteractions] Set hover state error:", err);
+            }
           }
           if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
@@ -577,7 +594,15 @@ export function useWorldMapInteractions({
 
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [map, isLoaded, handleMouseMove, handleClick, isPointOnGlobeOrMap, isMeasuring, tooltipPopupRef]);
+  }, [
+    map,
+    isLoaded,
+    handleMouseMove,
+    handleClick,
+    isPointOnGlobeOrMap,
+    isMeasuring,
+    tooltipPopupRef,
+  ]);
 
   // Bind move/zoom end labels distance fade
   useEffect(() => {

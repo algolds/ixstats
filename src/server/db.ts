@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 // Direct leaf imports avoid loading the system barrel during database initialization
@@ -9,9 +8,6 @@ import { prismaErrorToAppError } from "~/lib/prisma-error";
 
 // Check if we're in read-only mode (development with production data)
 const isReadOnlyMode = process.env.DATABASE_READONLY === "true";
-
-// Slow query threshold in milliseconds (higher in dev to reduce log noise and memory)
-const SLOW_QUERY_THRESHOLD_MS = isDevMode ? 500 : 100;
 
 /**
  * Creates a Prisma client with optional read-only protection and query monitoring.
@@ -41,20 +37,13 @@ const createPrismaClient = () => {
   // Only set up query monitoring in production (saves memory in dev)
   if (!isDevMode) {
     baseClient.$on("query", (e) => {
-      // Record query metrics for performance analysis
+      // Record query metrics; the monitor logs slow queries (>100ms) once
       queryMonitor.recordQuery({
-        queryKey: e.query.substring(0, 100),
+        queryKey: e.query.substring(0, 200),
         duration: e.duration,
         success: true,
         timestamp: Date.now(),
       });
-
-      // Log slow queries (>100ms) in production
-      if (e.duration > SLOW_QUERY_THRESHOLD_MS) {
-        console.warn(
-          `[SLOW_QUERY] ${e.duration}ms | ${e.query.substring(0, 200)}${e.query.length > 200 ? "..." : ""}`
-        );
-      }
     });
   }
 
@@ -243,6 +232,15 @@ const createPrismaClient = () => {
     // Wiki cache (written by WikiCacheService for 3-layer caching)
     "WikiCache",
     "ExternalApiCache",
+    // WikiOS Core Entities (Articles, Revisions, Categories, DAG Graph)
+    "WikiArticle",
+    "WikiRevision",
+    "WikiCategory",
+    "WikiCategoryMember",
+    "WikiAsset",
+    "WikiLink",
+    "WikiLog",
+    "WikiWatchlist",
     // WikiOS Stash — save-for-later with annotations
     "Stash",
     "StashItem",
@@ -391,7 +389,12 @@ export { db as prisma };
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
 
-if (typeof (globalThis as any).window === "undefined" && !isReadOnlyMode) {
+if (
+  typeof (globalThis as any).window === "undefined" &&
+  !isReadOnlyMode &&
+  env.NODE_ENV !== "test" &&
+  typeof process.env.JEST_WORKER_ID === "undefined"
+) {
   // Asynchronously synchronize baseline achievements in background on server start
   import("~/lib/achievements/sync")
     .then(({ syncAchievements }) => {

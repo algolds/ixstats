@@ -57,13 +57,13 @@ export default function LayerPanel() {
 
               {/* Ordinaries Header */}
               <div className="pt-2">
-                <div className="flex items-center justify-between px-3 py-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+                <div className="flex items-center justify-between px-3 py-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
                   <span>Ordinaries</span>
                   <button
                     onClick={() =>
                       addOrdinary({ type: "chief", tincture: "or", lineStyle: "straight" })
                     }
-                    className="rounded px-1.5 py-0.5 text-amber-500 transition-all hover:bg-white/5 hover:text-amber-400"
+                    className="rounded px-1.5 py-0.5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-amber-400"
                   >
                     + Add
                   </button>
@@ -72,7 +72,7 @@ export default function LayerPanel() {
                 {/* Ordinaries List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.ordinaries ?? []).length === 0 ? (
-                    <div className="px-3 py-2 text-[10px] text-zinc-600 italic">No ordinaries.</div>
+                    <div className="px-3 py-2 text-xs text-zinc-600 italic">No ordinaries.</div>
                   ) : (
                     (composition.shield.ordinaries ?? []).map((ord, idx) => {
                       const label = ORDINARIES.find((o) => o.value === ord.type)?.label || ord.type;
@@ -108,14 +108,14 @@ export default function LayerPanel() {
 
               {/* Charges Header */}
               <div className="pt-2">
-                <div className="flex items-center justify-between px-3 py-1 text-[10px] font-bold tracking-wider text-zinc-500 uppercase">
+                <div className="flex items-center justify-between px-3 py-1 text-xs font-bold tracking-wider text-zinc-500 uppercase">
                   <span>Charges</span>
                 </div>
 
                 {/* Charges List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.charges ?? []).length === 0 ? (
-                    <div className="px-3 py-2 text-[10px] text-zinc-600 italic">
+                    <div className="px-3 py-2 text-xs text-zinc-600 italic">
                       No charges. Select from library to add.
                     </div>
                   ) : (

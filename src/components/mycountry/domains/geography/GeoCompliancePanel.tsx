@@ -2,15 +2,15 @@
 
 import React, { useState } from "react";
 import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Info,
-  Loader2,
-  RefreshCw,
+  WarningTriangle as AlertTriangle,
+  CheckCircle as CheckCircle2,
+  NavArrowDown as ChevronDown,
+  NavArrowRight as ChevronRight,
+  InfoCircle as Info,
+  SystemRestart as Loader2,
+  Refresh as RefreshCw,
   Shield,
-} from "lucide-react";
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import type { ComplianceIssue, ComplianceSeverity } from "~/lib/country-geo";
 
@@ -66,7 +66,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
 
       {open && (
         <div className="space-y-2 px-3 pb-3">
-          <div className="text-muted-foreground flex items-center justify-between text-[10px]">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span>
               {issues.length === 0
                 ? "All checks passed. The geographic data is internally consistent."
@@ -78,7 +78,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
                 query.refetch();
                 onRefresh?.();
               }}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[10px]"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
               disabled={query.isRefetching}
             >
               {query.isRefetching ? (
@@ -91,14 +91,14 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
           </div>
 
           {query.isLoading && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
               <Loader2 className="h-3 w-3 animate-spin" />
               Running compliance checks…
             </div>
           )}
 
           {!query.isLoading && query.error && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
               <AlertTriangle className="h-3 w-3" />
               {query.error.message}
             </div>
@@ -115,7 +115,7 @@ export function GeoCompliancePanel({ countryId, onRefresh }: GeoCompliancePanelP
           )}
 
           {!query.isLoading && !query.error && issues.length === 0 && (
-            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-[11px]">
+            <div className="text-muted-foreground flex items-center justify-center gap-1.5 py-3 text-xs">
               <CheckCircle2 className="h-3 w-3 text-emerald-500" />
               No issues. Population, GDP, capitals, and coordinates all check out.
             </div>
@@ -143,7 +143,7 @@ function ComplianceBadge({
   }[tone];
   return (
     <span
-      className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] font-medium ${cls}`}
+      className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-medium ${cls}`}
       title={`${count} ${label}`}
     >
       {count}
@@ -155,11 +155,11 @@ function ComplianceIssueRow({ issue }: { issue: ComplianceIssue }) {
   const Icon = iconFor(issue.severity);
   const color = colorFor(issue.severity);
   return (
-    <div className={`flex items-start gap-2 rounded-md border px-2 py-1.5 text-[11px] ${color}`}>
+    <div className={`flex items-start gap-2 rounded-md border px-2 py-1.5 text-xs ${color}`}>
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="flex-1">
         <div className="leading-snug">{issue.message}</div>
-        <div className="text-muted-foreground/70 mt-0.5 flex flex-wrap items-center gap-1.5 text-[9px] uppercase">
+        <div className="text-muted-foreground/70 mt-0.5 flex flex-wrap items-center gap-1.5 text-xs uppercase">
           <span>{issue.category}</span>
           {issue.entityRef && (
             <>

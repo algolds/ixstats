@@ -274,30 +274,17 @@ export type OnomaSection =
 /**
  * Sections belonging to the CREATE pillar.
  */
-export type CreateSection =
-  | "overview"
-  | "places"
-  | "people"
-  | "organizations"
-  | "culture";
+export type CreateSection = "overview" | "places" | "people" | "organizations" | "culture";
 
 /**
  * Studio workspace sub-tabs (System Construction Layer).
  */
-export type StudioSubTab =
-  | "workshop"
-  | "visualizer"
-  | "namesets"
-  | "shifts";
+export type StudioSubTab = "workshop" | "visualizer" | "namesets" | "shifts";
 
 /**
  * Explore workspace sub-tabs (Language Analysis & Understanding Layer — Pure Reference).
  */
-export type ExploreSubTab =
-  | "phonology"
-  | "grammar"
-  | "writing"
-  | "packs";
+export type ExploreSubTab = "phonology" | "grammar" | "writing" | "packs";
 
 /**
  * Mapping of section IDs to display metadata.
@@ -473,7 +460,8 @@ export function getExploreSubTabFromPathname(pathname: string): ExploreSubTab {
   // Backward compatibility for root-level direct URLs
   const parts = pathname.split("/labs/onoma/")[1]?.split("/") || [];
   const rootSegment = parts[0] || "";
-  if (rootSegment === "phonology" || rootSegment === "acoustics" || rootSegment === "compare") return "phonology";
+  if (rootSegment === "phonology" || rootSegment === "acoustics" || rootSegment === "compare")
+    return "phonology";
   if (
     rootSegment === "grammar" ||
     rootSegment === "syntax" ||

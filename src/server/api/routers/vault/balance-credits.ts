@@ -11,146 +11,50 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
-import { type VaultTransactionType } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
-
-/**
- * Vault transaction type enum for validation
- */
-const vaultTransactionTypeEnum = z.enum([
-  "EARN_PASSIVE",
-  "EARN_ACTIVE",
-  "EARN_CARDS",
-  "EARN_SOCIAL",
-  "SPEND_PACKS",
-  "SPEND_MARKET",
-  "SPEND_CRAFT",
-  "SPEND_BOOST",
-  "SPEND_COSMETIC",
-  "ADMIN_ADJUSTMENT",
-]);
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
    */
-  getBalance: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1, "User ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const cacheKey = `user_vault_balance:${input.userId}`;
-        const cached = await globalCache.get<any>(cacheKey);
-        if (cached) return cached;
+  getBalance: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      // Guaranteed non-null by protectedProcedure's authMiddleware.
+      const userId = ctx.auth.userId;
+      const cacheKey = `user_vault_balance:${userId}`;
+      const cached = await globalCache.get<any>(cacheKey);
+      if (cached) return cached;
 
-        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
-        await globalCache.set(cacheKey, balance, { ttl: 30 });
-        return balance;
-      } catch (error) {
-        console.error("[Vault Router] Error getting balance:", error);
-        throw new Error("Failed to retrieve vault balance");
-      }
-    }),
-
-  /**
-   * Get transaction history with pagination
-   */
-  spendCredits: protectedProcedure
-    .input(
-      z.object({
-        amount: z.number().min(0.01, "Amount must be positive"),
-        type: vaultTransactionTypeEnum,
-        source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.string(), z.any()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        // Validate spending type
-        if (!input.type.startsWith("SPEND_") && input.type !== "ADMIN_ADJUSTMENT") {
-          throw new Error("Invalid transaction type for spending");
-        }
-
-        const result = await vaultService.spendCredits(
-          ctx.auth.userId,
-          input.amount,
-          input.type as VaultTransactionType,
-          input.source,
-          ctx.db as any,
-          input.metadata
-        );
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to spend credits");
-        }
-
-        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-        return {
-          success: true,
-          newBalance: result.newBalance,
-          amountSpent: input.amount,
-          message: `Spent ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error spending credits:", error);
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error("Failed to spend credits");
-      }
-    }),
+      const balance = await vaultService.getBalance(userId, ctx.db as any);
+      await globalCache.set(cacheKey, balance, { ttl: 30 });
+      return balance;
+    } catch (error) {
+      console.error("[Vault Router] Error getting balance:", error);
+      throw new Error("Failed to retrieve vault balance", { cause: error });
+    }
+  }),
 
   /**
    * Get vault level
    */
-  getVaultLevel: protectedProcedure
-    .input(
-      z.object({
-        userId: z.string().min(1, "User ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
-
-        return {
-          vaultLevel: balance.vaultLevel,
-          vaultXp: balance.vaultXp,
-          nextLevelXp: balance.vaultLevel * 1000,
-          progress: (balance.vaultXp % 1000) / 1000,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting vault level:", error);
-        throw new Error("Failed to retrieve vault level");
-      }
-    }),
-
-  /**
-   * Get today's earnings summary
-   */
-  getEarningsSummary: protectedProcedure.query(async ({ ctx }) => {
+  getVaultLevel: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
+      // Guaranteed non-null by protectedProcedure's authMiddleware.
+      const userId = ctx.auth.userId;
+      const balance = await vaultService.getBalance(userId, ctx.db as any);
 
-      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db as any);
-
-      return summary;
+      return {
+        vaultLevel: balance.vaultLevel,
+        vaultXp: balance.vaultXp,
+        nextLevelXp: balance.vaultLevel * 1000,
+        progress: (balance.vaultXp % 1000) / 1000,
+      };
     } catch (error) {
-      console.error("[Vault Router] Error getting earnings summary:", error);
-      throw new Error("Failed to retrieve earnings summary");
+      console.error("[Vault Router] Error getting vault level:", error);
+      throw new Error("Failed to retrieve vault level", { cause: error });
     }
   }),
 
@@ -190,7 +94,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("[Vault Router] Error getting today's earnings:", error);
-      throw new Error("Failed to retrieve today's earnings");
+      throw new Error("Failed to retrieve today's earnings", { cause: error });
     }
   }),
 
@@ -218,60 +122,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error calculating passive income:", error);
-        throw new Error("Failed to calculate passive income");
-      }
-    }),
-
-  /**
-   * Check daily earning cap
-   */
-  earnCredits: adminProcedure
-    .input(
-      z.object({
-        amount: z.number().min(0.01, "Amount must be positive"),
-        type: vaultTransactionTypeEnum,
-        source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.string(), z.any()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        // Validate earning type
-        if (!input.type.startsWith("EARN_") && input.type !== "ADMIN_ADJUSTMENT") {
-          throw new Error("Invalid transaction type for earning");
-        }
-
-        const result = await vaultService.earnCredits(
-          ctx.auth.userId,
-          input.amount,
-          input.type as VaultTransactionType,
-          input.source,
-          ctx.db as any,
-          input.metadata
-        );
-
-        if (!result.success) {
-          throw new Error(result.message || "Failed to earn credits");
-        }
-
-        await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-        return {
-          success: true,
-          newBalance: result.newBalance,
-          amountEarned: input.amount,
-          message: `Earned ${input.amount} IxCredits. New balance: ${result.newBalance} IxCredits`,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error earning credits:", error);
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error("Failed to earn credits");
+        throw new Error("Failed to calculate passive income", { cause: error });
       }
     }),
 
@@ -330,7 +181,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       return stats;
     } catch (error) {
       console.error("[Vault Router] Error getting user stats:", error);
-      throw new Error("Failed to retrieve user stats");
+      throw new Error("Failed to retrieve user stats", { cause: error });
     }
   }),
 
@@ -359,47 +210,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[Vault Router] Error getting budget multiplier:", error);
-        throw new Error("Failed to retrieve budget multiplier");
+        throw new Error("Failed to retrieve budget multiplier", { cause: error });
       }
     }),
-
-  /**
-   * Get detailed budget multiplier breakdown by department
-   */
-  getBudgetMultiplierBreakdown: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(
-          input.countryId,
-          ctx.db as any
-        );
-        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
-          input.countryId,
-          ctx.db as any
-        );
-
-        return {
-          countryId: input.countryId,
-          totalMultiplier,
-          breakdown,
-          totalCategories: breakdown.length,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting budget breakdown:", error);
-        throw new Error("Failed to retrieve budget multiplier breakdown");
-      }
-    }),
-
-  // ============================================
-  // COLLECTION CRUD
-  // ============================================
-
-  /**
-   * Get current user's collections
-   */
 });

@@ -2,6 +2,7 @@
 // Activities router for live activity feed system
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getForumActivity } from "~/server/modules/forum";
@@ -12,54 +13,99 @@ const activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
   filter: z
-    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
+    .enum(["all", "achievements", "diplomatic", "economic", "social", "meta", "community"])
     .default("all"),
   category: z.enum(["all", "game", "platform", "social"]).default("all"),
   userId: z.string().optional(),
 });
 
-const createActivitySchema = z.object({
-  type: z.enum(["achievement", "diplomatic", "economic", "social", "meta"]),
-  category: z.enum(["game", "platform", "social"]).default("game"),
-  userId: z.string().optional(),
-  countryId: z.string().optional(),
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
-  metadata: z
-    .record(
-      z.string(),
-      z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
-    )
-    .optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  visibility: z.enum(["public", "followers", "friends"]).default("public"),
-  relatedCountries: z.array(z.string()).optional(),
-});
+type ReactionTally = Map<string, Record<string, number>>;
 
-const engagementActionSchema = z.object({
-  activityId: z.string(),
-  action: z.string(),
-  userId: z.string(),
-});
+/** Per-post reaction counts in one grouped query (instead of loading every reaction row). */
+async function tallyReactions(db: PrismaClient, postIds: string[]): Promise<ReactionTally> {
+  const tally: ReactionTally = new Map();
+  if (postIds.length === 0) return tally;
+  const groups = await db.postReaction.groupBy({
+    by: ["postId", "reactionType"],
+    where: { postId: { in: postIds } },
+    _count: { _all: true },
+  });
+  for (const g of groups) {
+    const counts = tally.get(g.postId) ?? {};
+    counts[g.reactionType] = (counts[g.reactionType] ?? 0) + g._count._all;
+    tally.set(g.postId, counts);
+  }
+  return tally;
+}
 
-const commentActionSchema = z.object({
-  activityId: z.string(),
-  userId: z.string(),
-  content: z.string().min(1).max(2000),
-});
+/** Stored reactionCounts JSON baseline plus live reaction rows, as the old per-row reducer summed them. */
+function mergeReactionCounts(
+  stored: string | null | undefined,
+  live: Record<string, number> | undefined
+): Record<string, number> {
+  let baseline: Record<string, number> = {};
+  try {
+    if (stored) baseline = (JSON.parse(stored) as Record<string, number> | null) ?? {};
+  } catch {
+    // ignore
+  }
+  for (const [type, count] of Object.entries(live ?? {})) {
+    baseline[type] = (baseline[type] || 0) + count;
+  }
+  return baseline;
+}
 
-const getUserEngagementSchema = z.object({
-  activityIds: z.array(z.string()),
-  userId: z.string(),
-});
+/**
+ * Viewer-only reactions/reposts for the paginated ThinkPages items. Runs after the shared
+ * cache so per-viewer data never lands in the cached entry.
+ */
+async function attachViewerEngagement<T extends { source?: string; rawPost?: { id: string } }>(
+  db: PrismaClient,
+  viewerClerkId: string | null | undefined,
+  activities: T[]
+): Promise<T[]> {
+  const postIds = activities.flatMap((a) =>
+    a.source === "thinkpages" && a.rawPost ? [a.rawPost.id] : []
+  );
+  if (!viewerClerkId || postIds.length === 0) return activities;
+  const accounts = await db.thinkpagesAccount.findMany({
+    where: { clerkUserId: viewerClerkId },
+    select: { id: true },
+  });
+  const viewerAccountIds = accounts.map((a) => a.id);
+  if (viewerAccountIds.length === 0) return activities;
+  const [reactions, reposts] = await Promise.all([
+    db.postReaction.findMany({
+      where: { postId: { in: postIds }, accountId: { in: viewerAccountIds } },
+      select: { postId: true, accountId: true, reactionType: true },
+    }),
+    db.thinkpagesPost.findMany({
+      where: { repostOfId: { in: postIds }, accountId: { in: viewerAccountIds } },
+      select: { repostOfId: true, accountId: true },
+    }),
+  ]);
+  return activities.map((act) => {
+    const rawPost = act.rawPost;
+    if (act.source !== "thinkpages" || !rawPost) return act;
+    const postId = rawPost.id;
+    return {
+      ...act,
+      rawPost: {
+        ...rawPost,
+        reactions: reactions.filter((r) => r.postId === postId),
+        reposts: reposts
+          .filter((r) => r.repostOfId === postId)
+          .map((r) => ({ accountId: r.accountId })),
+      },
+    };
+  });
+}
 
 export const activitiesFeedGlobalRouter = createTRPCRouter({
-  // Test mutation to debug parameter passing
-
   // Get global activity feed
   getGlobalFeed: publicProcedure.input(activityFilterSchema).query(async ({ ctx, input }) => {
     try {
-      const cacheKey = `global_activity_feed:${input.filter}:${input.category}:${input.userId || "all"}:${input.limit}:${input.cursor || "none"}`;
+      const cacheKey = `global_activity_feed:${input.filter}:${input.category}:${input.userId || "all"}:${input.limit}`;
 
       const cachedData = await globalCache.get<{ combinedActivities: any[] }>(cacheKey);
       let combinedActivities: any[] = [];
@@ -81,7 +127,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         // Build where clause based on filters
         const where: any = {};
 
-        if (input.filter !== "all") {
+        if (input.filter !== "all" && input.filter !== "community") {
           where.type = input.filter;
         }
 
@@ -124,6 +170,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
                 visibility: "public",
               },
               orderBy: { ixTimeTimestamp: "desc" },
+              take: mergeCap,
               include: {
                 account: {
                   select: {
@@ -173,7 +220,6 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
                     },
                   },
                 },
-                reactions: true,
                 mediaAttachments: true,
                 poll: {
                   include: {
@@ -186,9 +232,6 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
                     },
                   },
                 },
-                reposts: {
-                  select: { accountId: true },
-                },
                 _count: {
                   select: {
                     replies: true,
@@ -198,6 +241,11 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
               } as any,
             })
           : [];
+
+        const reactionTally = await tallyReactions(
+          ctx.db,
+          (thinkpagesPosts as { id: string }[]).map((p) => p.id)
+        );
 
         // Batch fetch users and countries to avoid N+1 queries
         const userIds = [
@@ -211,7 +259,14 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
           userIds.length > 0
             ? ctx.db.user.findMany({
                 where: { clerkUserId: { in: userIds } },
-                include: { country: true },
+                select: {
+                  clerkUserId: true,
+                  countryId: true,
+                  wikiUsername: true,
+                  discordUsername: true,
+                  forumUsername: true,
+                  country: { select: { name: true, flag: true } },
+                },
               })
             : [],
           countryIds.length > 0
@@ -426,23 +481,9 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
             rawPost: {
               ...post,
               hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-              reactionCounts: (() => {
-                let baseline: Record<string, number> = {};
-                try {
-                  if (post.reactionCounts) {
-                    baseline =
-                      typeof post.reactionCounts === "string"
-                        ? JSON.parse(post.reactionCounts)
-                        : post.reactionCounts;
-                  }
-                } catch {
-                  // ignore
-                }
-                return (post as any).reactions.reduce((acc: any, reaction: any) => {
-                  acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-                  return acc;
-                }, baseline);
-              })(),
+              reactionCounts: mergeReactionCounts(post.reactionCounts, reactionTally.get(post.id)),
+              reactions: [],
+              reposts: [],
               timestamp: post.isAutoGenerated
                 ? post.ixTimeTimestamp.toISOString()
                 : post.createdAt.toISOString(),
@@ -451,7 +492,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         }
 
         // Add wiki recent changes as feed items
-        if (input.filter === "all" || input.filter === "meta") {
+        if (input.filter === "all" || input.filter === "meta" || input.filter === "community") {
           try {
             const wikiChanges = await getWikiBridgeRecentChanges(20);
             for (const rc of wikiChanges) {
@@ -500,7 +541,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         }
 
         // Add forum activity as feed items
-        if (input.filter === "all" || input.filter === "social") {
+        if (input.filter === "all" || input.filter === "social" || input.filter === "community") {
           try {
             const forumItems = await getForumActivity(20);
             for (const item of forumItems) {
@@ -549,12 +590,16 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         // Sort combined activities by timestamp (most recent first)
         combinedActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-        // Cache the combined activities for 15 seconds
-        await globalCache.set(cacheKey, { combinedActivities }, { ttl: 15 });
+        // Cache the combined activities for 60 seconds (matches the dashboard poll)
+        await globalCache.set(cacheKey, { combinedActivities }, { ttl: 60 });
       }
 
       // Apply pagination limit to combined results
-      const paginatedActivities = combinedActivities.slice(0, input.limit);
+      const paginatedActivities = await attachViewerEngagement(
+        ctx.db,
+        ctx.auth?.userId,
+        combinedActivities.slice(0, input.limit)
+      );
       const nextCursor =
         combinedActivities.length > input.limit ? combinedActivities[input.limit]?.id : undefined;
 
@@ -598,40 +643,7 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
       };
     } catch (error) {
       console.error("Error fetching global activity feed:", error);
-      throw new Error("Failed to fetch activity feed");
+      throw new Error("Failed to fetch activity feed", { cause: error });
     }
   }),
-
-  // Get feed from countries the user follows
-
-  // Get user-specific activity feed
-
-  // Create new activity
-
-  // Handle engagement actions (like, unlike, share, view)
-
-  // Add comment to activity
-
-  // Get comments for an activity
-
-  // Get user engagement state for activities
-
-  // Get trending topics based on activity data
-
-  // Get activity statistics
-
-  // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
-
-  // Country Follow System
-  // Follow a country
-
-  // Unfollow a country
-
-  // Get countries that a country is following
-
-  // Get countries that follow a country (followers)
-
-  // Check if a country is following another
-
-  // Get follow statistics for a country
 });

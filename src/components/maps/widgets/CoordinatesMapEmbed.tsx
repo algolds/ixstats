@@ -11,13 +11,23 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
+import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 export interface CoordinatesMapEmbedProps {
   lat: number;
   lng: number;
   zoom?: number;
   options?: string; // height=400|width=100%|interactive=yes|title=My Title
+}
+
+/** Popup title as a text node: the title comes from wiki markup, so it is never parsed as HTML. */
+export function buildPopupTitleNode(title: string): HTMLDivElement {
+  const titleEl = document.createElement("div");
+  titleEl.textContent = title;
+  titleEl.style.cssText =
+    "color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;";
+  return titleEl;
 }
 
 export function CoordinatesMapEmbed({
@@ -83,111 +93,121 @@ export function CoordinatesMapEmbed({
     return () => observer.disconnect();
   }, []);
 
-  const initMap = useCallback(async () => {
-    if (!containerRef.current) return;
+  const initMap = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!containerRef.current) return;
 
-    const maplibregl = (await import("maplibre-gl")).default;
-    await import("maplibre-gl/dist/maplibre-gl.css");
+      // maplibre-gl 6 is ESM-only, so the module namespace itself carries the
+      // named exports (Map, Popup, …).
+      const maplibregl = await loadMaplibre();
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      // Unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
+      if (isCancelled() || !containerRef.current) return;
 
-    // Clean up existing
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    const baseStyle: any = buildBaseStyle();
-    // Force Mercator projection for embeds
-    delete baseStyle.projection;
-
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: baseStyle,
-      center: [lng, lat],
-      zoom: zoom,
-      attributionControl: false,
-      interactive: interactiveVal,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // 1. Add world political borders
-      if (worldPolitical && worldPolitical.features && worldPolitical.features.length > 0) {
-        map.addSource("source-world-political", {
-          type: "geojson",
-          data: worldPolitical,
-        });
-
-        // Fill color layer with colors from feature properties
-        map.addLayer({
-          id: "world-political-fill",
-          type: "fill",
-          source: "source-world-political",
-          paint: {
-            "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
-            "fill-opacity": 0.45,
-          },
-        });
-
-        // Country border line layer
-        map.addLayer({
-          id: "world-political-stroke",
-          type: "line",
-          source: "source-world-political",
-          paint: {
-            "line-color": "#475569",
-            "line-width": 0.8,
-            "line-opacity": 0.5,
-          },
-        });
-
-        // Country name labels layer
-        map.addLayer({
-          id: "world-political-labels",
-          type: "symbol",
-          source: "source-world-political",
-          layout: {
-            "text-field": [
-              "coalesce",
-              ["get", "_displayName"],
-              ["get", "name"],
-              "",
-            ] as unknown as string,
-            "text-size": 10,
-            "text-allow-overlap": false,
-            "text-optional": true,
-            "text-font": [...MAP_SYMBOL_FONTS.regular],
-          },
-          paint: {
-            "text-color": "#475569",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.5,
-            "text-opacity": 0.8,
-          },
-          minzoom: 2,
-        });
+      // Clean up existing
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
 
-      // 2. Add Red marker/pin at [lng, lat]
-      const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+      const baseStyle: any = buildBaseStyle();
+      // Force Mercator projection for embeds
+      delete baseStyle.projection;
 
-      // 3. Add popup if title is available
-      if (titleVal) {
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
-          `<div style="color: #000; font-family: sans-serif; font-size: 12px; font-weight: bold; padding: 2px;">${titleVal}</div>`
-        );
-        marker.setPopup(popup);
-      }
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: baseStyle,
+        center: [lng, lat],
+        zoom: zoom,
+        attributionControl: false,
+        interactive: interactiveVal,
+      });
 
-      setMapReady(true);
-    });
-  }, [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]);
+      mapRef.current = map;
+
+      map.on("load", () => {
+        if (isCancelled()) return;
+        // 1. Add world political borders
+        if (worldPolitical && worldPolitical.features && worldPolitical.features.length > 0) {
+          map.addSource("source-world-political", {
+            type: "geojson",
+            data: worldPolitical,
+          });
+
+          // Fill color layer with colors from feature properties
+          map.addLayer({
+            id: "world-political-fill",
+            type: "fill",
+            source: "source-world-political",
+            paint: {
+              "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
+              "fill-opacity": 0.45,
+            },
+          });
+
+          // Country border line layer
+          map.addLayer({
+            id: "world-political-stroke",
+            type: "line",
+            source: "source-world-political",
+            paint: {
+              "line-color": "#475569",
+              "line-width": 0.8,
+              "line-opacity": 0.5,
+            },
+          });
+
+          // Country name labels layer
+          map.addLayer({
+            id: "world-political-labels",
+            type: "symbol",
+            source: "source-world-political",
+            layout: {
+              "text-field": [
+                "coalesce",
+                ["get", "_displayName"],
+                ["get", "name"],
+                "",
+              ] as unknown as string,
+              "text-size": 10,
+              "text-allow-overlap": false,
+              "text-optional": true,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
+            },
+            paint: {
+              "text-color": "#475569",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.5,
+              "text-opacity": 0.8,
+            },
+            minzoom: 2,
+          });
+        }
+
+        // 2. Add Red marker/pin at [lng, lat]
+        const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+
+        // 3. Add popup if title is available
+        if (titleVal) {
+          const popup = new maplibregl.Popup({ offset: 25 }).setDOMContent(
+            buildPopupTitleNode(titleVal)
+          );
+          marker.setPopup(popup);
+        }
+
+        setMapReady(true);
+      });
+    },
+    [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]
+  );
 
   useEffect(() => {
     if (isInViewport) {
+      let cancelled = false;
       // Small delay to ensure container has layout dimensions
-      const timer = setTimeout(() => initMap(), 50);
+      const timer = setTimeout(() => void initMap(() => cancelled), 50);
       return () => {
+        cancelled = true;
         clearTimeout(timer);
         if (mapRef.current) {
           mapRef.current.remove();
@@ -207,18 +227,19 @@ export function CoordinatesMapEmbed({
     });
     observer.observe(containerRef.current);
     return () => observer.disconnect();
+    // oxlint-disable-next-line
   }, [mapReady]);
 
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed glass-hierarchy-child relative overflow-hidden rounded-xl border border-white/10 bg-[#0a1628]/40 backdrop-blur-md"
+      className="wikios-ixworld-embed facet-hierarchy-child bg-map-ocean/40 relative overflow-hidden rounded-xl border border-white/10 backdrop-blur-md"
       style={{ height: heightVal }}
     >
       {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
 
       {!mapReady && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a1628]/60 backdrop-blur-sm">
+        <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm">
           <Loader2 className="mb-2 h-6 w-6 animate-spin text-blue-400" />
           <span className="text-xs font-medium text-zinc-400">Loading map...</span>
         </div>
@@ -226,10 +247,10 @@ export function CoordinatesMapEmbed({
 
       {/* Floating control bar or details overlay */}
       {mapReady && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-[10px] text-zinc-300 backdrop-blur-md select-none">
-          <MapPin size={10} className="text-blue-400" />
+        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-xs text-zinc-300 backdrop-blur-md select-none">
+          <MapPin className="h-2.5 w-2.5 text-blue-400" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
-          <span className="font-mono text-[9px] text-zinc-500">
+          <span className="font-mono text-xs text-zinc-500">
             ({lat.toFixed(3)}, {lng.toFixed(3)})
           </span>
         </div>

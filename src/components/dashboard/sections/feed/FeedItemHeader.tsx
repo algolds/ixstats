@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, ExternalLink, Rss } from "lucide-react";
+import { Clock, OpenNewWindow as ExternalLink, RssFeed as Rss } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { formatTimeAgo } from "~/lib/utils";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { timeAgo } from "~/lib/format/compact";
 import {
   WikiHtmlContent,
   WikiLinkPreview,
@@ -39,7 +38,7 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg border border-border/50 bg-accent/10 px-2 py-0.5 text-[10px] font-medium tracking-tight transition-all duration-150 hover:bg-accent/20 active:scale-[0.95]"
+      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.95]"
     >
       <ExternalLink className="h-3 w-3" />
       <span>Open</span>
@@ -71,6 +70,7 @@ export function FeedItemHeader({
   titleHtml,
   externalUrl,
 }: FeedItemHeaderProps) {
+  // oxlint-disable-next-line eslint/no-unused-vars
   const Icon = resolvedConfig.icon;
 
   return (
@@ -80,7 +80,7 @@ export function FeedItemHeader({
         {isWiki && wikiPageTitle ? (
           <Link
             href={wikiHref ?? "#"}
-            className="text-foreground truncate text-sm font-semibold tracking-tight transition-colors hover:text-teal-300"
+            className="text-foreground hover:text-wiki truncate text-sm font-semibold tracking-tight transition-colors"
           >
             {wikiPageTitle}
           </Link>
@@ -97,7 +97,7 @@ export function FeedItemHeader({
         )}
 
         {activity._isNew && (
-          <Badge className="shrink-0 rounded-full border-teal-500/30 bg-teal-500/15 text-[8px] font-semibold tracking-wider text-teal-400 uppercase">
+          <Badge className="shrink-0 rounded-full border-wiki/30 bg-wiki/15 text-xs font-semibold tracking-wider text-wiki uppercase">
             NEW
           </Badge>
         )}
@@ -109,7 +109,7 @@ export function FeedItemHeader({
           <Badge
             variant="outline"
             className={cn(
-              "shrink-0 rounded-full border-current/30 text-[8.5px] font-medium tracking-wider uppercase",
+              "shrink-0 rounded-full border-current/30 text-xs font-medium tracking-wider uppercase",
               resolvedConfig.color
             )}
           >
@@ -121,7 +121,7 @@ export function FeedItemHeader({
         {isWiki && isGrouped && activity._totalBytes !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[8.5px] font-medium tracking-tight tabular-nums shadow-xs",
+              "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tracking-tight tabular-nums shadow-xs",
               activity._totalBytes > 0
                 ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 : activity._totalBytes < 0
@@ -135,9 +135,9 @@ export function FeedItemHeader({
         )}
 
         {/* Timestamp */}
-        <span className="text-muted-foreground/70 flex items-center gap-1 text-[10px] font-normal tracking-normal tabular-nums">
+        <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-normal tracking-normal tabular-nums">
           <Clock className="h-3 w-3" />
-          {formatTimeAgo(new Date(activity.timestamp))}
+          {timeAgo(new Date(activity.timestamp))}
         </span>
 
         {/* External open link */}

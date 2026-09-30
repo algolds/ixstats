@@ -8,7 +8,7 @@ import { db } from "~/server/db";
 import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
 
 // Mock the Prisma DB client
-jest.mock("../../../../../../server/db", () => ({
+jest.mock("~/server/db", () => ({
   db: {
     city: {
       findMany: jest.fn(),
@@ -29,7 +29,7 @@ jest.mock("../../../../../../server/db", () => ({
 }));
 
 // Mock the layer loader
-jest.mock("../../../../../../server/api/routers/geo/core/layer-loader", () => ({
+jest.mock("~/server/api/routers/geo/core/layer-loader", () => ({
   loadLayerFromDB: jest.fn(),
 }));
 

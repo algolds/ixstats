@@ -1,14 +1,14 @@
+"use client";
 // src/components/forum/reader/ThreadListItem.tsx
 // Single row in a thread list view.
 
-"use client";
-
 import Link from "next/link";
-import { Pin, Lock, Eye, MessageSquare } from "lucide-react";
+import { Pin, Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
-import * as LucideIcons from "lucide-react";
+import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
+import { timeAgo } from "~/lib/format/compact";
 
 interface ThreadListItemProps {
   threadId: number;
@@ -25,16 +25,7 @@ interface ThreadListItemProps {
   isOpen: boolean;
 }
 
-function formatTimeAgo(unixTimestamp: number): string {
-  const now = Date.now() / 1000;
-  const diff = now - unixTimestamp;
-
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-  return new Date(unixTimestamp * 1000).toLocaleDateString();
-}
+const formatTimeAgo = (unixTimestamp: number) => timeAgo(unixTimestamp * 1000);
 
 export function ThreadListItem({
   threadId,
@@ -59,7 +50,7 @@ export function ThreadListItem({
     currentForumUserId != null && authorId != null && currentForumUserId === authorId;
 
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (LucideIcons as any)[chatBadge.icon] || LucideIcons.Crown;
+  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
 
   return (
     <div

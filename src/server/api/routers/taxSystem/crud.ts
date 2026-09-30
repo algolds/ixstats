@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
 import type { TaxBuilderState } from "~/types/builder/tax-builder";
 import {
   detectTaxConflicts,
@@ -58,12 +57,6 @@ function validateBracketsState(
 }
 
 export const taxSystemCrudRouter = createTRPCRouter({
-  // Parse economic data for tax system
-
-  // Calculate tax effectiveness with government components
-
-  // Check for conflicts before creating/updating
-
   // Get tax system by country ID
   getByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
@@ -86,7 +79,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
           take: 100,
         }),
       ]);
-
 
       if (!taxSystem) {
         return null;
@@ -292,7 +284,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
                   take: 5,
                   select: { id: true },
                 })
-
               ).map((ts) => ts.id),
             },
           },
@@ -467,7 +458,6 @@ export const taxSystemCrudRouter = createTRPCRouter({
                 take: 5,
                 select: { id: true },
               })
-
             ).map((ts) => ts.id),
           },
         },
@@ -622,12 +612,4 @@ export const taxSystemCrudRouter = createTRPCRouter({
       });
       return { success: true };
     }),
-
-  // Parse economic data for tax system with advanced intelligence
-
-  // Calculate unified tax effectiveness with government components
-
-  // Get tier-based tax recommendations for a country
-
-  // Real-time live tax calculation with full atomic component integration
 });

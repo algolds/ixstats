@@ -1,13 +1,21 @@
+"use client";
 // src/app/(forum)/forum/members/[userId]/page.tsx
 // Forum member profile page.
 
-"use client";
-
 import { useParams } from "next/navigation";
-import { Calendar, MessageSquare, Heart, Trophy, MapPin } from "lucide-react";
+import Link from "next/link";
+import {
+  Calendar,
+  ChatBubble as MessageSquare,
+  Heart,
+  Trophy,
+  MapPin,
+  ArrowUpRight,
+} from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { api } from "~/trpc/react";
+import { sanitizeHtml } from "~/lib/utils";
 
 function formatDate(unixTimestamp: number): string {
   return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
@@ -37,6 +45,21 @@ export default function MemberProfilePage() {
         </div>
       ) : member ? (
         <div>
+          {/* Unified IxnayID Profile Banner */}
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-xs text-orange-200 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-white">IxnayID Account:</span>
+              <span>Unified account profile available for @{member.username}</span>
+            </div>
+            <Link
+              href={`/@${encodeURIComponent(member.username)}`}
+              className="flex items-center gap-1 font-bold text-orange-400 hover:text-orange-300 hover:underline"
+            >
+              <span>View Full Profile</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
           {/* Profile header */}
           <div className="glass-forum-parent mb-4">
             <div className="flex items-start gap-4">
@@ -92,7 +115,7 @@ export default function MemberProfilePage() {
               <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">About</h2>
               <div
                 className="forum-post-content text-sm"
-                dangerouslySetInnerHTML={{ __html: member.about }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(member.about) }}
               />
             </div>
           )}

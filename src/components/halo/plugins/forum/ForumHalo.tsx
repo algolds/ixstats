@@ -8,11 +8,11 @@
  */
 
 import React, { useMemo } from "react";
-import { MessageSquare } from "lucide-react";
+import { ChatBubble as MessageSquare } from "iconoir-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { ForumView } from "./views";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/ui/dynamic-island";
+import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { PreText } from "~/components/ui/pretext";
 
 function ForumBreadcrumb() {
@@ -24,7 +24,7 @@ function ForumBreadcrumb() {
 
   return (
     <span
-      className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 ${
+      className={`flex items-center gap-1.5 overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
         isCollapsed ? "max-w-[100px]" : "max-w-[220px]"
       }`}
     >
@@ -34,7 +34,7 @@ function ForumBreadcrumb() {
       </PreText>
       {unreadAlerts > 0 && (
         <PreText
-          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-bold text-white"
+          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white"
           whiteSpace="nowrap"
         >
           {String(unreadAlerts)}

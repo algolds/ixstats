@@ -6,7 +6,7 @@
  * labor markets, demographics, and cross-builder integration.
  */
 
-import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import type { EconomicComponentType } from "~/lib/economy/atomic-data";
 
 // ============================================
 // ECONOMY BUILDER STATE

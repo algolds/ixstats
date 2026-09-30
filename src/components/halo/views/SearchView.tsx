@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Search, Xmark, NavArrowRight } from "iconoir-react";
-import { UnifiedCountryFlag } from "~/components/ui/UnifiedCountryFlag";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { SearchViewProps, SearchFilter } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -16,14 +16,15 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
 const CATEGORY_COLORS: Record<string, string> = {
   Statecraft: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
   Vault: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
-  Geography: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+  Geography:
+    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
   Knowledge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  Community: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+  Community: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
   Sports: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
   Labs: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20",
   System: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20",
   Country: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  Wiki: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
+  Wiki: "bg-wiki/10 text-wiki border border-wiki/30",
 };
 
 function SearchViewComponent({
@@ -74,7 +75,7 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:bg-accent/15 w-full rounded-lg border border-transparent py-2 pr-14 pl-9 text-sm transition-all focus:border-blue-500/30 focus:outline-none"
+            className="text-foreground placeholder:text-muted-foreground/50 w-full rounded-xl border border-black/[0.06] bg-black/[0.04] py-2 pr-14 pl-9 text-sm shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-blue-500/40 focus:bg-black/[0.06] focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:focus:border-blue-400/40 dark:focus:bg-white/[0.09]"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -97,10 +98,10 @@ function SearchViewComponent({
               soundEffects.tick();
               setSearchFilter?.(f.value);
             }}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-all ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
               searchFilter === f.value
-                ? "bg-foreground text-background shadow-xs"
-                : "bg-accent/10 text-muted-foreground hover:bg-accent/20 hover:text-foreground"
+                ? "bg-foreground text-background shadow-2xs"
+                : "text-muted-foreground hover:text-foreground bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
             }`}
           >
             {f.label}
@@ -109,18 +110,14 @@ function SearchViewComponent({
       </div>
 
       {/* Results list */}
-      <div
-        className="max-h-[380px] space-y-1 overflow-y-auto"
-        style={{ scrollbarWidth: "thin" }}
-      >
+      <div className="max-h-[380px] space-y-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
         {searchResults.length > 0 ? (
           searchResults.map((result) => {
             const Icon = result.icon;
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeStyle =
-              CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
+            const badgeStyle = CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
 
             return (
               <button
@@ -130,7 +127,7 @@ function SearchViewComponent({
                   result.action();
                   closeDropdown();
                 }}
-                className="hover:bg-accent/15 group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-all"
+                className="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
               >
                 {/* Icon or Flag */}
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">
@@ -151,13 +148,13 @@ function SearchViewComponent({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <PreText
-                      className="text-foreground group-hover:text-blue-500 dark:group-hover:text-blue-400 block truncate text-sm font-medium transition-colors"
+                      className="text-foreground block truncate text-sm font-medium transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-400"
                       whiteSpace="nowrap"
                     >
                       {result.title}
                     </PreText>
                     <span
-                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${badgeStyle}`}
+                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeStyle}`}
                     >
                       {cat}
                     </span>
@@ -188,7 +185,7 @@ function SearchViewComponent({
               {searchFilter !== "all" && (
                 <button
                   onClick={() => setSearchFilter?.("all")}
-                  className="text-primary hover:underline ml-1 font-medium"
+                  className="text-primary ml-1 font-medium hover:underline"
                 >
                   <PreText className="inline" whiteSpace="nowrap">
                     Search all
@@ -203,7 +200,7 @@ function SearchViewComponent({
             <PreText className="text-muted-foreground/80 mb-3 text-sm" whiteSpace="nowrap">
               {`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
             </PreText>
-            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-[11px]">
+            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <kbd className="bg-muted/50 rounded px-1.5 py-0.5">⌘K</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">

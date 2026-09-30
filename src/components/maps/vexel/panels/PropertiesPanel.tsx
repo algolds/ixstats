@@ -44,6 +44,7 @@ export default function PropertiesPanel() {
   };
 
   // Color picker component
+  // oxlint-disable-next-line
   const TincturePicker = ({
     value,
     onChange,
@@ -63,7 +64,7 @@ export default function PropertiesPanel() {
             type="button"
             title={getTinctureLabel(key)}
             onClick={() => onChange(key)}
-            className={`relative h-7 w-full rounded border transition-all ${
+            className={`relative h-7 w-full rounded border transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isSelected
                 ? "scale-105 border-amber-500 shadow-md"
                 : "border-white/10 opacity-70 hover:opacity-100"
@@ -71,7 +72,7 @@ export default function PropertiesPanel() {
             style={{ backgroundColor: color }}
           >
             {isSelected && (
-              <span className="absolute inset-0 flex items-center justify-center rounded bg-white/20 text-[10px] font-bold text-zinc-950">
+              <span className="absolute inset-0 flex items-center justify-center rounded bg-white/20 text-xs font-bold text-zinc-950">
                 ✓
               </span>
             )}
@@ -100,7 +101,7 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-[10px] font-bold tracking-wider text-zinc-300 uppercase">
+          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
             Shield Properties
           </h3>
 
@@ -162,7 +163,7 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
         <div className="flex max-h-[400px] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-[10px] font-bold tracking-wider text-zinc-300 uppercase">
+          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
             Field Properties
           </h3>
 
@@ -201,7 +202,7 @@ export default function PropertiesPanel() {
             <span className="block font-bold text-zinc-400">Tinctures ({expectedCount})</span>
             {Array.from({ length: expectedCount }).map((_, i) => (
               <div key={i} className="space-y-1">
-                <span className="text-[10px] tracking-wider text-zinc-500 uppercase">
+                <span className="text-xs tracking-wider text-zinc-500 uppercase">
                   Section {i + 1}
                 </span>
                 <TincturePicker
@@ -227,7 +228,7 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-[10px] font-bold tracking-wider text-zinc-300 uppercase">
+          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
             Ordinary Properties ({idx + 1})
           </h3>
 
@@ -284,7 +285,7 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
         <div className="flex flex-col gap-4 p-4 text-xs">
-          <h3 className="truncate border-b border-white/5 pb-2 text-[10px] font-bold tracking-wider text-zinc-300 uppercase">
+          <h3 className="truncate border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
             Charge Properties: {charge.chargeId}
           </h3>
 
@@ -383,7 +384,7 @@ export default function PropertiesPanel() {
     return (
       <FacetMaterial material="satin" className="overflow-hidden rounded-xl border border-white/10">
         <div className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <h3 className="border-b border-white/5 pb-2 text-[10px] font-bold tracking-wider text-zinc-300 uppercase">
+          <h3 className="border-b border-white/5 pb-2 text-xs font-bold tracking-wider text-zinc-300 uppercase">
             Ornaments Properties
           </h3>
 

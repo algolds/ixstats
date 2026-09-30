@@ -1,7 +1,9 @@
 import { DEFAULT_DESIGN_STATE, RARITY_BASE_VALUES } from "~/components/cards/designer/types";
-import { RARITY_MATERIALS, getRarityMaterial } from "../../../../lib/cards/rarity-materials";
+import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards/rarity-materials";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { CATEGORY_SYNONYMS, findMatchingCategory } from "~/lib/cards/category-enums";
+import { LoreCategory } from "~/lib/cards/category-enums";
 
 jest.mock("@tsparticles/react", () => ({
   __esModule: true,
@@ -39,10 +41,13 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(RARITY_BASE_VALUES.DIVINE).toBe(50000);
   });
 
-  it("should have generated game-icons manifest with >4,000 icons", () => {
-    const manifestPath = join(process.cwd(), "public/icons/game-icons-manifest.json");
-    expect(existsSync(manifestPath)).toBe(true);
+  // public/icons/ is git-ignored and the manifest is built by an archived download script
+  // (scripts/archive/gis_tools/download-and-index-game-icons.ts), so it exists on dev machines
+  // and the server but not in CI.
+  const manifestPath = join(process.cwd(), "public/icons/game-icons-manifest.json");
+  const itWithManifest = existsSync(manifestPath) ? it : it.skip;
 
+  itWithManifest("should have generated game-icons manifest with >4,000 icons", () => {
     const data = JSON.parse(readFileSync(manifestPath, "utf8"));
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThan(4000);
@@ -82,8 +87,6 @@ describe("Card Designer Studio & Game-Icons Library", () => {
   });
 
   it("should have comprehensive synonyms and keywords for all 13 LoreCategory entries", () => {
-    const { CATEGORY_SYNONYMS, findMatchingCategory, LoreCategory } = require("~/lib/cards");
-
     // Check Nations synonyms
     const nationSynonyms = CATEGORY_SYNONYMS[LoreCategory.NATION];
     expect(nationSynonyms).toContain("country");
@@ -139,7 +142,9 @@ describe("Card Designer Studio & Game-Icons Library", () => {
 
   it("should have IXWB preset and category / namespace 0 crawlers configured", () => {
     const { CATEGORY_PRESETS } = require("~/app/admin/cards/LoreCardBatchAdmin");
-    const { wikiLoreCardGenerator } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
+    const {
+      wikiLoreCardGenerator,
+    } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
 
     // Check IXWB preset
     const ixwbPreset = CATEGORY_PRESETS.find((p: any) => p.categoryName === "IXWB");

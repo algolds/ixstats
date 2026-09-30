@@ -17,25 +17,28 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Search,
-  Trash2,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
+  Trash as Trash2,
+  Undo as RotateCcw,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  WarningTriangle as AlertTriangle,
   CheckCircle,
-  Info,
-  AlertCircle,
-  Users,
+  InfoCircle as Info,
+  WarningCircle as AlertCircle,
+  Group as Users,
   Globe,
-  Zap,
+  Flash as Zap,
   Bell,
   Eye,
-  EyeOff,
-  X,
-} from "lucide-react";
+  EyeClosed as EyeOff,
+} from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "~/lib/utils";
-import { SwipeableRow, SwipeableGroup, SwipeActionButton } from "~/components/ui/facet/swipeable";
+import {
+  SwipeableRow,
+  SwipeableGroup,
+  SwipeActionButton,
+} from "~/components/ui/facet/swipeable/SwipeableRow";
 import { motion } from "motion/react";
 
 const TYPE_OPTIONS = [
@@ -121,7 +124,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         commit={{
           action: () => handleDelete(n.id),
           label: "Delete",
-          color: "#ef4444",
+          color: "var(--color-error)",
         }}
       >
         <SwipeActionButton
@@ -129,7 +132,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           icon={Trash2}
           label="Delete"
           onClick={() => handleDelete(n.id)}
-          color="#ef4444"
+          color="var(--color-error)"
         />
       </SwipeableRow.Trailing>
 
@@ -137,14 +140,14 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
       <SwipeableRow.Content>
         <div
           className={cn(
-            "relative flex cursor-grab items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.05] p-3.5 backdrop-blur-md transition-all duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] active:cursor-grabbing dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
+            "relative flex cursor-grab items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.05] p-3.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] active:cursor-grabbing dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
             !n.read && "border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20"
           )}
         >
           {/* Left indicator accent border */}
           <div
             className={cn(
-              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-all duration-300",
+              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
               colors.text.replace("text-", "bg-")
             )}
           />
@@ -168,13 +171,13 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                 )}
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-[9px] tracking-wider uppercase"
+                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-xs tracking-wider uppercase"
                 >
                   {n.category || n.type || "system"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-[9px]"
+                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-xs"
                 >
                   {scope.icon}
                   <span>{scope.label}</span>
@@ -187,7 +190,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                         ? "default"
                         : "secondary"
                   }
-                  className="h-4 px-1.5 py-0 text-[9px] leading-none"
+                  className="h-4 px-1.5 py-0 text-xs leading-none"
                 >
                   {n.priority}
                 </Badge>
@@ -201,7 +204,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
-            <span className="text-muted-foreground/80 text-[10px] font-medium whitespace-nowrap">
+            <span className="text-muted-foreground/80 text-xs font-medium whitespace-nowrap">
               {formattedTime}
             </span>
             <div className="flex items-center gap-1.5">
@@ -227,7 +230,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         <div className="space-y-3 rounded-b-xl border-t border-white/5 bg-slate-950/40 p-4 pl-[52px]">
           {n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Full Message
               </span>
               <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
@@ -237,7 +240,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           )}
           {n.description && !n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                 Description
               </span>
               <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
@@ -246,7 +249,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-[10px]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-xs">
             <div>
               <span className="text-muted-foreground font-semibold">User ID:</span>{" "}
               <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
@@ -270,7 +273,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             {n.metadata && (
               <div className="col-span-2 mt-1 space-y-1">
                 <span className="text-muted-foreground font-semibold">Metadata:</span>
-                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-[10px] text-emerald-400">
+                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-xs text-emerald-400">
                   {JSON.stringify(JSON.parse(n.metadata), null, 2)}
                 </pre>
               </div>
@@ -281,7 +284,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             <Button
               variant="outline"
               size="sm"
-              className="h-7 border-red-500/20 text-[10px] text-red-400 hover:bg-red-500/10 hover:text-red-500"
+              className="h-7 border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-500"
               onClick={() => handleDelete(n.id)}
               disabled={deleteMutation.isPending}
             >

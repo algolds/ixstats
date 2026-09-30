@@ -1,9 +1,11 @@
 import { forumBridge } from "~/server/modules/forum";
 import * as xenforoService from "~/server/modules/forum/services/xenforo-service";
 
+jest.mock("~/server/modules/forum/services/xenforo-service");
+
 describe("ForumBridge (Canonical Module)", () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   describe("syncInbound", () => {
@@ -29,7 +31,7 @@ describe("ForumBridge (Canonical Module)", () => {
         },
       };
 
-      jest.spyOn(xenforoService, "xfFetchAsUser").mockRejectedValue(new Error("Network failure"));
+      (xenforoService.xfFetchAsUser as jest.Mock).mockRejectedValue(new Error("Network failure"));
       const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
       const result = await forumBridge.syncInbound("user_123", mockDb);
@@ -75,7 +77,7 @@ describe("ForumBridge (Canonical Module)", () => {
         },
       };
 
-      jest.spyOn(xenforoService, "xfFetchAsUser").mockImplementation((endpoint: string) => {
+      (xenforoService.xfFetchAsUser as jest.Mock).mockImplementation((endpoint: string) => {
         if (endpoint.includes("/conversations/?page=1")) {
           return Promise.resolve({
             conversations: [
@@ -188,7 +190,7 @@ describe("ForumBridge (Canonical Module)", () => {
         },
       };
 
-      const postSpy = jest.spyOn(xenforoService, "xfPostAsUser").mockResolvedValue({ success: true } as any);
+      (xenforoService.xfPostAsUser as jest.Mock).mockResolvedValue({ success: true } as any);
 
       const result = await forumBridge.sendOutbound(
         "101",
@@ -198,7 +200,7 @@ describe("ForumBridge (Canonical Module)", () => {
       );
 
       expect(result.success).toBe(true);
-      expect(postSpy).toHaveBeenCalledWith(
+      expect(xenforoService.xfPostAsUser).toHaveBeenCalledWith(
         "/conversations/101/messages",
         { message_body: "Hello world" },
         42

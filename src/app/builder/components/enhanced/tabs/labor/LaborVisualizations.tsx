@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/GlassCard";
+import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
-import { GlassBarChart, GlassPieChart } from "~/components/ui/charts/RechartsIntegration";
+import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { DEFAULT_CHART_COLORS } from "~/lib/themes";
-import { PieChart, BarChart3, Shield, Gauge } from "lucide-react";
+import {
+  Reports as PieChart,
+  StatsReport as BarChart3,
+  Shield,
+  Dashboard as Gauge,
+} from "iconoir-react";
 import type { LaborConfiguration } from "~/types/economy-builder";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -27,14 +32,14 @@ export function LaborVisualizations({
 
   return (
     <div className="space-y-6">
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <div className="mb-4 flex flex-col gap-2 border-b border-white/5 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
               {activeChart === "type" ? (
@@ -55,7 +60,7 @@ export function LaborVisualizations({
                 variant={activeChart === "type" ? "default" : "ghost"}
                 onClick={() => setActiveChart("type")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-all",
+                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "type"
                     ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
                     : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
@@ -68,7 +73,7 @@ export function LaborVisualizations({
                 variant={activeChart === "sector" ? "default" : "ghost"}
                 onClick={() => setActiveChart("sector")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-all",
+                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "sector"
                     ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
                     : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
@@ -97,17 +102,17 @@ export function LaborVisualizations({
               valueFormatter={(value) => `${value.toFixed(1)}%`}
             />
           )}
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Shield className="h-5 w-5" />
             <span>Worker Protection Scores</span>
@@ -120,17 +125,17 @@ export function LaborVisualizations({
             colors={DEFAULT_CHART_COLORS}
             valueFormatter={(value) => `${value.toFixed(0)}`}
           />
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
 
-      <GlassCard
+      <FacetCard
         depth="base"
         theme="emerald"
         className="border-emerald-500/20"
         texture="chevron"
         textureOpacity={0.04}
       >
-        <GlassCardContent className="p-6">
+        <FacetCardContent className="p-6">
           <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
             <Gauge className="h-5 w-5" />
             <span>Labor Market Health</span>
@@ -160,8 +165,8 @@ export function LaborVisualizations({
               </div>
             ))}
           </div>
-        </GlassCardContent>
-      </GlassCard>
+        </FacetCardContent>
+      </FacetCard>
     </div>
   );
 }

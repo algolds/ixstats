@@ -3,9 +3,9 @@
 import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 
-import { cn } from "~/lib/utils";
+import { cn } from "~/lib/utils/cn";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 const Sheet = SheetPrimitive.Root;
@@ -38,7 +38,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  "fixed z-[100000] gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500 border border-border",
+  "fixed z-[100000] gap-4 bg-background p-6 shadow-lg transition ease-[var(--ease-drawer,cubic-bezier(0.32,0.72,0,1))] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:duration-280 border border-border",
   {
     variants: {
       side: {
@@ -131,13 +131,13 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex flex-col gap-2 text-center sm:text-left", className)} {...props} />
 );
 SheetHeader.displayName = "SheetHeader";
 
 const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+    className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
     {...props}
   />
 );

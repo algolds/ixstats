@@ -1,21 +1,21 @@
 # Autosave & Auto-Sync Architecture
 
 **Core Engine**: `src/hooks/useGenericAutoSync.ts`  
-**Consumers**: Builder Wizard (`/builder`), Government Builder, Tax Builder, National Identity, Map Editor  
+**Consumers**: Economy Builder (`useEconomyAutoSync`, live). `useGovernmentBuilderAutoSync` / `useTaxBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) are implemented but not yet mounted by any component. National Identity and the Map Editor do not use this engine.  
 **Protocol**: Client-driven debounced delta sync with deep equality detection and optimistic conflict handling
 
 ---
 
 ## 1. Overview & Architectural Goals
 
-The Autosave system provides continuous, non-intrusive persistence across all nation builders, policy editors, and map authoring tools without requiring manual "Save" button clicks.
+The Autosave system provides continuous, non-intrusive persistence for builder forms without requiring manual "Save" button clicks. Today it is wired into the Economy Builder only; other builders still save explicitly (e.g. the builder `EditorSaveBar`).
 
 ### Core Design Principles:
-1. **Universal Hook Primitive**: All builder forms share a single, strongly-typed autosave hook (`useGenericAutoSync`), eliminating copy-paste debouncing logic.
-2. **Deep Equality Diffing**: Mutations only trigger when field values genuinely change (evaluated via `isEqual`), preventing redundant network calls on re-renders.
+1. **Universal Hook Primitive**: Builder autosave hooks wrap a single, strongly-typed autosave hook (`useGenericAutoSync`), eliminating copy-paste debouncing logic.
+2. **Deep Equality Diffing**: Mutations only trigger when field values genuinely change (evaluated via `isEqual` from `src/lib/utils/common.ts`), preventing redundant network calls on re-renders.
 3. **Configurable Debounce**: Defaults to 2,000ms; resets immediately if the user continues typing.
 4. **Immediate Flush (`forceSync` / `triggerSync`)**: Exposes an explicit flush function for navigation guards and modal dismissals.
-5. **Conflict & Validation Warnings**: Surfaces non-blocking validation warnings and halts on critical server-side schema violations.
+5. **Conflict Warnings**: The government/tax wrappers can call `checkConflicts` before saving (`showConflictWarnings`) and surface non-blocking warnings.
 
 ---
 
@@ -33,6 +33,7 @@ export interface AutoSyncState<TError = Error> {
   lastSyncTime: Date | null;
   pendingChanges: boolean;
   syncError: TError | null;
+  optimistic?: boolean;
 }
 
 export interface AutoSyncOptions<TData, TResult = unknown, TError = Error> {
@@ -48,6 +49,7 @@ export function useGenericAutoSync<TData extends object, TResult = unknown, TErr
   options: AutoSyncOptions<TData, TResult, TError>
 ) {
   // Deep equality diffing + debounced timer + forceSync flush
+  // returns { ...syncState, forceSync, triggerSync: forceSync }
 }
 ```
 
@@ -55,7 +57,7 @@ export function useGenericAutoSync<TData extends object, TResult = unknown, TErr
 
 ## 3. Implementation Pattern in Builder Forms
 
-When wiring autosave into a domain form, wrap `useGenericAutoSync` with domain mutations:
+When wiring autosave into a domain form, wrap `useGenericAutoSync` with domain mutations (simplified from `src/hooks/useBuilderAutoSync.ts`, which also handles create-vs-update and conflict checks):
 
 ```tsx
 import { useState, useEffect } from "react";
@@ -95,7 +97,7 @@ export function useGovernmentBuilderAutoSync(
 
 ## 4. UI Indicators & Conflict Handling
 
-Forms render the live sync state using the standard Facet sync badge:
+`AutoSyncStatus` is designed to drive a sync indicator along these lines (there is no shared sync-badge component yet — each form renders its own state, e.g. the Economy Builder shows a last-saved time and toast via `useNotify`):
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -110,4 +112,4 @@ Forms render the live sync state using the standard Facet sync badge:
 ```
 
 ### Navigation Guarding
-When a user attempts to navigate away with `pendingChanges === true`, the router invokes `syncNow()` before unmounting to ensure zero data loss.
+Not yet implemented as described. `BuilderStateContext` exposes `registerAutoSync()` and `syncAllNow()` to flush every registered section (only the Economy Builder registers today), but nothing calls `syncAllNow()` on navigation. The builder `EditorSaveBar` only shows the browser `beforeunload` prompt while there are unsaved changes.

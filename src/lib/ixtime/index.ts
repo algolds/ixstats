@@ -5,3 +5,4 @@
 export * from "./core";
 export * from "./sync";
 export * from "./accuracy";
+export * from "./range";

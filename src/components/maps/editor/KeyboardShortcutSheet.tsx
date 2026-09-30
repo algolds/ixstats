@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Xmark as X } from "iconoir-react";
 
 interface ShortcutEntry {
   keys: string;
@@ -26,8 +26,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: "R / 2", description: "Add Region tool" },
       { keys: "P / 3", description: "Add POI tool" },
       { keys: "T / 4", description: "Add Route tool" },
-      { keys: "S", description: "Add Story Pin tool" },
-      { keys: "L", description: "Add Label tool" },
+      { keys: "K", description: "Add Mountain Peak tool" },
       { keys: "B", description: "Paint / Brush mode" },
       { keys: "I", description: "Import Provinces" },
     ],
@@ -105,7 +104,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <h3 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase">
+              <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
                 {group.title}
               </h3>
               <div className="space-y-1">
@@ -120,7 +119,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                         const trimmed = part.trim();
                         if (trimmed === "+" || trimmed === "/") {
                           return (
-                            <span key={i} className="text-muted-foreground text-[10px]">
+                            <span key={i} className="text-muted-foreground text-xs">
                               {trimmed}
                             </span>
                           );
@@ -128,7 +127,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                         return (
                           <kbd
                             key={i}
-                            className="border-border bg-muted text-foreground inline-flex min-w-[24px] items-center justify-center rounded border px-1.5 py-0.5 text-[11px] font-medium shadow-sm"
+                            className="border-border bg-muted text-foreground inline-flex min-w-[24px] items-center justify-center rounded border px-1.5 py-0.5 text-xs font-medium shadow-sm"
                           >
                             {trimmed}
                           </kbd>
@@ -143,8 +142,8 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-[11px]">
-          Press <kbd className="border-border bg-muted rounded border px-1 text-[10px]">Esc</kbd> or
+        <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-xs">
+          Press <kbd className="border-border bg-muted rounded border px-1 text-xs">Esc</kbd> or
           click outside to close
         </div>
       </div>

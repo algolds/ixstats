@@ -1,8 +1,15 @@
-// src/app/admin/_components/platform/EconomicControlCard.tsx
 "use client";
+// src/app/admin/_components/platform/EconomicControlCard.tsx
 
 import { useState } from "react";
-import { Globe, Zap, Loader2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import {
+  Globe,
+  Flash as Zap,
+  SystemRestart as Loader2,
+  NavArrowDown as ChevronDown,
+  NavArrowUp as ChevronUp,
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -75,7 +82,7 @@ export function EconomicControlCard({
   const growthPercent = ((globalGrowthFactor - 1) * 100).toFixed(2);
 
   return (
-    <Card className="glass-surface border-border/40">
+    <Card className="facet-surface border-border/40">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -93,7 +100,7 @@ export function EconomicControlCard({
           <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
             <Label
               htmlFor="econ-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-[10px] font-bold tracking-wider uppercase select-none"
+              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
             >
               Advanced
             </Label>
@@ -125,7 +132,7 @@ export function EconomicControlCard({
             step={0.001}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
             <span>-50%</span>
             <span>0%</span>
             <span>+3.21%</span>
@@ -170,7 +177,7 @@ export function EconomicControlCard({
             step={0.001}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
             <span>0%</span>
             <span>2% (default)</span>
             <span>5%</span>
@@ -190,7 +197,7 @@ export function EconomicControlCard({
                 </Label>
                 <Info className="text-muted-foreground h-3.5 w-3.5" />
               </div>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 Countries above the GDP/capita threshold experience reduced growth rates.
               </p>
 
@@ -232,7 +239,7 @@ export function EconomicControlCard({
                   step={0.01}
                   className="cursor-grab py-1 active:cursor-grabbing"
                 />
-                <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+                <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
                   <span>Weak (0.1)</span>
                   <span>Default (0.5)</span>
                   <span>Strong (1.0)</span>
@@ -263,7 +270,7 @@ export function EconomicControlCard({
                 step={0.005}
                 className="cursor-grab py-1 active:cursor-grabbing"
               />
-              <div className="text-muted-foreground flex justify-between text-[10px] font-semibold tracking-wider uppercase">
+              <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
                 <span>-20%</span>
                 <span>-10% (default)</span>
                 <span>0%</span>
@@ -288,7 +295,7 @@ export function EconomicControlCard({
                   <ChevronDown className="text-muted-foreground h-4 w-4" />
                 )}
               </button>
-              <p className="text-muted-foreground text-[11px] leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed">
                 Per-tier multipliers applied to base growth rates. 1.0x = no change.
               </p>
 
@@ -304,7 +311,7 @@ export function EconomicControlCard({
                         >
                           <div className="flex items-center justify-between text-xs font-medium">
                             <span className="text-foreground font-semibold">{tier}</span>
-                            <span className="text-muted-foreground text-[10px]">
+                            <span className="text-muted-foreground text-xs">
                               {range} | max {maxGrowth} |{" "}
                               <span className="font-mono font-bold text-blue-500">
                                 {value.toFixed(2)}x
@@ -345,7 +352,7 @@ export function EconomicControlCard({
 
         {/* Toggle Settings */}
         <div className="space-y-3">
-          <span className="text-muted-foreground block text-[9px] font-bold tracking-wider uppercase">
+          <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
             Calculation Automation
           </span>
           <div className="space-y-3">
@@ -354,7 +361,7 @@ export function EconomicControlCard({
                 <Label htmlFor="auto-update" className="text-foreground text-xs font-semibold">
                   Auto Calculations
                 </Label>
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-xs">
                   Enable automatic economic calculations
                 </p>
               </div>
@@ -366,7 +373,7 @@ export function EconomicControlCard({
                 <Label htmlFor="bot-sync" className="text-foreground text-xs font-semibold">
                   Discord Bot Sync
                 </Label>
-                <p className="text-muted-foreground text-[10px]">
+                <p className="text-muted-foreground text-xs">
                   Enable time synchronization with Discord bot
                 </p>
               </div>
@@ -385,7 +392,7 @@ export function EconomicControlCard({
         <Button
           onClick={onForceCalculation}
           disabled={calculationPending}
-          className="h-10 w-full text-xs font-bold transition-all duration-250 hover:scale-[1.01]"
+          className="h-10 w-full text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 hover:scale-[1.01]"
         >
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

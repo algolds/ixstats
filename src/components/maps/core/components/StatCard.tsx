@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 
 interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
@@ -22,7 +22,7 @@ export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
           : ""
       }`}
     >
-      <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium tracking-wider uppercase">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
         <Icon className="h-3 w-3" />
         {label}
         {interactive && <ChevronRight className="ml-auto h-2.5 w-2.5 opacity-40" />}

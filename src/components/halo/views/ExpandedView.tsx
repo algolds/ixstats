@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
-import { DynamicContainer } from "~/components/ui/dynamic-island";
+import { DynamicContainer } from "../HaloPrimitives";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
@@ -25,14 +25,16 @@ function ExpandedViewComponent({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const playAs = localStorage.getItem("ixstats.play_as_user");
+      // oxlint-disable-next-line
       setIsImpersonating(!!playAs);
       setTargetUser(playAs || "");
     }
+    // oxlint-disable-next-line
   }, [mode]);
 
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
-    window.location.href = "/admin/user-management";
+    window.location.href = "/admin/users";
   };
 
   // Don't render if mode is compact
@@ -58,7 +60,7 @@ function ExpandedViewComponent({
           </div>
           <button
             onClick={handleStopImpersonating}
-            className="rounded bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-red-700"
+            className="rounded bg-red-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-red-700"
           >
             Stop
           </button>

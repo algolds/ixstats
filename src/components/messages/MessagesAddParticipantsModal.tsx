@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, UserPlus } from "lucide-react";
+import { Search, UserPlus } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Input } from "~/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
@@ -90,7 +90,7 @@ export function MessagesAddParticipantsModal({
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-semibold text-white">
+                      <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
                         {(user.country?.name ?? user.displayName ?? "?")
                           .split(" ")
                           .map((n: string) => n[0])

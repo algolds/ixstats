@@ -1,15 +1,8 @@
+"use client";
+
 /**
- * useNotify - Unified Notification Hook
+ * useNotify — the platform's single toast/notification API.
  *
- * THE single entry point for all toast/notification/alert calls in the platform.
- * Replaces: sonner toast(), useToast(), and direct notificationStore.addNotification() calls.
- *
- * Each call:
- * 1. Enqueues to toastQueueStore → DI toast banner animation
- * 2. Adds to notificationStore → persistent notification center
- * 3. If persistent: true → fires tRPC mutation for DB persistence
- *
- * Usage:
  * ```tsx
  * const notify = useNotify();
  * notify.success("Embassy established", "Your embassy in Burgundie is now active");
@@ -18,276 +11,40 @@
  * notify.info("Election scheduled", "Voting begins in 3 IxDays");
  * notify.notify({ title, message, type, priority, category, persistent, actions, href });
  * ```
+ *
+ * Outside React, call `notifyFromStore()` (same options). Rendering (sonner + Facet
+ * `ToastBanner`) is mounted once by `<Toaster />` from `~/components/ui/toast`.
  */
 
-"use client";
+import { notifyFromStore, type NotifyStoreOptions } from "~/lib/notifications/notify-store";
 
-import { useCallback, useMemo } from "react";
-import {
-  useToastQueueStore,
-  type ToastType,
-  type ToastPriority,
-  type ToastAction,
-} from "~/stores/toastQueueStore";
-import { useNotificationStore } from "~/stores/notificationStore";
-import type { NotificationCategory } from "~/types/unified-notifications";
-import { soundEffects } from "~/lib/sound/cuelume";
+export type NotifyOptions = NotifyStoreOptions;
 
-// ─── Types ────────────────────────────────────────────────────────────
-
-export interface NotifyOptions {
-  title: string;
-  message?: string;
-  type?: ToastType;
-  priority?: ToastPriority;
-  category?: NotificationCategory;
-  duration?: number;
-  persistent?: boolean; // persist to database
-  actions?: ToastAction[];
-  href?: string;
-  metadata?: Record<string, unknown>;
-  /** If true, suppress the toast banner (only add to notification center) */
-  silent?: boolean;
-}
+type NotifyShortcut = (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
 
 export interface NotifyAPI {
-  success: (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
-  error: (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
-  warning: (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
-  info: (title: string, message?: string, opts?: Partial<NotifyOptions>) => void;
+  success: NotifyShortcut;
+  error: NotifyShortcut;
+  warning: NotifyShortcut;
+  info: NotifyShortcut;
   notify: (options: NotifyOptions) => void;
 }
 
-// ─── Priority → Severity mapping ─────────────────────────────────────
+const notifyApi: NotifyAPI = {
+  success: (title, message, opts) =>
+    notifyFromStore({ title, message, type: "success", priority: "medium", ...opts }),
+  error: (title, message, opts) =>
+    notifyFromStore({ title, message, type: "error", priority: "high", ...opts }),
+  warning: (title, message, opts) =>
+    notifyFromStore({ title, message, type: "warning", priority: "medium", ...opts }),
+  info: (title, message, opts) =>
+    notifyFromStore({ title, message, type: "info", priority: "medium", ...opts }),
+  notify: notifyFromStore,
+};
 
-function toSeverity(priority: ToastPriority): "urgent" | "important" | "informational" {
-  switch (priority) {
-    case "critical":
-      return "urgent";
-    case "high":
-      return "important";
-    default:
-      return "informational";
-  }
-}
-
-// ─── Hook ─────────────────────────────────────────────────────────────
-
+/** Returns the stable notify API (safe to list in hook dependency arrays). */
 export function useNotify(): NotifyAPI {
-  const enqueue = useToastQueueStore((s) => s.enqueue);
-  const addNotification = useNotificationStore((s) => s.addNotification);
-
-  const notify = useCallback(
-    (options: NotifyOptions) => {
-      const {
-        title,
-        message,
-        type = "info",
-        priority = "medium",
-        category = "system",
-        duration,
-        actions,
-        silent = false,
-        href,
-        metadata,
-        persistent = false,
-      } = options;
-
-      // 1. Enqueue to toast queue for DI banner display (unless silent or low priority)
-      if (!silent && priority !== "low") {
-        enqueue({
-          title,
-          message,
-          type,
-          priority,
-          category,
-          duration,
-          actions,
-        });
-
-        // Play semantic sound feedback based on toast type & priority
-        if (priority === "critical") {
-          soundEffects.pulse();
-        } else if (type === "success") {
-          soundEffects.success();
-        } else if (type === "error") {
-          soundEffects.error();
-        } else if (type === "warning") {
-          soundEffects.bloom();
-        } else {
-          soundEffects.chime();
-        }
-      }
-
-      // 2. Add to notification store for notification center (only if persistent)
-      if (persistent) {
-        void addNotification({
-          source: "user",
-          title,
-          message: message ?? "",
-          category,
-          type,
-          priority,
-          severity: toSeverity(priority),
-          context: {
-            userId: "",
-            isExecutiveMode: false,
-            currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
-            ixTime: 0,
-            realTime: Date.now(),
-            timeMultiplier: 2,
-            activeFeatures: [],
-            recentActions: [],
-            focusMode: false,
-            sessionDuration: 0,
-            isUserActive: true,
-            deviceType: "desktop",
-            screenSize: "large",
-            networkQuality: "high",
-            userPreferences: {} as any,
-            historicalEngagement: [],
-            interactionHistory: [],
-            contextualFactors: {},
-            urgencyFactors: [],
-            contextualRelevance: 0.5,
-          },
-          triggers: [],
-          relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
-          deliveryMethod: "dynamic-island",
-          status: "delivered",
-          actionable: !!actions?.length || !!href,
-          metadata: {
-            ...(metadata ?? {}),
-            ...(href ? { href } : {}),
-          },
-        });
-      }
-    },
-    [enqueue, addNotification]
-  );
-
-  const success = useCallback(
-    (title: string, message?: string, opts?: Partial<NotifyOptions>) => {
-      notify({ title, message, type: "success", priority: "medium", ...opts });
-    },
-    [notify]
-  );
-
-  const error = useCallback(
-    (title: string, message?: string, opts?: Partial<NotifyOptions>) => {
-      notify({ title, message, type: "error", priority: "high", ...opts });
-    },
-    [notify]
-  );
-
-  const warning = useCallback(
-    (title: string, message?: string, opts?: Partial<NotifyOptions>) => {
-      notify({ title, message, type: "warning", priority: "medium", ...opts });
-    },
-    [notify]
-  );
-
-  const info = useCallback(
-    (title: string, message?: string, opts?: Partial<NotifyOptions>) => {
-      notify({ title, message, type: "info", priority: "medium", ...opts });
-    },
-    [notify]
-  );
-
-  return useMemo(
-    () => ({ success, error, warning, info, notify }),
-    [success, error, warning, info, notify]
-  );
+  return notifyApi;
 }
 
-// ─── Non-hook companion for use outside React components ─────────────
-// Call from utility functions, service files, tRPC callbacks, etc.
-
-export function notifyFromStore(options: NotifyOptions): void {
-  const {
-    title,
-    message,
-    type = "info",
-    priority = "medium",
-    category = "system",
-    duration,
-    actions,
-    silent = false,
-    href,
-    metadata,
-    persistent = false,
-  } = options;
-
-  // 1. Toast queue
-  if (!silent && priority !== "low") {
-    const toastStore = useToastQueueStore.getState();
-    toastStore.enqueue({
-      title,
-      message,
-      type,
-      priority,
-      category,
-      duration,
-      actions,
-    });
-
-    if (priority === "critical") {
-      soundEffects.pulse();
-    } else if (type === "success") {
-      soundEffects.success();
-    } else if (type === "error") {
-      soundEffects.error();
-    } else if (type === "warning") {
-      soundEffects.bloom();
-    } else {
-      soundEffects.chime();
-    }
-  }
-
-  // 2. Notification store (only if persistent)
-  if (persistent) {
-    const notifStore = useNotificationStore.getState();
-    void notifStore.addNotification({
-      source: "user",
-      title,
-      message: message ?? "",
-      category,
-      type,
-      priority,
-      severity: toSeverity(priority),
-      context: {
-        userId: "",
-        isExecutiveMode: false,
-        currentRoute: typeof window !== "undefined" ? window.location.pathname : "",
-        ixTime: 0,
-        realTime: Date.now(),
-        timeMultiplier: 2,
-        activeFeatures: [],
-        recentActions: [],
-        focusMode: false,
-        sessionDuration: 0,
-        isUserActive: true,
-        deviceType: "desktop",
-        screenSize: "large",
-        networkQuality: "high",
-        userPreferences: {} as any,
-        historicalEngagement: [],
-        interactionHistory: [],
-        contextualFactors: {},
-        urgencyFactors: [],
-        contextualRelevance: 0.5,
-      },
-      triggers: [],
-      relevanceScore: priority === "critical" ? 95 : priority === "high" ? 80 : 50,
-      deliveryMethod: "dynamic-island",
-      status: "delivered",
-      actionable: !!actions?.length || !!href,
-      metadata: {
-        ...(metadata ?? {}),
-        ...(href ? { href } : {}),
-      },
-    });
-  }
-}
-
-export default useNotify;
+export { notifyFromStore, type NotifyStoreOptions };

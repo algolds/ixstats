@@ -2,7 +2,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { MEDIAWIKI_CONFIG, buildApiUrl } from "~/lib/wiki-os/config";
 import { getArticleWikitext, getInfobox } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { invalidateCache } from "~/lib/cache";
 
 // Use values from the shared configuration

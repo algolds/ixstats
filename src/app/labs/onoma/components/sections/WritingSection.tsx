@@ -1,8 +1,7 @@
+"use client";
 // src/app/labs/onoma/components/sections/WritingSection.tsx
 // Onoma Lab — Writing System Studio (Glyph Designer & Orthography Typesetting)
 // Philosophy: Apple SF Symbols × IPA × Linguistic Notation × Scientific Precision
-
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
@@ -264,8 +263,6 @@ export default function WritingSection({ studioWords = [] }: WritingSectionProps
 
   return (
     <div className="space-y-6">
-     
-
       {/* Main Studio Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Script Directory & Typology Settings (4 cols) */}

@@ -28,11 +28,7 @@ export class ParserFunctionEvaluator {
   /**
    * #switch: test | case1 = val1 | case2 = val2 | #default = defaultVal
    */
-  static evalSwitch(
-    testVal: string,
-    cases: Record<string, string>,
-    defaultVal = ""
-  ): string {
+  static evalSwitch(testVal: string, cases: Record<string, string>, defaultVal = ""): string {
     const key = testVal.trim();
     if (cases[key] !== undefined) return cases[key];
     return cases["#default"] ?? defaultVal;
@@ -67,9 +63,6 @@ export class ParserFunctionEvaluator {
     const m = String(d.getUTCMonth() + 1).padStart(2, "0");
     const dStr = String(d.getUTCDate()).padStart(2, "0");
 
-    return format
-      .replace(/Y/g, Y)
-      .replace(/m/g, m)
-      .replace(/d/g, dStr);
+    return format.replace(/Y/g, Y).replace(/m/g, m).replace(/d/g, dStr);
   }
 }

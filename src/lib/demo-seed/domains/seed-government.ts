@@ -4,7 +4,6 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../../ixtime";
-import fallbackGov from "../../../../data/seed/fallback-government.json";
 
 type Prisma = PrismaClient;
 

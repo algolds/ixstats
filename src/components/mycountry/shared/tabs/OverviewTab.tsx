@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown, Activity, ChevronRight, BookOpen } from "lucide-react";
+import {
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+  Activity,
+  NavArrowRight as ChevronRight,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
@@ -9,7 +15,13 @@ import { cn } from "~/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
-import { extractWikiIntroHtml, findCoatOfArmsUrl, type WikiIntro } from "~/lib/wiki-os/adapters/ixstates/integration";
+import {
+  extractWikiIntroHtml,
+  findCoatOfArmsUrl,
+  type WikiIntro,
+} from "~/lib/wiki-os/adapters/ixstates/integration";
+import type { CountryWithEconomicData } from "../primitives/CountryDataProvider";
+import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 
 type MetricView = {
   gdp: "perCapita" | "total";
@@ -29,30 +41,32 @@ export function OverviewTab({
   metricView,
   setMetricViewAction,
 }: {
-  country: any;
-  wikiIntro: unknown;
+  country: CountryWithEconomicData;
+  wikiIntro: WikiIntro | null | undefined;
   wikiImages: Array<{ title: string; url: string }> | null | undefined;
   wikiLoading: boolean;
   metricView: MetricView;
-  setMetricViewAction: React.Dispatch<React.SetStateAction<any>>;
+  setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   return (
-    <Card className="glass-surface glass-refraction bg-gradient-overview border-border overflow-hidden">
+    <Card className="facet-surface facet-refraction bg-gradient-overview border-border overflow-hidden">
       <CardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -70,8 +84,8 @@ export function OverviewTab({
                     if (gdpGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <TrendingUp size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">
+                          <TrendingUp className="inline-flex h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">
                             +{gdpGrowth.toFixed(1)}%
                           </span>
                         </span>
@@ -79,29 +93,31 @@ export function OverviewTab({
                     if (gdpGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <TrendingDown size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
+                          <TrendingDown className="inline-flex h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">{gdpGrowth.toFixed(1)}%</span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.gdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · $${Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")} total`
                     : `Per capita: $${Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")}`}
                 </p>
               </button>
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={() =>
-                  setMetricViewAction((v: any) => ({
+                  setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="border-border-secondary/30 bg-bg-accent/5 hover:bg-bg-accent/10 cursor-pointer rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
+                className="border-border/30 bg-card/40 hover:bg-card/70 cursor-pointer rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98] backdrop-blur-md"
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
@@ -117,8 +133,8 @@ export function OverviewTab({
                     if (popGrowth > 0)
                       return (
                         <span className="flex items-center gap-0.5 text-emerald-500">
-                          <TrendingUp size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">
+                          <TrendingUp className="inline-flex h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">
                             +{popGrowth.toFixed(1)}%
                           </span>
                         </span>
@@ -126,37 +142,39 @@ export function OverviewTab({
                     if (popGrowth < 0)
                       return (
                         <span className="flex items-center gap-0.5 text-red-500">
-                          <TrendingDown size={14} className="inline-flex" />
-                          <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
+                          <TrendingDown className="inline-flex h-3.5 w-3.5" />
+                          <span className="text-xs font-semibold">{popGrowth.toFixed(1)}%</span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-[10px]">0.0%</span>;
+                    return <span className="text-muted-foreground text-xs">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.population === "total"
                     ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
                     : `Total: ${Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")}`}
                 </p>
               </button>
               <button
+                type="button"
+                data-cuelume-press="soft"
                 onClick={
                   country.areaSqMi && country.landArea
                     ? () =>
-                        setMetricViewAction((v: any) => ({
+                        setMetricViewAction((v: MyCountryMetricView) => ({
                           ...v,
                           area: v.area === "km" ? "mi" : "km",
                         }))
                     : undefined
                 }
                 className={cn(
-                  "border-border-secondary/30 bg-bg-accent/5 rounded-xl border p-3 text-left transition-colors duration-200 dark:bg-white/[0.02]",
+                  "border-border/30 bg-card/40 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 backdrop-blur-md",
                   country.areaSqMi &&
                     country.landArea &&
-                    "hover:bg-bg-accent/10 cursor-pointer dark:hover:bg-white/[0.05]"
+                    "hover:bg-card/70 cursor-pointer active:scale-[0.98]"
                 )}
               >
-                <p className="text-muted-foreground/80 text-[10px] font-semibold tracking-wide uppercase">
+                <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                   Land Area
                 </p>
                 <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
@@ -168,7 +186,7 @@ export function OverviewTab({
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
                       : "N/A"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-[11px]">
+                <p className="text-muted-foreground mt-0.5 text-xs">
                   {metricView.area === "km"
                     ? country.areaSqMi
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
@@ -186,9 +204,9 @@ export function OverviewTab({
         </Tooltip>
 
         {/* Growth footer */}
-        <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-[11px]">
+        <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-xs">
           <span>
-            <TrendingUp className="mr-1 inline h-3 w-3 text-pink-500" />
+            <TrendingUp className="mr-1 inline h-3 w-3 text-muted-foreground" />
             Max GDP Growth{" "}
             <span className="text-foreground font-semibold">
               {((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%
@@ -196,7 +214,7 @@ export function OverviewTab({
             <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
           </span>
           <span>
-            <Activity className="mr-1 inline h-3 w-3 text-pink-500" />
+            <Activity className="mr-1 inline h-3 w-3 text-muted-foreground" />
             Local Factor{" "}
             <span
               className={cn(
@@ -224,7 +242,7 @@ export function OverviewTab({
           {/* Wiki intro + coat of arms */}
           {(() => {
             const introHtml =
-              extractWikiIntroHtml(wikiIntro as WikiIntro) ||
+              (wikiIntro ? extractWikiIntroHtml(wikiIntro) : null) ||
               country?.wikiSummary ||
               country?.description ||
               null;
@@ -286,7 +304,7 @@ export function OverviewTab({
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">
-                          <p className="text-muted-foreground/70 text-[9px] tracking-wide uppercase">
+                          <p className="text-muted-foreground/70 text-xs tracking-wide uppercase">
                             {f.label}
                           </p>
                           <p className="text-foreground truncate text-xs font-semibold">

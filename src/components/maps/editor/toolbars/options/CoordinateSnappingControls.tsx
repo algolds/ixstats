@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import { Crosshair, Navigation } from "lucide-react";
+import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
 
 export const btnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground transition-all duration-100 ease-out active:scale-95 hover:bg-accent hover:text-foreground";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-accent hover:text-foreground";
 export const activeBtnClass =
-  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-[11px] font-medium text-primary shadow-xs transition-all duration-100 ease-out active:scale-95";
+  "flex h-6 items-center gap-1 rounded bg-primary/10 px-1.5 text-xs font-medium text-primary shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98]";
 export const dangerBtnClass =
-  "flex h-6 items-center gap-1 rounded px-1.5 text-[11px] text-red-500 transition-all duration-100 ease-out active:scale-95 hover:bg-red-500/10";
-export const labelClass = "text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
+  "flex h-6 items-center gap-1 rounded px-1.5 text-xs text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.98] hover:bg-red-500/10";
+export const labelClass = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 export const dividerClass = "bg-border h-4 w-px";
 export const selectClass =
-  "h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground outline-none focus:ring-1 focus:ring-primary/50";
+  "h-6 rounded border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary/50";
 
 export function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
       <Icon className="text-muted-foreground h-3.5 w-3.5" />
-      <span className="text-foreground text-[11px] font-semibold">{label}</span>
+      <span className="text-foreground text-xs font-semibold">{label}</span>
     </div>
   );
 }
@@ -31,6 +31,16 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
     const latN = parseFloat(lat);
     if (!isNaN(lngN) && !isNaN(latN)) onMove(lngN, latN);
   };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handle();
+      e.currentTarget.blur();
+    } else if (e.key === "Escape") {
+      setLng("");
+      setLat("");
+      e.currentTarget.blur();
+    }
+  };
   return (
     <div className="flex items-center gap-1">
       <span className={labelClass}>Move to</span>
@@ -39,6 +49,7 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
         placeholder="Lng"
         value={lng}
         onChange={(e) => setLng(e.target.value)}
+        onKeyDown={handleKeyDown}
         className={`${selectClass} w-16`}
         step="any"
       />
@@ -47,6 +58,7 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
         placeholder="Lat"
         value={lat}
         onChange={(e) => setLat(e.target.value)}
+        onKeyDown={handleKeyDown}
         className={`${selectClass} w-16`}
         step="any"
       />
@@ -77,6 +89,7 @@ export function CoordinateSnappingControls({
 
   React.useEffect(() => {
     if (coords) {
+      // oxlint-disable-next-line
       setLng(coords[0].toString());
       setLat(coords[1].toString());
     }
@@ -90,6 +103,19 @@ export function CoordinateSnappingControls({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleApply();
+      e.currentTarget.blur();
+    } else if (e.key === "Escape") {
+      if (coords) {
+        setLng(coords[0].toString());
+        setLat(coords[1].toString());
+      }
+      e.currentTarget.blur();
+    }
+  };
+
   return (
     <div className="flex items-center gap-1.5">
       <span className={labelClass}>Coord</span>
@@ -99,7 +125,8 @@ export function CoordinateSnappingControls({
         value={lng}
         onChange={(e) => setLng(e.target.value)}
         onBlur={handleApply}
-        className={`${selectClass} w-16 text-[10px]`}
+        onKeyDown={handleKeyDown}
+        className={`${selectClass} w-16 text-xs`}
       />
       <input
         type="text"
@@ -107,7 +134,8 @@ export function CoordinateSnappingControls({
         value={lat}
         onChange={(e) => setLat(e.target.value)}
         onBlur={handleApply}
-        className={`${selectClass} w-16 text-[10px]`}
+        onKeyDown={handleKeyDown}
+        className={`${selectClass} w-16 text-xs`}
       />
 
       {onTogglePickingLocation && (

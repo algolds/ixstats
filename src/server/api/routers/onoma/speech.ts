@@ -7,6 +7,8 @@ import {
   createTRPCRouter,
   publicProcedure,
   adminProcedure,
+  lightMutationProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 
 // Per-culture Kokoro voice assignments, stored as a JSON string in systemConfig.
@@ -77,17 +79,23 @@ export const onomaSpeechRouter = createTRPCRouter({
     };
   }),
 
-  /** Admin: get the Kokoro natural voice config including secrets. */
+  /**
+   * Admin: get the Kokoro natural voice config. The API key never leaves the
+   * server — the client gets whether one is saved plus its last 4 characters.
+   */
   getKokoroAdminConfig: adminProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
     const map = new Map<string, string>(rows.map((r) => [r.key, r.value ?? ""]));
     const speedVal = map.get("onoma.kokoro.speed");
+    const savedApiKey = map.get("onoma.kokoro.apiKey") || "";
     return {
       enabled: map.get("onoma.kokoro.enabled") === "true",
       baseUrl: map.get("onoma.kokoro.baseUrl") || "",
-      apiKey: map.get("onoma.kokoro.apiKey") || "",
+      hasApiKey: savedApiKey.length > 0,
+      apiKeyHint:
+        savedApiKey.length > 4 ? `••••${savedApiKey.slice(-4)}` : savedApiKey ? "••••" : "",
       model: map.get("onoma.kokoro.model") || "model_q8f16",
       voice: map.get("onoma.kokoro.voice") || "af_heart",
       speed: speedVal != null && speedVal !== "" ? Number(speedVal) : 1.0,
@@ -141,10 +149,11 @@ export const onomaSpeechRouter = createTRPCRouter({
   }),
 
   /**
-   * Public: suggest IPA phonemization from Kokoro's own G2P (/dev/phonemize).
+   * Signed-in, rate-limited: suggest IPA phonemization from Kokoro's own G2P (/dev/phonemize).
+   * The request carries the admin API key, so anonymous callers can't reach it.
    */
-  suggestPhonemes: publicProcedure
-    .input(z.object({ text: z.string() }))
+  suggestPhonemes: lightMutationProcedure
+    .input(z.object({ text: z.string().min(1).max(2000) }))
     .mutation(async ({ ctx, input }) => {
       const rows = await ctx.db.systemConfig.findMany({
         where: { key: { in: ["onoma.kokoro.fastApiUrl", "onoma.kokoro.apiKey"] } },
@@ -198,9 +207,9 @@ export const onomaSpeechRouter = createTRPCRouter({
     }),
 
   /**
-   * Public: Query health status of both engines.
+   * Public, rate-limited: Query health status of both engines.
    */
-  getEngineHealth: publicProcedure.query(async ({ ctx }) => {
+  getEngineHealth: rateLimitedPublicProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
@@ -253,10 +262,10 @@ export const onomaSpeechRouter = createTRPCRouter({
   }),
 
   /**
-   * Public: Actively ping / wake up the Hugging Face / Kokoro server.
+   * Signed-in, rate-limited: Actively ping / wake up the Hugging Face / Kokoro server.
    * If the Space is sleeping or cold-starting, waits with a 45s timeout to wake it up.
    */
-  wakeKokoroServer: publicProcedure.mutation(async ({ ctx }) => {
+  wakeKokoroServer: lightMutationProcedure.mutation(async ({ ctx }) => {
     const rows = await ctx.db.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });
@@ -270,8 +279,7 @@ export const onomaSpeechRouter = createTRPCRouter({
     if (baseUrl && !/^https?:\/\//i.test(baseUrl)) baseUrl = `http://${baseUrl}`;
     if (fastApiUrl && !/^https?:\/\//i.test(fastApiUrl)) fastApiUrl = `http://${fastApiUrl}`;
 
-    const targetUrl =
-      engine === "kokoro-fastapi" ? fastApiUrl || baseUrl : baseUrl || fastApiUrl;
+    const targetUrl = engine === "kokoro-fastapi" ? fastApiUrl || baseUrl : baseUrl || fastApiUrl;
     if (!targetUrl) {
       return {
         status: "unconfigured" as const,
@@ -338,7 +346,10 @@ export const onomaSpeechRouter = createTRPCRouter({
       z.object({
         enabled: z.boolean(),
         baseUrl: z.string().url().or(z.string().length(0)),
-        apiKey: z.string(),
+        /** New key to save; omitted or empty keeps the saved key. */
+        apiKey: z.string().optional(),
+        /** Remove the saved key. */
+        clearApiKey: z.boolean().optional(),
         model: z.string(),
         voice: z.string(),
         speed: z.number().min(0.2).max(5.0),
@@ -359,7 +370,6 @@ export const onomaSpeechRouter = createTRPCRouter({
           value: input.baseUrl,
           desc: "Kokoro natural voice: API base URL",
         },
-        { key: "onoma.kokoro.apiKey", value: input.apiKey, desc: "Kokoro natural voice: API key" },
         { key: "onoma.kokoro.model", value: input.model, desc: "Kokoro natural voice: TTS model" },
         {
           key: "onoma.kokoro.voice",
@@ -387,51 +397,14 @@ export const onomaSpeechRouter = createTRPCRouter({
           desc: "Kokoro natural voice: kokoro-fastapi base URL",
         },
       ];
-      await ctx.db.$transaction(
-        entries.map((e) =>
-          ctx.db.systemConfig.upsert({
-            where: { key: e.key },
-            update: { value: e.value, updatedAt: new Date() },
-            create: { key: e.key, value: e.value, description: e.desc },
-          })
-        )
-      );
-      return { success: true };
-    }),
-
-  /** Admin: persist the Onoma brand configuration. */
-  updateBrandConfig: adminProcedure
-    .input(
-      z.object({
-        variation: z.string().max(32),
-        nucleusSymbol: z.string().max(8),
-        flankingStyle: z.string().max(32),
-        fontFamily: z.string().max(64),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const entries = [
-        {
-          key: "onoma.brand.variation",
-          value: input.variation,
-          desc: "Onoma brand logo variation",
-        },
-        {
-          key: "onoma.brand.nucleusSymbol",
-          value: input.nucleusSymbol,
-          desc: "Onoma brand nucleus phonetic symbol",
-        },
-        {
-          key: "onoma.brand.flankingStyle",
-          value: input.flankingStyle,
-          desc: "Onoma brand flanking notation style",
-        },
-        {
-          key: "onoma.brand.fontFamily",
-          value: input.fontFamily,
-          desc: "Onoma brand typography font family",
-        },
-      ];
+      const newApiKey = input.apiKey?.trim() ?? "";
+      if (input.clearApiKey || newApiKey) {
+        entries.push({
+          key: "onoma.kokoro.apiKey",
+          value: input.clearApiKey ? "" : newApiKey,
+          desc: "Kokoro natural voice: API key",
+        });
+      }
       await ctx.db.$transaction(
         entries.map((e) =>
           ctx.db.systemConfig.upsert({

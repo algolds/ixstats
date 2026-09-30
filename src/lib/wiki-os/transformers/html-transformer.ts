@@ -3,7 +3,7 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +57,13 @@ const BUILTIN_TOC_REGEX = /<div[^>]*id="toc"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)?
 const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
 const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
 const CLASS_NEW_REGEX = /class="new"/gu;
+/** Namespaces WikiOS does not read as articles of another wiki: they open on that wiki's own site. */
+const SITE_NAMESPACE_REGEX =
+  /^(?:File|Image|Media|Special|User|Category|Template|Module|Help|MediaWiki|Talk|[A-Za-z]+_talk)(?::|%3A)/iu;
+const QUERY_TITLE_REGEX = /(?:^|&(?:amp;)?)title=([^&]*)/u;
+const QUERY_UPLOAD_FILE_REGEX = /(?:^|&(?:amp;)?)wpDestFile=([^&]*)/u;
+const MISSING_PAGE_TOOLTIP_REGEX = / \(page does not exist\)"/gu;
+const PAGE_NAME_REGEX = /^[^#]*/u;
 
 const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
 const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
@@ -67,6 +74,19 @@ const IMG_SRC_COMMON_REGEX =
   /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/gu;
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
+
+const SECTION_HEADING_REGEX = /<(h[23])\b([^>]*)>([\s\S]*?)<\/\1>/giu;
+const HTML_ENTITY_REGEX = /&(amp|lt|gt|quot|#39|nbsp);/gu;
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  "#39": "'",
+  nbsp: " ",
+};
+const ATTR_UNSAFE_REGEX = /[&"<]/gu;
+const ATTR_ESCAPES: Record<string, string> = { "&": "&amp;", '"': "&quot;", "<": "&lt;" };
 
 // ---------------------------------------------------------------------------
 // Main transformer
@@ -100,8 +120,8 @@ export function transformArticleHtml(
   // 5. Remove MediaWiki's built-in TOC block if present
   processed = removeBuiltInToc(processed);
 
-  // 6. Transform wiki links from /wiki/ to /wiki/
-  processed = transformLinks(processed, basePath);
+  // 6. Transform wiki links from /wiki/ to /wiki/ (another wiki's links stay with that wiki)
+  processed = transformLinks(processed, basePath, wikiSource);
 
   // 7. Transform image URLs to be absolute
   processed = transformImages(processed, wikiSource);
@@ -116,10 +136,10 @@ export function transformArticleHtml(
   return {
     contentHtml: processed,
     infoboxHtml: infoboxHtml
-      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath)
+      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath, wikiSource)
       : null,
     noticesHtml: noticesHtml
-      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath)
+      ? transformLinks(transformImages(noticesHtml, wikiSource), basePath, wikiSource)
       : null,
     toc,
     images,
@@ -244,10 +264,7 @@ function extractTocFromHeadings(html: string): TocEntry[] {
     const level = parseInt(match[1]!, 10);
     const id = match[2]!;
     // Strip HTML tags and [edit] links from heading text
-    const text = match[3]!
-      .replace(EDIT_SECTION_REGEX, "")
-      .replace(TAG_STRIP_REGEX, "")
-      .trim();
+    const text = match[3]!.replace(EDIT_SECTION_REGEX, "").replace(TAG_STRIP_REGEX, "").trim();
     if (text) {
       toc.push({ id, text, level });
     }
@@ -259,10 +276,7 @@ function extractTocFromHeadings(html: string): TocEntry[] {
     while ((match = HEADING_PLAIN_REGEX.exec(html)) !== null) {
       const level = parseInt(match[1]!, 10);
       const id = match[2]!;
-      const text = match[3]!
-        .replace(EDIT_SECTION_REGEX, "")
-        .replace(TAG_STRIP_REGEX, "")
-        .trim();
+      const text = match[3]!.replace(EDIT_SECTION_REGEX, "").replace(TAG_STRIP_REGEX, "").trim();
       if (text) {
         toc.push({ id, text, level });
       }
@@ -276,7 +290,13 @@ function removeBuiltInToc(html: string): string {
   return html.replace(BUILTIN_TOC_REGEX, "");
 }
 
-function transformLinks(html: string, basePath: string): string {
+function transformLinks(html: string, basePath: string, wikiSource: WikiSource): string {
+  return wikiSource === "ixwiki"
+    ? transformIxWikiLinks(html, basePath)
+    : transformSourceWikiLinks(html, basePath, wikiSource);
+}
+
+function transformIxWikiLinks(html: string, basePath: string): string {
   const origin = DEFAULT_MEDIAWIKI_URL;
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
@@ -304,7 +324,34 @@ function transformLinks(html: string, basePath: string): string {
   return result;
 }
 
-function transformImages(
+/** The page a red link points at: its title, or the missing file of an upload link. */
+function redLinkPage(query: string): string | undefined {
+  const file = QUERY_UPLOAD_FILE_REGEX.exec(query)?.[1];
+  return file ? `File:${file}` : QUERY_TITLE_REGEX.exec(query)?.[1];
+}
+
+/**
+ * Another wiki's page is parsed by ixwiki, so its links resolve against ixwiki (ruling E-l). Articles stay in the
+ * WikiOS reader for that wiki (`?source=`, before any #fragment); files, special, user and similar pages open on
+ * that wiki; red links only mean "not on IxWiki", so they are ordinary links to that wiki's page.
+ */
+function transformSourceWikiLinks(html: string, basePath: string, wikiSource: WikiSource): string {
+  const origin = getWikiBaseUrl(wikiSource).replace(/\/+$/u, "");
+  const href = (page: string) =>
+    SITE_NAMESPACE_REGEX.test(page)
+      ? `href="${origin}/wiki/${page}" rel="noreferrer"`
+      : `href="${basePath}/wiki/${page.replace(PAGE_NAME_REGEX, (name) => `${name}?source=${wikiSource}`)}"`;
+  return html
+    .replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => href(path))
+    .replace(INDEX_PHP_HREF_REGEX, (_match, query: string) => {
+      const page = redLinkPage(query);
+      return page ? href(page) : `href="${origin}/index.php?${query}" rel="noreferrer"`;
+    })
+    .replace(CLASS_NEW_REGEX, 'class="wikios-source-link"')
+    .replace(MISSING_PAGE_TOOLTIP_REGEX, '"');
+}
+
+export function transformImages(
   html: string,
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
 ): string {
@@ -323,12 +370,18 @@ function transformImages(
 
   if (wikiSource === "ixwiki") {
     result = result
+      .replace(/src="\/\/(?:www\.)?ixwiki\.com\//gu, `src="https://ixwiki.com/`)
+      .replace(/src="http:\/\/ixwiki\.com\//gu, `src="https://ixwiki.com/`)
       .replace(/src="\/images\//gu, `src="${origin}/images/`)
+      .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${origin}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
       .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
+          .replace(/http:\/\/ixwiki\.com\//gu, `https://ixwiki.com/`)
+          .replace(/\/\/(?:www\.)?ixwiki\.com\//gu, `https://ixwiki.com/`)
           .replace(/\/images\//gu, `${origin}/images/`)
+          .replace(/\/thumb\//gu, `${origin}/images/thumb/`)
           .replace(/\/data\//gu, `${origin}/data/`);
         return `srcset="${transformed}"`;
       });
@@ -336,6 +389,7 @@ function transformImages(
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
       .replace(/src="\/images\//gu, `src="${proxyBase}/images/`)
+      .replace(/src="\/thumb\//gu, `src="${proxyBase}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${proxyBase}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
       .replace(/src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `src="${proxyBase}/images/`)
@@ -350,6 +404,7 @@ function transformImages(
       .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
           .replace(/\/images\//gu, `${proxyBase}/images/`)
+          .replace(/\/thumb\//gu, `${proxyBase}/images/thumb/`)
           .replace(/\/data\//gu, `${proxyBase}/data/`)
           .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `${proxyBase}/images/`);
         return `srcset="${transformed}"`;
@@ -385,6 +440,23 @@ function transformImages(
   return result;
 }
 
+/**
+ * Append an "Edit" link to every h2/h3 heading, opening the source editor at that section
+ * (`/wiki/{slug}/edit?section={heading text}`). `slug` must already be URI-encoded.
+ */
+export function addSectionEditLinks(html: string, slug: string): string {
+  return html.replace(SECTION_HEADING_REGEX, (match, tag: string, attrs: string, inner: string) => {
+    const text = inner
+      .replace(TAG_STRIP_REGEX, "")
+      .replace(HTML_ENTITY_REGEX, (_entity, name: string) => HTML_ENTITIES[name] ?? "")
+      .trim();
+    if (!text) return match;
+    const href = withBasePath(`/wiki/${slug}/edit?section=${encodeURIComponent(text)}`);
+    const label = text.replace(ATTR_UNSAFE_REGEX, (c) => ATTR_ESCAPES[c] ?? c);
+    return `<${tag}${attrs}>${inner}<a class="wikios-section-edit-link" href="${href}" aria-label="Edit section: ${label}">Edit</a></${tag}>`;
+  });
+}
+
 function styleEditSectionLinks(html: string): string {
   return html.replace(STYLE_EDIT_SECTION_REGEX, 'class="mw-editsection wikios-edit-section"');
 }
@@ -407,28 +479,25 @@ function extractImageUrls(html: string): string[] {
  * Strip MediaWiki skin-specific CSS while keeping page template styles.
  */
 export function stripConflictingStyles(html: string): string {
-  return html.replace(
-    STYLE_DEDUPLICATE_REGEX,
-    (fullMatch, content: string) => {
-      const isSkinSpecific =
-        content.includes(".skin-citizen") ||
-        content.includes(".skin-vector") ||
-        content.includes("skin-theme-clientpref") ||
-        content.includes(".mw-page-title") ||
-        content.includes(".mw-body-content parsoid-body");
+  return html.replace(STYLE_DEDUPLICATE_REGEX, (fullMatch, content: string) => {
+    const isSkinSpecific =
+      content.includes(".skin-citizen") ||
+      content.includes(".skin-vector") ||
+      content.includes("skin-theme-clientpref") ||
+      content.includes(".mw-page-title") ||
+      content.includes(".mw-body-content parsoid-body");
 
-      const hasTemplateStyles =
-        content.includes(".home-grid") ||
-        content.includes(".home-card") ||
-        content.includes("#featured_article") ||
-        content.includes(".home-header") ||
-        content.includes(".home-link") ||
-        content.includes(".infobox") ||
-        content.includes(".template-");
+    const hasTemplateStyles =
+      content.includes(".home-grid") ||
+      content.includes(".home-card") ||
+      content.includes("#featured_article") ||
+      content.includes(".home-header") ||
+      content.includes(".home-link") ||
+      content.includes(".infobox") ||
+      content.includes(".template-");
 
-      if (hasTemplateStyles) return fullMatch;
-      if (isSkinSpecific) return "";
-      return fullMatch;
-    }
-  );
+    if (hasTemplateStyles) return fullMatch;
+    if (isSkinSpecific) return "";
+    return fullMatch;
+  });
 }

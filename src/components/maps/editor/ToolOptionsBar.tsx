@@ -10,56 +10,30 @@
  * Height: 32px, matches Photoshop's slim context bar.
  */
 
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import {
   Crown,
-  Trash2,
+  Trash as Trash2,
   Copy,
   MapPin,
-  Hexagon,
-  Landmark,
-  Type,
-  Route,
-  BookMarked,
+  Bank as Landmark,
   Check,
-  Undo2,
-  Navigation,
-  ArrowLeftRight,
-  Magnet,
-  Eye,
-  Crosshair,
-  Scissors,
+  Undo as Undo2,
+  Cut as Scissors,
   GitMerge,
-  Sliders,
-  Sparkles,
-  Hand,
-  LassoSelect,
-  Ruler,
-  PaintBucket,
-  Pipette,
-  Wand2,
-} from "lucide-react";
-import type { EditorMode } from "~/hooks/useMapEditor";
-import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { Label } from "~/components/ui/label";
-import {
-  ColorPicker,
-  ColorPickerSelection,
-  ColorPickerHue,
-  ColorPickerAlpha,
-  ColorPickerEyeDropper,
-  ColorPickerOutput,
-  ColorPickerFormat,
-} from "~/components/ui/color-picker";
+  ControlSlider as Sliders,
+  Sparks as Sparkles,
+  SelectWindow as LassoSelect,
+  PathArrow as Route,
+} from "iconoir-react";
+import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
+import { Popover, PopoverTrigger } from "~/components/ui/popover";
+import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
 import {
-  CityScatterPopover,
-  TransformGeometryPopover,
   CityTransformationsPopover,
 } from "./toolbars/options/ScatterToolOptions";
 import { SubdivisionOptions } from "./toolbars/options/SubdivisionOptions";
-import { RouteOptions } from "./toolbars/options/RouteOptions";
-import { MagicWandOptions } from "./toolbars/options/MagicWandOptions";
 import { RulerOptions } from "./toolbars/options/RulerOptions";
 import {
   CoordinateSnappingControls,
@@ -75,6 +49,16 @@ import {
 
 interface ToolOptionsBarProps {
   mode: EditorMode;
+  // Routes
+  routeType?: string;
+  onRouteTypeChange?: (type: string) => void;
+  routeWaypointsCount?: number;
+  onUndoRouteWaypoint?: () => void;
+  onClearRouteWaypoints?: () => void;
+  editingRouteName?: string;
+  editingRouteNodesCount?: number;
+  onRouteEditCommit?: () => void;
+  onRouteEditCancel?: () => void;
   // City
   cityType?: string;
   onCityTypeChange?: (type: string) => void;
@@ -90,21 +74,6 @@ interface ToolOptionsBarProps {
   onPoiCategoryChange?: (cat: string) => void;
   poiIcon?: string;
   onPoiIconChange?: (icon: string) => void;
-  // Label
-  labelFontSize?: number;
-  onLabelFontSizeChange?: (size: number) => void;
-  labelColor?: string;
-  onLabelColorChange?: (color: string) => void;
-  labelBold?: boolean;
-  onLabelBoldChange?: (bold: boolean) => void;
-  // Route
-  routeTypes?: string[];
-  onRouteTypesChange?: (types: string[]) => void;
-  onFinishRoute?: () => void;
-  onUndoWaypoint?: () => void;
-  onReverseRoute?: () => void;
-  isSnapEnabled?: boolean;
-  onSnapToggle?: () => void;
   // Selection
   selectedCount?: number;
   onDuplicate?: () => void;
@@ -112,9 +81,6 @@ interface ToolOptionsBarProps {
   // Point feature actions (city/POI — used in edit mode)
   onCopyCoords?: () => void;
   onMoveToCoords?: (lng: number, lat: number) => void;
-  // Story
-  storyCategory?: string;
-  onStoryCategoryChange?: (cat: string) => void;
   // Gap / Negative Space
   showGaps?: boolean;
   onToggleGaps?: () => void;
@@ -134,8 +100,9 @@ interface ToolOptionsBarProps {
     type: "simplify" | "smooth" | "rotate" | "scale",
     value: number
   ) => void;
+  onUndoWaypoint?: () => void;
   onCancelSplit?: () => void;
-  selectedFeature?: any;
+  selectedFeature?: EditorFeature | null;
   // City operations
   selectedCitiesCount?: number;
   onMergeSelectedCities?: () => void;
@@ -151,16 +118,6 @@ interface ToolOptionsBarProps {
   rulerPoints?: [number, number][];
   rulerDistance?: number;
   onClearRuler?: () => void;
-  subdivisionColor?: string;
-  onSubdivisionColorChange?: (color: string) => void;
-
-  // Magic Wand options
-  wandMatchColor?: boolean;
-  onWandMatchColorChange?: (val: boolean) => void;
-  wandMatchLevel?: boolean;
-  onWandMatchLevelChange?: (val: boolean) => void;
-  wandMatchParent?: boolean;
-  onWandMatchParentChange?: (val: boolean) => void;
   // Lasso select options (Plan 120 P3)
   lassoTool?: "freehand" | "rect";
   onLassoToolChange?: (tool: "freehand" | "rect") => void;
@@ -199,28 +156,6 @@ const POI_CATEGORIES = [
   { value: "ruins", label: "Ruins" },
 ];
 
-const STORY_CATEGORIES = [
-  { value: "battle", label: "Battle" },
-  { value: "founding", label: "Founding" },
-  { value: "treaty", label: "Treaty" },
-  { value: "cultural", label: "Cultural" },
-  { value: "religious", label: "Religious" },
-  { value: "natural", label: "Natural" },
-  { value: "trade", label: "Trade" },
-  { value: "exploration", label: "Exploration" },
-  { value: "disaster", label: "Disaster" },
-];
-
-const SUGGESTED_LABEL_COLORS = [
-  { name: "Dark Slate", hex: "#0f172a" },
-  { name: "Ocean Blue", hex: "#1a5276" },
-  { name: "Purple", hex: "#7c3aed" },
-  { name: "Brown", hex: "#78350f" },
-  { name: "Green", hex: "#047857" },
-  { name: "Red", hex: "#b91c1c" },
-];
-
-
 export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBarProps) {
   const { mode } = props;
 
@@ -230,9 +165,9 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   if (mode === "split-subdivision") {
     return (
-      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
+      <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
         <ToolLabel icon={Scissors} label="Split Subdivision" />
-        <span className="text-muted-foreground text-[11px]">
+        <span className="text-muted-foreground text-xs">
           Click on the map to draw a split-line slicing through the subdivision.
         </span>
         <div className={dividerClass} />
@@ -256,7 +191,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
   }
 
   return (
-    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-all duration-200 ease-out">
+    <div className="border-border bg-card/90 flex h-8 shrink-0 items-center gap-2 border-b px-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out">
       {/* ── Auto-Create Cities button when gaps/empty highlighting is active ── */}
       {props.showGaps &&
         props.emptyRegionsCount! > 0 &&
@@ -268,7 +203,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           <>
             <button
               onClick={props.onCreateCentroidCities}
-              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-[11px] text-emerald-500 hover:bg-emerald-500/20"
+              className="flex h-6 items-center gap-1 rounded bg-emerald-500/10 px-1.5 text-xs text-emerald-500 hover:bg-emerald-500/20"
               title="Create centroid-based cities in all empty regions"
             >
               <Sparkles className="h-3 w-3" /> Auto-Create Cities ({props.emptyRegionsCount})
@@ -280,7 +215,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
-          <span className="text-foreground text-[11px] font-medium">
+          <span className="text-foreground text-xs font-medium">
             {props.selectedCount} selected
           </span>
           <div className={dividerClass} />
@@ -335,7 +270,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               <>
                 <div className={dividerClass} />
                 <button
-                  onClick={() => props.onSplitCity!(props.selectedFeature.id)}
+                  onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
                   className={btnClass}
                   title="Split city"
                 >
@@ -370,7 +305,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               className="border-border h-3 w-3 rounded"
             />
             <Crown className="h-3 w-3 text-amber-500" />
-            <span className="text-muted-foreground text-[11px]">Capital</span>
+            <span className="text-muted-foreground text-xs">Capital</span>
           </label>
           {mode === "edit-city" && (
             <>
@@ -382,7 +317,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               )}
               {props.onSplitCity && props.selectedFeature?.id && (
                 <button
-                  onClick={() => props.onSplitCity!(props.selectedFeature.id)}
+                  onClick={() => props.onSplitCity!(props.selectedFeature!.id)}
                   className={btnClass}
                   title="Split city"
                 >
@@ -466,137 +401,12 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         </>
       )}
 
-      {/* ── Story mode ── */}
-      {(mode === "add-story-pin" || mode === "edit-story-pin") && (
-        <>
-          <ToolLabel icon={BookMarked} label="Story" />
-          <span className={labelClass}>Category</span>
-          <select
-            value={props.storyCategory ?? "cultural"}
-            onChange={(e) => props.onStoryCategoryChange?.(e.target.value)}
-            className={selectClass}
-          >
-            {STORY_CATEGORIES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
-
-      {/* ── Label mode ── */}
-      {(mode === "add-label" || mode === "edit-label") && (
-        <>
-          <ToolLabel icon={Type} label="Label" />
-          <span className={labelClass}>Size</span>
-          <input
-            type="range"
-            min={8}
-            max={48}
-            value={props.labelFontSize ?? 14}
-            onChange={(e) => props.onLabelFontSizeChange?.(parseInt(e.target.value))}
-            className="accent-primary h-4 w-20"
-          />
-          <span className="text-muted-foreground w-6 text-[11px] tabular-nums">
-            {props.labelFontSize ?? 14}
-          </span>
-          <Popover>
-            <PopoverTrigger
-              className="border-border/40 relative h-5 w-5 shrink-0 cursor-pointer overflow-hidden rounded border"
-              title="Pick Color"
-            >
-              <div className="absolute inset-0 -z-10 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==')] bg-center" />
-              <div
-                className="h-full w-full"
-                style={{ backgroundColor: props.labelColor ?? "#374151" }}
-              />
-            </PopoverTrigger>
-            <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
-              <ColorPicker
-                value={props.labelColor ?? "#374151"}
-                onChange={(rgbaArray) => {
-                  let colorStr = "#000000";
-                  if (rgbaArray[3] < 1) {
-                    colorStr = `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${rgbaArray[3]})`;
-                  } else {
-                    const r = rgbaArray[0].toString(16).padStart(2, "0");
-                    const g = rgbaArray[1].toString(16).padStart(2, "0");
-                    const b = rgbaArray[2].toString(16).padStart(2, "0");
-                    colorStr = `#${r}${g}${b}`;
-                  }
-                  props.onLabelColorChange?.(colorStr);
-                }}
-              >
-                <ColorPickerSelection className="mb-2 h-32" />
-                <div className="mb-2 space-y-1">
-                  <Label className="text-muted-foreground text-[10px]">Hue</Label>
-                  <ColorPickerHue />
-                </div>
-                <div className="mb-2 space-y-1">
-                  <Label className="text-muted-foreground text-[10px]">Alpha</Label>
-                  <ColorPickerAlpha />
-                </div>
-                <div className="flex items-center gap-1.5 pt-1">
-                  <ColorPickerOutput />
-                  <ColorPickerFormat />
-                  <ColorPickerEyeDropper />
-                </div>
-              </ColorPicker>
-              <div className="border-border/40 mt-3 space-y-1 border-t pt-2">
-                <Label className="text-muted-foreground text-[10px]">Suggested Colors</Label>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {SUGGESTED_LABEL_COLORS.map((col) => (
-                    <button
-                      key={col.hex}
-                      onClick={() => props.onLabelColorChange?.(col.hex)}
-                      className="border-border/40 h-5 w-5 cursor-pointer rounded border transition-all hover:scale-110 active:scale-95"
-                      style={{ backgroundColor: col.hex }}
-                      title={col.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <button
-            onClick={() => props.onLabelBoldChange?.(!props.labelBold)}
-            className={props.labelBold ? activeBtnClass : btnClass}
-            title="Bold"
-          >
-            <span className="font-bold">B</span>
-          </button>
-        </>
-      )}
-
-      {/* ── Route mode ── */}
-      {mode === "add-route" && (
-        <RouteOptions
-          routeTypes={props.routeTypes}
-          onRouteTypesChange={props.onRouteTypesChange}
-          onFinishRoute={props.onFinishRoute}
-          onUndoWaypoint={props.onUndoWaypoint}
-          onReverseRoute={props.onReverseRoute}
-          isSnapEnabled={props.isSnapEnabled}
-          onSnapToggle={props.onSnapToggle}
-        />
-      )}
-
-      {/* ── Hand / Pan mode ── */}
-      {mode === "pan" && (
-        <>
-          <ToolLabel icon={Hand} label="Pan Map" />
-          <span className="text-muted-foreground text-[11px]">
-            Safe Pan Mode. Click and drag the map freely without selecting or moving features.
-          </span>
-        </>
-      )}
 
       {/* ── Lasso Select mode ── */}
       {mode === "lasso-select" && (
         <>
           <ToolLabel icon={LassoSelect} label="Lasso Select" />
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-xs">
             Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
             subtract.
           </span>
@@ -605,7 +415,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
               <button
                 key={tool}
                 onClick={() => props.onLassoToolChange?.(tool)}
-                className={`h-5 rounded px-2 text-[10px] font-medium transition-colors ${
+                className={`h-5 rounded px-2 text-xs font-medium transition-colors ${
                   (props.lassoTool ?? "freehand") === tool
                     ? "bg-primary/15 text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -618,28 +428,6 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         </>
       )}
 
-      {/* ── Eyedropper mode ── */}
-      {mode === "eyedropper" && (
-        <>
-          <ToolLabel icon={Pipette} label="Eyedropper" />
-          <span className="text-muted-foreground text-[11px]">
-            Click any feature on the map to sample its style and metadata properties.
-          </span>
-        </>
-      )}
-
-      {/* ── Magic Wand mode ── */}
-      {mode === "magic-wand" && (
-        <MagicWandOptions
-          wandMatchColor={props.wandMatchColor}
-          onWandMatchColorChange={props.onWandMatchColorChange}
-          wandMatchLevel={props.wandMatchLevel}
-          onWandMatchLevelChange={props.onWandMatchLevelChange}
-          wandMatchParent={props.wandMatchParent}
-          onWandMatchParentChange={props.onWandMatchParentChange}
-        />
-      )}
-
       {/* ── Ruler mode ── */}
       {mode === "ruler" && (
         <RulerOptions
@@ -649,98 +437,69 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         />
       )}
 
-      {/* ── Paint Fill mode ── */}
-      {mode === "paint-fill" && (
+      {/* ── Add Route mode ── */}
+      {mode === "add-route" && (
         <>
-          <ToolLabel icon={PaintBucket} label="Paint Fill" />
-          <span className="text-muted-foreground mr-2 text-[11px]">
-            Click any subdivision region to apply properties:
-          </span>
+          <ToolLabel icon={Route} label="Draw Route" />
           <span className={labelClass}>Type</span>
           <select
-            value={props.subdivisionType ?? "province"}
-            onChange={(e) => props.onSubdivisionTypeChange?.(e.target.value)}
+            value={props.routeType ?? "road"}
+            onChange={(e) => props.onRouteTypeChange?.(e.target.value)}
             className={selectClass}
           >
-            {SUBDIVISION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {ROUTE_TYPE_KEYS.map((k) => (
+              <option key={k} value={k}>
+                {ROUTE_STYLES[k]?.label ?? k}
               </option>
             ))}
           </select>
-          <span className={labelClass}>Level</span>
-          <input
-            type="number"
-            min={1}
-            max={5}
-            value={props.subdivisionLevel ?? 1}
-            onChange={(e) => props.onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
-            className={`${selectClass} w-12 text-center`}
-          />
-          {props.subdivisionColor !== undefined && props.onSubdivisionColorChange && (
-            <>
-              <span className={labelClass}>Color</span>
-              <Popover>
-                <PopoverTrigger
-                  className="border-border/40 relative h-5 w-10 shrink-0 cursor-pointer overflow-hidden rounded border"
-                  title="Pick Fill Color"
-                  asChild
-                >
-                  <button className="flex items-center justify-center p-0">
-                    <div
-                      className="h-full w-full rounded"
-                      style={{ backgroundColor: props.subdivisionColor || "#3b82f6" }}
-                    />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="bg-popover border-border/50 text-foreground w-64 p-3">
-                  <ColorPicker
-                    value={props.subdivisionColor || "#3b82f6"}
-                    onChange={(rgbaArray) => {
-                      let colorStr = "#000000";
-                      if (rgbaArray[3] < 1) {
-                        colorStr = `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${rgbaArray[3]})`;
-                      } else {
-                        const r = rgbaArray[0].toString(16).padStart(2, "0");
-                        const g = rgbaArray[1].toString(16).padStart(2, "0");
-                        const b = rgbaArray[2].toString(16).padStart(2, "0");
-                        colorStr = `#${r}${g}${b}`;
-                      }
-                      props.onSubdivisionColorChange?.(colorStr);
-                    }}
-                  >
-                    <ColorPickerSelection className="mb-2 h-32" />
-                    <div className="mb-2 space-y-1">
-                      <Label className="text-muted-foreground text-[10px]">Hue</Label>
-                      <ColorPickerHue />
-                    </div>
-                    <div className="mb-2 space-y-1">
-                      <Label className="text-muted-foreground text-[10px]">Alpha</Label>
-                      <ColorPickerAlpha />
-                    </div>
-                    <div className="flex items-center gap-1.5 pt-1">
-                      <ColorPickerOutput />
-                      <ColorPickerFormat />
-                      <ColorPickerEyeDropper />
-                    </div>
-                  </ColorPicker>
-                  <div className="border-border/40 mt-3 space-y-1 border-t pt-2">
-                    <Label className="text-muted-foreground text-[10px]">Suggested Colors</Label>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {SUGGESTED_LABEL_COLORS.map((col) => (
-                        <button
-                          key={col.hex}
-                          onClick={() => props.onSubdivisionColorChange?.(col.hex)}
-                          className="border-border/40 h-5 w-5 cursor-pointer rounded border transition-all hover:scale-110 active:scale-95"
-                          style={{ backgroundColor: col.hex }}
-                          title={col.name}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </>
+          <div className={dividerClass} />
+          <span className="text-xs font-mono tabular-nums text-muted-foreground">
+            {props.routeWaypointsCount ?? 0} waypoints
+          </span>
+          {props.onUndoRouteWaypoint && (props.routeWaypointsCount ?? 0) > 0 && (
+            <button onClick={props.onUndoRouteWaypoint} className={btnClass} title="Undo last waypoint">
+              <Undo2 className="h-3 w-3" /> Undo
+            </button>
+          )}
+          {props.onClearRouteWaypoints && (props.routeWaypointsCount ?? 0) > 0 && (
+            <button onClick={props.onClearRouteWaypoints} className={dangerBtnClass} title="Clear all waypoints">
+              <Trash2 className="h-3 w-3" /> Clear
+            </button>
+          )}
+        </>
+      )}
+
+      {/* ── Edit Route mode ── */}
+      {mode === "edit-route" && (
+        <>
+          <ToolLabel icon={Route} label="Edit Route" />
+          {props.editingRouteName && (
+            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {props.editingRouteName}
+            </span>
+          )}
+          <span className="text-xs font-mono tabular-nums text-muted-foreground">
+            {props.editingRouteNodesCount ?? 0} nodes
+          </span>
+          <div className={dividerClass} />
+          {props.onRouteEditCommit && (
+            <button
+              onClick={props.onRouteEditCommit}
+              className="flex items-center gap-1 rounded bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
+              title="Save route geometry"
+            >
+              <Check className="h-3 w-3" /> Save Path
+            </button>
+          )}
+          {props.onRouteEditCancel && (
+            <button
+              onClick={props.onRouteEditCancel}
+              className="rounded px-2 py-1 text-xs font-medium text-muted-foreground transition active:scale-[0.98] hover:bg-accent hover:text-foreground"
+              title="Cancel route editing"
+            >
+              Cancel
+            </button>
           )}
         </>
       )}

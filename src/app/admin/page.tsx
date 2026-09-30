@@ -1,5 +1,5 @@
-// src/app/admin/page.tsx
 "use client";
+// src/app/admin/page.tsx
 
 import { AdminRouter } from "./_components/AdminRouter";
 

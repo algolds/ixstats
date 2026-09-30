@@ -10,12 +10,16 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Sparkles, Info, AlertTriangle } from "lucide-react";
+import {
+  Sparks as Sparkles,
+  InfoCircle as Info,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { EconomicArchetypeDisplay } from "./EconomicArchetypeDisplay";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { useArchetypes } from "~/hooks/useArchetypes";
 import { api } from "~/trpc/react";
-import type { EconomicArchetype } from "~/app/builder/data/archetype-types";
+import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
 
 interface EconomicArchetypeModalProps {
   open: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "iconoir-react";
 import { IxTime } from "~/lib/ixtime";
 
 function formatRemaining(ms: number): string {
@@ -38,7 +38,7 @@ export function NextMatchCountdown({
   const due = targetIxTime <= now;
 
   return (
-    <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+    <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
       <Clock className="h-3 w-3 shrink-0" />
       <span className="truncate">
         {label}: {IxTime.formatIxTime(targetIxTime)}

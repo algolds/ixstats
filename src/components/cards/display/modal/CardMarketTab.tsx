@@ -3,15 +3,15 @@
 import React from "react";
 import { motion } from "motion/react";
 import {
-  BarChart3,
-  History,
+  StatsReport as BarChart3,
+  ClockRotateRight as History,
   Package,
-  Award,
+  Trophy as Award,
   Gift,
-  ArrowRightLeft,
+  ArrowSeparate as ArrowRightLeft,
   ShoppingBag,
   Star,
-} from "lucide-react";
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "../CardPriceHistoryChart";
@@ -44,7 +44,7 @@ export function CardMarketTab({
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="glass-hierarchy-child rounded-lg p-6">
+      <div className="facet-hierarchy-child rounded-lg p-6">
         <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
           <BarChart3 className="h-5 w-5" />
           Market History
@@ -52,20 +52,20 @@ export function CardMarketTab({
 
         {/* Market stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
             <p className={cn("flex items-baseline gap-1 text-2xl font-bold", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" variant="ic" />
               {card.marketValue.toLocaleString()}
             </p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Total Supply</p>
             <p className="text-foreground text-2xl font-bold">
               {card.totalSupply.toLocaleString()}
             </p>
           </div>
-          <div className="glass-hierarchy-child rounded-lg p-4">
+          <div className="facet-hierarchy-child rounded-lg p-4">
             <p className="text-muted-foreground mb-1 text-xs">Last Trade</p>
             <p className="text-foreground text-sm font-semibold">
               {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
@@ -80,7 +80,7 @@ export function CardMarketTab({
       </div>
 
       {/* Provenance & Ownership Timeline */}
-      <div className="glass-hierarchy-child rounded-lg p-6">
+      <div className="facet-hierarchy-child rounded-lg p-6">
         <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
           <History className="h-5 w-5 text-amber-500" />
           Provenance & Ownership History
@@ -104,30 +104,30 @@ export function CardMarketTab({
               if (event.action === "PACK_OPEN") {
                 icon = <Package className="h-4 w-4 text-white" />;
                 actionLabel = "Pulled from Card Pack";
-                colorClass = "bg-purple-500";
+                colorClass = "bg-indigo-500";
               } else if (event.action === "DAILY_CLAIM") {
                 icon = <Award className="h-4 w-4 text-white" />;
                 actionLabel = "Claimed as Daily Bonus";
-                colorClass = "bg-yellow-500";
+                colorClass = "bg-amber-500";
               } else if (event.action === "GIFT") {
                 icon = <Gift className="h-4 w-4 text-white" />;
                 actionLabel = event.fromUserName
                   ? `Gifted from ${event.fromUserName} to ${event.toUserName}`
                   : `Gifted to ${event.toUserName}`;
-                colorClass = "bg-pink-500";
+                colorClass = "bg-blue-500";
               } else if (event.action === "TRADE") {
                 icon = <ArrowRightLeft className="h-4 w-4 text-white" />;
                 actionLabel = event.fromUserName
                   ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                   : `Traded to ${event.toUserName}`;
-                colorClass = "bg-teal-500";
+                colorClass = "bg-cyan-500";
               } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
                 icon = <ShoppingBag className="h-4 w-4 text-white" />;
                 actionLabel = (
                   <span className="inline-flex items-center gap-1">
                     Purchased at Auction by {event.toUserName}
                     {event.price && (
-                      <span className="inline-flex items-center gap-0.5 text-amber-500 font-bold">
+                      <span className="inline-flex items-center gap-0.5 font-bold text-amber-500">
                         for <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {event.price.toLocaleString()}
                       </span>

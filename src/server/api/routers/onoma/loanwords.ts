@@ -30,9 +30,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         targetPackId: z.string(),
         domain: z.string(), // military | trade | religious | academic | general
         intensity: z.number().min(0).max(1).default(0.3),
-        adaptationRules: z
-          .record(z.string(), z.unknown())
-          .default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
+        adaptationRules: z.record(z.string(), z.unknown()).default({}), // e.g. { soundShifts: [{ from: "v", to: "b" }], syllableCap: true }
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -130,7 +128,7 @@ export const onomaLoanwordsRouter = createTRPCRouter({
         for (const shift of soundShifts) {
           if (shift.from && shift.to) {
             // Escape regex characters
-            const escapedFrom = shift.from.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            const escapedFrom = shift.from.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
             adapted = adapted.replace(new RegExp(escapedFrom, "g"), shift.to);
           }
         }

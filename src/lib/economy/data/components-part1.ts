@@ -1,0 +1,541 @@
+/**
+ * Atomic Economic Components - Part 1
+ *
+ * Contains Economic Model and initial Sector Focus components:
+ * - Free Market System
+ * - Mixed Economy
+ * - State Capitalism
+ * - Planned Economy
+ * - Social Market Economy
+ * - Knowledge Economy
+ * - Innovation Economy
+ * - Resource-Based Economy
+ * - Agriculture-Led Economy
+ *
+ * @module atomic-economic-data/components-part1
+ */
+
+import {
+  Dollar as DollarSign,
+  StatsReport as BarChart3,
+  City as Building2,
+  Archery as Target,
+  Heart,
+  Brain,
+  LightBulb as Lightbulb,
+  Wrench,
+  Leaf,
+} from "iconoir-react";
+import {
+  EconomicComponentType,
+  EconomicCategory,
+  formatComponentName,
+  type AtomicEconomicComponent,
+} from "./types";
+
+export const ATOMIC_ECONOMIC_COMPONENTS_PART_1: Partial<
+  Record<EconomicComponentType, AtomicEconomicComponent>
+> = {
+  // Economic Model Components
+  [EconomicComponentType.FREE_MARKET_SYSTEM]: {
+    id: "free_market_system",
+    type: EconomicComponentType.FREE_MARKET_SYSTEM,
+    name: formatComponentName(EconomicComponentType.FREE_MARKET_SYSTEM),
+    description: "Minimal government intervention, market-driven resource allocation",
+    effectiveness: 85,
+    synergies: [
+      EconomicComponentType.FLEXIBLE_LABOR,
+      EconomicComponentType.FREE_TRADE,
+      EconomicComponentType.STARTUP_ECOSYSTEM,
+    ],
+    conflicts: [
+      EconomicComponentType.PLANNED_ECONOMY,
+      EconomicComponentType.PROTECTED_WORKERS,
+      EconomicComponentType.PROTECTIONIST,
+    ],
+    governmentSynergies: ["FREE_MARKET_SYSTEM", "MINIMAL_GOVERNMENT", "PRIVATE_SECTOR_LEADERSHIP"],
+    governmentConflicts: ["PLANNED_ECONOMY", "STATE_CAPITALISM", "CENTRALIZED_POWER"],
+    taxImpact: {
+      optimalCorporateRate: 15,
+      optimalIncomeRate: 25,
+      revenueEfficiency: 0.85,
+    },
+    sectorImpact: {
+      services: 1.2,
+      finance: 1.3,
+      technology: 1.4,
+      manufacturing: 1.1,
+      agriculture: 0.9,
+      government: 0.7,
+    },
+    employmentImpact: {
+      unemploymentModifier: -0.5,
+      participationModifier: 1.1,
+      wageGrowthModifier: 1.2,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.0,
+      lifeExpectancyModifier: 1.15,
+      literacyModifier: 1.1,
+      urbanizationModifier: 1.0,
+    },
+    implementationCost: 50000,
+    maintenanceCost: 25000,
+    requiredCapacity: 60,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: DollarSign,
+    color: "emerald",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 150,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.MIXED_ECONOMY]: {
+    id: "mixed_economy",
+    type: EconomicComponentType.MIXED_ECONOMY,
+    name: formatComponentName(EconomicComponentType.MIXED_ECONOMY),
+    description: "Balance of market forces and government intervention",
+    effectiveness: 78,
+    synergies: [
+      EconomicComponentType.BALANCED_TRADE,
+      EconomicComponentType.SOCIAL_MARKET_ECONOMY,
+      EconomicComponentType.PROTECTED_WORKERS,
+    ],
+    conflicts: [EconomicComponentType.PLANNED_ECONOMY, EconomicComponentType.FREE_MARKET_SYSTEM],
+    governmentSynergies: ["MIXED_ECONOMY", "BALANCED_APPROACH", "SOCIAL_MARKET_ECONOMY"],
+    governmentConflicts: ["CENTRALIZED_POWER", "AUTOCRATIC_PROCESS"],
+    taxImpact: {
+      optimalCorporateRate: 22,
+      optimalIncomeRate: 30,
+      revenueEfficiency: 0.78,
+    },
+    sectorImpact: {
+      services: 1.0,
+      manufacturing: 1.1,
+      agriculture: 1.0,
+      government: 1.2,
+      finance: 1.0,
+      technology: 1.1,
+    },
+    employmentImpact: {
+      unemploymentModifier: 0.0,
+      participationModifier: 1.0,
+      wageGrowthModifier: 1.0,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.0,
+      lifeExpectancyModifier: 1.05,
+      literacyModifier: 1.4,
+      urbanizationModifier: 1.2,
+    },
+    implementationCost: 75000,
+    maintenanceCost: 40000,
+    requiredCapacity: 70,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: BarChart3,
+    color: "emerald",
+    metadata: {
+      complexity: "High",
+      timeToImplement: "3-4 years",
+      staffRequired: 200,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.STATE_CAPITALISM]: {
+    id: "state_capitalism",
+    type: EconomicComponentType.STATE_CAPITALISM,
+    name: formatComponentName(EconomicComponentType.STATE_CAPITALISM),
+    description: "Government controls strategic sectors while allowing market forces in others",
+    effectiveness: 72,
+    synergies: [
+      EconomicComponentType.EXPORT_ORIENTED,
+      EconomicComponentType.MANUFACTURING_LED,
+      EconomicComponentType.PLANNED_ECONOMY,
+    ],
+    conflicts: [
+      EconomicComponentType.FREE_MARKET_SYSTEM,
+      EconomicComponentType.FLEXIBLE_LABOR,
+      EconomicComponentType.FREE_TRADE,
+    ],
+    governmentSynergies: ["STATE_CAPITALISM", "CENTRALIZED_POWER", "PLANNED_ECONOMY"],
+    governmentConflicts: ["FREE_MARKET_SYSTEM", "DEMOCRATIC_PROCESS"],
+    taxImpact: {
+      optimalCorporateRate: 28,
+      optimalIncomeRate: 35,
+      revenueEfficiency: 0.72,
+    },
+    sectorImpact: {
+      manufacturing: 1.3,
+      government: 1.4,
+      utilities: 1.5,
+      finance: 0.8,
+      services: 0.9,
+      technology: 1.1,
+    },
+    employmentImpact: {
+      unemploymentModifier: 1.2,
+      participationModifier: 0.9,
+      wageGrowthModifier: 0.8,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.05,
+      lifeExpectancyModifier: 1.0,
+      literacyModifier: 1.3,
+      urbanizationModifier: 1.1,
+    },
+    implementationCost: 100000,
+    maintenanceCost: 60000,
+    requiredCapacity: 80,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Building2,
+    color: "emerald",
+    metadata: {
+      complexity: "High",
+      timeToImplement: "4-5 years",
+      staffRequired: 300,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.PLANNED_ECONOMY]: {
+    id: "planned_economy",
+    type: EconomicComponentType.PLANNED_ECONOMY,
+    name: formatComponentName(EconomicComponentType.PLANNED_ECONOMY),
+    description: "Government controls all major economic decisions and resource allocation",
+    effectiveness: 65,
+    synergies: [
+      EconomicComponentType.STATE_CAPITALISM,
+      EconomicComponentType.PROTECTED_WORKERS,
+      EconomicComponentType.IMPORT_SUBSTITUTION,
+    ],
+    conflicts: [
+      EconomicComponentType.FREE_MARKET_SYSTEM,
+      EconomicComponentType.FLEXIBLE_LABOR,
+      EconomicComponentType.FREE_TRADE,
+    ],
+    governmentSynergies: ["PLANNED_ECONOMY", "CENTRALIZED_POWER", "AUTOCRATIC_PROCESS"],
+    governmentConflicts: ["FREE_MARKET_SYSTEM", "DEMOCRATIC_PROCESS"],
+    taxImpact: {
+      optimalCorporateRate: 35,
+      optimalIncomeRate: 40,
+      revenueEfficiency: 0.65,
+    },
+    sectorImpact: {
+      government: 1.6,
+      manufacturing: 1.2,
+      utilities: 1.4,
+      agriculture: 1.1,
+      finance: 0.6,
+      services: 0.7,
+      technology: 0.8,
+    },
+    employmentImpact: {
+      unemploymentModifier: 1.5,
+      participationModifier: 0.8,
+      wageGrowthModifier: 0.7,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.1,
+      lifeExpectancyModifier: 0.9,
+      literacyModifier: 0.85,
+      urbanizationModifier: 0.7,
+    },
+    implementationCost: 150000,
+    maintenanceCost: 80000,
+    requiredCapacity: 90,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Target,
+    color: "purple",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 180,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.SOCIAL_MARKET_ECONOMY]: {
+    id: "social_market_economy",
+    type: EconomicComponentType.SOCIAL_MARKET_ECONOMY,
+    name: formatComponentName(EconomicComponentType.SOCIAL_MARKET_ECONOMY),
+    description: "Market economy with strong social safety nets and worker protections",
+    effectiveness: 82,
+    synergies: [
+      EconomicComponentType.PROTECTED_WORKERS,
+      EconomicComponentType.UNION_BASED,
+      EconomicComponentType.EDUCATION_FIRST,
+    ],
+    conflicts: [
+      EconomicComponentType.FLEXIBLE_LABOR,
+      EconomicComponentType.GIG_ECONOMY,
+      EconomicComponentType.FREE_MARKET_SYSTEM,
+    ],
+    governmentSynergies: ["SOCIAL_MARKET_ECONOMY", "WELFARE_STATE", "WORKER_PROTECTION"],
+    governmentConflicts: ["FREE_MARKET_SYSTEM", "MINIMAL_GOVERNMENT"],
+    taxImpact: {
+      optimalCorporateRate: 25,
+      optimalIncomeRate: 35,
+      revenueEfficiency: 0.82,
+    },
+    sectorImpact: {
+      services: 1.1,
+      education: 1.3,
+      healthcare: 1.4,
+      manufacturing: 1.0,
+      finance: 1.0,
+      government: 1.3,
+    },
+    employmentImpact: {
+      unemploymentModifier: -1.0,
+      participationModifier: 1.1,
+      wageGrowthModifier: 1.1,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.1,
+      lifeExpectancyModifier: 0.9,
+      literacyModifier: 0.85,
+      urbanizationModifier: 0.7,
+    },
+    implementationCost: 120000,
+    maintenanceCost: 70000,
+    requiredCapacity: 85,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Heart,
+    color: "amber",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 160,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.KNOWLEDGE_ECONOMY]: {
+    id: "knowledge_economy",
+    type: EconomicComponentType.KNOWLEDGE_ECONOMY,
+    name: formatComponentName(EconomicComponentType.KNOWLEDGE_ECONOMY),
+    description: "Economy driven by knowledge, innovation, and intellectual capital",
+    effectiveness: 88,
+    synergies: [
+      EconomicComponentType.TECHNOLOGY_FOCUSED,
+      EconomicComponentType.RD_INVESTMENT,
+      EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
+    ],
+    conflicts: [
+      EconomicComponentType.AGRICULTURE_LED,
+      EconomicComponentType.EXTRACTION_FOCUSED,
+      EconomicComponentType.MANUFACTURING_LED,
+    ],
+    governmentSynergies: ["RESEARCH_AND_DEVELOPMENT", "EDUCATION_SYSTEM", "INNOVATION_ECOSYSTEM"],
+    governmentConflicts: ["TRADITIONAL_LEGITIMACY", "RESOURCE_BASED_ECONOMY"],
+    taxImpact: {
+      optimalCorporateRate: 18,
+      optimalIncomeRate: 28,
+      revenueEfficiency: 0.88,
+    },
+    sectorImpact: {
+      technology: 1.8,
+      professional: 1.6,
+      education: 1.4,
+      finance: 1.2,
+      information: 1.7,
+      manufacturing: 0.7,
+      agriculture: 0.5,
+    },
+    employmentImpact: {
+      unemploymentModifier: -1.5,
+      participationModifier: 1.3,
+      wageGrowthModifier: 1.4,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.0,
+      lifeExpectancyModifier: 1.05,
+      literacyModifier: 1.1,
+      urbanizationModifier: 1.1,
+    },
+    implementationCost: 200000,
+    maintenanceCost: 100000,
+    requiredCapacity: 95,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Brain,
+    color: "cyan",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 170,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.INNOVATION_ECONOMY]: {
+    id: "innovation_economy",
+    type: EconomicComponentType.INNOVATION_ECONOMY,
+    name: formatComponentName(EconomicComponentType.INNOVATION_ECONOMY),
+    description: "Economy focused on continuous innovation and technological advancement",
+    effectiveness: 90,
+    synergies: [
+      EconomicComponentType.STARTUP_ECOSYSTEM,
+      EconomicComponentType.VENTURE_CAPITAL,
+      EconomicComponentType.PATENT_PROTECTION,
+    ],
+    conflicts: [
+      EconomicComponentType.EXTRACTION_FOCUSED,
+      EconomicComponentType.AGRICULTURE_LED,
+      EconomicComponentType.PROTECTIONIST,
+    ],
+    governmentSynergies: ["RESEARCH_AND_DEVELOPMENT", "INNOVATION_ECOSYSTEM", "STARTUP_INCUBATION"],
+    governmentConflicts: ["TRADITIONAL_LEGITIMACY", "PLANNED_ECONOMY"],
+    taxImpact: {
+      optimalCorporateRate: 16,
+      optimalIncomeRate: 26,
+      revenueEfficiency: 0.9,
+    },
+    sectorImpact: {
+      technology: 2.0,
+      professional: 1.8,
+      information: 1.9,
+      finance: 1.3,
+      manufacturing: 0.8,
+      agriculture: 0.4,
+    },
+    employmentImpact: {
+      unemploymentModifier: -2.0,
+      participationModifier: 1.4,
+      wageGrowthModifier: 1.6,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.0,
+      lifeExpectancyModifier: 1.05,
+      literacyModifier: 1.3,
+      urbanizationModifier: 1.3,
+    },
+    implementationCost: 250000,
+    maintenanceCost: 125000,
+    requiredCapacity: 98,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Lightbulb,
+    color: "amber",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 160,
+      technologyRequired: true,
+    },
+  },
+
+  [EconomicComponentType.RESOURCE_BASED_ECONOMY]: {
+    id: "resource_based_economy",
+    type: EconomicComponentType.RESOURCE_BASED_ECONOMY,
+    name: formatComponentName(EconomicComponentType.RESOURCE_BASED_ECONOMY),
+    description: "Economy dependent on natural resource extraction and export",
+    effectiveness: 70,
+    synergies: [
+      EconomicComponentType.EXPORT_ORIENTED,
+      EconomicComponentType.EXTRACTION_FOCUSED,
+      EconomicComponentType.MANUFACTURING_LED,
+    ],
+    conflicts: [
+      EconomicComponentType.KNOWLEDGE_ECONOMY,
+      EconomicComponentType.SERVICE_BASED,
+      EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
+    ],
+    governmentSynergies: ["RESOURCE_BASED_ECONOMY", "EXTRACTION_FOCUSED", "EXPORT_ORIENTED"],
+    governmentConflicts: ["KNOWLEDGE_ECONOMY", "INNOVATION_ECOSYSTEM"],
+    taxImpact: {
+      optimalCorporateRate: 30,
+      optimalIncomeRate: 32,
+      revenueEfficiency: 0.7,
+    },
+    sectorImpact: {
+      mining: 2.0,
+      manufacturing: 1.2,
+      agriculture: 1.1,
+      utilities: 1.3,
+      services: 0.8,
+      technology: 0.6,
+    },
+    employmentImpact: {
+      unemploymentModifier: 1.0,
+      participationModifier: 0.9,
+      wageGrowthModifier: 0.9,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 0.95,
+      lifeExpectancyModifier: 1.0,
+      literacyModifier: 1.2,
+      urbanizationModifier: 1.4,
+    },
+    implementationCost: 80000,
+    maintenanceCost: 45000,
+    requiredCapacity: 65,
+    category: EconomicCategory.ECONOMIC_MODEL,
+    icon: Wrench,
+    color: "teal",
+    metadata: {
+      complexity: "Medium",
+      timeToImplement: "2-3 years",
+      staffRequired: 160,
+      technologyRequired: true,
+    },
+  },
+
+  // Sector Focus Components
+  [EconomicComponentType.AGRICULTURE_LED]: {
+    id: "agriculture_led",
+    type: EconomicComponentType.AGRICULTURE_LED,
+    name: formatComponentName(EconomicComponentType.AGRICULTURE_LED),
+    description: "Economy focused on agricultural production and food security",
+    effectiveness: 68,
+    synergies: [
+      EconomicComponentType.RESOURCE_BASED_ECONOMY,
+      EconomicComponentType.EXPORT_ORIENTED,
+      EconomicComponentType.DOMESTIC_FOCUSED,
+    ],
+    conflicts: [
+      EconomicComponentType.KNOWLEDGE_ECONOMY,
+      EconomicComponentType.TECHNOLOGY_FOCUSED,
+      EconomicComponentType.FINANCE_CENTERED,
+    ],
+    governmentSynergies: ["AGRICULTURE", "RURAL_DEVELOPMENT", "FOOD_SECURITY"],
+    governmentConflicts: ["INNOVATION_ECOSYSTEM", "DIGITAL_GOVERNMENT"],
+    taxImpact: {
+      optimalCorporateRate: 20,
+      optimalIncomeRate: 22,
+      revenueEfficiency: 0.68,
+    },
+    sectorImpact: {
+      agriculture: 2.5,
+      manufacturing: 1.1,
+      services: 0.7,
+      technology: 0.5,
+      finance: 0.6,
+    },
+    employmentImpact: {
+      unemploymentModifier: 1.2,
+      participationModifier: 0.8,
+      wageGrowthModifier: 0.7,
+    },
+    demographicImpact: {
+      populationGrowthModifier: 1.0,
+      lifeExpectancyModifier: 1.1,
+      literacyModifier: 1.05,
+      urbanizationModifier: 1.0,
+    },
+    implementationCost: 60000,
+    maintenanceCost: 35000,
+    requiredCapacity: 55,
+    category: EconomicCategory.SECTOR_FOCUS,
+    icon: Leaf,
+    color: "green",
+    metadata: {
+      complexity: "Low",
+      timeToImplement: "1-2 years",
+      staffRequired: 120,
+      technologyRequired: false,
+    },
+  },
+};

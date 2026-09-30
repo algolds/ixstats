@@ -1,15 +1,19 @@
+"use client";
 // src/app/admin/wiki/components/BulkScannerSection.tsx
 // Bulk heuristic scanner for automated wiki page linking.
 
-"use client";
-
 import { useState, useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { RefreshCw, Search, Link2, Loader2, AlertTriangle } from "lucide-react";
+import {
+  Refresh as RefreshCw,
+  Search,
+  Link as Link2,
+  SystemRestart as Loader2,
+  WarningTriangle as AlertTriangle,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 import type { ScanResult } from "./types";
 
@@ -117,7 +121,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
       utils.countries.getAll.invalidate();
       setScanResults([]);
       setScanComplete(false);
-    } catch (err) {
+    } catch {
       notify.error("Error", "Failed to apply bulk links");
     } finally {
       setIsLinking(false);
@@ -127,34 +131,33 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const selectedCount = scanResults.filter((r) => r.selected).length;
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <RefreshCw className="h-5 w-5 text-amber-500" />
-            Bulk Scanner
-          </CardTitle>
-          <Badge variant="outline" className="w-fit text-xs">
-            {unlinkedCountries.length} unlinked countries
-          </Badge>
+    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+      <div className="border-border/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4 text-amber-400" />
+          <h3 className="text-foreground text-xs font-bold">Bulk Wiki Entity Scanner</h3>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-muted-foreground text-sm">
-          Automatically search wiki sources for unlinked countries and suggest matches.
+        <Badge variant="outline" className="w-fit text-xs">
+          {unlinkedCountries.length} unlinked countries
+        </Badge>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-muted-foreground text-xs">
+          Automatically search wiki sources for unlinked countries and suggest entity cross-links.
         </p>
 
         {/* Scan button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleScan}
             disabled={isScanning || unlinkedCountries.length === 0}
-            className="gap-2"
+            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
             {isScanning ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Search className="h-4 w-4" />
+              <Search className="mr-1.5 h-3.5 w-3.5" />
             )}
             {isScanning ? "Scanning..." : "Scan Unlinked Countries"}
           </Button>
@@ -164,12 +167,12 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               variant="outline"
               onClick={handleLinkSelected}
               disabled={selectedCount === 0 || isLinking}
-              className="gap-2"
+              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
             >
               {isLinking ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Link2 className="h-4 w-4" />
+                <Link2 className="mr-1.5 h-3.5 w-3.5" />
               )}
               {isLinking ? "Linking..." : `Link Selected (${selectedCount})`}
             </Button>
@@ -178,7 +181,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
 
         {/* Progress */}
         {isScanning && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="text-muted-foreground flex items-center justify-between text-xs">
               <span>
                 Scanning {scanProgress.current} of {scanProgress.total}...
@@ -187,9 +190,9 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                 {Math.round((scanProgress.current / Math.max(scanProgress.total, 1)) * 100)}%
               </span>
             </div>
-            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+            <div className="bg-muted/40 h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
+                className="h-full rounded-full bg-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
                 style={{
                   width: `${(scanProgress.current / Math.max(scanProgress.total, 1)) * 100}%`,
                 }}
@@ -200,39 +203,31 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
 
         {/* Results */}
         {scanComplete && scanResults.length === 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-400">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
+          <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
             No wiki matches found for unlinked countries.
           </div>
         )}
 
         {scanResults.length > 0 && (
-          <div className="border-border/30 max-h-[24rem] overflow-y-auto rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
-                <tr className="border-border/30 border-b">
-                  <th className="w-10 px-3 py-2.5" />
-                  <th className="text-muted-foreground px-3 py-2.5 text-left font-medium">
-                    Country
-                  </th>
-                  <th className="text-muted-foreground px-3 py-2.5 text-left font-medium">
-                    Matched Page
-                  </th>
-                  <th className="text-muted-foreground hidden px-3 py-2.5 text-left font-medium sm:table-cell">
-                    Source
-                  </th>
-                  <th className="text-muted-foreground px-3 py-2.5 text-right font-medium">
-                    Confidence
-                  </th>
+          <div className="border-border/30 bg-card/25 max-h-[24rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
+                <tr>
+                  <th className="w-10 px-3 py-2.5 text-center" />
+                  <th className="px-3 py-2.5 text-left font-medium">Country</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Matched Page</th>
+                  <th className="hidden px-3 py-2.5 text-left font-medium sm:table-cell">Source</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Confidence</th>
                 </tr>
               </thead>
-              <tbody className="divide-border/20 divide-y">
+              <tbody className="divide-border/15 divide-y">
                 {scanResults.map((result) => (
                   <tr
                     key={result.countryId}
                     className={cn(
                       "transition-colors",
-                      result.selected ? "bg-primary/5" : "hover:bg-muted/30"
+                      result.selected ? "bg-primary/5" : "hover:bg-foreground/[0.02]"
                     )}
                   >
                     <td className="px-3 py-2.5 text-center">
@@ -240,13 +235,13 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                         type="checkbox"
                         checked={result.selected}
                         onChange={() => toggleResult(result.countryId)}
-                        className="border-border accent-primary h-4 w-4 rounded"
+                        className="border-border rounded"
                       />
                     </td>
-                    <td className="text-foreground px-3 py-2.5 font-medium">
+                    <td className="text-foreground px-3 py-2.5 font-semibold">
                       {result.countryName}
                     </td>
-                    <td className="text-muted-foreground max-w-[10rem] truncate px-3 py-2.5">
+                    <td className="text-muted-foreground max-w-[10rem] truncate px-3 py-2.5 font-mono">
                       {result.matchedTitle}
                     </td>
                     <td className="hidden px-3 py-2.5 sm:table-cell">
@@ -255,17 +250,16 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                       </Badge>
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      <Badge
-                        variant="outline"
+                      <span
                         className={cn(
-                          "text-xs",
+                          "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
                           result.confidence === "exact"
-                            ? "border-emerald-500/30 text-emerald-500"
-                            : "border-amber-500/30 text-amber-500"
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                            : "border-amber-500/30 bg-amber-500/10 text-amber-400"
                         )}
                       >
                         {result.confidence === "exact" ? "Exact" : "Partial"}
-                      </Badge>
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -273,7 +267,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
             </table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

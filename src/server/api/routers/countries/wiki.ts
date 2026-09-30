@@ -1,20 +1,15 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  cachedStaticProcedure,
-  rateLimitedPublicProcedure,
-} from "~/server/api/trpc";
-import {
-  getArticleIntro,
-  getPageSections,
-  getPageImages as wikiBridgePageImages,
-  getInfobox as wikiBridgeInfobox,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { getArticleIntro, getPageSections, getPageImages as wikiBridgePageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
-import { parseInfoboxWithTemplates, resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import {
+  parseInfoboxWithTemplates,
+  resolveImageUrl,
+  type UnifiedInfoboxData,
+} from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
 
@@ -232,11 +227,11 @@ async function fetchWikiRichIntro(
       // Convert wiki links to HTML
       const linkBase = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
       const processedContent = cleanContent
-        .replace(/\[\[([^\[\]|]+)\|([^\[\]]+?)\]\]/g, (_, pg: string, display: string) => {
+        .replace(/\[\[([^[\]|]+)\|([^[\]]+?)\]\]/g, (_, pg: string, display: string) => {
           if (pg.toLowerCase().includes("template:")) return "";
           return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${display}</a>`;
         })
-        .replace(/\[\[([^\[\]]+?)\]\]/g, (_, pg: string) => {
+        .replace(/\[\[([^[\]]+?)\]\]/g, (_, pg: string) => {
           if (pg.toLowerCase().includes("template:")) return "";
           return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${pg}</a>`;
         })
@@ -263,25 +258,6 @@ async function fetchWikiRichIntro(
     }
   }
   return null;
-}
-
-/**
- * Fetch wiki infobox server-side via WikiBridge.
- */
-async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unknown> | null> {
-  try {
-    const infobox =
-      (await wikiBridgeInfobox(name, "ixwiki")) ?? (await wikiBridgeInfobox(name, "iiwiki"));
-    if (!infobox) return null;
-    const result: Record<string, unknown> = { templateName: infobox.templateName };
-    for (const field of infobox.fields) {
-      result[field.key] = field.value;
-    }
-    return result;
-  } catch (err) {
-    console.error(`[Wiki] Error fetching infobox for ${name}:`, err);
-    return null;
-  }
 }
 
 /**
@@ -365,20 +341,6 @@ export const wikiProcedures = {
       return fetchWikiIntro(name);
     }),
 
-  getBulkWikiIntros: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      if (names.length === 0) return {};
-      const results: Record<string, any> = {};
-      await Promise.all(
-        names.map(async (n) => {
-          results[n] = await fetchWikiIntro(n);
-        })
-      );
-      return results;
-    }),
-
   getWikiSections: cachedStaticProcedure
     .input(z.object({ countryName: z.string() }))
     .query(async ({ input }) => {
@@ -387,40 +349,12 @@ export const wikiProcedures = {
       return fetchWikiSections(name);
     }),
 
-  getBulkWikiSections: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiSections(name);
-        })
-      );
-      return results;
-    }),
-
   getWikiPageImages: cachedStaticProcedure
     .input(z.object({ countryName: z.string() }))
     .query(async ({ input }) => {
       const name = input.countryName.trim();
       if (!name) return null;
       return fetchWikiPageImages(name);
-    }),
-
-  getBulkWikiPageImages: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiPageImages(name);
-        })
-      );
-      return results;
     }),
 
   getWikiRichIntro: cachedStaticProcedure
@@ -435,33 +369,11 @@ export const wikiProcedures = {
     .input(z.object({ countryNames: z.array(z.string()).max(50) }))
     .query(async ({ input }) => {
       const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiRichIntro>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
       await Promise.all(
         names.map(async (name) => {
           results[name] = await fetchWikiRichIntro(name);
-        })
-      );
-      return results;
-    }),
-
-  getWikiInfoboxCached: cachedStaticProcedure
-    .input(z.object({ countryName: z.string() }))
-    .query(async ({ input }) => {
-      const name = input.countryName.trim();
-      if (!name) return null;
-      return fetchWikiInfoboxCached(name);
-    }),
-
-  getBulkWikiInfoboxes: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiInfoboxCached(name);
         })
       );
       return results;
@@ -473,20 +385,6 @@ export const wikiProcedures = {
       const name = input.countryName.trim();
       if (!name) return null;
       return fetchWikiSectionPreviews(name);
-    }),
-
-  getBulkWikiSectionPreviews: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
-      const results: Record<string, any> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 30. (audit B5)
-      await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiSectionPreviews(name);
-        })
-      );
-      return results;
     }),
 
   searchWiki: rateLimitedPublicProcedure
@@ -523,7 +421,9 @@ export const wikiProcedures = {
       const cacheKey = `parsed-infobox:${site}:${pageName.trim().toLowerCase()}`;
       try {
         // Try L1/L2 cache first
-        const cached = await wikiCacheService.getCustomCache<any>(cacheKey);
+        const cached = await wikiCacheService.getCustomCache<
+          UnifiedInfoboxData & { wikiIntro?: string }
+        >(cacheKey);
         if (cached) {
           return cached;
         }
@@ -560,6 +460,16 @@ export const wikiProcedures = {
         if (intro) {
           unified.wikiIntro = intro;
         }
+
+        // Extract category tags from article wikitext to guide background LoreScanner
+        const catMatches = article.wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
+        const categories = catMatches
+          .map((c) => c.replace(/^\[\[Category:/i, "").replace(/\]\]$/, "").split("|")[0]?.trim())
+          .filter((c): c is string => Boolean(c));
+        if (categories.length > 0) {
+          unified.categories = categories;
+        }
+        unified.rawWikitext = article.wikitext;
 
         // Resolve image URLs
         const wikiSource = site as "ixwiki" | "iiwiki" | "althistory";

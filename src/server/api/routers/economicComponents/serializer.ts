@@ -77,7 +77,9 @@ export function transformDatabaseComponent(dbComp: any): ParsedEconomicComponent
   });
 
   return {
-    id: dbComp.id || (typeof dbComp.componentType === "string" ? dbComp.componentType.toLowerCase() : ""),
+    id:
+      dbComp.id ||
+      (typeof dbComp.componentType === "string" ? dbComp.componentType.toLowerCase() : ""),
     type: dbComp.componentType,
     name: dbComp.name,
     description: dbComp.description ?? "",

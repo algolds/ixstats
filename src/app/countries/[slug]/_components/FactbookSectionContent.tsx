@@ -9,7 +9,7 @@ import {
   GovernmentTab,
   GeographyTab,
 } from "~/components/mycountry/shared/tabs";
-import type { FactbookSection } from "~/lib/wiki-os/adapters/ixstates/factbook-routes";
+import type { FactbookSection } from "~/lib/country/factbook-routes";
 
 /**
  * FactbookSectionContent — renders the tab content for a single factbook
@@ -75,7 +75,7 @@ export function FactbookSectionContent({ section }: { section: FactbookSection }
           country={country}
           economyData={economyData}
           countryImageData={countryImageData}
-          governmentStructure={governmentStructure}
+          governmentStructure={governmentStructure ?? null}
           setImageUploadModalAction={setImageUploadModal}
           openMetricModalAction={openMetricModal}
           metricView={metricView}

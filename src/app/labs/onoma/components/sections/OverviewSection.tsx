@@ -175,7 +175,7 @@ export function OverviewSection() {
         if (results.length > 0) {
           const runHash = `onoma-${Math.random().toString(36).substring(2, 7)}${Date.now().toString(36).slice(-4)}`;
           const cat = (selectedDict?.category as string) || "sandbox";
-          
+
           logActivityMutation
             .mutateAsync({
               count: results.length,
@@ -264,7 +264,7 @@ export function OverviewSection() {
   return (
     <div className="space-y-5">
       {/* 30% Controls + 70% Results Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-10 items-start">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-10">
         {/* 30% Control Column */}
         <div className="lg:col-span-3">
           <QuickGeneratorControls

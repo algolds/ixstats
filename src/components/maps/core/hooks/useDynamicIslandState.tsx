@@ -15,9 +15,10 @@ import type { MapSearchResult } from "../MapDynamicIsland";
 
 interface UseDynamicIslandStateProps {
   onSearchResult: (result: MapSearchResult) => void;
+  realm?: string;
 }
 
-export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateProps) {
+export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslandStateProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(-1);
@@ -71,7 +72,7 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
   const debouncedQuery = useDebounce(query.trim(), 250);
 
   const { data: results, isLoading: searchLoading } = api.geoCore.searchFeatures.useQuery(
-    { query: debouncedQuery, limit: 20 },
+    { query: debouncedQuery, limit: 20, realm },
     { enabled: debouncedQuery.length >= 2, staleTime: 30_000 }
   );
 
@@ -138,6 +139,7 @@ export function useDynamicIslandState({ onSearchResult }: UseDynamicIslandStateP
         handleSelect(flatResults[selectedIdx]);
       }
     },
+    // oxlint-disable-next-line
     [flatResults, selectedIdx, handleSelect, closeSearch]
   );
 

@@ -33,9 +33,7 @@ export function ExploreSection({
       ) : activeSubTab === "writing" ? (
         <WritingSection studioWords={studioWords} />
       ) : (
-        <LanguagePacksSection
-          onLoadToStudio={(title, words) => onLoadToStudio?.(words, title)}
-        />
+        <LanguagePacksSection onLoadToStudio={(title, words) => onLoadToStudio?.(words, title)} />
       )}
     </div>
   );

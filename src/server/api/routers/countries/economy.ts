@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
   publicProcedure,
@@ -6,6 +7,7 @@ import {
   rateLimitedPublicProcedure,
   cachedStaticProcedure,
 } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
@@ -16,7 +18,20 @@ import {
   getGrowthRates,
   stddev,
   getCountryComponentsStatsData,
+  resolveCountryRefId,
 } from "./utils";
+
+const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
+
+const SOVEREIGN_OWNER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  forumUsername: true,
+  wikiUsername: true,
+  membershipTier: true,
+  role: { select: { displayName: true, name: true } },
+} satisfies Prisma.UserSelect;
+type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
 
 export const economyProcedures = {
   getByIdWithEconomicData: rateLimitedPublicProcedure
@@ -24,10 +39,14 @@ export const economyProcedures = {
       z.object({
         id: z.string(),
         timestamp: z.number().optional(),
+        ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
+      const realmId = await viewerRealmId(ctx, input.realm);
+      const countryId = await resolveCountryRefId(ctx.db, input.id, realmId);
+      if (!countryId) return null;
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
       const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -38,12 +57,8 @@ export const economyProcedures = {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
-        users: {
-          select: {
-            clerkUserId: true,
-          },
-          take: 1,
-        },
+        owner: { select: SOVEREIGN_OWNER_SELECT },
+        realm: { select: { id: true, name: true, slug: true } },
       };
 
       if (availableRelations.economicProfile) includeObject.economicProfile = true;
@@ -56,24 +71,22 @@ export const economyProcedures = {
 
       let country;
       try {
-        const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
+          where: { id: countryId },
+          omit: HEAVY_COUNTRY_GEO_OMIT,
           include: includeObject,
         });
-      } catch (dbError) {
-        const slugLower = input.id.toLowerCase();
+      } catch {
         country = await ctx.db.country.findFirst({
-          where: {
-            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
-          },
+          where: { id: countryId },
+          omit: HEAVY_COUNTRY_GEO_OMIT,
           include: {
             storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
+            owner: { select: SOVEREIGN_OWNER_SELECT },
+            realm: { select: { id: true, name: true, slug: true } },
           },
         });
       }
@@ -83,7 +96,7 @@ export const economyProcedures = {
       }
 
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
+      const baselineDate = country.baselineDate.getTime();
 
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
@@ -190,8 +203,20 @@ export const economyProcedures = {
       if (avgPopGrowth < 0.002) vulnerabilities.push("low_population_growth");
       if (avgGdpGrowth < 0.01) vulnerabilities.push("low_gdp_per_capita_growth");
 
+      // `country` comes from an `include: any` query, so pin the owner to the shape selected above.
+      const rawUser = country.owner as SovereignOwner | null;
+      const sovereignUser = rawUser
+        ? {
+            id: rawUser.id,
+            username: rawUser.forumUsername || rawUser.wikiUsername || rawUser.clerkUserId || null,
+            roleName: rawUser.role?.displayName || rawUser.role?.name || "Sovereign Regent",
+            membershipTier: rawUser.membershipTier || "citizen",
+          }
+        : null;
+
       const response = {
         ...country,
+        sovereignUser,
         currentPopulation: result.newStats.currentPopulation,
         currentGdpPerCapita: result.newStats.currentGdpPerCapita,
         currentTotalGdp: result.newStats.currentTotalGdp,
@@ -266,7 +291,7 @@ export const economyProcedures = {
           country.lastCalculated instanceof Date ? country.lastCalculated.getTime() : Date.now(),
       };
 
-      const ownerClerkUserId = (country as any).users?.[0]?.clerkUserId ?? null;
+      const ownerClerkUserId = rawUser?.clerkUserId ?? null;
 
       return {
         ...response,
@@ -279,6 +304,7 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
+        omit: HEAVY_COUNTRY_GEO_OMIT,
         include: {
           storytellerEffects: { where: { isActive: true } },
           nationalIdentity: true,
@@ -289,7 +315,7 @@ export const economyProcedures = {
 
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);
-      const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
+      const baselineDate = country.baselineDate.getTime();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const componentsData = await getCountryComponentsStatsData(ctx.db, country.id);
       const base = prepareBaseCountryData(country, componentsData);
@@ -365,28 +391,30 @@ export const economyProcedures = {
       };
     }),
 
-  getGlobalStats: cachedStaticProcedure.query(async ({ ctx }) => {
-    const countries = await ctx.db.country.findMany({
-      where: { isDemo: false },
-      select: {
-        currentPopulation: true,
-        currentTotalGdp: true,
-        landArea: true,
-      },
-    });
+  getGlobalStats: cachedStaticProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false, realmId: await viewerRealmId(ctx, input?.realm) },
+        select: {
+          currentPopulation: true,
+          currentTotalGdp: true,
+          landArea: true,
+        },
+      });
 
-    const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
-    const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
-    const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
+      const totalPop = countries.reduce((acc, c) => acc + (c.currentPopulation || 0), 0);
+      const totalGdp = countries.reduce((acc, c) => acc + (c.currentTotalGdp || 0), 0);
+      const totalArea = countries.reduce((acc, c) => acc + (c.landArea || 0), 0);
 
-    return {
-      totalPopulation: totalPop,
-      totalGdp: totalGdp,
-      totalLandArea: totalArea,
-      avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
-      count: countries.length,
-    };
-  }),
+      return {
+        totalPopulation: totalPop,
+        totalGdp: totalGdp,
+        totalLandArea: totalArea,
+        avgGdpPerCapita: totalPop > 0 ? totalGdp / totalPop : 0,
+        count: countries.length,
+      };
+    }),
 
   // Get trade data for a country
   getTradeData: publicProcedure
@@ -567,7 +595,7 @@ export const economyProcedures = {
         };
       } catch (error) {
         console.error("Failed to generate activity rings data:", error);
-        throw new Error("Failed to generate activity rings data");
+        throw new Error("Failed to generate activity rings data", { cause: error });
       }
     }),
 };

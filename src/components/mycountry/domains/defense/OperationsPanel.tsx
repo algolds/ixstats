@@ -1,6 +1,6 @@
 "use client";
 
-import { Swords } from "lucide-react";
+import { Tournament as Swords } from "iconoir-react";
 import { DeploymentWizard } from "./operations/DeploymentWizard";
 import { ActiveOperations } from "./operations/ActiveOperations";
 import { PvPConflictPanel } from "./operations/PvPConflictPanel";

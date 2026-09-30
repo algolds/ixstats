@@ -62,6 +62,7 @@ export function getHolographicIntensity(rarity: CardRarity): HolographicIntensit
  */
 export function getRainbowHolographicGradient(
   angle: number = 45,
+  // oxlint-disable-next-line typescript/no-unused-vars
   animated: boolean = true
 ): string {
   const gradient = `linear-gradient(
@@ -642,6 +643,7 @@ export function getLightRefractionStyle(
   const deltaY = mouseY - centerY;
 
   // Calculate angle and intensity
+  // oxlint-disable-next-line typescript/no-unused-vars
   const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
   const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);

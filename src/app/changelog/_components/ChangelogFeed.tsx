@@ -4,16 +4,16 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
-  Flame,
-  Zap,
+  FireFlame as Flame,
+  Flash as Zap,
   Cpu,
   ShieldCheck,
   Search,
   Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Layers,
-} from "lucide-react";
+  CheckCircle as CheckCircle2,
+  NavArrowRight as ChevronRight,
+  Component as Layers,
+} from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
@@ -52,8 +52,7 @@ const CATEGORY_META: Record<
     label: "New Features",
     icon: Flame,
     color: "text-emerald-500 dark:text-emerald-400",
-    badgeBg:
-      "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+    badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
   },
   improvement: {
     label: "Improvements",
@@ -65,8 +64,7 @@ const CATEGORY_META: Record<
     label: "Platform & Engine",
     icon: Cpu,
     color: "text-purple-500 dark:text-purple-400",
-    badgeBg:
-      "bg-purple-500/15 border-purple-500/30 text-purple-700 dark:text-purple-300",
+    badgeBg: "bg-purple-500/15 border-purple-500/30 text-purple-700 dark:text-purple-300",
   },
   fix: {
     label: "Fixes & Polish",
@@ -86,8 +84,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
     return releases
       .map((release) => {
         const items = release.items.filter((item) => {
-          const matchesCategory =
-            selectedCategory === "all" || item.category === selectedCategory;
+          const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
           const matchesSearch =
             !q ||
             item.title.toLowerCase().includes(q) ||
@@ -108,7 +105,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
   return (
     <>
       {/* Search & Category Filter Controls */}
-      <div className="glass-surface border-border/40 mb-10 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
+      <div className="facet-surface border-border/40 mb-10 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -118,12 +115,12 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
               placeholder="Search features, fixes, or engines…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-accent/20 w-full rounded-xl border border-transparent py-2 pr-4 pl-9 text-xs transition-all focus:outline-none"
+              className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-accent/20 w-full rounded-xl border border-transparent py-2 pr-4 pl-9 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs cursor-pointer"
+                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-xs"
               >
                 Clear
               </button>
@@ -142,7 +139,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer",
+                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
                     isSelected
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/15 bg-transparent"
@@ -159,9 +156,11 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
       {/* Release Timeline */}
       {filteredReleases.length === 0 ? (
-        <div className="glass-surface border-border/30 rounded-2xl border p-12 text-center">
+        <div className="facet-surface border-border/30 rounded-2xl border p-12 text-center">
           <Search className="text-muted-foreground/40 mx-auto h-8 w-8" />
-          <h3 className="text-foreground mt-3 text-base font-semibold">No matching updates found</h3>
+          <h3 className="text-foreground mt-3 text-base font-semibold">
+            No matching updates found
+          </h3>
           <p className="text-muted-foreground mt-1 text-xs">
             Try adjusting your search keywords or switching category filters.
           </p>
@@ -170,7 +169,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
               setSearchQuery("");
               setSelectedCategory("all");
             }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 rounded-xl px-4 py-2 text-xs font-medium transition-colors cursor-pointer"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 cursor-pointer rounded-xl px-4 py-2 text-xs font-medium transition-colors"
           >
             Reset Filters
           </button>
@@ -185,24 +184,26 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-foreground text-2xl font-bold tracking-tight">
                       v{release.version}{" "}
-                      <span className="text-muted-foreground font-semibold">"{release.releaseName}"</span>
+                      <span className="text-muted-foreground font-semibold">
+                        "{release.releaseName}"
+                      </span>
                     </h2>
                     {release.isCurrent && (
-                      <Badge className="rounded-full border-blue-500/30 bg-blue-500/15 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">
+                      <Badge className="rounded-full border-blue-500/30 bg-blue-500/15 text-xs font-bold text-blue-600 uppercase dark:text-blue-400">
                         Latest Release
                       </Badge>
                     )}
                   </div>
-                  <p className="text-muted-foreground text-xs leading-relaxed max-w-3xl">
+                  <p className="text-muted-foreground max-w-3xl text-xs leading-relaxed">
                     {release.tagline}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>{release.date}</span>
                   <span className="text-muted-foreground/40">·</span>
-                  <span className="font-mono text-[11px]">Channel: {release.channel}</span>
+                  <span className="font-mono text-xs">Channel: {release.channel}</span>
                 </div>
               </div>
 
@@ -217,14 +218,14 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group glass-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs transition-all duration-200 hover:shadow-md backdrop-blur-xl"
+                      className="group facet-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md"
                     >
                       <div className="space-y-3">
                         {/* Item Category Header */}
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+                              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase",
                               catMeta.badgeBg
                             )}
                           >
@@ -246,7 +247,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         {/* Bullet Highlights */}
                         {item.highlights && item.highlights.length > 0 && (
                           <div className="border-border/30 bg-accent/5 space-y-1.5 rounded-xl border p-3">
-                            <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
                               Key Highlights
                             </span>
                             <ul className="space-y-1">
@@ -266,7 +267,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
                       {/* Optional Action Link */}
                       {item.link && (
-                        <div className="mt-4 pt-3 border-t border-border/20">
+                        <div className="border-border/20 mt-4 border-t pt-3">
                           <Link
                             href={item.link.href}
                             className="group/link text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"

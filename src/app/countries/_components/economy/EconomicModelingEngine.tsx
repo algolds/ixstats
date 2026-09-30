@@ -2,22 +2,22 @@
 import React, { useState } from "react";
 import {
   Calculator,
-  TrendingUp,
-  BarChart3,
-  Zap,
+  StatUp as TrendingUp,
+  StatsReport as BarChart3,
+  Flash as Zap,
   Settings,
   Eye,
-  Pencil,
-  Save,
-  RotateCcw,
+  EditPencil as Pencil,
+  FloppyDisk as Save,
+  Undo as RotateCcw,
   HelpCircle,
   Activity,
-  PlayCircle,
-  PauseCircle,
+  Play as PlayCircle,
+  Pause as PauseCircle,
   Plus,
   Minus,
-  Info,
-} from "lucide-react";
+  InfoCircle as Info,
+} from "iconoir-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";

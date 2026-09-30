@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { Lock, Unlock as UnlockIcon, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react";
+// oxlint-disable-next-line eslint/no-unused-vars
+import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
@@ -14,19 +15,30 @@ import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
-import { BuilderHalo } from "~/components/halo/plugins";
-import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+// oxlint-disable-next-line eslint/no-unused-vars
 import { PreText } from "~/components/ui/pretext";
 import { BuilderWelcomeModal } from "./BuilderWelcomeModal";
+import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { ImportSection } from "./sections/ImportSection";
-import { BuilderNotchBar } from "./BuilderNotchBar";
+import { BuilderGuideProvider } from "./builder-guide-context";
+import { BuilderGuideSheet } from "./BuilderGuideSheet";
+import { BuilderStudioHeader } from "./BuilderStudioHeader";
+import { BuilderStepFooter } from "./BuilderStepFooter";
+import { BuilderResetConfirmDialog } from "./BuilderResetConfirmDialog";
+import { EditorSaveBar } from "./EditorSaveBar";
+import { EditChangesProvider } from "../primitives/ChangedFieldDot";
+import { SectionAlerts } from "../primitives/SectionAlert";
 import { useBuilderActions } from "../hooks/useBuilderActions";
 import { useBuilderAlerts } from "../hooks/useBuilderAlerts";
+import { useStepCompletion } from "../hooks/useStepCompletion";
+import { useBuilderKeyboardShortcuts } from "../hooks/useBuilderKeyboardShortcuts";
+import { useEditChanges } from "../hooks/useEditChanges";
 import {
   type BuilderSection,
   BUILD_STEPS,
   legacyStepToSection,
   sectionToLegacyStep,
+  isScratchOrImportOrigin,
 } from "../lib/builder-theme";
 import type { BuilderStep } from "./enhanced/builderConfig";
 import { withBasePath } from "~/lib/base-path";
@@ -90,53 +102,21 @@ function buildSectionUrl(section: BuilderSection, mode?: "create" | "edit"): str
     if (section === "identity") return "/mycountry/editor";
     return `/mycountry/editor?section=${section}`;
   }
-  if (section === "foundation") return "/builder";
-  return `/builder?section=${section}`;
+  if (section === "foundation") return "/mycountry/builder";
+  return `/mycountry/builder?section=${section}`;
 }
 
 function WelcomeModalWrapper() {
-  const { welcomeModalOpen, setWelcomeModalOpen, triggerDIExpansion } = useBuilderFilter();
+  const { welcomeModalOpen, setWelcomeModalOpen } = useBuilderFilter();
   return (
     <BuilderWelcomeModal
       open={welcomeModalOpen}
-      onOpenChange={(open) => {
-        setWelcomeModalOpen(open);
-        if (!open) {
-          triggerDIExpansion();
-        }
-      }}
+      onOpenChange={setWelcomeModalOpen}
     />
   );
 }
 
 // ─── Inner Router (consumes BuilderStateContext) ───
-
-/**
- * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
- */
-function getHighResFlagUrl(url: string | null | undefined): string | null | undefined {
-  if (!url) return url;
-
-  // 1. Upgrade flagcdn.com thumbnail to SVG
-  // e.g., https://flagcdn.com/w320/us.png -> https://flagcdn.com/us.svg
-  if (url.includes("flagcdn.com")) {
-    return url.replace(/\/w\d+\/([a-z0-9_-]+)\.(png|jpg|jpeg|gif|webp)$/i, "/$1.svg");
-  }
-
-  // 2. Upgrade Wikimedia Commons thumbnail to original (SVG if it is one, or original high-res image)
-  // e.g., https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Flag_of_the_United_States.svg/320px-Flag_of_the_United_States.svg.png
-  // -> https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg
-  if (url.includes("upload.wikimedia.org/wikipedia/commons/thumb/")) {
-    const parts = url.split("/");
-    if (parts[5] === "thumb") {
-      parts.splice(5, 1); // remove "thumb"
-      parts.pop(); // remove trailing thumbnail size filename
-      return parts.join("/");
-    }
-  }
-
-  return url;
-}
 
 function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) {
   const { user } = useUser();
@@ -144,28 +124,65 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   const {
     builderState,
     setBuilderState,
-    clearDraft,
-    lastSaved,
-    isAutoSaving,
-    foundationPreviewCountry,
     submitFn,
     isSubmittingGlobal,
+    applyImportedData,
+    clearDraft,
+    isLoadingCountry,
+    triggerManualSave,
   } = useBuilderContext();
 
-  const rawFlagUrl =
-    foundationPreviewCountry?.flag ||
-    builderState.selectedCountry?.flag ||
-    builderState.economicInputs?.flagUrl;
-
-  const flagUrl = getHighResFlagUrl(rawFlagUrl);
+  const editChanges = useEditChanges({
+    enabled: mode === "edit",
+    isLoadingCountry,
+    builderState,
+    setBuilderState,
+  });
 
   // Initialize section from URL - default to foundation/identity
   const [activeSection, setActiveSection] = useState<BuilderSection>(() => getSectionFromUrl(mode));
+  const filter = useBuilderFilter();
+  const { viewMode } = filter;
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
+  const handleOpenResetDialog = useCallback(() => {
+    setIsResetDialogOpen(true);
+  }, []);
+
+  const handleConfirmReset = useCallback(() => {
+    clearDraft();
+    if (mode === "edit") {
+      router.push(createUrl("/mycountry"));
+    } else {
+      filter.clearSelection();
+      setActiveSection("foundation");
+      window.history.pushState(null, "", withBasePath(buildSectionUrl("foundation", mode)));
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+    setIsResetDialogOpen(false);
+  }, [clearDraft, mode, router, filter]);
 
   const { handleContinue, handlePreviousStep } = useBuilderActions({
     builderState,
     setBuilderState,
     mode,
+    viewMode,
+  });
+
+  const handleToggleAdvanced = useCallback(() => {
+    const nextIsAdvanced = !(builderState.showAdvancedMode || filter.viewMode === "expert");
+    filter.setViewMode(nextIsAdvanced ? "expert" : "standard");
+    setBuilderState((prev) => ({
+      ...prev,
+      showAdvancedMode: nextIsAdvanced,
+    }));
+  }, [builderState.showAdvancedMode, filter, setBuilderState]);
+
+  useBuilderKeyboardShortcuts({
+    onSave: submitFn,
+    onReset: handleOpenResetDialog,
+    onToggleAdvanced: handleToggleAdvanced,
+    isSubmitting: isSubmittingGlobal,
   });
 
   const [heroCollapsed, setHeroCollapsed] = useState(false);
@@ -173,6 +190,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Ref to track current builderState.step for use in callbacks without stale closures
   const builderStepRef = useRef(builderState.step);
   const initialUrlSyncRef = useRef(false);
+  const prevStepRef = useRef(builderState.step);
 
   useEffect(() => {
     builderStepRef.current = builderState.step;
@@ -184,6 +202,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     if (activeSection !== "import") {
       const targetStep = sectionToLegacyStep(activeSection);
       if (targetStep !== builderState.step) {
+        prevStepRef.current = targetStep as BuilderStep;
         setBuilderState((prev) => ({ ...prev, step: targetStep as BuilderStep }));
       }
     }
@@ -193,34 +212,37 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Sync activeSection when builderState.step changes (handles clear button, footer nav, etc.)
   useEffect(() => {
     if (!initialUrlSyncRef.current) return;
-    const mappedSection = legacyStepToSection(builderState.step) as BuilderSection;
-    if (
-      activeSection !== "import" &&
-      mappedSection !== activeSection &&
-      BUILD_STEPS.includes(mappedSection)
-    ) {
-      setActiveSection(mappedSection);
-      window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection, mode)));
-      document.title = `${SECTION_TITLES[mappedSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+    if (prevStepRef.current !== builderState.step) {
+      prevStepRef.current = builderState.step;
+      const mappedSection = legacyStepToSection(builderState.step) as BuilderSection;
+      if (
+        activeSection !== "import" &&
+        mappedSection !== activeSection &&
+        BUILD_STEPS.includes(mappedSection)
+      ) {
+        setActiveSection(mappedSection);
+        window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection, mode)));
+        document.title = `${SECTION_TITLES[mappedSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+      }
     }
   }, [builderState.step, activeSection, mode]);
 
-  // Advanced mode state
-  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
-
-  // Flash label: briefly shows section name in DI center on navigation, then clears
-  const [navFlashLabel, setNavFlashLabel] = useState<string | null>(null);
-  const navFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isScratchOrImport = useMemo(
+    () => isScratchOrImportOrigin(builderState),
+    [builderState]
+  );
 
   // Compute completed and accessible steps from builder state
   const completedSteps = useMemo(() => {
     const set = new Set<BuilderSection>();
     for (const step of builderState.completedSteps) {
-      if (mode === "edit" && step === "foundation") continue;
+      if ((mode === "edit" || isScratchOrImport) && step === "foundation") continue;
       set.add(legacyStepToSection(step));
     }
     return set;
-  }, [builderState.completedSteps, mode]);
+  }, [builderState.completedSteps, mode, isScratchOrImport]);
+
+  useStepCompletion(completedSteps, SECTION_TITLES, BUILD_STEPS.length);
 
   const accessibleSteps = useMemo(() => {
     const set = new Set<BuilderSection>();
@@ -229,6 +251,18 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       for (const step of BUILD_STEPS) {
         if (step === "foundation") continue;
         set.add(step);
+      }
+      return set;
+    }
+
+    if (isScratchOrImport) {
+      // In scratch/import mode, all sections except foundation are accessible
+      set.add("identity");
+      set.add("government");
+      set.add("economics");
+      set.add("preview");
+      if (activeSection === "import") {
+        set.add("import");
       }
       return set;
     }
@@ -262,7 +296,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       set.add("import");
     }
     return set;
-  }, [completedSteps, mode, activeSection]);
+  }, [completedSteps, mode, activeSection, isScratchOrImport]);
 
   // Navigate to a section — also briefly flashes the section name in DI
   const handleNavigate = useCallback(
@@ -271,11 +305,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       if (section === activeSection) return;
 
       setActiveSection(section);
-
-      // Flash section name in DI compact center for 1.8s
-      if (navFlashTimerRef.current) clearTimeout(navFlashTimerRef.current);
-      setNavFlashLabel(SECTION_TITLES[section] ?? null);
-      navFlashTimerRef.current = setTimeout(() => setNavFlashLabel(null), 1800);
 
       // Sync URL
       window.history.pushState(null, "", withBasePath(buildSectionUrl(section, mode)));
@@ -290,6 +319,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       if (section !== "import") {
         const legacyStep = sectionToLegacyStep(section);
         if (BUILD_STEPS.includes(section) && legacyStep !== builderStepRef.current) {
+          prevStepRef.current = legacyStep as BuilderStep;
           setBuilderState((prev) => ({
             ...prev,
             step: legacyStep as BuilderStep,
@@ -301,77 +331,6 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     [activeSection, setBuilderState, mode]
   );
 
-  // Cleanup flash timer on unmount
-  useEffect(() => {
-    return () => {
-      if (navFlashTimerRef.current) clearTimeout(navFlashTimerRef.current);
-    };
-  }, []);
-
-  // Step labels for Dynamic Island display
-  const currentStepLabel = useMemo(() => {
-    const shortLabels: Record<BuilderSection, string> = {
-      foundation: "Foundation",
-      identity: "Identity",
-      government: "Government",
-      economics: "Economics",
-      preview: "Preview",
-      import: "Import",
-    };
-    return shortLabels[activeSection] || activeSection;
-  }, [activeSection]);
-
-  const currentSubStepLabel = useMemo(() => {
-    if (activeSection === "identity") {
-      const tab = builderState.activeIdentitySubTab || (mode === "edit" ? "basic" : "archetype");
-      const labels: Record<string, string> = {
-        archetype: "Archetype/Preset",
-        basic: "Basic Info",
-        culture: "Culture",
-        technical: "Technical",
-      };
-      return labels[tab] || tab;
-    }
-    if (activeSection === "government") {
-      const tab = builderState.activeGovernmentTab || "components";
-      const labels: Record<string, string> = {
-        components: "Core Setup",
-        structure: "Departments",
-        spending: "Budget & Revenue",
-        preview: "Verify & Preview",
-      };
-      return labels[tab] || tab;
-    }
-    if (activeSection === "economics") {
-      const tab = builderState.activeEconomicsTab || "components";
-      const labels: Record<string, string> = {
-        components: "Econ Components",
-        sectors: "Sectors",
-        labor: "Labor Market",
-        demographics: "Demographics",
-        tax: "Tax System",
-      };
-      return labels[tab] || tab;
-    }
-    return null;
-  }, [
-    activeSection,
-    builderState.activeIdentitySubTab,
-    builderState.activeGovernmentTab,
-    builderState.activeEconomicsTab,
-  ]);
-  const themeTextColor = useMemo(() => {
-    const colors: Record<BuilderSection, string> = {
-      foundation: "text-amber-400",
-      identity: "text-teal-400",
-      government: "text-cyan-400",
-      economics: "text-emerald-400",
-      preview: "text-amber-400",
-      import: "text-blue-400",
-    };
-    return colors[activeSection] || "text-amber-400";
-  }, [activeSection]);
-
   // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
@@ -382,6 +341,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       // the "Foundation is blank when going back" bug).
       if (newSection !== "import") {
         const legacyStep = sectionToLegacyStep(newSection);
+        prevStepRef.current = legacyStep as BuilderStep;
         setBuilderState((prev) =>
           prev.step === legacyStep ? prev : { ...prev, step: legacyStep as BuilderStep }
         );
@@ -397,23 +357,19 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     document.title = `${SECTION_TITLES[activeSection]} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
   }, [activeSection, mode]);
 
-  // Handle import completion
-  const handleImportComplete = useCallback(
-    (data: any) => {
-      // Import data is stored in localStorage by ImportSection
-      // Navigate to identity to continue building
-      handleNavigate("identity");
-    },
-    [handleNavigate]
-  );
+  // Guard against landing on foundation when in scratch or import mode
+  useEffect(() => {
+    if (isScratchOrImport && activeSection === "foundation") {
+      setActiveSection("identity");
+      prevStepRef.current = "core";
+      setBuilderState((prev) => (prev.step === "core" ? prev : { ...prev, step: "core" }));
+      window.history.pushState(null, "", withBasePath(buildSectionUrl("identity", mode)));
+    }
+  }, [isScratchOrImport, activeSection, mode, setBuilderState]);
+
+
 
   // Manual save now lives in the Dynamic Island (BuilderDIPlugin → triggerManualSave).
-
-  // Toggle advanced mode
-  const handleToggleAdvanced = useCallback(() => {
-    setIsAdvancedMode((prev) => !prev);
-    setBuilderState((prev) => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
-  }, [setBuilderState]);
 
   // Unified alert system — pure derivation from builder state
   const alertResult = useBuilderAlerts({
@@ -467,17 +423,16 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
     );
   }
 
-  // Country name from builder state
-  const countryName = builderState.economicInputs?.countryName;
-
   // Render the active section
   const renderSection = () => {
     if (activeSection === "import") {
       return (
         <ImportSection
           onNavigate={handleNavigate}
-          onImportComplete={(data) => {
-            handleNavigate("identity");
+          onImportComplete={(imported) => {
+            if (imported) {
+              applyImportedData(imported);
+            }
           }}
         />
       );
@@ -502,19 +457,20 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
 
   // Always use sidebar layout now (no welcome screen)
   return (
-    <BuilderFilterProvider onNavigate={handleNavigate}>
+    <BuilderGuideProvider currentSection={activeSection}>
       <BuilderHalo />
       <WelcomeModalWrapper />
-      <div className="relative min-h-screen w-full">
-        {/* Page-wide Background Flag Watermark */}
-        {flagUrl && (
-          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
-            <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.09] blur-[8px] saturate-[85%] transition-all duration-700 dark:opacity-[0.08] dark:saturate-[60%]"
-              style={{ backgroundImage: `url(${flagUrl})` }}
-            />
-          </div>
-        )}
+      <BuilderGuideSheet />
+      <div className="relative flex min-h-screen w-full flex-1 flex-col">
+        {/* Tactile Paper Texture Background Overlay */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-0 select-none opacity-[0.06] dark:opacity-[0.04]"
+          style={{
+            backgroundImage: `url(${withBasePath("/textures/groovepaper.png")})`,
+            backgroundRepeat: "repeat",
+          }}
+        />
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}
@@ -524,25 +480,42 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           heroCollapsed={heroCollapsed}
           onHeroExpand={() => setHeroCollapsed(false)}
           heroSection={null}
-          notchBar={
-            activeSection !== "foundation" && (
-              <BuilderNotchBar
+          onReset={handleOpenResetDialog}
+          alerts={
+            alertResult.forSection(activeSection).length > 0 ? (
+              <SectionAlerts alerts={alertResult.forSection(activeSection)} />
+            ) : null
+          }
+          studioHeader={
+            activeSection !== "foundation" &&
+            activeSection !== "import" && (
+              <BuilderStudioHeader
                 activeSection={activeSection}
                 completedSteps={completedSteps}
                 accessibleSteps={accessibleSteps}
                 mode={mode}
                 onNavigate={handleNavigate}
-                onBack={() => {
-                  if (activeSection === "import") {
-                    handleNavigate("foundation");
-                  } else {
-                    handlePreviousStep();
-                  }
-                }}
+                onBack={handlePreviousStep}
                 onContinue={handleContinue}
                 onSubmit={submitFn ?? undefined}
                 isSubmitting={isSubmittingGlobal}
                 alertResult={alertResult}
+                onReset={handleOpenResetDialog}
+              />
+            )
+          }
+          stepFooter={
+            activeSection !== "foundation" &&
+            activeSection !== "import" && (
+              <BuilderStepFooter
+                activeSection={activeSection}
+                mode={mode}
+                onNavigate={handleNavigate}
+                onBack={handlePreviousStep}
+                onContinue={handleContinue}
+                onSubmit={submitFn ?? undefined}
+                isSubmitting={isSubmittingGlobal}
+                onReset={handleOpenResetDialog}
               />
             )
           }
@@ -554,13 +527,25 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+              className="flex h-full min-h-0 w-full flex-1 flex-col"
             >
-              <Suspense fallback={<SectionSkeleton />}>{renderSection()}</Suspense>
+              <Suspense fallback={<SectionSkeleton />}>
+                <EditChangesProvider changes={editChanges.changes}>
+                  {renderSection()}
+                </EditChangesProvider>
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </BuilderSidebarLayout>
+        {mode === "edit" && <EditorSaveBar edit={editChanges} onPersist={triggerManualSave} />}
       </div>
-    </BuilderFilterProvider>
+      <BuilderResetConfirmDialog
+        open={isResetDialogOpen}
+        onOpenChange={setIsResetDialogOpen}
+        mode={mode}
+        onConfirm={handleConfirmReset}
+      />
+    </BuilderGuideProvider>
   );
 }
 
@@ -570,7 +555,9 @@ export function BuilderRouter({ mode = "create", countryId }: BuilderRouterProps
   return (
     <BuilderErrorBoundary>
       <BuilderStateProvider mode={mode} countryId={countryId}>
-        <BuilderRouterInner mode={mode} countryId={countryId} />
+        <BuilderFilterProvider defaultViewMode={mode === "edit" ? "expert" : "standard"}>
+          <BuilderRouterInner mode={mode} countryId={countryId} />
+        </BuilderFilterProvider>
       </BuilderStateProvider>
     </BuilderErrorBoundary>
   );

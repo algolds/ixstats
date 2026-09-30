@@ -186,6 +186,7 @@ model SportMatch {
   @@index([awayTeamId])
   @@index([status])
   @@index([matchDay])
+  @@index([status, resolvedIxTime])
   @@map("sport_matches")
 }
 
