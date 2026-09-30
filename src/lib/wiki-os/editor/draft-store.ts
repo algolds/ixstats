@@ -8,16 +8,65 @@ export interface WikiEditorDraft {
   readonly wikitext?: string;
   readonly html?: string;
   readonly mode: "visual" | "source";
-  readonly basetimestamp?: string;
+  /**
+   * The revision (`revisionRef`) the draft was started from; null for a page that did not exist.
+   * Absent on drafts saved before this field existed, which are treated as based on an unknown revision.
+   */
+  readonly baseRevisionRef?: string | null;
+  /** Draft format: 2 is written by this code; drafts without it were written by older code (see `migrateDraft`). */
+  readonly version?: number;
   readonly savedAt: number;
 }
 
 const STORAGE_PREFIX = "wikios_draft:";
+const DRAFT_VERSION = 2;
 const LEGACY_HTML_PREFIX = "wikios-draft-html-";
 const LEGACY_SOURCE_PREFIX = "wikios-draft-";
 
 function draftKey(title: string, source = "ixwiki"): string {
   return `${STORAGE_PREFIX}${source}:${title.replace(/ /g, "_")}`;
+}
+
+/**
+ * The revision each open editor was loaded from, by draft key. `saveDraft` stamps it on every draft
+ * it writes, whichever editor component calls it, so a draft always knows what it was based on.
+ */
+const editorBases = new Map<string, string | null>();
+
+/** Records that the editor for `title` is editing the page as of `revisionRef` (null: a new page). */
+export function setEditorBase(title: string, revisionRef: string | null, source = "ixwiki"): void {
+  editorBases.set(draftKey(title, source), revisionRef);
+}
+
+/** The editor for `title` was closed. */
+export function clearEditorBase(title: string, source = "ixwiki"): void {
+  editorBases.delete(draftKey(title, source));
+}
+
+/**
+ * Reads a draft written by older code. The visual editor's "Save draft" used to store the page's
+ * wikitext in the `html` field; a draft with no `version` (older code never wrote one), in visual
+ * mode, with `html` and no `wikitext`, is returned with that text as `wikitext`. The decision is the
+ * draft's version alone: wikitext that happens to start with `<div>` or `<blockquote>` is still wikitext.
+ */
+function migrateDraft(draft: WikiEditorDraft): WikiEditorDraft {
+  const { html } = draft;
+  if (draft.version !== undefined || draft.mode !== "visual" || draft.wikitext !== undefined) return draft;
+  if (html === undefined) return draft;
+  const { html: _html, ...rest } = draft;
+  return { ...rest, wikitext: html };
+}
+
+/**
+ * Whether `draft` was started from a different revision than the current one, i.e. the page changed
+ * after the draft was written and restoring it silently would replace fresher text.
+ * `currentRevisionRefs` is every reference that names the current revision (its row id and its
+ * MediaWiki rev_id once stamped: a draft written before the stamp is still based on it); empty for
+ * a page with no revision.
+ */
+export function isDraftStale(draft: WikiEditorDraft, currentRevisionRefs: readonly string[]): boolean {
+  const base = draft.baseRevisionRef ?? null;
+  return base === null ? currentRevisionRefs.length > 0 : !currentRevisionRefs.includes(base);
 }
 
 /**
@@ -27,8 +76,11 @@ export function saveDraft(draft: Omit<WikiEditorDraft, "savedAt">): void {
   if (typeof window === "undefined") return;
   try {
     const key = draftKey(draft.title, draft.source);
+    const base = draft.baseRevisionRef === undefined ? editorBases.get(key) : draft.baseRevisionRef;
     const payload: WikiEditorDraft = {
       ...draft,
+      ...(base === undefined ? {} : { baseRevisionRef: base }),
+      version: DRAFT_VERSION,
       savedAt: Date.now(),
     };
     window.localStorage.setItem(key, JSON.stringify(payload));
@@ -54,7 +106,7 @@ export function getDraft(title: string, source = "ixwiki"): WikiEditorDraft | nu
     const key = draftKey(title, source);
     const raw = window.localStorage.getItem(key);
     if (raw) {
-      return JSON.parse(raw) as WikiEditorDraft;
+      return migrateDraft(JSON.parse(raw) as WikiEditorDraft);
     }
 
     // 2. Fallback to legacy visual draft
@@ -126,7 +178,7 @@ export function listDrafts(): WikiEditorDraft[] {
         const raw = window.localStorage.getItem(key);
         if (raw) {
           try {
-            const parsed = JSON.parse(raw) as WikiEditorDraft;
+            const parsed = migrateDraft(JSON.parse(raw) as WikiEditorDraft);
             const norm = parsed.title.replace(/ /g, "_");
             draftsMap.set(norm, parsed);
           } catch {

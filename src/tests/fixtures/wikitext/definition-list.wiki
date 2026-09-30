@@ -1,0 +1,12 @@
+== Glossary ==
+; Republic : A state without a monarch
+; Monarchy
+: A state with a monarch
+: Often hereditary
+;Term:Definition with no spaces
+;Another term
+:First meaning
+:Second meaning
+
+: An indented sentence.
+:: A deeper indent.

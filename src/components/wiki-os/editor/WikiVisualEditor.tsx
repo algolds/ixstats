@@ -3,7 +3,7 @@
 // Visual editor on Plate (Slate).
 // Operates on native WikiAST blocks and lossless wikitext serialization.
 
-import React, { useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
@@ -35,6 +35,16 @@ export interface WikiVisualEditorProps {
   onSwitchToSource: (dirty: boolean, currentContent: string) => void;
   /** Reports the client-side wikitext serialization after every change. */
   onSerializedWikitext?: (result: WikitextSerializeResult) => void;
+  /**
+   * Hands the host a function that reads the editor's content as wikitext right now (null when some
+   * content has no wikitext yet), and null when the editor goes away.
+   */
+  registerContentReader?: (read: (() => string | null) | null) => void;
+  /**
+   * Whether to start from a local draft of this page when one exists. A host that settles the draft
+   * question itself (the edit bridge) passes false and hands the text to start from as `initialWikitext`.
+   */
+  restoreLocalDraft?: boolean;
 }
 
 type PlateEditorLike = TSlateEditor;
@@ -47,12 +57,14 @@ export function WikiVisualEditor({
   onCancel,
   onSwitchToSource,
   onSerializedWikitext,
+  registerContentReader,
+  restoreLocalDraft = true,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
-  const htmlRef = useRef<string>(initialHtml || "");
   const wtRef = useRef<WikitextSerializeResult>({
     wikitext: initialWikitext || "",
     complete: true,
+    notices: [],
   });
   const { repulsionProgress } = useNavigationScroll();
 
@@ -65,7 +77,7 @@ export function WikiVisualEditor({
 
   // Draft restore prompt
   const initialContent = React.useMemo(() => {
-    const existingDraft = getDraft(title, "ixwiki");
+    const existingDraft = restoreLocalDraft ? getDraft(title, "ixwiki") : null;
     if (existingDraft?.wikitext) {
       return { wikitext: existingDraft.wikitext };
     }
@@ -76,7 +88,7 @@ export function WikiVisualEditor({
       return { wikitext: initialWikitext };
     }
     return { html: fixEditorImageUrls(initialHtml || "") };
-  }, [title, initialHtml, initialWikitext]);
+  }, [title, initialHtml, initialWikitext, restoreLocalDraft]);
 
   const { setIsDirty, setWordCount } = state;
   const onSerializedWikitextRef = useRef(onSerializedWikitext);
@@ -84,8 +96,7 @@ export function WikiVisualEditor({
   const refreshActiveFormats = fmt.refreshActiveFormats;
 
   const handleValueChange = useCallback(
-    (nodes: Descendant[], html: string, plainText: string) => {
-      htmlRef.current = html;
+    (nodes: Descendant[], _html: string, plainText: string) => {
       wtRef.current = serializePlateToWikitext(nodes);
       onSerializedWikitextRef.current?.(wtRef.current);
       setIsDirty(true);
@@ -95,6 +106,8 @@ export function WikiVisualEditor({
     [setIsDirty, setWordCount, refreshActiveFormats]
   );
 
+  // What a save writes is the serialized wikitext, even when it is empty: an emptied document is an
+  // empty page, never the HTML of the editor.
   const handleSave = useCallback(async () => {
     // Never save leftover HTML: blocks without canonical wikitext must be fixed in source mode.
     if (!wtRef.current.complete) {
@@ -104,19 +117,26 @@ export function WikiVisualEditor({
       );
       return;
     }
-    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
-    await state.executeSave(() => wikitextToSave);
-    saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
+    const wikitextToSave = wtRef.current.wikitext;
+    // Edits that could not be applied as typed, or a block that had to move: the author is told.
+    for (const notice of wtRef.current.notices) state.notify.warning("Check the saved page", notice);
+    const saved = await state.executeSave(() => wikitextToSave);
+    // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
+    if (!saved) saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
   }, [state, title]);
 
   const handleSaveDraft = useCallback(() => {
-    const wikitextToSave = wtRef.current.wikitext || htmlRef.current;
-    state.executeSaveDraft(() => wikitextToSave, "visual");
+    state.executeSaveDraft(() => wtRef.current.wikitext, "visual");
   }, [state]);
 
   const handleSwitchToSource = useCallback(() => {
-    onSwitchToSource(state.isDirty, wtRef.current.wikitext || htmlRef.current);
+    onSwitchToSource(state.isDirty, wtRef.current.wikitext);
   }, [onSwitchToSource, state.isDirty]);
+
+  useEffect(() => {
+    registerContentReader?.(() => (wtRef.current.complete ? wtRef.current.wikitext : null));
+    return () => registerContentReader?.(null);
+  }, [registerContentReader]);
 
   const handleOpenTemplateEditor = useCallback(
     (id: string) => {
@@ -168,28 +188,6 @@ export function WikiVisualEditor({
       setIsDirty(true);
     },
     [editorRef, fmt, setIsDirty]
-  );
-
-  const handleUpdateInfoboxFields = useCallback(
-    (id: string, fields: Array<{ label: string; value: string }>) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const entries = Array.from(
-        Editor.nodes(editor as unknown as import("slate").BaseEditor, {
-          at: [],
-          match: (n) => (n as unknown as { id?: string }).id === id,
-        })
-      );
-      if (entries.length === 0) return;
-      const [, path] = entries[0]!;
-      Transforms.setNodes(
-        editor as unknown as import("slate").BaseEditor,
-        { fields, edited: true } as unknown as Partial<import("slate").Descendant>,
-        { at: path }
-      );
-      setIsDirty(true);
-    },
-    [editorRef, setIsDirty]
   );
 
   // Template and Image Handlers
@@ -316,7 +314,6 @@ export function WikiVisualEditor({
             onSelectionChange={refreshActiveFormats}
             openTemplateEditor={handleOpenTemplateEditor}
             deleteNode={handleDeleteNode}
-            updateInfoboxFields={handleUpdateInfoboxFields}
           />
         </div>
 

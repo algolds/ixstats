@@ -2,6 +2,7 @@
  * src/lib/wiki-os/wikitext/table-parser.ts — MediaWiki Wikitable Parser.
  */
 
+import { splitLogicalLines } from "./block-lines";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import type { WikiTableBlock, TableRowNode, TableCellNode } from "./types";
 
@@ -142,19 +143,36 @@ export function extractTableCellContent(rawCell: string): { attributes: string; 
 }
 
 export function parseWikitable(raw: string): WikiTableBlock {
-  const lines = raw.split("\n");
+  const lines = splitLogicalLines(raw);
   const rows: TableRowNode[] = [];
   let currentCells: TableCellNode[] = [];
   let currentRowAttributes: string | undefined;
   let caption: string | undefined;
   let tableAttributes: string | undefined;
 
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i]!;
+  // Source ranges (plan 414): the `{|` line and its captions, then each row's lines, then the rest
+  // (empty rows and the `|}` line). Together with the "\n" between them they are `raw` again.
+  let headEnd = 0;
+  let boundary = -1; // end of the last piece already cut from `raw`
+  let lastCellEnd = -1; // end of the last line that belongs to the row being read
+
+  const pushRow = (): void => {
+    rows.push({
+      type: "table-row",
+      attributes: currentRowAttributes,
+      raw: raw.slice(boundary + 1, lastCellEnd),
+      children: currentCells,
+    });
+    boundary = lastCellEnd;
+    currentCells = [];
+  };
+
+  for (const { text: rawLine, end } of lines) {
     const line = rawLine.trim();
     if (line.startsWith("{|")) {
       const attrs = line.slice(2).trim();
       if (attrs) tableAttributes = attrs;
+      headEnd = boundary = end;
       continue;
     }
     if (line.startsWith("|}") || line === "|}") continue;
@@ -163,15 +181,13 @@ export function parseWikitable(raw: string): WikiTableBlock {
     if (line.startsWith("|+")) {
       const { content } = extractTableCellContent(line.slice(2).trim());
       caption = content;
+      if (rows.length === 0 && currentCells.length === 0) headEnd = boundary = end;
       continue;
     }
 
     // Row separator: |-
     if (line.startsWith("|-")) {
-      if (currentCells.length > 0) {
-        rows.push({ type: "table-row", attributes: currentRowAttributes, children: currentCells });
-        currentCells = [];
-      }
+      if (currentCells.length > 0) pushRow();
       currentRowAttributes = line.slice(2).trim() || undefined;
       continue;
     }
@@ -192,6 +208,7 @@ export function parseWikitable(raw: string): WikiTableBlock {
           });
         }
       }
+      lastCellEnd = end;
       continue;
     }
 
@@ -208,30 +225,33 @@ export function parseWikitable(raw: string): WikiTableBlock {
           children: inlines,
         });
       }
+      lastCellEnd = end;
       continue;
     }
 
-    // Multiline continuation text inside the last active cell
+    // Multiline continuation text inside the last active cell: every line, a blank one too, is
+    // one line break plus its own text, so a blank line between paragraphs stays one blank line.
     if (currentCells.length > 0) {
       const lastCell = currentCells[currentCells.length - 1]!;
       if (line.length === 0) {
-        lastCell.children.push({ type: "text", text: "\n\n" } as any);
+        lastCell.children.push({ type: "text", text: "\n" } as any);
       } else {
         const additionalInlines = parseInlineLinksAndFormatting(rawLine);
         lastCell.children.push({ type: "text", text: "\n" } as any, ...additionalInlines);
       }
+      lastCellEnd = end;
     }
   }
 
-  if (currentCells.length > 0) {
-    rows.push({ type: "table-row", attributes: currentRowAttributes, children: currentCells });
-  }
+  if (currentCells.length > 0) pushRow();
 
   return {
     type: "table",
     caption,
     attributes: tableAttributes,
     rawWikitext: raw,
+    headRaw: raw.slice(0, headEnd),
+    tailRaw: raw.slice(boundary + 1),
     children: rows,
   };
 }

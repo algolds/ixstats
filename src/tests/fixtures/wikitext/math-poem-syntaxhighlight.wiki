@@ -1,0 +1,16 @@
+The growth rate is <math>\frac{a}{b} + {{x}}</math> per year.
+
+<math>
+E = mc^2
+</math>
+
+<poem>
+Roses are red
+  Violets are blue
+</poem>
+
+<syntaxhighlight lang="lua">
+local p = {}
+function p.hello() return "{{hi}}" end
+return p
+</syntaxhighlight>

@@ -62,6 +62,11 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
   __esModule: true,
   executeMediaWikiWrite: jest.fn(),
 }));
+// Edit conflicts have their own suite (wikios-edit-conflict.test.ts); here no save ever conflicts.
+jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({
+  __esModule: true,
+  detectEditConflict: jest.fn().mockResolvedValue(null),
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   __esModule: true,
   getUserContribs: jest.fn(),

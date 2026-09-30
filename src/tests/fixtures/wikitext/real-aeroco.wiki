@@ -1,0 +1,62 @@
+{{stub}}
+{{Infobox company
+| name = Aeroco
+| logo = Aeroco Better Logo.PNG
+| image = Aeroco Manufacturing Centre.jpg
+| image_caption = Aeroco Manufacturing Facility in [[Easthampton]], Arcerion. 
+| former_name = 
+| type = [[Public company|Public]]
+| traded_as = $AERO
+| ISIN = 
+| industry = [[Aerospace manufacturer|Aerospace]], [[arms industry|defence]]
+| predecessor = Various
+| founded = {{start date and age|1989|10|11|df=y}}
+| founder = 
+| hq_location = [[Craigfearn]], [[Arcerion]]
+| area_served = Worldwide
+| products = military aircraft, civilian airliners, helicopters, missiles, rockets
+| key_people = 
+| revenue = {{Increase}} ₤67.91 billion
+| revenue_year = 2026
+| operating_income = 
+| income_year = 
+| net_income = 
+| net_income_year = 
+| assets = {{Increase}} ₤237.41 billion
+| assets_year = 2026
+| equity = 
+| equity_year = 
+| owner = 
+| num_employees = 83,712
+| num_employees_year = 2022
+| divisions = 
+| subsid = 
+| homepage = aeroco.com
+| footnotes = 
+}}
+'''Aeroco''' is a [[Crona|Cronan]] aerospace corporation based in the city of [[Craigfearn]], [[Arcerion]]. Aeroco designs, manufactuers, and sells commercial aircraft, as well as researching and dveloping new technologies for the aeropsace industry. It also has divisions for both Defense Systems and Aerospace, which produce a variety of fighter aicraft, rockets, missiles, and helicopters for various armed forces across Ixnay. As of 2026, Aeroco was the largest aircraft manufacturer in Crona. 
+
+The company was founded in 1989 after a merger of Arco Aeropsace Limited and Craigfearn Technologies, a pair of industry leading manufacturing companies that had produced engines and air systems parts for Arcer and Levantine militaries since the end of the Second Great War. The merger was initially intended to build new jet airliners to compete with [[Levantia|Levantine]] designs, and de to sales success across Ixnay it now competes in a variety of regional and international business markets. Aeroco has offices and facilities in Arcerion, [[Alstin]], [[Stenza]] and a limited footprint in Levantia through some partnerships with [[Burgundie|Burgoignesc]] enterprises. 
+
+The registered headquarters for the corporation is in [[Kinnaird]], Arcerion, however the manufacturing headquarters, as well as the company's head offices are located Craigfearn, to the North. It is currently traded on the [[Kinnaird Stock Exchange]] under the ticker '$AERO,' where it is one of the most trades tocks in terms of volume and equity. The company's current CEO is Kate Tallyford. 
+
+Aeroco has existing defense contracts with the [[Armed Forces of Arcerion|Arcer Armed Forces]], as well as several other nations, and is a leading supplier to nations in [[Australis]] and [[Sarpedon]]. Its flagship product is the fourth-generation jet fighter, the ''A2000'', which is more commonly referred to as the ''[[Aeroco Kestrel]]''. Its commercial airline program also has seen high levels of success in Crona as the most recognized wide-body jet airline manufacturer, with a multitude of prop and jet aircraft servicing passengers from the [[Nysdra Sea]] to the [[Okatian Sea]].
+
+== List of Products ==
+Aeroco has manufactured a number of both civilian and military aircraft over the several decades it has been in existence, with its primary users being smaller middle-powers, as well as larger regional powers such as Arcerion and Burgundie. The naming convention for its military aircraft generally are after birds of prey, and for civilian airliners and aircraft, tend to be under the 'AE' prefix, such as the 'AE500' series of luxury private jet aircraft. 
+
+Additionally, the amalgamation or merging of additional companies in the 1990s and early 2000s has meant that non-Aeroco derived aircraft have been adopted and produced as newer Aeroco products, although these are not renamed or given the 'AE' prefix. Below is a list of some of the Aeroco offerings since the companies founding in 1989, including those products and airframes no longer in service. 
+<gallery mode="packed">
+File:AEC ground attack.jpg|Ground-attack aircraft of Arcerion, the Aeroco Osprey.
+File:Kestrel air superiority.jpg|Aeroco Kestrel air superiority fighter.
+File:AE500 jet.jpg|AE500-series private jet aircraft. 
+File:Aeroco Vulture.PNG|Aeroco Vulture helicopter gunship in service with the [[Arcer Army]]
+File:Tactical helicopter.jpg|Aeroco AE90-series helicopter. 
+</gallery>
+
+[[Category:Arcerion]]
+[[Category: Companies]]
+{{Template:Award winning article}}
+[[Category:2023 Award winning pages]]
+[[Category:IXWB]]
+[[Category: Alstin Options]]

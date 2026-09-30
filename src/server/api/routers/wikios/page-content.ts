@@ -36,6 +36,7 @@ import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholde
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -415,12 +416,20 @@ export const wikiosPageContentRouter = createTRPCRouter({
   getWikitext: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
+      // The head revision is read BEFORE the text: a save in between can then only make the text newer
+      // than its ref (a harmless extra conflict), never older (which would let a stale edit overwrite it).
+      // Without the shadow store the editor still loads; it then saves without a base revision.
+      const head = await getHeadRevisionRefs(input.title).catch(() => null);
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
       const result = await getArticleWikitextShadow(input.title, "ixwiki");
       return {
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
         timestamp: result?.timestamp ?? null,
+        /** The latest revision the editor is based on; send it back as `baseRevisionRef` when saving. */
+        revisionRef: head?.revisionRef ?? null,
+        /** Every reference that names that revision (its row id and its MediaWiki rev_id once stamped). */
+        revisionRefs: head?.revisionRefs ?? [],
       };
     }),
 

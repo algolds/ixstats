@@ -1,0 +1,7 @@
+==Compact heading==
+===Sub heading with trailing space ===
+Text right under the heading.
+==== Level four ====
+= Level one =
+====== Level six ======
+== ''Italic'' and [[linked]] heading ==
