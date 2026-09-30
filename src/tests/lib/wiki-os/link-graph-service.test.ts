@@ -46,10 +46,7 @@ describe("LinkGraphService.extractLinks", () => {
   it("keeps links to other namespaces, with their canonical prefix", () => {
     const links = LinkGraphService.extractLinks("[[template:infobox country]] [[user talk:jane]]");
 
-    expect(links.map((l) => l.targetTitle)).toEqual([
-      "Template:Infobox country",
-      "User talk:Jane",
-    ]);
+    expect(links.map((l) => l.targetTitle)).toEqual(["Template:Infobox country", "User talk:Jane"]);
   });
 
   it("drops a leading colon and decodes percent-escapes in HTML hrefs", () => {
@@ -59,6 +56,16 @@ describe("LinkGraphService.extractLinks", () => {
     );
 
     expect(links.map((l) => l.targetTitle)).toEqual(["Foo", "Café au lait"]);
+  });
+
+  it("gives another wiki's links no IxWiki namespaces, but still skips File and Category", () => {
+    const links = LinkGraphService.extractLinks(
+      "[[project:foo]] [[File:x.png]] [[:category:Y]] [[Bar]]",
+      undefined,
+      "iiwiki"
+    );
+
+    expect(links.map((l) => l.targetTitle)).toEqual(["Project:foo", "Bar"]);
   });
 
   it("does not throw on a title with a stray percent sign", () => {

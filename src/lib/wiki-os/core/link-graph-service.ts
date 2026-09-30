@@ -13,9 +13,13 @@ import { canonicalizeTitle, decodeTitleParam, type CanonicalTitle } from "./titl
 const NON_ARTICLE_NAMESPACES: ReadonlySet<number> = new Set([6, 14, -1, -2]);
 
 /** The canonical target of a link, or null when it does not point at an article. */
-function articleTarget(rawTarget: string): CanonicalTitle | null {
-  const canon = canonicalizeTitle(rawTarget);
-  return canon && !NON_ARTICLE_NAMESPACES.has(canon.namespaceId) ? canon : null;
+function articleTarget(rawTarget: string, source: string): CanonicalTitle | null {
+  const canon = canonicalizeTitle(rawTarget, { source });
+  // File, Category, Special and Media are core MediaWiki namespaces on every wiki, so another
+  // wiki's links are checked against IxWiki's table for that (its own titles carry no namespace).
+  const namespaceId =
+    source === "ixwiki" ? canon?.namespaceId : canonicalizeTitle(rawTarget)?.namespaceId;
+  return canon && !NON_ARTICLE_NAMESPACES.has(namespaceId ?? 0) ? canon : null;
 }
 
 export interface ExtractedLink {
@@ -31,7 +35,7 @@ export class LinkGraphService {
   /**
    * Extract all internal and external link references from content
    */
-  static extractLinks(wikitext: string, html?: string): ExtractedLink[] {
+  static extractLinks(wikitext: string, html?: string, source = "ixwiki"): ExtractedLink[] {
     const linkMap = new Map<string, ExtractedLink>();
 
     // 1. Parse Wikitext internal links: [[Target|Label]] or [[Target#Section|Label]]
@@ -43,7 +47,7 @@ export class LinkGraphService {
       const section = match[2]?.trim();
       const label = match[3]?.trim() || rawTarget;
 
-      const target = rawTarget ? articleTarget(rawTarget) : null;
+      const target = rawTarget ? articleTarget(rawTarget, source) : null;
       if (target) {
         const key = `${target.slug}#${section || ""}`;
         if (!linkMap.has(key)) {
@@ -67,7 +71,7 @@ export class LinkGraphService {
         const section = match[2]?.trim();
         const label = match[3]?.replace(/<[^>]*>/g, "").trim();
 
-        const target = rawTarget ? articleTarget(decodeTitleParam(rawTarget)) : null;
+        const target = rawTarget ? articleTarget(decodeTitleParam(rawTarget), source) : null;
         if (target) {
           const key = `${target.slug}#${section || ""}`;
           if (!linkMap.has(key)) {
@@ -95,7 +99,7 @@ export class LinkGraphService {
     html?: string,
     source = "ixwiki"
   ): Promise<number> {
-    const extracted = this.extractLinks(wikitext, html);
+    const extracted = this.extractLinks(wikitext, html, source);
 
     // Resolve which target articles currently exist in PostgreSQL, by canonical title
     const targetTitles = [...new Set(extracted.map((l) => l.targetTitle))];

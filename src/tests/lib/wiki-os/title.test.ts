@@ -3,6 +3,7 @@ import {
   NAMESPACE_CANONICAL_NAMES,
   canonicalizeTitle,
   decodeTitleParam,
+  storedNamespace,
 } from "~/lib/wiki-os/core/title";
 
 const titleOf = (raw: string): string | undefined => canonicalizeTitle(raw)?.title;
@@ -131,6 +132,123 @@ describe("canonicalizeTitle", () => {
       const first = canonicalizeTitle(raw);
       expect(canonicalizeTitle(first?.title ?? "")?.title).toBe(first?.title);
     }
+  });
+});
+
+describe("canonicalizeTitle: MediaWiki's invalid titles (Title::secureAndSplit)", () => {
+  it("refuses control characters, wherever they are", () => {
+    for (const bad of ["a\u0000b", "a\tb", "a\nb", "a\rb", "a\u001Fb", "a\u007Fb", "\u0001a"]) {
+      expect(canonicalizeTitle(bad)).toBeNull();
+    }
+    expect(canonicalizeTitle("Talk:a\nb")).toBeNull();
+    expect(canonicalizeTitle("a\u0080b")).not.toBeNull();
+  });
+
+  it("refuses a percent followed by two hex digits, but not a bare percent", () => {
+    expect(canonicalizeTitle("a%41b")).toBeNull();
+    expect(canonicalizeTitle("a%e9b")).toBeNull();
+    expect(canonicalizeTitle("Talk:100%25")).toBeNull();
+    expect(titleOf("100% Pure")).toBe("100% Pure");
+    expect(titleOf("a%4")).toBe("A%4");
+    expect(titleOf("a%zz")).toBe("A%zz");
+  });
+
+  it("refuses relative path segments", () => {
+    for (const bad of [
+      ".",
+      "..",
+      "./a",
+      "../a",
+      "a/./b",
+      "a/../b",
+      "a/.",
+      "a/..",
+      "Talk:..",
+      "Talk:a/../b",
+    ]) {
+      expect(canonicalizeTitle(bad)).toBeNull();
+    }
+    for (const fine of ["...", "a/b", "a/.b", "a./b", "a/..b", "Wait...", ".hidden", "a.b/c.d"]) {
+      expect(canonicalizeTitle(fine)).not.toBeNull();
+    }
+  });
+
+  it("refuses the signature magic word", () => {
+    expect(canonicalizeTitle("a~~~b")).toBeNull();
+    expect(canonicalizeTitle("Talk:~~~")).toBeNull();
+    expect(titleOf("a~~b")).toBe("A~~b");
+  });
+
+  it("refuses a namespace prefix followed by an empty or colon-leading name", () => {
+    expect(canonicalizeTitle("Talk:")).toBeNull();
+    expect(canonicalizeTitle("Talk: ")).toBeNull();
+    expect(canonicalizeTitle("Talk::Foo")).toBeNull();
+    expect(canonicalizeTitle("user talk:_:x")).toBeNull();
+    expect(titleOf("Talk:Foo:bar")).toBe("Talk:Foo:bar");
+  });
+
+  it("normalises again after capitalising, so a canonical title is stable", () => {
+    for (const raw of ["\u0345abc", "ǆa", "ǰx", "a\u0300b", "\u1E9Bx", "ßa", "ǅx"]) {
+      const first = canonicalizeTitle(raw);
+      expect(first?.title).toBe(first?.title.normalize("NFC"));
+      expect(canonicalizeTitle(first?.title ?? "")?.title).toBe(first?.title);
+    }
+  });
+});
+
+describe("canonicalizeTitle for another wiki", () => {
+  const foreign = (raw: string, source = "iiwiki") => canonicalizeTitle(raw, { source });
+
+  it("never applies IxWiki's namespace table", () => {
+    expect(foreign("project:Foo")).toMatchObject({
+      title: "Project:Foo",
+      namespaceId: 0,
+      namespacePrefix: null,
+      base: "Project:Foo",
+    });
+    expect(foreign("image:x.png")?.title).toBe("Image:x.png");
+    expect(foreign("ixwiki:about")?.title).toBe("Ixwiki:about");
+    expect(foreign("user talk:jane")?.title).toBe("User talk:jane");
+  });
+
+  it("still normalises, capitalises and validates", () => {
+    expect(foreign("foo_bar  baz", "althistory")?.title).toBe("Foo bar baz");
+    expect(foreign(":portal:eurth")?.title).toBe("Portal:eurth");
+    expect(foreign("e\u0301cole")?.title).toBe("\u00c9cole");
+    expect(foreign("Foo#bar_baz")).toMatchObject({ title: "Foo", fragment: "bar baz" });
+    expect(foreign("a[b")).toBeNull();
+    expect(foreign("a%41")).toBeNull();
+    expect(foreign("Project:")?.title).toBe("Project:");
+  });
+
+  it("gives IxWiki the table, whether the source is omitted or named", () => {
+    expect(canonicalizeTitle("project:Foo")?.title).toBe("IxWiki:Foo");
+    expect(canonicalizeTitle("project:Foo", { source: "ixwiki" })?.title).toBe("IxWiki:Foo");
+  });
+});
+
+describe("storedNamespace", () => {
+  it("uses the canonical namespace for a namespace the table knows", () => {
+    const canon = canonicalizeTitle("user talk:Jane");
+    expect(canon && storedNamespace(canon, 3)).toEqual({
+      namespaceId: 3,
+      namespacePrefix: "User talk",
+    });
+  });
+
+  it("keeps MediaWiki's namespace and the title's own prefix for one the table lacks", () => {
+    const canon = canonicalizeTitle("Portal:Eurth");
+    expect(canon && storedNamespace(canon, 100)).toEqual({
+      namespaceId: 100,
+      namespacePrefix: "Portal",
+    });
+  });
+
+  it("leaves a main-namespace page in namespace 0", () => {
+    const canon = canonicalizeTitle("Foo");
+    expect(canon && storedNamespace(canon, 0)).toEqual({ namespaceId: 0, namespacePrefix: null });
+    const colon = canonicalizeTitle("Star Wars: A Story");
+    expect(colon && storedNamespace(colon, 0)).toEqual({ namespaceId: 0, namespacePrefix: null });
   });
 });
 

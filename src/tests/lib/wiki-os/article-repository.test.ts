@@ -200,6 +200,17 @@ describe("ArticleRepository.findBySlug", () => {
     expect(article?.title).toBe("NATO");
   });
 
+  it("looks another wiki's title up without IxWiki's namespace table", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Project:foo", { source: "iiwiki" }));
+
+    const article = await ArticleRepository.findBySlug("project:foo", "iiwiki");
+
+    expect(mockFindUnique.mock.calls[0]?.[0].where).toEqual({
+      source_title: { source: "iiwiki", title: "Project:foo" },
+    });
+    expect(article?.title).toBe("Project:foo");
+  });
+
   it("returns null when nothing matches", async () => {
     await expect(ArticleRepository.findBySlug("Nowhere")).resolves.toBeNull();
   });
@@ -257,7 +268,9 @@ describe("ArticleRepository.getHistory", () => {
       orderBy: { createdAt: "desc" },
       take: 10,
     });
-    expect(history).toEqual([expect.objectContaining({ articleId: "id-Foo bar", author: "alice" })]);
+    expect(history).toEqual([
+      expect.objectContaining({ articleId: "id-Foo bar", author: "alice" }),
+    ]);
   });
 
   it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {

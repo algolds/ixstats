@@ -105,7 +105,7 @@ export class ArticleRepository {
    * and rows that predate canonical titles.
    */
   private static async lookupArticle(slug: string, source: string) {
-    const canon = canonicalizeTitle(slug);
+    const canon = canonicalizeTitle(slug, { source });
     if (canon) {
       const exact = await db.wikiArticle.findUnique({
         where: { source_title: { source, title: canon.title } },
@@ -151,10 +151,10 @@ export class ArticleRepository {
     revisionId: RevisionId;
     extractedLinksCount: number;
   }> {
-    const canon = canonicalizeTitle(input.title || input.slug);
+    const source = input.source || "ixwiki";
+    const canon = canonicalizeTitle(input.title || input.slug, { source });
     if (!canon) throw new Error("Invalid title");
     const { title, slug } = canon;
-    const source = input.source || "ixwiki";
     const wikitext = input.wikitext || "";
     const contentHtml = input.contentHtml || "";
 
@@ -323,7 +323,10 @@ export class ArticleRepository {
    */
   static async findMissingTitles(titles: string[], source = "ixwiki"): Promise<string[]> {
     if (titles.length === 0) return [];
-    const candidates = titles.map((raw) => ({ raw, title: canonicalizeTitle(raw)?.title }));
+    const candidates = titles.map((raw) => ({
+      raw,
+      title: canonicalizeTitle(raw, { source })?.title,
+    }));
     const found = await db.wikiArticle.findMany({
       where: { source, title: { in: candidates.flatMap((c) => c.title ?? []) } },
       select: { title: true },
