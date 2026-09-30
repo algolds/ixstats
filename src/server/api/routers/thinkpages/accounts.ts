@@ -1,6 +1,23 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { isSystemOwner } from "~/lib/auth";
+import { assertCountryWriteAccess, getRoleName } from "~/server/shared/country-authorization";
+
+const ADMIN_ROLE_NAMES = ["owner", "admin", "staff"];
+
+/** Same admin definition as `adminProcedure`: system owner, admin-ish role, or role level <= 20. */
+function isAdminCaller(ctx: {
+  auth?: { userId?: string | null; sessionClaims?: unknown } | null;
+  user?: unknown;
+}) {
+  const userId = ctx.auth?.userId;
+  if (userId && isSystemOwner(userId)) return true;
+  const roleName = getRoleName(ctx.user, ctx.auth?.sessionClaims);
+  if (roleName && ADMIN_ROLE_NAMES.includes(roleName)) return true;
+  const level = (ctx.user as { role?: { level?: number | null } } | null | undefined)?.role?.level;
+  return typeof level === "number" && level <= 20;
+}
 
 // Base schema for ThinkPages accounts
 const thinkpagesAccountBaseSchema = z.object({
@@ -14,7 +31,7 @@ const thinkpagesAccountBaseSchema = z.object({
   firstName: z.string().min(1).max(50),
   lastName: z.string().max(50).optional().default(""),
   bio: z.string().max(500).optional().default(""),
-  verified: z.boolean().default(false),
+  // `verified` is admin-controlled and intentionally not accepted on create.
   postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
   politicalLean: z.enum(["left", "center", "right"]).default("center"),
   personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
@@ -31,6 +48,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
     .input(
       z.object({
         accountId: z.string(),
+        // Admin-only: ignored/forbidden for regular users (see handler).
         verified: z.boolean().optional(),
         profileImageUrl: z.string().url().or(z.literal("")).optional().nullable(),
         postingFrequency: z.enum(["active", "moderate", "low"]).optional(),
@@ -61,6 +79,16 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           code: "FORBIDDEN",
           message: "You do not have permission to update this account",
         });
+      }
+
+      // Verification is an admin-granted badge: users cannot self-grant it.
+      if (input.verified !== undefined && input.verified !== existingAccount.verified) {
+        if (!isAdminCaller(ctx)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only administrators can change an account's verified status",
+          });
+        }
       }
 
       const account = await db.thinkpagesAccount.update({
@@ -136,6 +164,9 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
       });
     }
 
+    // The caller must own (or be an admin for) the country the persona is attached to
+    await assertCountryWriteAccess(ctx, input.countryId);
+
     // Verify country exists
     const country = await db.country.findUnique({
       where: { id: input.countryId },
@@ -186,7 +217,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
         firstName: input.firstName,
         lastName: lastNameVal,
         bio: input.bio || "",
-        verified: input.verified,
+        verified: false,
         postingFrequency: input.postingFrequency,
         politicalLean: input.politicalLean,
         personality: input.personality,
