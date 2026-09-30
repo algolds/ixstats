@@ -10,7 +10,8 @@ import { protectedProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
+import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
+import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { IxTime } from "~/lib/ixtime";
 import {
   countryEconomicInputsSchema,
@@ -371,10 +372,10 @@ export const managementCreateProcedures = {
         clearLayerCache("political");
         await globalCache.delete(`user_profile:${userId}`);
 
-        // Onboarding bonuses (one-time)
+        // Onboarding bonuses (one-time; a no-op if the account was already paid at sign-up)
         try {
           const bcfg = await getBonusConfig(ctx.db);
-          await grantBonus(ctx.db, userId, "bonus:new_player", bcfg.newPlayer, {
+          await grantBonus(ctx.db, userId, NEW_PLAYER_BONUS_SOURCE, bcfg.newPlayer, {
             oneTime: true,
             metadata: { countryId: result.id, countryName: result.name },
           });
@@ -391,6 +392,7 @@ export const managementCreateProcedures = {
         } catch (bonusError) {
           console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
         }
+        queueAchievementCheck(userId, result.id);
 
         return result;
       } catch (error) {
