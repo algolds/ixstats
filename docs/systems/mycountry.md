@@ -170,7 +170,7 @@ The National Issues engine (`src/lib/national-issues/`, `src/server/api/routers/
   - There are ten categories: GDP per capita, total GDP, GDP growth, population, public approval, stability, diplomatic standing, infrastructure, debt-to-GDP and income equality (Gini). Lower is better for debt and Gini.
   - Each category gives realm, region and tier positions, a percentile and the country's value. A country with no value for a category is left out of that ranking. A trend is given only for the GDP and population categories.
   - The census uses stored values, so it moves when decisions change stored stats (approval, debt, infrastructure, stability) or diplomacy.
-  - It is shown in the MyCountry rail (`WorldCensusCard.tsx`) and in the country profile's prototype layouts (`GlobalPositionRankings.tsx`), which used to show fixed sample ranks. `/leaderboards` is still achievements, not nation stats.
+  - It is shown in the MyCountry rail (`WorldCensusCard.tsx`) and on the public country profile's prototypes (the World chapter / tile, via `useCountryProfileLayer`; see `src/app/countries/README.md`). `/leaderboards` is still achievements, not nation stats.
 - **Trend History**: Trend charts read `HistoricalDataPoint` rows (`api.historical.getCountryHistory`). The `VitalitySnapshot` model exists but nothing writes it yet.
 - **Country Change Log**: Stat changes routed through `CountryEventSpine.recordCountryEvent` (`src/lib/activity/event-spine.ts` — issues, intents, policy maintenance) are written to `CountryChangeLog` and surfaced on the overview via `mycountry.getCanonFeed` ("Burg's Guardrail"). Not every mutating action goes through the spine yet.
 

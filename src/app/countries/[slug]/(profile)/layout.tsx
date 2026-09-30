@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { WarningTriangle as AlertTriangle, Group as Users } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -22,15 +23,21 @@ import { CountryHeader } from "../_components/CountryHeader";
 import { CountryTabs } from "../_components/CountryTabs";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
+import { createUrl } from "~/lib/utils";
+import {
+  CountryConceptSwitcher,
+  isProfileConcept,
+  type ProfileConcept,
+} from "../_components/switcher/CountryConceptSwitcher";
+import { ChronicleProfileView } from "../_components/prototypes/ChronicleProfileView";
+import { CommandProfileView } from "../_components/prototypes/CommandProfileView";
 
-import { useState, useEffect } from "react";
-import { CountryConceptSwitcher, type ProfileConcept } from "../_components/switcher/CountryConceptSwitcher";
-import { CommandProfileView } from "../_components/concepts/CommandProfileView";
-import { EditorialProfileView } from "../_components/concepts/EditorialProfileView";
-import { AtlasProfileView } from "../_components/concepts/AtlasProfileView";
-
-/** v2: earlier builds saved the prototype "command" layout as everyone's default. */
-const CONCEPT_STORAGE_KEY = "ixstates_profile_concept_v2";
+/**
+ * v3: the sample-data concepts (command/editorial/atlas) were replaced by the two real-data
+ * prototypes, so earlier saved choices are ignored.
+ */
+const CONCEPT_STORAGE_KEY = "ixstates_profile_concept_v3";
+const DEFAULT_CONCEPT: ProfileConcept = "chronicle";
 
 /**
  * CountryProfileLayout — persistent country shell (route group `(profile)`).
@@ -55,43 +62,48 @@ export default function CountryProfileLayout({
 }
 
 function CountryProfileShell({ slug, children }: { slug: string; children: React.ReactNode }) {
-  const { country, isLoading, error } = useCountryData();
-  const { userProfile } = useUserCountry();
+  const { country, isLoading, error, currentIxTime } = useCountryData();
+  const { user, userProfile } = useUserCountry();
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
 
-  // Concept switcher state with URL and localStorage sync. Default: the standard factbook,
-  // the only layout wired to the country's real data — the concept layouts are design
-  // prototypes filled with sample (Caphirian) figures.
-  const [concept, setConceptState] = useState<ProfileConcept>("standard");
+  // Layout under comparison: `?concept=` wins, then the saved choice, then Chronicle.
+  const router = useRouter();
+  const [concept, setConceptState] = useState<ProfileConcept>(DEFAULT_CONCEPT);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const paramConcept = urlParams.get("concept") as ProfileConcept | null;
-      if (paramConcept && ["command", "editorial", "atlas", "standard"].includes(paramConcept)) {
-        setConceptState(paramConcept);
-        return;
-      }
-      const saved = localStorage.getItem(CONCEPT_STORAGE_KEY) as ProfileConcept | null;
-      if (saved && ["command", "editorial", "atlas", "standard"].includes(saved)) {
-        setConceptState(saved);
-      }
+    const paramConcept = new URLSearchParams(window.location.search).get("concept");
+    if (isProfileConcept(paramConcept)) {
+      setConceptState(paramConcept);
+      return;
+    }
+    try {
+      const saved = localStorage.getItem(CONCEPT_STORAGE_KEY);
+      if (isProfileConcept(saved)) setConceptState(saved);
+    } catch {
+      /* storage unavailable (private mode) */
     }
   }, []);
 
-  const handleConceptChange = (newConcept: ProfileConcept) => {
-    setConceptState(newConcept);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(CONCEPT_STORAGE_KEY, newConcept);
-        const url = new URL(window.location.href);
-        url.searchParams.set("concept", newConcept);
-        window.history.replaceState({}, "", url.toString());
-      } catch {
-        /* ignore */
-      }
+  /** Switch layout; `persist: false` changes only this visit's URL (the Factbook deep-dive). */
+  const setConcept = useCallback((next: ProfileConcept, { persist = true } = {}) => {
+    setConceptState(next);
+    try {
+      if (persist) localStorage.setItem(CONCEPT_STORAGE_KEY, next);
+      const url = new URL(window.location.href);
+      url.searchParams.set("concept", next);
+      window.history.replaceState(window.history.state, "", url.toString());
+    } catch {
+      /* ignore */
     }
-  };
+  }, []);
+
+  const handleConceptChange = useCallback((next: ProfileConcept) => setConcept(next), [setConcept]);
+
+  const openFactbook = useCallback(() => {
+    setConcept("standard", { persist: false });
+    router.push(createUrl(`/countries/${slug}/factbook?concept=standard`));
+    window.scrollTo({ top: 0 });
+  }, [router, setConcept, slug]);
 
   usePageTitle({
     title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
@@ -170,31 +182,34 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   return (
     <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
-      <CountryHeader
-        country={{
-          name: country.name,
-          slug: country.slug ?? country.name.replace(/\s+/g, "_"),
-          currentPopulation: country.currentPopulation,
-          currentGdpPerCapita: country.currentGdpPerCapita,
-          currentTotalGdp: country.currentTotalGdp,
-          landArea: country.landArea ?? null,
-          adjustedGdpGrowth: country.adjustedGdpGrowth,
-          continent: country.continent,
-          realm: country.realm ?? null,
-          sovereignUser,
-        }}
-        flagUrl={country.flag || flagUrl}
-        flagLoading={country.flag ? false : flagLoading}
-        unsplashImageUrl={unsplashImageUrl}
-        isOwnCountry={!!isOwnCountry}
-        showGdpPerCapita={showGdpPerCapita}
-        showFullPopulation={showFullPopulation}
-        bannerMode={bannerMode}
-        customBannerUrl={customBannerUrl}
-        onToggleGdpDisplay={toggleGdpDisplay}
-        onTogglePopulationDisplay={togglePopulationDisplay}
-        onBannerModeChange={setBannerMode}
-      />
+      {/* The prototypes open with their own hero; the Factbook keeps the banner header. */}
+      {concept === "standard" && (
+        <CountryHeader
+          country={{
+            name: country.name,
+            slug: country.slug ?? country.name.replace(/\s+/g, "_"),
+            currentPopulation: country.currentPopulation,
+            currentGdpPerCapita: country.currentGdpPerCapita,
+            currentTotalGdp: country.currentTotalGdp,
+            landArea: country.landArea ?? null,
+            adjustedGdpGrowth: country.adjustedGdpGrowth,
+            continent: country.continent,
+            realm: country.realm ?? null,
+            sovereignUser,
+          }}
+          flagUrl={country.flag || flagUrl}
+          flagLoading={country.flag ? false : flagLoading}
+          unsplashImageUrl={unsplashImageUrl}
+          isOwnCountry={!!isOwnCountry}
+          showGdpPerCapita={showGdpPerCapita}
+          showFullPopulation={showFullPopulation}
+          bannerMode={bannerMode}
+          customBannerUrl={customBannerUrl}
+          onToggleGdpDisplay={toggleGdpDisplay}
+          onTogglePopulationDisplay={togglePopulationDisplay}
+          onBannerModeChange={setBannerMode}
+        />
+      )}
 
       <div className="container mx-auto space-y-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -225,19 +240,26 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
           </Button>
         </div>
 
-        {/* Concept Views Dispatcher */}
-        {concept !== "standard" && (
-          <div
-            role="note"
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-medium text-amber-900 dark:text-amber-200"
-          >
-            Prototype layout: most sections below show sample figures, not {country.name}&apos;s
-            data. Switch to Standard Factbook for the live profile.
-          </div>
+        {concept === "chronicle" && (
+          <ChronicleProfileView
+            country={country}
+            flagUrl={country.flag || flagUrl || null}
+            isOwner={!!isOwnCountry}
+            isSignedIn={!!user}
+            currentIxTime={currentIxTime}
+            onOpenFactbook={openFactbook}
+          />
         )}
-        {concept === "command" && <CommandProfileView country={country} slug={slug} />}
-        {concept === "editorial" && <EditorialProfileView country={country} slug={slug} />}
-        {concept === "atlas" && <AtlasProfileView country={country} slug={slug} />}
+        {concept === "command" && (
+          <CommandProfileView
+            country={country}
+            flagUrl={country.flag || flagUrl || null}
+            isOwner={!!isOwnCountry}
+            isSignedIn={!!user}
+            currentIxTime={currentIxTime}
+            onOpenFactbook={openFactbook}
+          />
+        )}
         {concept === "standard" && (
           <>
             <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} countrySlug={slug} />
@@ -246,7 +268,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
         )}
       </div>
 
-      {/* Floating Glass Dev Concept Switcher */}
+      {/* Layout switcher for comparing the prototypes */}
       <CountryConceptSwitcher
         activeConcept={concept}
         onSelectConcept={handleConceptChange}
