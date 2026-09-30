@@ -19,6 +19,7 @@ import {
   authorizeAction,
   decideAction,
   requireCanonicalTitle,
+  requireGroupChange,
   requireRight,
   rightForLevel,
   type ActionDecision,
@@ -378,6 +379,23 @@ describe("authorizeAction", () => {
     await expect(authorizeAction(ctx(), "edit", "a[b")).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("requireGroupChange", () => {
+  it("lets a bureaucrat change the groups on the changeable list only", async () => {
+    await expect(requireGroupChange(ctx("user_owner"), ["sysop", "bot"])).resolves.toBeUndefined();
+    await expect(
+      requireGroupChange(ctx("user_owner"), ["sysop", "rollbacker"])
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringMatching(/^permissiondenied: .*rollbacker/),
+    });
+  });
+
+  it("refuses a caller without the userrights right", async () => {
+    mockDb.wikiUserGroup.findMany.mockResolvedValue([{ group: "sysop", expiresAt: null }]);
+    await expect(requireGroupChange(ctx(), ["bot"])).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
 

@@ -15,9 +15,11 @@ import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { checkEditPolicy, isOwnUserSpace, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
 import {
+  changeableGroups,
   getWikiPermissions,
   isActive,
   type ActiveBlock,
+  type ExplicitGroup,
   type Right,
   type WikiPermissions,
 } from "~/lib/wiki-os/rights";
@@ -213,4 +215,17 @@ export async function requireRight(ctx: WikiAuthContext, right: Right): Promise<
     throw forbidden("permissiondenied", `You do not have the "${right}" right.`);
   }
   return permissions;
+}
+
+/** Throws FORBIDDEN unless the caller holds `userrights` and every one of `groups` is theirs to change. */
+export async function requireGroupChange(
+  ctx: WikiAuthContext,
+  groups: readonly ExplicitGroup[]
+): Promise<void> {
+  const { rights } = await requireRight(ctx, "userrights");
+  const allowed = changeableGroups(rights);
+  const refused = groups.find((group) => !allowed.includes(group));
+  if (refused) {
+    throw forbidden("permissiondenied", `You cannot add or remove the "${refused}" group.`);
+  }
 }

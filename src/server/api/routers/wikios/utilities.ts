@@ -238,6 +238,17 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           orderBy: { createdAt: "desc" },
           take: input.limit,
           skip: input.offset,
+          // Public: the actor is named by `actorName`; never the internal `userId` (plan 409 writes it).
+          select: {
+            id: true,
+            logType: true,
+            action: true,
+            title: true,
+            actorName: true,
+            comment: true,
+            params: true,
+            createdAt: true,
+          },
         }),
         db.wikiLog.count({ where }),
       ]);

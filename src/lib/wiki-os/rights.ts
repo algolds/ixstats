@@ -363,3 +363,31 @@ export function getWikiPermissions(ctx: WikiAuthContext): Promise<WikiPermission
   permissionsByContext.set(ctx, loading);
   return loading;
 }
+
+/**
+ * Groups, rights and active block of someone other than the caller: the WikiOS user `userId` (null
+ * when `wikiUsername` is a wiki account nobody has linked) known by `wikiUsername`.
+ */
+export async function loadTargetPermissions(
+  target: { userId: string | null; wikiUsername: string },
+  now = new Date()
+): Promise<WikiPermissions> {
+  const user = target.userId
+    ? await db.user.findUnique({
+        where: { id: target.userId },
+        select: { createdAt: true, clerkUserId: true, role: { select: { name: true } } },
+      })
+    : null;
+  return loadSubjectPermissions(
+    {
+      userId: target.userId,
+      signedIn: user !== null,
+      accountCreatedAt: user?.createdAt ?? null,
+      roleName: user?.role?.name ?? null,
+      isSystemOwner: Boolean(user?.clerkUserId && isSystemOwner(user.clerkUserId)),
+      wikiUsername: target.wikiUsername,
+      linkVerified: target.userId !== null,
+    },
+    now
+  );
+}
