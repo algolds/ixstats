@@ -20,7 +20,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { getFlagColors } from "~/lib/flags/flag-color-extractor";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
-import { EMBED_CSS, EMBED_JS } from "~/lib/wiki-os/editor/wiki-embed-shared";
+import { EMBED_CSS, EMBED_JS, EMBED_PREFETCH } from "~/lib/wiki-os/editor/wiki-embed-shared";
 import { parseWikiSource } from "~/lib/wiki-os/config";
 
 // Subcomponent imports
@@ -37,6 +37,7 @@ import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
 import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
+import { withBasePath } from "~/lib/base-path";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
@@ -365,14 +366,21 @@ export function ArticleRenderer({
     if (!document.getElementById("ixstats-embed-js")) {
       const script = document.createElement("script");
       script.id = "ixstats-embed-js";
-      script.textContent = EMBED_JS;
+      // The embed iframes load /maps, which lives under the app's base path.
+      script.textContent = EMBED_JS.replace(
+        `'${EMBED_PREFETCH}'`,
+        JSON.stringify(withBasePath(EMBED_PREFETCH))
+      );
+      // The CSP carries a per-request nonce, so an inline script only runs if it carries it too.
+      const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce;
+      if (nonce) script.nonce = nonce;
       document.head.appendChild(script);
     }
     if (!document.getElementById("ixstats-embed-prefetch")) {
       const link = document.createElement("link");
       link.id = "ixstats-embed-prefetch";
       link.rel = "prefetch";
-      link.href = "/maps?embed=true";
+      link.href = withBasePath(EMBED_PREFETCH);
       link.setAttribute("as", "document");
       document.head.appendChild(link);
     }

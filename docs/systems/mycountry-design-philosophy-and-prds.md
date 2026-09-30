@@ -36,7 +36,7 @@ The single most critical design pillar of MyCountry is: **players should want to
 A realistic simulation must avoid the "omniscient player" trap. The player's view of their nation is only as clear as their civil service is efficient.
 
 * **Recon Capacity Constraints**: Over-stretching the civil service (exceeding available capacity) clouds reporting. Preview estimates become inaccurate, and warnings are shown.
-* **Low Efficiency (Effectiveness < 45%)**: Obscures precise metric tracking. On custom policies, numeric effects are masked and converted to qualitative bands (e.g., *Mild Positive*, *Strong Negative*).
+* **Low Efficiency (Effectiveness < 45%)**: Obscures precise metric tracking. *(Design intent, not built: numeric effects are not masked into qualitative bands today; `PolicyReconBanner` shows warnings only.)* On custom policies, numeric effects would be masked and converted to qualitative bands (e.g., *Mild Positive*, *Strong Negative*).
 * **Department Presence**: A player cannot preview or launch policies in a category unless they have established a corresponding active department (e.g., finance, commerce, defense, interior, foreign).
 
 ---

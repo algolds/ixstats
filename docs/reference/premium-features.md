@@ -13,6 +13,8 @@ This document provides a comprehensive breakdown of features available in the Ba
 > | Defense domain renders as a read-only preview with an Upgrade banner for non-premium users (`/mycountry/intelligence` resolves to the same Defense domain) | `PremiumPreviewFrame`, `DomainSurface.tsx`, `ability.can("access", "MyCountryFeature", "defense")` |
 > | Intelligence/Defense nav items locked or hidden for non-premium users | `MyCountrySidebarNav.tsx` |
 >
+> **Test switch.** `NEXT_PUBLIC_PREMIUM_FOR_ALL="true"` grants premium to every signed-in user: `hasPremiumTier()` in `src/lib/auth/premium.ts` is the one definition used by `premiumMiddleware`, `defineAbilityFor` and `users.getMembershipStatus`. It is off unless set; keep it off in production. It is inlined into the client bundle, so changing it needs a rebuild (see `.env.example`).
+>
 > **Not implemented:** payments/subscriptions (no Stripe or checkout; no $9.99 billing), a separate 5-tab Intelligence Dashboard, tiered API rate limits (everyone gets the same limits, e.g. 100 req/min on `rateLimitMiddleware`), export quotas, 30-day history limits, custom reports, document/scenario/alert quotas, and premium ThinkPages limits (every user is capped at **25** ThinkPages accounts). Vault's `premiumMultiplier` is display-only. Owners/admins/staff pass the client-side ability check (`src/lib/auth/ability.ts`) but not `premiumMiddleware`, which checks `membershipTier` only.
 
 ---

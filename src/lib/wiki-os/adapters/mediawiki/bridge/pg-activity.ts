@@ -388,7 +388,7 @@ export async function ixwikiGetUserCreatedPages(
   return Array.from(pagesMap.values()).slice(0, limit);
 }
 
-export async function ixwikiGetUserInfo(username: string): Promise<{
+export interface IxwikiUserInfo {
   exists: boolean;
   userId: number;
   username: string;
@@ -399,55 +399,10 @@ export async function ixwikiGetUserInfo(username: string): Promise<{
   user_name: string;
   user_editcount: number;
   user_registration: string;
-} | null> {
-  const cleanUser = decodeURIComponent(username).replace(/^@/, "").trim();
-  if (!cleanUser) return null;
+}
 
-  // 1. PostgreSQL Local Fast-Path (<1ms via wikiRevision + lorewardUserStats)
-  try {
-    const [revCount, stats, firstRev] = await Promise.all([
-      (db as any).wikiRevision.count({
-        where: { author: { equals: cleanUser, mode: "insensitive" } },
-      }),
-      (db as any).lorewardUserStats.findFirst({
-        where: { username: { equals: cleanUser, mode: "insensitive" } },
-        select: { username: true, totalScore: true },
-      }),
-      (db as any).wikiRevision.findFirst({
-        where: { author: { equals: cleanUser, mode: "insensitive" } },
-        orderBy: { createdAt: "asc" },
-        select: { author: true, createdAt: true },
-      }),
-    ]);
-
-    if (revCount > 0 || stats) {
-      const canonicalName = firstRev?.author || stats?.username || cleanUser;
-      const totalEdits = Math.max(
-        revCount,
-        stats?.totalScore ? Math.round(stats.totalScore / 50) : 0
-      );
-      const regDate = firstRev?.createdAt
-        ? firstRev.createdAt.toISOString()
-        : new Date().toISOString();
-
-      return {
-        exists: true,
-        userId: 1,
-        username: canonicalName,
-        editCount: totalEdits,
-        registration: regDate,
-        groups: totalEdits > 50 ? ["editor", "autoconfirmed"] : ["user"],
-        user_id: 1,
-        user_name: canonicalName,
-        user_editcount: totalEdits,
-        user_registration: regDate,
-      };
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  // 2. Live MediaWiki Action API HTTP Fallback
+/** Live MediaWiki Action API read: the only source of a real user id, edit count and groups. */
+async function fetchLiveUserInfo(cleanUser: string): Promise<IxwikiUserInfo | null> {
   try {
     const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
     const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
@@ -470,7 +425,7 @@ export async function ixwikiGetUserInfo(username: string): Promise<{
       if (u && !u.missing) {
         const canonicalName = u.name || cleanUser;
         const totalEdits = Number(u.editcount || 0);
-        const regDate = u.registration || new Date().toISOString();
+        const regDate: string | null = u.registration || null;
         const groups = Array.isArray(u.groups) ? u.groups : [];
 
         return {
@@ -483,9 +438,59 @@ export async function ixwikiGetUserInfo(username: string): Promise<{
           user_id: Number(u.userid || 0),
           user_name: canonicalName,
           user_editcount: totalEdits,
-          user_registration: regDate,
+          user_registration: regDate ?? "",
         };
       }
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+  }
+  return null;
+}
+
+/**
+ * MediaWiki user info. Real data (id, edit count, groups) comes only from the live MediaWiki API. When the wiki
+ * cannot be reached but IxStats has mirrored activity for the name, the user is reported as existing with
+ * `userId: 0`, `editCount: 0` and no groups: "unknown", never an estimate or a made-up id.
+ */
+export async function ixwikiGetUserInfo(username: string): Promise<IxwikiUserInfo | null> {
+  const cleanUser = decodeURIComponent(username).replace(/^@/, "").trim();
+  if (!cleanUser) return null;
+
+  const live = await fetchLiveUserInfo(cleanUser);
+  if (live) return live;
+
+  // Local mirror: proves the name is known (revisions / Lorewards stats) but not its edit count or id.
+  try {
+    const [revCount, stats, firstRev] = await Promise.all([
+      (db as any).wikiRevision.count({
+        where: { author: { equals: cleanUser, mode: "insensitive" } },
+      }),
+      (db as any).lorewardUserStats.findFirst({
+        where: { username: { equals: cleanUser, mode: "insensitive" } },
+        select: { username: true },
+      }),
+      (db as any).wikiRevision.findFirst({
+        where: { author: { equals: cleanUser, mode: "insensitive" } },
+        orderBy: { createdAt: "asc" },
+        select: { author: true },
+      }),
+    ]);
+
+    if (revCount > 0 || stats) {
+      const canonicalName = firstRev?.author || stats?.username || cleanUser;
+      return {
+        exists: true,
+        userId: 0,
+        username: canonicalName,
+        editCount: 0,
+        registration: null,
+        groups: [],
+        user_id: 0,
+        user_name: canonicalName,
+        user_editcount: 0,
+        user_registration: "",
+      };
     }
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);

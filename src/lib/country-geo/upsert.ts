@@ -70,7 +70,17 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     const coords = data.coordinates as any;
     const lng = Array.isArray(coords) ? coords[0] : coords.lng;
     const lat = Array.isArray(coords) ? coords[1] : coords.lat;
-    const terrain = await getTerrainAtPoint(db, Number(lng), Number(lat));
+    // Scope to the country's realm so another realm's altitude band can't answer
+    const realmRow = await db.country.findUnique({
+      where: { id: countryId },
+      select: { realmId: true },
+    });
+    const terrain = await getTerrainAtPoint(
+      db,
+      Number(lng),
+      Number(lat),
+      realmRow?.realmId ?? undefined
+    );
     if (terrain.elevationZone) {
       autoElevation = Math.round(
         (terrain.elevationZone.elevationMin + terrain.elevationZone.elevationMax) / 2

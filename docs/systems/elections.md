@@ -3,11 +3,13 @@
 **Parent App Suite:** MyCountry Suite (`MYCOUNTRY_VERSION = 6`)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `ELECT` | **Domain Accent:** Imperial Purple / Amber Gold  
-**Route:** `/mycountry/politics` (Politics Domain) | **Status:** 📀 Gold Master (100% Ready)  
+**Route:** `/mycountry/politics` (Politics Domain) | **Status:** 🟡 Partial: parties and legislature setup work; no election is ever started, so bills cannot pass (see [SYSTEM_STATUS.md](SYSTEM_STATUS.md))  
 
 Elections, political parties, and legislature management form the parliamentary governance simulation layer of MyCountry. Sovereign states configure unicameral/bicameral (or custom multi-chamber) legislatures, manage political parties, table Bills, and have elections resolved on the IxTime clock with D'Hondt, FPTP, or mixed seat allocation.
 
 > **Current gap:** elections are resolved only by the scheduled cron (`processDueElections`). The manual `simulateElection`, `scheduleElection`, and `registerCandidate` procedures were deleted in plan 312 as zero-caller procedures. An election needs at least 2 registered candidates to resolve, and no current API or UI registers candidates. The follow-up election the cron auto-schedules therefore stays `upcoming` until candidates exist.
+>
+> The gap is wider than follow-ups: `election.create` is called only from that follow-up branch of `election-cron.ts` (and the demo seed), so no first election or candidate is ever created for a real nation. Seats are created without a party (`legislature.ts`), so `legislation.holdVote` finds no voting blocs and throws "No seated legislature": bills cannot pass. The 11-step algorithm below describes code that a real nation cannot currently reach.
 
 ---
 

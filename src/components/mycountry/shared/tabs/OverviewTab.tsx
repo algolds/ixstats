@@ -12,6 +12,7 @@ import Link from "next/link";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
+import { assetUrl } from "~/lib/base-path";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { smartNormalizeGrowthRate } from "~/lib/statecraft/growth-calculations";
 import { OVERVIEW_IDENTITY_FIELDS } from "./overview-identity-fields";
@@ -246,7 +247,12 @@ export function OverviewTab({
               country?.wikiSummary ||
               country?.description ||
               null;
-            const coatOfArmsUrl = findCoatOfArmsUrl(wikiImages) || wikiImages?.[0]?.url || null;
+            // The Editor saves the seal to Country.coatOfArms; wiki images are the fallback.
+            const coatOfArmsUrl =
+              assetUrl(country?.coatOfArms) ||
+              findCoatOfArmsUrl(wikiImages) ||
+              wikiImages?.[0]?.url ||
+              null;
             const showLoadingSkeleton = wikiLoading && !introHtml;
             return introHtml || coatOfArmsUrl || showLoadingSkeleton ? (
               <div className="flex gap-3">

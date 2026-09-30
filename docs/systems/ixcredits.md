@@ -52,7 +52,7 @@ $$\text{Daily Dividend} = (\text{BaseRate} + \text{PopulationBonus} + \text{Grow
 
 ### 2. Active Gameplay (`EARN_ACTIVE`) — 100 IxC Daily Cap
 - **Login Streak** (`vault.claimDailyBonus`): 1 to 7 IxC daily (`min(streak, maxStreakBonus)`)
-- **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day
+- **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day. The claim widget copy (`DailyBonusWidget.tsx`) promises 1–10,000 IxC, but the 100 IxC active cap always applies
 - **Diplomatic Actions**: 15 IxC for new embassy, 12 IxC for cultural exchange
 - **Diplomatic Scenario Responses**: 10 IxC base, +5 for high-stakes scenarios, +0/2/5/8 by choice risk (10–23 IxC)
 
@@ -63,7 +63,7 @@ $$\text{Daily Dividend} = (\text{BaseRate} + \text{PopulationBonus} + \text{Grow
 Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the daily caps and the `isEarningEnabled` gate; amounts are admin-tunable (`vault_bonus_*` SystemConfig):
 - **Achievement Unlocks** (one-time each): Common 100, Uncommon 250, Rare 500, Epic 1,000, Legendary 2,500 IxC
 - **New Player** 5,000 IxC, **Wiki Country Import** 2,500 IxC, **Loreward** win 2,500 IxC
-- **NS Deck Import**: 50 IxC per card, capped at 5,000 IxC
+- **NS Deck Import**: 50 IxC per newly imported card, capped at 5,000 IxC, paid **once per nation, whichever account imports it** (`onceKey` on the nation name, `ns-import/decks.ts`)
 
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped.
 
@@ -71,10 +71,10 @@ Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that wo
 
 ## Spending IxCredits
 
-- **Card Packs (`SPEND_PACKS`)**: Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
+- **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
 - **Card Crafting & Evolution (`SPEND_CRAFT`)**: Fusion (250–10,000 IxC), Rarity Evolution (200–4,000 IxC)
 - **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
-- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items (profile glow, neon frame, chat badge, lore request token, card capacity, passive yield boost)
+- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, an archetype proposal token (no consumer yet), a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no passive yield boost item, although the passive-income code reads a yield boost if one exists
 
 ---
 

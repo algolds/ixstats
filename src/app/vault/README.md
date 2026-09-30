@@ -9,12 +9,12 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | Route | Renders | Purpose |
 |-------|---------|---------|
 | `/vault` | `VaultDashboardSection` | Balance, level/XP, daily claim, passive income, today's earnings, quick stats |
-| `/vault/cards` | `VaultCardsSection` | Card hub: Inventory / Collections / Gallery sub-tabs |
+| `/vault/cards` | `VaultCardsSection` | Card hub: Gallery (default, lore-first) / Inventory / Collections sub-tabs |
 | `/vault/inventory` | `VaultCardsSection` | Same hub (inventory entry) |
 | `/vault/collections` | `VaultCardsSection` | Same hub (collections entry) |
 | `/vault/collections/[slug]` | collection detail | View a collection; comments / likes |
-| `/vault/lore-gallery` | `VaultCardsSection` | Gallery sub-tab (development builds only; otherwise falls back to Inventory) |
-| `/vault/ns-library` | `VaultCardsSection` | Gallery sub-tab (development builds only; otherwise falls back to Inventory) |
+| `/vault/lore-gallery` | `VaultCardsSection` | Gallery sub-tab |
+| `/vault/ns-library` | `VaultCardsSection` | Gallery sub-tab |
 | `/vault/lore-generator` | `LoreCardGenerator` | Request generation of a lore card |
 | `/vault/marketplace` | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links) |
 | `/vault/crafting` | `CraftingWorkbench` | Fusion / evolution crafting (not linked from the sidebar) |

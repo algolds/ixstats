@@ -54,17 +54,35 @@ export class MessagingMessageOperations {
       include: { conversation: true },
     });
 
-    if (!participant && conv && (conv.source === "thinktank" || conv.type === "group")) {
-      participant = await this.db.conversationParticipant
-        .create({
-          data: {
-            conversationId: targetConvId,
-            userId: actorId,
-            role: "participant",
-          },
-          include: { conversation: true },
-        })
-        .catch(() => null);
+    // Only existing active participants may send. The one exception is a ThinkTank chat:
+    // an active member of the linked ThinktankGroup may be (re)joined to its conversation
+    // (membership sync in thinktanks/membership.ts normally does this already).
+    if (!participant && conv) {
+      const membership = await this.db.thinktankGroup?.findFirst?.({
+        where: {
+          conversationId: targetConvId,
+          isActive: true,
+          members: { some: { userId: actorId, isActive: true } },
+        },
+        select: { id: true },
+      });
+
+      if (membership) {
+        participant = await this.db.conversationParticipant
+          .upsert({
+            where: {
+              conversationId_userId: { conversationId: targetConvId, userId: actorId },
+            },
+            create: {
+              conversationId: targetConvId,
+              userId: actorId,
+              role: "participant",
+            },
+            update: { isActive: true, leftAt: null },
+            include: { conversation: true },
+          })
+          .catch(() => null);
+      }
     }
 
     if (!participant) {
@@ -99,7 +117,7 @@ export class MessagingMessageOperations {
     });
 
     const otherParticipants = await this.db.conversationParticipant.findMany({
-      where: { conversationId: input.conversationId, userId: { not: actorId }, isActive: true },
+      where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
     });
 
     const notifFn = this.notifications?.create ?? this.notifications?.createNotification;
@@ -113,7 +131,7 @@ export class MessagingMessageOperations {
             priority: "low",
             title: "New Message",
             message: input.content.slice(0, 100),
-            href: `/messages?id=${input.conversationId}`,
+            href: `/messages?id=${targetConvId}`,
           })
           .catch(() => {});
       }
@@ -122,13 +140,13 @@ export class MessagingMessageOperations {
     if (this.websocket?.broadcastToUsers) {
       const allRecipientIds = otherParticipants.map((p: any) => p.userId);
       this.websocket.broadcastToUsers(allRecipientIds, "message:new", {
-        conversationId: input.conversationId,
+        conversationId: targetConvId,
         message,
       });
     } else if (this.websocket?.broadcastMessage) {
       this.websocket.broadcastMessage({
         type: "message:new",
-        conversationId: input.conversationId,
+        conversationId: targetConvId,
         messageId: message.id,
         accountId: actorId,
         content: input.content,
@@ -146,7 +164,7 @@ export class MessagingMessageOperations {
     if (effectiveConv?.source === "forum" && this.forumBridge?.postOutbound) {
       this.forumBridge
         .postOutbound({
-          conversationId: input.conversationId,
+          conversationId: targetConvId,
           senderId: actorId,
           content: input.content,
         })
@@ -155,12 +173,7 @@ export class MessagingMessageOperations {
 
     if (effectiveConv?.source === "wiki" && this.wikiBridge?.sendOutbound) {
       this.wikiBridge
-        .sendOutbound(
-          effectiveConv.sourceId || input.conversationId,
-          input.content,
-          actorId,
-          this.db
-        )
+        .sendOutbound(effectiveConv.sourceId || targetConvId, input.content, actorId, this.db)
         .catch(() => {});
     }
 

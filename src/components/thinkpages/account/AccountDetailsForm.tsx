@@ -14,7 +14,6 @@ export interface AccountDetailsFormProps {
     lastName: string;
     username: string;
     bio: string;
-    verified: boolean;
     postingFrequency: "active" | "moderate" | "low";
     politicalLean: "left" | "center" | "right";
     personality: "serious" | "casual" | "satirical";

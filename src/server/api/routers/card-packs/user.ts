@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { purchasePack, openPack, getUserPacks } from "~/lib/cards/pack-service";
+import { LedgerError } from "~/lib/vault/vault-ledger";
 import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
@@ -110,6 +111,12 @@ export const cardPacksUserRouter = createTRPCRouter({
           userPack,
         };
       } catch (error) {
+        if (error instanceof LedgerError) {
+          throw new TRPCError({
+            code: error.code === "INSUFFICIENT_CREDITS" ? "FORBIDDEN" : "PRECONDITION_FAILED",
+            message: error.message,
+          });
+        }
         // Handle specific error messages from service
         if (error instanceof Error) {
           if (

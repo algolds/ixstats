@@ -17,6 +17,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
 
@@ -114,78 +115,48 @@ export const loreCardsUserRouter = createTRPCRouter({
           });
         }
 
-        // Deduct IxCredits and log transaction if not using token
-        if (!useToken) {
-          await ctx.db.$transaction(async (tx) => {
-            const freshVault = await tx.myVault.findUnique({
-              where: { userId },
-            });
-
-            if (!freshVault) {
-              throw new TRPCError({
-                code: "BAD_REQUEST",
-                message: "Vault not found. Please initialize your vault first.",
-              });
-            }
-
-            if (freshVault.credits < LORE_CARD_REQUEST_COST) {
-              throw new TRPCError({
-                code: "BAD_REQUEST",
-                message: `Insufficient IxCredits. You need ${LORE_CARD_REQUEST_COST} IxCredits to request a lore card (current balance: ${freshVault.credits} IxCredits)`,
-              });
-            }
-
-            const updated = await tx.myVault.update({
-              where: { userId },
-              data: {
-                credits: {
-                  decrement: LORE_CARD_REQUEST_COST,
-                },
-              },
-            });
-
-            // Log transaction inside transaction callback
-            await tx.vaultTransaction.create({
-              data: {
-                vaultId: freshVault.id,
-                credits: -LORE_CARD_REQUEST_COST,
-                balanceAfter: updated.credits,
-                type: "EXPENSE",
-                source: "LORE_CARD_REQUEST",
-                metadata: {
-                  articleTitle: input.articleTitle,
-                  wikiSource: input.wikiSource,
-                  useToken: false,
-                },
-              },
-            });
-          });
-        } else {
-          // Log transaction for token use
-          await ctx.db.vaultTransaction.create({
+        // Create the request and charge for it atomically. Credits go through the ledger
+        // (lifetime counters, maintenance mode); a token use is a zero-credit marker row that
+        // getLoreTokensBalance counts, so it stays outside the ledger (which rejects 0 amounts).
+        const request = await ctx.db.$transaction(async (tx) => {
+          const created = await tx.loreCardRequest.create({
             data: {
-              vaultId: vault.id,
-              credits: 0,
-              balanceAfter: vault.credits,
-              type: "EXPENSE",
-              source: "LORE_CARD_REQUEST",
-              metadata: {
-                articleTitle: input.articleTitle,
-                wikiSource: input.wikiSource,
-                useToken: true,
-              },
+              userId,
+              wikiSource: input.wikiSource,
+              articleTitle: input.articleTitle,
+              status: "PENDING",
             },
           });
-        }
 
-        // Create request
-        const request = await ctx.db.loreCardRequest.create({
-          data: {
-            userId,
-            wikiSource: input.wikiSource,
+          const metadata = {
             articleTitle: input.articleTitle,
-            status: "PENDING",
-          },
+            wikiSource: input.wikiSource,
+            requestId: created.id,
+            useToken,
+          };
+
+          if (useToken) {
+            await tx.vaultTransaction.create({
+              data: {
+                vaultId: vault.id,
+                credits: 0,
+                balanceAfter: vault.credits,
+                type: "SPEND_MARKET",
+                source: "LORE_CARD_REQUEST",
+                metadata,
+              },
+            });
+          } else {
+            await spendCreditsTx(tx, {
+              userId,
+              amount: LORE_CARD_REQUEST_COST,
+              type: "SPEND_MARKET",
+              source: "LORE_CARD_REQUEST",
+              metadata,
+            });
+          }
+
+          return created;
         });
 
         console.log(
@@ -205,6 +176,12 @@ export const loreCardsUserRouter = createTRPCRouter({
         console.error("[Lore Cards] Error in requestLoreCard:", error);
         if (error instanceof TRPCError) {
           throw error;
+        }
+        if (error instanceof LedgerError) {
+          throw new TRPCError({
+            code: error.code === "INSUFFICIENT_CREDITS" ? "BAD_REQUEST" : "PRECONDITION_FAILED",
+            message: error.message,
+          });
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

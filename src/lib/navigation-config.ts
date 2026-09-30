@@ -447,12 +447,6 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
             icon: Trophy,
             description: "Overview of your leagues and competitions.",
           },
-          {
-            name: "Create League",
-            href: "/myleague/create",
-            icon: Layers,
-            description: "Start a new league from scratch.",
-          },
         ],
       },
       {
@@ -486,12 +480,6 @@ export const contextualMenus: Record<string, ContextualMenuDefinition> = {
             href: "/myclub",
             icon: Users,
             description: "Your sports franchises at a glance.",
-          },
-          {
-            name: "Create Club",
-            href: "/myclub/create",
-            icon: Layers,
-            description: "Establish a new sports franchise.",
           },
         ],
       },

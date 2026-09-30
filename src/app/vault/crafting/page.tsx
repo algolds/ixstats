@@ -15,6 +15,9 @@ export default function VaultCraftingPage() {
   const formattedCards: CardInstance[] =
     myCards?.map((o: any) => ({
       id: o.cards.id,
+      // craftCard consumes ownership rows, not card definitions
+      ownershipId: o.id,
+      isLocked: o.isLocked ?? false,
       title: o.cards.title,
       description: o.cards.description || "",
       artwork: o.cards.artwork || "/images/cards/placeholder-nation.png",

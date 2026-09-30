@@ -27,7 +27,7 @@ own DB schema, themeable). Do C as its own track once 2b/3 land.
 
 1. **No hard-coded `ixwiki.com`.** All MediaWiki endpoints via `WIKIOS_MEDIAWIKI_API` /
    `NEXT_PUBLIC_MEDIAWIKI_URL` env (already the pattern; `WIKIOS_PARSOID_URL` is no longer read). New code must follow it.
-   Known exception: `transformers/html-transformer.ts` still rewrites asset URLs to a literal `https://ixwiki.com/`.
+   Known exceptions: `transformers/html-transformer.ts` rewrites asset URLs to a literal `https://ixwiki.com/`, and about 48 other non-comment `ixwiki.com` references remain across ~21 WikiOS files (e.g. `write-service.ts`, `csrf-cache.ts`, `parsoid.ts`, `pg-reader.ts`, `image-url.ts`, the `wiki/layout.tsx` canonical).
 2. **No new IxStats-specific coupling** in WikiOS code. Country/stat templates are an IxStats
    *plugin*, not core wiki behavior — keep them behind the existing `MyCountry:`/`CountryData:`/
    `BusinessData:` prefix checks, isolated.

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Book, Globe, HomeSimple, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
+import { useAuth, useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -23,6 +23,7 @@ export { CORE_COMMANDS as commands, CORE_FEATURES as features } from "./halo-reg
  */
 export function useDynamicIslandState() {
   const { user, isSignedIn } = useUser();
+  const { signOut } = useAuth();
   const { toggleTheme, toggleCompactMode } = useTheme();
   const soundSettings = useSoundSettings();
   const notify = useNotify();
@@ -155,7 +156,7 @@ export function useDynamicIslandState() {
     } else {
       ctx.push({
         name: "Sign Out",
-        path: "/sign-out",
+        actionId: "sign-out",
         icon: LogOut,
         category: "System",
         description: "Sign out of your account",
@@ -250,6 +251,12 @@ export function useDynamicIslandState() {
             window.location.href = createAbsoluteUrl("/wiki/random");
             return;
           }
+          case "sign-out": {
+            void signOut().finally(() => {
+              window.location.href = createAbsoluteUrl("/");
+            });
+            return;
+          }
           case "random-country": {
             if (countryIndex.length > 0) {
               const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
@@ -275,7 +282,7 @@ export function useDynamicIslandState() {
         return;
       }
       if (targetPath) {
-        window.location.href = createAbsoluteUrl(targetPath === "/sign-out" ? "/" : targetPath);
+        window.location.href = createAbsoluteUrl(targetPath);
       }
     };
 
@@ -407,6 +414,7 @@ export function useDynamicIslandState() {
     toggleCompactMode,
     markAllNotificationsAsRead,
     notify,
+    signOut,
   ]);
 
   // Plugin view sync

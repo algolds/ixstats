@@ -7,7 +7,7 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
@@ -25,16 +25,28 @@ import {
   type WikiAuthContext,
   type WikiAuthIdentity,
 } from "~/lib/wiki-os/auth";
+import { checkEditPolicy } from "~/lib/wiki-os/namespace-policy";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
-/** Throws FORBIDDEN unless the caller may edit `title` at its current protection level. */
+/**
+ * Throws FORBIDDEN unless the caller may edit `title`: first its namespace (all WikiOS edits reach
+ * MediaWiki through one shared bot account, so interface and project namespaces are admin-only;
+ * see namespace-policy.ts), then its current protection level.
+ */
 async function assertCanEditArticle(
   ctx: WikiAuthContext,
   title: string,
   realm = "ixwiki"
 ): Promise<WikiAuthIdentity> {
   const identity = getWikiAuth(ctx);
+  const policy = checkEditPolicy(title, {
+    isAdmin: identity.isAdmin,
+    linkedWikiUsername: identity.hasLinkedWikiAccount ? identity.wikiUsername : null,
+  });
+  if (!policy.allowed) {
+    throw new TRPCError({ code: "FORBIDDEN", message: policy.reason });
+  }
   const existing = await ArticleRepository.findBySlug(title, realm);
   if (!canEditProtectedArticle(existing, identity)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "This page is protected." });
@@ -54,9 +66,10 @@ function assertWikiAdmin(ctx: WikiAuthContext): void {
 
 export const wikiosEditingRouter = createTRPCRouter({
   /**
-   * Preview wikitext by converting it to HTML via Parsoid.
+   * Preview wikitext by converting it to HTML via Parsoid. Signed-in only: it forwards up to 200k
+   * characters to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  previewWikitext: rateLimitedPublicProcedure
+  previewWikitext: protectedProcedure
     .input(
       z.object({
         wikitext: z.string().max(200_000),
@@ -119,6 +132,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary: input.summary,
         minor: input.minor,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       void CloudflareGuardian.purgeArticleEdgeCache(input.title);
@@ -175,6 +189,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary,
         minor: false,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       return {
@@ -229,6 +244,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         summary,
         minor: false,
         authorWikiUsername: authorName,
+        revisionId: saveResult.revisionId,
       });
 
       return {

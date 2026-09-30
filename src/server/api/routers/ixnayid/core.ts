@@ -18,9 +18,6 @@ export const ixnayidCoreRouter = createTRPCRouter({
         forumUserId: true,
         forumUsername: true,
         lastForumSync: true,
-        wikiUserId: true,
-        wikiUsername: true,
-        lastWikiSync: true,
         discordUserId: true,
         discordUsername: true,
         lastDiscordSync: true,
@@ -49,9 +46,17 @@ export const ixnayidCoreRouter = createTRPCRouter({
       }
     }
 
-    const activeWikiName = user?.wikiUsername || country?.name || null;
+    // Wiki is "linked" only through a VERIFIED ixwiki link (token proven on the wiki user page, or
+    // admin-verified). Owning a country or holding an unproven legacy `User.wikiUsername` does not count.
+    const verifiedWikiLink = user
+      ? await db.wikiAccountLink.findFirst({
+          where: { userId: user.id, source: "ixwiki", verifiedAt: { not: null } },
+          select: { username: true, verifiedAt: true },
+        })
+      : null;
+    const verifiedWikiName = verifiedWikiLink?.username ?? null;
     const passportHandle =
-      user?.wikiUsername ||
+      verifiedWikiName ||
       user?.forumUsername ||
       country?.slug ||
       country?.name ||
@@ -70,10 +75,10 @@ export const ixnayidCoreRouter = createTRPCRouter({
         lastSync: user?.lastForumSync ?? null,
       },
       wiki: {
-        linked: !!activeWikiName,
-        username: activeWikiName,
-        isCustomClaimed: !!user?.wikiUsername,
-        lastSync: user?.lastWikiSync ?? null,
+        linked: !!verifiedWikiLink,
+        username: verifiedWikiName,
+        isCustomClaimed: !!verifiedWikiLink,
+        lastSync: verifiedWikiLink?.verifiedAt ?? null,
       },
       discord: {
         linked: !!user?.discordUserId,

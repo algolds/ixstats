@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
+  JUNK_RATE_MAX,
   getValuationConfig,
   recomputeAllCardValues,
   setValuationConfig,
@@ -38,7 +39,7 @@ export const cardsSettingsRouter = createTRPCRouter({
           nsPremium: z.number().min(0),
           multSpecial: z.number().min(0),
           multNation: z.number().min(0),
-          junkRate: z.number().min(0),
+          junkRate: z.number().min(0).max(JUNK_RATE_MAX),
         })
         .partial()
     )

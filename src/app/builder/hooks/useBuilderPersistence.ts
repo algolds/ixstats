@@ -110,9 +110,13 @@ export function useBuilderPersistence({
   }, [mode, countryId]);
 
   // DB Sync for Edit Mode
+  const utils = api.useUtils();
   const updateMutation = api.countries.updateCountry.useMutation({
     onSuccess: () => {
       setLastSaved(new Date());
+      // Flags are resolved by name and cached for an hour on the client: drop the cache so a
+      // new flag / seal shows outside the Editor right away.
+      void utils.countries.flags.resolveBatch.invalidate();
     },
     onError: (err) => {
       console.error("[useBuilderPersistence] DB sync error:", err);

@@ -2,7 +2,7 @@
 
 **Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Platform Pillar:** Temporal Master World Clock & Simulation Ticks  
-**Role:** Living-World Simulation Backend | **Status:** 📀 Gold Master (100% Ready)  
+**Role:** Living-World Simulation Backend | **Status:** ✅ Live; see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 **Single Source of Truth:** `src/lib/ixtime/` · `src/stores/ixtime-store.ts` · `src/context/IxTimeContext.tsx`
 
 ---
@@ -34,7 +34,7 @@ IxTime features bidirectional mathematical time conversion, cross-service synchr
 │ 2. MASTER TEMPORAL ENGINE (src/lib/ixtime/)                                           │
 │    • core.ts (IxTime)                 — Synchronous epoch math & pivot conversions     │
 │    • sync.ts (IxTimeSyncManager)      — 15s daemon polling & automated drift correction│
-│    • accuracy.ts                      — 12 mathematical verification test suites       │
+│    • accuracy.ts                      — 12 verification suites (Jest only; not run at runtime)│
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 3. API & GATEWAY LAYER                                                                │
 │    • tRPC Routers                     — api.system.getCurrentIxTime, api.admin.bot.*   │

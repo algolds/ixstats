@@ -111,6 +111,10 @@ export interface CreateConversationInput {
   initialMessage?: string;
   source?: MessageSource;
   channelId?: string;
+  conversationType?: "personal" | "diplomatic" | "official";
+  diplomaticClassification?: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET" | "TOP_SECRET";
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
+  channelType?: "BILATERAL" | "MULTILATERAL" | "EMERGENCY";
 }
 
 export interface CreateConversationByCountriesInput {

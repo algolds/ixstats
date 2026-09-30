@@ -21,8 +21,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 │   └── IxVault (wallet/economy/trading cards)
 
 ├── Engines (internal-only simulation cores — single integer)
-│   ├── MyCountry  (nation-scoped deterministic sim)
-│   ├── Statecraft (executive intent parsing, power brokers, CivCap throughput, recon research)
+│   ├── MyCountry  (nation-scoped deterministic sim; includes the Statecraft code: intent parsing, power brokers, CivCap throughput, recon research. Statecraft has no engine version of its own)
 │   ├── Concord    (living-world sim — time, diplomacy, crises, NPCs)
 │   └── Atlas      (spatial foundation — worldgen, geo, maps; powers IxWorld)
 
@@ -200,7 +199,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **WikiOS**           | `WIKIOS_VERSION` (registry) | The **App** — next-gen wiki software that powers the IxWiki content, deprecating legacy MediaWiki to "Classic Mode."                                                                 |
 | **Canvas Editor**    | `CANVAS_VERSION` (registry) | WikiOS **sub-system** (nested sub-version): visual/contenteditable wiki editor (`src/components/wiki-os/editor/WikiVisualEditor.tsx`). Also used in ThinkPages Glass Canvas Composer. |
-| **Image Repository** | —                           | WikiOS Commons Explorer at `/w/repository/`. Wikimedia Commons API proxy. tRPC: `commons.ts`.                                                                                        |
+| **Image Repository** | —                           | WikiOS Commons Explorer at `/util/repository` (`src/app/(wiki-os)/util/repository`). Wikimedia Commons API proxy. tRPC: `commons.ts`.                                                                                        |
 
 #### WikiOS Special Pages
 
@@ -309,15 +308,14 @@ First-class systems within the IxStates platform.
 | **Prisma**        | `social.prisma` (ThinkpagesAccount, ThinkpagesPost, etc.)                     |
 | **Reactions**     | ❤️ like, 😂 funny, 😡 angry, 😢 sad, 🔥 fire, 👍 thumb up, 👎 thumb down      |
 | **Custom emojis** | Discord CDN: ixnay, heky_boi, pog                                             |
-| **Status widget** | `ThinkPagesStatusWidget.tsx` — displays platform v{THINKPAGES_VERSION}        |
 
 #### Sub-systems
 
 | Sub-system     | Description                                                                                                                                    |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ThinkShare** | Unified messaging backbone — diplomatic DMs, personal messaging. Prisma: `ThinkshareConversation`, `ThinkshareMessage`. tRPC: `messages/`. |
-| **ThinkTanks** | Collaborative group workspace & research engine (`/thinktanks`). 4-pillar model (Feed, Chat, Docs, Members). Prisma: `ThinktankGroup`, `ThinktankMember`, `ThinktankCollaborativeDoc`. tRPC: `thinkpages/thinktanks/`. |
-| **IxTwitter**  | Discord auto-poster for ThinkPages content. tRPC backfill via `discord-ixtwitter-sync.ts`.                                                     |
+| **ThinkTanks** | Collaborative group workspace & research engine (`/thinktanks`). Planned 4-pillar model (Feed, Chat, Docs, Members); only Feed and Members are live. Prisma: `ThinktankGroup`, `ThinktankMember`, `CollaborativeDoc`. tRPC: `thinkpages/thinktanks/`. |
+| **IxTwitter**  | Discord auto-poster for ThinkPages content. Sync code is `src/lib/discord/ixtwitter-sync.ts`; the backfill is an archived script (`scripts/archive/migrations/backfill-ixtwitter.ts`), not tRPC.                                                     |
 
 ---
 
@@ -367,12 +365,12 @@ First-class systems within the IxStates platform.
 
 ### 3.5 Stash
 
-Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`). _(Formerly "LoreStash"; the Prisma models `LoreStash`/`LoreStashItem` keep their names.)_
+Save-for-later wiki articles with annotations. Integrated with WikiOS reader (`StashButton.tsx`). _(Formerly "LoreStash"; the Prisma models were renamed to `Stash`/`StashItem`/`StashAnnotation`, and the tables keep the legacy `lore_stash*` names.)_
 
 | Token      | Value                                     |
 | ---------- | ----------------------------------------- |
 | **Icon**   | Bookmark (Lucide)                         |
-| **Prisma** | `LoreStash` (30+ fields), `LoreStashItem` |
+| **Prisma** | `Stash`, `StashItem`, `StashAnnotation` (`wiki.prisma`) |
 | **Routes** | `src/app/stashes/`                        |
 
 ---
@@ -397,7 +395,7 @@ Global contextual UI overlay system with plugin architecture. _(Formerly "Dynami
 | Token        | Value                                 |
 | ------------ | ------------------------------------- |
 | **Location** | `src/components/halo/`       |
-| **Plugins**  | Wiki, Forum, Maps, Builder, MyCountry |
+| **Plugins**  | Wiki, Forum, MyCountry, Builder, Sports (no Maps plugin; `src/components/halo/plugins/`) |
 | **Views**    | CompactView, ExpandedView, NavTray, NotificationsView, SearchView, SettingsView |
 | **Docs**     | `docs/systems/halo.md`                |
 

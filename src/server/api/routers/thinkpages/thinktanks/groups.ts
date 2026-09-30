@@ -20,6 +20,7 @@ import {
   requireGroupReader,
   requirePersonaAccount,
 } from "./access";
+import { filterInvitableUserIds } from "./invite-privacy";
 
 export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
   // Create a new ThinkTank group
@@ -460,6 +461,9 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       return {
         ...group,
         collaborativeDocs: canRead ? group.collaborativeDocs : [],
+        // The group chat is for members only: don't hand its conversation id to outsiders.
+        conversationId: isMember ? group.conversationId : null,
+        conversation: isMember ? group.conversation : null,
         members: canRead ? enrichedMembers : [],
         settings: parsedSettings,
         tags: parsedTags,
@@ -692,17 +696,26 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
 
       // Only the owner or a group admin can invite (the invite form is in group settings).
       const { group } = await requireGroupManager(db, input.groupId, invitedBy);
-      const userIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
+      const requestedIds = [...new Set(input.userIds.map((id) => id.trim()))].filter(
         (id) => id && id !== invitedBy
       );
+      // Honor each invitee's privacy settings (thinktankInvites, blocks) and skip unknown users.
+      const userIds = await filterInvitableUserIds(
+        db,
+        { clerkUserId: invitedBy, dbUserId: ctx.user?.id },
+        requestedIds
+      );
 
-      const invites = await db.thinktankInvite.createMany({
-        data: userIds.map((userId) => ({
-          groupId: input.groupId,
-          invitedUser: userId,
-          invitedBy,
-        })),
-      });
+      const invites =
+        userIds.length > 0
+          ? await db.thinktankInvite.createMany({
+              data: userIds.map((userId) => ({
+                groupId: input.groupId,
+                invitedUser: userId,
+                invitedBy,
+              })),
+            })
+          : { count: 0 };
 
       // Send notifications to all invited users
       if (userIds.length > 0) {
@@ -720,6 +733,76 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
           .catch((e) => console.warn("[ThinkTanks] Failed to send invite notifications:", e));
       }
 
-      return invites;
+      return { ...invites, skipped: requestedIds.length - userIds.length };
+    }),
+
+  // Look up users to invite by ThinkPages username / display name (group managers only).
+  // Returns only what the invite picker needs; never email or other account fields.
+  searchInvitableUsers: protectedProcedure
+    .input(z.object({ groupId: z.string(), query: z.string().trim().min(2).max(50) }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const callerId = ctx.auth.userId;
+      await requireGroupManager(db, input.groupId, callerId);
+
+      const term = input.query.replace(/^@/, "");
+      if (term.length < 2) return [];
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          isActive: true,
+          clerkUserId: { not: callerId },
+          OR: [
+            { username: { contains: term, mode: "insensitive" } },
+            { displayName: { contains: term, mode: "insensitive" } },
+          ],
+        },
+        select: {
+          clerkUserId: true,
+          username: true,
+          displayName: true,
+          profileImageUrl: true,
+          country: { select: { name: true } },
+        },
+        orderBy: { username: "asc" },
+        take: 25,
+      });
+
+      const seen = new Set<string>();
+      const unique = accounts.filter((a) => {
+        if (seen.has(a.clerkUserId)) return false;
+        seen.add(a.clerkUserId);
+        return true;
+      });
+
+      const members = await db.thinktankMember.findMany({
+        where: {
+          groupId: input.groupId,
+          isActive: true,
+          userId: { in: unique.map((a) => a.clerkUserId) },
+        },
+        select: { userId: true },
+      });
+      const memberIds = new Set(members.map((m) => m.userId));
+
+      const allowed = new Set(
+        await filterInvitableUserIds(
+          db,
+          { clerkUserId: callerId, dbUserId: ctx.user?.id },
+          unique.map((a) => a.clerkUserId).filter((id) => !memberIds.has(id)),
+          { forSearch: true }
+        )
+      );
+
+      return unique
+        .filter((a) => allowed.has(a.clerkUserId))
+        .slice(0, 10)
+        .map((a) => ({
+          userId: a.clerkUserId,
+          username: a.username,
+          displayName: a.displayName,
+          profileImageUrl: a.profileImageUrl,
+          countryName: a.country?.name ?? null,
+        }));
     }),
 });

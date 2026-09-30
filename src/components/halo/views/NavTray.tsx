@@ -25,7 +25,7 @@ export const SECTION_COLORS: Record<string, { accent: string; bg: string; label:
   "/maps": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Maps" },
   "/w": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Wiki" },
   "/forum": { accent: "#f97316", bg: "bg-orange-500/15", label: "Forum" },
-  "/vault": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Cards" },
+  "/vault": { accent: "#06b6d4", bg: "bg-cyan-500/15", label: "Vault" },
   "/thinkpages": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "ThinkPages" },
   "/admin": { accent: "#ef4444", bg: "bg-red-500/15", label: "Admin" },
   "/feed": { accent: "#3b82f6", bg: "bg-blue-500/15", label: "Feed" },
@@ -64,7 +64,7 @@ const PRIMARY_NAV: NavTrayItem[] = [
 ];
 
 const SECONDARY_NAV: { name: string; href: string }[] = [
-  { name: "Cards", href: "/vault" },
+  { name: "Vault", href: "/vault" },
   { name: "Labs", href: "/labs/onoma" },
   { name: "Help", href: "/help" },
 ];

@@ -32,8 +32,8 @@ describe("card-valuation", () => {
     expect(computeCardValue({ rarity: "RARE", cardType: "NATION" }, C)).toBe(100 * C.multNation);
   });
 
-  test("junk pays the rarity floor at default junkRate", () => {
-    expect(junkValue(C, "LEGENDARY")).toBe(3000);
-    expect(junkValue(C, "COMMON")).toBe(10);
+  test("junk pays the rarity floor scaled by the default junkRate", () => {
+    expect(junkValue(C, "LEGENDARY")).toBe(Math.round(3000 * C.junkRate));
+    expect(junkValue(C, "COMMON")).toBe(Math.round(10 * C.junkRate));
   });
 });

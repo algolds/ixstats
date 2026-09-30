@@ -122,6 +122,30 @@ export function requireWikiUserId(ctx: WikiAuthContext): string {
   return userId;
 }
 
+/**
+ * Every id the signed-in user's WikiOS rows may be keyed by: the internal User id that
+ * requireWikiUserId returns, plus the Clerk id that it returned before 2026-08-22 (rows
+ * written earlier, such as stashes and watchlists, still carry it). Read with
+ * `userId: { in: ids }` and check ownership with `ids.includes(...)`; write new rows with
+ * requireWikiUserId. Throws UNAUTHORIZED when signed out.
+ */
+export function requireWikiUserIds(ctx: WikiAuthContext): string[] {
+  const primary = requireWikiUserId(ctx);
+  const ids = [primary, ctx.auth?.userId, ctx.user?.clerkUserId].filter(
+    (id): id is string => typeof id === "string" && id.length > 0
+  );
+  return [...new Set(ids)];
+}
+
+/** Require a signed-in user and return the auth provider's (Clerk) user id. */
+export function requireWikiAuthId(ctx: WikiAuthContext): string {
+  const authId = ctx.auth?.userId ?? ctx.user?.clerkUserId ?? null;
+  if (!authId) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "You must be signed in." });
+  }
+  return authId;
+}
+
 /** Attribution label for edit summaries: wiki username, else account id, else "anonymous". */
 export function getWikiActorLabel(ctx: WikiAuthContext): string {
   const { wikiUsername, userId } = getWikiAuth(ctx);

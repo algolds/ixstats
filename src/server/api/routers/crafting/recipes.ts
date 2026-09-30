@@ -14,6 +14,7 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
+import { getVaultLevel } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { type CardType } from "@prisma/client";
@@ -52,11 +53,8 @@ export const craftingRecipesRouter = createTRPCRouter({
         orderBy: [{ resultRarity: "desc" }, { name: "asc" }],
       });
 
-      // Check user collectorLevel once
-      const user = await ctx.db.user.findUnique({
-        where: { id: userId },
-        select: { collectorLevel: true },
-      });
+      // Recipes unlock by Vault level (derived from Vault XP); read it once
+      const vaultLevel = await getVaultLevel(userId, ctx.db);
 
       // Batch completion counts for all recipes
       const completionCountMap = new Map<string, number>();
@@ -79,7 +77,7 @@ export const craftingRecipesRouter = createTRPCRouter({
 
       // Check unlock status and completion for each recipe synchronously
       const recipesWithStatus = recipes.map((recipe) => {
-        const isUnlocked = user ? user.collectorLevel >= recipe.minLevel : false;
+        const isUnlocked = vaultLevel >= recipe.minLevel;
         const completedCount = completionCountMap.get(recipe.id) ?? 0;
         const isCompleted = completedCount > 0;
 
@@ -125,11 +123,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       }
 
       // Check if user meets minimum level requirement
-      const userForCheck = await ctx.db.user.findUnique({
-        where: { id: userId },
-        select: { collectorLevel: true },
-      });
-      const isUnlocked = userForCheck ? userForCheck.collectorLevel >= recipe.minLevel : false;
+      const isUnlocked = (await getVaultLevel(userId, ctx.db)) >= recipe.minLevel;
 
       const completedCount = await ctx.db.craftingHistory.count({
         where: {
@@ -198,11 +192,7 @@ export const craftingRecipesRouter = createTRPCRouter({
       }
 
       // Check unlock requirements (minimum level)
-      const userForUnlock = await ctx.db.user.findUnique({
-        where: { id: userId },
-        select: { collectorLevel: true },
-      });
-      const isUnlocked = userForUnlock ? userForUnlock.collectorLevel >= recipe.minLevel : false;
+      const isUnlocked = (await getVaultLevel(userId, ctx.db)) >= recipe.minLevel;
 
       if (!isUnlocked) {
         throw new TRPCError({
@@ -235,6 +225,14 @@ export const craftingRecipesRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "You don't own all the specified material cards",
+        });
+      }
+
+      const lockedMaterial = ownedCards.find((oc) => oc.isLocked);
+      if (lockedMaterial) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Cannot use locked cards as materials: ${lockedMaterial.cards.title}`,
         });
       }
 
@@ -286,12 +284,21 @@ export const craftingRecipesRouter = createTRPCRouter({
             });
           }
 
-          // Delete consumed cards
-          await tx.cardOwnership.deleteMany({
+          // Delete consumed cards: only rows still owned and unlocked, so a concurrent
+          // craft/junk/listing can't be double-spent (rolls back the whole craft)
+          const consumed = await tx.cardOwnership.deleteMany({
             where: {
               id: { in: input.materialCardIds },
+              ownerId: userId,
+              isLocked: false,
             },
           });
+          if (consumed.count !== input.materialCardIds.length) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Some materials were already used or locked. Refresh and try again.",
+            });
+          }
 
           let resultCard = null;
 

@@ -9,8 +9,7 @@ import {
   Page as FileText,
   Crown,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 
 const CabinetPanel = dynamic(
   () =>
@@ -96,29 +95,13 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
         </span>
       </div>
 
-      {/* Facet Segmented Sub-Tab Switcher */}
-      <div className="border-border/30 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b pb-2">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            data-cuelume-press="soft"
-            onClick={() => {
-              soundEffects.press();
-              setActiveTab(id);
-            }}
-            className={cn(
-              "flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              activeTab === id
-                ? "border border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 shadow-2xs"
-                : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground border-border/30 border"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Sub-tab switcher (shared with the other domain sections) */}
+      <SectionTabBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        activeClassName="border-indigo-500/40 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300"
+      />
 
       {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}

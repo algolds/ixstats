@@ -129,19 +129,11 @@ export async function syncGeographicDemographics(
     where: { countryId, status: "approved" },
     _sum: { population: true, gdpContribution: true },
   });
-  let totalSubPop = subdivisionsSum._sum.population ?? 0;
-  let totalSubGdp = subdivisionsSum._sum.gdpContribution ?? 0;
+  const totalSubPop = subdivisionsSum._sum.population ?? 0;
+  const totalSubGdp = subdivisionsSum._sum.gdpContribution ?? 0;
 
-  // Fallback to cities if no subdivisions exist/are approved
-  if (totalSubPop === 0 && totalSubGdp === 0) {
-    const citiesSum = await db.city.aggregate({
-      where: { countryId, status: "approved" },
-      _sum: { population: true, gdpContribution: true },
-    });
-    totalSubPop = citiesSum._sum.population ?? 0;
-    totalSubGdp = citiesSum._sum.gdpContribution ?? 0;
-  }
-
+  // Only subdivisions cover the whole nation. City figures are urban-only, so falling back to them
+  // would overwrite the national population/GDP with the urban total; leave the national figures alone.
   if (totalSubPop > 0) {
     const gdpPerCapita = totalSubGdp / totalSubPop;
     await db.country.update({

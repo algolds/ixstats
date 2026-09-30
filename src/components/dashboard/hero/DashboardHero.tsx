@@ -18,6 +18,7 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { assetUrl } from "~/lib/base-path";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -183,8 +184,9 @@ export function DashboardHeroComponent({
 
   if (!isSignedIn || !hasCountry || !country) return null;
 
-  const flagUrl =
-    (country as any)?.flagUrl || (country as any)?.flag || (country as any)?.newStats?.flagUrl;
+  const flagUrl = assetUrl(
+    (country as any)?.flagUrl || (country as any)?.flag || (country as any)?.newStats?.flagUrl
+  );
   const profileSlug =
     stats.slug || (country as any)?.slug || (country as any)?.newStats?.slug || countryId;
 

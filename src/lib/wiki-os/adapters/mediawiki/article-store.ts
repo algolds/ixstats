@@ -6,6 +6,7 @@
  */
 
 import { db } from "~/server/db";
+import { Cache } from "~/lib/cache/cache";
 import { ArticleRepository } from "../../core/article-repository";
 import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
@@ -95,12 +96,17 @@ export async function getArticleHtmlShadow(
 }
 
 /**
- * Save pre-rendered HTML to PostgreSQL article record
+ * Save pre-rendered HTML to PostgreSQL article record.
+ *
+ * `renderedFromWikitext`: the wikitext the HTML was rendered from. When given, the write only
+ * lands if the article still holds that wikitext, so a slow render cannot overwrite the cache of a
+ * newer save.
  */
 export async function saveArticleHtmlShadow(
   title: string,
   html: string,
-  source: WikiSource = "ixwiki"
+  source: WikiSource = "ixwiki",
+  renderedFromWikitext?: string
 ): Promise<void> {
   try {
     const slug = toArticleSlug(title);
@@ -108,6 +114,7 @@ export async function saveArticleHtmlShadow(
       where: {
         source,
         OR: [{ slug }, { title: title.replace(/_/g, " ") }],
+        ...(renderedFromWikitext !== undefined ? { wikitext: renderedFromWikitext } : {}),
       },
       data: {
         contentHtml: html,
@@ -166,6 +173,55 @@ export async function getPageHistoryShadow(
 /** Alias for getPageHistoryShadow */
 export const getArticleHistoryShadow = getPageHistoryShadow;
 
+type MediaWikiAuthorsData = Awaited<ReturnType<typeof fetchMediaWikiPageAuthorsAndRevisions>>;
+
+/** MediaWiki revision lineage changes slowly and a WikiOS edit is overlaid from Postgres below. */
+const MW_AUTHORS_TTL_MS = 10 * 60 * 1000;
+/** A failed or empty lookup is remembered briefly so an unreachable wiki does not stall every view. */
+const MW_AUTHORS_NEGATIVE_TTL_MS = 60 * 1000;
+/** Authorship is decoration: do not hold an article view for the full 8 s default. */
+const MW_AUTHORS_TIMEOUT_MS = 2500;
+
+const mwAuthorsCache = new Cache<MediaWikiAuthorsData>({
+  defaultTtlMs: MW_AUTHORS_TTL_MS,
+  maxSize: 500,
+  namespace: "wiki-authors",
+});
+const mwAuthorsInFlight = new Map<string, Promise<MediaWikiAuthorsData>>();
+
+/** MediaWiki page history for authorship: cached, single-flight and short-timeout (NEW-5). */
+async function getMediaWikiAuthorsCached(
+  cleanTitle: string,
+  source: WikiSource
+): Promise<MediaWikiAuthorsData> {
+  const key = `${source}:${cleanTitle.toLowerCase()}`;
+  const cached = mwAuthorsCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const inFlight = mwAuthorsInFlight.get(key);
+  if (inFlight) return inFlight;
+
+  const request = (async () => {
+    let data: MediaWikiAuthorsData = null;
+    try {
+      data = await fetchMediaWikiPageAuthorsAndRevisions(
+        cleanTitle,
+        source,
+        250,
+        MW_AUTHORS_TIMEOUT_MS
+      );
+    } catch {
+      data = null;
+    }
+    mwAuthorsCache.set(key, data, data?.creator ? MW_AUTHORS_TTL_MS : MW_AUTHORS_NEGATIVE_TTL_MS);
+    return data;
+  })().finally(() => {
+    mwAuthorsInFlight.delete(key);
+  });
+  mwAuthorsInFlight.set(key, request);
+  return request;
+}
+
 /**
  * Get article authorship information (creator, last editor, top contributors)
  */
@@ -177,7 +233,7 @@ export async function getArticleAuthors(
 
   // 1. Check MediaWiki upstream API for full chronological history & true original creator
   try {
-    const mwData = await fetchMediaWikiPageAuthorsAndRevisions(cleanTitle, source, 250);
+    const mwData = await getMediaWikiAuthorsCached(cleanTitle, source);
     if (mwData && mwData.creator) {
       // Check if PostgreSQL has any newer native edits
       let latestEditor: { username: string; timestamp?: string; avatar?: string | null } | null =

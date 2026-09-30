@@ -136,11 +136,15 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
         the board reflects what nations actually do.
       </p>
       <p className="text-muted-foreground mx-auto mb-8 max-w-xl text-sm leading-relaxed">
-        Cards from elsewhere? Bring them home through{" "}
-        <Link href="/vault/import" className={splashGold.link}>
-          MyVault import
+        Collect lore cards, earn IxCredits, and unlock achievements in the{" "}
+        <Link href="/vault" className={splashGold.link}>
+          MyVault
         </Link>
-        .
+        . Play NationStates? You can{" "}
+        <Link href="/vault/import" className={splashGold.link}>
+          import your deck
+        </Link>{" "}
+        too.
       </p>
 
       {stats && (

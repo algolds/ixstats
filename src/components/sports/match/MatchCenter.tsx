@@ -19,6 +19,7 @@ import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { getSportTheme } from "~/lib/sports/theming";
 import { MatchSurface } from "~/components/sports/surfaces/MatchSurface";
+import { MatchPredictionPanel } from "~/components/sports/match/MatchPredictionPanel";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -350,6 +351,15 @@ export function MatchCenter({
           </button>
         </div>
       </div>
+
+      {/* ─── Prediction market (scheduled matches only) ─── */}
+      {match.status === "scheduled" && (
+        <MatchPredictionPanel
+          matchId={matchId}
+          homeName={match.homeTeam.name}
+          awayName={match.awayTeam.name}
+        />
+      )}
 
       {/* ─── Match Surface & Event Tabs ─── */}
       <Tabs

@@ -129,7 +129,10 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   const handleCraft = useCallback(async () => {
     if (!recipeId) return;
 
-    const materialCardIds = cardSlots.filter((slot) => slot.card).map((slot) => slot.card!.id);
+    // The server consumes ownership rows (CardOwnership.id), not card definitions
+    const materialCardIds = cardSlots
+      .filter((slot) => slot.card)
+      .map((slot) => slot.card!.ownershipId ?? slot.card!.id);
 
     if (materialCardIds.length !== cardSlots.length) {
       alert("Please fill all card slots before crafting");
@@ -141,6 +144,14 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
   }, [recipeId, cardSlots, craftMutation]);
 
   // Check if all slots are filled
+  // Locked cards can't be consumed, and one card can't fill two slots
+  const usedOwnershipIds = new Set(
+    cardSlots.flatMap((slot) => (slot.card ? [slot.card.ownershipId ?? slot.card.id] : []))
+  );
+  const pickableCards = availableCards.filter(
+    (card) => !card.isLocked && !usedOwnershipIds.has(card.ownershipId ?? card.id)
+  );
+
   const allSlotsFilled = cardSlots.every((slot) => slot.card !== null);
 
   // Check if user has enough credits
@@ -329,9 +340,9 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
               <CometCard className="p-6" glassDepth="modal">
                 <h3 className="mb-4 text-xl font-bold tracking-tight text-white">Select a Card</h3>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {availableCards.map((card) => (
+                  {pickableCards.map((card) => (
                     <motion.div
-                      key={card.id}
+                      key={card.ownershipId ?? card.id}
                       whileHover={{ scale: 1.05 }}
                       onClick={() => handleCardSelect(selectedSlot, card)}
                       className="cursor-pointer"
@@ -340,7 +351,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
                     </motion.div>
                   ))}
                 </div>
-                {availableCards.length === 0 && (
+                {pickableCards.length === 0 && (
                   <div className="py-8 text-center text-white/60">No cards available</div>
                 )}
               </CometCard>
