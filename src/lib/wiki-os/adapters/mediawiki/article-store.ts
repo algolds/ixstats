@@ -12,6 +12,7 @@ import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
+import { OutboundLimiter } from "../../services/outbound-limiter";
 
 export type { ArticleAuthorInfo };
 
@@ -86,54 +87,6 @@ export async function getRevisionWikitextShadow(
 }
 
 /**
- * Fetch pre-rendered HTML from PostgreSQL
- */
-export async function getArticleHtmlShadow(
-  title: string,
-  source: WikiSource = "ixwiki"
-): Promise<{ html: string; timestamp?: string } | null> {
-  const article = await ArticleRepository.findBySlug(title, source);
-  if (article && article.contentHtml) {
-    return {
-      html: article.contentHtml,
-      timestamp: article.updatedAt.toISOString(),
-    };
-  }
-  return null;
-}
-
-/**
- * Save pre-rendered HTML to PostgreSQL article record.
- *
- * `renderedFromWikitext`: the wikitext the HTML was rendered from. When given, the write only
- * lands if the article still holds that wikitext, so a slow render cannot overwrite the cache of a
- * newer save.
- */
-export async function saveArticleHtmlShadow(
-  title: string,
-  html: string,
-  source: WikiSource = "ixwiki",
-  renderedFromWikitext?: string
-): Promise<void> {
-  try {
-    const slug = toArticleSlug(title);
-    await db.wikiArticle.updateMany({
-      where: {
-        source,
-        OR: [{ slug }, { title: title.replace(/_/g, " ") }],
-        ...(renderedFromWikitext !== undefined ? { wikitext: renderedFromWikitext } : {}),
-      },
-      data: {
-        contentHtml: html,
-        updatedAt: new Date(),
-      },
-    });
-  } catch {
-    // Best-effort
-  }
-}
-
-/**
  * Fetch revision history from PostgreSQL, falling back to MediaWiki.
  */
 export async function getPageHistoryShadow(
@@ -195,6 +148,16 @@ const mwAuthorsCache = new Cache<MediaWikiAuthorsData>({
   namespace: "wiki-authors",
 });
 const mwAuthorsInFlight = new Map<string, Promise<MediaWikiAuthorsData>>();
+/**
+ * Anyone can ask for the authors of any title, and each distinct one is an HTTP call: a few in
+ * flight and a steady rate per process. A title the limiter turns away is answered from Postgres
+ * alone (authorship is decoration, never worth an error).
+ */
+const mwAuthorsLimiter = new OutboundLimiter({
+  name: "Looking up authors",
+  maxConcurrent: 6,
+  perMinute: 120,
+});
 
 /** MediaWiki page history for authorship: cached, single-flight and short-timeout (NEW-5). */
 async function getMediaWikiAuthorsCached(
@@ -211,11 +174,8 @@ async function getMediaWikiAuthorsCached(
   const request = (async () => {
     let data: MediaWikiAuthorsData = null;
     try {
-      data = await fetchMediaWikiPageAuthorsAndRevisions(
-        cleanTitle,
-        source,
-        250,
-        MW_AUTHORS_TIMEOUT_MS
+      data = await mwAuthorsLimiter.run(() =>
+        fetchMediaWikiPageAuthorsAndRevisions(cleanTitle, source, 250, MW_AUTHORS_TIMEOUT_MS)
       );
     } catch {
       data = null;

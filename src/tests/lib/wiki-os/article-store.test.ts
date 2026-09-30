@@ -3,7 +3,6 @@ import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
   getArticleAuthors,
-  saveArticleHtmlShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 const mockGetArticleWikitext = jest.fn();
@@ -21,7 +20,6 @@ const mockWikiRevisionFindFirst = jest.fn();
 const mockWikiRevisionFindMany = jest.fn();
 const mockTransaction = jest.fn();
 const mockFetchAuthors = jest.fn();
-const mockWikiArticleUpdateMany = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -33,7 +31,6 @@ jest.mock("~/server/db", () => ({
       upsert: (...args: any[]) => mockWikiArticleUpsert(...args),
       delete: (...args: any[]) => mockWikiArticleDelete(...args),
       deleteMany: (...args: any[]) => mockWikiArticleDeleteMany(...args),
-      updateMany: (...args: any[]) => mockWikiArticleUpdateMany(...args),
     },
     wikiRevision: {
       create: (...args: any[]) => mockWikiRevisionCreate(...args),
@@ -249,26 +246,38 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
     expect(again.lastEditor).toMatchObject({ username: "WikiOSUser" });
   });
-});
 
-describe("saveArticleHtmlShadow", () => {
-  it("only writes when the article still holds the wikitext it was rendered from", async () => {
-    mockWikiArticleUpdateMany.mockResolvedValue({ count: 1 });
-
-    await saveArticleHtmlShadow("Foo", "<p>x</p>", "ixwiki", "rendered from this");
-
-    expect(mockWikiArticleUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ wikitext: "rendered from this" }),
-      })
+  it("never has more than a few lookups in flight: a further title is answered from Postgres, without an error", async () => {
+    const releases: Array<() => void> = [];
+    mockFetchAuthors.mockImplementation(
+      (title: string) => new Promise((resolve) => releases.push(() => resolve(mwData(title))))
     );
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+
+    const lookups = Array.from({ length: 7 }, (_, n) => getArticleAuthors(`Fan out ${n}`));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(6);
+    releases.forEach((release) => release());
+    const results = await Promise.all(lookups);
+    expect(results.slice(0, 6).every((r) => r.creator?.username?.startsWith("creator-of-"))).toBe(
+      true
+    );
+    expect(results[6]).toMatchObject({ creator: null, totalContributors: 0 });
   });
 
-  it("writes unconditionally when no source wikitext is given", async () => {
-    mockWikiArticleUpdateMany.mockResolvedValue({ count: 1 });
+  it("holds lookups to a steady rate per process", async () => {
+    mockFetchAuthors.mockImplementation(async (title: string) => mwData(title));
+    mockWikiArticleFindFirst.mockResolvedValue(null);
+    const realNow = Date.now.bind(Date);
+    const nowSpy = jest.spyOn(Date, "now").mockImplementation(() => realNow() + 10 * 60 * 1000);
+    mockFetchAuthors.mockClear();
 
-    await saveArticleHtmlShadow("Foo", "<p>x</p>");
+    const results = [];
+    for (let n = 0; n < 125; n++) results.push(await getArticleAuthors(`Steady ${n}`));
 
-    expect(mockWikiArticleUpdateMany.mock.calls.at(-1)?.[0].where).not.toHaveProperty("wikitext");
+    expect(mockFetchAuthors).toHaveBeenCalledTimes(120);
+    expect(results.filter((r) => r.creator === null)).toHaveLength(5);
+    nowSpy.mockRestore();
   });
 });

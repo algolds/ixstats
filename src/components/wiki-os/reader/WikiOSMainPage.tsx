@@ -13,6 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
 import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
+import { extractFeaturedArticle } from "./featured-article";
 import {
   extractLeadImageFromHtml,
   normalizeWikiImageUrl,
@@ -526,87 +527,4 @@ export function WikiOSMainPage() {
       )}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Extract featured article from Main_Page HTML
-// ---------------------------------------------------------------------------
-
-function extractFeaturedArticle(html: string): string | null {
-  if (!html) return null;
-
-  const patterns = [
-    /<div[^>]*id="featured(?:_|&#95;)article"/i,
-    /<div[^>]*id="mp-tfa"/i,
-    /<div[^>]*id="mainpage-featured"/i,
-    /<div[^>]*class="[^"]*(?:featured-article|tfa-box|mp-box|featured_article)[^"]*"/i,
-    /<section[^>]*class="[^"]*featured[^"]*"/i,
-  ];
-
-  let startIdx = -1;
-  for (const pattern of patterns) {
-    const idx = html.search(pattern);
-    if (idx !== -1) {
-      startIdx = idx;
-      break;
-    }
-  }
-
-  if (startIdx === -1) {
-    const cardIdx = html.search(/<div[^>]*class="[^"]*card[^"]*"/i);
-    if (cardIdx !== -1) {
-      startIdx = cardIdx;
-    }
-  }
-
-  if (startIdx === -1) {
-    if (html.length < 2500 && html.includes("<p>")) {
-      return transformFeaturedContent(html);
-    }
-    return null;
-  }
-
-  let depth = 0;
-  let pos = startIdx;
-  const isSection = html
-    .slice(startIdx, startIdx + 10)
-    .toLowerCase()
-    .startsWith("<section");
-  const openTag = isSection ? "<section" : "<div";
-  const closeTag = isSection ? "</section>" : "</div>";
-
-  while (pos < html.length) {
-    const nextOpen = html.indexOf(openTag, pos + (depth === 0 ? 0 : 1));
-    const nextClose = html.indexOf(closeTag, pos);
-
-    if (nextClose === -1) break;
-
-    if (nextOpen !== -1 && nextOpen < nextClose) {
-      depth++;
-      pos = nextOpen + openTag.length;
-    } else {
-      if (depth <= 1) {
-        const endPos = nextClose + closeTag.length;
-        return transformFeaturedContent(html.slice(startIdx, endPos));
-      }
-      depth--;
-      pos = nextClose + closeTag.length;
-    }
-  }
-
-  return null;
-}
-
-function transformFeaturedContent(cardHtml: string): string {
-  return cardHtml
-    .replace(/<div[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<p[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/p>/gi, "")
-    .replace(/<div[^>]*class="[^"]*card-byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<p>\s*Featured article\s*<\/p>/gi, "")
-    .replace(/class="card[^"]*"/i, 'class="wikios-fa-card"')
-    .replace(/class="card-image[^"]*"/gi, 'class="wikios-fa-image"')
-    .replace(/class="card-text"/gi, 'class="wikios-fa-text"')
-    .replace(/class="byline"/gi, 'class="wikios-fa-byline hidden"')
-    .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/')
-    .replace(/href="https?:\/\/ixwiki\.com\/wiki\//g, 'href="/wiki/');
 }

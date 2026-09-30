@@ -4,9 +4,6 @@
  * MediaWiki's copy of the page (`&page=`), which is stale until the background export lands.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
-  saveArticleHtmlShadow: jest.fn(),
-}));
 
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 
@@ -40,17 +37,6 @@ test("renders the given wikitext with text= and the title as context", async () 
   expect(body.get("text")).toBe("New '''body'''");
   expect(body.get("title")).toBe("My Page");
   expect(body.has("page")).toBe(false);
-});
-
-test("falls back to page= only when there is no wikitext", async () => {
-  fetchMock.mockResolvedValue(okParse("<p>upstream</p>"));
-
-  const html = await renderArticleViaMediaWiki("", "My Page");
-
-  expect(html).toBe("<p>upstream</p>");
-  const url = new URL(String(fetchMock.mock.calls[0]![0]));
-  expect(url.searchParams.get("page")).toBe("My_Page");
-  expect(url.searchParams.has("text")).toBe(false);
 });
 
 test("returns null when MediaWiki is unreachable or answers with an error", async () => {

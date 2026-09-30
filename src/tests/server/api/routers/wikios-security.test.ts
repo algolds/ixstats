@@ -9,7 +9,7 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
-    wikiArticle: { upsert: jest.fn() },
+    wikiArticle: { upsert: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     wikiRevision: { findFirst: jest.fn(), create: jest.fn() },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -33,6 +33,7 @@ jest.mock("~/lib/wiki-os/core", () => ({
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
   MediaAssetService: { registerAsset: jest.fn() },
 }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   __esModule: true,
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
@@ -108,7 +109,7 @@ import { db } from "~/server/db";
 const mockDb = db as unknown as {
   user: { findFirst: jest.Mock; update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
-  wikiArticle: { upsert: jest.Mock };
+  wikiArticle: { upsert: jest.Mock; count: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
   stashItem: { upsert: jest.Mock; deleteMany: jest.Mock };

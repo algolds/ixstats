@@ -99,11 +99,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing required query param: slug" }, { status: 400 });
   }
 
+  // An explicit column list: the view bundle never leaves the database, and the raw HTML is read
+  // only for the JSON export.
   const article = await db.wikiArticle.findFirst({
     where: {
       source: realm,
       status: "PUBLISHED",
       OR: [{ slug }, { title: slug.replace(/_/g, " ") }],
+    },
+    select: {
+      title: true,
+      slug: true,
+      source: true,
+      namespace: true,
+      status: true,
+      format: true,
+      summary: true,
+      wordCount: true,
+      readingTime: true,
+      wikitext: true,
+      contentHtml: format === "json",
     },
   });
 

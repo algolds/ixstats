@@ -9,6 +9,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import {
   getRevisionWikitextShadow,
@@ -134,7 +135,10 @@ export const wikiosEditingRouter = createTRPCRouter({
       const noticesPrefix = transformed.noticesHtml
         ? `<div class="wikios-notices-container mb-4">${transformed.noticesHtml}</div>`
         : "";
-      return { html: noticesPrefix + infoboxPrefix + transformed.contentHtml };
+      // MediaWiki's HTML, from a user's wikitext: sanitized before it is handed back.
+      return {
+        html: sanitizeWikiArticleHtml(noticesPrefix + infoboxPrefix + transformed.contentHtml),
+      };
     }),
 
   /**

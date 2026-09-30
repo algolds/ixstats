@@ -266,6 +266,41 @@ const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
   SAFE_FOR_TEMPLATES: false,
 };
 
+/** A 53-bit string hash (cyrb53): plenty to tell one sanitizer configuration from another. */
+function hashString(text: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 2654435761);
+    h2 = Math.imul(h2 ^ code, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+
+/** Bump when `getPurifier`'s hooks change: they shape the output but are not part of the config. */
+const SANITIZER_HOOKS_VERSION = 1;
+
+let articleSanitizerFingerprint: string | null = null;
+
+/**
+ * Identifies everything that decides what `sanitizeWikiArticleHtml` outputs: its allow and forbid
+ * lists (regular expressions included), the hooks version and DOMPurify's own version. Stored
+ * article bundles carry it, so changing the sanitizer invalidates them by itself.
+ */
+export function wikiArticleSanitizerFingerprint(): string {
+  articleSanitizerFingerprint ??= hashString(
+    JSON.stringify(
+      [WIKI_ARTICLE_SANITIZE_CONFIG, SANITIZER_HOOKS_VERSION, DOMPurify.version],
+      (_key: string, value: object | string | number | boolean | null) =>
+        value instanceof RegExp ? value.toString() : value
+    )
+  );
+  return articleSanitizerFingerprint;
+}
+
 /**
  * WikiOS article sanitization (stored or compiled article HTML, served to every reader).
  * Wiki config plus the MediaWiki/Parsoid markup articles need; <style> blocks are removed

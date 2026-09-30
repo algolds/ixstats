@@ -8,6 +8,7 @@
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle } from "./title";
+import { enqueueRender } from "../services/render-service";
 
 export interface MovePageResult {
   success: boolean;
@@ -46,13 +47,14 @@ export class PageManagementService {
       throw new Error("Old and new page names are identical.");
     }
 
-    return db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       // 1. Fetch original article
       const original = await tx.wikiArticle.findFirst({
         where: {
           source: realm,
           OR: [{ slug: oldSlug }, { title: oldSlugOrTitle.replace(/_/g, " ") }],
         },
+        select: { id: true, title: true, namespace: true },
       });
 
       if (!original) {
@@ -65,6 +67,7 @@ export class PageManagementService {
           source: realm,
           OR: [{ slug: newSlug }, { title: newCanonicalTitle }],
         },
+        select: { id: true },
       });
 
       if (existingTarget && existingTarget.id !== original.id) {
@@ -79,9 +82,12 @@ export class PageManagementService {
           slug: newSlug,
           namespace: target.namespaceId,
           namespacePrefix: target.namespacePrefix,
+          // The page's name is part of how it renders ({{PAGENAME}}, the display title): stale.
+          htmlSyncedAt: null,
           lastEditorId: userId,
           updatedAt: new Date(),
         },
+        select: { id: true },
       });
 
       // 4. Create redirect article at the old location
@@ -101,6 +107,7 @@ export class PageManagementService {
           authorId: userId,
           lastEditorId: userId,
         },
+        select: { id: true },
       });
 
       // 5. Update Link Graph: Repoint incoming links to new article ID
@@ -138,6 +145,10 @@ export class PageManagementService {
         linksUpdated: linkUpdateResult.count,
       };
     });
+
+    // The moved page is stale under its new name: render it off the read path.
+    enqueueRender(result.movedArticleId);
+    return result;
   }
 
   /**
@@ -156,6 +167,7 @@ export class PageManagementService {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
       },
+      select: { id: true, title: true, status: true },
     });
 
     if (!article) {
@@ -169,6 +181,7 @@ export class PageManagementService {
         lastEditorId: userId,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
 
     await db.wikiLog.create({
@@ -202,6 +215,7 @@ export class PageManagementService {
         source: realm,
         OR: [{ slug }, { title: slugOrTitle.replace(/_/g, " ") }],
       },
+      select: { id: true, title: true },
     });
 
     if (!article) {
@@ -215,6 +229,7 @@ export class PageManagementService {
         lastEditorId: userId,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
 
     await db.wikiLog.create({
