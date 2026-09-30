@@ -107,7 +107,7 @@ describe("movePage", () => {
     const redirect = tables.wikiArticle.rows.find((row) => row.title === "Old name");
     expect(redirect).toMatchObject({
       wikitext: "#REDIRECT [[New name]]",
-      redirectTargetSlug: "new_name",
+      redirectTargetSlug: "New name",
     });
     expect(tables.wikiRevision.rows.find((row) => row.articleId === redirect?.id)).toMatchObject({
       wikitext: "#REDIRECT [[New name]]",

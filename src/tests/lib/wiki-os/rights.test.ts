@@ -7,6 +7,7 @@ jest.mock("~/server/db", () => ({
     wikiUserGroup: { findMany: jest.fn() },
     wikiBlock: { findMany: jest.fn() },
     wikiRevision: { count: jest.fn() },
+    user: { findUnique: jest.fn() },
   },
 }));
 jest.mock("~/lib/auth", () => ({
@@ -21,6 +22,7 @@ import {
   BUREAUCRAT_CHANGEABLE_GROUPS,
   changeableGroups,
   getWikiPermissions,
+  getWikiPermissionsForAuthId,
   resolveGroups,
   rightsForGroups,
   type GroupResolutionInput,
@@ -196,6 +198,7 @@ const mockDb = db as unknown as {
   wikiUserGroup: { findMany: jest.Mock };
   wikiBlock: { findMany: jest.Mock };
   wikiRevision: { count: jest.Mock };
+  user: { findUnique: jest.Mock };
 };
 
 let groupRows: Row[] = [];
@@ -374,5 +377,37 @@ describe("isWikiAdmin", () => {
   it("is false for an interface-admin who is not a sysop (editprotected is the admin right)", async () => {
     groupRows = [{ userId: "db1", group: "interface-admin", expiresAt: null }];
     expect(await isWikiAdmin(ctxFor())).toBe(false);
+  });
+});
+
+describe("getWikiPermissionsForAuthId (callers without a request context)", () => {
+  it("loads the user row and applies the role mapping and explicit groups", async () => {
+    mockDb.user.findUnique.mockResolvedValue({
+      id: "db9",
+      clerkUserId: "user_9",
+      createdAt: ago(DAY),
+      role: { id: "r1", name: "admin", level: 10 },
+    });
+    groupRows = [{ userId: "db9", group: "bot", expiresAt: null }];
+
+    const perms = await getWikiPermissionsForAuthId("user_9");
+
+    expect(mockDb.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { clerkUserId: "user_9" } })
+    );
+    expect(perms.groups).toEqual(expect.arrayContaining(["sysop", "bot"]));
+    expect(perms.rights.has("import")).toBe(true);
+  });
+
+  it("gives a signed-in account with no user row only what being signed in gives", async () => {
+    mockDb.user.findUnique.mockResolvedValue(null);
+    const perms = await getWikiPermissionsForAuthId("user_unknown");
+    expect(perms.groups).toEqual(["*", "user"]);
+    expect(perms.rights.has("import")).toBe(false);
+  });
+
+  it("recognises a system owner by their account id", async () => {
+    mockDb.user.findUnique.mockResolvedValue(null);
+    expect((await getWikiPermissionsForAuthId("user_owner")).rights.has("import")).toBe(true);
   });
 });

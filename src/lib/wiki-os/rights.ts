@@ -365,6 +365,23 @@ export function getWikiPermissions(ctx: WikiAuthContext): Promise<WikiPermission
 }
 
 /**
+ * The permissions of the signed-in account `authId` (a Clerk user id), for callers outside tRPC, such as
+ * API routes, that have no request context: it loads the user row the context would have carried.
+ */
+export async function getWikiPermissionsForAuthId(authId: string): Promise<WikiPermissions> {
+  const user = await db.user.findUnique({
+    where: { clerkUserId: authId },
+    select: {
+      id: true,
+      clerkUserId: true,
+      createdAt: true,
+      role: { select: { id: true, name: true, level: true } },
+    },
+  });
+  return getWikiPermissions({ auth: { userId: authId }, user });
+}
+
+/**
  * Groups, rights and active block of someone other than the caller: the WikiOS user `userId` (null
  * when `wikiUsername` is a wiki account nobody has linked) known by `wikiUsername`.
  */

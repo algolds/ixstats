@@ -174,6 +174,17 @@ export function ScrubbableRevisionTimeline({
           </div>
         </div>
 
+        {/* Rollback failure: the server's reason (e.g. a revision text that was never imported) */}
+        {rollbackMutation.error && (
+          <div
+            role="alert"
+            className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {rollbackMutation.error.message}
+          </div>
+        )}
+
         {/* Visual Timeline Scrubber Bar */}
         <div className="space-y-2 pt-2">
           <div className="text-muted-foreground flex justify-between text-xs">
@@ -301,7 +312,10 @@ export function ScrubbableRevisionTimeline({
             </span>
             <button
               type="button"
-              onClick={() => setUndoTarget(compareRev)}
+              onClick={() => {
+                revertMutation.reset();
+                setUndoTarget(compareRev);
+              }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
             >
               <Undo className="h-3.5 w-3.5" />
@@ -322,6 +336,12 @@ export function ScrubbableRevisionTimeline({
               <strong>{undoTarget.id}</strong> authored by <strong>{undoTarget.author}</strong>?
               This will create a new revision restoring the exact text.
             </p>
+            {revertMutation.error && (
+              <p role="alert" className="flex items-center gap-2 text-xs font-medium text-red-400">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {revertMutation.error.message}
+              </p>
+            )}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -339,7 +359,10 @@ export function ScrubbableRevisionTimeline({
               </button>
               <button
                 type="button"
-                onClick={() => setUndoTarget(null)}
+                onClick={() => {
+                  revertMutation.reset();
+                  setUndoTarget(null);
+                }}
                 className="border-border/50 bg-secondary/60 text-foreground hover:bg-secondary rounded-lg border px-3 py-1.5 text-xs font-medium"
               >
                 Cancel
