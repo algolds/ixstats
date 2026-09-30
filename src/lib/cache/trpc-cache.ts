@@ -212,6 +212,11 @@ async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Pro
   });
 }
 
+// tRPC's `middlewareMarker` (not exported from a stable entrypoint).
+const MIDDLEWARE_MARKER = "middlewareMarker";
+
+type CachedData = NonNullable<unknown>;
+
 /** tRPC's next() resolves to { ok: false, error } when the procedure throws. */
 function isFailedResult<T>(result: T): boolean {
   return typeof result === "object" && result !== null && "ok" in result && result.ok === false;
@@ -248,20 +253,23 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     const cacheKey = generateCacheKey(path, input, userId, namespace, realmKey);
 
     // Check cache
-    const cached = await getCachedValue<T>(cacheKey);
+    const cached = await getCachedValue<CachedData>(cacheKey);
     if (cached !== null) {
       if (process.env.NODE_ENV === "development") {
         console.log(`[TRPC_CACHE] HIT: ${path}`);
       }
-      return cached;
+      // Rebuilt around the current request's ctx: the stored payload is only the procedure's data.
+      return { marker: MIDDLEWARE_MARKER, ok: true, data: cached, ctx } as T;
     }
 
     // Execute procedure
     const result = await next();
 
     // Cache result (never a failed one, or the error would be replayed for the whole TTL)
+    // Only `data` is stored: the result envelope carries ctx (Prisma client, headers, auth),
+    // which superjson rejects ("Detected property constructor") and must never be replayed.
     if (!isFailedResult(result)) {
-      await setCachedValue(cacheKey, result, ttlSeconds);
+      await setCachedValue(cacheKey, (result as { data?: CachedData }).data, ttlSeconds);
     }
 
     if (process.env.NODE_ENV === "development") {
