@@ -35,12 +35,19 @@ if ( !defined( 'WIKIOS_KEEP_WIKI_ARTICLE_PATH' ) && !getenv( 'WIKIOS_KEEP_WIKI_A
 }
 
 // ---------------------------------------------------------------------------------------------
-// 2. Canonical URL -> WikiOS, for existing content pages shown as an article only. Edit forms,
-//    history, diffs, Special pages, missing pages and non-content namespaces keep MediaWiki's own.
+// 2. Canonical URL -> WikiOS, for the current version of an existing content page only. MediaWiki
+//    marks old revisions (?oldid=) and diffs (?diff=) as articles too, so those are excluded here:
+//    they get no WikiOS canonical (MediaWiki adds none of its own there), which keeps /wiki/Foo (the
+//    current text) from being named as the canonical URL of a specific old revision. Edit forms,
+//    history, Special pages, missing pages and non-content namespaces get none either.
 // ---------------------------------------------------------------------------------------------
 $wgHooks['BeforePageDisplay'][] = static function ( $out, $skin ) {
 	$title = $out->getTitle();
 	if ( !$title || !$out->isArticle() || !$title->exists() || !$title->isContentPage() ) {
+		return;
+	}
+	$request = $out->getRequest();
+	if ( $request->getCheck( 'oldid' ) || $request->getCheck( 'diff' ) ) {
 		return;
 	}
 	$out->setCanonicalUrl( 'https://ixwiki.com/wiki/' . wfUrlencode( $title->getPrefixedDBkey() ) );
@@ -57,21 +64,30 @@ foreach ( [
 	'edit',
 	'bot',
 	'autoconfirmed',
-	'import',
-	'importupload',
+	'editsemiprotected',
 	'upload',
 	'reupload',
-	'reupload-shared',
 	'noratelimit',
 	'skipcaptcha',
-	// WikiOS enforces its own page protection before it pushes a head; without this right a page
-	// that is protected in MediaWiki could never be mirrored and the two sides would diverge.
+	// Broader than a plain mirror needs, kept on purpose. A bot password only carries these rights
+	// if its grants include them (createBotPassword --grants ...), so a leaked bot password is
+	// limited to the grants chosen when it was created; the group itself is what caps the account.
+	//
+	// - editprotected: WikiOS enforces its own page protection before it pushes a head. Without
+	//   this right a page that is protected in MediaWiki could never be mirrored and the two sides
+	//   would diverge. `editsemiprotected` above is the same reasoning for semi-protection.
+	// - import, importupload: WikiOS' XML import writes
+	//   through Special:Import / action=import, which needs both rights (owner scope: XML
+//   export-0.11 import and export). The `basic` grant already carries editsemiprotected.
 	'editprotected',
+	'import',
+	'importupload',
 ] as $right ) {
 	$wgGroupPermissions['wikios-mirror'][$right] = true;
 }
 
-// Deliberately NOT granted: editinterface, editsitecss, editsitejs (and editsitejson/edituserjs/...).
+// Deliberately NOT granted: editinterface, editsitecss, editsitejs (and editsitejson/edituserjs/...),
+// and reupload-shared (overwrites files of a shared repository, which this wiki does not use).
 // WikiOS keeps the Template:, Module: and MediaWiki: namespaces admin-only, so the mirror account
 // must not be able to rewrite the wiki's interface messages, site CSS or site JS even if its bot
 // password leaks. Those pages are edited on classic MediaWiki by a real administrator.
@@ -85,6 +101,12 @@ foreach ( [
 //        env[WIKIOS_WEBHOOK_SECRET] = <same value as WIKI_SYNC_WEBHOOK_SECRET in the WikiOS env>
 //    in /etc/php/8.4/fpm/pool.d/www.conf (PHP-FPM clears the environment unless it is listed
 //    there), then `systemctl reload php8.4-fpm`. Without it the hook does nothing.
+//
+//    Only web requests (PHP-FPM) announce their edits. Edits made from the command line
+//    (maintenance/edit.php, importDump.php, job runners, other CLI scripts) run outside the pool
+//    and have no WIKIOS_WEBHOOK_SECRET in their environment, so they send nothing. That is
+//    intended: WikiOS' `wiki-recentchanges` cron job (every 10 minutes, runAutoSyncCycle)
+//    reads MediaWiki's recent changes and imports whatever the webhook did not announce.
 // ---------------------------------------------------------------------------------------------
 $wgHooks['PageSaveComplete'][] = static function (
 	$wikiPage,
