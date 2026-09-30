@@ -47,7 +47,10 @@ export class MessagingConversationOperations {
         data: {
           name: input.subject,
           type: isGroup ? "group" : "direct",
-          channelType: input.channelId,
+          channelType: input.channelType ?? input.channelId,
+          conversationType: input.conversationType,
+          diplomaticClassification: input.diplomaticClassification,
+          priority: input.priority,
           source: input.source || "thinkshare",
           participants: {
             create: allParticipants.map((uid) => ({
@@ -91,6 +94,7 @@ export class MessagingConversationOperations {
       subject: input.subject,
       initialMessage: input.initialMessage,
       source: input.source || "diplomatic",
+      conversationType: "diplomatic",
     });
   }
 
@@ -238,7 +242,6 @@ export class MessagingConversationOperations {
           conversationType: input.conversationType || "official",
           diplomaticClassification: input.classification || null,
           source: input.source || "system",
-          subject: input.subject || null,
           participants: {
             create: [
               { userId: actorId, role: "admin" },

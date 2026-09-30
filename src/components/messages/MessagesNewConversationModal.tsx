@@ -11,7 +11,10 @@ interface MessagesNewConversationModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUserId: string;
-  onCreateConversation: (participantId: string) => Promise<void>;
+  onCreateConversation: (
+    participantId: string,
+    options?: { diplomatic?: boolean }
+  ) => Promise<void>;
 }
 
 export function MessagesNewConversationModal({
@@ -22,16 +25,17 @@ export function MessagesNewConversationModal({
 }: MessagesNewConversationModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [diplomatic, setDiplomatic] = useState(false);
 
   const { data: users, isLoading } = api.messages.searchUsers.useQuery(
     { query: searchQuery },
     { enabled: isOpen && searchQuery.length > 2 }
   );
 
-  const handleCreate = async (userId: string) => {
+  const handleCreate = async (userId: string, isDiplomatic = false) => {
     setIsCreating(true);
     try {
-      await onCreateConversation(userId);
+      await onCreateConversation(userId, isDiplomatic ? { diplomatic: true } : undefined);
       setSearchQuery("");
     } finally {
       setIsCreating(false);
@@ -76,6 +80,16 @@ export function MessagesNewConversationModal({
             />
           </div>
 
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={diplomatic}
+              onChange={(e) => setDiplomatic(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <span>Diplomatic channel (country-to-country)</span>
+          </label>
+
           {/* Results */}
           <div className="max-h-64 overflow-y-auto">
             {isLoading ? (
@@ -93,7 +107,7 @@ export function MessagesNewConversationModal({
                 {(users as any[]).map((user: any) => (
                   <button
                     key={user.id || user.clerkUserId}
-                    onClick={() => handleCreate(user.clerkUserId || user.id)}
+                    onClick={() => handleCreate(user.clerkUserId || user.id, diplomatic)}
                     disabled={isCreating}
                     className="hover:bg-muted/50 flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-colors"
                   >
