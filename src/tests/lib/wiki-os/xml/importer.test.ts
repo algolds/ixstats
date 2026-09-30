@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
+import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
 import {
@@ -26,6 +27,7 @@ import {
 } from "./fake-wiki-db";
 
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
+jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
@@ -198,12 +200,11 @@ describe("fresh import of the export-0.11 fixture", () => {
     ).toHaveLength(1);
   });
 
-  it("makes the newest revision with text the page's head, and marks it for re-render", () => {
+  it("makes the newest revision with text the page's head, and marks it stale and queues its render", () => {
     expect(article("Kingdom of Testia")).toMatchObject({
       wikitext: KINGDOM_V2,
       mwLatestRevId: 1002,
       mwPageId: 101,
-      contentHtml: "",
       htmlSyncedAt: null,
       wordCount: 6,
       readingTime: 1,
@@ -372,10 +373,11 @@ describe("the page's head only moves forward", () => {
       contentHtml: "<p>seeded</p>",
     });
     expect(syncLinks).not.toHaveBeenCalledWith(seeded.id, expect.anything(), "", "ixwiki");
+    expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id); // its head did not change: nothing to render
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(4);
   });
 
-  it("a newer dump replaces an older head and invalidates its rendering", async () => {
+  it("a newer dump replaces an older head, marks its rendering stale (the HTML stays until the render lands) and queues the render", async () => {
     const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
     seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
 
@@ -384,10 +386,11 @@ describe("the page's head only moves forward", () => {
     expect(article("Kingdom of Testia")).toMatchObject({
       wikitext: KINGDOM_V2,
       mwLatestRevId: 1002,
-      contentHtml: "",
+      contentHtml: "<p>seeded</p>",
       htmlSyncedAt: null,
       mwPageId: 101,
     });
+    expect(enqueueRender).toHaveBeenCalledWith(seeded.id);
     expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
   });
 
