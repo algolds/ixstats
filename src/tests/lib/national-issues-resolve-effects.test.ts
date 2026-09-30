@@ -6,6 +6,7 @@
  * - GDP / GDP-growth / population consequences become StorytellerEffects the projection applies
  *   instead of field writes that were overwritten or read by nothing;
  * - consequences that cannot be applied are left out of the displayed list.
+ * (Creating a missing stability row is covered in stability-event-deltas.test.ts.)
  */
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 import { describe, it, expect, beforeEach } from "@jest/globals";
@@ -29,8 +30,7 @@ import { NationalIssuesConsequences } from "~/lib/national-issues/consequences";
 const COUNTRY = "country-1";
 const ISSUE = "issue-1";
 
-function makeDb(options: { consequences: unknown[]; stabilityRow?: boolean }) {
-  const hasStability = options.stabilityRow ?? true;
+function makeDb(options: { consequences: unknown[] }) {
   return {
     nationalIssue: {
       findUnique: jest.fn().mockResolvedValue({
@@ -61,7 +61,7 @@ function makeDb(options: { consequences: unknown[]; stabilityRow?: boolean }) {
       update: jest.fn().mockResolvedValue({}),
     },
     internalStabilityMetrics: {
-      findUnique: jest.fn().mockResolvedValue(hasStability ? { stabilityScore: 60 } : null),
+      findUnique: jest.fn().mockResolvedValue({ stabilityScore: 60 }),
       update: jest.fn().mockResolvedValue({}),
     },
     politicalParty: { findFirst: jest.fn() },
@@ -160,18 +160,14 @@ describe("NationalIssuesConsequences.resolveIssue", () => {
     const db = makeDb({
       consequences: [
         approval,
-        stability,
         { targetModel: "Country", targetField: "currentTotalGdp", operation: "set", value: 1 },
       ],
-      stabilityRow: false,
     });
 
     const result = await NationalIssuesConsequences.resolveIssue(ISSUE, "opt-1", db as any);
 
     expect(result.consequences.map((c) => c.targetField)).toEqual(["publicApproval"]);
     expect(db.storytellerEffect.create).not.toHaveBeenCalled();
-    expect(db.internalStabilityMetrics.update).not.toHaveBeenCalled();
-    expect(result.consequenceLog).not.toContain("Stability");
     expect(result.consequenceLog).not.toContain("GDP");
   });
 });
