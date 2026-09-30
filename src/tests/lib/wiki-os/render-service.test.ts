@@ -136,7 +136,10 @@ describe("renderArticle", () => {
 
     await expect(renderArticle(id)).resolves.toEqual({ ok: true });
 
-    expect(mockRenderViaMediaWiki.mock.calls.map((call) => call[0])).toEqual(["old text", "new text"]);
+    expect(mockRenderViaMediaWiki.mock.calls.map((call) => call[0])).toEqual([
+      "old text",
+      "new text",
+    ]);
     expect(mockUpdateMany.mock.calls.map((call) => call[0].where.wikitext)).toEqual([
       "old text",
       "new text",

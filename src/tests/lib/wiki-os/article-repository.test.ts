@@ -299,7 +299,13 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     expect(mockFindMany).not.toHaveBeenCalled();
     const { where, select } = mockFindUnique.mock.calls[0]?.[0];
     expect(where).toEqual({ source_title: { source: "ixwiki", title: "Foo bar" } });
-    expect(Object.keys(select).sort()).toEqual(["categories", "htmlSyncedAt", "id", "revisions", "title"]);
+    expect(Object.keys(select).sort()).toEqual([
+      "categories",
+      "htmlSyncedAt",
+      "id",
+      "revisions",
+      "title",
+    ]);
     expect(select.revisions).toMatchObject({ take: 1, orderBy: { createdAt: "desc" } });
     expect(select.categories.take).toBe(50);
     expect(head).toEqual({

@@ -109,7 +109,8 @@ export async function renderFallbackView(articleId: string): Promise<ViewBundle 
     select: { wikitext: true, contentHtml: true },
   });
   if (!row) return null;
-  const html = row.wikitext.trim() !== "" ? parseWikitextToHtml(row.wikitext, "ixwiki") : row.contentHtml;
+  const html =
+    row.wikitext.trim() !== "" ? parseWikitextToHtml(row.wikitext, "ixwiki") : row.contentHtml;
   return html?.trim() ? buildViewBundle(html) : null;
 }
 
@@ -126,7 +127,8 @@ async function renderSource(article: {
   wikitext: string;
   contentHtml: string | null;
 }): Promise<string | null> {
-  if (article.wikitext.trim() === "") return article.contentHtml?.trim() ? article.contentHtml : null;
+  if (article.wikitext.trim() === "")
+    return article.contentHtml?.trim() ? article.contentHtml : null;
   return renderArticleViaMediaWiki(article.wikitext, article.title);
 }
 

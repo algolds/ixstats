@@ -200,7 +200,10 @@ describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
     setRow(freshBundleRow("<p>First.</p>"));
     await caller().getArticleHtml({ title: "Aurelia" });
 
-    findArticleForView.mockResolvedValue({ ...found, htmlSyncedAt: new Date("2026-09-30T11:00:00Z") });
+    findArticleForView.mockResolvedValue({
+      ...found,
+      htmlSyncedAt: new Date("2026-09-30T11:00:00Z"),
+    });
     setRow(freshBundleRow("<p>Second.</p>", new Date("2026-09-30T11:00:00Z")));
     const result = await caller().getArticleHtml({ title: "Aurelia" });
 
@@ -241,7 +244,10 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     expect(result.contentHtml).toBe("<p>New.</p>");
     expect(result.renderQuality).toBe("rendered");
     expect(renderArticleViaMediaWiki).toHaveBeenCalledTimes(1);
-    expect(renderArticleViaMediaWiki).toHaveBeenCalledWith("'''Aurelia''' is a country.", "Aurelia");
+    expect(renderArticleViaMediaWiki).toHaveBeenCalledWith(
+      "'''Aurelia''' is a country.",
+      "Aurelia"
+    );
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
     expect(mockUpdateMany.mock.calls[0]?.[0].where.wikitext).toBe("'''Aurelia''' is a country.");
   });
@@ -294,7 +300,13 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
 
   it("is not found for a stub row that has nothing to show", async () => {
     findArticleForView.mockResolvedValue(head({ htmlSyncedAt: null, title: "Stubbed stub" }));
-    setRow({ renderedView: null, htmlSyncedAt: null, title: "Stubbed stub", wikitext: "", contentHtml: null });
+    setRow({
+      renderedView: null,
+      htmlSyncedAt: null,
+      title: "Stubbed stub",
+      wikitext: "",
+      contentHtml: null,
+    });
 
     await expect(caller().getArticleHtml({ title: "Stubbed stub" })).rejects.toMatchObject({
       code: "NOT_FOUND",
@@ -346,9 +358,11 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
   it("never has more than a few imports in flight, so made-up titles cannot fan out to MediaWiki", async () => {
     findArticleForView.mockResolvedValue(null);
     const releases: Array<() => void> = [];
-    jest.mocked(syncSinglePage).mockImplementation(
-      () => new Promise<boolean>((resolve) => releases.push(() => resolve(false)))
-    );
+    jest
+      .mocked(syncSinglePage)
+      .mockImplementation(
+        () => new Promise<boolean>((resolve) => releases.push(() => resolve(false)))
+      );
 
     const requests = ["Fan 1", "Fan 2", "Fan 3", "Fan 4", "Fan 5", "Fan 6"].map((title) =>
       caller()
@@ -364,7 +378,9 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
 
     // A refused title was not recorded: once a slot is free it is imported.
     jest.mocked(syncSinglePage).mockResolvedValue(false);
-    await caller().getArticleHtml({ title: "Fan 6" }).catch(() => undefined);
+    await caller()
+      .getArticleHtml({ title: "Fan 6" })
+      .catch(() => undefined);
     expect(syncSinglePage).toHaveBeenCalledTimes(5);
   });
 
@@ -389,11 +405,27 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
     findArticleForView.mockResolvedValue(head());
     setRow(freshBundleRow(chipped));
     jest.mocked(resolveActiveCountryId).mockResolvedValue("country_1");
-    const resolve = jest.fn(async () => new Map([["CountryData:Aurelia:population", { key: "CountryData:Aurelia:population", value: "12,345" }]]));
+    const resolve = jest.fn(
+      async () =>
+        new Map([
+          [
+            "CountryData:Aurelia:population",
+            { key: "CountryData:Aurelia:population", value: "12,345" },
+          ],
+        ])
+    );
     const unregister = registerTemplateProvider({ name: "test", canHandle: () => true, resolve });
 
     const first = await caller().getArticleHtml({ title: "Aurelia" });
-    resolve.mockImplementation(async () => new Map([["CountryData:Aurelia:population", { key: "CountryData:Aurelia:population", value: "99" }]]));
+    resolve.mockImplementation(
+      async () =>
+        new Map([
+          [
+            "CountryData:Aurelia:population",
+            { key: "CountryData:Aurelia:population", value: "99" },
+          ],
+        ])
+    );
     const second = await caller().getArticleHtml({ title: "Aurelia" });
     unregister();
 

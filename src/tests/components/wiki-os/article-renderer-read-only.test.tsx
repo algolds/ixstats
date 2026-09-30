@@ -194,7 +194,9 @@ describe("ArticleRenderer embed assets load only for a page that embeds a map (p
   });
 
   it("adds them for a page whose infobox holds an embed", () => {
-    renderArticle("ixwiki", { infoboxHtml: '<table><tr><td><div class="ix-embed-wrap"></div></td></tr></table>' });
+    renderArticle("ixwiki", {
+      infoboxHtml: '<table><tr><td><div class="ix-embed-wrap"></div></td></tr></table>',
+    });
 
     expect(embedAssets().every(Boolean)).toBe(true);
   });
@@ -247,7 +249,9 @@ describe("ArticleRenderer loads authorship beside the article (plan 404)", () =>
   });
 
   it("does not ask when the page came with its authorship (another wiki's page)", () => {
-    renderArticle("iiwiki", { authorInfo: { creator: { username: "Carol" }, totalContributors: 1 } });
+    renderArticle("iiwiki", {
+      authorInfo: { creator: { username: "Carol" }, totalContributors: 1 },
+    });
 
     expect(authorsQuery).toHaveBeenCalledWith(
       expect.anything(),
