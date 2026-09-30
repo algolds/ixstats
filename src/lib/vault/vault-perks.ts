@@ -351,6 +351,9 @@ export async function getLoreTokensBalance(userId: string, db: PrismaClient): Pr
       const metaObj = meta as Record<string, unknown>;
       if (metaObj.useToken === true) {
         usedTokenCount++;
+      } else if (metaObj.tokenRefund === true) {
+        // A rejected request gives its token back
+        usedTokenCount--;
       }
     }
   }

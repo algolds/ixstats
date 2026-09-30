@@ -18,8 +18,52 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import { LedgerError, earnCreditsTx } from "~/lib/vault/vault-ledger";
+import type { Prisma } from "@prisma/client";
 
 const LORE_CARD_REQUEST_COST = 50; // IxCredits
+
+/**
+ * What the user actually paid for a lore request: read back the LORE_CARD_REQUEST
+ * transaction (matched by requestId, or by article for requests filed before requestId was
+ * recorded). Falls back to the flat request cost when no record is found.
+ */
+async function findLoreRequestPayment(
+  tx: Prisma.TransactionClient,
+  request: { id: string; userId: string; articleTitle: string; wikiSource: string }
+): Promise<{ usedToken: boolean; credits: number }> {
+  const vault = await tx.myVault.findUnique({ where: { userId: request.userId } });
+  if (!vault) return { usedToken: false, credits: LORE_CARD_REQUEST_COST };
+
+  const rows = await tx.vaultTransaction.findMany({
+    where: { vaultId: vault.id, source: "LORE_CARD_REQUEST" },
+    orderBy: { createdAt: "desc" },
+    select: { credits: true, metadata: true },
+  });
+
+  for (const row of rows) {
+    let meta: unknown = row.metadata;
+    if (typeof meta === "string") {
+      try {
+        meta = JSON.parse(meta);
+      } catch {
+        continue;
+      }
+    }
+    if (!meta || typeof meta !== "object") continue;
+    const m = meta as Record<string, unknown>;
+    const matches =
+      m.requestId === request.id ||
+      (m.requestId === undefined &&
+        m.articleTitle === request.articleTitle &&
+        m.wikiSource === request.wikiSource);
+    if (!matches || m.tokenRefund === true) continue;
+    return m.useToken === true
+      ? { usedToken: true, credits: 0 }
+      : { usedToken: false, credits: Math.abs(row.credits) || LORE_CARD_REQUEST_COST };
+  }
+  return { usedToken: false, credits: LORE_CARD_REQUEST_COST };
+}
 
 export const loreCardsAdminRouter = createTRPCRouter({
   /**
@@ -223,50 +267,62 @@ export const loreCardsAdminRouter = createTRPCRouter({
           });
         }
 
-        // Update request status
-        await ctx.db.loreCardRequest.update({
-          where: { id: input.requestId },
-          data: {
-            status: "REJECTED",
-            reviewedAt: new Date(),
-            reviewedBy: adminUserId,
-            rejectionReason: input.reason,
-          },
-        });
-
-        // Refund IxCredits to user
-        await ctx.db.myVault.update({
-          where: { userId: request.userId },
-          data: {
-            credits: {
-              increment: LORE_CARD_REQUEST_COST,
-            },
-          },
-        });
-
-        // Log refund transaction
-        const vault = await ctx.db.myVault.findUnique({
-          where: { userId: request.userId },
-        });
-
-        if (vault) {
-          await ctx.db.vaultTransaction.create({
+        // Reject and refund atomically. The conditional update makes a double-click (or two
+        // admins) refund once; the refund goes through the ledger and mirrors what was paid.
+        const refund = await ctx.db.$transaction(async (tx) => {
+          const { count } = await tx.loreCardRequest.updateMany({
+            where: { id: input.requestId, status: "PENDING" },
             data: {
-              vaultId: vault.id,
-              credits: LORE_CARD_REQUEST_COST,
-              balanceAfter: vault.credits,
-              type: "INCOME",
-              source: "REFUND",
-              metadata: {
-                articleTitle: request.articleTitle,
-                reason: "Lore card request rejected",
-              },
+              status: "REJECTED",
+              reviewedAt: new Date(),
+              reviewedBy: adminUserId,
+              rejectionReason: input.reason,
             },
           });
-        }
+          if (count !== 1) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Request is no longer pending",
+            });
+          }
+
+          const paid = await findLoreRequestPayment(tx, request);
+          const metadata = {
+            requestId: request.id,
+            articleTitle: request.articleTitle,
+            reason: "Lore card request rejected",
+          };
+
+          if (paid.usedToken) {
+            // Paid with a token: give the token back, not 50 IxC
+            const vault = await tx.myVault.findUnique({ where: { userId: request.userId } });
+            if (vault) {
+              await tx.vaultTransaction.create({
+                data: {
+                  vaultId: vault.id,
+                  credits: 0,
+                  balanceAfter: vault.credits,
+                  type: "REFUND",
+                  source: "LORE_CARD_REQUEST",
+                  metadata: { ...metadata, tokenRefund: true },
+                },
+              });
+            }
+            return { credits: 0, tokenRefunded: true };
+          }
+
+          await earnCreditsTx(tx, {
+            userId: request.userId,
+            amount: paid.credits,
+            type: "REFUND",
+            source: "LORE_CARD_REFUND",
+            metadata,
+          });
+          return { credits: paid.credits, tokenRefunded: false };
+        });
 
         console.log(
-          `[Lore Cards] Admin ${adminUserId} rejected request ${input.requestId}. User refunded ${LORE_CARD_REQUEST_COST} IxC`
+          `[Lore Cards] Admin ${adminUserId} rejected request ${input.requestId}. User refunded ${refund.tokenRefunded ? "1 token" : `${refund.credits} IxC`}`
         );
 
         return {
@@ -277,6 +333,9 @@ export const loreCardsAdminRouter = createTRPCRouter({
         console.error("[Lore Cards] Error in rejectRequest:", error);
         if (error instanceof TRPCError) {
           throw error;
+        }
+        if (error instanceof LedgerError) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
         }
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
