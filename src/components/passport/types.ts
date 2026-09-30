@@ -16,7 +16,10 @@ export type PassportVault = PassportPayload["vault"];
 
 export type PassportTabType = "overview" | "realms" | "work" | "vault" | "history";
 
-/** Owner's display toggles on the passport's back face (session-only, not persisted). */
+/**
+ * Owner's display toggles on the passport's back face. Session-only view preview: not persisted, and they
+ * do not change what other viewers see (the public passport always includes these sections).
+ */
 export interface PassportVisibility {
   accolades: boolean;
   impact: boolean;

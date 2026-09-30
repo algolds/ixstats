@@ -93,7 +93,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   // Connected accounts counter
   const linkedServicesCount =
     (status?.forum.linked ? 1 : 0) +
-    (status?.wiki.linked ? 1 : 0) +
+    (status?.wiki.linked || wikiLinks.data?.some((l) => l.verified) ? 1 : 0) +
     (status?.discord.linked ? 1 : 0);
 
   const totalConnectedCount = linkedServicesCount + (userProfile?.countryId ? 1 : 0);

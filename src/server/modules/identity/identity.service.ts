@@ -64,26 +64,43 @@ async function loadWikiFeed(identity: ResolvedIdentity) {
 
 type WikiInfo = Awaited<ReturnType<typeof loadWikiInfo>>;
 
-/** Keep the user's linked forum/wiki ids current with what the passport just resolved. */
-function syncLinkedAccounts(
-  identity: ResolvedIdentity,
-  member: IdentityForumMember | null,
-  wikiInfo: WikiInfo
-): void {
-  const { user, wikiName } = identity;
-  if (!user) return;
-  const now = new Date();
-  const forumSync =
-    member && user.forumUserId !== member.user_id
-      ? { forumUserId: member.user_id, forumUsername: member.username, lastForumSync: now }
-      : {};
-  const wikiSync =
-    wikiInfo && wikiName && user.wikiUsername !== wikiName
-      ? { wikiUsername: wikiName, wikiUserId: wikiInfo.user_id, lastWikiSync: now }
-      : {};
-  const data = { ...forumSync, ...wikiSync };
-  if (Object.keys(data).length === 0) return;
-  db.user.update({ where: { id: user.id }, data }).catch(() => null);
+/** A real MediaWiki user id is >= 1; the bridge reports 0 when it has no live MediaWiki data. */
+function hasLiveWikiData(info: WikiInfo): info is NonNullable<WikiInfo> {
+  return Boolean(info?.exists && info.userId > 0);
+}
+
+/**
+ * Keep the user's linked forum ids current with what the passport just resolved.
+ *
+ * Wiki identity is deliberately NOT synced here: `getPassport` is a public read path and the wiki name it
+ * resolves can be derived from a country name. Only a verified `WikiAccountLink` (identity.wiki-links.ts)
+ * may set the legacy `User.wikiUsername` / `wikiUserId` columns.
+ */
+function syncLinkedAccounts(identity: ResolvedIdentity, member: IdentityForumMember | null): void {
+  const { user } = identity;
+  if (!user || !member || user.forumUserId === member.user_id) return;
+  db.user
+    .update({
+      where: { id: user.id },
+      data: {
+        forumUserId: member.user_id,
+        forumUsername: member.username,
+        lastForumSync: new Date(),
+      },
+    })
+    .catch(() => null);
+}
+
+/** The user's verified ixwiki link, or null. Only this proves the passport's wiki account is theirs. */
+async function loadVerifiedWikiName(userId: string | undefined): Promise<string | null> {
+  if (!userId) return null;
+  const link = await db.wikiAccountLink
+    .findFirst({
+      where: { userId, source: "ixwiki", verifiedAt: { not: null } },
+      select: { username: true },
+    })
+    .catch(() => null);
+  return link?.username ?? null;
 }
 
 /** Tab 1 — identity essentials, featured realm, linked platforms and civic stature. */
@@ -92,9 +109,10 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   if (!identity) return null;
   const { user, wikiName, forumUserId } = identity;
 
-  const [wikiInfo, loreStats, awards, member, thinkpages, clerk, nations, vault] =
+  const [wikiInfo, verifiedWikiName, loreStats, awards, member, thinkpages, clerk, nations, vault] =
     await Promise.all([
       loadWikiInfo(wikiName),
+      loadVerifiedWikiName(user?.id),
       loadLoreStats(wikiName),
       loadLoreAwards(wikiName),
       forumUserId ? forum.getMember(forumUserId).catch(() => null) : null,
@@ -104,7 +122,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
       resolvePassportVault(user?.id),
     ]);
   const loreRank = await loadLoreRank(loreStats?.totalScore);
-  syncLinkedAccounts(identity, member, wikiInfo);
+  syncLinkedAccounts(identity, member);
 
   const realms = membershipsOf(identity, nations);
   return {
@@ -121,10 +139,13 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     featuredRealm: realms.find((r) => r.isFeatured) ?? realms[0] ?? null,
     realmCount: realms.length,
     wiki: {
-      linked: Boolean(wikiInfo?.exists || wikiName),
+      // A user's wiki is "linked" only through a verified link: `wikiName` may be a country name, which
+      // proves nothing. A handle with no user and no country is an external wiki name, linked if it exists.
+      linked: user ? Boolean(verifiedWikiName) : !identity.country && Boolean(wikiInfo?.exists),
       username: wikiName,
-      editCount: wikiInfo?.editCount ?? 0,
-      groups: wikiInfo?.groups ?? [],
+      // MediaWiki's own numbers, or null / empty when they could not be read (never estimated).
+      editCount: hasLiveWikiData(wikiInfo) ? wikiInfo.editCount : null,
+      groups: hasLiveWikiData(wikiInfo) ? wikiInfo.groups : [],
       lorewards: loreStats
         ? {
             totalScore: loreStats.totalScore,

@@ -147,8 +147,8 @@ function civicStats(data: PassportPayload) {
     },
     {
       label: "WikiOS",
-      value: data.wiki.editCount.toLocaleString(),
-      sub: "Edits",
+      value: data.wiki.editCount === null ? "-" : data.wiki.editCount.toLocaleString(),
+      sub: data.wiki.editCount === null ? "Edit count unavailable" : "Edits",
     },
   ];
 }

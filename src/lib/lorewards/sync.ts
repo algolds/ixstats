@@ -10,6 +10,7 @@ import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string | null> {
   const pageTitle = yearOrKey === "main" ? "IxWiki:OOL" : `IxWiki:OOL/${yearOrKey}`;
@@ -551,7 +552,10 @@ export async function syncCurrentWinners(force = false): Promise<void> {
 
 /**
  * Grant the Loreward-winner credit bonus to any winning entry whose wiki winnerUser
- * maps to a platform account (User.wikiUsername). Idempotent: grantBonus(oneTime) keys
+ * maps to a platform account through a VERIFIED ixwiki `WikiAccountLink` (token proven on the wiki user
+ * page, or admin-verified). The legacy `User.wikiUsername` column is deliberately not consulted: it can hold
+ * values that were never proven, so paying through it would pay whoever squatted the name.
+ * Idempotent: grantBonus(oneTime) keys
  * off `bonus:loreward:<entryId>`, so re-running after each sync only pays new wins.
  * Returns the number of newly-granted bonuses.
  */
@@ -567,13 +571,17 @@ export async function grantLorewardBonuses(): Promise<number> {
   let granted = 0;
   for (const e of entries) {
     if (!e.winnerUser) continue;
-    const user = await db.user.findFirst({
-      where: { wikiUsername: { equals: e.winnerUser, mode: "insensitive" } },
-      select: { id: true },
+    const link = await db.wikiAccountLink.findFirst({
+      where: {
+        source: "ixwiki",
+        verifiedAt: { not: null },
+        username: { equals: normalizeWikiUsername(e.winnerUser), mode: "insensitive" },
+      },
+      select: { userId: true },
     });
-    if (!user) continue; // winner has no linked platform account — skip
+    if (!link) continue; // winner has no verified platform account — skip
 
-    const res = await grantBonus(db, user.id, `bonus:loreward:${e.id}`, cfg.loreward, {
+    const res = await grantBonus(db, link.userId, `bonus:loreward:${e.id}`, cfg.loreward, {
       oneTime: true,
       metadata: { entryId: e.id, date: e.date, type: e.type, winnerUser: e.winnerUser },
     });
