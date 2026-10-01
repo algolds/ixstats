@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { motion } from "motion/react";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { springGentle } from "~/lib/design/motion";
@@ -14,6 +15,22 @@ const MARKER = RADIUS + 18;
 const RINGS = [0.25, 0.5, 0.75, 1] as const;
 /** Keep a last-placed axis visible as a sliver rather than a point on the centre. */
 const FLOOR = 4;
+
+/**
+ * The Sovereign Command OS DNA gave each axis its own hue (sky, indigo, emerald, amber, red,
+ * purple); system colour roles keep that per-axis identity in both themes.
+ */
+const AXIS_COLORS = [
+  "var(--color-blue)",
+  "var(--color-indigo)",
+  "var(--color-green)",
+  "var(--color-yellow)",
+  "var(--color-red)",
+  "var(--color-purple)",
+  "var(--color-teal)",
+  "var(--color-orange)",
+] as const;
+const axisColor = (i: number) => AXIS_COLORS[i % AXIS_COLORS.length]!;
 
 function point(index: number, count: number, r: number): [number, number] {
   const angle = (Math.PI * 2 * index) / count - Math.PI / 2;
@@ -40,7 +57,7 @@ function AxisNumber({
       aria-hidden
       style={style}
       className={cn(
-        "bg-surface-secondary border-separator text-caption text-label flex size-6 items-center justify-center rounded-full border tabular-nums",
+        "bg-surface-secondary border-separator text-caption text-label font-data flex size-6 items-center justify-center rounded-full border tabular-nums",
         className
       )}
     >
@@ -64,6 +81,7 @@ export function CountryDNA({
   caption: string;
   className?: string;
 }) {
+  const gradientId = useId();
   if (axes.length < 3) return null;
   const count = axes.length;
 
@@ -74,6 +92,18 @@ export function CountryDNA({
         className="absolute inset-0 size-full overflow-visible"
         aria-hidden
       >
+        {/* The concept's tinted fill and centre glow, in the app tint. */}
+        <defs>
+          <linearGradient id={`${gradientId}-fill`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--tint)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="var(--tint)" stopOpacity="0.12" />
+          </linearGradient>
+          <radialGradient id={`${gradientId}-glow`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="var(--tint)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--tint)" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <circle cx={CENTER} cy={CENTER} r={RADIUS * 0.45} fill={`url(#${gradientId}-glow)`} />
         {RINGS.map((level) => (
           <polygon
             key={level}
@@ -99,10 +129,15 @@ export function CountryDNA({
         })}
         <motion.polygon
           points={polygon(count, (i) => reach(axes[i]!))}
-          className="fill-tint/20 stroke-tint"
+          className="stroke-tint"
+          fill={`url(#${gradientId}-fill)`}
           strokeWidth={2}
           strokeLinejoin="round"
-          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "center",
+            filter: "drop-shadow(0 0 8px color-mix(in srgb, var(--tint) 30%, transparent))",
+          }}
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={springGentle}
@@ -114,8 +149,9 @@ export function CountryDNA({
               key={axis.key}
               cx={x}
               cy={y}
-              r={4}
-              className="fill-tint stroke-surface"
+              r={4.5}
+              fill={axisColor(i)}
+              className="stroke-surface"
               strokeWidth={1.5}
             />
           );
@@ -129,7 +165,11 @@ export function CountryDNA({
             n={i + 1}
             className="absolute -translate-x-1/2 -translate-y-1/2"
             // Placed on the chart's own grid, so it tracks the SVG at any width.
-            style={{ left: `${(x / SIZE) * 100}%`, top: `${(y / SIZE) * 100}%` }}
+            style={{
+              left: `${(x / SIZE) * 100}%`,
+              top: `${(y / SIZE) * 100}%`,
+              borderColor: axisColor(i),
+            }}
           />
         );
       })}
@@ -161,7 +201,9 @@ export function DnaLegend({
       {axes.map((axis, i) => (
         <FacetRow
           key={axis.key}
-          leading={numbered ? <AxisNumber n={i + 1} /> : undefined}
+          leading={
+            numbered ? <AxisNumber n={i + 1} style={{ borderColor: axisColor(i) }} /> : undefined
+          }
           title={axis.label}
           subtitle={axis.value}
           trailing={

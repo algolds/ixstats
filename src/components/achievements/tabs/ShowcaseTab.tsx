@@ -82,8 +82,11 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
+                // v2 showcase: glass cabinet cards that lift on hover, with the full backdrop.
+                variant="glass"
+                interactive="hover"
                 className={cn(
-                  "flex flex-col justify-between overflow-hidden p-4 transition-colors",
+                  "flex flex-col justify-between overflow-hidden p-4",
                   categoryTheme.cardBorderHover
                 )}
               >
@@ -91,6 +94,9 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                   iconPath={iconPath}
                   categoryTheme={categoryTheme}
                   isUnlocked={!!isUnlocked}
+                  isLegendaryOrEpic={
+                    achievement.rarity === "Legendary" || achievement.rarity === "Epic"
+                  }
                 />
 
                 <div className="relative">
@@ -98,7 +104,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     <Badge variant={getRarityBadgeVariant(achievement.rarity, isUnlocked)}>
                       {achievement.rarity}
                     </Badge>
-                    <span className="text-label-secondary text-footnote tabular-nums">
+                    <span className="text-label-secondary text-footnote font-data tabular-nums">
                       {achievement.globalUnlockPercent !== undefined
                         ? `${achievement.globalUnlockPercent}% unlocked`
                         : "Rare unlock"}
@@ -143,11 +149,11 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 </div>
 
                 <div className="border-separator relative mt-3 flex items-center justify-between border-t pt-2">
-                  <Badge variant="success" className="tabular-nums">
+                  <Badge variant="success" numeric>
                     {achievement.points} pts
                   </Badge>
                   {achievement.unlockedAt && (
-                    <span className="text-label-secondary text-footnote tabular-nums">
+                    <span className="text-label-secondary text-footnote font-data tabular-nums">
                       {new Date(achievement.unlockedAt).toLocaleDateString()}
                     </span>
                   )}

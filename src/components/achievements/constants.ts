@@ -150,8 +150,10 @@ export const QUEST_PATHS = [
 ];
 
 /**
- * Per-category styling (Facet 3): a system colour carries the category on its badge, icon
- * pedestal and icon fill. No gradients or glows — the card itself stays an opaque surface.
+ * Per-category styling: a system colour carries the category on its badge, icon pedestal and icon
+ * fill. Facet 3.1 (spec §16.5) restores the v2 card decoration through the identity sheet's
+ * sanctioned classes, driven by `accent` / `accent2` (aurora, radiance) and the `jewel` stops
+ * (the metallic icon fill) — system colour roles, so they follow the theme.
  */
 export interface CategoryTheme {
   name: string;
@@ -164,9 +166,18 @@ export interface CategoryTheme {
   pedestal: string;
   cardBorderHover: string;
   accentColor: string;
-  /** Solid fill painted through the achievement icon's mask. */
+  /** Solid fill painted through the achievement icon's mask (locked/fallback). */
   iconFill: string;
+  /** Category colour (CSS) for the aurora and radiance layers (`--accent`). */
+  accent: string;
+  /** The aurora's secondary hue (`--accent-2`; v2 `via-amber`/`via-cyan`…). */
+  accent2: string;
+  /** Jewel icon gradient stops (`--jewel-from/-via/-to`; v2 `iconGradient`). */
+  jewel: readonly [from: string, via: string, to: string];
 }
+
+/** A pale highlight of a colour, for the jewel's middle stop (v2 `via-*-100`). */
+const pale = (color: string) => `color-mix(in srgb, ${color} 25%, white)`;
 
 export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Economic: {
@@ -178,6 +189,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-green/40",
     accentColor: "emerald",
     iconFill: "bg-green",
+    accent: "var(--color-green)",
+    accent2: "var(--color-yellow)",
+    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
   },
   Military: {
     name: "Military",
@@ -188,6 +202,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-red/40",
     accentColor: "red",
     iconFill: "bg-red",
+    accent: "var(--color-red)",
+    accent2: "var(--color-yellow)",
+    jewel: ["var(--color-red)", pale("var(--color-yellow)"), "var(--color-red)"],
   },
   Diplomatic: {
     name: "Diplomatic",
@@ -198,6 +215,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-teal/40",
     accentColor: "cyan",
     iconFill: "bg-teal",
+    accent: "var(--color-teal)",
+    accent2: "var(--color-blue)",
+    jewel: ["var(--color-cyan)", pale("var(--color-cyan)"), "var(--color-blue)"],
   },
   Government: {
     name: "Government",
@@ -208,6 +228,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-indigo/40",
     accentColor: "indigo",
     iconFill: "bg-indigo",
+    accent: "var(--color-indigo)",
+    accent2: "var(--color-cyan)",
+    jewel: ["var(--color-indigo)", pale("var(--color-cyan)"), "var(--color-indigo)"],
   },
   Social: {
     name: "Social",
@@ -218,6 +241,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-blue/40",
     accentColor: "blue",
     iconFill: "bg-blue",
+    accent: "var(--color-blue)",
+    accent2: "var(--color-cyan)",
+    jewel: ["var(--color-blue)", pale("var(--color-cyan)"), "var(--color-blue)"],
   },
   General: {
     name: "General",
@@ -228,6 +254,9 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     cardBorderHover: "hover:border-yellow/40",
     accentColor: "amber",
     iconFill: "bg-yellow",
+    accent: "var(--color-yellow)",
+    accent2: "var(--color-orange)",
+    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
   },
 };
 

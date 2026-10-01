@@ -1,13 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { type CSSProperties } from "react";
 import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
+/** The icon as a CSS mask image, for the jewel and ghost-heraldry layers (`--heraldry-mask`). */
+function maskVar(iconPath: string): string {
+  return `url("${iconPath.replace(/"/g, '\\"')}")`;
+}
+
+/** The category colours that drive the identity sheet's aurora / radiance layers. */
+function accentVars(categoryTheme: CategoryTheme): CSSProperties {
+  return {
+    "--accent": categoryTheme.accent,
+    "--accent-2": categoryTheme.accent2,
+  } as CSSProperties;
+}
+
 /**
- * Achievement icon painted in its category colour through the icon mask (locked: a faint
- * blurred icon under a lock)
+ * Jewel achievement icon (v2 c5c6b382 `JewelAchievementIcon`): the achievement icon filled with
+ * a category-tuned metallic gem gradient (`facet-jewel`, styles/facet/identity.css). Locked: a
+ * faint blurred icon under a lock.
  */
 export function JewelAchievementIcon({
   iconPath,
@@ -34,57 +49,79 @@ export function JewelAchievementIcon({
     );
   }
 
+  const [from, via, to] = categoryTheme.jewel;
   return (
     <div
       aria-hidden
-      className={cn(className, categoryTheme.iconFill)}
-      style={{
-        maskImage: `url(${iconPath})`,
-        WebkitMaskImage: `url(${iconPath})`,
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskPosition: "center",
-      }}
+      className={cn(className, "facet-jewel drop-shadow-md")}
+      style={
+        {
+          "--heraldry-mask": maskVar(iconPath),
+          "--jewel-from": from,
+          "--jewel-via": via,
+          "--jewel-to": to,
+        } as CSSProperties
+      }
     />
   );
 }
 
 /**
- * Achievement card backdrop: the achievement's icon as a faint ghost watermark in the
- * bottom-right corner (decorative, `aria-hidden`, behind the content). Facet 3 cards are opaque,
- * so the old aurora, radiance and foil gradients are gone.
+ * Achievement card backdrop (v2 c5c6b382 `AchievementCardBackdrop`), on the identity sheet's
+ * sanctioned layers (spec §16.5):
+ * - the dot texture,
+ * - the multi-stop aurora mesh (`facet-aurora`: category → secondary hue, .4 → .75 on card hover),
+ * - the category radiance from the top (`facet-radiance`, .45 → .7 on card hover),
+ * - the holographic foil sheen on unlocked epic/legendary achievements (`facet-foil`),
+ * - the 144px ghost heraldic watermark of the icon in the bottom-right corner
+ *   (`facet-ghost-heraldry`).
+ * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
+ * `relative overflow-hidden` card and keep the content `relative`; the hover brighten follows
+ * the card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
   iconPath,
   categoryTheme,
   isUnlocked,
+  isLegendaryOrEpic = false,
 }: {
   iconPath: string;
   categoryTheme: CategoryTheme;
   isUnlocked: boolean;
-  /** @deprecated Ignored — the foil sheen was removed in Facet 3. */
+  /** Adds the foil sheen (unlocked only). */
   isLegendaryOrEpic?: boolean;
 }) {
+  const accents = accentVars(categoryTheme);
   return (
-    <div
-      aria-hidden
-      className={cn(
-        "pointer-events-none absolute -right-6 -bottom-6 size-36 opacity-[0.06] select-none print:hidden",
-        isUnlocked ? categoryTheme.iconFill : "bg-label"
+    <>
+      <TextureOverlay texture="dots" opacity={0.035} />
+
+      <span
+        aria-hidden
+        data-interactive={isUnlocked ? "true" : undefined}
+        className="facet-aurora absolute -inset-px rounded-[inherit] print:hidden"
+        style={accents}
+      />
+
+      <span
+        aria-hidden
+        data-interactive={isUnlocked ? "true" : undefined}
+        className="facet-radiance absolute inset-0 rounded-[inherit] print:hidden"
+        style={accents}
+      />
+
+      {isLegendaryOrEpic && isUnlocked && (
+        <span
+          aria-hidden
+          className="facet-foil absolute -inset-px rounded-[inherit] print:hidden"
+        />
       )}
-      style={{
-        maskImage: `url(${iconPath})`,
-        WebkitMaskImage: `url(${iconPath})`,
-        maskSize: "contain",
-        WebkitMaskSize: "contain",
-        maskRepeat: "no-repeat",
-        WebkitMaskRepeat: "no-repeat",
-        maskPosition: "center",
-        WebkitMaskPosition: "center",
-      }}
-    />
+
+      <span
+        aria-hidden
+        className="facet-ghost-heraldry absolute -right-6 -bottom-6 size-36 print:hidden"
+        style={{ "--heraldry-mask": maskVar(iconPath) } as CSSProperties}
+      />
+    </>
   );
 }

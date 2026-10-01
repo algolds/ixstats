@@ -192,12 +192,13 @@ function CommandBody({
               onClick={() => jump(item.id)}
               aria-current={current ? "location" : undefined}
               className={cn(
-                "focus-visible:outline-tint duration-fast ease-out-facet flex items-center gap-2 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2",
+                // Concept dock: the current domain is a tinted pill with a tint ring; items press.
+                "focus-visible:outline-tint facet-press flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
                 orientation === "vertical"
                   ? "text-body rounded-control-sm w-full px-3 py-2"
                   : "text-caption flex-col rounded-full px-3 py-1",
                 current
-                  ? "bg-tint-fill text-tint"
+                  ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                   : "text-label-secondary hover:bg-fill-4 hover:text-label"
               )}
             >
@@ -241,9 +242,10 @@ function CommandBody({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
         {/* ── Command dock (≥1024px): domains and sovereign tools */}
         <aside aria-label="Command dock" className="hidden lg:block">
+          {/* Concept "Command Dock": a glass panel with the refraction hairline. */}
           <FacetMaterial
-            material="regular"
-            className="rounded-card shadow-floating sticky top-[var(--shell-top-offset,5rem)] space-y-4 p-2"
+            material="hero"
+            className="rounded-card sticky top-[var(--shell-top-offset,5rem)] space-y-4 p-2"
           >
             <nav aria-labelledby="command-dock-domains" className="space-y-1">
               <h2 id="command-dock-domains" className="text-subhead text-label-secondary px-3 pt-1">
@@ -264,12 +266,13 @@ function CommandBody({
         </aside>
 
         <div className="min-w-0 space-y-6">
-          {/* ── Country DNA and national condition */}
+          {/* ── Country DNA and national condition: the concept's glass feature card */}
           <Tile
             id="dna"
             icon={Dna}
             title="Country DNA"
             subtitle={dnaLine ?? "World Census standing and national condition"}
+            feature
           >
             {dna.length > 0 && (
               <div
@@ -498,10 +501,11 @@ function CommandBody({
             </Tile>
           </div>
 
-          {/* ── Bottom dock (<1024px), pinned while the stream is on screen */}
+          {/* ── Bottom dock (<1024px), pinned while the stream is on screen: tab-bar acrylic */}
           <FacetMaterial
             as="nav"
-            material="regular"
+            material="acrylic"
+            glow
             aria-label="Domains"
             className="shadow-floating z-sticky sticky bottom-[calc(var(--shell-tabbar-height,0px)+1rem)] mx-auto w-fit max-w-full overflow-x-auto rounded-full p-1 lg:hidden"
           >
@@ -561,13 +565,17 @@ function CommandBody({
   );
 }
 
-/** A domain tile: an opaque card with an icon, a title (Facet `title-2`) and a subtitle. */
+/**
+ * A domain tile: a card with an icon, a title (Facet `title-2`) and a subtitle. Data tiles are
+ * opaque; a `feature` tile (the DNA) is the concept's glass panel with the tint glow.
+ */
 function Tile({
   id,
   icon: Icon,
   title,
   subtitle,
   action,
+  feature = false,
   className,
   children,
 }: {
@@ -576,6 +584,7 @@ function Tile({
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  feature?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -586,12 +595,17 @@ function Tile({
       aria-labelledby={titleId}
       className={cn("min-w-0", SCROLL_MARGIN, className)}
     >
-      <FacetCard padding="md" className="flex h-full flex-col gap-5">
+      <FacetCard
+        padding="md"
+        variant={feature ? "glass" : undefined}
+        glow={feature ? true : "shadow"}
+        className="flex h-full flex-col gap-5"
+      >
         <header className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <span
               aria-hidden
-              className="bg-tint-fill text-tint rounded-control-sm flex size-9 shrink-0 items-center justify-center"
+              className="bg-tint-fill text-tint border-tint/20 rounded-control-sm flex size-9 shrink-0 items-center justify-center border"
             >
               <Icon className="size-5" />
             </span>

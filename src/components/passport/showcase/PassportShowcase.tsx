@@ -88,7 +88,7 @@ function AchievementsPanel({
   return (
     <TooltipProvider delayDuration={100}>
       <div className="space-y-4">
-        <p className="text-label-secondary text-footnote tabular-nums">
+        <p className="text-label-secondary text-footnote font-data tabular-nums">
           {achievements.unlockedCount.toLocaleString()}
           {achievements.totalCount ? ` / ${achievements.totalCount.toLocaleString()}` : ""} unlocked
           · {achievements.points.toLocaleString()} pts
@@ -116,7 +116,8 @@ function AchievementsPanel({
 
         <div className="space-y-2">
           <h4 className="text-footnote text-label-secondary font-medium">
-            Ribbon rack · <span className="tabular-nums">{achievements.ribbons.length}</span>
+            Ribbon rack ·{" "}
+            <span className="font-data tabular-nums">{achievements.ribbons.length}</span>
           </h4>
           <div className="flex flex-wrap gap-2" data-testid="passport-ribbon-shelf">
             {achievements.ribbons.map((ribbon) => (
@@ -175,8 +176,8 @@ function CollectionPanel({
                 {rarityLabel(card.rarity)}
               </p>
             </div>
-            <span className="text-label text-headline flex shrink-0 items-center gap-1 tabular-nums">
-              <IxCreditsSymbol aria-hidden className="text-label-secondary size-3.5" />
+            <span className="text-label text-headline font-data flex shrink-0 items-center gap-1 tabular-nums">
+              <IxCreditsSymbol aria-hidden className="text-yellow size-3.5" />
               {card.marketValue.toLocaleString()}
             </span>
           </li>

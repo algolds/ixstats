@@ -16,7 +16,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
-import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
@@ -29,6 +29,7 @@ import {
   isNoticeOrUtilityIcon,
 } from "~/lib/wiki-os/transformers/image-url";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
+import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 const TRENDING_DEFAULT_LIMIT = 4;
 const TRENDING_FILTER_LIMIT = 10;
@@ -283,11 +284,18 @@ export function TrendingSectionWidget() {
   }, [trendingData, activeFilter]);
 
   return (
-    <FacetCard className="no-wiki-tooltip">
-      <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-        <Flame aria-hidden className="text-label-secondary size-4 shrink-0" />
-        <h3 className="text-headline text-label">Trending topics</h3>
-      </div>
+    // v2 (c5c6b382): a CutoutCard with the amber cutout tab header.
+    <CutoutCard
+      variant="card"
+      className="no-wiki-tooltip"
+      trackPointerHover={false}
+      style={widgetAccent(WIDGET_ACCENT.trending)}
+    >
+      <CutoutCardHeader icon={<Flame />}>
+        <span role="heading" aria-level={3}>
+          Trending topics
+        </span>
+      </CutoutCardHeader>
 
       <div className="space-y-3 px-4 pb-4">
         <SegmentedControl
@@ -367,13 +375,24 @@ export function TrendingSectionWidget() {
                 <W
                   key={item.id}
                   {...(linkProps as any)}
-                  className="group/item bg-surface-secondary hover:bg-fill-3 rounded-row duration-fast ease-out-facet focus-visible:outline-tint flex cursor-pointer items-start gap-3 p-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="group/item bg-surface-secondary border-separator hover:border-tint/40 hover:bg-fill-3 rounded-row facet-press facet-press-subtle focus-visible:outline-tint flex cursor-pointer items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <SrcIcon aria-hidden className={cn("mt-0.5 size-4 shrink-0", src.color)} />
+                  {/* v2 source chip; the glyph grows on hover. */}
+                  <span
+                    aria-hidden
+                    className="bg-surface border-separator rounded-control-sm mt-0.5 flex size-6 shrink-0 items-center justify-center border"
+                  >
+                    <SrcIcon
+                      className={cn(
+                        "ease-out-facet duration-fast size-3.5 transition-[scale] group-hover/item:scale-110 motion-reduce:transition-none motion-reduce:group-hover/item:scale-100",
+                        src.color
+                      )}
+                    />
+                  </span>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-label text-headline truncate group-hover/item:underline">
+                      <span className="text-label text-headline group-hover/item:text-tint truncate transition-colors">
                         {displayTitle}
                       </span>
                       <Badge variant="neutral">{src.label}</Badge>
@@ -385,17 +404,17 @@ export function TrendingSectionWidget() {
                       </p>
                     )}
 
-                    <div className="text-label-secondary text-footnote mt-1 flex items-center gap-3 tabular-nums">
+                    <div className="text-label-secondary text-footnote font-data mt-1 flex items-center gap-3 tabular-nums">
                       {item.engagement?.likes > 0 && (
                         <span className="flex items-center gap-1">
-                          <Heart aria-hidden className="size-3.5" />
+                          <Heart aria-hidden className="text-red size-3.5 fill-current" />
                           <span className="sr-only">Likes: </span>
                           {item.engagement.likes}
                         </span>
                       )}
                       {item.engagement?.replies > 0 && (
                         <span className="flex items-center gap-1">
-                          <MessageSquare aria-hidden className="size-3.5" />
+                          <MessageSquare aria-hidden className="text-indigo size-3.5" />
                           <span className="sr-only">Replies: </span>
                           {item.engagement.replies}
                         </span>
@@ -436,6 +455,6 @@ export function TrendingSectionWidget() {
             })}
         </div>
       </div>
-    </FacetCard>
+    </CutoutCard>
   );
 }

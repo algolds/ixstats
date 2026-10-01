@@ -35,7 +35,7 @@ export function NewVersionNotice() {
       animate={{ opacity: 1, y: 0 }}
       transition={springGentle}
       role="status"
-      className="bg-surface border-separator rounded-row shadow-card flex flex-wrap items-center justify-between gap-3 border p-4"
+      className="bg-tint-fill border-tint/25 rounded-row flex flex-wrap items-center justify-between gap-3 border p-4"
     >
       <div className="flex items-center gap-2">
         <Spark aria-hidden className="text-tint size-4 shrink-0" />
@@ -44,7 +44,9 @@ export function NewVersionNotice() {
           <Link href="/changelog" className="text-tint font-medium hover:underline">
             v{APP_VERSION}
           </Link>{" "}
-          <span className="text-label-secondary text-footnote tabular-nums">({BUILD_VERSION})</span>
+          <span className="text-label-secondary text-footnote font-data tabular-nums">
+            ({BUILD_VERSION})
+          </span>
           .
         </p>
       </div>

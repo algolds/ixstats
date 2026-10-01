@@ -195,9 +195,16 @@ export function DashboardHeroComponent({
     stats.slug || (country as any)?.slug || (country as any)?.newStats?.slug || countryId;
 
   return (
-    <FacetCard className="overflow-hidden">
-      {/* Hero identity: the corner flag watermark (spec §14 deviation f) */}
-      <FlagWatermark src={flagUrl} className="-top-12 -right-12 size-80" />
+    // v2 (c5c6b382) glass hero (white 5% frosted fill, 15% white border, xl shadow) with a
+    // top refraction hairline, the 320px flag watermark that brightens on hover, and paper grain.
+    <FacetCard
+      variant="glass"
+      glow
+      className="overflow-hidden"
+      texture="paperGrain"
+      textureOpacity={0.07}
+    >
+      <FlagWatermark src={flagUrl} />
 
       <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />
 
@@ -227,7 +234,8 @@ export function DashboardHeroComponent({
           />
         </div>
 
-        <div className="bg-surface-secondary rounded-row relative flex h-full flex-col justify-between gap-2 overflow-hidden p-3 md:col-span-2">
+        {/* v2 nested a frosted panel here; glass never nests, so it is the inset panel. */}
+        <div className="bg-surface-secondary rounded-row shadow-card relative flex h-full flex-col justify-between gap-2 overflow-hidden p-3 md:col-span-2">
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-2 flex items-center justify-between gap-2">
               <Link
@@ -236,7 +244,7 @@ export function DashboardHeroComponent({
                 title={`View ${stats.countryName} Profile`}
               >
                 <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-control">
-                  <div className="bg-surface border-separator rounded-control flex items-center justify-center overflow-hidden border p-1">
+                  <div className="bg-surface border-separator rounded-control ease-out-facet flex items-center justify-center overflow-hidden border p-1 transition-[scale] duration-300 group-hover/title:scale-105 motion-reduce:transition-none motion-reduce:group-hover/title:scale-100">
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={stats.countryName}
@@ -249,7 +257,7 @@ export function DashboardHeroComponent({
 
                 <div className="flex min-w-0 flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-label text-title-3 truncate underline-offset-2 group-hover/title:underline">
+                    <span className="text-label text-title-3 group-hover/title:text-tint truncate underline-offset-2 transition-colors group-hover/title:underline">
                       {stats.countryName}
                     </span>
                     {chatBadge.enabled && (
@@ -270,12 +278,15 @@ export function DashboardHeroComponent({
                 </div>
               </Link>
 
-              <Button asChild variant="tinted" size="sm" className="shrink-0 rounded-full">
-                <Link href="/mycountry">
-                  <span>MyCountry</span>
-                  <ChevronRight />
-                </Link>
-              </Button>
+              {/* v2 amber MyCountry pill: the tinted button in the MyCountry (gold) scope. */}
+              <span data-app="mycountry" className="contents">
+                <Button asChild variant="tinted" size="sm" className="shrink-0 rounded-full">
+                  <Link href="/mycountry">
+                    <span>MyCountry</span>
+                    <ChevronRight />
+                  </Link>
+                </Button>
+              </span>
             </div>
 
             <div className="min-h-0 flex-1">

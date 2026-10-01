@@ -97,6 +97,8 @@ export const PassportBackFace = React.memo(function PassportBackFace({
 
   return (
     <MotionFacetCard
+      // v2: the back of the document is the same translucent glass page as the front.
+      variant="glass"
       className={cn(
         "absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
         !isFlipped ? "pointer-events-none" : ""

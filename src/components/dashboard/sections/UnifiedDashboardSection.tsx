@@ -11,7 +11,7 @@ import {
   Globe,
   FireFlame as Flame,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -22,6 +22,7 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { FacetTabs } from "~/components/ui/facet";
+import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
@@ -360,22 +361,28 @@ export function UnifiedDashboardSection({
 
             {/* Economic Tier Distribution */}
             {(globalStats as any)?.economicTierDistribution && (
-              <FacetCard>
-                <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-                  <Globe aria-hidden className="text-label-secondary size-4 shrink-0" />
-                  <h3 className="text-headline text-label">Economic tiers</h3>
-                </div>
+              // v2 (c5c6b382): a CutoutCard with the emerald cutout tab header.
+              <CutoutCard
+                variant="card"
+                trackPointerHover={false}
+                style={widgetAccent(WIDGET_ACCENT.economy)}
+              >
+                <CutoutCardHeader icon={<Globe />}>
+                  <span role="heading" aria-level={3}>
+                    Economic tiers
+                  </span>
+                </CutoutCardHeader>
                 <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
                   {Object.entries((globalStats as any).economicTierDistribution).map(
                     ([tier, count]) => (
                       <Badge key={tier} variant="neutral">
                         <span>{tier}</span>
-                        <span className="text-label tabular-nums">{count as number}</span>
+                        <span className="text-label font-data tabular-nums">{count as number}</span>
                       </Badge>
                     )
                   )}
                 </div>
-              </FacetCard>
+              </CutoutCard>
             )}
           </div>
         </div>

@@ -34,14 +34,19 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
   return (
     <div
       className={cn(
-        "bg-fill-4 border-separator relative flex shrink-0 items-center justify-center overflow-hidden border select-none",
+        // v2 medallion: a faint fill with an inset (pressed-in) shadow; the emblem grows on hover.
+        "group/seal bg-fill-4 border-separator relative flex shrink-0 items-center justify-center overflow-hidden border shadow-[inset_0_2px_6px_rgb(0_0_0/0.35)] select-none",
         config.container,
         className
       )}
       aria-hidden="true"
     >
       {/* Official Ixnay emblem (original colours) */}
-      <img src={logoUrl} alt="" className="h-full w-full object-contain select-none" />
+      <img
+        src={logoUrl}
+        alt=""
+        className="ease-out-facet h-full w-full object-contain transition-[scale] duration-200 select-none group-hover/seal:scale-105 motion-reduce:transition-none motion-reduce:group-hover/seal:scale-100"
+      />
     </div>
   );
 });

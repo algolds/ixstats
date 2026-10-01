@@ -28,7 +28,14 @@ export function VaultCardHoldingsCard({
   getRarityBorder,
 }: VaultCardHoldingsCardProps) {
   return (
-    <FacetCard padding="lg" className="overflow-hidden">
+    // v2 (c5c6b382): a glass showcase card with the dot texture.
+    <FacetCard
+      variant="glass"
+      padding="lg"
+      texture="dots"
+      textureOpacity={0.04}
+      className="overflow-hidden"
+    >
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
@@ -92,7 +99,7 @@ export function VaultCardHoldingsCard({
                   <span className="text-label max-w-[130px] truncate font-semibold">
                     {card.title}
                   </span>
-                  <span className="text-footnote text-yellow flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-footnote text-yellow font-data flex items-center gap-0.5 font-semibold tabular-nums">
                     <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
                     {card.marketValue.toLocaleString()}
                   </span>

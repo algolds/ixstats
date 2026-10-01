@@ -30,7 +30,8 @@ export function VaultNetWorthCard({
   activeAuctions,
 }: VaultNetWorthCardProps) {
   return (
-    <FacetCard padding="lg" className="overflow-hidden">
+    // v2 (c5c6b382): the balance hero — glass, gold/copper accents, hover lift.
+    <FacetCard variant="glass" glow interactive="hover" padding="lg" className="overflow-hidden">
       <div className="flex h-full flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -45,7 +46,7 @@ export function VaultNetWorthCard({
         </div>
 
         <div className="mt-5">
-          <div className="text-large-title text-yellow flex items-center gap-2">
+          <div className="text-large-title text-yellow font-data flex items-center gap-2 tabular-nums">
             <IxCreditsSymbol className="text-yellow h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
             <NumberFlow value={netWorth} />
           </div>
@@ -54,14 +55,14 @@ export function VaultNetWorthCard({
         <div className="border-separator text-footnote mt-6 grid grid-cols-2 gap-4 border-t pt-4">
           <div>
             <span className="text-label-secondary text-eyebrow block">Available Balance</span>
-            <div className="text-title-3 text-yellow mt-1 flex items-center gap-1">
+            <div className="text-title-3 text-yellow font-data mt-1 flex items-center gap-1 tabular-nums">
               <IxCreditsSymbol className="text-yellow h-4.5 w-4.5 shrink-0" />
               <NumberFlow value={liquidCredits} />
             </div>
           </div>
           <div>
             <span className="text-label-secondary text-eyebrow block">Card Deck Value</span>
-            <div className="text-title-3 text-indigo mt-1 flex items-center gap-1">
+            <div className="text-title-3 text-indigo font-data mt-1 flex items-center gap-1 tabular-nums">
               <IxCreditsSymbol className="text-indigo h-4.5 w-4.5 shrink-0" />
               <NumberFlow value={collectionValuation} />
             </div>
@@ -74,7 +75,7 @@ export function VaultNetWorthCard({
             <Layers className="text-tint h-3.5 w-3.5 shrink-0" />
             <span>
               Cards:{" "}
-              <strong className="text-label font-semibold">
+              <strong className="text-label font-data font-semibold tabular-nums">
                 {totalCards} / {150 + capacityBoost}
               </strong>
             </span>
@@ -82,13 +83,19 @@ export function VaultNetWorthCard({
           <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
             <Package className="text-indigo h-3.5 w-3.5 shrink-0" />
             <span>
-              Packs: <strong className="text-label font-semibold">{unopenedPacks}</strong>
+              Packs:{" "}
+              <strong className="text-label font-data font-semibold tabular-nums">
+                {unopenedPacks}
+              </strong>
             </span>
           </div>
           <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
             <ShoppingBag className="text-blue h-3.5 w-3.5 shrink-0" />
             <span>
-              Auctions: <strong className="text-label font-semibold">{activeAuctions}</strong>
+              Auctions:{" "}
+              <strong className="text-label font-data font-semibold tabular-nums">
+                {activeAuctions}
+              </strong>
             </span>
           </div>
         </div>

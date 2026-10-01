@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Bank, Community, GraduationCap, City, Suitcase } from "iconoir-react";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils/cn";
@@ -10,6 +11,25 @@ const ICON: Record<ConditionKey, typeof Bank> = {
   literacy: GraduationCap,
   urban: City,
 };
+
+/**
+ * The concept's per-pillar hue (Macro sky, Demographics emerald, Institutions amber…), as system
+ * colour roles. It re-tints the tile: icon chip, figure, meter and the category radiance wash.
+ */
+const HUE: Record<ConditionKey, string> = {
+  employment: "var(--color-blue)",
+  approval: "var(--color-green)",
+  stability: "var(--color-yellow)",
+  literacy: "var(--color-indigo)",
+  urban: "var(--color-purple)",
+};
+
+const hueStyle = (color: string) =>
+  ({
+    "--tint": color,
+    "--tint-fill": `color-mix(in srgb, ${color} 16%, transparent)`,
+    "--accent": color,
+  }) as CSSProperties;
 
 /**
  * ConditionMatrix — the Sovereign Command OS "national condition" grid on real readings: one
@@ -30,12 +50,22 @@ export function ConditionMatrix({
       {pillars.map((p) => {
         const Icon = ICON[p.key];
         return (
-          <li key={p.key} className="bg-surface-secondary rounded-row flex flex-col gap-3 p-4">
+          <li
+            key={p.key}
+            style={hueStyle(HUE[p.key])}
+            className="bg-surface-secondary border-separator hover:border-tint/40 rounded-row duration-fast ease-out-facet relative isolate flex flex-col gap-3 overflow-hidden border p-4 transition-colors"
+          >
+            {/* Concept tile wash (`from-<hue>/20 to-<hue>/5`): the sanctioned category radiance. */}
+            <span
+              aria-hidden
+              data-interactive="true"
+              className="facet-radiance absolute inset-0 -z-10 rounded-[inherit]"
+            />
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="bg-fill-4 text-label-secondary rounded-control-sm flex size-8 shrink-0 items-center justify-center"
+                  className="bg-tint-fill text-tint border-tint/20 rounded-control-sm flex size-8 shrink-0 items-center justify-center border"
                 >
                   <Icon className="size-4" />
                 </span>
@@ -44,7 +74,7 @@ export function ConditionMatrix({
                   <p className="text-footnote text-label-secondary">{p.area}</p>
                 </div>
               </div>
-              <span className="text-title-3 text-label tabular-nums">{p.display}</span>
+              <span className="text-title-3 text-label font-data tabular-nums">{p.display}</span>
             </div>
             <Progress value={p.value} aria-hidden className="h-1.5" />
             {p.detail && <p className="text-footnote text-label-secondary">{p.detail}</p>}

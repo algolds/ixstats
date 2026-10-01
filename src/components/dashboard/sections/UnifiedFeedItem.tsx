@@ -44,15 +44,15 @@ export const SOURCE_CONFIG: Record<
   string,
   { icon: typeof Rss; color: string; bg: string; label: string }
 > = {
-  activity: { icon: Rss, color: "text-blue", bg: "bg-fill-3", label: "Activity" },
+  activity: { icon: Rss, color: "text-blue", bg: "bg-blue/10", label: "Activity" },
   thinkpages: {
     icon: Users,
     color: "text-blue",
-    bg: "bg-fill-3",
+    bg: "bg-blue/10",
     label: "Social",
   },
-  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-fill-3", label: "Wiki" },
-  forum: { icon: MessageCircle, color: "text-orange", bg: "bg-fill-3", label: "Forum" },
+  wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
+  forum: { icon: MessageCircle, color: "text-orange", bg: "bg-orange/10", label: "Forum" },
 };
 
 export function getActivityLabel(activity: any): {
@@ -65,9 +65,9 @@ export function getActivityLabel(activity: any): {
   const title = (activity.content?.title ?? "").toLowerCase();
 
   if (title.includes("point of interest") || title.includes("poi"))
-    return { label: "POI", icon: MapIcon, color: "text-green", bg: "bg-fill-3" };
+    return { label: "POI", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (title.includes("city") || title.includes("settlement"))
-    return { label: "City", icon: MapIcon, color: "text-green", bg: "bg-fill-3" };
+    return { label: "City", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (
     title.includes("subdivision") ||
     title.includes("province") ||
@@ -78,10 +78,10 @@ export function getActivityLabel(activity: any): {
       label: "Subdivision",
       icon: MapIcon,
       color: "text-green",
-      bg: "bg-fill-3",
+      bg: "bg-green/10",
     };
   if (cat === "map" || title.includes("map") || title.includes("claim"))
-    return { label: "Maps", icon: MapIcon, color: "text-green", bg: "bg-fill-3" };
+    return { label: "Maps", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (
     cat === "economic" ||
     title.includes("gdp") ||
@@ -92,7 +92,7 @@ export function getActivityLabel(activity: any): {
       label: "Economy",
       icon: TrendingUp,
       color: "text-green",
-      bg: "bg-fill-3",
+      bg: "bg-green/10",
     };
   if (
     cat === "diplomatic" ||
@@ -100,26 +100,26 @@ export function getActivityLabel(activity: any): {
     title.includes("diplom") ||
     title.includes("treaty")
   )
-    return { label: "Diplomacy", icon: Globe, color: "text-teal", bg: "bg-fill-3" };
+    return { label: "Diplomacy", icon: Globe, color: "text-teal", bg: "bg-teal/10" };
   if (
     cat === "military" ||
     title.includes("military") ||
     title.includes("defense") ||
     title.includes("deploy")
   )
-    return { label: "Defense", icon: Shield, color: "text-red", bg: "bg-fill-3" };
+    return { label: "Defense", icon: Shield, color: "text-red", bg: "bg-red/10" };
   if (
     cat === "political" ||
     title.includes("govern") ||
     title.includes("politic") ||
     title.includes("election")
   )
-    return { label: "Politics", icon: Landmark, color: "text-indigo", bg: "bg-fill-3" };
+    return { label: "Politics", icon: Landmark, color: "text-indigo", bg: "bg-indigo/10" };
   if (cat === "crisis" || title.includes("crisis"))
-    return { label: "Crisis", icon: AlertTriangle, color: "text-red", bg: "bg-fill-3" };
+    return { label: "Crisis", icon: AlertTriangle, color: "text-red", bg: "bg-red/10" };
   if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
-    return { label: "Achievement", icon: Trophy, color: "text-yellow", bg: "bg-fill-3" };
-  return { label: "Activity", icon: Rss, color: "text-blue", bg: "bg-fill-3" };
+    return { label: "Achievement", icon: Trophy, color: "text-yellow", bg: "bg-yellow/10" };
+  return { label: "Activity", icon: Rss, color: "text-blue", bg: "bg-blue/10" };
 }
 
 export const UnifiedFeedItem = memo(function UnifiedFeedItem({
@@ -181,13 +181,13 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   }
 
   return (
-    <FacetCard padding="md">
+    <FacetCard padding="md" className="group">
       <div className="flex items-start gap-3">
-        {/* Source icon — wiki uses the W logo */}
+        {/* Source icon — wiki uses the W logo; v2 domain-tinted chip that grows on card hover */}
         <div
           aria-hidden
           className={cn(
-            "rounded-row mt-0.5 flex size-9 shrink-0 items-center justify-center",
+            "rounded-row border-separator ease-out-facet mt-0.5 flex size-9 shrink-0 items-center justify-center border transition-[scale] duration-200 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100",
             resolvedConfig.bg
           )}
         >

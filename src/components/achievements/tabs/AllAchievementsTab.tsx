@@ -126,14 +126,19 @@ function GroupedSeriesCard({
   const rawIconPath =
     item.iconPath || getAchievementGameIconPath(activeLevel.key, activeLevel.category);
   const iconPath = createUrl(rawIconPath);
+  const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
   return (
+    // v2 (c5c6b382): unlocked achievements are glass cards that lift on hover, decorated with the
+    // aurora / radiance / foil / ghost-heraldry backdrop; locked ones stay a dashed opaque slot.
     <MotionFacetCard
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
+      variant={isUnlocked ? "glass" : undefined}
+      interactive={isUnlocked ? "hover" : undefined}
       className={cn(
-        "flex flex-col justify-between overflow-hidden p-5 transition-colors",
+        "flex flex-col justify-between overflow-hidden p-5",
         isUnlocked
           ? categoryTheme.cardBorderHover
           : "bg-surface-secondary border-dashed shadow-none select-none"
@@ -143,6 +148,7 @@ function GroupedSeriesCard({
         iconPath={iconPath}
         categoryTheme={categoryTheme}
         isUnlocked={!!isUnlocked}
+        isLegendaryOrEpic={isLegendaryOrEpic}
       />
 
       {/* Status & tier */}

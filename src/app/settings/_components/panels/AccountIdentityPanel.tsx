@@ -117,8 +117,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         }
       />
 
-      {/* Identity card */}
-      <FacetCard padding="md">
+      {/* Identity card: v2's glass passport card with the tint wash (Facet 3.1 glass hero) */}
+      <FacetCard variant="glass" glow="shadow" padding="md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
@@ -133,6 +133,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <User aria-hidden className="size-6" />
                 </div>
               )}
+              <span
+                aria-hidden
+                className="bg-success ring-surface absolute right-1 bottom-1 size-3 rounded-full ring-2"
+              />
             </div>
 
             <div className="min-w-0 flex-1 space-y-1">
@@ -142,8 +146,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <ShieldCheck aria-hidden />
                   Verified
                 </Badge>
-                <Badge variant="success" className="tabular-nums">
-                  {totalConnectedCount}/4 Connected
+                <Badge variant="success">
+                  <span className="font-data tabular-nums">{totalConnectedCount}/4</span> Connected
                 </Badge>
               </div>
 

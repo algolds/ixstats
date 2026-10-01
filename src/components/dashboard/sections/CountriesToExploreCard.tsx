@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Group as Users, Globe } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { createUrl } from "~/lib/utils";
+import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
@@ -40,11 +41,17 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
   if (!randomCountries || randomCountries.length === 0) return null;
 
   return (
-    <FacetCard>
-      <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-        <Users aria-hidden className="text-label-secondary size-4 shrink-0" />
-        <h3 className="text-headline text-label">Countries to explore</h3>
-      </div>
+    // v2 (c5c6b382): a CutoutCard with the blue cutout tab header and flag-backed rows.
+    <CutoutCard
+      variant="card"
+      trackPointerHover={false}
+      style={widgetAccent(WIDGET_ACCENT.countries)}
+    >
+      <CutoutCardHeader icon={<Users />}>
+        <span role="heading" aria-level={3}>
+          Countries to explore
+        </span>
+      </CutoutCardHeader>
       <div className="space-y-2 px-4 pb-4">
         <ul className="space-y-1">
           {randomCountries.map((c) => {
@@ -52,8 +59,20 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
             return (
               <li
                 key={c.id}
-                className="bg-surface-secondary rounded-row flex items-center gap-2 p-2"
+                className="group/c bg-surface-secondary border-separator hover:bg-fill-3 rounded-row duration-fast ease-out-facet relative isolate flex items-center gap-2 overflow-hidden border p-2 transition-colors"
               >
+                {/* v2 flag backdrop on the row's trailing edge, behind an opaque scrim. */}
+                {c.flagUrl && (
+                  <span aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+                    <img
+                      src={c.flagUrl}
+                      alt=""
+                      loading="lazy"
+                      className="ease-out-facet size-full object-cover object-right opacity-40 transition-[scale] duration-300 group-hover/c:scale-105 motion-reduce:transition-none motion-reduce:group-hover/c:scale-100"
+                    />
+                    <span className="from-surface-secondary via-surface-secondary/85 absolute inset-0 bg-gradient-to-r to-transparent" />
+                  </span>
+                )}
                 <UnifiedCountryFlag
                   showTooltip={false}
                   countryName={c.name}
@@ -68,7 +87,9 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                   >
                     {c.name}
                   </Link>
-                  <span className="text-label-secondary text-footnote">Tier {c.economicTier}</span>
+                  <span className="text-label-secondary text-footnote">
+                    Tier <span className="font-data tabular-nums">{c.economicTier}</span>
+                  </span>
                 </div>
                 <Button
                   size="sm"
@@ -92,12 +113,12 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
         </ul>
         <Link
           href={"/countries"}
-          className="text-tint hover:bg-fill-4 rounded-control text-footnote focus-visible:outline-tint flex items-center justify-center gap-1 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control text-footnote facet-press focus-visible:outline-tint flex items-center justify-center gap-1 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <Globe aria-hidden className="size-3.5" />
           <span>Explore all countries</span>
         </Link>
       </div>
-    </FacetCard>
+    </CutoutCard>
   );
 }

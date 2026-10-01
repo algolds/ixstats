@@ -122,8 +122,11 @@ export function MidRibbonPassportDocument({
         {/* FRONT FACE OF THE PASSPORT                                               */}
         {/* ========================================================================= */}
         <MotionFacetCard
+          // v2 document: the translucent glass page (Facet 3.1 glass hero + tinted shadow; no
+          // clipping blob); the panels inside stay opaque (glass never nests).
+          variant="glass"
+          glow="shadow"
           className={cn(
-            // The passport document is an opaque content card (Facet 3: content is never glass).
             "relative w-full [backface-visibility:hidden]",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           )}
@@ -147,7 +150,7 @@ export function MidRibbonPassportDocument({
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                 {/* Left: Unobstructed High-Res Portrait & Signature */}
                 <div className="flex flex-col items-center gap-4 sm:items-start lg:col-span-4">
-                  <div className="bg-fill-3 border-separator rounded-row relative h-44 w-38 overflow-hidden border sm:h-52 sm:w-44">
+                  <div className="bg-fill-3 border-separator rounded-card shadow-card relative h-44 w-38 overflow-hidden border-2 sm:h-52 sm:w-44">
                     {highResAvatarUrl ? (
                       <img
                         src={highResAvatarUrl}

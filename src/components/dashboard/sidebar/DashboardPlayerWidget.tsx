@@ -22,16 +22,22 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
+import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 
-/** A quick-action row in the 12rem sidebar card. */
+/**
+ * A quick-action tile in the 12rem sidebar card — v2 (c5c6b382) coloured tiles: a domain-tinted
+ * fill and rim (set `widgetAccent` on the tile), the glyph grows on hover, the tile presses.
+ */
 const QUICK_ACTION =
-  "text-body text-label hover:bg-fill-4 active:bg-fill-3 rounded-row duration-fast ease-out-facet focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 px-2 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
+  "group/icon text-body text-label bg-tint-fill border-tint/30 hover:border-tint/50 hover:bg-fill-3 rounded-row facet-press focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 border px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
+const QUICK_ACTION_ICON =
+  "text-tint ease-out-facet duration-fast size-4 shrink-0 transition-[scale] group-hover/icon:scale-110 motion-reduce:transition-none motion-reduce:group-hover/icon:scale-100";
 const QUICK_ACTION_DISABLED =
-  "text-body text-label-tertiary rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-2";
+  "text-body text-label-tertiary bg-fill-4 rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-2";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 
@@ -96,16 +102,26 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   if (profileLoading) {
     return (
-      <FacetCard className="w-48 overflow-hidden">
-        <div className="bg-tint-fill flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
+      <CutoutCard
+        variant="card"
+        className="w-48"
+        trackPointerHover={false}
+        style={widgetAccent(WIDGET_ACCENT.player)}
+      >
+        <div className="bg-tint-fill relative flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
           <Skeleton className="h-4 w-24 rounded-full" />
+          <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+          <CutoutCorner
+            className="text-surface absolute right-0 -bottom-px -scale-x-100"
+            size={16}
+          />
         </div>
         <div className="space-y-2 p-3 pt-1">
           <Skeleton className="rounded-control-sm h-4 w-24" />
           <Skeleton className="rounded-control-sm h-4 w-20" />
           <Skeleton className="rounded-control-sm h-4 w-28" />
         </div>
-      </FacetCard>
+      </CutoutCard>
     );
   }
 
@@ -123,11 +139,19 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
 
   return (
-    <FacetCard className="group w-48 overflow-hidden" texture="dots">
+    // v2 (c5c6b382): a CutoutCard whose cutout tab header is the nation's flag (zooming on hover)
+    // under a dark scrim, with the inverted-corner notches, dot texture and coloured action tiles.
+    <CutoutCard
+      variant="card"
+      className="group w-48"
+      trackPointerHover={false}
+      texture="dots"
+      style={widgetAccent(WIDGET_ACCENT.player)}
+    >
       {/* Neon Frame Overlay */}
-      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />
-      {/* Identity header: the flag behind a flat scrim, avatar and nation name */}
-      <div className="bg-tint-fill relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden px-3 pt-4 pb-5">
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-cutout" />
+      {/* Identity header: the flag behind an image scrim, avatar and nation name */}
+      <div className="bg-tint-fill relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden px-3 pt-4 pb-6">
         {userProfile?.country?.name && (
           <div aria-hidden className="absolute inset-0 overflow-hidden">
             <UnifiedCountryFlag
@@ -136,10 +160,10 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               fitContainer={true}
               showTooltip={false}
               rounded={false}
-              className="h-full w-full object-cover opacity-40 brightness-90"
+              className="ease-out-facet h-full w-full object-cover opacity-40 brightness-90 transition-[scale] duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
             {/* Image scrim so the name stays readable over any flag */}
-            <div className="absolute inset-0 bg-black/55" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/75" />
           </div>
         )}
 
@@ -147,7 +171,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         <AvatarGlow
           avatarGlow={avatarGlow}
           roundedClass="rounded-full"
-          className="bg-tint shadow-card relative mb-2 h-9 w-9 ring-1 ring-white/20"
+          className="bg-tint shadow-card ease-out-facet relative mb-2 h-9 w-9 ring-1 ring-white/20 transition-[scale] duration-200 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
@@ -188,7 +212,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 key={ach.key}
                 title={ach.description}
                 variant="neutral"
-                className="cursor-help"
+                className="bg-surface/85 cursor-help"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>
@@ -196,34 +220,37 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             ))}
           </div>
         )}
+
+        <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />
       </div>
-      <div className="relative space-y-2 p-3">
+      <div className="relative space-y-2 p-3 pt-1">
         {/* Condensed hero stats — visible when hero is collapsed */}
         {heroCollapsed && (
           <>
             <dl className="space-y-1">
               <div className="text-footnote flex items-center justify-between">
                 <dt className="text-label-secondary flex items-center gap-2">
-                  <Users aria-hidden className="size-3.5" /> Pop
+                  <Users aria-hidden className="text-blue size-3.5" /> Pop
                 </dt>
-                <dd className="text-label font-medium tabular-nums">
+                <dd className="text-label font-data font-medium tabular-nums">
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
                 </dd>
               </div>
               <div className="text-footnote flex items-center justify-between">
                 <dt className="text-label-secondary flex items-center gap-2">
-                  <DollarSign aria-hidden className="size-3.5" /> GDP
+                  <DollarSign aria-hidden className="text-green size-3.5" /> GDP
                 </dt>
-                <dd className="text-label font-medium tabular-nums">
+                <dd className="text-label font-data font-medium tabular-nums">
                   {formatCompactCurrency((country as any)?.newStats?.currentTotalGdp ?? 0)}
                 </dd>
               </div>
               {(country as any)?.newStats?.landArea && (
                 <div className="text-footnote flex items-center justify-between">
                   <dt className="text-label-secondary flex items-center gap-2">
-                    <MapIcon aria-hidden className="size-3.5" /> Area
+                    <MapIcon aria-hidden className="text-yellow size-3.5" /> Area
                   </dt>
-                  <dd className="text-label font-medium tabular-nums">
+                  <dd className="text-label font-data font-medium tabular-nums">
                     {Math.round((country as any)?.newStats?.landArea).toLocaleString()} km²
                   </dd>
                 </div>
@@ -244,16 +271,17 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <Link
             href="/messages"
             className={QUICK_ACTION}
+            style={widgetAccent("var(--color-indigo)")}
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
                 : "No unread messages"
             }
           >
-            <Mail aria-hidden className="text-tint size-4 shrink-0" />
+            <Mail aria-hidden className={QUICK_ACTION_ICON} />
             <span className="min-w-0 flex-1 truncate">Mail</span>
             {totalUnreadMessages > 0 && (
-              <Badge variant="tinted" className="tabular-nums">
+              <Badge variant="tinted" numeric>
                 {totalUnreadMessages}
                 <span className="sr-only"> unread</span>
               </Badge>
@@ -265,15 +293,13 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive?focus=directives")}
               className={QUICK_ACTION}
+              style={widgetAccent("var(--color-yellow)")}
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
-              <ClipboardList aria-hidden className="text-label-secondary size-4 shrink-0" />
+              <ClipboardList aria-hidden className={QUICK_ACTION_ICON} />
               <span className="min-w-0 flex-1 truncate">Directives</span>
               {(issueCount > 0 || urgentCount > 0) && (
-                <Badge
-                  variant={urgentCount > 0 ? "destructive" : "caution"}
-                  className="tabular-nums"
-                >
+                <Badge variant={urgentCount > 0 ? "destructive" : "caution"} numeric>
                   {urgentCount > 0 ? urgentCount : issueCount}
                   <span className="sr-only">{urgentCount > 0 ? " urgent" : " pending"}</span>
                 </Badge>
@@ -291,11 +317,14 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive?focus=agenda")}
               className={QUICK_ACTION}
+              style={widgetAccent(
+                pendingActions > 0 ? "var(--color-orange)" : "var(--color-green)"
+              )}
               title={
                 pendingActions > 0 ? `${pendingActions} pending agenda items` : "All agenda clear"
               }
             >
-              <CalendarCheck aria-hidden className="text-label-secondary size-4 shrink-0" />
+              <CalendarCheck aria-hidden className={QUICK_ACTION_ICON} />
               <span className="min-w-0 flex-1 truncate">Agenda</span>
               <span
                 aria-hidden
@@ -320,14 +349,16 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {crisesCount > 0 && (
           <Link
             href={createUrl("/mycountry/executive")}
-            className="bg-destructive/15 text-destructive hover:bg-destructive/25 rounded-row text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center justify-center gap-2 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-destructive/15 text-destructive hover:bg-destructive/25 rounded-row text-caption facet-press focus-visible:outline-tint flex items-center justify-center gap-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
             title={`${crisesCount} active crises! Click to view.`}
           >
             <AlertTriangle aria-hidden className="size-3.5" />
-            <span>{crisesCount} crises active</span>
+            <span>
+              <span className="font-data tabular-nums">{crisesCount}</span> crises active
+            </span>
           </Link>
         )}
       </div>
-    </FacetCard>
+    </CutoutCard>
   );
 }

@@ -47,7 +47,8 @@ export function VaultYieldProjectionsCard({
   socialCapData,
 }: VaultYieldProjectionsCardProps) {
   return (
-    <FacetCard padding="lg" className="overflow-hidden">
+    // v2 (c5c6b382): a glass feature card that lifts on hover.
+    <FacetCard variant="glass" interactive="hover" padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-blue/30 bg-blue/15 text-blue shadow-card flex h-8 w-8 items-center justify-center border">

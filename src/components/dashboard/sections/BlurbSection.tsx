@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/u
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -23,6 +24,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn, createUrl } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
+import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,27 +57,33 @@ export function BlurbSection() {
 
   return (
     <>
-      <FacetCard
+      {/* v2 (c5c6b382): a pressable CutoutCard with the indigo cutout tab header. */}
+      <CutoutCard
+        variant="card"
         onClick={() => setModalOpen(true)}
         aria-label="Open blurb of the day"
         className="no-wiki-tooltip flex flex-col justify-between"
+        trackPointerHover={false}
+        style={widgetAccent(WIDGET_ACCENT.blurb)}
       >
-        <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2">
-            <Quote aria-hidden className="text-label-secondary size-4 shrink-0" />
-            <h3 className="text-headline text-label">Blurb of the day</h3>
-          </div>
-
-          <Badge variant="neutral">
-            <Compass aria-hidden />
-            Daily prompt
-          </Badge>
-        </div>
+        <CutoutCardHeader
+          icon={<Quote />}
+          trailing={
+            <Badge variant="tinted">
+              <Compass aria-hidden />
+              Daily prompt
+            </Badge>
+          }
+        >
+          <span role="heading" aria-level={3}>
+            Blurb of the day
+          </span>
+        </CutoutCardHeader>
 
         <div className="space-y-3 px-4 pb-4">
           {/* Prompt question */}
           <div className="space-y-1">
-            {prompt.title && <p className="text-subhead text-label-secondary">{prompt.title}</p>}
+            {prompt.title && <p className="text-subhead text-tint">{prompt.title}</p>}
             <blockquote className="text-label text-callout line-clamp-3 select-text">
               &ldquo;{prompt.question}&rdquo;
             </blockquote>
@@ -83,9 +91,10 @@ export function BlurbSection() {
 
           {/* Footer meta and call to action */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-label-secondary text-footnote flex items-center gap-2 tabular-nums">
-              <MessageCircle aria-hidden className="size-3.5" />
-              {responseCount} {responseCount === 1 ? "response" : "responses"}
+            <span className="text-label-secondary text-footnote flex items-center gap-2">
+              <MessageCircle aria-hidden className="text-tint size-3.5" />
+              <span className="font-data tabular-nums">{responseCount}</span>
+              {responseCount === 1 ? "response" : "responses"}
             </span>
 
             <Button
@@ -103,7 +112,7 @@ export function BlurbSection() {
             </Button>
           </div>
         </div>
-      </FacetCard>
+      </CutoutCard>
 
       <BlurbResponseModal
         open={modalOpen}

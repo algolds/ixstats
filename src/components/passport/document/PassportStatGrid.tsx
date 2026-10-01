@@ -20,8 +20,9 @@ interface PassportStatGridProps {
 
 /** An inset panel (`FacetCard variant="inset"` styling on a button or link). */
 const STAT_CELL = cn(FACET_INSET_SURFACE, "w-full p-3");
+/** v2 cells: a hover rim in the cell's accent and the press scale. */
 const STAT_CELL_INTERACTIVE =
-  "hover:bg-fill-3 duration-fast ease-out-facet focus-visible:outline-tint cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
+  "hover:bg-fill-3 border border-transparent hover:border-yellow/30 facet-press focus-visible:outline-tint cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /** Category breadth of the whole live collection (e.g. "3/12", "Military focus"). */
 function categorySummary(focus: PassportVault["focus"]): { label: string; sub: string } {
@@ -59,11 +60,11 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           <Stat
             size="sm"
             label="Lorewards"
-            icon={<Trophy />}
+            icon={<Trophy className="text-yellow" />}
             iconPlacement="trailing"
             value={lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
             hint={
-              <span className="tabular-nums">
+              <span className="font-data tabular-nums">
                 {lorewards?.totalScore ? `${lorewards.totalScore.toLocaleString()} pts` : "0 pts"}
               </span>
             }
@@ -80,7 +81,7 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           <Stat
             size="sm"
             label="Focus"
-            icon={<Sparkles />}
+            icon={<Sparkles className="text-yellow" />}
             iconPlacement="trailing"
             value={focus.label}
             hint={<span className="block truncate">{focus.sub}</span>}
@@ -93,11 +94,11 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           <Stat
             size="sm"
             label="Forum"
-            icon={<MessageSquare />}
+            icon={<MessageSquare className="text-blue" />}
             iconPlacement="trailing"
             value={forumStats ? `${forumStats.messageCount.toLocaleString()} Posts` : "—"}
             hint={
-              <span className="tabular-nums">
+              <span className="font-data tabular-nums">
                 {forumStats
                   ? `${forumStats.reactionScore.toLocaleString()} reactions`
                   : "Not linked"}
@@ -112,16 +113,16 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           <Stat
             size="sm"
             label="IxCredits"
-            icon={<IxCreditsSymbol />}
+            icon={<IxCreditsSymbol className="text-yellow" />}
             iconPlacement="trailing"
             value={
               <span className="inline-flex items-center gap-1">
-                <IxCreditsSymbol aria-hidden className="size-3.5 shrink-0" />
+                <IxCreditsSymbol aria-hidden className="text-yellow size-3.5 shrink-0" />
                 {vault.credits.toLocaleString()}
               </span>
             }
             hint={
-              <span className="tabular-nums">
+              <span className="font-data tabular-nums">
                 {vault.totalCards.toLocaleString()} cards · Lv {vault.collectorLevel}
               </span>
             }

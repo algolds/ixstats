@@ -27,8 +27,13 @@ import { PreText } from "~/components/ui/pretext";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { StandingBands } from "~/components/mycountry/shell/StandingBands";
 
+/** v2 telemetry cells: hover wash, the icon grows, and the cell presses (`facet-press-sm`). */
 const SNAPSHOT_BUTTON =
-  "group hover:bg-fill-4 rounded-control duration-fast ease-out-facet focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 px-2 py-1 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
+  "group facet-press facet-press-sm hover:bg-fill-4 rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 px-2 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2";
+
+/** v2 icon nudge on hover (Reduce Motion: still). */
+const ICON_GROW =
+  "ease-out-facet transition-[scale] duration-fast group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100";
 
 // Helper UI primitives
 export function StatPill({
@@ -47,7 +52,7 @@ export function StatPill({
       <Icon aria-hidden className={cn("size-3.5 shrink-0", color)} />
       <div className="min-w-0">
         <p className="text-label-secondary text-eyebrow">{label}</p>
-        <p className="text-label text-caption tabular-nums">{value}</p>
+        <p className="text-label text-caption font-data tabular-nums">{value}</p>
       </div>
     </div>
   );
@@ -89,7 +94,9 @@ export function IndicatorRow({
     <div className="space-y-0.5">
       <div className="text-footnote flex items-center justify-between gap-2">
         <span className="text-label-secondary truncate">{label}</span>
-        <span className={cn("shrink-0 font-medium tabular-nums", valueClass)}>{value}</span>
+        <span className={cn("font-data shrink-0 font-medium tabular-nums", valueClass)}>
+          {value}
+        </span>
       </div>
       {barValue != null && <MiniBar value={barValue} max={barMax} color={barColor} />}
     </div>
@@ -257,19 +264,19 @@ function HeroSnapshotPanelsComponent({
     : [];
 
   return (
-    <div className="bg-surface rounded-row flex h-full flex-col overflow-hidden">
+    <div className="bg-surface rounded-row border-separator flex h-full flex-col overflow-hidden border">
       {/* Section 1: headline figures */}
-      <div className="divide-separator grid grid-cols-3 divide-x p-2">
+      <div className="divide-separator bg-surface-secondary grid grid-cols-3 divide-x p-2">
         <button
           type="button"
           onClick={() => onOpenModal("population")}
           className={SNAPSHOT_BUTTON}
           title="Population breakdown"
         >
-          <Users aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <Users aria-hidden className={cn("text-blue size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">Pop</span>
-            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline">
+            <span className="text-label text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline">
               {pop}
             </span>
           </span>
@@ -281,10 +288,10 @@ function HeroSnapshotPanelsComponent({
           className={SNAPSHOT_BUTTON}
           title="GDP breakdown"
         >
-          <Coins aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <Coins aria-hidden className={cn("text-green size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">GDP</span>
-            <span className="text-label text-caption sm:text-headline block truncate tabular-nums group-hover:underline">
+            <span className="text-success text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline">
               {gdp}
             </span>
           </span>
@@ -296,7 +303,7 @@ function HeroSnapshotPanelsComponent({
           className={SNAPSHOT_BUTTON}
           title="Vitality breakdown"
         >
-          <Activity aria-hidden className="text-label-secondary size-4 shrink-0" />
+          <Activity aria-hidden className={cn("text-yellow size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">Standing</span>
             <span className="text-success text-caption sm:text-headline block truncate group-hover:underline">
@@ -316,7 +323,7 @@ function HeroSnapshotPanelsComponent({
                 type="button"
                 key={ring.label}
                 onClick={() => onOpenModal("vitality")}
-                className="bg-surface-secondary hover:bg-fill-3 rounded-control duration-fast ease-out-facet focus-visible:outline-tint group flex cursor-pointer items-center gap-2 p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="bg-surface-secondary hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group flex cursor-pointer items-center gap-2 p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
                 title="Vitality breakdown"
               >
                 <HealthRing value={ring.value} size={32} color={ring.color} label={ring.label} />
@@ -333,23 +340,29 @@ function HeroSnapshotPanelsComponent({
       </div>
 
       {/* Section 3: executive telemetry */}
-      <dl className="border-separator divide-separator grid grid-cols-3 divide-x border-t py-2">
+      <dl className="border-separator divide-separator bg-surface-secondary grid grid-cols-3 divide-x border-t py-2">
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
-          <Heart aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <Heart aria-hidden className="text-red size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Approval</dt>
-          <dd className="text-label text-caption truncate tabular-nums">{approvalPct}%</dd>
+          <dd className="text-label text-caption font-data truncate tabular-nums">
+            {approvalPct}%
+          </dd>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
-          <Scale aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <Scale aria-hidden className="text-indigo size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Stability</dt>
-          <dd className="text-label text-caption truncate tabular-nums">{stabilityPct}%</dd>
+          <dd className="text-label text-caption font-data truncate tabular-nums">
+            {stabilityPct}%
+          </dd>
         </div>
 
         <div className="flex min-w-0 items-center justify-center gap-1 px-1">
-          <Zap aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <Zap aria-hidden className="text-yellow size-3.5 shrink-0" />
           <dt className="text-label-secondary text-footnote">Capacity</dt>
-          <dd className="text-label text-caption truncate tabular-nums">{capacityPct}%</dd>
+          <dd className="text-label text-caption font-data truncate tabular-nums">
+            {capacityPct}%
+          </dd>
         </div>
       </dl>
     </div>

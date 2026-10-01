@@ -64,7 +64,14 @@ export function VaultMilestonesCard({
   ];
 
   return (
-    <FacetCard padding="lg" className="overflow-hidden">
+    // v2 (c5c6b382): a glass showcase card with the dot texture.
+    <FacetCard
+      variant="glass"
+      padding="lg"
+      texture="dots"
+      textureOpacity={0.03}
+      className="overflow-hidden"
+    >
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">

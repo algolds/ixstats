@@ -104,23 +104,30 @@ export default function AchievementsPage() {
       <div className="space-y-6">
         {/* Country profile header card */}
         {isMounted && userProfile && (
-          <FacetCard padding="lg" className="overflow-hidden">
-            {/* Hero identity: the corner flag watermark */}
+          // v2 (c5c6b382): the glass hero with the dot texture and the flag watermark.
+          <FacetCard
+            variant="glass"
+            glow
+            padding="lg"
+            texture="dots"
+            textureOpacity={0.03}
+            className="overflow-hidden"
+          >
             <FlagWatermark src={countryFlagUrl} />
 
             <div className="relative space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-label text-title-1 flex flex-wrap items-center gap-3">
                   <span>Achievements</span>
-                  <Badge variant="tinted" className="tabular-nums">
-                    {completionPercent}% mastered
+                  <Badge variant="yellow">
+                    <span className="font-data tabular-nums">{completionPercent}%</span> mastered
                   </Badge>
                 </h1>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Button asChild variant="gray" size="sm" className="rounded-full">
                     <Link href="/leaderboards">
-                      <Award aria-hidden />
+                      <Award aria-hidden className="text-yellow" />
                       <span>Global leaderboards</span>
                     </Link>
                   </Button>
@@ -149,7 +156,9 @@ export default function AchievementsPage() {
                   label="Achievement points"
                   value={
                     <span className="flex items-baseline gap-1">
-                      <NumberFlow value={gameplayPoints} />
+                      <span className="text-success">
+                        <NumberFlow value={gameplayPoints} />
+                      </span>
                       <span className="text-footnote text-label-secondary">pts</span>
                     </span>
                   }

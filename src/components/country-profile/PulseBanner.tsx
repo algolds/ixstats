@@ -55,8 +55,11 @@ export function PulseBanner({
     });
 
   return (
+    // Concept banner: glass with the ambient tint glow bleeding off the top-right corner.
     <FacetCard
       role="region"
+      variant="glass"
+      glow
       padding="md"
       aria-label={`National pulse: ${status.label}`}
       className={cn(
@@ -67,7 +70,7 @@ export function PulseBanner({
       <div className="flex min-w-0 items-start gap-3">
         <span
           aria-hidden
-          className="bg-tint-fill text-tint rounded-control relative flex size-10 shrink-0 items-center justify-center"
+          className="bg-surface text-tint border-separator rounded-control shadow-card relative flex size-10 shrink-0 items-center justify-center border"
         >
           <Activity className="size-5" />
           <span
