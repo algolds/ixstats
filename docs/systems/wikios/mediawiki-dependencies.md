@@ -222,8 +222,11 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 ## 6. Open items found by the audit (not changed by plan 418)
 
-- **`scripts/sync-ixwiki-full.ts` and `scripts/sync-ixwiki-live.ts`** import `../src/lib/wiki-os/transformers/excerpt`, a
-  module that no longer exists; they do not run.
+- **`scripts/audit/audit-wikios-db.ts`** still imports `../../src/lib/wiki-os/transformers/excerpt`, a module that no longer
+  exists (`cleanExcerpt` lives in `transformers/wikitext-parser.ts`); it does not run. (`scripts/sync-ixwiki-full.ts` and
+  `scripts/sync-ixwiki-live.ts` had the same import; plan 415 pointed them at `wikitext-parser.ts` and
+  `image-url.ts` `extractLeadImagePath`, the form a lead image is stored in, and made the live one read the wiki's address from
+  the config.)
 
 ## How to re-check
 

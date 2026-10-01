@@ -11,10 +11,9 @@
 
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import {
-  cleanExcerpt,
-  extractLeadImageFromWikitext,
-} from "../src/lib/wiki-os/transformers/excerpt";
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "../src/lib/wiki-os/config";
+import { extractLeadImagePath } from "../src/lib/wiki-os/transformers/image-url";
+import { cleanExcerpt } from "../src/lib/wiki-os/transformers/wikitext-parser";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -28,9 +27,8 @@ const prisma = new PrismaClient({
   },
 });
 
-const DEFAULT_USER_AGENT = "IxStats-Builder";
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
+// The wiki's address comes from the one WikiOS config object (src/lib/wiki-os/config.ts).
+const API_URL = mediaWikiApiUrl({ internal: true });
 
 function sanitize(str: string | null | undefined): string {
   if (!str) return "";
@@ -143,7 +141,7 @@ async function syncNamespace(ns: number, prefix: string, name: string, maxPerNs 
           const revTimestamp = rev?.timestamp ? new Date(rev.timestamp) : new Date();
           const cleanSum = cleanExcerpt(wikitext, 300);
           const summary = cleanSum ? cleanSum.substring(0, 480) : null;
-          const leadImageUrl = extractLeadImageFromWikitext(wikitext);
+          const leadImageUrl = extractLeadImagePath(wikitext);
 
           // A changed text leaves the rendered view stale: readers re-render it on their next visit.
           const textUnchanged =

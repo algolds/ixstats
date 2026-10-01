@@ -12,10 +12,8 @@
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
-import {
-  cleanExcerpt,
-  extractLeadImageFromWikitext,
-} from "../src/lib/wiki-os/transformers/excerpt";
+import { extractLeadImagePath } from "../src/lib/wiki-os/transformers/image-url";
+import { cleanExcerpt } from "../src/lib/wiki-os/transformers/wikitext-parser";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -144,7 +142,7 @@ async function main() {
 
         // Precompute clean excerpt and lead image
         const summary = cleanExcerpt(wikitext, 300);
-        const leadImageUrl = extractLeadImageFromWikitext(wikitext);
+        const leadImageUrl = extractLeadImagePath(wikitext);
 
         // A changed text leaves the rendered view stale: readers re-render it on their next visit.
         const textUnchanged =
