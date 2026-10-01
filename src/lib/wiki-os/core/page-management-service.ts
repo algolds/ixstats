@@ -11,6 +11,7 @@ import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueRender } from "../services/render-service";
 import { evictWikiTitleCaches } from "../services/title-cache-eviction";
+import { notifyWatchers } from "../services/watchlist-notify";
 
 /** Who performed an operation: the WikiOS user row (for the foreign keys) and the name the log shows. */
 export interface PageActor {
@@ -141,6 +142,16 @@ export class PageManagementService {
       enqueueRender(moved.movedArticleId);
       await evictWikiTitleCaches(moved.oldTitle, realm, moved.movedArticleId);
       await evictWikiTitleCaches(moved.newTitle, realm, moved.movedArticleId);
+      // watchlist: the page's watchers stay with its row: tell them it moved (the mover is left out).
+      await notifyWatchers({
+        kind: "moved",
+        articleId: moved.movedArticleId,
+        title: moved.newTitle,
+        fromTitle: moved.oldTitle,
+        editor: actor.name,
+        editorUserId: actor.userId,
+        summary: reason,
+      });
     }
     return result;
   }
@@ -383,6 +394,15 @@ export class PageManagementService {
     });
     // A deleted page must not be read out of a cache.
     await evictWikiTitleCaches(title, realm, articleId);
+    // watchlist: tell the page's watchers it is gone (the deleter is left out).
+    await notifyWatchers({
+      kind: "deleted",
+      articleId,
+      title,
+      editor: actor.name,
+      editorUserId: actor.userId,
+      summary: reason,
+    });
     return { success: true, articleId };
   }
 

@@ -6,6 +6,7 @@
  */
 import { runAutoSyncCycle } from "~/lib/wiki-os/services/auto-sync-service";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 
 const mockSystemConfigFindUnique = jest.fn();
 const mockSystemConfigUpsert = jest.fn();
@@ -36,6 +37,9 @@ jest.mock("~/server/db", () => ({
 }));
 
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
+  notifyWatchers: jest.fn().mockResolvedValue(0),
+}));
 
 const HWM_KEY = "wikiAutoSync.rcHighWater";
 
@@ -336,4 +340,45 @@ test("stores a synced redirect's canonical target and fragment, and nulls for or
   const noRedirect = { redirectTargetSlug: null, redirectTargetFragment: null };
   expect(upsertFor("Plain").create).toMatchObject(noRedirect);
   expect(upsertFor("Plain").update).toMatchObject(noRedirect);
+});
+
+describe("watchers are told of a MediaWiki edit (plan 416, WK-19)", () => {
+  it("notifies the page's watchers when a new revision changed the text, naming the diff's revisions", async () => {
+    rcResponses = [{ changes: [change("A", 100, 1)] }];
+    mediaWikiWikitext = { A: "New body." };
+    mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Old body." });
+    // The cycle first asks whether rev 100 is stored (it is not), then for the page's latest revision.
+    mockWikiRevisionFindFirst.mockImplementation(async ({ where }: { where: { mwRevId?: number } }) =>
+      where.mwRevId ? null : { id: "r_prev", mwRevId: 99, byteSize: 9 }
+    );
+
+    await runAutoSyncCycle();
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "edited",
+      articleId: "art-1",
+      title: "A",
+      editor: "alice",
+      editorWikiUsername: "alice",
+      summary: "edit",
+      previousRef: "99",
+      currentRef: "100",
+    });
+  });
+
+  it("does not notify when the text did not change (the echo of a WikiOS save) or the revision was already known", async () => {
+    rcResponses = [{ changes: [change("A", 100, 1)] }];
+    mediaWikiWikitext = { A: "Same body." };
+    mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Same body." });
+    await runAutoSyncCycle();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+
+    rcResponses = [{ changes: [change("A", 101, 2)] }];
+    mediaWikiWikitext = { A: "Another body." };
+    mockWikiArticleFindUnique.mockResolvedValue({ wikitext: "Old." });
+    mockWikiRevisionCreateMany.mockResolvedValue({ count: 0 }); // skipDuplicates: nothing inserted
+    await runAutoSyncCycle();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  });
 });

@@ -6,10 +6,11 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { requireNotBlocked } from "~/lib/wiki-os/permissions";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
+import { markWatchedVisited } from "~/lib/wiki-os/services/watchlist-notify";
 
 import { db } from "~/server/db";
 
@@ -326,16 +327,28 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     }),
 
   /**
-   * Mark all watched articles as visited (clearing unread indicator dots).
+   * Mark all watched articles as visited (clearing unread indicator dots and the "already
+   * notified" mark, so the next change to any of them notifies again).
    */
   markAllWatchedVisited: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = requireWikiUserId(ctx);
     await ctx.db.wikiWatchlist.updateMany({
       where: { userId },
-      data: { lastViewedTime: new Date() },
+      data: { lastViewedTime: new Date(), notificationTime: null },
     });
     return { success: true };
   }),
+
+  /**
+   * The reader viewed a watched page: clear its unread dot and the "already notified" mark, so the
+   * next change to it notifies this watcher again. Does nothing for a page they do not watch.
+   */
+  markWatchedVisited: lightMutationProcedure
+    .input(z.object({ pageTitle: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      await markWatchedVisited(requireWikiUserId(ctx), input.pageTitle);
+      return { success: true };
+    }),
 
   /**
    * Check whether a page is on the user's watchlist.

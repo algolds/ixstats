@@ -4,6 +4,7 @@
  */
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -42,6 +43,9 @@ jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
+  notifyWatchers: jest.fn().mockResolvedValue(0),
+}));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
@@ -313,6 +317,77 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
       ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" })
     ).rejects.toThrow("db down");
     expect(enqueueRender).not.toHaveBeenCalled();
+  });
+});
+
+describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", () => {
+  const save = (extra: { editSummary?: string } = {}, authorName?: string) => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle(
+      { slug: "Foo", title: "Foo", wikitext: "new text", ...extra },
+      "user_clerk",
+      authorName
+    );
+  };
+
+  it("notifies once, after the commit, with the editor left out and the diff's two revisions", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ id: "r_prev", mwRevId: 77, byteSize: 3 });
+    mockRevisionCreate.mockResolvedValue({
+      id: "r_new",
+      summary: "Fixed a date",
+      authorId: "db_editor",
+    });
+
+    await save({ editSummary: "Fixed a date" }, "Kir");
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "edited",
+      articleId: "a1",
+      title: "Foo",
+      editor: "Kir",
+      editorUserId: "db_editor",
+      summary: "Fixed a date",
+      previousRef: "77", // a revision synced from MediaWiki is referred to by its rev_id
+      currentRef: "r_new",
+    });
+  });
+
+  it("notifies after the revision is written, never before the transaction committed", async () => {
+    const order: string[] = [];
+    mockRevisionCreate.mockImplementation(async () => {
+      order.push("revision");
+      return { id: "r1" };
+    });
+    jest.mocked(notifyWatchers).mockImplementation(async () => {
+      order.push("notify");
+      return 0;
+    });
+
+    await save();
+
+    expect(order).toEqual(["revision", "notify"]);
+  });
+
+  it("has no earlier revision to diff against for a new page", async () => {
+    await save();
+
+    expect(notifyWatchers).toHaveBeenCalledWith(expect.objectContaining({ previousRef: null }));
+  });
+
+  it("does not notify for a save that changed nothing, or one that failed", async () => {
+    mockCount.mockResolvedValue(1);
+    await save();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+
+    mockCount.mockResolvedValue(0);
+    mockUpsert.mockRejectedValue(new Error("db down"));
+    await expect(
+      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "x" })
+    ).rejects.toThrow("db down");
+    expect(notifyWatchers).not.toHaveBeenCalled();
   });
 });
 
