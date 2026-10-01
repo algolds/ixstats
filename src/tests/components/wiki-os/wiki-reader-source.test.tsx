@@ -196,7 +196,17 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(refetch).toHaveBeenCalledTimes(1);
     });
 
-    it("does not, when the server's DOM is there to read it back from", () => {
+    it("treats that marker as no data: a loading state, never an article with an empty body", () => {
+      mockSignedIn = false;
+      lean(jest.fn());
+
+      render(<Reader title="Aurelia" />);
+
+      expect(screen.getByText("Loading article...")).toBeInTheDocument();
+      expect(mockRenderer).not.toHaveBeenCalled();
+    });
+
+    it("also when the element is there but empty", () => {
       const refetch = jest.fn();
       mockSignedIn = false;
       lean(refetch);
@@ -206,7 +216,40 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
 
       render(<Reader title="Aurelia" />);
 
+      expect(refetch).toHaveBeenCalledTimes(1);
+      expect(mockRenderer).not.toHaveBeenCalled();
+      body.remove();
+    });
+
+    it("does not, when the server's DOM is there to read it back from", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      body.innerHTML = "<p>Eurth</p>";
+      document.body.append(body);
+
+      render(<Reader title="Aurelia" />);
+
       expect(refetch).not.toHaveBeenCalled();
+      expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ title: "Aurelia" }));
+      body.remove();
+    });
+
+    it("a signed-in reader still asks once for their own chips: a lean copy is the anonymous one", () => {
+      const refetch = jest.fn();
+      mockSignedIn = true;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      body.innerHTML = "<p>Eurth</p>";
+      document.body.append(body);
+
+      const { rerender } = render(<Reader title="Aurelia" />);
+      rerender(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
       body.remove();
     });
   });

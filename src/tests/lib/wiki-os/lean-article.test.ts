@@ -44,30 +44,61 @@ describe("markers", () => {
 });
 
 describe("the server's stash", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
   it("hands the SSR render the real HTML of a marker, and passes real HTML through", () => {
     const token = stashLeanArticle({ body: BODY, infobox: "<table></table>", notices: null });
 
+    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(true); // looking does not use it up
+    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(true);
     expect(resolveLeanHtml(leanMarker(token, "body"))).toBe(BODY);
     expect(resolveLeanHtml(leanMarker(token, "infobox"))).toBe("<table></table>");
     expect(resolveLeanHtml(leanMarker(token, "notices"))).toBeNull();
-    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(true);
     // not a marker: the HTML itself
     expect(resolveLeanHtml("<p>x</p>")).toBe("<p>x</p>");
     expect(resolveLeanHtml(null)).toBeNull();
     expect(isLeanResolvable("<p>x</p>")).toBe(true);
   });
 
-  it("forgets an article after a minute, and a marker nobody stashed finds nothing", () => {
-    jest.useFakeTimers();
-    const token = stashLeanArticle({ body: BODY, infobox: null, notices: null });
+  it("hands each part over once, and forgets the article with its last part", () => {
+    const token = stashLeanArticle({ body: BODY, infobox: "<table></table>", notices: null });
+
     expect(resolveLeanHtml(leanMarker(token, "body"))).toBe(BODY);
-
-    jest.advanceTimersByTime(60_001);
-
     expect(resolveLeanHtml(leanMarker(token, "body"))).toBeNull();
     expect(isLeanResolvable(leanMarker(token, "body"))).toBe(false);
+    // the other part is still there until it is taken
+    expect(isLeanResolvable(leanMarker(token, "infobox"))).toBe(true);
+    expect(resolveLeanHtml(leanMarker(token, "infobox"))).toBe("<table></table>");
+    expect(isLeanResolvable(leanMarker(token, "infobox"))).toBe(false);
+    expect(
+      (globalThis as { __wikiosLeanStash?: Map<string, unknown> }).__wikiosLeanStash?.has(token)
+    ).toBe(false);
+  });
+
+  it("forgets an article a few seconds after it was kept, and a marker nobody stashed finds nothing", () => {
+    const token = stashLeanArticle({ body: BODY, infobox: null, notices: null });
+    jest.advanceTimersByTime(4_999);
+    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(true);
+
+    jest.advanceTimersByTime(2);
+
+    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(false);
+    expect(resolveLeanHtml(leanMarker(token, "body"))).toBeNull();
     expect(resolveLeanHtml(leanMarker("123e4567-e89b-42d3-a456-426614174999", "body"))).toBeNull();
-    jest.useRealTimers();
+  });
+
+  it("keeps at most 200 articles: the oldest goes first", () => {
+    const tokens = Array.from({ length: 250 }, (_, i) =>
+      stashLeanArticle({ body: `<p>${i}</p>`, infobox: null, notices: null })
+    );
+
+    const stash = (globalThis as { __wikiosLeanStash?: Map<string, unknown> }).__wikiosLeanStash!;
+    expect(stash.size).toBeLessThanOrEqual(200);
+    expect(isLeanResolvable(leanMarker(tokens[0]!, "body"))).toBe(false);
+    expect(isLeanResolvable(leanMarker(tokens[49]!, "body"))).toBe(false);
+    expect(isLeanResolvable(leanMarker(tokens[249]!, "body"))).toBe(true);
+    expect(isLeanResolvable(leanMarker(tokens[50]!, "body"))).toBe(true);
   });
 });
 

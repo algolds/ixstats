@@ -43,11 +43,17 @@ const BUSY_RETRY_DELAY_MS = 3_000;
  */
 const VIEWER_CHIP = 'data-key="MyCountry:';
 
+/**
+ * Whether the server's copy of the page may hold the anonymous reader's chips. A lean copy (its HTML
+ * is markers; see lib/wiki-os/lean-article.ts) is always the anonymous one, whatever the chips are.
+ */
 function hasViewerChips(
   article:
     { contentHtml: string; infoboxHtml: string | null; noticesHtml: string | null } | undefined
 ): boolean {
-  return [article?.contentHtml, article?.infoboxHtml, article?.noticesHtml].some((html) =>
+  if (!article) return false;
+  if (parseLeanMarker(article.contentHtml) !== null) return true;
+  return [article.contentHtml, article.infoboxHtml, article.noticesHtml].some((html) =>
     html?.includes(VIEWER_CHIP)
   );
 }
@@ -137,6 +143,8 @@ export default function ArticlePageClient({
   useEffect(() => {
     if (leanUnresolved) void refetch();
   }, [leanUnresolved, refetch]);
+  // Until then the cached marker is no data: the page shows its loading state, not an empty article.
+  const article = leanUnresolved ? undefined : data;
 
   // The server's copy of a page with viewer-specific chips is the anonymous one: a signed-in
   // reader asks once more, with their session, for their own chips.
@@ -227,7 +235,7 @@ export default function ArticlePageClient({
             {isIxWiki && <ArticleTabs title={title} />}
             {redirectedFrom && <RedirectNotice from={redirectedFrom} />}
             {aside}
-            {isLoading && !data && (
+            {(isLoading || leanUnresolved) && !article && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
                 <p className="mt-4 text-sm text-zinc-400">
@@ -235,10 +243,10 @@ export default function ArticlePageClient({
                 </p>
               </div>
             )}
-            {error && !data && isBusyError(error) && (
+            {error && !article && isBusyError(error) && (
               <ArticleBusy title={title} onRetry={() => void refetch()} />
             )}
-            {error && !data && !isBusyError(error) && (
+            {error && !article && !isBusyError(error) && (
               <ArticleNotFound
                 title={title}
                 wikiSource={wikiSource}
@@ -246,17 +254,17 @@ export default function ArticlePageClient({
                 onCreate={() => handleEnterEdit("source")}
               />
             )}
-            {data && (
+            {article && (
               <ArticleRenderer
-                title={data.title}
-                contentHtml={data.contentHtml}
-                infoboxHtml={data.infoboxHtml}
-                noticesHtml={data.noticesHtml}
-                toc={data.toc}
-                categories={data.categories}
-                lastModified={data.lastModified ?? null}
+                title={article.title}
+                contentHtml={article.contentHtml}
+                infoboxHtml={article.infoboxHtml}
+                noticesHtml={article.noticesHtml}
+                toc={article.toc}
+                categories={article.categories}
+                lastModified={article.lastModified ?? null}
                 wikiSource={wikiSource}
-                authorInfo={data.authorInfo}
+                authorInfo={article.authorInfo}
               />
             )}
             {children}
