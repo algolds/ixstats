@@ -1393,6 +1393,12 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<s><div:x></s:y>", "<s><div:x></s:y>"],
   ["<i><b></i>", "<i><b></i>"],
   ["<noscript>", "<noscript>"],
+  // a closing tag the parser never sees as one (inside an attribute value), and elements a div sits inside of that the
+  // closing tag does not close: the tags look balanced, the tree gets deep
+  ['<blockquote␠title="</blockquote>">␤', '<blockquote title="</blockquote>">\n'],
+  ["<b><div></b>", "<b><div></b>"],
+  ["<a><div></a>", "<a><div></a>"],
+  ["<font><div></font>", "<font><div></font>"],
   // a srcset: candidates, a URL that ends in commas
   ["/images/a.png␠1x,␠", "/images/a.png 1x, "],
   ["a,,,,,,,,,,x␠", "a,,,,,,,,,,x "],

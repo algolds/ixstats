@@ -541,6 +541,10 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
       ["a closing tag in a table", "<div><table><tr><td></div>", 150],
       ["a closing tag of another name", "<s><div:x></s:y>", 300],
       ["formatting elements the closing tag leaves open", "<i><b></i>", 6_000],
+      ["a closing tag in an attribute value", '<blockquote title="</blockquote>">\n', 4_000],
+      ["a bold element a div is inside of", "<b><div></b>", 4_000],
+      ["an anchor a div is inside of", "<a><div></a>", 4_000],
+      ["a font element a div is inside of", "<font><div></font>", 4_000],
     ])("sees %s", (_name, unit, times) => {
       const html = nested(unit, times);
       expect(tagsNestTooDeep(html)).toBe(false);
@@ -585,13 +589,23 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
     });
   });
 
-  it("slimArticleHtml and markTemplateChips return such a page unchanged, at once", () => {
-    const html = `${nested("<s>", 6_000)}{{MyCountry:gdp}}`;
-    const started = performance.now();
-    expect(slimArticleHtml(html)).toBe(html);
-    expect(markTemplateChips(html)).toBe(html);
-    expect(performance.now() - started).toBeLessThan(1_000);
-  });
+  it.each([
+    ["nested `<s>`", "<s>", 6_000],
+    ["a closing tag a div stops", "<span><div></span>", 300],
+    ["a closing tag of another name", "<s><div:x></s:y>", 300],
+    ["formatting elements the closing tag leaves open", "<i><b></i>", 6_000],
+    ["a closing tag in an attribute value", '<blockquote title="</blockquote>">\n', 4_000],
+    ["a div inside an anchor", "<a><div></a>", 4_000],
+  ])(
+    "slimArticleHtml and markTemplateChips return a page of %s unchanged, at once",
+    (_name, unit, times) => {
+      const html = `${nested(unit, times)}{{MyCountry:gdp}}`;
+      const started = performance.now();
+      expect(slimArticleHtml(html)).toBe(html);
+      expect(markTemplateChips(html)).toBe(html);
+      expect(performance.now() - started).toBeLessThan(1_000);
+    }
+  );
 
   it("leaves a page over the size ceiling alone too, and one at it to the tidying passes", () => {
     const flat = (length: number) => `<p> a </p>${"b".repeat(length)}`.slice(0, length);
@@ -754,6 +768,10 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
     ["<div><table><tr><td></div>", 150],
     ["<s><div:x></s:y>", 300],
     ["<i><b></i>", 6_000],
+    ['<blockquote title="</blockquote>">\n', 4_000],
+    ["<b><div></b>", 4_000],
+    ["<a><div></a>", 4_000],
+    ["<font><div></font>", 4_000],
   ])(
     "shows %s repeated %d times as its source too: the tags are few, the tree is deep",
     (unit, times) => {
