@@ -428,7 +428,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       await assertTitleVisible(ctx, input.title, input.wiki);
       const { getPageImages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-      return getPageImages(input.title);
+      return getPageImages(input.title, { wiki: input.wiki });
     }),
 
   /**

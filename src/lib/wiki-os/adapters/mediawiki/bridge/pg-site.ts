@@ -6,6 +6,8 @@
 
 import { db } from "~/server/db";
 import { MediaAssetService } from "~/lib/wiki-os/core";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import type { PageImage } from "./types";
 
 // ---------------------------------------------------------------------------
 // Media & Thumbnails
@@ -24,6 +26,64 @@ export async function batchFetchThumbnails(titles: string[]): Promise<Map<string
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
   return map;
+}
+
+/** The images of a page to list: at most this many, as the wiki's own image list was capped. */
+const DEFAULT_PAGE_IMAGE_LIMIT = 50;
+/** An image smaller than this on both sides is an icon, not an illustration. */
+const MIN_ILLUSTRATION_SIDE = 100;
+
+/**
+ * The images a published IxWiki page uses (the files its last render reported, `wiki_image_links`),
+ * with the URLs and size WikiOS holds for each (`wiki_assets`), in file-name order; null when the page
+ * is missing, deleted or uses none. A file with no asset row is skipped, as is an icon (under 100 px on
+ * both sides, when the size is known) and anything that is not an image.
+ */
+export async function ixwikiGetPageImages(
+  title: string,
+  opts?: { excludePatterns?: RegExp[]; limit?: number }
+): Promise<PageImage[] | null> {
+  const canon = canonicalizeTitle(title, { source: "ixwiki" });
+  if (!canon) return null;
+
+  try {
+    const article = await db.wikiArticle.findFirst({
+      where: { source: "ixwiki", title: canon.title, status: { not: "ARCHIVED" } },
+      select: { imageLinks: { select: { fileName: true }, orderBy: { fileName: "asc" } } },
+    });
+    const excludePatterns = opts?.excludePatterns ?? [];
+    const fileNames = (article?.imageLinks ?? [])
+      .map((link) => link.fileName)
+      .filter((name) => !excludePatterns.some((pattern) => pattern.test(`File:${name}`)))
+      .slice(0, opts?.limit ?? DEFAULT_PAGE_IMAGE_LIMIT);
+    if (fileNames.length === 0) return null;
+
+    const assets = await MediaAssetService.findAssets(fileNames);
+    const images: PageImage[] = [];
+    for (const name of fileNames) {
+      const key = name.replace(/ /g, "_");
+      const asset = assets.get(key) ?? assets.get(key.toLowerCase());
+      if (!asset || !asset.mimeType.startsWith("image/")) continue;
+      const { width, height } = asset;
+      const isIcon =
+        width !== null &&
+        height !== null &&
+        width < MIN_ILLUSTRATION_SIDE &&
+        height < MIN_ILLUSTRATION_SIDE;
+      if (isIcon) continue;
+      images.push({
+        title: `File:${name}`,
+        url: asset.url,
+        thumbUrl: asset.thumbnailUrl || asset.url,
+        width: width ?? 0,
+        height: height ?? 0,
+      });
+    }
+    return images.length > 0 ? images : null;
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------

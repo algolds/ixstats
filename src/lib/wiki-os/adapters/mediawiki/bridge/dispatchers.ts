@@ -40,6 +40,7 @@ import {
   ixwikiGetPageProps,
   ixwikiGetPageProtection,
   ixwikiGetImageMeta,
+  ixwikiGetPageImages,
   ixwikiGetPageLog,
 } from "./pg-reader";
 import {
@@ -456,7 +457,9 @@ export async function getCoordinates(
 }
 
 /**
- * Get images referenced on a wiki page with thumbnail URLs.
+ * Get images referenced on a wiki page with thumbnail URLs. An IxWiki page's come from Postgres (its
+ * redirect followed, as MediaWiki's own image query did); a sister wiki's page asks its own wiki, and
+ * no title is ever tried on a wiki it does not belong to.
  */
 export async function getPageImages(
   title: string,
@@ -464,9 +467,13 @@ export async function getPageImages(
     excludePatterns?: RegExp[];
     thumbWidth?: number;
     limit?: number;
+    wiki?: WikiSource;
   }
 ) {
-  return httpGetPageImages(title, opts);
+  const wiki = opts?.wiki ?? "ixwiki";
+  if (wiki !== "ixwiki") return httpGetPageImages(title, wiki, opts);
+  const { title: shown } = await ixwikiResolveRedirect(title);
+  return ixwikiGetPageImages(shown, opts);
 }
 
 /**
