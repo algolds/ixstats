@@ -21,6 +21,7 @@ import {
   Coins,
   Activity,
   Crown,
+  OpenBook,
 } from "iconoir-react";
 import type { DepartmentCategory, OrganizationalLevel } from "~/types/government";
 
@@ -59,6 +60,10 @@ const NAMED_DEPARTMENT_ICONS = new Map<string, React.ComponentType<{ className?:
     Coins,
     Activity,
     Crown,
+    // ...and three that are lucide names, mapped to the nearest Iconoir icon
+    Users, // Iconoir's Group
+    BookOpen: OpenBook,
+    Building2: Building,
   })
 );
 

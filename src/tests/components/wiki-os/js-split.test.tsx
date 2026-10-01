@@ -106,9 +106,13 @@ describe("Iconoir", () => {
     expect(resolveNamedDepartmentIcon("Shield")).toBeTruthy();
     expect(resolveNamedDepartmentIcon("DeliveryTruck")).toBeTruthy();
     // the names the builder's government step stores
-    for (const stored of ["Coins", "Activity", "Crown"]) {
+    for (const stored of ["Coins", "Activity", "Crown", "Users", "BookOpen", "Building2"]) {
       expect(resolveNamedDepartmentIcon(stored)).toBeTruthy();
     }
+    // lucide names map to the nearest Iconoir icon, not to one another
+    expect(resolveNamedDepartmentIcon("Users")).toBe(resolveNamedDepartmentIcon("Group"));
+    expect(resolveNamedDepartmentIcon("Building2")).toBe(resolveNamedDepartmentIcon("Building"));
+    expect(resolveNamedDepartmentIcon("BookOpen")).not.toBe(resolveNamedDepartmentIcon("Users"));
     expect(resolveNamedDepartmentIcon("https://example.com/a.png")).toBeNull();
     expect(resolveNamedDepartmentIcon("NoSuchIcon")).toBeNull();
     expect(resolveNamedDepartmentIcon(undefined)).toBeNull();
