@@ -1,13 +1,12 @@
 // src/lib/wiki-os/bridge/http-reader.ts
 // HTTP readers for external MediaWiki endpoints (IIWiki, Althistory, Commons).
 
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import {
   type PageImage,
   type SisterWikiSource,
   type WikiArticle,
   type WikiSearchResult,
-  type WikiSource,
   cacheGet,
   cacheSet,
 } from "./types";
@@ -183,18 +182,13 @@ export async function iiwikiSearch(query: string, limit: number = 10): Promise<W
 export async function httpGetCategoryMembers(
   category: string,
   limit: number = 50,
-  type?: "page" | "subcat" | "file",
-  wiki: WikiSource = "ixwiki"
+  type: "page" | "subcat" | "file" | undefined,
+  wiki: SisterWikiSource
 ): Promise<{
   members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }>;
 }> {
   const cleanCat = category.replace(/^Category:/i, "");
-  const base =
-    wiki === "iiwiki"
-      ? getIiwikiApiBaseUrl()
-      : wiki === "althistory"
-        ? ALTHISTORY_API
-        : DEFAULT_MEDIAWIKI_URL;
+  const base = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
 
   const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
   url.searchParams.set("action", "query");

@@ -19,7 +19,7 @@ import {
   searchShadowArticles,
   NativeSearchService,
 } from "~/lib/wiki-os/core/native-search-service";
-import { db } from "~/server/db";
+import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 
 export const wikiosSearchRouter = createTRPCRouter({
   /**
@@ -225,44 +225,21 @@ export const wikiosSearchRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // 1. Primary: Direct PostgreSQL Prisma Asset Search
+      // IxWiki's files are the assets Postgres holds (a category limits them to the files it lists).
       if (input.wiki === "ixwiki") {
-        const where: {
-          OR?: Array<{
-            title?: { contains: string; mode: "insensitive" };
-            filename?: { contains: string; mode: "insensitive" };
-          }>;
-          mimeType?: { in: string[] };
-        } = {};
-        if (input.query && input.query.trim().length > 0) {
-          where.OR = [
-            { title: { contains: input.query.trim(), mode: "insensitive" } },
-            { filename: { contains: input.query.trim(), mode: "insensitive" } },
-          ];
-        }
-        if (input.fileTypes && input.fileTypes.length > 0) {
-          where.mimeType = { in: input.fileTypes };
-        }
-
-        const assets = await db.wikiAsset.findMany({
-          where,
-          take: input.limit,
-          orderBy: { title: "asc" },
-        });
-
-        if (assets && assets.length > 0) {
-          return assets.map((a) => ({
-            name: a.filename || a.title,
-            title: `File:${a.title}`,
-            url: a.url,
-            size: a.sizeBytes || 0,
-            width: a.width ?? 800,
-            height: a.height ?? 600,
-            mime: a.mimeType || "image/png",
-          }));
-        }
+        const assets = await MediaAssetService.search(input);
+        return assets.map((a) => ({
+          name: a.filename || a.title,
+          title: `File:${a.title}`,
+          url: a.url,
+          size: a.sizeBytes || 0,
+          width: a.width ?? 800,
+          height: a.height ?? 600,
+          mime: a.mimeType || "image/png",
+        }));
       }
 
+      // A sister wiki's files are read from that wiki.
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 

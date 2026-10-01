@@ -202,52 +202,25 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      // 1. Primary: Direct PostgreSQL Category Search via wikiCategory model (4,008 categories)
+      // IxWiki's categories are Postgres's: a category MediaWiki hides (the maintenance and tracking
+      // ones) is not listed, and the counts tell pages, subcategories and files apart.
       if (input.wiki === "ixwiki") {
-        const queryTerm = input.query ? input.query.trim() : "";
-        const fromTerm = input.from ? input.from.trim() : "";
-
-        // A category MediaWiki hides (the maintenance and tracking ones) is not listed.
-        const whereCat: {
-          hidden: boolean;
-          OR?: Array<{
-            name?: { contains: string; mode: "insensitive" };
-            slug?: { contains: string; mode: "insensitive" };
-          }>;
-          name?: { gte: string; mode: "insensitive" };
-        } = { hidden: false };
-        if (queryTerm) {
-          whereCat.OR = [
-            { name: { contains: queryTerm, mode: "insensitive" } },
-            { slug: { contains: toArticleSlug(queryTerm), mode: "insensitive" } },
-          ];
-        } else if (fromTerm) {
-          whereCat.name = { gte: fromTerm, mode: "insensitive" };
-        }
-
-        const categories = await db.wikiCategory.findMany({
-          where: whereCat,
-          include: {
-            _count: {
-              select: { members: { where: { article: { status: "PUBLISHED" } } }, children: true },
-            },
-          },
-          orderBy: { name: "asc" },
-          take: input.limit,
+        const found = await CategoryService.search({
+          query: input.query.trim(),
+          from: (input.from ?? "").trim(),
+          limit: input.limit,
         });
-
-        if (categories.length > 0) {
-          return categories.map((cat) => ({
-            name: cat.name,
-            title: `Category:${cat.name}`,
-            size: cat._count.members + cat._count.children,
-            pages: cat._count.members,
-            files: 0,
-            subcats: cat._count.children,
-          }));
-        }
+        return found.map((cat) => ({
+          name: cat.name,
+          title: `Category:${cat.name}`,
+          size: cat.pages + cat.subcats + cat.files,
+          pages: cat.pages,
+          files: cat.files,
+          subcats: cat.subcats,
+        }));
       }
 
+      // A sister wiki's categories are read from that wiki.
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
       const params = new URLSearchParams({
@@ -354,6 +327,11 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      if (input.wiki === "ixwiki") {
+        const counts = await CategoryService.getCounts(input.categories);
+        return Object.fromEntries(input.categories.map((cat) => [cat, counts.get(cat)?.files ?? 0]));
+      }
+
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 
@@ -402,6 +380,11 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      if (input.wiki === "ixwiki") {
+        const titles = await CategoryService.getMemberTitles(input.category, 14, input.limit);
+        return titles.map((title) => title.replace(/^Category:/, ""));
+      }
+
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
       const url = `${baseUrl}?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(
@@ -435,6 +418,8 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      if (input.wiki === "ixwiki") return CategoryService.autocomplete(input.prefix, input.limit);
+
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
       const url = `${baseUrl}?action=query&list=allcategories&acprefix=${encodeURIComponent(
