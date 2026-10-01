@@ -420,6 +420,24 @@ export function getWikiPermissions(ctx: WikiAuthContext): Promise<WikiPermission
 }
 
 /**
+ * Caps the rights `ctx` holds at `ceiling` (a bot password's grants: effective rights are the user's
+ * rights intersected with the grants'). Every later `getWikiPermissions(ctx)`, `authorizeAction(ctx, ...)`
+ * and `requireRight(ctx, ...)` on this context sees the capped rights; the groups are left as they are.
+ */
+export async function capWikiPermissions(
+  ctx: WikiAuthContext,
+  ceiling: ReadonlySet<Right>
+): Promise<WikiPermissions> {
+  const full = await getWikiPermissions(ctx);
+  const capped: WikiPermissions = {
+    ...full,
+    rights: new Set([...full.rights].filter((right) => ceiling.has(right))),
+  };
+  permissionsByContext.set(ctx, Promise.resolve(capped));
+  return capped;
+}
+
+/**
  * The permissions of the signed-in account `authId` (a Clerk user id), for callers outside tRPC, such as
  * API routes, that have no request context: it loads the user row the context would have carried.
  */

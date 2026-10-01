@@ -13,6 +13,7 @@
  *  - watchlist-annotations: user watchlist + page annotations
  *  - user-talk:             user info, contributions, talk pages, backlinks
  *  - page-admin:            move, delete, undelete, protect, block, user groups, log
+ *  - bot-passwords:         Special:BotPasswords (api.php credentials)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -27,6 +28,7 @@ import { wikiosUserTalkRouter } from "./user-talk";
 import { wikiosDiscussionsRouter } from "./discussions";
 import { wikiosUtilitiesRouter } from "./utilities";
 import { wikiosPageAdminRouter } from "./page-admin";
+import { wikiosBotPasswordsRouter } from "./bot-passwords";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -40,5 +42,6 @@ export const wikiosRouter = mergeRouters(
   wikiosUserTalkRouter,
   wikiosDiscussionsRouter,
   wikiosUtilitiesRouter,
-  wikiosPageAdminRouter
+  wikiosPageAdminRouter,
+  wikiosBotPasswordsRouter
 );
