@@ -2,7 +2,8 @@
 /**
  * Plan 406 E: a changed page marks every page that transcludes it stale (invalidateDependents), and the
  * `wiki-render-stale` job renders them in the background (renderStaleBatch): oldest first, two at a time,
- * and a page MediaWiki cannot render never keeps the rest of the queue waiting.
+ * and a page MediaWiki cannot render never keeps the rest of the queue waiting. A bundle another renderer
+ * version built is also stale, but is found once per process (a scan), not by the per-minute query.
  */
 import {
   invalidateDependents,
@@ -48,18 +49,40 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 
 const HTML = '<div class="mw-parser-output"><p>Intro.</p></div>';
 
-/** What makes an article stale: never rendered or edited since (the marker), or an outdated bundle. */
-const STALE_OR = [
-  { htmlSyncedAt: null },
-  { renderedView: { path: ["rendererVersion"], not: RENDERER_VERSION } },
-];
-
 let ids = 0;
 const freshIds = (count: number) => Array.from({ length: count }, () => `stale-${++ids}`);
 
-/** `findUnique` answers for the given articles; `findMany` lists them as stale. */
-function staleArticles(articleIds: string[]) {
-  mockFindMany.mockResolvedValue(articleIds.map((id) => ({ id })));
+interface FindManyArgs {
+  where: { htmlSyncedAt?: null; id?: { notIn?: string[]; in?: string[] } };
+  take?: number;
+}
+
+/** The articles the fake database holds as stale: never rendered or edited since, and outdated bundles. */
+interface StaleArticles {
+  unsynced: string[];
+  outdated: string[];
+}
+
+/**
+ * `findMany` answers the three queries the batch asks (the per-minute unsynced one, the one scan for
+ * outdated bundles, and the check of a few ids before they are rendered); a stored render brings the
+ * article up to date, so it is neither unsynced nor outdated any more. `findUnique` answers the render.
+ */
+function database(stale: StaleArticles) {
+  mockFindMany.mockImplementation(async ({ where, take }: FindManyArgs) => {
+    const list = (articleIds: string[]) => articleIds.slice(0, take).map((id) => ({ id }));
+    if (where.htmlSyncedAt === null) {
+      const leftOut = new Set(where.id?.notIn);
+      return list(stale.unsynced.filter((id) => !leftOut.has(id)));
+    }
+    const asked = where.id?.in;
+    return list(stale.outdated.filter((id) => !asked || asked.includes(id)));
+  });
+  mockUpdateMany.mockImplementation(async ({ where }: { where: { id: string } }) => {
+    stale.unsynced = stale.unsynced.filter((id) => id !== where.id);
+    stale.outdated = stale.outdated.filter((id) => id !== where.id);
+    return { count: 1 };
+  });
   mockFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
     title: `Title of ${where.id}`,
     source: "ixwiki",
@@ -67,6 +90,15 @@ function staleArticles(articleIds: string[]) {
     contentHtml: null,
   }));
 }
+
+/** `findUnique` answers for the given articles; `findMany` lists them as unsynced. */
+const staleArticles = (articleIds: string[]) => database({ unsynced: articleIds, outdated: [] });
+
+const queries = () => mockFindMany.mock.calls.map(([args]) => args as FindManyArgs);
+const unsyncedQueries = () => queries().filter((query) => query.where.htmlSyncedAt === null);
+const checkQueries = () => queries().filter((query) => query.where.id?.in !== undefined);
+const scanQueries = () =>
+  queries().filter((query) => query.where.htmlSyncedAt === undefined && !query.where.id);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -127,7 +159,7 @@ describe("renderStaleBatch", () => {
     await expect(renderStaleBatch()).resolves.toEqual({ rendered: 3, failed: 0 });
 
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { status: "PUBLISHED", OR: STALE_OR, wikitext: { not: "" } },
+      where: { status: "PUBLISHED", htmlSyncedAt: null, wikitext: { not: "" } },
       orderBy: { updatedAt: "asc" },
       take: 20,
       select: { id: true },
@@ -179,7 +211,7 @@ describe("renderStaleBatch", () => {
 
     await renderStaleBatch();
     // (the service remembers failures for the life of the process, so other tests' articles may be listed too)
-    expect(mockFindMany.mock.calls[1]?.[0].where.id.notIn).toContain(broken);
+    expect(unsyncedQueries()[1]?.where.id?.notIn).toContain(broken);
   });
 
   it("counts an article that saves keep overtaking as failed, and leaves it out for a while", async () => {
@@ -190,7 +222,7 @@ describe("renderStaleBatch", () => {
     await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 1 });
 
     await renderStaleBatch();
-    expect(mockFindMany.mock.calls[1]?.[0].where.id.notIn).toContain(moving);
+    expect(unsyncedQueries()[1]?.where.id?.notIn).toContain(moving);
   });
 
   it("starts no new render once its time budget is spent", async () => {
@@ -210,74 +242,169 @@ describe("renderStaleBatch", () => {
   });
 });
 
-describe("renderStaleBatch: which articles are stale", () => {
-  interface Row {
-    id: string;
-    htmlSyncedAt: Date | null;
-    renderedView: { rendererVersion?: string } | null;
-  }
-  const SYNCED = new Date("2026-09-30T10:00:00Z");
-
-  /**
-   * `where` as Postgres evaluates it for the filters the batch uses. `not` on a JSON path is
-   * `(col #> path) <> value`: NULL, so no match, when the column is NULL or lacks the key.
-   */
-  function matches(row: Row, where: { OR: typeof STALE_OR }): boolean {
-    return where.OR.some((branch) => {
-      if ("htmlSyncedAt" in branch) return row.htmlSyncedAt === null;
-      const version = row.renderedView?.rendererVersion;
-      return version !== undefined && version !== branch.renderedView.not;
+describe("renderStaleBatch: bundles an earlier renderer version built", () => {
+  /** A fresh copy of the service: the backlog of outdated articles is per process and scanned once. */
+  async function freshService() {
+    let service!: typeof import("~/lib/wiki-os/services/render-service");
+    await jest.isolateModulesAsync(async () => {
+      service = await import("~/lib/wiki-os/services/render-service");
     });
+    return service;
   }
+  const renderedIds = () => mockUpdateMany.mock.calls.map(([args]) => args.where.id);
 
-  it("lists never-rendered and edited-since rows, and outdated bundles, and skips current ones", async () => {
-    const [stale, outdated, current, legacy, keyless] = freshIds(5);
-    const rows: Row[] = [
-      { id: stale!, htmlSyncedAt: null, renderedView: { rendererVersion: RENDERER_VERSION } },
+  it("finds them with one scan, never with the per-minute query, and renders them oldest first", async () => {
+    const { renderStaleBatch: batch, RENDERER_VERSION: version } = await freshService();
+    const [o1, o2, o3] = freshIds(3);
+    database({ unsynced: [], outdated: [o1!, o2!, o3!] });
+
+    // one article per batch: the backlog outlives three batches and is read from the scan only once
+    for (let round = 0; round < 3; round++) {
+      await expect(batch(1)).resolves.toEqual({ rendered: 1, failed: 0 });
+    }
+
+    expect(renderedIds()).toEqual([o1, o2, o3]);
+    expect(scanQueries()).toEqual([
       {
-        id: outdated!,
-        htmlSyncedAt: SYNCED,
-        renderedView: { rendererVersion: "2:oldfingerprint" },
+        where: {
+          status: "PUBLISHED",
+          wikitext: { not: "" },
+          renderedView: { path: ["rendererVersion"], not: version },
+        },
+        orderBy: { updatedAt: "asc" },
+        take: 100_000,
+        select: { id: true },
       },
-      { id: current!, htmlSyncedAt: SYNCED, renderedView: { rendererVersion: RENDERER_VERSION } },
-      // never rendered by this pipeline, or a bundle with no version: left as before (NULL <> x is not true)
-      { id: legacy!, htmlSyncedAt: SYNCED, renderedView: null },
-      { id: keyless!, htmlSyncedAt: SYNCED, renderedView: {} },
-    ];
-    mockFindMany.mockImplementation(async ({ where }: { where: { OR: typeof STALE_OR } }) =>
-      rows.filter((row) => matches(row, where)).map(({ id }) => ({ id }))
-    );
-    mockFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
-      title: `Title of ${where.id}`,
-      source: "ixwiki",
-      wikitext: `text of ${where.id}`,
-      contentHtml: null,
-    }));
-
-    await expect(renderStaleBatch()).resolves.toEqual({ rendered: 2, failed: 0 });
-
-    expect(mockUpdateMany.mock.calls.map(([args]) => args.where.id).sort()).toEqual(
-      [stale, outdated].sort()
-    );
+    ]);
+    expect(unsyncedQueries()).toHaveLength(3);
+    for (const query of unsyncedQueries()) {
+      expect(query.where).toEqual({
+        status: "PUBLISHED",
+        htmlSyncedAt: null,
+        wikitext: { not: "" },
+      });
+    }
   });
 
-  it("asks only for published articles with text, with the same order and backoff as before", async () => {
-    const [broken] = freshIds(1);
-    staleArticles([broken!]);
-    mockRender.mockResolvedValue(null);
-    await renderStaleBatch();
+  it("renders unsynced articles first, and the outdated ones in the room they leave", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [u1, u2, o1, o2, o3] = freshIds(5);
+    database({ unsynced: [u1!, u2!], outdated: [o1!, o2!, o3!] });
 
-    await renderStaleBatch(7);
+    await expect(batch(4)).resolves.toEqual({ rendered: 4, failed: 0 });
 
-    expect(mockFindMany.mock.calls[1]?.[0]).toMatchObject({
-      where: {
-        status: "PUBLISHED",
-        OR: STALE_OR,
-        wikitext: { not: "" },
-        id: { notIn: expect.arrayContaining([broken]) },
-      },
-      orderBy: { updatedAt: "asc" },
-      take: 7,
-    });
+    expect(renderedIds()).toEqual([u1, u2, o1, o2]);
+  });
+
+  it("does not even look at the backlog while unsynced articles fill the batch", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [u1, u2, o1] = freshIds(3);
+    const stale = { unsynced: [u1!, u2!], outdated: [o1!] };
+    database(stale);
+
+    await batch(2);
+    expect(scanQueries()).toHaveLength(0);
+    expect(renderedIds()).toEqual([u1, u2]);
+
+    await batch(2); // the unsynced are done: now there is room
+    expect(scanQueries()).toHaveLength(1);
+    expect(renderedIds()).toEqual([u1, u2, o1]);
+  });
+
+  it("renders an article that is both unsynced and outdated once", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [both, o1] = freshIds(2);
+    database({ unsynced: [both!], outdated: [both!, o1!] });
+
+    await expect(batch()).resolves.toEqual({ rendered: 2, failed: 0 });
+
+    expect(renderedIds()).toEqual([both, o1]);
+  });
+
+  it("never scans again once the backlog is empty", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [o1] = freshIds(1);
+    database({ unsynced: [], outdated: [o1!] });
+
+    await batch();
+    expect(scanQueries()).toHaveLength(1);
+    expect(checkQueries()).toHaveLength(1);
+
+    for (let round = 0; round < 3; round++) {
+      await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 });
+    }
+
+    expect(scanQueries()).toHaveLength(1);
+    expect(checkQueries()).toHaveLength(1);
+    expect(unsyncedQueries()).toHaveLength(4);
+  });
+
+  it("scans once and never checks anything when nothing is outdated", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    database({ unsynced: [], outdated: [] });
+
+    for (let round = 0; round < 3; round++) await batch();
+
+    expect(scanQueries()).toHaveLength(1);
+    expect(checkQueries()).toHaveLength(0);
+    expect(mockRender).not.toHaveBeenCalled();
+  });
+
+  it("drops an article that was brought up to date meanwhile, without rendering it", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [o1, o2, o3] = freshIds(3);
+    const stale = { unsynced: [], outdated: [o1!, o2!, o3!] };
+    database(stale);
+
+    await batch(1); // scans, renders o1
+    stale.outdated = stale.outdated.filter((id) => id !== o2); // a reader's render got o2
+    await batch(1); // o2 is dropped, o3 takes its place
+    await batch(1);
+
+    expect(renderedIds()).toEqual([o1, o3]);
+    expect(checkQueries().map((query) => query.where.id?.in)).toEqual([[o1], [o2], [o3]]);
+  });
+
+  it("keeps a failed article in the backlog, behind the usual backoff", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [broken, fine] = freshIds(2);
+    database({ unsynced: [], outdated: [broken!, fine!] });
+    mockRender.mockImplementation(async (_text: string, title: string) =>
+      title === `Title of ${broken}` ? null : HTML
+    );
+
+    await expect(batch()).resolves.toEqual({ rendered: 1, failed: 1 });
+    await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 }); // backing off: left alone
+    expect(mockFindUnique.mock.calls.filter(([args]) => args.where.id === broken)).toHaveLength(1);
+    expect(scanQueries()).toHaveLength(1);
+
+    const later = jest.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * 60_000);
+    try {
+      await expect(batch()).resolves.toEqual({ rendered: 0, failed: 1 }); // its turn again, no rescan
+    } finally {
+      later.mockRestore();
+    }
+    expect(mockFindUnique.mock.calls.filter(([args]) => args.where.id === broken)).toHaveLength(2);
+    expect(scanQueries()).toHaveLength(1);
+  });
+
+  it("logs a failed scan, still renders the unsynced articles, and scans again next time", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [u1, o1] = freshIds(2);
+    const stale = { unsynced: [u1!], outdated: [o1!] };
+    database(stale);
+    const answer = mockFindMany.getMockImplementation()!;
+    mockFindMany.mockImplementationOnce(answer); // the unsynced query
+    mockFindMany.mockRejectedValueOnce(new Error("db down")); // the scan
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("outdated"), expect.any(Error));
+    expect(renderedIds()).toEqual([u1]);
+
+    await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
+    expect(renderedIds()).toEqual([u1, o1]);
+    expect(scanQueries()).toHaveLength(2);
+    warn.mockRestore();
   });
 });

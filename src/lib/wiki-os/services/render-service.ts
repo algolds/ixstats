@@ -568,29 +568,103 @@ export interface StaleBatchResult {
 }
 
 /**
- * Render up to `limit` stale articles, oldest first, two at a time, as background work (a reader's or an
- * editor's render goes before them). Run every minute by the `wiki-render-stale` cron job: a changed
- * template marks every page that uses it stale (`invalidateDependents`), and this brings their views up
- * to date without a reader having to wait. Stale also means outdated: a published article whose bundle
- * was built by another renderer version (a bumped transform, a changed sanitizer) is rendered again,
- * so a deploy that changes the version brings every stored view up to date. An article that failed is
- * left out for a while (doubling, up to an hour) so a page MediaWiki cannot render never keeps the rest
- * of the queue waiting.
+ * Published articles with text whose bundle another renderer version built. `not` on a JSON path never
+ * matches a NULL column (SQL NULL <> x is not true): a row that was never rendered belongs to the
+ * unsynced query, and a legacy row (NULL view, non-NULL htmlSyncedAt) is left as it always was.
+ */
+const OUTDATED_BUNDLE_WHERE = {
+  status: "PUBLISHED",
+  wikitext: { not: "" },
+  renderedView: { path: ["rendererVersion"], not: RENDERER_VERSION },
+} satisfies Prisma.WikiArticleWhereInput;
+
+/** The most outdated articles one process keeps track of. */
+const MAX_OUTDATED_BACKLOG = 100_000;
+
+/**
+ * ponytail: `RENDERER_VERSION` is a constant of the process, so articles only turn outdated at a deploy:
+ * the backlog is found by ONE scan per process (the first batch with room, so the per-minute query
+ * never evaluates the JSON path) and then only shrinks. Once it is empty it stays empty: no rescan.
+ * A second process started mid-backlog scans once itself, and a backlog past MAX_OUTDATED_BACKLOG
+ * leaves the rest to readers' background renders and the next deploy's process; both are fine.
+ */
+let outdatedBacklog: Promise<Set<string>> | undefined;
+
+async function scanOutdatedBacklog(): Promise<Set<string>> {
+  const rows = await db.wikiArticle.findMany({
+    where: OUTDATED_BUNDLE_WHERE,
+    orderBy: { updatedAt: "asc" },
+    take: MAX_OUTDATED_BACKLOG,
+    select: { id: true },
+  });
+  return new Set(rows.map((row) => row.id));
+}
+
+/** The backlog, scanned on first use; null, and scanned again by the next batch, when the scan failed. */
+async function loadOutdatedBacklog(): Promise<Set<string> | null> {
+  const scan = (outdatedBacklog ??= scanOutdatedBacklog());
+  try {
+    return await scan;
+  } catch (error) {
+    console.warn("[WikiOS:render] Listing the articles with an outdated bundle failed:", error);
+    if (outdatedBacklog === scan) outdatedBacklog = undefined;
+    return null;
+  }
+}
+
+/**
+ * Up to `want` ids from the head of the backlog that are not in `skip` (backing off, or already in the
+ * batch) and are still outdated: an article a reader's render or a save has brought up to date since the
+ * scan is dropped from the backlog. Picked ids stay in it until their render succeeds.
+ */
+async function pickOutdated(
+  backlog: Set<string>,
+  want: number,
+  skip: ReadonlySet<string>
+): Promise<string[]> {
+  const picked: string[] = [];
+  const passed = new Set(skip);
+  while (picked.length < want) {
+    const candidates: string[] = [];
+    for (const id of backlog) {
+      if (candidates.length === want - picked.length) break;
+      if (!passed.has(id)) candidates.push(id);
+    }
+    if (candidates.length === 0) break;
+
+    const current = await db.wikiArticle.findMany({
+      where: { ...OUTDATED_BUNDLE_WHERE, id: { in: candidates } },
+      select: { id: true },
+    });
+    const stillOutdated = new Set(current.map((row) => row.id));
+    for (const id of candidates) {
+      passed.add(id);
+      if (stillOutdated.has(id)) picked.push(id);
+      else backlog.delete(id);
+    }
+  }
+  return picked;
+}
+
+/**
+ * Render up to `limit` stale articles, two at a time, as background work (a reader's or an editor's
+ * render goes before them). Run every minute by the `wiki-render-stale` cron job: a changed template
+ * marks every page that uses it stale (`invalidateDependents`), and this brings their views up to date
+ * without a reader having to wait. Those unsynced articles (`htmlSyncedAt` NULL) come first, oldest
+ * first; any room left goes to the outdated backlog (bundles an earlier renderer version built, see
+ * `outdatedBacklog`), so a deploy that changes the version brings every stored view up to date without
+ * ever holding up an edit. An article that failed is left out for a while (doubling, up to an hour) so
+ * a page MediaWiki cannot render never keeps the rest of the queue waiting.
  */
 export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
   const now = Date.now();
   const backingOff = [...staleFailures].flatMap(([id, failure]) =>
     failure.retryAt > now ? [id] : []
   );
-  const stale = await db.wikiArticle.findMany({
+  const unsynced = await db.wikiArticle.findMany({
     where: {
       status: "PUBLISHED",
-      // `not` on a JSON path never matches a NULL column (SQL NULL <> x is not true): those rows are
-      // either never rendered (htmlSyncedAt null, listed by the first branch) or legacy, as before
-      OR: [
-        { htmlSyncedAt: null },
-        { renderedView: { path: ["rendererVersion"], not: RENDERER_VERSION } },
-      ],
+      htmlSyncedAt: null,
       wikitext: { not: "" },
       ...(backingOff.length > 0 ? { id: { notIn: backingOff } } : {}),
     },
@@ -599,23 +673,35 @@ export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
     select: { id: true },
   });
 
+  const unsyncedIds = unsynced.map((row) => row.id);
+  const backlog = unsyncedIds.length < limit ? await loadOutdatedBacklog() : null;
+  const outdatedIds = backlog
+    ? await pickOutdated(
+        backlog,
+        limit - unsyncedIds.length,
+        new Set([...backingOff, ...unsyncedIds])
+      )
+    : [];
+  const queue = [...unsyncedIds, ...outdatedIds];
+
   const result: StaleBatchResult = { rendered: 0, failed: 0 };
   const deadline = now + STALE_BATCH_BUDGET_MS;
   let next = 0;
   const worker = async (): Promise<void> => {
-    for (let item = stale[next++]; item && Date.now() < deadline; item = stale[next++]) {
-      const outcome = await startRender(item.id, BACKGROUND);
+    for (let id = queue[next++]; id !== undefined && Date.now() < deadline; id = queue[next++]) {
+      const outcome = await startRender(id, BACKGROUND);
       if (outcome.ok) {
-        staleFailures.delete(item.id);
+        staleFailures.delete(id);
+        backlog?.delete(id);
         result.rendered++;
       } else {
-        rememberStaleFailure(item.id);
+        rememberStaleFailure(id);
         result.failed++;
       }
     }
   };
   await Promise.all(
-    Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, stale.length) }, worker)
+    Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, queue.length) }, worker)
   );
   return result;
 }
