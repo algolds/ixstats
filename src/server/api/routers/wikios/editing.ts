@@ -7,7 +7,12 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  publicProcedure,
+  readOnlyProcedure,
+} from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { transformArticleHtml, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
@@ -32,7 +37,30 @@ import {
   requireRestorableWikitext,
 } from "~/lib/wiki-os/services/edit-service";
 
+/** The reason of a refusal as a reader sees it: the message without its MediaWiki-style code (`protectedpage: `). */
+const reasonOf = (message: string): string => message.replace(/^[a-z]+: /, "");
+
 export const wikiosEditingRouter = createTRPCRouter({
+  /**
+   * Whether the caller may edit `title` (or create it, when it does not exist): the gate a save passes
+   * (`assertCanEditArticle`), asked beforehand, so a reader who cannot edit is shown the page's source
+   * instead of an editor whose save would be refused. A refusal is an answer, not an error.
+   */
+  getEditAccess: publicProcedure
+    .input(z.object({ title: z.string().min(1).max(500) }))
+    .query(async ({ input, ctx }) => {
+      try {
+        await assertCanEditArticle(ctx, requireCanonicalTitle(input.title));
+        return { allowed: true as const, reason: null };
+      } catch (error) {
+        const refused =
+          error instanceof TRPCError &&
+          (error.code === "FORBIDDEN" || error.code === "PRECONDITION_FAILED");
+        if (!refused) throw error;
+        return { allowed: false as const, reason: reasonOf(error.message) };
+      }
+    }),
+
   /**
    * Preview wikitext by converting it to HTML via Parsoid. Signed-in only: it forwards up to 200k
    * characters to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
