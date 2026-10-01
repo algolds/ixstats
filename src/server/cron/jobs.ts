@@ -189,6 +189,16 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/wiki-os/services/auto-sync-service")).runAutoSyncCycle,
   },
   {
+    // Renders the articles a changed template (or an import) left stale, two at a time, in the background.
+    name: "wiki-render-stale",
+    defaultSchedule: "* * * * *",
+    lockName: "wiki-render-stale",
+    timeoutMs: 55_000,
+    modulePath: "~/lib/wiki-os/services/render-service",
+    exportName: "renderStaleBatch",
+    load: async () => (await import("~/lib/wiki-os/services/render-service")).renderStaleBatch,
+  },
+  {
     // Once per new IxTime year, remind each owned country to set that year's budget (MC-1).
     name: "budget-year-rollover",
     defaultSchedule: "41 * * * *",

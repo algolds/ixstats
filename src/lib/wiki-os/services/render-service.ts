@@ -449,3 +449,76 @@ export async function invalidateDependents(title: string, source = "ixwiki"): Pr
     return 0;
   }
 }
+
+// ---------------------------------------------------------------------------
+// The stale batch: the backlog a changed template or an import leaves behind
+// ---------------------------------------------------------------------------
+
+/** Renders the batch runs at once: the private MediaWiki is small, and readers share its slots. */
+const STALE_BATCH_CONCURRENCY = 2;
+/** The batch starts no new render this long after it began (its cron job is cut off at 55 s). */
+const STALE_BATCH_BUDGET_MS = 45_000;
+/** An article whose batch render failed is left out for this long, doubling per failure up to the cap. */
+const STALE_RETRY_BASE_MS = 60_000;
+const STALE_RETRY_MAX_MS = 60 * 60_000;
+const MAX_REMEMBERED_STALE_FAILURES = 5_000;
+
+const staleFailures = new Map<string, { strikes: number; retryAt: number }>();
+
+function rememberStaleFailure(articleId: string): void {
+  const strikes = (staleFailures.get(articleId)?.strikes ?? 0) + 1;
+  staleFailures.delete(articleId);
+  if (staleFailures.size >= MAX_REMEMBERED_STALE_FAILURES) {
+    const oldest = staleFailures.keys().next().value;
+    if (oldest !== undefined) staleFailures.delete(oldest);
+  }
+  const wait = Math.min(STALE_RETRY_BASE_MS * 2 ** (strikes - 1), STALE_RETRY_MAX_MS);
+  staleFailures.set(articleId, { strikes, retryAt: Date.now() + wait });
+}
+
+export interface StaleBatchResult {
+  rendered: number;
+  /** MediaWiki failed, or saves kept overtaking the render (see `runJob`). */
+  failed: number;
+}
+
+/**
+ * Render up to `limit` stale articles, oldest first, two at a time, as background work (a reader's or an
+ * editor's render goes before them). Run every minute by the `wiki-render-stale` cron job: a changed
+ * template marks every page that uses it stale (`invalidateDependents`), and this brings their views up
+ * to date without a reader having to wait. An article that failed is left out for a while (doubling,
+ * up to an hour) so a page MediaWiki cannot render never keeps the rest of the queue waiting.
+ */
+export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
+  const now = Date.now();
+  const backingOff = [...staleFailures].flatMap(([id, failure]) => (failure.retryAt > now ? [id] : []));
+  const stale = await db.wikiArticle.findMany({
+    where: {
+      status: "PUBLISHED",
+      htmlSyncedAt: null,
+      wikitext: { not: "" },
+      ...(backingOff.length > 0 ? { id: { notIn: backingOff } } : {}),
+    },
+    orderBy: { updatedAt: "asc" },
+    take: limit,
+    select: { id: true },
+  });
+
+  const result: StaleBatchResult = { rendered: 0, failed: 0 };
+  const deadline = now + STALE_BATCH_BUDGET_MS;
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    for (let item = stale[next++]; item && Date.now() < deadline; item = stale[next++]) {
+      const outcome = await startRender(item.id, BACKGROUND);
+      if (outcome.ok) {
+        staleFailures.delete(item.id);
+        result.rendered++;
+      } else {
+        rememberStaleFailure(item.id);
+        result.failed++;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, stale.length) }, worker));
+  return result;
+}
