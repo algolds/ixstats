@@ -13,8 +13,15 @@ import { lowerAscii } from "./clean-markup-passes";
 /**
  * ponytail: TAG_BODY, 2,048 characters: the longest tag (`<img … >`, `<table … class="infobox">`) these scans
  * read. A page's attributes are a few dozen characters each and its longest tag (an image with a `srcset`)
- * under a thousand; a longer run between a `<` and its `>` is text that was never a tag, and reading it again
- * from every `<` inside it is what made the expressions quadratic.
+ * under a thousand (1,033 characters, the longest of the clone's stored HTML); a longer run between a `<` and its
+ * `>` is text that was never a tag, and reading it again from every `<` inside it is what made the expressions
+ * quadratic.
+ *
+ * Two kinds of malformed tag read differently from the expressions, and only they: a tag with an attribute of more
+ * than 2 KB is not a tag here (the expressions matched it, in time quadratic in the page), and a tag ends at its
+ * first `>`, so a `>` inside a quoted attribute value ends it there (as `[^>]*` always did, which is not how an
+ * HTML parser reads it; the HTML these scans read has been through the sanitizer, whose output is well formed).
+ * The behaviour is kept.
  */
 export const TAG_BODY = 2_048;
 
