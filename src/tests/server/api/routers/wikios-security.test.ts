@@ -672,7 +672,7 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
       join(process.cwd(), "src/server/api/routers/wikios/discussions.ts"),
       "utf8"
     );
-    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread"]) {
+    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread", "deleteComment"]) {
       expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
     }
     expect(source).not.toMatch(/: protectedProcedure/);

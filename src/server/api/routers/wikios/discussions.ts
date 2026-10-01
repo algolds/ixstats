@@ -9,210 +9,47 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, lightMutationProcedure } from "~/server/api/trpc";
-import { requireWikiUserId, isWikiAdmin } from "~/lib/wiki-os/auth";
+import { requireWikiUserId } from "~/lib/wiki-os/auth";
 import { assertTitleVisible, requireNotBlocked } from "~/lib/wiki-os/permissions";
+import {
+  loadMarginPage,
+  loadThreadComments,
+  normalizeMarginTitle,
+  requireOwnerOrSysop,
+} from "~/lib/wiki-os/services/margin-service";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
-interface HydratedComment {
-  id: string;
-  threadId: string;
-  userId: string;
-  countryId: string | null;
-  content: string;
-  suggestedEdit: string | null;
-  reactions: unknown;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface HydratedThread {
-  id: string;
-  articleTitle: string;
-  status: "OPEN" | "RESOLVED" | "ARCHIVED";
-  title: string;
-  sectionAnchor: string | null;
-  selectedText: string | null;
-  anchorOffset: number | null;
-  resolvedAt: Date | null;
-  resolvedBy: string | null;
-  createdBy: string;
-  countryId: string | null;
-  teamId: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  comments: HydratedComment[];
-}
-
 export const wikiosDiscussionsRouter = createTRPCRouter({
   /**
-   * Get all active threads, comments, and annotations for an article's Margin inspector.
+   * One page (50) of an article's threads for the Margin inspector, each with its first 100 comments.
+   * Public: authors come back as a display name, avatar and `isAuthor` only.
    */
   getArticleMarginData: publicProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1).max(500),
         status: z.enum(["ALL", "OPEN", "RESOLVED", "ARCHIVED"]).default("OPEN"),
+        cursor: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
       await assertTitleVisible(ctx, input.articleTitle);
-      const normalizedTitle = input.articleTitle.trim().replace(/ /g, "_");
+      return loadMarginPage(ctx, input);
+    }),
 
-      const whereClause: {
-        articleTitle: string;
-        status?: "OPEN" | "RESOLVED" | "ARCHIVED";
-      } = {
-        articleTitle: normalizedTitle,
-      };
-
-      if (input.status !== "ALL") {
-        whereClause.status = input.status;
-      }
-
-      // Fetch threads + comments
-      const prismaClient = db as any;
-      const threads: HydratedThread[] = await prismaClient.wikiDiscussionThread.findMany({
-        where: whereClause,
-        include: {
-          comments: {
-            orderBy: { createdAt: "asc" },
-          },
-        },
-        orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+  /** The next page (100) of one thread's comments, after the last comment the reader already has. */
+  getThreadComments: publicProcedure
+    .input(z.object({ threadId: z.string().max(64), cursor: z.string().max(64).optional() }))
+    .query(async ({ input, ctx }) => {
+      const thread = await db.wikiDiscussionThread.findUnique({
+        where: { id: input.threadId },
+        select: { articleTitle: true },
       });
-
-      // Collect all unique user IDs for batch hydration
-      const userIds = new Set<string>();
-      for (const t of threads) {
-        if (t.createdBy) userIds.add(t.createdBy);
-        if (t.resolvedBy) userIds.add(t.resolvedBy);
-        for (const c of t.comments) {
-          if (c.userId) userIds.add(c.userId);
-        }
-      }
-
-      const users =
-        userIds.size > 0
-          ? await db.user.findMany({
-              where: {
-                OR: [
-                  { id: { in: Array.from(userIds) } },
-                  { clerkUserId: { in: Array.from(userIds) } },
-                  { wikiUsername: { in: Array.from(userIds) } },
-                  { discordUserId: { in: Array.from(userIds) } },
-                ],
-              },
-              select: {
-                id: true,
-                clerkUserId: true,
-                wikiUsername: true,
-                discordUserId: true,
-                discordUsername: true,
-                role: {
-                  select: {
-                    name: true,
-                    displayName: true,
-                  },
-                },
-                country: {
-                  select: {
-                    id: true,
-                    name: true,
-                    flag: true,
-                  },
-                },
-              },
-            })
-          : [];
-
-      const userMap = new Map<string, (typeof users)[0]>();
-      for (const u of users) {
-        userMap.set(u.id, u);
-        if (u.clerkUserId) userMap.set(u.clerkUserId, u);
-        if (u.wikiUsername) userMap.set(u.wikiUsername, u);
-        if (u.discordUserId) userMap.set(u.discordUserId, u);
-      }
-
-      // Hydrate threads with author data
-      const hydratedThreads = threads.map((t: HydratedThread) => {
-        const creator = userMap.get(t.createdBy);
-        const resolver = t.resolvedBy ? userMap.get(t.resolvedBy) : null;
-        const creatorName =
-          creator?.wikiUsername ||
-          creator?.discordUsername ||
-          creator?.country?.name ||
-          (t.createdBy.startsWith("user_") ? t.createdBy.slice(0, 12) : t.createdBy) ||
-          "User";
-        const resolverName =
-          resolver?.wikiUsername ||
-          resolver?.discordUsername ||
-          resolver?.country?.name ||
-          (t.resolvedBy && t.resolvedBy.startsWith("user_")
-            ? t.resolvedBy.slice(0, 12)
-            : t.resolvedBy) ||
-          "User";
-
-        return {
-          id: t.id,
-          articleTitle: t.articleTitle,
-          status: t.status,
-          title: t.title,
-          sectionAnchor: t.sectionAnchor,
-          selectedText: t.selectedText,
-          anchorOffset: t.anchorOffset,
-          resolvedAt: t.resolvedAt,
-          resolvedBy: resolver
-            ? {
-                id: resolver.id,
-                username: resolverName,
-              }
-            : null,
-          createdBy: {
-            id: t.createdBy,
-            username: creatorName,
-            avatar: null,
-            role: creator?.role || null,
-            country: creator?.country || null,
-          },
-          teamId: t.teamId,
-          createdAt: t.createdAt,
-          updatedAt: t.updatedAt,
-          comments: t.comments.map((c: HydratedComment) => {
-            const author = userMap.get(c.userId);
-            const authorName =
-              author?.wikiUsername ||
-              author?.discordUsername ||
-              author?.country?.name ||
-              (c.userId.startsWith("user_") ? c.userId.slice(0, 12) : c.userId) ||
-              "User";
-
-            return {
-              id: c.id,
-              threadId: c.threadId,
-              content: c.content,
-              suggestedEdit: c.suggestedEdit,
-              reactions: (c.reactions as Record<string, number> | null) || {},
-              createdAt: c.createdAt,
-              updatedAt: c.updatedAt,
-              author: {
-                id: c.userId,
-                username: authorName,
-                avatar: null,
-                role: author?.role || null,
-                country: author?.country || null,
-              },
-            };
-          }),
-        };
-      });
-
-      return {
-        threads: hydratedThreads,
-        totalOpenCount: threads.filter((t) => t.status === "OPEN").length,
-        totalResolvedCount: threads.filter((t) => t.status === "RESOLVED").length,
-      };
+      if (!thread) throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
+      await assertTitleVisible(ctx, thread.articleTitle);
+      return loadThreadComments(ctx, input);
     }),
 
   /**
@@ -240,7 +77,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
       const dbUser = ctx.user as any;
       const effectiveUserId = dbUser?.id || authUserId;
       const effectiveCountryId = input.countryId || dbUser?.countryId || null;
-      const normalizedTitle = input.articleTitle.trim().replace(/ /g, "_");
+      const normalizedTitle = normalizeMarginTitle(input.articleTitle);
 
       return db.$transaction(async (tx) => {
         const client = tx as any;
@@ -329,7 +166,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Toggle thread resolution status (Hold-to-Resolve).
+   * Toggle thread resolution status (Hold-to-Resolve). Only the thread's creator or a sysop.
    */
   resolveThread: lightMutationProcedure
     .input(
@@ -341,17 +178,17 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
       await requireNotBlocked(ctx);
-      const prismaClient = db as any;
 
-      const thread = await prismaClient.wikiDiscussionThread.findUnique({
+      const thread = await db.wikiDiscussionThread.findUnique({
         where: { id: input.threadId },
       });
 
       if (!thread) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
       }
+      await requireOwnerOrSysop(ctx, thread.createdBy, "resolve or reopen this thread");
 
-      return prismaClient.wikiDiscussionThread.update({
+      return db.wikiDiscussionThread.update({
         where: { id: input.threadId },
         data: {
           status: input.resolved ? "RESOLVED" : "OPEN",
@@ -363,35 +200,57 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     }),
 
   /**
-   * Delete a discussion thread (creator or admin only).
+   * Delete a discussion thread (creator or sysop only).
    */
   deleteThread: lightMutationProcedure
     .input(z.object({ threadId: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
-      const userId = requireWikiUserId(ctx);
+      requireWikiUserId(ctx);
       await requireNotBlocked(ctx);
-      const admin = await isWikiAdmin(ctx);
-      const prismaClient = db as any;
 
-      const thread = await prismaClient.wikiDiscussionThread.findUnique({
+      const thread = await db.wikiDiscussionThread.findUnique({
         where: { id: input.threadId },
       });
 
       if (!thread) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
       }
+      await requireOwnerOrSysop(ctx, thread.createdBy, "delete this thread");
 
-      if (thread.createdBy !== userId && !admin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to delete this thread.",
-        });
-      }
-
-      await prismaClient.wikiDiscussionThread.delete({
+      await db.wikiDiscussionThread.delete({
         where: { id: input.threadId },
       });
 
       return { success: true };
+    }),
+
+  /**
+   * Delete one comment (its author or a sysop only). A thread left without comments goes with it.
+   */
+  deleteComment: lightMutationProcedure
+    .input(z.object({ commentId: z.string().max(64) }))
+    .mutation(async ({ input, ctx }) => {
+      requireWikiUserId(ctx);
+      await requireNotBlocked(ctx);
+
+      const comment = await db.wikiDiscussionComment.findUnique({
+        where: { id: input.commentId },
+      });
+
+      if (!comment) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Comment not found" });
+      }
+      await requireOwnerOrSysop(ctx, comment.userId, "delete this comment");
+
+      return db.$transaction(async (tx) => {
+        await tx.wikiDiscussionComment.delete({ where: { id: comment.id } });
+        const remaining = await tx.wikiDiscussionComment.count({
+          where: { threadId: comment.threadId },
+        });
+        if (remaining === 0) {
+          await tx.wikiDiscussionThread.delete({ where: { id: comment.threadId } });
+        }
+        return { success: true, threadDeleted: remaining === 0 };
+      });
     }),
 });
