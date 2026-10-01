@@ -34,6 +34,7 @@ import {
   DynamicStatSpan,
 } from "./ArticlePlaceholders";
 import { useStatValues } from "./useStatValues";
+import { useHydrated } from "./useHydrated";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
@@ -392,14 +393,19 @@ export function ArticleRenderer({
     }
   }, [hasEmbeds]);
 
+  // The placeholder pass needs a DOM, so the server renders the article as it is. The browser's
+  // hydrating pass must start from that same HTML (it does until `hydrated`), and the pass is applied
+  // straight after: a mismatch would leave the server's HTML in place with no placeholders mounted.
+  const hydrated = useHydrated();
   const processedHtml = useMemo(() => {
+    if (!hydrated) return contentHtml;
     const html = injectPlaceholderElements(contentHtml);
     return isAuthenticated && !readOnly ? addSectionEditLinks(html, slug) : html;
-  }, [contentHtml, isAuthenticated, readOnly, slug]);
-  const processedInfoboxHtml = useMemo(
-    () => (infoboxHtml ? injectPlaceholderElements(infoboxHtml) : null),
-    [infoboxHtml]
-  );
+  }, [hydrated, contentHtml, isAuthenticated, readOnly, slug]);
+  const processedInfoboxHtml = useMemo(() => {
+    if (!infoboxHtml) return null;
+    return hydrated ? injectPlaceholderElements(infoboxHtml) : infoboxHtml;
+  }, [hydrated, infoboxHtml]);
 
   const [portalTargets, setPortalTargets] = useState<PortalTarget[]>([]);
 
@@ -640,7 +646,8 @@ export function ArticleRenderer({
                 <>
                   {creatorName && <span className="text-muted-foreground/40 select-none">•</span>}
                   <span>
-                    {new Date(lastModified).toLocaleDateString(undefined, {
+                    {new Date(lastModified).toLocaleDateString("en-US", {
+                      timeZone: "UTC",
                       month: "short",
                       day: "numeric",
                       year: "numeric",

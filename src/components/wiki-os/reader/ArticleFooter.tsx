@@ -22,6 +22,7 @@ export function ArticleFooter({
         <p className="wikios-last-modified">
           Last modified:{" "}
           {new Date(lastModified).toLocaleDateString("en-US", {
+            timeZone: "UTC",
             year: "numeric",
             month: "long",
             day: "numeric",

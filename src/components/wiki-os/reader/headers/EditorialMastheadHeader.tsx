@@ -76,7 +76,7 @@ export function EditorialMastheadHeader({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                className="group/author text-foreground hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 dark:border-white/10 dark:bg-white/5"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -88,10 +88,10 @@ export function EditorialMastheadHeader({
                         (e.currentTarget as HTMLElement).style.display = "none";
                       }}
                     />
-                    <User className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
+                    <User className="text-wiki absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
                   </span>
                 ) : (
-                  <User className="h-3 w-3 shrink-0 text-wiki" />
+                  <User className="text-wiki h-3 w-3 shrink-0" />
                 )}
                 <span>{creatorName}</span>
               </Link>
@@ -104,14 +104,12 @@ export function EditorialMastheadHeader({
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
               <div className="flex items-center gap-1.5 font-medium">
                 <span className="text-muted-foreground/30 select-none">•</span>
-                <span className="text-muted-foreground/75 text-xs font-normal">
-                  Updated by:
-                </span>
+                <span className="text-muted-foreground/75 text-xs font-normal">Updated by:</span>
                 <Link
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                  className="group/editor text-foreground hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 dark:border-white/10 dark:bg-white/5"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
@@ -123,10 +121,10 @@ export function EditorialMastheadHeader({
                           (e.currentTarget as HTMLElement).style.display = "none";
                         }}
                       />
-                      <PenTool className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
+                      <PenTool className="text-wiki absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
                     </span>
                   ) : (
-                    <PenTool className="h-3 w-3 shrink-0 text-wiki" />
+                    <PenTool className="text-wiki h-3 w-3 shrink-0" />
                   )}
                   <span>{lastEditorName}</span>
                 </Link>
@@ -141,7 +139,8 @@ export function EditorialMastheadHeader({
               )}
               <span className="flex items-center gap-1.5">
                 <Calendar className="text-muted-foreground/60 h-3.5 w-3.5" />
-                {new Date(lastModified).toLocaleDateString(undefined, {
+                {new Date(lastModified).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
