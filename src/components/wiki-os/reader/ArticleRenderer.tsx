@@ -35,6 +35,7 @@ import {
 import { useStatValues } from "./useStatValues";
 import { useHydrated } from "./useHydrated";
 import { useScrollSpy } from "./useScrollSpy";
+import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
@@ -158,9 +159,9 @@ function mayNameCountry(title: string): boolean {
 
 export function ArticleRenderer({
   title,
-  contentHtml,
-  infoboxHtml,
-  noticesHtml,
+  contentHtml: contentMarker,
+  infoboxHtml: infoboxMarker,
+  noticesHtml: noticesMarker,
   toc,
   categories,
   lastModified,
@@ -169,6 +170,12 @@ export function ArticleRenderer({
 }: ArticleRendererProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // In lean mode (lib/wiki-os/lean-article.ts) the three parts arrive as markers, and the real HTML is
+  // read from where the server rendered it: the DOM in the browser, the server's stash in the SSR render.
+  const leanToken = parseLeanMarker(contentMarker)?.token ?? null;
+  const contentHtml = useMemo(() => resolveLeanHtml(contentMarker) ?? "", [contentMarker]);
+  const infoboxHtml = useMemo(() => resolveLeanHtml(infoboxMarker), [infoboxMarker]);
+  const noticesHtml = useMemo(() => resolveLeanHtml(noticesMarker), [noticesMarker]);
   const {
     setWikiPage,
     activeModal,
@@ -698,16 +705,27 @@ export function ArticleRenderer({
 
         {/* Page-top notices (WIP, stub, hatnotes) */}
         {noticesMarkup && (
-          <div className="wikios-notices" dangerouslySetInnerHTML={noticesMarkup} />
+          <div
+            id={leanToken ? leanElementId(leanToken, "notices") : undefined}
+            className="wikios-notices"
+            dangerouslySetInnerHTML={noticesMarkup}
+          />
         )}
 
         {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
             {processedInfoboxHtml && (
-              <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
+              <InfoboxWithMap
+                infoboxHtml={processedInfoboxHtml}
+                articleTitle={title}
+                markupId={leanToken ? leanElementId(leanToken, "infobox") : undefined}
+              />
             )}
-            <div dangerouslySetInnerHTML={bodyMarkup} />
+            <div
+              id={leanToken ? leanElementId(leanToken, "body") : undefined}
+              dangerouslySetInnerHTML={bodyMarkup}
+            />
             {/* Render portals into injected placeholder nodes */}
             {portalTargets.map((target, _idx) => {
               if (target.type === "coords") {

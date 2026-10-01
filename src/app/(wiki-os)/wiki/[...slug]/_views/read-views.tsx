@@ -15,6 +15,7 @@ import {
 } from "~/lib/wiki-os/wiki-path";
 import { HydrateClient, api } from "~/trpc/server";
 import ArticlePageClient from "../ArticlePageClient";
+import { leanTheFlight } from "../_lib/lean-flight";
 import { loadArticle, type ArticleHtml } from "../_lib/load-article";
 import { userExists } from "../_lib/load-user";
 import { orNotFound } from "../_lib/or-not-found";
@@ -53,14 +54,15 @@ interface Extras {
  * cache, so the article is in the first HTML and the client does not fetch it again. A redirect page
  * sends its reader to the target instead (308).
  */
-function articleReader(
+async function articleReader(
   canon: CanonicalTitle,
   view: ReadView,
   query: SearchParamsLike,
   found: Found | null,
   { aside, children }: Extras = {}
-): ReactElement {
+): Promise<ReactElement> {
   if (found?.data.resolvedFrom) permanentRedirect(redirectHref(found.data, query));
+  if (found) await leanTheFlight(canon.title, view.followRedirect, found.data);
   return (
     <HydrateClient>
       <ArticlePageClient

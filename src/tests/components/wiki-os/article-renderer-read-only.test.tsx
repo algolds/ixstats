@@ -2,7 +2,11 @@ import type { ComponentProps, ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { api } from "~/trpc/react";
+import { act } from "@testing-library/react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
+import { leanEnvironment, leanMarker, stashLeanArticle } from "~/lib/wiki-os/lean-article";
 import { DEFAULT_CHROME_PREFS } from "~/lib/wiki-os/chrome-prefs";
 
 const mockToggleMargin = jest.fn();
@@ -59,7 +63,21 @@ jest.mock("~/components/wiki-os/reader/AppleBooksTocDrawer", () => ({
   AppleBooksTocDrawer: () => null,
 }));
 jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
-jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));
+// the real one's contract for the infobox's HTML: a div with the given id and that HTML, its markup
+// object stable between renders
+jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => {
+  const { useMemo } = jest.requireActual<typeof import("react")>("react");
+  return {
+    InfoboxWithMap: (props: { infoboxHtml: string; markupId?: string }) => {
+      const markup = useMemo(() => ({ __html: props.infoboxHtml }), [props.infoboxHtml]);
+      return (
+        <aside className="wikios-infobox">
+          <div id={props.markupId} dangerouslySetInnerHTML={markup} />
+        </aside>
+      );
+    },
+  };
+});
 jest.mock("~/components/wiki-os/reader/ArticleHeader", () => ({
   WikiOSHeader: (props: { title: string }) => {
     mockHeader(props);
@@ -387,5 +405,78 @@ describe("ArticleRenderer first paint and signing in (plan 413)", () => {
 
     expect(companion()).toBeNull();
     expect(document.cookie).toContain("wikios_companion_collapsed=1");
+  });
+});
+
+describe("lean first response (plan 413, item 8c)", () => {
+  const BODY = '<h2 id="History">History</h2><p>Eurth is a world.</p>';
+  const INFOBOX =
+    '<table class="infobox"><tbody><tr><td>Capital: Aurelia</td></tr></tbody></table>';
+  const detectServer = () => typeof window === "undefined";
+
+  afterEach(() => {
+    leanEnvironment.isServer = detectServer;
+    document.body.innerHTML = "";
+  });
+
+  const article = (token: string) => (
+    <ArticleRenderer
+      title="Portal:Eurth"
+      contentHtml={leanMarker(token, "body")}
+      infoboxHtml={leanMarker(token, "infobox")}
+      noticesHtml={null}
+      toc={[]}
+      categories={[]}
+      lastModified={null}
+      wikiSource="ixwiki"
+      authorInfo={null}
+    />
+  );
+
+  it("renders the real article on the server from markers and hydrates it in the browser by reading the DOM back", async () => {
+    // The server render: markers in the props, the real HTML from the stash
+    leanEnvironment.isServer = () => true;
+    const token = stashLeanArticle({ body: BODY, infobox: INFOBOX, notices: null });
+    const html = renderToString(article(token));
+    expect(html).toContain("Eurth is a world.");
+    expect(html).toContain("Capital: Aurelia");
+    expect(html).toContain(`id="wikios-lean-${token}-body"`);
+    expect(html).toContain(`id="wikios-lean-${token}-infobox"`);
+    expect(html).not.toContain("wikios-lean:"); // a marker is never in the page
+
+    // The browser: that DOM is all there is, and the props carry markers only
+    leanEnvironment.isServer = () => false;
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    document.body.append(container);
+    const paragraph = container.querySelector("p");
+    const infobox = container.querySelector(".infobox");
+    const recoverable: unknown[] = [];
+
+    await act(async () => {
+      hydrateRoot(container, article(token), { onRecoverableError: (e) => recoverable.push(e) });
+    });
+
+    expect(recoverable).toEqual([]);
+    // hydrated in place: the article's nodes are the server's, not rewritten
+    expect(container.querySelector("p")).toBe(paragraph);
+    expect(container.querySelector(".infobox")).toBe(infobox);
+    expect(container.textContent).toContain("Eurth is a world.");
+    // and the reader works off the real HTML it read back: the signed-in reader's edit link is on its heading
+    expect(container.querySelector("h2 .wikios-section-edit-link")).not.toBeNull();
+  });
+
+  it("shows no article, rather than a marker, when the DOM it would read back is not there", async () => {
+    leanEnvironment.isServer = () => false;
+    const container = document.createElement("div");
+    document.body.append(container);
+    const token = "123e4567-e89b-42d3-a456-426614174000";
+
+    await act(async () => {
+      render(article(token), { container });
+    });
+
+    expect(container.textContent).not.toContain("wikios-lean");
+    expect(container.querySelector(".wikios-article-body")?.textContent ?? "").toBe("");
   });
 });

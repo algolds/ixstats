@@ -411,9 +411,9 @@ describe("loadViewBundle", () => {
   });
 
   it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
-    expect(RENDERER_VERSION).toBe(`2:${wikiArticleSanitizerFingerprint()}`);
+    expect(RENDERER_VERSION).toBe(`3:${wikiArticleSanitizerFingerprint()}`);
     mockFindUnique.mockResolvedValue({
-      renderedView: { ...buildViewBundle(PARSED), rendererVersion: "2:0123456789abc" },
+      renderedView: { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" },
       htmlSyncedAt: syncedAt,
     });
 

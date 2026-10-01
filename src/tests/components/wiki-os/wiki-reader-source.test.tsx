@@ -176,6 +176,41 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(body.compareDocumentPosition(members) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  describe("a lean page (plan 413, item 8c) carries markers for the article's HTML", () => {
+    const token = "123e4567-e89b-42d3-a456-426614174000";
+    const lean = (refetch: jest.Mock) =>
+      mockUseQuery.mockReturnValue({
+        data: { ...article, title: "Aurelia", contentHtml: `wikios-lean:${token}:body` },
+        isLoading: false,
+        error: null,
+        refetch,
+      });
+
+    it("asks for the article when the DOM the marker stands for is not there (a marker kept from an earlier page load)", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not, when the server's DOM is there to read it back from", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      document.body.append(body);
+
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).not.toHaveBeenCalled();
+      body.remove();
+    });
+  });
+
   describe("viewer-specific chips (the route reads the article as an anonymous viewer)", () => {
     const chipHtml =
       '<p>Your GDP: <span class="wikios-stat-resolved" data-key="MyCountry:gdp">No Country Loaded</span></p>';

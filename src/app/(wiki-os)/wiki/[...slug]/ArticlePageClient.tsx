@@ -6,7 +6,7 @@
 
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
@@ -24,6 +24,7 @@ import {
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
+import { isLeanResolvable, parseLeanMarker } from "~/lib/wiki-os/lean-article";
 
 // The Main Page is its own chunk: an article never downloads it. It stays server-rendered (its data
 // is in the first HTML), so the chunk is preloaded for that page, not fetched after hydration.
@@ -124,6 +125,18 @@ export default function ArticlePageClient({
       retryDelay: BUSY_RETRY_DELAY_MS,
     }
   );
+
+  // A lean page (lib/wiki-os/lean-article.ts) hydrates with markers for the article's HTML, which the
+  // reader reads back from the DOM the server rendered. A marker with no such DOM (kept from an
+  // earlier page load) is replaced by asking for the article.
+  const leanMarker = data?.contentHtml;
+  const leanUnresolved = useMemo(
+    () => parseLeanMarker(leanMarker) !== null && !isLeanResolvable(leanMarker),
+    [leanMarker]
+  );
+  useEffect(() => {
+    if (leanUnresolved) void refetch();
+  }, [leanUnresolved, refetch]);
 
   // The server's copy of a page with viewer-specific chips is the anonymous one: a signed-in
   // reader asks once more, with their session, for their own chips.

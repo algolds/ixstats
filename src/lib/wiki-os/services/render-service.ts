@@ -26,10 +26,11 @@ import {
 import { renderArticleViaMediaWiki } from "../adapters/mediawiki/parsoid";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
+import { slimArticleHtml } from "../transformers/slim-html";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 
 /** Bump when the bundle's shape or the transform changes. */
-const RENDERER_BASE_VERSION = 2;
+const RENDERER_BASE_VERSION = 3;
 
 /**
  * What a bundle was built by: the transform's version plus a fingerprint of the sanitizer (its
@@ -83,7 +84,9 @@ const SUPERSEDED: RenderResult = { ok: false, superseded: true };
  */
 export function buildViewBundle(rawHtml: string): ViewBundle {
   const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
-  const clean = (html: string) => sanitizeWikiArticleHtml(markTemplateChips(html));
+  // sanitized first, then slimmed: the slimming only removes (titles that repeat their link, classes
+  // nothing uses, empty attributes, layout whitespace), so it cannot let anything through
+  const clean = (html: string) => slimArticleHtml(sanitizeWikiArticleHtml(markTemplateChips(html)));
   return {
     bodyHtml: clean(transformed.contentHtml),
     infoboxHtml: transformed.infoboxHtml ? clean(transformed.infoboxHtml) : null,

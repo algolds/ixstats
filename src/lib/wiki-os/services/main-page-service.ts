@@ -15,7 +15,7 @@ import { getRecentChanges, getSiteStats } from "../adapters/mediawiki/bridge";
 import { CategoryService } from "../core/category-service";
 import { extractFeaturedArticle, featuredArticleDetails } from "../main-page/featured-article";
 import { extractLeadImageFromHtml } from "../transformers/image-url";
-import type { InertFragment } from "../transformers/inert-dom";
+import { parseInertOnServer } from "../transformers/server-dom";
 import { getArticleView } from "./article-view-service";
 
 const MAIN_PAGE_TITLE = "Main Page";
@@ -95,29 +95,11 @@ export interface MainPageData {
 /** A view of an article for the server's own use: no viewer, no import from MediaWiki. */
 const readView = (title: string) => getArticleView(title, async () => null, undefined, "none");
 
-// ─── A DOM on the server ──────────────────────────────────────────
-
-let serverDocument: Document | null = null;
-
-/**
- * `parseInert` for the server: the same inert <template> fragment, from one jsdom window created on
- * first use (the sanitizer already depends on jsdom there).
- */
-function parseOnServer(html: string): InertFragment | null {
-  if (!serverDocument) {
-    const { JSDOM } = require("jsdom") as typeof import("jsdom");
-    serverDocument = new JSDOM("").window.document;
-  }
-  const template = serverDocument.createElement("template");
-  template.innerHTML = html;
-  return { template, document: template.content.ownerDocument, content: template.content };
-}
-
 // ─── Parts ────────────────────────────────────────────────────────
 
 async function readFeatured(): Promise<MainPageFeatured | null> {
   const view = await readView(MAIN_PAGE_TITLE);
-  const card = view && extractFeaturedArticle(view.contentHtml, parseOnServer);
+  const card = view && extractFeaturedArticle(view.contentHtml, parseInertOnServer);
   if (!card) return null;
   const { title, slug, excerpt, image } = featuredArticleDetails(card);
   return { title, slug, excerpt, image };
