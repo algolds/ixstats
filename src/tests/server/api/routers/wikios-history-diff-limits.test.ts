@@ -121,3 +121,30 @@ describe("getDiff answers are bounded", () => {
     expect(result.added).toBe(1_000);
   });
 });
+
+describe("a revision reference is checked at the door", () => {
+  it.each(["99999999999", "2147483648", "9".repeat(40), "a/b", "x y", "<b>", ""])(
+    "refuses %j as before, torev, fromrev and revid, without reading anything",
+    async (ref) => {
+      await expect(caller().getHistory({ title: "Foo", before: ref })).rejects.toThrow(
+        /Not a revision reference/
+      );
+      await expect(caller().getDiff({ torev: ref })).rejects.toThrow(/Not a revision reference/);
+      await expect(caller().getDiff({ fromrev: ref, torev: "2" })).rejects.toThrow(
+        /Not a revision reference/
+      );
+      await expect(caller().getRevisionContent({ revid: ref })).rejects.toThrow(
+        /Not a revision reference/
+      );
+      expect(getArticleHistoryShadow).not.toHaveBeenCalled();
+      expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(["1", "2147483647", "r2", "cmabc123def456ghi789jkl012"])("accepts %j", async (ref) => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(text("a"));
+
+    await expect(caller().getHistory({ title: "Foo", before: ref })).resolves.toBeDefined();
+    await expect(caller().getDiff({ torev: ref })).resolves.toBeDefined();
+  });
+});

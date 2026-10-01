@@ -33,7 +33,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
   const [undoConfirm, setUndoConfirm] = useState(false);
 
   const { data, isLoading, error } = api.wikios.getDiff.useQuery(
-    { fromrev, torev },
+    { fromrev: fromrev || undefined, torev },
     { enabled: torev.length > 0, staleTime: 60_000 }
   );
 

@@ -15,6 +15,7 @@ import {
   diffWikitext,
   type WikitextDiff,
 } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { isRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { assertTitleVisible, canSeeTitle } from "~/lib/wiki-os/permissions";
 import {
   getArticleHistoryShadow,
@@ -33,6 +34,9 @@ function diffOrRefuse(oldText: string, newText: string): WikitextDiff {
   }
 }
 
+/** A revision reference as a client sends it: refused at the door when no revision could have it (not a 500 from the database). */
+const revisionRef = z.string().refine(isRevisionRef, "Not a revision reference");
+
 /** Most revisions one history request returns (the page the UI asks for is far smaller). */
 const MAX_HISTORY_PAGE = 500;
 
@@ -48,7 +52,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1).max(500),
         limit: z.number().int().min(1).max(MAX_HISTORY_PAGE).default(50),
-        before: z.string().min(1).max(64).optional(),
+        before: revisionRef.optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -71,8 +75,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
   getDiff: rateLimitedPublicProcedure
     .input(
       z.object({
-        fromrev: z.string().max(64).optional(),
-        torev: z.string().min(1).max(64),
+        fromrev: revisionRef.optional(),
+        torev: revisionRef,
       })
     )
     .query(async ({ input, ctx }) => {
@@ -140,7 +144,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    * Get the wikitext of a specific revision (for undo preview).
    */
   getRevisionContent: publicProcedure
-    .input(z.object({ revid: z.string().min(1).max(64) }))
+    .input(z.object({ revid: revisionRef }))
     .query(async ({ input, ctx }) => {
       const result = await getRevisionWikitextShadow(input.revid);
       if (!result) throw new Error("Revision not found");
@@ -154,7 +158,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    * with the page the URL named.
    */
   getRevisionHtml: rateLimitedPublicProcedure
-    .input(z.object({ ref: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/) }))
+    .input(z.object({ ref: revisionRef }))
     .query(async ({ input, ctx }) => {
       const result = await getRevisionView(input.ref, (title) => canSeeTitle(ctx, title)).catch(
         (error: Error) => {

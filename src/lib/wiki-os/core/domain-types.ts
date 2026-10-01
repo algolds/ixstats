@@ -35,6 +35,15 @@ export const toRevisionRef = (rev: { id: string; mwRevId?: number | null }): str
 export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: string } =>
   /^\d+$/.test(ref) ? { mwRevId: Number(ref) } : { id: ref };
 
+/** MediaWiki's `rev_id` is a 32-bit integer column: a larger number cannot name a revision. */
+const MAX_MW_REV_ID = 2_147_483_647;
+
+/** Whether `ref` can be a revision reference: a `rev_id` that fits the column, or a row id. */
+export const isRevisionRef = (ref: string): boolean =>
+  /^\d+$/.test(ref)
+    ? ref.length <= 10 && Number(ref) <= MAX_MW_REV_ID
+    : /^[A-Za-z0-9_-]{1,64}$/.test(ref);
+
 // ---------------------------------------------------------------------------
 // Structured Block AST
 // ---------------------------------------------------------------------------
