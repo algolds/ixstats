@@ -91,6 +91,9 @@ import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
+import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+
+const syncSinglePageMockReset = () => jest.mocked(syncSinglePage).mockClear();
 import { evictArticleView } from "~/lib/wiki-os/services/article-view-service";
 
 const caller = () =>
@@ -681,6 +684,93 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
   it("a page that is not a redirect has neither", async () => {
     const result = await caller().getArticleHtml({ title: "Aurelia" });
     expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
+  });
+});
+
+describe("MediaWiki imports by who asked (plan 412 review)", () => {
+  // Imports are per-process budgets that earlier tests in this file spent: a later minute has them full.
+  let minutesLater = 100;
+  let clock: jest.SpyInstance;
+  beforeEach(() => {
+    const realNow = Date.now.bind(Date);
+    const offset = ++minutesLater * 3_600_000;
+    clock = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+    findArticleForView.mockResolvedValue(null);
+  });
+  afterEach(() => clock.mockRestore());
+
+  const asHeaders = (headers: Record<string, string>) =>
+    createCallerFactory(wikiosPageContentRouter)(
+      createMockRouterContext({ auth: null, user: null, headers: new Headers(headers) }) as never
+    );
+  const BROWSER = { "x-trpc-source": "rsc", accept: "text/html,application/xhtml+xml,*/*;q=0.8" };
+
+  it("a server render of a page request, which asks for HTML, imports a missing page", async () => {
+    await expect(
+      asHeaders(BROWSER).getArticleHtml({ title: "Ssr page one" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Ssr page one");
+  });
+
+  it.each([
+    ["a client navigation's RSC fetch", { "x-trpc-source": "rsc", accept: "text/x-component" }],
+    ["a bare request", { "x-trpc-source": "rsc", accept: "*/*" }],
+    ["a request with no Accept at all", { "x-trpc-source": "rsc" }],
+    ["an API client", { "x-trpc-source": "rsc", accept: "application/json" }],
+  ])("%s never imports: a missing page is simply missing", async (_name, headers) => {
+    await expect(
+      asHeaders(headers).getArticleHtml({ title: "No import page" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).not.toHaveBeenCalled();
+  });
+
+  it("the reader's own call (not the server's) imports whatever it accepts", async () => {
+    await expect(
+      asHeaders({ accept: "application/json" }).getArticleHtml({ title: "Client page" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Client page");
+  });
+
+  it("server renders import at most 10 pages a minute, from a budget of their own", async () => {
+    const codes: string[] = [];
+    for (let i = 1; i <= 12; i++) {
+      await asHeaders(BROWSER)
+        .getArticleHtml({ title: `Flood ${i}` })
+        .catch((error: { code: string }) => codes.push(error.code));
+    }
+
+    expect(codes.slice(0, 10)).toEqual(Array(10).fill("NOT_FOUND"));
+    expect(codes.slice(10)).toEqual(["TOO_MANY_REQUESTS", "TOO_MANY_REQUESTS"]);
+    expect(syncSinglePage).toHaveBeenCalledTimes(10);
+
+    // The readers' budget is untouched by the flood.
+    syncSinglePageMockReset();
+    await expect(
+      asHeaders({}).getArticleHtml({ title: "Reader after the flood" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Reader after the flood");
+  });
+
+  it("a title that is not in canonical form is never imported, whoever asks", async () => {
+    for (const source of ["client", "ssr"] as const) {
+      await expect(
+        getArticleView("junk_title with  spaces", async () => null, undefined, source)
+      ).resolves.toBeNull();
+    }
+    expect(syncSinglePage).not.toHaveBeenCalled();
+
+    await expect(
+      getArticleView("Junk title", async () => null, undefined, "ssr")
+    ).resolves.toBeNull();
+    expect(syncSinglePage).toHaveBeenCalledTimes(1); // a canonical one is
   });
 });
 

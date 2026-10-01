@@ -28,7 +28,7 @@ import {
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
-import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -44,14 +44,25 @@ import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 registerTemplateProvider(ixstatsTemplateProvider);
 
 /**
+ * Who is asking, for the MediaWiki import of a page WikiOS does not have yet: the server's own
+ * caller (`x-trpc-source: rsc`, set in `~/trpc/server`) is a page request, which only a request that
+ * asks for HTML may import for; any other caller is the reader's client.
+ */
+function importSourceOf(headers: Headers | undefined): ImportSource {
+  if (headers?.get("x-trpc-source") !== "rsc") return "client";
+  return /\btext\/html\b/i.test(headers.get("accept") ?? "") ? "ssr" : "none";
+}
+
+/**
  * The reader's view of the IxWiki page `title` (canonical, redirects already followed), or null when
  * there is none. Not asking MediaWiki about a missing page right now is "busy", not "no such page".
  */
-async function readIxWikiView(ctx: WikiAuthContext, title: string) {
+async function readIxWikiView(ctx: WikiAuthContext & { headers?: Headers }, title: string) {
   return getArticleView(
     title,
     () => resolveActiveCountryId(ctx),
-    () => canSeeDeletedPages(ctx)
+    () => canSeeDeletedPages(ctx),
+    importSourceOf(ctx.headers)
   ).catch((error: Error) => {
     if (error instanceof ThrottledError) {
       throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
