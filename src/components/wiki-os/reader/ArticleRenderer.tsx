@@ -221,6 +221,8 @@ export function ArticleRenderer({
     if (savedCompanionCollapsed !== null) return;
     try {
       if (localStorage.getItem("wikios:companionCollapsed") === "true") {
+        // a one-time migration from the old localStorage key, which only the browser can read
+        // oxlint-disable-next-line
         setCompanionCollapsed(true);
         writeCollapsedCookie(COMPANION_COLLAPSED_COOKIE, true);
       }

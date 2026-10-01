@@ -124,6 +124,8 @@ export function WikiOSHeader({
   useEffect(() => {
     const picture = backdropRef.current?.querySelector("img");
     if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
+      // reads the DOM's state (an external system) after hydration, which no render can know
+      // oxlint-disable-next-line
       if (hero.src !== hero.original) setFailedSrc(hero.src);
     }
   }, [hero, failedSrc]);
