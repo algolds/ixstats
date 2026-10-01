@@ -6,12 +6,12 @@
 import React, { useState, memo } from "react";
 import { cn } from "~/lib/utils";
 
+/** All the server tells a reader about an author (plan 416): never an id, a role or a country. */
 export interface CommentAuthor {
-  id: string;
   username: string;
   avatar: string | null;
-  role: { name: string; displayName: string } | null;
-  country: { id: string; name: string; flag: string | null } | null;
+  /** The signed-in reader wrote it. */
+  isAuthor: boolean;
 }
 
 export function getInitials(name: string): string {
@@ -41,7 +41,6 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
   const [imgError, setImgError] = useState(false);
   const initials = getInitials(author.username);
   const avatarUrl = !imgError ? author.avatar || liveAvatar : null;
-  const flagUrl = author.country?.flag;
 
   const sizeClasses = {
     xs: "w-5 h-5 text-xs",
@@ -71,16 +70,6 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
           <span>{initials}</span>
         )}
       </div>
-
-      {/* Country Flag Micro Badge */}
-      {flagUrl && (
-        <span
-          className="absolute -right-0.5 -bottom-0.5 flex h-2.5 w-3 items-center justify-center overflow-hidden rounded-xs border border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-xs"
-          title={author.country?.name}
-        >
-          <img src={flagUrl} alt="" className="h-full w-full object-cover" />
-        </span>
-      )}
     </div>
   );
 });

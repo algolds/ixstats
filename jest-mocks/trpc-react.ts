@@ -38,6 +38,15 @@ const createRouterProxy = (): any => {
           cache[prop] = jest.fn(() => createMockQuery());
           return cache[prop];
         }
+        if (prop === "useInfiniteQuery") {
+          cache[prop] = jest.fn(() => ({
+            ...createMockQuery({ pages: [], pageParams: [] }),
+            fetchNextPage: jest.fn().mockResolvedValue(undefined),
+            hasNextPage: false,
+            isFetchingNextPage: false,
+          }));
+          return cache[prop];
+        }
         if (prop === "useMutation") {
           cache[prop] = jest.fn(() => createMockMutation());
           return cache[prop];

@@ -98,13 +98,21 @@ export function WikiMarginDrawer({
     data: marginData,
     isLoading,
     refetch,
-  } = api.wikios.getArticleMarginData.useQuery(
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = api.wikios.getArticleMarginData.useInfiniteQuery(
     { articleTitle, status: "ALL" },
-    { enabled: isOpen, staleTime: 10_000 }
+    {
+      enabled: isOpen,
+      staleTime: 10_000,
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    }
   );
 
-  const threads = marginData?.threads ?? [];
-  const openThreadsCount = marginData?.totalOpenCount ?? 0;
+  const threads = marginData?.pages.flatMap((page) => page.threads) ?? [];
+  const openThreadsCount = marginData?.pages[0]?.totalOpenCount ?? 0;
+  const canModerate = marginData?.pages[0]?.canModerate ?? false;
 
   // Keyboard shortcut listener: Escape to close
   useEffect(() => {
@@ -320,6 +328,10 @@ export function WikiMarginDrawer({
                   isAuthenticated={isAuthenticated}
                   onRefetch={refetch}
                   themeColors={themeColors}
+                  canModerate={canModerate}
+                  hasMoreThreads={hasNextPage}
+                  isLoadingMoreThreads={isFetchingNextPage}
+                  onLoadMoreThreads={() => void fetchNextPage()}
                 />
               )}
 

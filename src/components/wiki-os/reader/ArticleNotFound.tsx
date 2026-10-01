@@ -2,15 +2,20 @@
 
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 
-/** The reader's "no such page" state. Only an IxWiki page can be created from WikiOS. */
+/**
+ * The reader's "no such page" state. Only an IxWiki page can be created from WikiOS, and only by a
+ * signed-in user (`canCreate`, default true).
+ */
 export function ArticleNotFound({
   title,
   wikiSource,
   onCreate,
+  canCreate = true,
 }: {
   title: string;
   wikiSource: WikiSource;
   onCreate: () => void;
+  canCreate?: boolean;
 }) {
   return (
     <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
@@ -18,7 +23,7 @@ export function ArticleNotFound({
       <p className="text-sm text-zinc-400">
         The page &ldquo;{title}&rdquo; does not exist on {WIKI_SOURCES[wikiSource].name}.
       </p>
-      {wikiSource === "ixwiki" && (
+      {wikiSource === "ixwiki" && canCreate && (
         <div className="mt-4 flex gap-3">
           <button
             type="button"

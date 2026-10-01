@@ -40,6 +40,8 @@ export interface WikiNarratorState {
   activeSectionTitle: string;
   speed: number;
   voice: string;
+  /** The voice that is reading: Kokoro's natural voice or the browser's; unknown until the first play. */
+  engine?: "kokoro" | "browser";
 }
 
 export interface WikiNarratorActions {

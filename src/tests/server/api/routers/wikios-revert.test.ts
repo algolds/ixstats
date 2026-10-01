@@ -42,7 +42,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
 }));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
-  CloudflareGuardian: { verifyTurnstile: jest.fn(), purgeArticleEdgeCache: jest.fn() },
+  CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,

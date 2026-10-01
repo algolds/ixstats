@@ -1,5 +1,5 @@
 "use client";
-// src/app/(wiki-os)/wiki/whatlinkshere/page.tsx
+// src/app/(wiki-os)/util/whatlinkshere/page.tsx
 // WikiOS Backlinks & Directed Link Graph Explorer — Special:WhatLinksHere
 
 import { useState } from "react";

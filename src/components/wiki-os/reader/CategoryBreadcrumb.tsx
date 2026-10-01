@@ -54,7 +54,7 @@ export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
           {i > 0 && <ChevronRight className="wikios-breadcrumb-sep h-3 w-3" />}
           <Link
             href={withBasePath(
-              `/wiki/categories/${encodeURIComponent(catTitle.replace(/ /g, "_"))}`
+              `/util/categories/${encodeURIComponent(catTitle.replace(/ /g, "_"))}`
             )}
             className="wikios-breadcrumb-link"
           >

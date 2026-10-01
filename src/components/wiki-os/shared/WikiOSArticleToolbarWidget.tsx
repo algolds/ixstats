@@ -11,6 +11,7 @@ import {
   HalfMoon as SunMoon,
   Square,
   Eye,
+  ChatBubble,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -19,6 +20,8 @@ import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { MEDIA_THEME_OPTIONS } from "~/lib/wiki-os/transformers/media-theme";
+import { pageEditHref, pageTalkPair } from "~/lib/wiki-os/page-tools";
+import { articleHref } from "~/lib/wiki-os/wiki-path";
 import {
   CutoutCard,
   CutoutCardContent,
@@ -42,6 +45,10 @@ export function WikiOSArticleToolbarWidget({
   const { isCollapsed } = useSidebar();
   const { isMarginOpen, toggleMargin } = useWikiContext();
   const { mediaThemeMode, setMediaThemeMode, cycleMediaThemeMode } = useWikiMediaTheme();
+  // Discussion (`/wiki/Talk:<title>`), or from a talk page its subject page.
+  const pair = pageTalkPair(title);
+  const pairHref = pair ? withBasePath(articleHref(pair.page)) : null;
+  const pairLabel = pair?.isTalk ? "Subject Page" : "Discussion";
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -62,11 +69,22 @@ export function WikiOSArticleToolbarWidget({
         {/* Edit */}
         {isSignedIn && (
           <Link
-            href={withBasePath(`/wiki/${slug}/edit`)}
+            href={withBasePath(pageEditHref(title, slug))}
             className="rail-glow-blue rail-animate-bounce flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-blue-500/15 active:scale-95"
             title="Edit Article"
           >
             <FileEdit className="h-4.5 w-4.5" />
+          </Link>
+        )}
+
+        {/* Discussion */}
+        {pairHref && (
+          <Link
+            href={pairHref}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-500/20 bg-sky-500/5 text-sky-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-sky-500/15 active:scale-95"
+            title={pairLabel}
+          >
+            <ChatBubble className="h-4.5 w-4.5" />
           </Link>
         )}
 
@@ -124,11 +142,22 @@ export function WikiOSArticleToolbarWidget({
         {/* Edit */}
         {isSignedIn && (
           <Link
-            href={withBasePath(`/wiki/${slug}/edit`)}
+            href={withBasePath(pageEditHref(title, slug))}
             className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
           >
             <FileEdit className="h-3.5 w-3.5 shrink-0 text-blue-400" />
             <span>Edit Article</span>
+          </Link>
+        )}
+
+        {/* Discussion */}
+        {pairHref && (
+          <Link
+            href={pairHref}
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
+          >
+            <ChatBubble className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+            <span>{pairLabel}</span>
           </Link>
         )}
 
@@ -176,9 +205,7 @@ export function WikiOSArticleToolbarWidget({
         <div className="mt-2 space-y-1.5 border-t border-white/5 pt-2">
           <div className="flex items-center justify-between px-1 text-xs font-bold tracking-wider text-slate-400 uppercase">
             <span>Media Theme</span>
-            <span className="text-xs font-semibold text-cyan-400 capitalize">
-              {mediaThemeMode}
-            </span>
+            <span className="text-xs font-semibold text-cyan-400 capitalize">{mediaThemeMode}</span>
           </div>
           <div className="grid grid-cols-2 gap-1 rounded-lg border border-white/5 bg-black/20 p-0.5 dark:bg-black/30">
             {MEDIA_THEME_OPTIONS.map((opt) => {

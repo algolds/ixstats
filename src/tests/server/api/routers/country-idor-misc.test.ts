@@ -9,6 +9,11 @@ jest.mock("~/server/db", () => ({
     wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRevision: { count: jest.fn().mockResolvedValue(0) },
+    // plan 416: and that the page is not deleted (no such page: nothing hidden)
+    wikiArticle: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   },
   isDatabaseReadOnly: false,
 }));

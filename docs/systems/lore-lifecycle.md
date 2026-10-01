@@ -107,7 +107,7 @@ stateDiagram-v2
 ---
 
 ### Stage 3: Authoring & Instant Publishing (The Synthesis)
-* **Active Routes:** WikiOS Editor Bridge (`WikiEditBridge` at `/wiki/[slug]/edit` or in-place modal)
+* **Active Routes:** WikiOS Editor Bridge (`WikiEditBridge` at `/wiki/<title>?action=edit` or in-place modal)
 * **Workflow:**
   1. **Visual & Source Editing**:
      - Switch between the Plate visual editor and the **CodeMirror 6** wikitext source editor.

@@ -473,7 +473,7 @@ export function WikiOSHeader({
                   </div>
                   <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
                     <Link
-                      href={withBasePath("/wiki/lorewards")}
+                      href={withBasePath("/util/lorewards")}
                       className="text-xs font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
                     >
                       View Leaderboard &rarr;

@@ -12,6 +12,7 @@
  *  - stash:                 lore stash CRUD and item management
  *  - watchlist-annotations: user watchlist + page annotations
  *  - user-talk:             user info, contributions, talk pages, backlinks
+ *  - page-views:            page info, page lists, category member pages, file info (plan 412)
  *  - page-admin:            move, delete, undelete, protect, block, user groups, log
  *  - bot-passwords:         Special:BotPasswords (api.php credentials)
  */
@@ -27,6 +28,7 @@ import { wikiosWatchlistAnnotationsRouter } from "./watchlist-annotations";
 import { wikiosUserTalkRouter } from "./user-talk";
 import { wikiosDiscussionsRouter } from "./discussions";
 import { wikiosUtilitiesRouter } from "./utilities";
+import { wikiosPageViewsRouter } from "./page-views";
 import { wikiosPageAdminRouter } from "./page-admin";
 import { wikiosBotPasswordsRouter } from "./bot-passwords";
 
@@ -42,6 +44,7 @@ export const wikiosRouter = mergeRouters(
   wikiosUserTalkRouter,
   wikiosDiscussionsRouter,
   wikiosUtilitiesRouter,
+  wikiosPageViewsRouter,
   wikiosPageAdminRouter,
   wikiosBotPasswordsRouter
 );

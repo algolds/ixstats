@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
 import {
@@ -28,6 +29,9 @@ import {
 
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
+  notifyWatchers: jest.fn().mockResolvedValue(0),
+}));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
@@ -392,6 +396,45 @@ describe("the page's head only moves forward", () => {
     });
     expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
     expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
+  });
+
+  it("tells the watchers of an existing page whose head the dump moved, naming the dump's author", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+
+    await importFixture();
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "edited",
+      articleId: seeded.id,
+      title: "Kingdom of Testia",
+      editor: "192.0.2.7",
+      editorUserId: null,
+      summary: "typo & <nowiki> fix",
+      currentRef: "1002",
+    });
+  });
+
+  it("tells nobody when the dump creates the pages: nobody watches them yet", async () => {
+    await importFixture();
+
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+
+  it("tells nobody when the page's head did not change, or on a dry run", async () => {
+    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
+    seedRevision(seeded.id, {
+      wikitext: "NEWER LOCAL EDIT",
+      createdAt: new Date("2026-06-01T00:00:00Z"),
+    });
+    await importFixture();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+
+    const older = seedArticle({ title: "Other", slug: "other", wikitext: "OLD" });
+    seedRevision(older.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+    await importFixture({ dryRun: true });
+    expect(notifyWatchers).not.toHaveBeenCalled();
   });
 
   it("leaves an existing protection alone and only protects an unprotected page", async () => {

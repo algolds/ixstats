@@ -30,36 +30,27 @@ import { WikiOSLogomark } from "./WikiOSLogomark";
 import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-
-const RESERVED_WIKI_SLUGS = new Set([
-  "lorewards",
-  "diff",
-  "watchlist",
-  "search",
-  "random",
-  "repository",
-  "recent-changes",
-  "categories",
-  "whatlinkshere",
-  "user",
-  "history",
-  "contributions",
-  "utilities",
-  "templates",
-  "sandbox",
-]);
+import { isTalkNamespace } from "~/lib/wiki-os/core/talk";
+import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 
 /**
- * A path that is NOT an editable wiki article: the reserved /wiki/* tool routes, the Special: namespace, and
- * anything not under /wiki/<slug> (util, library and other routes). Article pages (/wiki/<Title> and their
- * /edit, /talk sub-routes) are NOT special, so the page tools (Edit / Talk / History / What Links Here) render
- * for them. NOTE: previously this matched every "/wiki/" path, which hid page tools on all articles.
+ * A path that is NOT an editable wiki article: the Special: namespace, and anything not under
+ * /wiki/<title> (util, library and other routes). Every other /wiki/<title> is a page (a title that
+ * used to be a tool route, such as "Search", is an article now), so the page tools (Edit /
+ * Discussion / History / What Links Here) render for it.
  */
 function isNonArticlePath(cleanPath: string): boolean {
   const wikiSlug = cleanPath.match(/^\/wiki\/([^/]+)/)?.[1];
   if (!wikiSlug) return true;
-  const slug = decodeURIComponent(wikiSlug);
-  return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
+  return /^special:/i.test(decodeURIComponent(wikiSlug));
+}
+
+/** Whether `cleanPath` is a talk page (`/wiki/Talk:Foo`, `/wiki/User_talk:Jane/Notes`). */
+function isTalkPath(cleanPath: string): boolean {
+  const title = cleanPath.match(/^\/wiki\/(.+)$/)?.[1];
+  if (!title) return false;
+  const canon = canonicalizeTitle(title.split("/").map(decodeTitleParam).join("/"));
+  return canon !== null && isTalkNamespace(canon.namespaceId);
 }
 
 export function WikiOSLayout({
@@ -135,20 +126,19 @@ export function WikiOSLayout({
 
   const getActiveId = () => {
     const p = stripBasePath(pathname);
-    if (p.includes("/talk")) return "talk";
-    if (p.includes("/edit")) return "edit";
-    if (p.includes("/util/categories") || p.includes("/wiki/categories")) return "categories";
-    if (p.includes("/util/recent") || p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/util/templates") || p.includes("/wiki/templates")) return "templates";
-    if (p === "/util" || p.startsWith("/util") || p.includes("/wiki/utilities")) return "utilities";
-    if (p.includes("/util/lorewards") || p.includes("/wiki/lorewards")) return "lorewards";
+    if (isTalkPath(p)) return "talk";
+    if (p.includes("/util/categories")) return "categories";
+    if (p.includes("/util/recent")) return "recent";
+    if (p.includes("/util/templates")) return "templates";
+    if (p === "/util" || p.startsWith("/util")) return "utilities";
+    if (p.includes("/util/lorewards")) return "lorewards";
     if (p.includes("/blurbs")) return "blurbs";
     if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/util/repository") || p.includes("/wiki/repository")) return "images";
-    if (p.includes("/util/watchlist") || p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/util/random") || p.includes("/wiki/random")) return "random";
-    if (p.includes("/util/search") || p.includes("/wiki/search")) return "search";
-    if (p.includes("/util/history") || p.includes("/wiki/history")) return "history";
+    if (p.includes("/util/repository")) return "images";
+    if (p.includes("/util/watchlist")) return "stashes";
+    if (p.includes("/util/random")) return "random";
+    if (p.includes("/util/search")) return "search";
+    if (p.includes("/util/history")) return "history";
     if (p === "/wiki/Main_Page" || p === "/wiki") return "main";
     return null;
   };

@@ -90,7 +90,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
           <span>FULL WIKIOS & DATABASE ACTIVITY STREAM ({feed.length})</span>
         </h4>
         <Link
-          href={`/wiki/contributions/${encodeURIComponent(contributionsUser)}`}
+          href={`/util/contributions/${encodeURIComponent(contributionsUser)}`}
           data-cuelume-press="soft"
           className="flex items-center gap-0.5 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
         >
