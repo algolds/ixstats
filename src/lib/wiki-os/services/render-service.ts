@@ -43,8 +43,9 @@ const RENDERER_BASE_VERSION = 3;
 
 /**
  * What a bundle was built by: the transform's version plus a fingerprint of the sanitizer (its
- * rules and DOMPurify's version). A bundle of another version is never served, it re-renders, so a
- * sanitizer change reaches every stored article without anyone remembering to bump a number.
+ * rules and DOMPurify's version). A bundle of another version is outdated: readers get it re-sanitized
+ * and marked stale while `renderStaleBatch` (or the first reader's background render) replaces it, so
+ * a sanitizer change reaches every stored article without anyone remembering to bump a number.
  */
 export const RENDERER_VERSION = `${RENDERER_BASE_VERSION}:${wikiArticleSanitizerFingerprint()}`;
 
@@ -60,6 +61,9 @@ export const viewBundleSchema = z.object({
 });
 
 export type ViewBundle = z.infer<typeof viewBundleSchema>;
+
+/** `viewBundleSchema` without the version check: the shape of a bundle some earlier renderer built. */
+const outdatedViewBundleSchema = viewBundleSchema.extend({ rendererVersion: z.string() });
 
 export interface RenderResult {
   ok: boolean;
@@ -117,16 +121,52 @@ function describeRenderProblem(rawHtml: string, wikitext: string): string | null
   return null;
 }
 
-/** The bundle and freshness of an article; null when it has no valid bundle of this renderer version. */
-export async function loadViewBundle(
-  articleId: string
-): Promise<{ bundle: ViewBundle; htmlSyncedAt: Date | null } | null> {
+/** The bundle and freshness of an article, and whether an earlier renderer version built the bundle. */
+export interface LoadedViewBundle {
+  bundle: ViewBundle;
+  htmlSyncedAt: Date | null;
+  /**
+   * Built by another renderer version (or another sanitizer): worth showing, since it shows the page, but
+   * it is not what a render would produce now. Its HTML has been through the current sanitizer.
+   */
+  outdated: boolean;
+}
+
+/** `bundle` with every HTML part (body, infobox, notices; the TOC is plain text) sanitized by the current rules. */
+function resanitizeViewBundle(bundle: ViewBundle): ViewBundle {
+  return {
+    ...bundle,
+    bodyHtml: sanitizeWikiArticleHtml(bundle.bodyHtml),
+    infoboxHtml: bundle.infoboxHtml === null ? null : sanitizeWikiArticleHtml(bundle.infoboxHtml),
+    noticesHtml: bundle.noticesHtml === null ? null : sanitizeWikiArticleHtml(bundle.noticesHtml),
+  };
+}
+
+/**
+ * The bundle and freshness of an article. A bundle of this renderer version is returned as it is. One
+ * that only differs in its renderer version (an older transform or sanitizer built it) is returned
+ * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule.
+ * Null when the article has no bundle, or one whose shape is not a bundle's at all.
+ */
+export async function loadViewBundle(articleId: string): Promise<LoadedViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
     where: { id: articleId },
     select: { renderedView: true, htmlSyncedAt: true },
   });
-  const parsed = viewBundleSchema.safeParse(row?.renderedView);
-  return row && parsed.success ? { bundle: parsed.data, htmlSyncedAt: row.htmlSyncedAt } : null;
+  if (!row) return null;
+
+  const current = viewBundleSchema.safeParse(row.renderedView);
+  if (current.success) {
+    return { bundle: current.data, htmlSyncedAt: row.htmlSyncedAt, outdated: false };
+  }
+  const outdated = outdatedViewBundleSchema.safeParse(row.renderedView);
+  return outdated.success
+    ? {
+        bundle: resanitizeViewBundle(outdated.data),
+        htmlSyncedAt: row.htmlSyncedAt,
+        outdated: true,
+      }
+    : null;
 }
 
 /**
@@ -405,6 +445,11 @@ function startRender(articleId: string, priority: number): Promise<RenderResult>
   return job;
 }
 
+/** The last render of `articleId` failed a moment ago and none is running: nobody retries it yet. */
+function coolingDown(articleId: string): boolean {
+  return (failedUntil.get(articleId) ?? 0) > Date.now() && !inFlight.has(articleId);
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(null), ms);
@@ -426,11 +471,20 @@ export async function ensureRendered(
   articleId: string,
   { waitMs }: { waitMs: number }
 ): Promise<RenderResult | null> {
-  const coolingDown = (failedUntil.get(articleId) ?? 0) > Date.now();
-  if (coolingDown && !inFlight.has(articleId)) return FAILED;
+  if (coolingDown(articleId)) return FAILED;
 
   const render = startRender(articleId, waitMs > 0 ? READER : SAVE);
   return waitMs > 0 ? withTimeout(render, waitMs) : null;
+}
+
+/**
+ * Queue a render for a reader who is served the article's outdated bundle meanwhile; fire-and-forget, as
+ * backlog work (it never goes before a save or a reader who waits). Joins a render already queued or
+ * running, and leaves an article that just failed to render alone until its cool-down is over.
+ */
+export function renderInBackground(articleId: string): void {
+  if (coolingDown(articleId)) return;
+  void startRender(articleId, BACKGROUND);
 }
 
 /**
