@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { withBasePath } from "~/lib/base-path";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
-import { WikiHalo } from "~/components/halo/plugins";
+import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";

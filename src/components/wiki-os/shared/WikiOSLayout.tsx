@@ -3,6 +3,7 @@
 // WikiOS content wrapper with standard DashboardSidebarLayout.
 
 import { type ReactNode, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
@@ -22,16 +23,23 @@ import {
 } from "~/components/ui/popover";
 
 // Sibling component imports
-import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
-import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
 import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
+import { useMountOnFirstOpen } from "./useMountOnFirstOpen";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { isTalkNamespace } from "~/lib/wiki-os/core/talk";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
+
+// Dialogs nobody has opened when the page paints: each is fetched the first time it is opened.
+const SearchModal = dynamic(() => import("./SearchModal").then((m) => m.SearchModal), {
+  ssr: false,
+});
+const CreatePageModal = dynamic(() => import("./CreatePageModal").then((m) => m.CreatePageModal), {
+  ssr: false,
+});
 
 /**
  * A path that is NOT an editable wiki article: the Special: namespace, and anything not under
@@ -78,6 +86,8 @@ export function WikiOSLayout({
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
+  const searchMounted = useMountOnFirstOpen(searchOpen);
+  const createPageMounted = useMountOnFirstOpen(createPageOpen);
 
   // Check URL params to auto-open page creation modal
   useEffect(() => {
@@ -226,8 +236,10 @@ export function WikiOSLayout({
       </footer>
 
       {/* Search Modal */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      {searchMounted && <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />}
+      {createPageMounted && (
+        <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      )}
     </div>
   );
 }

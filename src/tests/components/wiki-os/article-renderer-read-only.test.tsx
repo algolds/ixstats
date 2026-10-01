@@ -9,7 +9,15 @@ const mockMargin = jest.fn();
 const mockHeader = jest.fn();
 let mockMarginOpen = false;
 
-jest.mock("next/dynamic", () => () => () => null);
+// A lazily loaded component renders nothing here, but a margin part reports that it was rendered
+// (plan 413 made the margin suite dynamic: its loader names the module).
+jest.mock("next/dynamic", () => (loader: () => Promise<unknown>) => {
+  const part = /wiki-os\/margin\/(?:modals\/)?(\w+)/.exec(loader.toString())?.[1];
+  return function Dynamic() {
+    if (part) mockMargin(part);
+    return null;
+  };
+});
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => ({ isSignedIn: true }) }));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({
@@ -66,21 +74,6 @@ jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
 jest.mock("~/components/wiki-os/reader/useStatValues", () => ({ useStatValues: () => ({}) }));
 jest.mock("~/components/wiki-os/reader/ArticleCategories", () => ({ CategoriesBar: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleFooter", () => ({ ArticleFooter: () => null }));
-jest.mock("~/components/wiki-os/margin", () => {
-  const part =
-    (name: string) =>
-    ({ children }: { children?: ReactNode }) => {
-      mockMargin(name);
-      return <>{children}</>;
-    };
-  return {
-    WikiMarginDrawer: part("drawer"),
-    MarginGutterPins: part("pins"),
-    SelectionCapsule: part("capsule"),
-    MarginShareModal: part("share"),
-  };
-});
-
 const content = '<h2 id="History">History</h2><p>Eurth is a world.</p>';
 
 function renderArticle(
@@ -105,6 +98,44 @@ function renderArticle(
 
 const marginQuery = api.wikios.getArticleMarginData.useQuery as jest.Mock;
 const annotationsQuery = api.wikios.getAnnotations.useQuery as jest.Mock;
+
+describe("ArticleRenderer loads the margin drawer only once it is opened (plan 413)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMarginOpen = false;
+  });
+
+  it("mounts the pins and the capsule, but not the drawer, while the margin is closed", () => {
+    renderArticle("ixwiki");
+
+    expect(mockMargin).toHaveBeenCalledWith("MarginGutterPins");
+    expect(mockMargin).toHaveBeenCalledWith("SelectionCapsule");
+    expect(mockMargin).not.toHaveBeenCalledWith("WikiMarginDrawer");
+  });
+
+  it("mounts the drawer when it opens, and keeps it mounted after it closes (its exit animation)", () => {
+    mockMarginOpen = true;
+    const { rerender } = renderArticle("ixwiki");
+    expect(mockMargin).toHaveBeenCalledWith("WikiMarginDrawer");
+
+    mockMarginOpen = false;
+    mockMargin.mockClear();
+    rerender(
+      <ArticleRenderer
+        title="Portal:Eurth"
+        contentHtml={content}
+        infoboxHtml={null}
+        noticesHtml={null}
+        toc={[]}
+        categories={[]}
+        lastModified={null}
+        wikiSource="ixwiki"
+        authorInfo={null}
+      />
+    );
+    expect(mockMargin).toHaveBeenCalledWith("WikiMarginDrawer");
+  });
+});
 
 describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", () => {
   beforeEach(() => {
@@ -150,8 +181,8 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
     const { container } = renderArticle("ixwiki");
 
     expect(container.querySelector(".wikios-section-edit-link")).not.toBeNull();
-    expect(mockMargin).toHaveBeenCalledWith("drawer");
-    expect(mockMargin).toHaveBeenCalledWith("pins");
+    expect(mockMargin).toHaveBeenCalledWith("MarginGutterPins");
+    expect(mockMargin).toHaveBeenCalledWith("SelectionCapsule");
     expect(marginQuery).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ enabled: true })

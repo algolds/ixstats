@@ -4,6 +4,7 @@
 // spelling, 404) on the server and primes the query cache, so the article is in the first HTML;
 // this component keeps what is per viewer: edit mode, margin, stash, narrator.
 
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { api } from "~/trpc/react";
@@ -13,7 +14,6 @@ import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
 import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
 import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
-import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
@@ -24,6 +24,12 @@ import {
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
+
+// The Main Page is its own chunk: an article never downloads it. It stays server-rendered (its data
+// is in the first HTML), so the chunk is preloaded for that page, not fetched after hydration.
+const WikiOSMainPage = dynamic(() =>
+  import("~/components/wiki-os/reader/WikiOSMainPage").then((m) => m.WikiOSMainPage)
+);
 
 const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
 /** How soon a stale article (its render pending) is asked for again. */

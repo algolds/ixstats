@@ -19,7 +19,6 @@ import {
   WarningTriangle as AlertTriangle,
   MoreHoriz as MoreHorizontal,
 } from "iconoir-react";
-import * as IconoirIcons from "iconoir-react";
 import type { DepartmentCategory, OrganizationalLevel } from "~/types/government";
 
 export function isImageIconSource(value: string | undefined): value is string {
@@ -32,12 +31,35 @@ export function isImageIconSource(value: string | undefined): value is string {
   );
 }
 
+/** The Iconoir names a department's `icon` can hold (the ones this module already imports). */
+const NAMED_DEPARTMENT_ICONS = new Map<string, React.ComponentType<{ className?: string }>>(
+  Object.entries({
+    Shield,
+    GraduationCap,
+    Heart,
+    Suitcase: Briefcase,
+    DeliveryTruck: Truck,
+    Leaf,
+    Group: Users,
+    Building,
+    Globe,
+    Flash: Zap,
+    Wifi,
+    Palette,
+    Flask: Beaker,
+    HomeSimple: Home,
+    Medal,
+    Eye,
+    WarningTriangle: AlertTriangle,
+    MoreHoriz: MoreHorizontal,
+  })
+);
+
 export function resolveNamedDepartmentIcon(
   iconName: string | undefined
 ): React.ComponentType<{ className?: string }> | null {
   if (!iconName || isImageIconSource(iconName)) return null;
-  const icon = (IconoirIcons as Record<string, unknown>)[iconName];
-  return typeof icon === "function" ? (icon as React.ComponentType<{ className?: string }>) : null;
+  return NAMED_DEPARTMENT_ICONS.get(iconName) ?? null;
 }
 
 export const departmentCategories: DepartmentCategory[] = [

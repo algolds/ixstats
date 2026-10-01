@@ -415,11 +415,11 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
 
-  it("the Main Page is the Main Page component, with no article query", () => {
+  it("the Main Page is the Main Page component (its own chunk), with no article query", async () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
     render(<Reader title="Main Page" />);
 
-    expect(screen.getByText("main page")).toBeInTheDocument();
+    expect(await screen.findByText("main page")).toBeInTheDocument();
     expect(mockUseQuery).toHaveBeenCalledWith(
       { title: "Main Page" },
       expect.objectContaining({ enabled: false })

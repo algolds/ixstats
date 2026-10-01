@@ -7,7 +7,6 @@ import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
@@ -45,13 +44,34 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
-import {
-  WikiMarginDrawer,
-  MarginGutterPins,
-  SelectionCapsule,
-  MarginShareModal,
-  type SelectionPayload,
-} from "~/components/wiki-os/margin";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import type { SelectionPayload } from "~/components/wiki-os/margin/SelectionCapsule";
+
+// The margin suite and the TOC drawer are interactions, not the first paint: each is its own chunk.
+// A drawer or modal is fetched when first opened; the capsule and the gutter pins (which need the
+// page's own selection and text) load right after hydration, off the critical path.
+const MarginGutterPins = dynamic(
+  () => import("~/components/wiki-os/margin/MarginGutterPins").then((m) => m.MarginGutterPins),
+  { ssr: false }
+);
+const SelectionCapsule = dynamic(
+  () => import("~/components/wiki-os/margin/SelectionCapsule").then((m) => m.SelectionCapsule),
+  { ssr: false }
+);
+const WikiMarginDrawer = dynamic(
+  () => import("~/components/wiki-os/margin/WikiMarginDrawer").then((m) => m.WikiMarginDrawer),
+  { ssr: false }
+);
+const MarginShareModal = dynamic(
+  () =>
+    import("~/components/wiki-os/margin/modals/MarginShareModal").then((m) => m.MarginShareModal),
+  { ssr: false }
+);
+const AppleBooksTocDrawer = dynamic(
+  () =>
+    import("~/components/wiki-os/reader/AppleBooksTocDrawer").then((m) => m.AppleBooksTocDrawer),
+  { ssr: false }
+);
 
 const CoordinatesMapEmbed = dynamic(
   () =>
@@ -165,6 +185,8 @@ export function ArticleRenderer({
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
   const [tocOpen, setTocOpen] = useState(false);
+  const tocDrawerMounted = useMountOnFirstOpen(tocOpen);
+  const marginDrawerMounted = useMountOnFirstOpen(marginOpen);
   // oxlint-disable-next-line eslint/no-unused-vars
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
   const [companionCollapsed, setCompanionCollapsed] = useState(false);
@@ -811,12 +833,14 @@ export function ArticleRenderer({
       )}
 
       {/* Apple Books Style TOC Drawer (Modal Sheet) */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
+      {tocDrawerMounted && (
+        <AppleBooksTocDrawer
+          isOpen={tocOpen}
+          onClose={() => setTocOpen(false)}
+          entries={toc}
+          themeColors={themeColors}
+        />
+      )}
 
       {lightboxPortal}
       {citeTooltipPortal}
@@ -841,23 +865,25 @@ export function ArticleRenderer({
             onShareQuote={handleShareQuote}
           />
 
-          <WikiMarginDrawer
-            isOpen={marginOpen}
-            onClose={() => setMarginOpen(false)}
-            articleTitle={title}
-            initialTab={marginTab}
-            activeAnchor={activeAnchor}
-            draftQuote={draftQuote}
-            onClearDraftQuote={() => setDraftQuote(null)}
-            selectedThreadId={selectedThreadId}
-            onSelectThread={setSelectedThreadId}
-            selectedAnnotationId={selectedAnnotationId}
-            onSelectAnnotation={setSelectedAnnotationId}
-            contentRef={contentRef}
-            isAuthenticated={isAuthenticated}
-            themeColors={themeColors}
-            onExpandedChange={setMarginExpanded}
-          />
+          {marginDrawerMounted && (
+            <WikiMarginDrawer
+              isOpen={marginOpen}
+              onClose={() => setMarginOpen(false)}
+              articleTitle={title}
+              initialTab={marginTab}
+              activeAnchor={activeAnchor}
+              draftQuote={draftQuote}
+              onClearDraftQuote={() => setDraftQuote(null)}
+              selectedThreadId={selectedThreadId}
+              onSelectThread={setSelectedThreadId}
+              selectedAnnotationId={selectedAnnotationId}
+              onSelectAnnotation={setSelectedAnnotationId}
+              contentRef={contentRef}
+              isAuthenticated={isAuthenticated}
+              themeColors={themeColors}
+              onExpandedChange={setMarginExpanded}
+            />
+          )}
 
           {/* Share Modal Dialog */}
           {sharePayload && (
