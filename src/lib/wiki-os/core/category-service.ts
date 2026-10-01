@@ -78,6 +78,15 @@ interface CountRow {
   files: bigint;
 }
 
+/** What a category's member is, by its namespace: a subcategory (14), a file (6), else a page. */
+export type MemberKind = "page" | "subcat" | "file";
+
+const KIND_CONDITION: Record<MemberKind, Prisma.Sql> = {
+  page: Prisma.sql`a."namespace" NOT IN (6, 14)`,
+  subcat: Prisma.sql`a."namespace" = 14`,
+  file: Prisma.sql`a."namespace" = 6`,
+};
+
 /** A category name as the tables store it: no "Category:", spaces for underscores. */
 function categoryName(category: string): string {
   return category
@@ -437,18 +446,27 @@ export class CategoryService {
   }
 
   /**
-   * The titles (namespace prefix included) of the published members of `category` that are in
-   * `namespace` (14 = subcategories, 6 = files), in the category page's order: by sort key, then title.
+   * The titles (namespace prefix included) of the published members of `category` of the given kinds,
+   * in the category page's order: by sort key, then title.
    */
-  static async getMemberTitles(category: string, namespace: number, limit: number): Promise<string[]> {
+  static async getMemberTitles(
+    category: string,
+    kinds: readonly MemberKind[],
+    limit: number
+  ): Promise<string[]> {
+    if (kinds.length === 0) return [];
     const name = categoryName(category);
+    const ofKind = Prisma.join(
+      kinds.map((kind) => KIND_CONDITION[kind]),
+      " OR "
+    );
     const rows = await db.$queryRaw<Array<{ title: string }>>`
       SELECT a."title" AS "title"
       FROM wiki_category_members m
       JOIN wiki_categories c ON c."id" = m."categoryId"
       JOIN wiki_articles a ON a."id" = m."articleId"
       WHERE (${categoryMatch(name)}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
-        AND a."namespace" = ${namespace}
+        AND (${ofKind})
       ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"
       LIMIT ${limit}`;
     return rows.map((row) => row.title);

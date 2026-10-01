@@ -558,10 +558,11 @@ function firstContentFileName(text: string): string | null {
 }
 
 /**
- * Extracts the genuine lead image from raw wikitext (checking infobox parameters first,
- * skipping notice templates, and grabbing the first body [[File:...]]). Linear in the text.
+ * The file name of the genuine lead image of raw wikitext (checking infobox parameters first,
+ * skipping notice templates, and grabbing the first body [[File:...]]); null when it has none.
+ * Linear in the text.
  */
-export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
+export function extractLeadImageFileName(wikitext: string | null | undefined): string | null {
   if (!wikitext || typeof wikitext !== "string") return null;
 
   // 1. The first infobox parameter that names a picture (Priority 1). A blank or unusable value
@@ -570,12 +571,17 @@ export function extractLeadImageFromWikitext(wikitext: string | null | undefined
   if (value !== null) {
     const rawFile = bareFileName(value);
     if (rawFile && rawFile.length <= MAX_FILE_NAME_LENGTH && !isNoticeOrUtilityIcon(rawFile)) {
-      return getImageUrl(rawFile);
+      return rawFile;
     }
   }
 
   // 2. Strip top-level notice / maintenance templates, then 3. take the first content [[File:...]].
-  const name = firstContentFileName(withoutNoticeTemplates(wikitext));
+  return firstContentFileName(withoutNoticeTemplates(wikitext));
+}
+
+/** The URL of the lead image of raw wikitext (see `extractLeadImageFileName`); null when it has none. */
+export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
+  const name = extractLeadImageFileName(wikitext);
   return name ? getImageUrl(name) : null;
 }
 

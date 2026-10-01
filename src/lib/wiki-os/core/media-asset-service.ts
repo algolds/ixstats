@@ -161,7 +161,7 @@ export class MediaAssetService {
     }
     if (fileTypes && fileTypes.length > 0) where.mimeType = { in: [...fileTypes] };
     if (category) {
-      const titles = await CategoryService.getMemberTitles(category, 6, MAX_CATEGORY_FILES);
+      const titles = await CategoryService.getMemberTitles(category, ["file"], MAX_CATEGORY_FILES);
       const names = titles.map((title) => title.replace(/^File:/i, ""));
       where.AND = [
         {

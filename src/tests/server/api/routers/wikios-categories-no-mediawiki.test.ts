@@ -109,9 +109,7 @@ describe("getSubcategories for IxWiki", () => {
     const result = await categories().getSubcategories({ category: "Countries", wiki: "ixwiki" });
 
     expect(result).toEqual(["Provinces", "Cities"]);
-    const [strings, ...values] = mocked.$queryRaw.mock.calls[0]!;
-    expect((strings as TemplateStringsArray).join("?")).toContain(`a."namespace" = ?`);
-    expect(values).toContain(14);
+    expect(JSON.stringify(mocked.$queryRaw.mock.calls[0])).toContain(`a.\\"namespace\\" = 14`);
     expect(guard.calls()).toEqual([]);
   });
 
@@ -184,9 +182,7 @@ describe("searchFiles for IxWiki", () => {
 
     await search().searchFiles({ category: "Flags", limit: 10, wiki: "ixwiki" });
 
-    const [strings, ...values] = mocked.$queryRaw.mock.calls[0]!;
-    expect((strings as TemplateStringsArray).join("?")).toContain(`a."namespace" = ?`);
-    expect(values).toContain(6);
+    expect(JSON.stringify(mocked.$queryRaw.mock.calls[0])).toContain(`a.\\"namespace\\" = 6`);
     expect(mocked.wikiAsset.findMany.mock.calls[0]?.[0]).toMatchObject({
       take: 10,
       where: {

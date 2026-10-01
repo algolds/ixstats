@@ -381,7 +381,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
-        const titles = await CategoryService.getMemberTitles(input.category, 14, input.limit);
+        const titles = await CategoryService.getMemberTitles(input.category, ["subcat"], input.limit);
         return titles.map((title) => title.replace(/^Category:/, ""));
       }
 

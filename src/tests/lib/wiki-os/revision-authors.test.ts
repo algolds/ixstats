@@ -16,7 +16,8 @@ jest.mock("~/server/db", () => ({
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { buildAuthorInfo, isAnonymousAuthor } from "~/lib/wiki-os/core/revision-authors";
+import { buildAuthorInfo } from "~/lib/wiki-os/core/revision-authors";
+import { isAnonymousAuthor } from "~/lib/wiki-os/core/anonymous-author";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
 const mocked = db as unknown as {
