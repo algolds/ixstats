@@ -13,7 +13,7 @@
 
 import DOMPurify, { type Config } from "dompurify";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
-import { tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
+import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
 import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
@@ -404,17 +404,20 @@ function hashString(text: string): string {
 }
 
 /**
- * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter) or the TemplateStyles scoper
- * (`scope-template-styles.ts`) change: they shape the output but are not part of the config.
+ * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter), the TemplateStyles scoper
+ * (`scope-template-styles.ts`) or the guard that shows HTML nested too deep as its source
+ * (`sanitizeWikiArticleHtml`) change: they shape the output but are not part of the config.
+ * 8: HTML nested past DOM_DEPTH_CEILING (as the parser nests it) is an escaped `<pre class="wikios-fallback-plain">`.
  */
-const SANITIZER_HOOKS_VERSION = 7;
+const SANITIZER_HOOKS_VERSION = 8;
 
 let articleSanitizerFingerprint: string | null = null;
 
 /**
  * Identifies everything that decides what `sanitizeWikiArticleHtml` outputs: its allow and forbid
- * lists (regular expressions included), the hooks version, DOMPurify's own version, the wiki's origin (the
- * one host a TemplateStyles `url()` may name) and whether TemplateStyles is on (`WIKIOS_TEMPLATESTYLES`).
+ * lists (regular expressions included), the hooks version, the depth past which HTML is shown as its source,
+ * DOMPurify's own version, the wiki's origin (the one host a TemplateStyles `url()` may name) and whether
+ * TemplateStyles is on (`WIKIOS_TEMPLATESTYLES`).
  * Stored article bundles carry it, so changing the sanitizer invalidates them by itself.
  */
 export function wikiArticleSanitizerFingerprint(): string {
@@ -423,6 +426,7 @@ export function wikiArticleSanitizerFingerprint(): string {
       [
         WIKI_ARTICLE_SANITIZE_CONFIG,
         SANITIZER_HOOKS_VERSION,
+        DOM_DEPTH_CEILING,
         DOMPurify.version,
         mediaWikiOrigin(),
         wikiosConfig.templateStyles,
