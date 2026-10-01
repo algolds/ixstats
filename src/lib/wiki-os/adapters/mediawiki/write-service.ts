@@ -16,6 +16,11 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 
 const REQUEST_TIMEOUT_MS = 30_000;
+/**
+ * An import (a file upload) is longer: MediaWiki updates its link tables and caches for every revision it makes the
+ * page's current one, so a batch of revisions of a big page takes a while.
+ */
+const IMPORT_TIMEOUT_MS = 120_000;
 
 /** MediaWiki answered with an `error` object: its `code` ("badtoken", "missingtitle", "cantimport", ...) and info. */
 export class MediaWikiApiError extends Error {
@@ -97,7 +102,7 @@ async function send<T>(
     "User-Agent": DEFAULT_USER_AGENT,
     ...(cookies.length > 0 ? { Cookie: cookies.join("; ") } : {}),
   };
-  const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal = AbortSignal.timeout(file ? IMPORT_TIMEOUT_MS : REQUEST_TIMEOUT_MS);
 
   let res: Response;
   if (method === "GET") {

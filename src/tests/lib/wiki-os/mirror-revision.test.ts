@@ -676,6 +676,23 @@ describe("a batch of revisions of one title", () => {
     expect(reads.map((call) => call.params.rvlimit)).toEqual(["1", "max"]);
   });
 
+  it("gives the import more time than any other call: MediaWiki updates the page for every revision it imports", async () => {
+    const timeout = jest.spyOn(AbortSignal, "timeout");
+    wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
+    historyIs([
+      { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+      { revid: 11, text: "A human's text.\n", timestamp: "2026-09-27T10:05:00Z" },
+    ]);
+
+    await runBatch([jobFor(1), jobFor(2)]);
+
+    const importCall = timeout.mock.calls.findIndex(([ms]) => ms === 120_000);
+    expect(importCall).toBeGreaterThanOrEqual(0);
+    expect(timeout.mock.calls.filter(([ms]) => ms === 120_000)).toHaveLength(1);
+    expect(timeout.mock.calls.some(([ms]) => ms === 30_000)).toBe(true);
+    timeout.mockRestore();
+  });
+
   it("reads nothing from MediaWiki while it plans, and claims nothing", async () => {
     const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
 

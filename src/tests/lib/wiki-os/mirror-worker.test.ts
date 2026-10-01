@@ -513,7 +513,7 @@ describe("runMirrorCycleLocked", () => {
       expect.anything(),
       "wiki-mirror",
       expect.any(Function),
-      { timeoutMs: 180_000 }
+      { timeoutMs: 300_000 }
     );
   });
 

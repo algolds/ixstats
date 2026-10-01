@@ -35,8 +35,8 @@ import { invalidateTemplateDependents } from "./render-service";
 const DEFAULT_MAX_JOBS = 50;
 /** No new job starts after this long (the cron job is cut off at 55 s). */
 const DEFAULT_DEADLINE_MS = 50_000;
-/** The lock of an in-process run is held at most this long: its last job can take minutes when MediaWiki is slow. */
-const KICK_LOCK_TIMEOUT_MS = 3 * 60_000;
+/** The lock of an in-process run is held at most this long: its last batch can take minutes when MediaWiki is slow. */
+const KICK_LOCK_TIMEOUT_MS = 5 * 60_000;
 /** A cycle that kills many jobs at once (MediaWiki down for hours) warns about this many and counts the rest. */
 const MAX_DEAD_ALERTS = 5;
 
