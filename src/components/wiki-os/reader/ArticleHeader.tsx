@@ -118,6 +118,15 @@ export function WikiOSHeader({
   const onHeroError = () => {
     if (hero && hero.src !== hero.original) setFailedSrc(hero.src);
   };
+  // A thumbnail that failed before hydration fired no React `onError`: the picture is already
+  // "complete" with no pixels. Look once the page is interactive, and fall back the same way.
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const picture = backdropRef.current?.querySelector("img");
+    if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
+      if (hero.src !== hero.original) setFailedSrc(hero.src);
+    }
+  }, [hero, failedSrc]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -301,6 +310,7 @@ export function WikiOSHeader({
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
+          ref={backdropRef}
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
           style={

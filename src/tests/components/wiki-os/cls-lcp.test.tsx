@@ -128,6 +128,51 @@ describe("hero image", () => {
     );
   });
 
+  describe("a thumbnail that failed before hydration (no React onError ever fired)", () => {
+    const FILE = "/api/mediawiki/ixwiki/images/a/ab/Flag.png";
+    const picture = (state: { complete: boolean; naturalWidth: number }) => {
+      const complete = jest
+        .spyOn(HTMLImageElement.prototype, "complete", "get")
+        .mockReturnValue(state.complete);
+      const width = jest
+        .spyOn(HTMLImageElement.prototype, "naturalWidth", "get")
+        .mockReturnValue(state.naturalWidth);
+      return () => {
+        complete.mockRestore();
+        width.mockRestore();
+      };
+    };
+
+    it("falls back to the file once mounted: the picture is complete with no pixels", () => {
+      const restore = picture({ complete: true, naturalWidth: 0 });
+      const { container } = render(header());
+
+      expect(container.querySelector("img")!.getAttribute("src")).toBe(FILE);
+      restore();
+    });
+
+    it("keeps the thumbnail when it loaded, and while it is still loading", () => {
+      const loaded = picture({ complete: true, naturalWidth: 1280 });
+      const { container, unmount } = render(header());
+      expect(container.querySelector("img")!.getAttribute("src")).toContain("1280px-");
+      unmount();
+      loaded();
+
+      const loading = picture({ complete: false, naturalWidth: 0 });
+      const again = render(header());
+      expect(again.container.querySelector("img")!.getAttribute("src")).toContain("1280px-");
+      loading();
+    });
+
+    it("does not loop when the file itself has no pixels either", () => {
+      const restore = picture({ complete: true, naturalWidth: 0 });
+      const { container } = render(header({ featuredImageFile: null }));
+
+      expect(container.querySelector("img")!.getAttribute("src")).toBe(FILE);
+      restore();
+    });
+  });
+
   it("a country's flag backdrop gets no thumbnail or size of the lead image", () => {
     const { container } = render(
       header({ countryData: { flagUrl: "/api/mediawiki/ixwiki/images/f/fa/Flag_of_X.svg" } })
