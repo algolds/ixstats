@@ -238,7 +238,9 @@ export class PageManagementService {
     // 3. Protections follow the page; the mirrored protectionLevel follows its edit protection
     const edit = await this.moveRestrictions(tx, realm, original.title, newCanonicalTitle);
 
-    // 4. Update original article to new title and slug
+    // 4. Update original article to new title and slug. (A `File:` page's `wiki_assets` row is NOT renamed with it:
+    // the row's name, MD5 key, slug and URL (staged or MediaWiki's shard path) move together with the bytes, which
+    // WikiOS cannot move itself and MediaWiki moves in the mirror's `move` job. Open item F37.)
     const movedArticle = await tx.wikiArticle.update({
       where: { id: original.id },
       data: {
