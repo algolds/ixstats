@@ -187,6 +187,23 @@ describe("buildExpectations", () => {
     });
   });
 
+  it("expects WikiOS's own api.php at /w/api.php, JSON with the site name, and a login token", () => {
+    expect(byPath("/w/api.php?action=query&meta=siteinfo&siprop=general&format=json")).toMatchObject({
+      via: "public",
+      expectStatus: 200,
+      expectContentType: "application/json",
+      expectBodyIncludes: '"sitename"',
+      expectJson: true,
+      standalone: true,
+    });
+    expect(byPath("/w/api.php?action=query&meta=tokens&type=login&format=json")).toMatchObject({
+      expectStatus: 200,
+      expectBodyIncludes: '"logintoken"',
+      expectJson: true,
+      standalone: true,
+    });
+  });
+
   it("accepts 200 or 403 for the classic edit form", () => {
     expect(byPath("/index.php?title=Foo&action=edit")).toMatchObject({ expectStatus: [200, 403] });
   });
@@ -419,6 +436,8 @@ describe("planChecks", () => {
       "/wiki/Special:Search?search=x",
       "/wiki/Main_Page?action=raw",
       "/wiki/Main_Page?oldid=1",
+      "/w/api.php?action=query&meta=siteinfo&siprop=general&format=json",
+      "/w/api.php?action=query&meta=tokens&type=login&format=json",
       "/api/ixtime/current",
       "/maps?embed=true",
       "/maplibre/maplibre-gl-worker.mjs",

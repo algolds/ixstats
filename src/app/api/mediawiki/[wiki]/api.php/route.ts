@@ -22,6 +22,14 @@ export async function GET(
 
   const corsHeaders = apiCorsHeaders(wiki, request.headers.get("origin"));
 
+  // A wiki that allows no action is not proxied at all (IxWiki's API is WikiOS's own, at /w/api.php).
+  if (wiki.allowedActions.length === 0) {
+    return NextResponse.json(
+      { error: `${wiki.label}'s api.php is not proxied here` },
+      { status: 410, headers: corsHeaders }
+    );
+  }
+
   try {
     const clientIp = resolveRateLimitIdentifier(request.headers, null);
     const rateLimit = await rateLimiter.check(clientIp, "wiki_proxy");

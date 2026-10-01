@@ -68,6 +68,9 @@ model WikiArticle {
   htmlSyncedAt        DateTime?            // timestamp when HTML was last rendered
   syncedAt            DateTime             @default(now()) // last pull from MediaWiki
   mwPageId            Int?                 // Legacy MediaWiki page_id
+  /// The integer page id api.php reports (`pageid`): the MediaWiki page_id for pages that have one, else a number from
+  /// `wiki_articles_pageid_seq`. Assigned by a trigger on insert (prisma/manual-migrations/2026-09-30-wikios-api.sql); never changes.
+  pageId              Int?
   mwLatestRevId       Int?                 // Legacy MediaWiki rev_id
   lastMwSyncAt        DateTime?
   
@@ -86,6 +89,7 @@ model WikiArticle {
   imageLinks          WikiImageLink[]      @relation("ArticleImageLinks")
 
   @@unique([source, title])
+  @@unique([source, pageId])
   @@index([source, slug])
   @@index([source, status])
   @@index([source, namespace])
@@ -101,6 +105,9 @@ model WikiRevision {
   articleId        String
   article          WikiArticle  @relation("ArticleRevisions", fields: [articleId], references: [id], onDelete: Cascade)
   mwRevId          Int?         // MediaWiki rev_id (null if native WikiOS edit)
+  /// The integer revision id api.php reports (`revid`): the MediaWiki rev_id for revisions that have one, else a number from
+  /// `wiki_revisions_revid_seq`. Assigned by a trigger on insert (prisma/manual-migrations/2026-09-30-wikios-api.sql); never changes.
+  revId            Int?
   format           String       @default("STRUCTURED_JSON")
   contentJson      Json?
   contentHtml      String?      @db.Text
@@ -130,6 +137,7 @@ model WikiRevision {
   @@index([articleId, parked, createdAt])
   @@index([articleId, sha1])
   @@unique([source, mwRevId])
+  @@unique([source, revId])
   @@index([author])
   @@index([authorId])
   @@index([createdAt])
@@ -159,6 +167,8 @@ model WikiLog {
   id                  String       @id @default(cuid())
   articleId           String?
   article             WikiArticle? @relation("ArticleLogs", fields: [articleId], references: [id], onDelete: SetNull)
+  /// The integer log id api.php reports (`logid`), from `wiki_logs_logid_seq`; assigned by a trigger on insert.
+  logId               Int?         @unique
   logType             String       // move | delete | protect | upload | rights | block
   action              String       // e.g. "delete", "restore", "move", "protect", "modify"
   title               String
@@ -252,6 +262,41 @@ model WikiBlock {
   @@index([userId])
   @@index([wikiUsername])
   @@map("wiki_blocks")
+}
+
+/// An app-specific credential for the api.php endpoint (Special:BotPasswords). The password is shown once; only
+/// its scrypt hash (`scrypt$<salt b64>$<hash b64>`) is stored. `grants` limit what a login may do (effective rights =
+/// the user's rights intersected with the grants' rights). `restrictions` is reserved for IP/time restrictions and is
+/// not read yet.
+model WikiBotPassword {
+  id           String           @id @default(cuid())
+  userId       String
+  appId        String           // /^[a-zA-Z0-9_ -]{1,32}$/
+  passwordHash String
+  grants       String[]
+  restrictions Json?
+  createdAt    DateTime         @default(now())
+  lastUsedAt   DateTime?
+  sessions     WikiApiSession[]
+
+  @@unique([userId, appId])
+  @@index([userId])
+  @@map("wiki_bot_passwords")
+}
+
+/// A bot's api.php session (`wikios_api_session` cookie = `<id>.<HMAC>`); 24 hours, sliding.
+model WikiApiSession {
+  id            String          @id
+  botPasswordId String
+  botPassword   WikiBotPassword  @relation(fields: [botPasswordId], references: [id], onDelete: Cascade)
+  userId        String
+  expiresAt     DateTime
+  createdAt     DateTime        @default(now())
+
+  @@index([botPasswordId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("wiki_api_sessions")
 }
 
 /// Native Directed Link Graph Edge

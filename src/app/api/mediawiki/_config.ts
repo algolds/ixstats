@@ -47,7 +47,10 @@ export const WIKIS = {
       `${(process.env.IXWIKI_LOCAL_PATH || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "")}/api.php`,
     imageInfoApiUrl: () => `${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`,
     corsOrigins: ["https://ixwiki.com", "https://www.ixwiki.com", ...DEV_ORIGINS],
-    allowedActions: ["query", "opensearch"],
+    // None: WikiOS answers an IxWiki api.php itself (`/w/api.php`, from its own pages), and this proxy would
+    // hand outside callers MediaWiki's copy of a page WikiOS has deleted. Only the media proxy
+    // (`ixwiki/[...path]`, image files) still reaches IxWiki's MediaWiki from here.
+    allowedActions: [],
     detectCloudflare: false,
     resolveRetries: 0,
   },

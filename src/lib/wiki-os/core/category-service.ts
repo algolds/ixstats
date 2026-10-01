@@ -60,6 +60,46 @@ interface MemberRow {
   sortKey: string;
 }
 
+/** How many members of each kind a category has: published pages only, told apart by namespace. */
+export interface CategoryCounts {
+  /** Members that are neither files nor categories. */
+  pages: number;
+  /** Members that are categories (namespace 14). */
+  subcats: number;
+  /** Members that are files (namespace 6). */
+  files: number;
+}
+
+interface CountRow {
+  slug: string;
+  name: string;
+  pages: bigint;
+  subcats: bigint;
+  files: bigint;
+}
+
+/** What a category's member is, by its namespace: a subcategory (14), a file (6), else a page. */
+export type MemberKind = "page" | "subcat" | "file";
+
+const KIND_CONDITION: Record<MemberKind, Prisma.Sql> = {
+  page: Prisma.sql`a."namespace" NOT IN (6, 14)`,
+  subcat: Prisma.sql`a."namespace" = 14`,
+  file: Prisma.sql`a."namespace" = 6`,
+};
+
+/** A category name as the tables store it: no "Category:", spaces for underscores. */
+function categoryName(category: string): string {
+  return category
+    .replace(/^Category:/i, "")
+    .replace(/_/g, " ")
+    .trim();
+}
+
+/** The rows of `wiki_categories` a category name denotes, as the page of members matches them. */
+function categoryMatch(name: string) {
+  return Prisma.sql`c."slug" = ${toArticleSlug(name)} OR lower(c."name") = lower(${name})`;
+}
+
 export class CategoryService {
   /**
    * One page of a category's members in MediaWiki's order: by sort key (the page title when it has
@@ -366,5 +406,115 @@ export class CategoryService {
     }
 
     return members;
+  }
+
+  /**
+   * The member counts of each category in `categories` (names, with or without "Category:"), keyed by the
+   * name as given. A category with no published member, or that does not exist, has no members.
+   */
+  static async getCounts(categories: readonly string[]): Promise<Map<string, CategoryCounts>> {
+    const names = categories.map(categoryName);
+    const counts = new Map<string, CategoryCounts>();
+    if (names.length === 0) return counts;
+
+    const slugs = names.map(toArticleSlug);
+    const rows = await db.$queryRaw<CountRow[]>`
+      SELECT c."slug" AS "slug", c."name" AS "name",
+             count(*) FILTER (WHERE a."namespace" NOT IN (6, 14)) AS "pages",
+             count(*) FILTER (WHERE a."namespace" = 14) AS "subcats",
+             count(*) FILTER (WHERE a."namespace" = 6) AS "files"
+      FROM wiki_categories c
+      JOIN wiki_category_members m ON m."categoryId" = c."id"
+      JOIN wiki_articles a ON a."id" = m."articleId"
+      WHERE (c."slug" IN (${Prisma.join(slugs)}) OR lower(c."name") IN (${Prisma.join(names.map((name) => name.toLowerCase()))}))
+        AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
+      GROUP BY c."slug", c."name"`;
+
+    categories.forEach((given, index) => {
+      const name = names[index]!;
+      const row = rows.find(
+        (candidate) =>
+          candidate.slug === slugs[index] || candidate.name.toLowerCase() === name.toLowerCase()
+      );
+      counts.set(given, {
+        pages: Number(row?.pages ?? 0),
+        subcats: Number(row?.subcats ?? 0),
+        files: Number(row?.files ?? 0),
+      });
+    });
+    return counts;
+  }
+
+  /**
+   * The titles (namespace prefix included) of the published members of `category` of the given kinds,
+   * in the category page's order: by sort key, then title.
+   */
+  static async getMemberTitles(
+    category: string,
+    kinds: readonly MemberKind[],
+    limit: number
+  ): Promise<string[]> {
+    if (kinds.length === 0) return [];
+    const name = categoryName(category);
+    const ofKind = Prisma.join(
+      kinds.map((kind) => KIND_CONDITION[kind]),
+      " OR "
+    );
+    const rows = await db.$queryRaw<Array<{ title: string }>>`
+      SELECT a."title" AS "title"
+      FROM wiki_category_members m
+      JOIN wiki_categories c ON c."id" = m."categoryId"
+      JOIN wiki_articles a ON a."id" = m."articleId"
+      WHERE (${categoryMatch(name)}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
+        AND (${ofKind})
+      ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"
+      LIMIT ${limit}`;
+    return rows.map((row) => row.title);
+  }
+
+  /**
+   * Names of the categories that are not hidden, by name: those that contain `query`, else those from
+   * `from` on, alphabetically; with their member counts.
+   */
+  static async search({
+    query,
+    from,
+    limit,
+  }: {
+    query: string;
+    from: string;
+    limit: number;
+  }): Promise<Array<{ name: string } & CategoryCounts>> {
+    const where: Prisma.WikiCategoryWhereInput = { hidden: false };
+    if (query) {
+      where.OR = [
+        { name: { contains: query, mode: "insensitive" } },
+        { slug: { contains: toArticleSlug(query), mode: "insensitive" } },
+      ];
+    } else if (from) {
+      where.name = { gte: from, mode: "insensitive" };
+    }
+    const categories = await db.wikiCategory.findMany({
+      where,
+      select: { name: true },
+      orderBy: { name: "asc" },
+      take: limit,
+    });
+    const counts = await this.getCounts(categories.map((category) => category.name));
+    return categories.map(({ name }) => ({
+      name,
+      ...(counts.get(name) ?? { pages: 0, subcats: 0, files: 0 }),
+    }));
+  }
+
+  /** The names of up to `limit` categories that are not hidden and start with `prefix`, alphabetically. */
+  static async autocomplete(prefix: string, limit: number): Promise<string[]> {
+    const categories = await db.wikiCategory.findMany({
+      where: { hidden: false, name: { startsWith: categoryName(prefix), mode: "insensitive" } },
+      select: { name: true },
+      orderBy: { name: "asc" },
+      take: limit,
+    });
+    return categories.map((category) => category.name);
   }
 }

@@ -1,16 +1,21 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 409: the lore-card generator reads the live MediaWiki, which still has a page WikiOS deleted. Every
-// list it returns and every preview it builds leaves that page out, and the wiki is not even asked about it.
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: {
-    ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
-    systemConfig: { findMany: async () => [] },
-  },
-  isDatabaseReadOnly: true,
-}));
+// Plan 409: a page WikiOS deleted is left out of every list the lore-card generator returns and every preview
+// it builds. Plan 418: IxWiki's pages are read from Postgres (the queries name the published pages, and no wiki
+// is asked); a sister wiki's pages are still read from that wiki, which the generator holds to WikiOS's deletions.
+jest.mock("~/server/db", () => {
+  const helpers = jest.requireActual("~/tests/helpers/fake-lore-card-db");
+  return {
+    __esModule: true,
+    db: {
+      ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
+      systemConfig: { findMany: async () => [] },
+      ...helpers.loreCardDbExtras(helpers.loreCardQueryRaw),
+    },
+    isDatabaseReadOnly: true,
+  };
+});
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
@@ -18,10 +23,6 @@ import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 
 const fetchMock = jest.fn();
 const realFetch = global.fetch;
-/** The `titles=` parameter of every page query the generator sent to the wiki. */
-const askedTitles = () =>
-  fetchMock.mock.calls.flatMap(([url]) => new URL(String(url)).searchParams.get("titles") ?? []);
-
 const live = (title: string) => ({ title, original: { source: `https://img/${title}.png` } });
 
 /** A MediaWiki that has both pages, whatever is asked. */
@@ -64,17 +65,17 @@ afterAll(() => {
 });
 
 describe("the lore-card generator leaves out a page WikiOS deleted", () => {
-  it("does not ask the wiki about it, or preview it", async () => {
+  it("previews only the published page, and no wiki is asked", async () => {
     const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
       ["Hidden_land", "Shown land"],
       "ixwiki"
     );
 
     expect(previews.map((preview) => preview.title)).toEqual(["Shown land"]);
-    expect(askedTitles().join("|")).not.toContain("Hidden");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("does not list it among a category's members, a wiki's pages or random pages", async () => {
+  it("does not list it among a category's members, a wiki's pages or random pages, and no wiki is asked", async () => {
     expect(await wikiLoreCardGenerator.fetchCategoryMembers("Nations", "ixwiki")).toEqual([
       "Shown land",
     ]);
@@ -85,6 +86,7 @@ describe("the lore-card generator leaves out a page WikiOS deleted", () => {
     expect(await wikiLoreCardGenerator.fetchRandomArticlesWithImages(10, "ixwiki")).toEqual([
       "Shown land",
     ]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("makes no card from it, and never reads its text from the wiki", async () => {
@@ -100,5 +102,8 @@ describe("the lore-card generator leaves out a page WikiOS deleted", () => {
       "iiwiki"
     );
     expect(previews.map((preview) => preview.title)).toEqual(["Hidden land"]);
+    // It went to iiwiki, not to IxWiki's tables.
+    expect(fetchMock).toHaveBeenCalled();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("iiwiki.com");
   });
 });

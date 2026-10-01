@@ -39,3 +39,13 @@ export async function withoutArchivedTitles(
   if (hidden.size === 0) return rawTitles;
   return rawTitles.filter((raw) => !hidden.has(canonicalizeTitle(raw, { source })?.title ?? ""));
 }
+
+/**
+ * `fileNames` (no "File:" prefix, as `wiki_image_links` and `wiki_assets` hold them) without the files whose
+ * `File:` page WikiOS has deleted, in their order. A file with no page row is kept: it is an asset only.
+ */
+export async function withoutArchivedFiles(fileNames: readonly string[]): Promise<string[]> {
+  const hidden = await archivedTitlesAmong(fileNames.map((name) => `File:${name}`));
+  if (hidden.size === 0) return [...fileNames];
+  return fileNames.filter((name) => !hidden.has(canonicalizeTitle(`File:${name}`)?.title ?? ""));
+}

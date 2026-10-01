@@ -9,7 +9,6 @@ import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transforms, Editor, Element as SlateElement, type Node, type Descendant } from "slate";
 import { nanoid } from "platejs";
-import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
 
 // The concrete plate editor type is deeply generic; the formatting layer only
 // relies on Slate runtime APIs, so we keep the ref loose.
@@ -26,6 +25,9 @@ export interface UseWikiVisualFormattingProps {
   editorRef: React.MutableRefObject<PlateEditorLike | null>;
   setIsDirty: (val: boolean) => void;
 }
+
+/** A template preview is read again after a day (the server keeps its own, Redis, copy for as long). */
+const TEMPLATE_PREVIEW_STALE_MS = 24 * 60 * 60 * 1000;
 
 const MARK_MAP: Record<string, string> = {
   bold: "bold",
@@ -192,6 +194,7 @@ export function useWikiVisualFormatting({
   const lastActiveFormatsRef = useRef<Set<string>>(new Set());
 
   const previewMutation = api.wikios.previewWikitext.useMutation();
+  const utils = api.useUtils();
 
   const withEditor = useCallback(
     <T>(fn: (editor: PlateEditorLike) => T): T | undefined => {
@@ -862,8 +865,12 @@ export function useWikiVisualFormatting({
           .filter(([, v]) => v.trim())
           .map(([k, v]) => `|${k}=${v}`);
         const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-        const preview = await renderTemplateCached(templateName, params);
-        const result = { html: preview.html };
+        // The server renders it (sanitized, cached in Redis): the browser never asks MediaWiki itself.
+        const html = await utils.wikios.getTemplatePreview.fetch(
+          { template: templateName, params },
+          { staleTime: TEMPLATE_PREVIEW_STALE_MS }
+        );
+        const result = { html };
         withEditor((editor) => {
           Transforms.insertNodes(editor, {
             type: "raw-html",
@@ -883,7 +890,7 @@ export function useWikiVisualFormatting({
       }
     },
     // oxlint-disable-next-line
-    [previewMutation, title, withEditor, setIsDirty]
+    [previewMutation, utils, title, withEditor, setIsDirty]
   );
 
   const handleInsertImage = useCallback(

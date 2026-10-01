@@ -21,8 +21,9 @@
  *   variable). There is no default: the IxStates path differs per server.
  * - --page, --revid, --subpage and --category must name things that exist: a page and one of its
  *   revisions, a template subpage and a category page. The defaults are guesses.
- * - /api.php is still MediaWiki's on the public host; when WikiOS serves its own api.php subset the
- *   expected body here changes.
+ * - /api.php is MediaWiki's on the public host; WikiOS's own MediaWiki-compatible api.php is /w/api.php
+ *   (two rows below: siteinfo, and a login token, which answers `sessionsecretmissing`, so the row fails,
+ *   while WIKIOS_API_SESSION_SECRET is not set).
  * - --standalone keeps only the rows that do not need the nginx takeover or classic MediaWiki on --base:
  *   WikiOS itself, plus the render engine when --internal is given.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it
@@ -246,6 +247,25 @@ function wikiosRows(options: ChecklistOptions): Expectation[] {
       path: `/wiki/${options.page}?oldid=${options.revid}`,
       via: "public",
       expectStatus: 200,
+      standalone: true,
+    },
+    {
+      name: "api.php (plan 410) answers siteinfo from WikiOS at /w/api.php",
+      path: "/w/api.php?action=query&meta=siteinfo&siprop=general&format=json",
+      via: "public",
+      expectStatus: 200,
+      expectContentType: "application/json",
+      expectBodyIncludes: '"sitename"',
+      expectJson: true,
+      standalone: true,
+    },
+    {
+      name: "api.php hands out a login token (the session secret is set)",
+      path: "/w/api.php?action=query&meta=tokens&type=login&format=json",
+      via: "public",
+      expectStatus: 200,
+      expectBodyIncludes: '"logintoken"',
+      expectJson: true,
       standalone: true,
     },
     {

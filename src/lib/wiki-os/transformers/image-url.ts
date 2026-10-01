@@ -160,6 +160,15 @@ export function getMd5ShardPath(filename: string): {
 }
 
 /**
+ * The canonical path of an IxWiki file under the wiki's host: `/images/<shard>/<File>`. It carries no host,
+ * no proxy and no deployment base path, so it is what a lead image is stored as (`WikiArticle.leadImageUrl`):
+ * `resolveStoredImageUrl` turns it into the URL a page loads it from, under whatever base path is serving.
+ */
+export function getImagePath(filename: string): string {
+  return `/images/${getMd5ShardPath(filename).fullPath}`;
+}
+
+/**
  * Get direct file/image URL for an IxWiki file via MD5 shard static storage with proxy fallback.
  */
 export function getImageUrl(filename: string): string {
@@ -633,10 +642,11 @@ function firstContentFileName(text: string): string | null {
 }
 
 /**
- * Extracts the genuine lead image from raw wikitext (checking infobox parameters first,
- * skipping notice templates, and grabbing the first body [[File:...]]). Linear in the text.
+ * The file name of the genuine lead image of raw wikitext (checking infobox parameters first,
+ * skipping notice templates, and grabbing the first body [[File:...]]); null when it has none.
+ * Linear in the text.
  */
-export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
+export function extractLeadImageFileName(wikitext: string | null | undefined): string | null {
   if (!wikitext || typeof wikitext !== "string") return null;
 
   // 1. The first infobox parameter that names a picture (Priority 1). A blank or unusable value
@@ -645,13 +655,40 @@ export function extractLeadImageFromWikitext(wikitext: string | null | undefined
   if (value !== null) {
     const rawFile = bareFileName(value);
     if (rawFile && rawFile.length <= MAX_FILE_NAME_LENGTH && !isNoticeOrUtilityIcon(rawFile)) {
-      return getImageUrl(rawFile);
+      return rawFile;
     }
   }
 
   // 2. Strip top-level notice / maintenance templates, then 3. take the first content [[File:...]].
-  const name = firstContentFileName(withoutNoticeTemplates(wikitext));
+  return firstContentFileName(withoutNoticeTemplates(wikitext));
+}
+
+/** The URL of the lead image of raw wikitext (see `extractLeadImageFileName`); null when it has none. */
+export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
+  const name = extractLeadImageFileName(wikitext);
   return name ? getImageUrl(name) : null;
+}
+
+/**
+ * The canonical path (`getImagePath`) of the lead image of raw wikitext; null when it has none. This is the
+ * form a lead image is stored in (`WikiArticle.leadImageUrl`): `resolveStoredImageUrl` loads it.
+ */
+export function extractLeadImagePath(wikitext: string | null | undefined): string | null {
+  const name = extractLeadImageFileName(wikitext);
+  return name ? getImagePath(name) : null;
+}
+
+/**
+ * The URL a page loads a stored lead image from. A canonical path (`/images/...`) goes through the wiki
+ * image proxy under the base path this deployment is served at; a row written before lead images were
+ * stored canonically holds a URL that already loads (a proxied path, which keeps the base path it was
+ * written under, or an absolute URL, which is proxied as before) and is passed through. Null for no image.
+ */
+export function resolveStoredImageUrl(stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  if (stored.startsWith("/images/")) return normalizeWikiImageUrl(stored);
+  if (stored.startsWith("/")) return stored;
+  return normalizeWikiImageUrl(stored) ?? stored;
 }
 
 /**

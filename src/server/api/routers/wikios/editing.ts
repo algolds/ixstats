@@ -17,13 +17,7 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
-import {
-  getWikiActorLabel,
-  isWikiAdmin,
-  requireWikiUserId,
-  resolveWikiUsername,
-  type WikiAuthContext,
-} from "~/lib/wiki-os/auth";
+import { getWikiActorLabel, requireWikiUserId, resolveWikiUsername } from "~/lib/wiki-os/auth";
 import {
   authorizeAction,
   refusals,
@@ -31,83 +25,15 @@ import {
   requireRight,
   requireUploadTitle,
 } from "~/lib/wiki-os/permissions";
-import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
+import {
+  assertCanEditArticle,
+  commitWikitextSave,
+  deletedPage,
+  requireRestorableWikitext,
+} from "~/lib/wiki-os/services/edit-service";
 
 import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-
-/**
- * The refusal for saving over a deleted (archived) page. Its old revisions stay in the table and the
- * history readers do not hide them by deletion date, so a save must not quietly republish them: an
- * administrator restores the page first.
- */
-const deletedPage = () =>
-  new TRPCError({
-    code: "PRECONDITION_FAILED",
-    message: "This page was deleted; ask an administrator to restore it",
-  });
-
-/**
- * Throws FORBIDDEN unless the caller may edit `title` (or create it, when it does not exist): not
- * blocked, allowed in its namespace, past its protection, and holding the right (see
- * `authorizeAction`). A deleted (archived) page counts as missing for those checks, as in MediaWiki,
- * but cannot be saved over (PRECONDITION_FAILED).
- */
-async function assertCanEditArticle(
-  ctx: WikiAuthContext,
-  title: string,
-  realm = "ixwiki"
-): Promise<void> {
-  const existing = await ArticleRepository.findBySlug(title, realm, { includeArchived: true });
-  const archived = existing?.status === "ARCHIVED";
-  await authorizeAction(ctx, existing && !archived ? "edit" : "create", title, realm);
-  if (archived) throw deletedPage();
-}
-
-/**
- * The wikitext a revert or rollback may save over `title`, from the revision it restores. Throws
- * when the revision is parked (a MediaWiki edit that conflicted with the page's text and never went
- * live: it was never the page, so there is nothing to go back to), when the text was never imported
- * (a placeholder must not blank the page), when the revision belongs to another page, or when it
- * would blank a page that has text (admins may). Text that is only whitespace counts as blank on
- * both sides.
- */
-async function requireRestorableWikitext(
-  ctx: WikiAuthContext,
-  title: string,
-  revision: { wikitext: string | null; title: string; parked: boolean }
-): Promise<string> {
-  const { wikitext } = revision;
-  if (revision.parked) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message:
-        "That revision never went live (a MediaWiki edit that conflicted with the page's text), so it cannot be restored.",
-    });
-  }
-  if (wikitext === null) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "This revision's text has not been imported yet.",
-    });
-  }
-  if (canonicalizeTitle(revision.title)?.title !== title) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "That revision belongs to a different page.",
-    });
-  }
-  if (wikitext.trim() === "" && !(await isWikiAdmin(ctx))) {
-    const current = await ArticleRepository.findBySlug(title);
-    if ((current?.wikitext ?? "").trim() !== "") {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Restoring this revision would blank the page. Only administrators can do that.",
-      });
-    }
-  }
-  return wikitext;
-}
 
 export const wikiosEditingRouter = createTRPCRouter({
   /**
@@ -158,23 +84,12 @@ export const wikiosEditingRouter = createTRPCRouter({
       const conflict = await detectEditConflict(title, input.baseRevisionRef);
       if (conflict) return { success: false as const, editConflict: true as const, ...conflict };
 
-      const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
-
-      // 1. Primary Save: Direct to PostgreSQL
-      const saveResult = await ArticleRepository.saveArticle(
-        {
-          slug: title,
-          title,
-          wikitext: input.wikitext,
-          editSummary: input.summary,
-          minor: input.minor,
-        },
-        ctx.auth?.userId ?? undefined,
-        authorName
-      );
-
-      // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
-      void CloudflareGuardian.purgeArticleEdgeCache(title);
+      const saveResult = await commitWikitextSave(ctx, {
+        title,
+        wikitext: input.wikitext,
+        summary: input.summary,
+        minor: input.minor,
+      });
 
       return {
         success: true as const,

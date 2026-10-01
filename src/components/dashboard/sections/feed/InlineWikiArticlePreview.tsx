@@ -64,7 +64,7 @@ export function InlineWikiArticlePreview({
 
   // Eligible article images
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title: cleanTitle },
+    { title: cleanTitle, wiki },
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 

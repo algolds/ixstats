@@ -25,7 +25,7 @@ import {
 import { toRevisionRef } from "../core/domain-types";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
-import { extractLeadImageFromWikitext } from "../transformers/image-url";
+import { extractLeadImagePath } from "../transformers/image-url";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { mwSha1Base36 } from "../xml/sha1";
 import { enqueueRevisionJob, type RevisionJobInput } from "./mirror-outbox";
@@ -293,7 +293,7 @@ function buildHead(rev: MediaWikiRevision, createdAt: Date): ImportedHead {
     readingTime: Math.max(1, Math.ceil(words / 200)),
     redirectTargetSlug: redirect?.title ?? null,
     redirectTargetFragment: redirect?.fragment ?? null,
-    leadImageUrl: extractLeadImageFromWikitext(rev.wikitext),
+    leadImageUrl: extractLeadImagePath(rev.wikitext),
   };
 }
 

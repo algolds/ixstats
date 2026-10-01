@@ -14,6 +14,7 @@
  */
 
 import { db } from "~/server/db";
+import { resolveStoredImageUrl } from "../transformers/image-url";
 import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
 
@@ -226,7 +227,7 @@ function toTypeaheadItem(row: TypeaheadRow): SearchResultItem {
     snippet: buildSnippet(row.summary, null),
     snippetRanges: [],
     readingTime: row.readingTime || 1,
-    leadImageUrl: row.leadImageUrl ?? null,
+    leadImageUrl: resolveStoredImageUrl(row.leadImageUrl),
     matchType: match.matchType,
     similarityScore: match.score,
   };
@@ -368,7 +369,7 @@ function toFulltextItem(row: FulltextRow): SearchResultItem {
     snippet: text || buildSnippet(row.summary, null),
     snippetRanges: text ? ranges : [],
     readingTime: row.readingTime || 1,
-    leadImageUrl: row.leadImageUrl || null,
+    leadImageUrl: resolveStoredImageUrl(row.leadImageUrl),
     matchType: rank > 0.3 ? "title_exact" : "content",
     similarityScore: Math.min(1.0, Math.max(0.1, rank || 0.5)),
   };
@@ -437,7 +438,7 @@ async function legacyFulltext(
     snippet: buildSnippet(a.summary, a.wikitext ? matchWindow(a.wikitext, query) : null),
     snippetRanges: [],
     readingTime: a.readingTime || 1,
-    leadImageUrl: a.leadImageUrl ?? null,
+    leadImageUrl: resolveStoredImageUrl(a.leadImageUrl),
     matchType: a.title.toLowerCase().includes(query.toLowerCase()) ? "title_fuzzy" : "content",
     similarityScore: 0.7,
   }));

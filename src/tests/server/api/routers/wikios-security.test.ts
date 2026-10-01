@@ -56,6 +56,8 @@ jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
+  // The engine call stays real: the template preview sends its wikitext through it (the S7 tests below).
+  ...jest.requireActual("~/lib/wiki-os/adapters/mediawiki/parsoid"),
   wikitextToHtml: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
@@ -104,9 +106,9 @@ import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
-import { getTemplatePreview } from "~/lib/wiki-os/templates/template-registry";
-import { canonicalPreviewInput } from "~/lib/wiki-os/templates/preview-service";
+import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
 import {
+  canonicalPreviewInput,
   previewCacheKey,
   renderTemplateWithRedisCache,
 } from "~/lib/wiki-os/templates/preview-service.server";

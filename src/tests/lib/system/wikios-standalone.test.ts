@@ -47,6 +47,8 @@ describe("wikiStandaloneRedirect", () => {
   it.each([
     "/wiki",
     "/wiki/Main_Page",
+    "/w",
+    "/w/api.php",
     "/wiki/Special:FilePath/Example.png",
     "/util/search",
     "/stashes",
@@ -109,6 +111,10 @@ describe("wikiStandaloneRedirect", () => {
     expect(wikiStandaloneRedirect("/utilities", "")).toBe(`${IXSTATES}/utilities`);
     expect(wikiStandaloneRedirect("/stashed", "")).toBe(`${IXSTATES}/stashed`);
     expect(wikiStandaloneRedirect("/fontsy", "")).toBe(`${IXSTATES}/fontsy`);
+    // "/w" is a segment prefix: it is api.php's directory, not every path that starts with w
+    expect(wikiStandaloneRedirect("/wx/api.php", "")).toBe(`${IXSTATES}/wx/api.php`);
+    expect(wikiStandaloneRedirect("/world", "")).toBe(`${IXSTATES}/world`);
+    expect(wikiStandaloneRedirect("/wikipedia", "")).toBe(`${IXSTATES}/wikipedia`);
   });
 
   it("uses NEXT_PUBLIC_IXSTATES_URL and ignores its trailing slashes", () => {

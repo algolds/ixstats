@@ -366,10 +366,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
             console.warn("[Lore Cards] searchPages error:", e);
           }
 
-          // If searchPages returned empty, fall back to HTTP API with correct User-Agent
-          if (results.length === 0) {
+          // IxWiki's search is native (`searchPages`); only a sister wiki that returned nothing falls
+          // back to its own opensearch, with the correct User-Agent
+          if (results.length === 0 && wikiSrc === "iiwiki") {
             try {
-              const httpUrl = `${getMediaWikiApiUrl(wikiSrc as any)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
+              const httpUrl = `${getMediaWikiApiUrl(wikiSrc)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
               const res = await fetch(httpUrl, {
                 headers: { "User-Agent": DEFAULT_USER_AGENT },
                 signal: AbortSignal.timeout(6000),
