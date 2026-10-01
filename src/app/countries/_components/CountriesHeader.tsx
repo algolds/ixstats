@@ -28,7 +28,13 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 }) => {
   return (
     <div className="bg-background z-sticky sticky top-0 mb-6 pt-2 pb-3">
-      <FacetCard className="overflow-hidden p-4 md:p-5">
+      <FacetCard
+        variant="glass"
+        texture="dots"
+        textureOpacity={0.04}
+        className="overflow-hidden p-4 md:p-5"
+      >
+        {/* v2 (c5c6b382): the hero card over a fine dot grid — now the glass hero tier. */}
         {/* Header Title (phones under the new shell get the ShellPageHeader title instead) */}
         <div {...shellPageTitleProps} className="mb-3">
           <h1 className="text-large-title text-label flex items-center gap-2">

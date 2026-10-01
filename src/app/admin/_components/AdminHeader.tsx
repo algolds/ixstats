@@ -13,7 +13,10 @@ export function AdminHeader({ icon: Icon, title, description, children }: AdminH
   return (
     <div className="border-separator mb-8 flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <div aria-hidden className="bg-tint-fill text-tint rounded-row p-3">
+        <div
+          aria-hidden
+          className="bg-tint-fill text-tint rounded-row border-separator border p-3 shadow-xs transition-transform duration-300 hover:scale-105 motion-reduce:hover:scale-100"
+        >
           <Icon className="size-6" />
         </div>
         <div>

@@ -47,7 +47,7 @@ export default function IdAccountHubPage() {
         </div>
       </SignedIn>
       <SignedOut>
-        <div className="border-separator bg-surface rounded-card shadow-card flex flex-col items-center justify-center gap-4 border p-8 text-center">
+        <div className="material-hero text-label flex flex-col items-center justify-center gap-4 rounded-2xl p-8 text-center">
           <Crown className="text-label h-10 w-10" />
           <h2 className="text-label text-title-2">Sign in to Access IxnayID</h2>
           <p className="text-label-secondary text-footnote max-w-md">

@@ -104,8 +104,13 @@ export function ThinktankHeader({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-30"
         >
-          <img src={group.settings.bannerUrl} alt="" className="size-full object-cover" />
-          <div className="bg-surface/70 absolute inset-0" />
+          <img
+            src={group.settings.bannerUrl}
+            alt=""
+            className="size-full object-cover blur-[2px]"
+          />
+          {/* v2 banner scrim: the artwork fades into the header surface. */}
+          <div className="from-surface/30 via-surface/70 to-surface absolute inset-0 bg-gradient-to-b" />
         </div>
       )}
 
@@ -159,11 +164,11 @@ export function ThinktankHeader({
               <h1 className="text-headline text-label truncate">{group.name}</h1>
               {group.type === "private" ? (
                 <span title="Private Group" className="inline-flex">
-                  <Lock className="text-label-secondary size-3.5 shrink-0" aria-label="Private" />
+                  <Lock className="text-orange size-3.5 shrink-0" aria-label="Private" />
                 </span>
               ) : (
                 <span title="Public Group" className="inline-flex">
-                  <Globe className="text-label-secondary size-3.5 shrink-0" aria-label="Public" />
+                  <Globe className="text-green size-3.5 shrink-0" aria-label="Public" />
                 </span>
               )}
             </div>

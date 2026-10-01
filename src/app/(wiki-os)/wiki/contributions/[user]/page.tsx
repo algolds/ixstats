@@ -12,6 +12,7 @@ import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { User as UserIcon, Search, Folder as FolderTree, Clock, GitCommit } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Refraction } from "~/components/ui/facet";
 
 export default function ContributionsPage() {
   const params = useParams<{ user: string }>();
@@ -42,8 +43,9 @@ export default function ContributionsPage() {
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-          className="rounded-card border-separator bg-surface relative overflow-hidden border p-6 sm:p-8"
+          className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
         >
+          <Refraction />
           <TextureOverlay texture="paperGrain" opacity={0.06} />
 
           <div className="relative z-10 space-y-4">

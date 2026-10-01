@@ -59,7 +59,7 @@ export default function RealmPassportPage({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <div className="border-separator bg-surface rounded-card shadow-card flex flex-col gap-4 border p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="material-hero text-label flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <div className="bg-fill-3 text-label rounded-card text-title-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border font-mono">
             {account?.clerkImageUrl ? (

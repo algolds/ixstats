@@ -51,7 +51,7 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <header className="border-separator bg-surface rounded-card flex items-center gap-4 border p-6">
+      <header className="material-hero text-label flex items-center gap-4 rounded-2xl p-6">
         <div className="border-separator bg-fill-3 rounded-card flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border">
           {realm.thumbnail ? (
             <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />

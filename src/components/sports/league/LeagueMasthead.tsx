@@ -15,6 +15,7 @@ import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
+import { Refraction } from "~/components/ui/facet";
 
 export interface LeagueMastheadProps {
   league: {
@@ -76,10 +77,12 @@ export function LeagueMasthead({
   return (
     <header
       className={cn(
-        "rounded-sheet border-separator bg-surface shadow-card relative overflow-hidden border p-6 md:p-8",
+        // v2 masthead: the glass hero card (Facet 3.1 glass hero tier). Sports stay flat: no glow.
+        "material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 md:p-8",
         className
       )}
     >
+      <Refraction />
       {/* ─── Breadcrumbs & Utilities ─── */}
       <div className="border-separator mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">

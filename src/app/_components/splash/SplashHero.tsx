@@ -64,7 +64,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={`bg-surface border-separator shadow-card rounded-card mb-6 flex flex-col items-center gap-3 border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-4 ${splashGold.border} `}
+        className="material-hero text-label mb-6 flex flex-col items-center gap-3 rounded-2xl px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-4"
       >
         <div className="flex items-center gap-2">
           <div className={splashGold.pulseDot} aria-hidden />
@@ -167,7 +167,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
 
       <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
         <Link href="/countries">
-          <Button size="lg" variant="outline">
+          <Button size="lg" variant="outline" className="border-tint/40 hover:bg-tint-fill">
             Explore nations
             <motion.span className="ml-2 inline-block">
               <ArrowRight className="h-5 w-5" />
@@ -175,7 +175,8 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
           </Button>
         </Link>
         <Link href="/builder">
-          <Button size="lg" className="shadow-floating">
+          {/* The gold primary (data-app="mycountry") with the v2 gold glow. */}
+          <Button size="lg" className="facet-glow">
             <motion.span className="mr-2 inline-block">
               <Hammer className="h-5 w-5" />
             </motion.span>

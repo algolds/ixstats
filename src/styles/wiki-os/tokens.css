@@ -82,6 +82,21 @@
     --wikios-body-link-hover: #8ab4f8;
   }
 
+  /* Facet 3.1 (spec §16): the v2 IxWiki brand blue — the laurel mark, the wordmark's "Ix" and
+     the mark's soft glow (c5c6b382 SculptedEmblemHero / WikiOSBrandLockup: `text-wiki`
+     #1d4e89, blue-400 in dark, `drop-shadow 0 4px 20px` at 20% / 38%). Brand marks only; the
+     app tint stays the Wiki tint for links, selection and focus. */
+  :root {
+    --wikios-brand: #1d4e89;
+    --wikios-brand-ix: #2563eb;
+    --wikios-brand-glow: rgb(29 78 137 / 0.2);
+  }
+  :root[data-theme="dark"] {
+    --wikios-brand: #60a5fa;
+    --wikios-brand-ix: #60a5fa;
+    --wikios-brand-glow: rgb(96 165 250 / 0.38);
+  }
+
   /* Accent = the app tint, resolved on each tint scope (see header). */
   :root,
   [data-app] {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Suspense } from "react";
 import { withBasePath } from "~/lib/base-path";
 
@@ -16,6 +16,23 @@ export const metadata: Metadata = {
   ],
 };
 
+/**
+ * Onoma's own accent (Facet 3.1, spec §16.0 — v2 brand): the electric azure #0091FF as a scoped
+ * tint, so `text-tint`, `bg-tint-fill`, focus, selection and the glass hero wash/border read as
+ * Onoma inside the lab. It reuses the tint slots the `[data-app]` scopes resolve (facet/tokens.css):
+ * dark is the brand azure (6.5:1 on black) with the azure-300 step; light steps down to the Onoma
+ * light primaries (#0066b8, 5.8:1 on white) so tinted text stays AA. Portalled dialogs and menus keep
+ * the Labs (maps) tint via PortalTintSync.
+ */
+const ONOMA_TINT = {
+  "--tint-light": "#0066b8",
+  "--tint-light-strong": "#005599",
+  "--on-tint-light": "#ffffff",
+  "--tint-dark": "#0091ff",
+  "--tint-dark-strong": "#33a7ff",
+  "--on-tint-dark": "#0b0c0f",
+} as CSSProperties;
+
 export default function OnomaLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense
@@ -28,7 +45,9 @@ export default function OnomaLayout({ children }: { children: ReactNode }) {
         </div>
       }
     >
-      {children}
+      <div data-app="maps" className="contents" style={ONOMA_TINT}>
+        {children}
+      </div>
     </Suspense>
   );
 }

@@ -34,7 +34,7 @@ export function WikiOSBrandLockup({
             isCompact ? "rounded-row size-9" : "rounded-card size-11"
           )}
         >
-          <IxWikiLogo size={isCompact ? 20 : 24} className="text-tint relative" />
+          <IxWikiLogo size={isCompact ? 20 : 24} className="wikios-brand-mark relative" />
         </div>
 
         {/* Text Stack */}
@@ -65,7 +65,7 @@ export function WikiOSBrandLockup({
         className="relative mb-2 flex cursor-pointer items-center justify-center"
       >
         {/* The Laurel Logo */}
-        <IxWikiLogo size={84} className="text-tint relative size-18 sm:size-22" />
+        <IxWikiLogo size={84} className="wikios-brand-mark relative size-18 sm:size-22" />
       </motion.div>
 
       {/* 2. Wordmark ("IxWiki") */}

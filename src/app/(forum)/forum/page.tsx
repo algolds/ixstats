@@ -2,7 +2,7 @@
 // src/app/(forum)/forum/page.tsx
 // Forum index — categories view by default, thread feed for Trending/New.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FireFlame as Flame, Clock, HomeSimple as HomeIcon } from "iconoir-react";
@@ -20,6 +20,11 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 
 type ViewMode = "categories" | "trending" | "new";
+
+const TINT_RULE: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, transparent, color-mix(in srgb, var(--tint) 20%, transparent), transparent)",
+};
 
 export default function ForumIndexPage() {
   const { clearForumPage } = useForumContext();
@@ -87,6 +92,8 @@ export default function ForumIndexPage() {
               ? "Most active discussions across all forums"
               : "Latest threads and activity"}
           </p>
+          {/* v2 header rule: a hairline of the Forum tint fading out at both ends. */}
+          <div aria-hidden="true" className="mt-3 h-px w-full" style={TINT_RULE} />
         </div>
       )}
 

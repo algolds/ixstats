@@ -19,7 +19,7 @@ import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { MEDIA_THEME_OPTIONS } from "~/lib/wiki-os/transformers/media-theme";
-import { FacetCard } from "~/components/ui/facet-container";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 
@@ -104,11 +104,11 @@ export function WikiOSArticleToolbarWidget({
   }
 
   return (
-    <FacetCard className="w-48 overflow-hidden">
-      <div className="border-separator text-subhead text-label flex items-center gap-2 border-b px-3 py-3">
-        <FileEdit className="text-tint size-3.5" aria-hidden="true" />
+    // v2 (c5c6b382): a CutoutCard with the tinted cutout tab header.
+    <CutoutCard variant="card" trackPointerHover={false} className="w-48 rounded-xl">
+      <CutoutCardHeader icon={<FileEdit />} cornerSize={16} className="px-3 pt-2 pb-4">
         Page Tools
-      </div>
+      </CutoutCardHeader>
 
       <div className="space-y-0.5 p-2">
         {/* Edit */}
@@ -186,7 +186,7 @@ export function WikiOSArticleToolbarWidget({
           <StashButton title={title} isAuthenticated={isSignedIn} />
         </div>
       </div>
-    </FacetCard>
+    </CutoutCard>
   );
 }
 

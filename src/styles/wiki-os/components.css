@@ -1400,3 +1400,117 @@
     r: 1.5;
   }
 }
+
+/* ===========================================================================
+   Facet 3.1 (spec §16.1 #6) — IxWiki brand mark and the reader hero modes
+   v2 source: c5c6b382 reader/hero/FeaturedImageRefraction.tsx, SculptedEmblemHero.tsx.
+   Paint only; the components place the layers. Pointer tilt / sheen stay retired.
+   =========================================================================== */
+
+@layer components {
+  /* The laurel mark in the v2 brand blue with its soft glow (brand tokens: wiki-os/tokens.css). */
+  .wikios-brand-mark {
+    color: var(--wikios-brand);
+    filter: drop-shadow(0 4px 20px var(--wikios-brand-glow));
+  }
+  .wikios-brand-ix {
+    color: var(--wikios-brand-ix);
+  }
+
+  /* Harmonic Under-Glow: a blurred, saturated copy of the lead image bleeding out behind the
+     glass card (v2: opacity .6 / .75 dark → .9 / .95 on hover; image .85 / .95, blur-xl → 2xl,
+     contrast 1.15, saturate 1.85). The component masks the halo's edge (radial mask). */
+  .wikios-hero-underglow {
+    opacity: 0.6;
+    transition: opacity 300ms var(--ease-out-facet);
+  }
+  .wikios-hero-underglow > img {
+    opacity: 0.85;
+    filter: blur(24px) contrast(1.15) saturate(1.85);
+  }
+  @media (min-width: 640px) {
+    .wikios-hero-underglow > img {
+      filter: blur(40px) contrast(1.15) saturate(1.85);
+    }
+  }
+  .wikios-hero-refraction:hover .wikios-hero-underglow,
+  .wikios-hero-refraction:focus-within .wikios-hero-underglow {
+    opacity: 0.9;
+  }
+  :root[data-theme="dark"] .wikios-hero-underglow {
+    opacity: 0.75;
+  }
+  :root[data-theme="dark"] .wikios-hero-underglow > img {
+    opacity: 0.95;
+  }
+  :root[data-theme="dark"] .wikios-hero-refraction:hover .wikios-hero-underglow,
+  :root[data-theme="dark"] .wikios-hero-refraction:focus-within .wikios-hero-underglow {
+    opacity: 0.95;
+  }
+
+  /* Facet Crystal Lens: the lead image as an internal colour tint, held under a surface scrim
+     for text contrast, with the precision chamfered double rim (v2: image .16 / .22 → .24 / .32,
+     blur-3xl, saturate 1.5, luminosity blend in light, lighten in dark). */
+  .wikios-hero-lens-art {
+    opacity: 0.16;
+    filter: blur(64px) saturate(1.5);
+    mix-blend-mode: luminosity;
+    transition: opacity 300ms var(--ease-out-facet);
+  }
+  .wikios-hero-refraction:hover .wikios-hero-lens-art,
+  .wikios-hero-refraction:focus-within .wikios-hero-lens-art {
+    opacity: 0.24;
+  }
+  :root[data-theme="dark"] .wikios-hero-lens-art {
+    opacity: 0.22;
+    mix-blend-mode: lighten;
+  }
+  :root[data-theme="dark"] .wikios-hero-refraction:hover .wikios-hero-lens-art,
+  :root[data-theme="dark"] .wikios-hero-refraction:focus-within .wikios-hero-lens-art {
+    opacity: 0.32;
+  }
+  .wikios-hero-lens-scrim {
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-surface) 90%, transparent) 0%,
+      color-mix(in srgb, var(--color-surface) 65%, transparent) 50%,
+      color-mix(in srgb, var(--color-surface) 20%, transparent) 100%
+    );
+  }
+  .wikios-hero-lens-chamfer {
+    box-shadow:
+      inset 0 1.5px 2px rgb(255 255 255 / 0.85),
+      inset 0 -1.5px 3px rgb(0 0 0 / 0.4);
+  }
+  :root[data-theme="dark"] .wikios-hero-lens-chamfer {
+    box-shadow:
+      inset 0 1.5px 2px rgb(255 255 255 / 0.35),
+      inset 0 -1.5px 3px rgb(0 0 0 / 0.8);
+  }
+
+  /* Reduce Transparency and Increase Contrast: the card is opaque, so drop the artwork. */
+  @media (prefers-reduced-transparency: reduce) {
+    .wikios-hero-underglow,
+    .wikios-hero-lens-art,
+    .wikios-hero-lens-scrim {
+      display: none;
+    }
+  }
+  @media (prefers-contrast: more) {
+    .wikios-hero-underglow,
+    .wikios-hero-lens-art,
+    .wikios-hero-lens-scrim {
+      display: none;
+    }
+  }
+  :where([data-transparency="reduced"], [data-contrast="more"])
+    :is(.wikios-hero-underglow, .wikios-hero-lens-art, .wikios-hero-lens-scrim) {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wikios-hero-underglow,
+    .wikios-hero-lens-art {
+      transition: none;
+    }
+  }
+}

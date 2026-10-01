@@ -65,8 +65,9 @@ export function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        {/* Workspace canvas: the opaque content card; sections use surface-secondary insets. */}
-        <FacetCard padding="lg" className="relative overflow-hidden">
+        {/* Workspace canvas: the v2 satin canvas as the glass hero tier (Onoma azure wash and
+            border from the scoped tint); sections inside stay opaque (surface-secondary insets). */}
+        <FacetCard variant="glass" padding="lg" className="relative overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}

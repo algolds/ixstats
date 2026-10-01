@@ -68,7 +68,7 @@ export default function MemberProfilePage() {
           </div>
 
           {/* Profile header */}
-          <FacetCard padding="lg" className="mb-4">
+          <FacetCard variant="glass" padding="lg" glow className="mb-4">
             <div className="flex items-start gap-4">
               {member.avatarUrl ? (
                 <img

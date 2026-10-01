@@ -19,6 +19,7 @@ import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountr
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
+import { Refraction } from "~/components/ui/facet";
 
 export type ArticleThemeColors =
   | FlagColors
@@ -301,7 +302,8 @@ export function WikiOSHeader({
               referrerPolicy="no-referrer"
             />
           )}
-          <div className="absolute inset-0 bg-black/20" />
+          {/* v2 bottom scrim: grounds the floating title card on the artwork. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
         </div>
       ) : (
         <div
@@ -317,9 +319,10 @@ export function WikiOSHeader({
         </div>
       )}
 
-      {/* Title card */}
+      {/* Floating glass title card (v2 HUD box, Facet 3.1 glass hero tier) */}
       <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
-        <div className="rounded-row border-separator bg-surface shadow-floating space-y-2 border p-4 text-left sm:p-5">
+        <div className="material-hero text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
+          <Refraction />
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />

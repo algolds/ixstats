@@ -71,7 +71,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <header className="border-separator bg-surface rounded-card flex flex-wrap items-center justify-between gap-3 border p-5">
+      <header className="material-hero text-label flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5">
         <div>
           <Link href={realmHref} className="text-label-secondary hover:text-label text-footnote">
             ← {board.realm.name}

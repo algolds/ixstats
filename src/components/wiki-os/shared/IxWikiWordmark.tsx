@@ -28,7 +28,7 @@ export function IxWikiWordmark({
   return (
     <span
       className={cn(
-        "text-label inline-flex items-baseline font-['SangBleu_Empire',serif] font-semibold subpixel-antialiased select-none",
+        "text-label inline-flex items-baseline font-['SangBleu_Empire',serif] font-bold subpixel-antialiased select-none",
         sizeClasses[size],
         className
       )}
@@ -39,7 +39,7 @@ export function IxWikiWordmark({
     >
       {highlightIx ? (
         <>
-          <span className="text-tint">Ix</span>
+          <span className="wikios-brand-ix">Ix</span>
           <span className="text-label">Wiki</span>
         </>
       ) : (

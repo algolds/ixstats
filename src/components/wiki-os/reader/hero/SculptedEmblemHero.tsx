@@ -207,7 +207,7 @@ export function SculptedEmblemHero({
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
           <IxWikiLogo
             size={96}
-            className="text-tint relative z-10 h-22 w-22 transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] sm:h-26 sm:w-26 lg:h-28 lg:w-28"
+            className="wikios-brand-mark relative z-10 h-22 w-22 transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover/brand:scale-100 sm:h-26 sm:w-26 lg:h-28 lg:w-28"
           />
         </motion.div>
 
@@ -249,14 +249,12 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "border-separator border",
-            "bg-surface",
-            "",
+            "material-thin border-separator border",
             "hover:border-yellow/40 hover:bg-yellow/6",
-            "text-label-secondary hover:text-label group focus-visible:ring-yellow transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+            "text-label-secondary hover:text-label group facet-press focus-visible:ring-yellow focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirTrophy className="text-yellow h-3.5 w-3.5 transition-transform" />
+          <IconoirTrophy className="text-yellow h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
           <span>Award-Winning Lore</span>
         </Link>
 
@@ -267,14 +265,12 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "border-separator border",
-            "bg-surface",
-            "",
+            "material-thin border-separator border",
             "hover:border-tint/40 hover:bg-tint-fill",
-            "text-label-secondary hover:text-label group focus-visible:ring-tint transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirOpenBook className="text-tint h-3.5 w-3.5 transition-transform" />
+          <IconoirOpenBook className="text-tint h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
           <span>Getting Started</span>
         </Link>
 
@@ -285,14 +281,12 @@ export function SculptedEmblemHero({
           data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
-            "border-separator border",
-            "bg-surface",
-            "",
+            "material-thin border-separator border",
             "hover:border-green/40 hover:bg-green/6",
-            "text-label-secondary hover:text-label group focus-visible:ring-green transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+            "text-label-secondary hover:text-label group facet-press focus-visible:ring-green focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirFolder className="text-green h-3.5 w-3.5 transition-transform" />
+          <IconoirFolder className="text-green h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
           <span>Resources</span>
         </Link>
       </motion.div>
@@ -308,11 +302,8 @@ export function SculptedEmblemHero({
         <div
           className={cn(
             "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-            "border-separator border",
-            "bg-surface",
-            "",
-            "hover:border-separator hover:bg-surface hover:shadow-card",
-            "group text-left transition-colors duration-200"
+            "material-hero",
+            "group text-left"
           )}
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
@@ -397,11 +388,8 @@ export function SculptedEmblemHero({
             data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-              "border-separator border",
-              "bg-surface",
-              "",
-              "hover:border-separator hover:bg-surface hover:shadow-card",
-              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
+              "material-hero facet-lift",
+              "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
@@ -444,11 +432,8 @@ export function SculptedEmblemHero({
             data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
-              "border-separator border",
-              "bg-surface",
-              "",
-              "hover:border-separator hover:bg-surface hover:shadow-card",
-              "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
+              "material-hero facet-lift",
+              "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
@@ -562,7 +547,7 @@ export function SculptedEmblemHero({
                       data-cuelume-hover="tick"
                       className="group/title rounded-control-sm focus-visible:ring-yellow block focus-visible:ring-2 focus-visible:outline-none"
                     >
-                      <h3 className="text-label text-title-3 group-hover/title:text-yellow sm:text-title-2 lg:text-title-1] transition-colors">
+                      <h3 className="text-label text-title-3 group-hover/title:text-yellow sm:text-title-2 lg:text-title-1 transition-colors">
                         {featuredArticleData.title}
                       </h3>
                     </Link>

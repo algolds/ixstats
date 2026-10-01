@@ -64,7 +64,7 @@ export default function HelpPage() {
         </div>
       </ShellGate>
       <ShellGate variant="legacy">
-        <header className="border-border border-b">
+        <header className="material-thin border-separator border-b">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="mb-3 flex items-center gap-3">
               <Book aria-hidden="true" className="text-muted-foreground h-7 w-7" />

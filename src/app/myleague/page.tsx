@@ -132,8 +132,8 @@ export default function MyLeaguePage() {
       {/* Dynamic League Creator Dialog */}
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
-      {/* ─── COMMAND STUDIO HEADER ─── */}
-      <FacetCard padding="lg">
+      {/* ─── COMMAND STUDIO HEADER ─── v2 glass hero (no glow: sports stay flat) */}
+      <FacetCard variant="glass" padding="lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function MyLeaguePage() {
             Featured competition
           </h2>
 
-          <FacetCard className="overflow-hidden">
+          <FacetCard variant="glass" className="overflow-hidden">
             <div className="flex flex-col md:flex-row">
               <div className="bg-fill-3 relative h-48 shrink-0 overflow-hidden md:h-auto md:w-80">
                 <LeagueCover

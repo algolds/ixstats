@@ -271,8 +271,9 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const sportTheme = getSportTheme(team.league?.sportPreset);
 
+  // v2 club header: the glass hero card (no glow: sports stay flat).
   const heroSection = (
-    <FacetCard className="overflow-hidden">
+    <FacetCard variant="glass" className="overflow-hidden">
       {team.coverImage && (
         <div className="bg-fill-3 h-28 overflow-hidden">
           <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />

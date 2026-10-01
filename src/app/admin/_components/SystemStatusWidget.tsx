@@ -17,6 +17,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
 
 /** The console's live status: IxTime, bot connection and system health. */
 function useSystemStatus() {
@@ -160,14 +161,17 @@ export function SystemStatusWidget() {
   };
 
   return (
-    <FacetCard className="w-full overflow-hidden">
-      {/* Header (toggles collapse) */}
+    // v2 (c5c6b382): a CutoutCard whose tinted header tab toggles the collapse.
+    <CutoutCard variant="card" trackPointerHover={false} className="w-full rounded-xl">
+      {/* Cutout header tab (toggles collapse) */}
       <Button
         variant="ghost"
         onClick={toggleCollapsed}
         aria-expanded={!isCollapsed}
-        className="h-auto w-full justify-between rounded-none px-4 py-3 text-left active:scale-100"
+        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left active:scale-100"
       >
+        <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />
         <span className="flex items-center gap-2">
           <span className="bg-tint-fill text-tint rounded-control-sm p-1">
             <Shield aria-hidden className="size-4" />
@@ -185,7 +189,7 @@ export function SystemStatusWidget() {
       </Button>
 
       {isCollapsed ? (
-        <div className="border-separator text-footnote flex items-center justify-between gap-2 overflow-hidden border-t px-3 py-2 tabular-nums">
+        <div className="text-footnote flex items-center justify-between gap-2 overflow-hidden px-3 py-2 tabular-nums">
           {/* IxTime */}
           <span
             className="text-label max-w-[100px] shrink-0 truncate font-medium whitespace-nowrap"
@@ -213,7 +217,7 @@ export function SystemStatusWidget() {
           </span>
         </div>
       ) : (
-        <div className="border-separator space-y-3 border-t p-4 tabular-nums">
+        <div className="space-y-3 p-4 pt-1 tabular-nums">
           {/* Live IxTime Display */}
           <div className="space-y-1">
             <div className="text-eyebrow text-label-secondary flex items-center gap-2">
@@ -302,6 +306,6 @@ export function SystemStatusWidget() {
           </dl>
         </div>
       )}
-    </FacetCard>
+    </CutoutCard>
   );
 }

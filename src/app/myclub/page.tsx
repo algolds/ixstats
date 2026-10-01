@@ -72,8 +72,8 @@ export default function MyClubPage() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
-      {/* ─── FRANCHISE SUITE HEADER ─── */}
-      <FacetCard padding="lg">
+      {/* ─── FRANCHISE SUITE HEADER ─── v2 glass hero (no glow: sports stay flat) */}
+      <FacetCard variant="glass" padding="lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">

@@ -104,7 +104,7 @@ export function CountryListCard({
     <FacetCard
       depth={2}
       className={cn(
-        "group hover:border-label-tertiary rounded-card flex h-full flex-col overflow-hidden",
+        "group hover:border-label-tertiary rounded-card isolate flex h-full flex-col overflow-hidden",
         dominantColor && "border-l-2"
       )}
       // The flag's dominant colour is data, not decoration: a thin identity edge.
@@ -119,6 +119,19 @@ export function CountryListCard({
       }}
       aria-label={`Open ${country.name}`}
     >
+      {/* v2 (c5c6b382): the flag as a soft blurred accent along the card's top edge, fading out
+          toward the content. Decorative only. */}
+      {flagUrl && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-16 bg-cover bg-center opacity-30 blur-[8px] saturate-110 transition-opacity duration-200 group-hover:opacity-40 print:hidden"
+          style={{
+            backgroundImage: `url(${flagUrl})`,
+            maskImage: "linear-gradient(to bottom, black, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+          }}
+        />
+      )}
       <FacetCardContent className="min-h-0 grow p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">

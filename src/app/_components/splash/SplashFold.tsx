@@ -136,9 +136,7 @@ export function SplashFold() {
         </div>
 
         <TabsContent value="thinkpages">
-          <div
-            className={`bg-surface border-separator shadow-card rounded-card border p-6 md:p-8 ${splashGold.border} `}
-          >
+          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -264,9 +262,7 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="world">
-          <div
-            className={`bg-surface border-separator shadow-card rounded-card border p-6 md:p-8 ${splashGold.border} `}
-          >
+          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -331,9 +327,7 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="diplomacy">
-          <div
-            className={`bg-surface border-separator shadow-card rounded-card border p-6 md:p-8 ${splashGold.border} `}
-          >
+          <div className="material-hero text-label rounded-2xl p-6 md:p-8">
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -396,9 +390,7 @@ export function SplashFold() {
 
         <TabsContent value="community">
           <div className="space-y-8">
-            <div
-              className={`bg-surface border-separator shadow-card rounded-card mx-auto max-w-4xl border p-6 text-center md:p-8 ${splashGold.border} `}
-            >
+            <div className="material-hero text-label mx-auto max-w-4xl rounded-2xl p-6 text-center md:p-8">
               <h3 className={`text-title-1 md:text-large-title mb-4 ${splashGold.headline}`}>
                 Community
               </h3>
@@ -407,7 +399,7 @@ export function SplashFold() {
                 MyCountry arc.
               </p>
               <a href="https://discord.gg/mgXAEYdqkd" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline">
+                <Button size="lg" variant="outline" className="border-tint/40 hover:bg-tint-fill">
                   <MessageCircle className="mr-2 h-5 w-5" />
                   Discord
                 </Button>
