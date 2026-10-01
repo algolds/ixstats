@@ -1,11 +1,15 @@
 /**
  * template-registry.ts — WikiOS Template Registry.
  *
- * Syncs TemplateData schemas from MediaWiki, caches them in Prisma,
- * and provides lookup/search for the editor's template inserter.
+ * The TemplateData types, the admin-triggered refresh of TemplateData from MediaWiki (`fetchTemplateData`),
+ * and the template preview (rendered by MediaWiki as a private engine). A reader gets TemplateData from
+ * Postgres (`template-data-reader.ts`), never from MediaWiki.
+ *
+ * CLIENT-SAFE: `preview-service.ts` is part of the client bundle, so nothing here may import the database.
  */
 
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
 import { transformImages, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
@@ -41,11 +45,8 @@ export interface TemplateDataInfo {
 // Fetch from MediaWiki
 // ---------------------------------------------------------------------------
 
-/**
- * Fetch TemplateData for one or more templates from MediaWiki.
- * Uses the templatedata API action.
- */
-function normalizeString(val: unknown): string | undefined {
+/** A TemplateData text that is a string or an object of strings by language: the English one, else the first. */
+export function normalizeString(val: unknown): string | undefined {
   if (!val) return undefined;
   if (typeof val === "string") return val;
   if (typeof val === "object") {
@@ -55,6 +56,10 @@ function normalizeString(val: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * Fetch TemplateData for one or more templates from MediaWiki (the `templatedata` API action).
+ * ADMIN-TRIGGERED REFRESH ONLY (the admin template sync): a reader's TemplateData comes from Postgres.
+ */
 export async function fetchTemplateData(titles: string[]): Promise<Map<string, TemplateDataInfo>> {
   const result = new Map<string, TemplateDataInfo>();
   if (titles.length === 0) return result;
@@ -138,46 +143,6 @@ export async function fetchTemplateData(titles: string[]): Promise<Map<string, T
   return result;
 }
 
-/**
- * Search for templates by name prefix using MediaWiki's prefix search.
- */
-export async function searchTemplatesFromWiki(
-  query: string,
-  limit = 20
-): Promise<Array<{ title: string; ns: number }>> {
-  const params = new URLSearchParams({
-    action: "query",
-    list: "prefixsearch",
-    pssearch: query,
-    psnamespace: "10", // Template namespace
-    pslimit: String(limit),
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(`${mwApi}?${params}`, {
-      headers: {
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-    const data = (await res.json()) as {
-      query?: {
-        prefixsearch?: Array<{ ns: number; title: string; pageid: number }>;
-      };
-    };
-    return (data.query?.prefixsearch ?? []).map((p) => ({
-      title: p.title.replace(/^Template:/, ""),
-      ns: p.ns,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 const INVALID_PARAMETER_PREVIEW = "Invalid parameter";
 /** A key containing these could end the parameter name early or open a second parameter. */
 const UNSAFE_PARAM_KEY = /[|={}\n\r]/;
@@ -226,8 +191,13 @@ function buildTemplateInvocation(
   return `{{${templateName}${parts.join("")}}}`;
 }
 
+/** The page a template preview is rendered as (the parse context: `{{PAGENAME}}` and the like). */
+const PREVIEW_PAGE_TITLE = "Template preview";
+
 /**
- * Get a rendered preview of a template with given parameters.
+ * Get a rendered preview of a template with given parameters. MediaWiki renders it as a private engine
+ * (the render service's own non-persisting call, which uses the internal URL when one is configured);
+ * when it cannot, the in-process compiler does.
  */
 export async function getTemplatePreview(
   templateName: string,
@@ -236,42 +206,9 @@ export async function getTemplatePreview(
   const wikitext = buildTemplateInvocation(templateName, params);
   if (wikitext === null) return INVALID_PARAMETER_PREVIEW;
 
-  const apiParams = new URLSearchParams({
-    action: "parse",
-    text: wikitext,
-    contentmodel: "wikitext",
-    prop: "text",
-    pst: "1",
-    disablelimitreport: "1",
-    disableeditsection: "1",
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(mwApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      body: apiParams.toString(),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as {
-        parse?: { text?: string };
-      };
-      if (data.parse?.text) {
-        return transformWikiLinks(
-          transformImages(stripConflictingStyles(data.parse.text), "ixwiki")
-        );
-      }
-    }
-  } catch {
-    // Fall through to local compiler
+  const rendered = await renderArticleViaMediaWiki(wikitext, PREVIEW_PAGE_TITLE);
+  if (rendered) {
+    return transformWikiLinks(transformImages(stripConflictingStyles(rendered.html), "ixwiki"));
   }
 
   const localHtml = parseWikitextToHtml(wikitext, "ixwiki");

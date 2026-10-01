@@ -50,6 +50,8 @@ jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
+  // The engine call stays real: the template preview sends its wikitext through it (the S7 tests below).
+  ...jest.requireActual("~/lib/wiki-os/adapters/mediawiki/parsoid"),
   wikitextToHtml: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({

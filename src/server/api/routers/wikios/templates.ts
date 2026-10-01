@@ -7,11 +7,8 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, readOnlyProcedure } from "~/server/api/trpc";
-import {
-  fetchTemplateData,
-  categorizeTemplate,
-  isNoiseTemplate,
-} from "~/lib/wiki-os/templates/template-registry";
+import { categorizeTemplate, isNoiseTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { db } from "~/server/db";
@@ -1240,8 +1237,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
         };
       }
 
-      // 2. Fetch from MediaWiki API
-      const tdMap = await fetchTemplateData([templateName]);
+      // 2. Read the TemplateData block from the template's own stored wikitext (or its /doc subpage)
+      const tdMap = await readTemplateData([templateName]);
       const data = tdMap.get(templateName);
       if (!data) {
         return {
