@@ -32,6 +32,7 @@ process.env.SKIP_ENV_VALIDATION = "1";
 type ExportWriterModule = typeof import("../../src/lib/wiki-os/xml/export-writer");
 type ImportReaderModule = typeof import("../../src/lib/wiki-os/xml/import-reader");
 type SlimModule = typeof import("../../src/lib/wiki-os/transformers/slim-html");
+type ChipsModule = typeof import("../../src/lib/wiki-os/templates/chip-markers");
 
 /** A page of a corpus: where it came from and its text. */
 interface Page {
@@ -228,7 +229,10 @@ const TITLE_TARGETS: ReadonlySet<string> = new Set([
 ]);
 
 /** The fuzz drivers whose input is hostile by design and are given the input they would really get instead. */
-const NATURAL: ReadonlySet<string> = new Set(["transformers/slim-html#slimArticleHtml"]); // its driver pads the text past the size ceiling
+const NATURAL: ReadonlySet<string> = new Set([
+  "transformers/slim-html#slimArticleHtml",
+  "templates/chip-markers#markTemplateChips",
+]); // their drivers pad the text past the size ceiling
 
 function pagesOf(corpus: Corpus, kind: Target["kind"]): Page[] {
   if (kind === "html" || kind === "markup") return corpus.html;
@@ -283,6 +287,15 @@ function extraPairs(corpus: Corpus, oldDir: string): Pair[] {
           .slimArticleHtml,
       new: async () =>
         (await import("../../src/lib/wiki-os/transformers/slim-html")).slimArticleHtml,
+    },
+    {
+      name: "templates/chip-markers#markTemplateChips (as it is called)",
+      pages: corpus.html,
+      old: async () =>
+        ((await import(join(oldDir, "src/lib/wiki-os/templates/chip-markers.ts"))) as ChipsModule)
+          .markTemplateChips,
+      new: async () =>
+        (await import("../../src/lib/wiki-os/templates/chip-markers")).markTemplateChips,
     },
     {
       name: "main-page/lead-paragraph#leadParagraph (against the code it was extracted from)",
