@@ -46,6 +46,23 @@ describe("extractTemplateDataJson", () => {
     );
   });
 
+  it("finds the block after a character whose lower case is longer than itself (\"İ\")", () => {
+    // "İ".toLowerCase() is two UTF-16 units: offsets taken in a lower-cased copy would cut the JSON short.
+    const text = `İİİİ intro <TemplateData>{"description":"after dotted capitals"}</TemplateData> İ`;
+
+    expect(extractTemplateDataJson(text)).toBe('{"description":"after dotted capitals"}');
+    expect(parseTemplateData("T", extractTemplateDataJson(text)!)?.description).toBe(
+      "after dotted capitals"
+    );
+  });
+
+  it("closes the block at its own closing tag in any case, and reads a second block independently", () => {
+    expect(extractTemplateDataJson('<templatedata>{"a":1}</TEMPLATEDATA>x<templatedata>{"b":2}')).toBe(
+      '{"a":1}'
+    );
+    expect(extractTemplateDataJson("<templatedata>{}")).toBeNull();
+  });
+
   it("is null without a block, or with one that never closes", () => {
     expect(extractTemplateDataJson("{{Quote|x}} no data")).toBeNull();
     expect(extractTemplateDataJson("<templatedata>{}")).toBeNull();

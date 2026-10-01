@@ -17,8 +17,8 @@ import {
   type TemplateParam,
 } from "~/lib/wiki-os/templates/template-registry";
 
-const OPEN_TAG = "<templatedata>";
-const CLOSE_TAG = "</templatedata>";
+const OPEN_TAG = /<templatedata>/i;
+const CLOSE_TAG = /<\/templatedata>/gi;
 
 /** TemplateData text: a string, or one string per language. */
 const localized = z.union([z.string(), z.record(z.string(), z.string())]);
@@ -48,14 +48,17 @@ const templateDataSchema = z.looseObject({
 
 /**
  * The JSON inside the first `<templatedata>` block of `wikitext`, or null when it has none (or the block
- * never closes). Found by index, never by backtracking pattern: linear in the text, whatever it holds.
+ * never closes). The tags are found in the text as it is, case-insensitively, never in a lower-cased
+ * copy (lower-casing "İ" makes two characters of one, and shifts every offset after it). Two scans of a
+ * literal pattern: linear in the text, whatever it holds.
  */
 export function extractTemplateDataJson(wikitext: string): string | null {
-  const lower = wikitext.toLowerCase();
-  const open = lower.indexOf(OPEN_TAG);
-  if (open === -1) return null;
-  const close = lower.indexOf(CLOSE_TAG, open + OPEN_TAG.length);
-  return close === -1 ? null : wikitext.slice(open + OPEN_TAG.length, close);
+  const open = OPEN_TAG.exec(wikitext);
+  if (!open) return null;
+  const start = open.index + open[0].length;
+  CLOSE_TAG.lastIndex = start;
+  const close = CLOSE_TAG.exec(wikitext);
+  return close ? wikitext.slice(start, close.index) : null;
 }
 
 function toParam(raw: z.infer<typeof paramSchema>): TemplateParam {
