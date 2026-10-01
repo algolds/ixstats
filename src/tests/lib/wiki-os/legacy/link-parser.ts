@@ -1,15 +1,17 @@
+// The inline parser as it was before the regex-DoS sweep (plan F15), verbatim apart from its import paths:
+// regex-dos-wikitext.test.ts holds the scanning rewrite against it. Not used by any code.
+
 /**
  * src/lib/wiki-os/wikitext/link-parser.ts — MediaWiki Link & Media Tokenizer.
  */
 
-import { canonicalizeTitle } from "../core/title";
-import { parseFileLinkInner } from "./file-params";
-import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
-import { forwardFinder } from "./forward-finder";
-import { UNINDEXED, chargeScan, matchBraces, matchBrackets, mayScan, type MatchIndex } from "./match-index";
-import { findTagClose, matchOpenTag, skipProtectedAt } from "./protected-regions";
-import { classifyTemplate } from "./resolver";
-import type { WikiInlineNode, WikiTextNode } from "./types";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { parseFileLinkInner } from "~/lib/wiki-os/wikitext/file-params";
+import { splitBalancedPipes, parseParameterList } from "~/lib/wiki-os/wikitext/parameter-parser";
+import { UNINDEXED, matchBraces, matchBrackets, type MatchIndex } from "~/lib/wiki-os/wikitext/match-index";
+import { findTagClose, matchOpenTag, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import { classifyTemplate } from "~/lib/wiki-os/wikitext/resolver";
+import type { WikiInlineNode, WikiTextNode } from "~/lib/wiki-os/wikitext/types";
 
 export interface ParsedMediaLink {
   filename: string;
@@ -32,13 +34,6 @@ export function findMatchingClosingBrackets(
 ): number {
   if (!text.startsWith("[[", startIndex)) return -1;
   if (index && index[startIndex] !== UNINDEXED) return index[startIndex]!;
-  if (index && !mayScan(index)) return -1;
-  const close = scanForClosingBrackets(text, startIndex);
-  if (index) chargeScan(index, (close === -1 ? text.length : close) - startIndex);
-  return close;
-}
-
-function scanForClosingBrackets(text: string, startIndex: number): number {
   let depth = 0;
   let inComment = false;
   let j = startIndex;
@@ -86,13 +81,6 @@ export function findMatchingClosingBraces(
 ): number {
   if (!text.startsWith("{{", startIndex)) return -1;
   if (index && index[startIndex] !== UNINDEXED) return index[startIndex]!;
-  if (index && !mayScan(index)) return -1;
-  const close = scanForClosingBraces(text, startIndex);
-  if (index) chargeScan(index, (close === -1 ? text.length : close) - startIndex);
-  return close;
-}
-
-function scanForClosingBraces(text: string, startIndex: number): number {
   let depth = 0;
   let linkDepth = 0;
   let inComment = false;
@@ -190,8 +178,6 @@ interface InlineContext {
   text: string;
   brackets?: MatchIndex;
   braces?: MatchIndex;
-  /** The first `]` at or after a position that only grows (an external link ends at one). */
-  nextClose: (from: number) => number;
 }
 
 interface InlineSpan {
@@ -313,11 +299,9 @@ function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
 }
 
 /** External link: `[https://url Title]` or `[https://url]`. */
-function tryExternalLink(ctx: InlineContext, i: number): InlineSpan | null {
-  const { text } = ctx;
-  if (!/^https?:\/\//i.test(text.slice(i + 1, i + 9))) return null;
-  const closeIdx = ctx.nextClose(i);
-  if (closeIdx === -1) return null;
+function tryExternalLink(text: string, i: number): InlineSpan | null {
+  const closeIdx = text.indexOf("]", i);
+  if (closeIdx === -1 || !/^https?:\/\//i.test(text.slice(i + 1, i + 9))) return null;
   const inner = text.slice(i + 1, closeIdx).trim();
   const spaceIdx = inner.indexOf(" ");
   const url = spaceIdx !== -1 ? inner.slice(0, spaceIdx) : inner;
@@ -425,7 +409,7 @@ function tryInlineConstruct(ctx: InlineContext, i: number): InlineSpan | null {
           tryWikiLink(ctx, i)
         );
       }
-      return tryExternalLink(ctx, i);
+      return tryExternalLink(text, i);
     case "<": {
       // Comments and literal tags are copied as they are: nothing inside them is wikitext.
       const end = skipProtectedAt(text, i);
@@ -448,7 +432,6 @@ function tokenizeInline(text: string): InlinePart[] {
     text,
     brackets: text.includes("[[") ? matchBrackets(text) : undefined,
     braces: text.includes("{{") ? matchBraces(text) : undefined,
-    nextClose: forwardFinder(text, "]"),
   };
   const special = /[[<{]/g;
   let i = 0;
@@ -535,10 +518,6 @@ function applyQuoteMarks(parts: InlinePart[]): WikiInlineNode[] {
   return out.length > 0 ? out : [{ text: "" }];
 }
 
-/** Characters that start a construct or end a line: a text with none of them is one run of plain text. */
-const INLINE_MARKUP = /[[<{'\n]/;
-
 export function parseInlineLinksAndFormatting(text: string): WikiInlineNode[] {
-  if (!INLINE_MARKUP.test(text)) return [{ text }]; // a list item or a cell of plain text is most of the calls
   return applyQuoteMarks(tokenizeInline(text));
 }

@@ -10,6 +10,7 @@
  * `<nowiki>`, and a positional value with a top-level `=` is written as `N=value`.
  */
 
+import { isBlank, splitBlanks } from "./blank";
 import { findMatchingClosingBraces, findMatchingClosingBrackets } from "./link-parser";
 import { matchBraces, matchBrackets } from "./match-index";
 import { parseParameterList, splitBalancedPipes } from "./parameter-parser";
@@ -23,51 +24,74 @@ export function readTemplateParams(raw: string): Record<string, string> | null {
 }
 
 interface TopLevelHandlers {
-  /** The character at `index`, outside balanced `{{…}}`, `[[…]]`, comments and literal tags. */
-  char: (index: number) => string;
+  /** Plain text outside balanced `{{…}}`, `[[…]]`, comments and literal tags (a run, or one character that opens none). */
+  text: (text: string) => string;
   /** A balanced `{{…}}` or `[[…]]`, a comment or a literal tag, whole. */
   skipped: (text: string) => string;
   /** A `{{` or `}}` that pairs with nothing. */
   unpaired: (token: "{{" | "}}") => string;
 }
 
-/** Walks `value` at its top level, concatenating what the handlers return. */
+/** What a construct can start with (`<` a comment or a literal tag, a pair of braces or brackets): all before the next is plain text. */
+const CONSTRUCT_START = /<|\{\{|\[\[|\}\}/g;
+
+/**
+ * Walks `value` at its top level, concatenating what the handlers return. Plain text between two constructs is
+ * handed over as one run (a character that opens nothing joins it), and the pieces are joined once: a million
+ * `out +=` of one-character strings is slow in some engines.
+ */
 function scanTopLevel(value: string, handlers: TopLevelHandlers): string {
   const braces = matchBraces(value);
   const brackets = matchBrackets(value);
-  let out = "";
+  const out: string[] = [];
+  let runStart = 0;
+  /** Ends the plain text run at `to`, and starts the next one at `resume`. */
+  const construct = (to: number, resume: number, handled: string): number => {
+    if (to > runStart) out.push(handlers.text(value.slice(runStart, to)));
+    out.push(handled);
+    runStart = resume;
+    return resume;
+  };
   let i = 0;
   while (i < value.length) {
-    const protectedEnd = value[i] === "<" ? skipProtectedAt(value, i, true) : null;
-    const braceEnd = value.startsWith("{{", i) ? findMatchingClosingBraces(value, i, braces) : -2;
-    const bracketEnd = value.startsWith("[[", i) ? findMatchingClosingBrackets(value, i, brackets) : -2;
+    CONSTRUCT_START.lastIndex = i;
+    const start = CONSTRUCT_START.exec(value)?.index ?? value.length;
+    if (start > i) {
+      i = start;
+      continue;
+    }
+    const code = value.charCodeAt(i);
+    const protectedEnd = code === 60 ? skipProtectedAt(value, i, true) : null;
+    const braceEnd =
+      code === 123 && value.charCodeAt(i + 1) === 123
+        ? findMatchingClosingBraces(value, i, braces)
+        : -2;
+    const bracketEnd =
+      code === 91 && value.charCodeAt(i + 1) === 91
+        ? findMatchingClosingBrackets(value, i, brackets)
+        : -2;
     if (protectedEnd !== null) {
-      out += handlers.skipped(value.slice(i, protectedEnd));
-      i = protectedEnd;
+      i = construct(i, protectedEnd, handlers.skipped(value.slice(i, protectedEnd)));
     } else if (braceEnd >= 0) {
-      out += handlers.skipped(value.slice(i, braceEnd + 2));
-      i = braceEnd + 2;
+      i = construct(i, braceEnd + 2, handlers.skipped(value.slice(i, braceEnd + 2)));
     } else if (bracketEnd >= 0) {
-      out += handlers.skipped(value.slice(i, bracketEnd + 2));
-      i = bracketEnd + 2;
+      i = construct(i, bracketEnd + 2, handlers.skipped(value.slice(i, bracketEnd + 2)));
     } else if (braceEnd === -1) {
-      out += handlers.unpaired("{{");
-      i += 2;
-    } else if (value.startsWith("}}", i)) {
-      out += handlers.unpaired("}}");
-      i += 2;
+      i = construct(i, i + 2, handlers.unpaired("{{"));
+    } else if (code === 125 && value.charCodeAt(i + 1) === 125) {
+      i = construct(i, i + 2, handlers.unpaired("}}"));
     } else {
-      out += handlers.char(i);
       i++;
     }
   }
-  return out;
+  if (value.length > runStart) out.push(handlers.text(value.slice(runStart)));
+  return out.join("");
 }
 
 /** `value` as one parameter value: a top-level `|` is `{{!}}`, an unpaired `{{` or `}}` is literal. */
 export function escapeParamValue(value: string): string {
   return scanTopLevel(value, {
-    char: (index) => (value[index] === "|" ? "{{!}}" : value[index]!),
+    text: (text) => text.replaceAll("|", "{{!}}"),
     skipped: (text) => text,
     unpaired: (token) => `<nowiki>${token}</nowiki>`,
   });
@@ -77,8 +101,8 @@ export function escapeParamValue(value: string): string {
 function hasTopLevelEquals(value: string): boolean {
   let found = false;
   scanTopLevel(value, {
-    char: (index) => {
-      if (value[index] === "=") found = true;
+    text: (text) => {
+      if (text.includes("=")) found = true;
       return "";
     },
     skipped: () => "",
@@ -87,36 +111,72 @@ function hasTopLevelEquals(value: string): boolean {
   return found;
 }
 
-/** `lead key eq value trail` of a named parameter segment (`" capital = X\n"`). */
-const NAMED_PART = /^(\s*)([^=]*?)(\s*=\s*)([\s\S]*?)(\s*)$/;
+/**
+ * `[lead, key, eq, value, trail]` of a named parameter segment (`" capital = X\n"` is `" "`, `"capital"`, `" = "`,
+ * `"X"`, `"\n"`), or null when it has no `=`: what `/^(\s*)([^=]*?)(\s*=\s*)([\s\S]*?)(\s*)$/` captures, scanned
+ * once (a run of blanks that no `=` follows made the expression quadratic).
+ */
+function splitNamedPart(part: string): [string, string, string, string, string] | null {
+  let keyStart = 0;
+  while (keyStart < part.length && isBlank(part.charCodeAt(keyStart))) keyStart++;
+  const equals = part.indexOf("=", keyStart);
+  if (equals === -1) return null;
+  let keyEnd = equals;
+  while (keyEnd > keyStart && isBlank(part.charCodeAt(keyEnd - 1))) keyEnd--;
+  let valueStart = equals + 1;
+  while (valueStart < part.length && isBlank(part.charCodeAt(valueStart))) valueStart++;
+  let valueEnd = part.length;
+  while (valueEnd > valueStart && isBlank(part.charCodeAt(valueEnd - 1))) valueEnd--;
+  return [
+    part.slice(0, keyStart),
+    part.slice(keyStart, keyEnd),
+    part.slice(keyEnd, valueStart),
+    part.slice(valueStart, valueEnd),
+    part.slice(valueEnd),
+  ];
+}
+
 const LEADING_COMMENTS = /^(?:<!--[\s\S]*?-->\s*)+/;
-const TRAILING_COMMENTS = /(?:\s*<!--[\s\S]*?-->)+$/;
+
+/**
+ * The comments (and the blanks before them) that end `text`: what `/(?:\s*<!--[\s\S]*?-->)+$/` matches, which
+ * is everything from the first `<!--` that has `-->` after it to the end when the text ends with `-->`, and the
+ * blanks before that `<!--`.
+ */
+function trailingComments(text: string): string {
+  if (!text.endsWith("-->")) return "";
+  const open = text.indexOf("<!--");
+  if (open === -1 || text.length - open < 7) return "";
+  let from = open;
+  while (from > 0 && isBlank(text.charCodeAt(from - 1))) from--;
+  return text.slice(from);
+}
 
 /** `newValue` in the place of `oldValue`, keeping the comments that stood at its start and end. */
 function keepingComments(oldValue: string, newValue: string): string {
   const leading = LEADING_COMMENTS.exec(oldValue)?.[0] ?? "";
-  const trailing = TRAILING_COMMENTS.exec(oldValue.slice(leading.length))?.[0] ?? "";
+  const trailing = trailingComments(oldValue.slice(leading.length));
   return `${leading}${newValue}${trailing}`;
 }
 
 function replaceValue(part: string, param: WikiParameter, value: string): string {
   const escaped = escapeParamValue(value);
   if (param.isPositional) {
-    const [, lead = "", old = "", trail = ""] = /^(\s*)([\s\S]*?)(\s*)$/.exec(part) ?? [];
+    const [lead, old, trail] = splitBlanks(part);
     const text = keepingComments(old, escaped);
     // A positional value with a top-level `=` would be read as a name: write it as `N=value`.
     return hasTopLevelEquals(escaped) ? `${lead}${param.key}=${text}${trail}` : `${lead}${text}${trail}`;
   }
-  const match = NAMED_PART.exec(part);
-  return match ? `${match[1]}${match[2]}${match[3]}${keepingComments(match[4]!, escaped)}${match[5]}` : part;
+  const match = splitNamedPart(part);
+  return match ? `${match[0]}${match[1]}${match[2]}${keepingComments(match[3], escaped)}${match[4]}` : part;
 }
 
 /** A segment for a parameter that was not there, in the style of the last named one. */
 function newPart(parts: string[], key: string, value: string): string {
   const escaped = escapeParamValue(value);
   for (let i = parts.length - 1; i >= 1; i--) {
-    const match = NAMED_PART.exec(parts[i]!);
-    if (match) return `${match[1]}${key}${match[3]}${escaped}${match[5]}`;
+    const match = splitNamedPart(parts[i]!);
+    if (match) return `${match[0]}${key}${match[2]}${escaped}${match[4]}`;
   }
   return `${key}=${escaped}`;
 }

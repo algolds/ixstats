@@ -13,6 +13,7 @@
  */
 
 import { isTemplateOnlyLine, logicalLineEnd } from "./block-lines";
+import { isMagicWordLine, matchHeading, startsRedirect } from "./line-patterns";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import { parseWikiList } from "./list-parser";
 import { matchBraces, type MatchIndex } from "./match-index";
@@ -46,15 +47,12 @@ interface Scanned {
   resumeAt?: number;
 }
 
-const HEADING = /^(={1,6})\s*(.+?)\s*\1$/;
 const DIVIDER = /^----+$/;
 const LIST_LINE = /^[*#:;]/;
 const BLOCKQUOTE_OPEN = /^<blockquote[\s>]/i;
 const BLOCKQUOTE_CLOSE = /<\/blockquote>/i;
 /** A line that opens a table: `{|`, or a cell whose content starts one (`| {|`). */
 const OPENS_TABLE = /^(?:[|!]\s*)?\{\|/;
-const MAGIC_WORD_LINE = /^(?:__[A-Za-z0-9_]+__[ \t]*)+$/;
-const REDIRECT_LINE = /^#redirect\s*:?\s*\[\[/i;
 
 export function parse(input: string, options?: { title?: string; slug?: string }): ParseResult {
   const title = options?.title || "";
@@ -160,7 +158,7 @@ function scanRedirect(
   lineEnd: number,
   isFirst: boolean
 ): Scanned | null {
-  return isFirst && REDIRECT_LINE.test(line) ? rawBlock(ctx, start, lineEnd, "redirect") : null;
+  return isFirst && startsRedirect(line) ? rawBlock(ctx, start, lineEnd, "redirect") : null;
 }
 
 /** A line of comments only, or of `__NOTOC__`-style magic words. */
@@ -177,7 +175,7 @@ function scanCommentOrMagicWord(
     }
     if (isCommentOnly(line)) return rawBlock(ctx, start, lineEnd, "comment");
   }
-  return MAGIC_WORD_LINE.test(line) ? rawBlock(ctx, start, lineEnd, "magic-word") : null;
+  return isMagicWordLine(line) ? rawBlock(ctx, start, lineEnd, "magic-word") : null;
 }
 
 /**
@@ -335,11 +333,11 @@ function scanTable(
 /** `== Heading ==` and `----`, each a single line. */
 function scanHeadingOrDivider(line: string, lineEnd: number): Scanned | null {
   if (DIVIDER.test(line)) return { node: { type: "divider", children: [{ text: "" }] }, lineEnd };
-  const match = HEADING.exec(line);
-  if (!match) return null;
-  const level = Math.min(6, Math.max(1, match[1]!.length)) as 1 | 2 | 3 | 4 | 5 | 6;
+  const heading = matchHeading(line);
+  if (!heading) return null;
+  const level = heading.level as 1 | 2 | 3 | 4 | 5 | 6;
   return {
-    node: { type: "heading", level, children: parseInlineLinksAndFormatting(match[2]!) },
+    node: { type: "heading", level, children: parseInlineLinksAndFormatting(heading.title) },
     lineEnd,
   };
 }
@@ -402,12 +400,12 @@ function startsNewBlock(input: string, start: number, lineEnd: number): boolean 
   const text = line.trim();
   return (
     text === "" ||
-    HEADING.test(text) ||
+    matchHeading(text) !== null ||
     DIVIDER.test(text) ||
     LIST_LINE.test(text) ||
     text.startsWith("{|") ||
     BLOCKQUOTE_OPEN.test(text) ||
-    MAGIC_WORD_LINE.test(text) ||
+    isMagicWordLine(text) ||
     isCommentOnly(text) ||
     isTemplateOnlyLine(text) ||
     standaloneOpaqueTag(input, start + line.length - line.trimStart().length, lineEnd) !== null

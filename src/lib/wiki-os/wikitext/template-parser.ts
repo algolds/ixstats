@@ -5,6 +5,7 @@
  * nested templates, links, tables, and unclosed typing states.
  */
 
+import { forwardFinder } from "./forward-finder";
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
 import { classifyTemplate } from "./resolver";
 import { skipProtectedAt } from "./protected-regions";
@@ -23,12 +24,16 @@ interface ScannedTemplate {
   closed: boolean;
 }
 
-/** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1. */
-function nextTemplateOpen(wikitext: string, from: number): number {
+/** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1; `nextTag` finds a `<` for calls whose position only grows. */
+function nextTemplateOpen(
+  wikitext: string,
+  from: number,
+  nextTag: (from: number) => number
+): number {
   let i = from;
   let brace = wikitext.indexOf("{{", i);
   while (brace !== -1) {
-    const tag = wikitext.indexOf("<", i);
+    const tag = nextTag(i);
     if (tag === -1 || tag > brace) return brace;
     const end = skipProtectedAt(wikitext, tag);
     i = end ?? tag + 1;
@@ -129,11 +134,12 @@ export function unclosedTemplateDiagnostic(
 export function scanTemplates(wikitext: string): ScanTemplatesResult {
   const templates: ParsedTemplate[] = [];
   const diags: Diagnostic[] = [];
+  const nextTag = forwardFinder(wikitext, "<");
 
   let i = 0;
 
   while (i < wikitext.length) {
-    const openIdx = nextTemplateOpen(wikitext, i);
+    const openIdx = nextTemplateOpen(wikitext, i, nextTag);
     if (openIdx === -1) break;
 
     const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx);
