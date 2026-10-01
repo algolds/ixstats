@@ -6,7 +6,16 @@
  * worker with the jobs left in the outbox.
  */
 import type { WikiMirrorJob } from "@prisma/client";
-import { runMirrorCycle, runMirrorCycleLocked } from "~/lib/wiki-os/services/mirror-worker";
+import {
+  DEFAULT_DEADLINE_MS,
+  LOCK_TIMEOUT_MS,
+  MAX_CYCLE_MS,
+  runMirrorCycle,
+  runMirrorCycleLocked,
+} from "~/lib/wiki-os/services/mirror-worker";
+import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
+import { ATTEMPT_TIMEOUT_MS, INTERRUPTED_AFTER_MS } from "~/lib/wiki-os/services/mirror-queue";
+import { CRON_JOBS } from "~/server/cron/jobs";
 import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
@@ -501,6 +510,46 @@ describe("batches of revision jobs", () => {
   });
 });
 
+describe("the bounds that keep a lock transaction from expiring mid-attempt", () => {
+  it("bounds an attempt well under the lock, and a cycle by its deadline plus one attempt", () => {
+    expect(ATTEMPT_TIMEOUT_MS).toBe(6 * 60_000);
+    expect(MAX_CYCLE_MS).toBe(DEFAULT_DEADLINE_MS + ATTEMPT_TIMEOUT_MS);
+    expect(LOCK_TIMEOUT_MS).toBe(10 * 60_000);
+    expect(LOCK_TIMEOUT_MS).toBeGreaterThan(MAX_CYCLE_MS);
+  });
+
+  it("runs everything a revision attempt asks of MediaWiki, and a page operation, inside one attempt scope", async () => {
+    const timeout = jest.spyOn(AbortSignal, "timeout");
+    const seen: boolean[] = [];
+    sendBatch.mockImplementation(async (plan) => {
+      seen.push(requestSignal(30_000).aborted);
+      return plan.members.map(({ job }) => ({ job, mwRevId: 1 }));
+    });
+    pageJob.mockImplementation(async () => void seen.push(requestSignal(30_000).aborted));
+    addJob({ title: "Foo" });
+    addJob({ kind: "delete", title: "Bar", payload: { reason: "" }, revisionId: null });
+
+    await runMirrorCycle();
+
+    const attemptScopes = timeout.mock.calls.filter(([ms]) => ms === ATTEMPT_TIMEOUT_MS);
+    expect(attemptScopes).toHaveLength(2); // one per attempt, not per call
+    expect(seen).toEqual([false, false]);
+    timeout.mockRestore();
+  });
+
+  it("gives the cron job the same lock allowance as the in-process run, longer than a cycle can take", () => {
+    const row = CRON_JOBS.find((job) => job.name === "wiki-mirror");
+
+    expect(row?.timeoutMs).toBe(LOCK_TIMEOUT_MS);
+    expect(row?.timeoutMs).toBeGreaterThan(MAX_CYCLE_MS);
+  });
+
+  it("reclaims a `running` job only after an attempt can no longer be running", () => {
+    expect(INTERRUPTED_AFTER_MS).toBeGreaterThan(ATTEMPT_TIMEOUT_MS);
+    expect(INTERRUPTED_AFTER_MS).toBe(10 * 60_000);
+  });
+});
+
 describe("runMirrorCycleLocked", () => {
   it("does no work when another runner holds the mirror lock", async () => {
     addJob();
@@ -513,7 +562,7 @@ describe("runMirrorCycleLocked", () => {
       expect.anything(),
       "wiki-mirror",
       expect.any(Function),
-      { timeoutMs: 300_000 }
+      { timeoutMs: 600_000 }
     );
   });
 

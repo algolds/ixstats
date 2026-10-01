@@ -194,8 +194,9 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     name: "wiki-mirror",
     defaultSchedule: "* * * * *",
     lockName: "wiki-mirror",
-    // The cycle starts no job after 50 s, but a batch import of a big page can take two minutes of its own.
-    timeoutMs: 4 * MINUTE,
+    // Longer than a cycle can take (it starts nothing after 50 s, and an attempt is cut off after 6 minutes: see
+    // mirror-worker.ts MAX_CYCLE_MS / LOCK_TIMEOUT_MS, which a test keeps in step), so the lock never expires mid-attempt.
+    timeoutMs: 10 * MINUTE,
     modulePath: "~/lib/wiki-os/services/mirror-worker",
     exportName: "runMirrorCycle",
     load: async () => (await import("~/lib/wiki-os/services/mirror-worker")).runMirrorCycle,

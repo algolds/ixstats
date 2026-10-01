@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 
 let cachedBotToken: string | null = null;
 let cachedBotCookies: string[] = [];
@@ -98,7 +99,7 @@ async function loginStep<T>(
       ...(cookies.length > 0 ? { Cookie: cookies.join("; ") } : {}),
       "User-Agent": DEFAULT_USER_AGENT,
     },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: requestSignal(REQUEST_TIMEOUT_MS),
   });
   const body = await readApiBody(res, "login");
   const merged = mergeCookies(cookies, res.headers.getSetCookie());

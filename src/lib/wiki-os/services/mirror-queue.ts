@@ -22,8 +22,14 @@ const BACKOFF_BASE_MS = 30_000;
 const BACKOFF_MAX_MS = 60 * 60_000;
 /** The oldest not-done jobs a pick looks at: enough to see every blocker of the jobs it could run. */
 const WINDOW_SIZE = 1_000;
-/** An attempt makes a handful of requests of 30 s at most; one still running after this is not running. */
-const INTERRUPTED_AFTER_MS = 10 * 60_000;
+/**
+ * All the MediaWiki calls of one attempt together (the login, an import that can take two minutes, the checks, the
+ * fallback edit) are cut off after this (see adapters/mediawiki/attempt-scope.ts), which is what the worker's lock
+ * has to outlast: a lock transaction can never expire in the middle of an attempt.
+ */
+export const ATTEMPT_TIMEOUT_MS = 6 * 60_000;
+/** A job still `running` this long after its claim belongs to a run that died: longer than any attempt can last. */
+export const INTERRUPTED_AFTER_MS = ATTEMPT_TIMEOUT_MS + 4 * 60_000;
 const DONE_RETENTION_MS = 30 * 24 * 60 * 60_000;
 const LAST_ERROR_LIMIT = 2_000;
 

@@ -16,7 +16,9 @@ import { discordWebhook } from "~/lib/discord/webhook";
 import { withJobLock } from "~/lib/system/job-lock";
 import { MIRROR_LOCK_NAME } from "./mirror-outbox";
 import { runPageJob } from "./mirror-page-ops";
+import { withinAttempt } from "../adapters/mediawiki/attempt-scope";
 import {
+  ATTEMPT_TIMEOUT_MS,
   claimJob,
   completeJob,
   failJob,
@@ -33,10 +35,15 @@ import { executeRevisionBatch, planRevisionBatch } from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
 
 const DEFAULT_MAX_JOBS = 50;
-/** No new job starts after this long (the cron job is cut off at 55 s). */
-const DEFAULT_DEADLINE_MS = 50_000;
-/** The lock of an in-process run is held at most this long: its last batch can take minutes when MediaWiki is slow. */
-const KICK_LOCK_TIMEOUT_MS = 5 * 60_000;
+/** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
+export const DEFAULT_DEADLINE_MS = 50_000;
+/** The longest a cycle can run: it starts nothing after the deadline, and its last attempt is cut off after its own limit. */
+export const MAX_CYCLE_MS = DEFAULT_DEADLINE_MS + ATTEMPT_TIMEOUT_MS;
+/**
+ * The lock of an in-process run is held at most this long, and the `wiki-mirror` cron row (src/server/cron/jobs.ts)
+ * allows its job the same: more than any cycle can take, so a lock transaction never expires mid-attempt.
+ */
+export const LOCK_TIMEOUT_MS = 10 * 60_000;
 /** A cycle that kills many jobs at once (MediaWiki down for hours) warns about this many and counts the rest. */
 const MAX_DEAD_ALERTS = 5;
 
@@ -64,7 +71,7 @@ async function runRevisionBatch(claimed: readonly MirrorJob[]): Promise<MirrorJo
     const plan = await planRevisionBatch(claimed);
     handled = claimed.slice(0, plan.members.length);
     await releaseJobs(claimed.slice(handled.length).map((job) => job.id));
-    const outcomes = await executeRevisionBatch(plan);
+    const outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, () => executeRevisionBatch(plan));
     const settled: MirrorJob[] = [];
     for (const { job, mwRevId, note } of outcomes)
       settled.push(await completeJob(job, mwRevId, note));
@@ -97,7 +104,7 @@ async function runJobs(candidates: readonly MirrorJob[]): Promise<MirrorJob[]> {
   const [job] = claimed;
   if (job.kind === "revision") return runRevisionBatch(claimed);
   try {
-    await runPageJob(job);
+    await withinAttempt(ATTEMPT_TIMEOUT_MS, () => runPageJob(job));
     return [await completeJob(job, null)];
   } catch (error) {
     return failAll(claimed, error);
@@ -165,7 +172,7 @@ export async function runMirrorCycleLocked(
   options: MirrorCycleOptions = {}
 ): Promise<MirrorCycleResult | null> {
   const outcome = await withJobLock(db, MIRROR_LOCK_NAME, () => runMirrorCycle(options), {
-    timeoutMs: KICK_LOCK_TIMEOUT_MS,
+    timeoutMs: LOCK_TIMEOUT_MS,
   });
   return outcome.ran ? outcome.result : null;
 }

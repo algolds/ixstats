@@ -9,6 +9,7 @@
 
 import { z } from "zod";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import {
   getBotSessionAndToken,
   invalidateCsrfToken,
@@ -103,7 +104,7 @@ async function send<T>(
     "User-Agent": DEFAULT_USER_AGENT,
     ...(cookies.length > 0 ? { Cookie: cookies.join("; ") } : {}),
   };
-  const signal = AbortSignal.timeout(file ? IMPORT_TIMEOUT_MS : REQUEST_TIMEOUT_MS);
+  const signal = requestSignal(file ? IMPORT_TIMEOUT_MS : REQUEST_TIMEOUT_MS);
 
   let res: Response;
   if (method === "GET") {
