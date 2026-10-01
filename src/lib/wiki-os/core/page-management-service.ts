@@ -9,6 +9,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
+import { enqueueDeleteJob, enqueueMoveJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateTemplateDependents } from "../services/render-service";
 import { evictWikiTitleCaches } from "../services/title-cache-eviction";
 import { notifyWatchers, type HeadChange } from "../services/watchlist-notify";
@@ -141,6 +142,8 @@ export class PageManagementService {
           : null;
       return { success: true, ...moved, talk };
     });
+    // The move jobs are committed with it: let the mirror worker send them to MediaWiki in a moment.
+    scheduleMirrorKick();
 
     // A moved page is stale under its new name: render it off the read path, and forget what the
     // caches hold under either of its names (the old one is a redirect now).
@@ -267,7 +270,7 @@ export class PageManagementService {
     });
 
     // 7. Log the move action
-    await tx.wikiLog.create({
+    const log = await tx.wikiLog.create({
       data: {
         logType: "move",
         action: "move",
@@ -285,7 +288,21 @@ export class PageManagementService {
         userId: actor.userId,
         articleId: movedArticle.id,
       },
+      select: { id: true },
     });
+
+    // 8. The move for classic MediaWiki, in the same transaction. A deleted page is not there to move.
+    if (original.status !== "ARCHIVED") {
+      await enqueueMoveJob(tx, {
+        title: original.title,
+        articleId: movedArticle.id,
+        logId: log.id,
+        source: realm,
+        to: newCanonicalTitle,
+        reason,
+        leaveRedirect: redirectArticleId !== null,
+      });
+    }
 
     return {
       oldTitle: original.title,
@@ -388,7 +405,7 @@ export class PageManagementService {
         data: { status: "ARCHIVED", lastEditorId: actor.userId, updatedAt: new Date() },
         select: { id: true },
       });
-      await tx.wikiLog.create({
+      const log = await tx.wikiLog.create({
         data: {
           logType: "delete",
           action: "delete",
@@ -399,9 +416,18 @@ export class PageManagementService {
           userId: actor.userId,
           articleId: article.id,
         },
+        select: { id: true },
+      });
+      await enqueueDeleteJob(tx, "delete", {
+        title: article.title,
+        articleId: article.id,
+        logId: log.id,
+        source: realm,
+        reason,
       });
       return { title: article.title, articleId: article.id };
     });
+    scheduleMirrorKick();
     // A deleted page must not be read out of a cache.
     await evictWikiTitleCaches(title, realm, articleId);
     // A deleted template or module: the pages that use it render without it.
@@ -441,7 +467,7 @@ export class PageManagementService {
         data: { status: "PUBLISHED", lastEditorId: actor.userId, updatedAt: new Date() },
         select: { id: true },
       });
-      await tx.wikiLog.create({
+      const log = await tx.wikiLog.create({
         data: {
           logType: "delete",
           action: "restore",
@@ -452,9 +478,18 @@ export class PageManagementService {
           userId: actor.userId,
           articleId: article.id,
         },
+        select: { id: true },
+      });
+      await enqueueDeleteJob(tx, "undelete", {
+        title: article.title,
+        articleId: article.id,
+        logId: log.id,
+        source: realm,
+        reason,
       });
       return { title: article.title, articleId: article.id };
     });
+    scheduleMirrorKick();
     // The page was "missing" while deleted: forget that, and anything cached from before.
     await evictWikiTitleCaches(title, realm, articleId);
     // A restored template or module: the pages that use it render with it again.

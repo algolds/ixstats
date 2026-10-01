@@ -31,6 +31,7 @@ import {
 } from "../xml/revision-plan";
 import { mwSha1Base36 } from "../xml/sha1";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
+import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateDependents } from "../services/render-service";
 import { notifyWatchers } from "../services/watchlist-notify";
 
@@ -802,10 +803,20 @@ export class ArticleRepository {
         },
       });
 
+      // 3. The revision's MediaWiki mirror job, in the same transaction: a committed edit always has it.
+      await enqueueRevisionJob(tx, {
+        title: article.title,
+        articleId: article.id,
+        revisionId: revision.id,
+        source,
+      });
+
       return { article, revision, textUnchanged, previous };
     });
+    // The job is committed: let the mirror worker send it to MediaWiki in a moment, not at the next cron minute.
+    scheduleMirrorKick();
 
-    // 3. Render the new text off the read path (the commit above marked the old view stale). The render
+    // 4. Render the new text off the read path (the commit above marked the old view stale). The render
     // also fills the link graph, the template and image links and the categories (render-service.ts);
     // pages that transclude this one are stale now too.
     if (!result.textUnchanged) {
@@ -824,7 +835,7 @@ export class ArticleRepository {
       });
     }
 
-    // 4. Auto-register any new image references in PostgreSQL wiki_assets
+    // 5. Auto-register any new image references in PostgreSQL wiki_assets
     void MediaAssetService.processContentImages(wikitext || providedHtml || "").catch((err) => {
       console.warn("[ArticleRepository] Media asset processing failed:", err);
     });

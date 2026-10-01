@@ -11,6 +11,7 @@ import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { RestrictionLevel, RestrictionType } from "~/lib/wiki-os/permissions";
 import { isActive, type ExplicitGroup } from "~/lib/wiki-os/rights";
+import { enqueueProtectJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import {
   legacyProtectionLevel,
   PageOperationError,
@@ -181,25 +182,34 @@ export class RightsAdminService {
         });
       }
 
-      await tx.wikiLog.create({
+      const restrictions = changes.map((change) => ({
+        action: change.action,
+        level: change.level,
+        expiresAt: change.expiresAt?.toISOString() ?? null,
+      }));
+      const log = await tx.wikiLog.create({
         data: {
           logType: "protect",
           action: changes.some((change) => change.level !== null) ? "protect" : "unprotect",
           title,
           actorName: actor.name,
           comment: reason,
-          params: {
-            restrictions: changes.map((change) => ({
-              action: change.action,
-              level: change.level,
-              expiresAt: change.expiresAt?.toISOString() ?? null,
-            })),
-          },
+          params: { restrictions },
           userId: actor.userId,
           articleId: article?.id ?? null,
         },
+        select: { id: true },
+      });
+      await enqueueProtectJob(tx, {
+        title,
+        articleId: article?.id ?? null,
+        logId: log.id,
+        source: realm,
+        reason,
+        restrictions,
       });
     });
+    scheduleMirrorKick();
   }
 
   /** The restrictions on `title` that are in force now, each with the name of who set it. */

@@ -145,6 +145,7 @@ export interface FakeWikiDb {
   wikiRevision: Table;
   wikiLink: Table;
   wikiLog: Table;
+  wikiMirrorJob: Table;
   wikiDiscussionThread: Table;
   wikiWatchlist: Table;
   stash: Table;
@@ -173,6 +174,7 @@ export function createFakeWikiDb() {
     wikiRevision: createTable(),
     wikiLink: createTable(),
     wikiLog: createTable(() => ({ comment: null, params: null, articleId: null })),
+    wikiMirrorJob: createTable(() => ({ state: "pending", attempts: 0, payload: null })),
     wikiDiscussionThread: createTable(),
     wikiWatchlist: createTable(() => ({ notificationTime: null })),
     stash: createTable(),
