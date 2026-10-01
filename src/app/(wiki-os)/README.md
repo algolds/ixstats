@@ -44,7 +44,7 @@ Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes 
 | **Speculative Navigation** | Instant link hover/touch prefetching (`useWikiPrefetch`), localStorage client cache (`editor/local-cache.ts`, 24h TTL), and zero-navigation in-place editor bridge (`WikiEditBridge`) |
 | **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment |
 | **Two-Tier Native Search** | Tier 1 typo-tolerant prefix search (<1.5ms) + Tier 2 weighted `tsvector` full-text search with headline snippets |
-| **Cloudflare Defense** | Invisible Cloudflare Turnstile verification (when the client sends a token) and automated edge CDN cache purging on save |
+| **Cloudflare Defense** | Automated edge CDN cache purging on save (editing itself needs a signed-in account and is rate-limited and rights-checked) |
 | **Reader** | Pre-rendered HTML transforms, 3D tilt hero banner (`ArticleHeader`), sticky TOC, link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
 | **Editor** | Dual-mode Plate visual editor (WikiAST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
 | **Stash** | Color-coded collections, one-click stash toggle, text-selection annotations, per-item notes |
@@ -73,7 +73,7 @@ src/lib/wiki-os/
 │   └── category-service.ts    # Recursive category tree DAG & member lookups
 │
 ├── guardian/                  # Security & Edge Defense
-│   └── cloudflare-guardian.ts # Cloudflare Turnstile verification & global CDN cache purges
+│   └── cloudflare-guardian.ts # global CDN cache purges on save
 │
 ├── adapters/                  # External Service Adapters & Background Workers
 │   └── mediawiki/             # Legacy MediaWiki compatibility & federation suite

@@ -55,7 +55,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
 }));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
-  CloudflareGuardian: { verifyTurnstile: jest.fn(), purgeArticleEdgeCache: jest.fn() },
+  CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
@@ -684,5 +684,21 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     await expect(caller.deleteThread({ threadId: "t".repeat(65) })).rejects.toMatchObject(bad);
     await expect(caller.resolveThread({ threadId: "t".repeat(65), resolved: true })).rejects.toMatchObject(bad);
     await expect(caller.postComment({ threadId: "t".repeat(65), content: "hi" })).rejects.toMatchObject(bad);
+  });
+});
+
+describe("Plan 416 item 5: no inert Turnstile plumbing", () => {
+  const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
+
+  it("saveWikitext takes no CAPTCHA token and calls no CAPTCHA verification", () => {
+    const editing = read("src/server/api/routers/wikios/editing.ts");
+    expect(editing).not.toMatch(/turnstile/i);
+    expect(editing).toContain("CloudflareGuardian.purgeArticleEdgeCache");
+  });
+
+  it("the guardian keeps the edge cache purge and has no Turnstile verification that fails open", () => {
+    const guardian = read("src/lib/wiki-os/guardian/cloudflare-guardian.ts");
+    expect(guardian).toContain("static async purgeArticleEdgeCache");
+    expect(guardian).not.toMatch(/verifyTurnstile|siteverify|TURNSTILE_SECRET/);
   });
 });
