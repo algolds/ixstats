@@ -29,7 +29,7 @@ import { SYSTEM_TINTED, type SystemTintedColor } from "~/components/ui/badge";
 export type ActionPillTone = "tint" | SystemTintedColor;
 
 const TONE_PRESSED: Record<ActionPillTone, string> = {
-  tint: "bg-tint-fill text-tint hover:bg-tint/20 hover:text-tint",
+  tint: "bg-tint-fill text-tint-ink hover:bg-tint/20 hover:text-tint-ink",
   red: `${SYSTEM_TINTED.red} hover:bg-red/25 hover:text-red-ink`,
   orange: `${SYSTEM_TINTED.orange} hover:bg-orange/25 hover:text-orange-ink`,
   yellow: `${SYSTEM_TINTED.yellow} hover:bg-yellow/25 hover:text-yellow-ink`,

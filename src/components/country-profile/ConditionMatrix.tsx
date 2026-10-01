@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { Bank, Community, GraduationCap, City, Suitcase } from "iconoir-react";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils/cn";
@@ -24,12 +23,6 @@ const HUE: Record<ConditionKey, FacetAccent> = {
   literacy: "indigo",
   urban: "purple",
 };
-
-/**
- * The radiance layer reads `--accent` (the achievement backdrop's variable), not the tile's
- * `--facet-accent`; bridge it on the layer itself (which also shadows shadcn's global `--accent`).
- */
-const RADIANCE_ACCENT = { "--accent": "var(--facet-accent)" } as CSSProperties;
 
 /**
  * ConditionMatrix — the Sovereign Command OS "national condition" grid on real readings: one
@@ -59,7 +52,6 @@ export function ConditionMatrix({
             <span
               aria-hidden
               data-interactive="true"
-              style={RADIANCE_ACCENT}
               className="facet-radiance absolute inset-0 -z-10 rounded-[inherit]"
             />
             <div className="flex items-start justify-between gap-3">

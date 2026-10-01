@@ -108,6 +108,9 @@ beforeAll(async () => {
     "bg-facet-accent-fill",
     "text-facet-accent",
     "text-facet-accent-ink",
+    "text-label-secondary",
+    "text-muted-foreground",
+    "text-tint-ink",
   ]);
   const utilities = css.slice(css.indexOf("@layer utilities"));
   rules = flatten(utilities);
@@ -215,5 +218,31 @@ describe("accent utilities", () => {
       .join("");
     expect(body).not.toMatch(/color-mix\(in srgb, var\(--tint\)/);
     expect(body.match(/var\(--facet-accent, var\(--tint\)\)/g)!.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("vibrant labels on acrylic (spec §16.8)", () => {
+  it("material-acrylic points the secondary label at the vibrant role", () => {
+    const body = rulesFor("material-acrylic")
+      .map((r) => r.body)
+      .join("");
+    expect(body).toMatch(/--color-label-secondary:\s*var\(--color-label-vibrant-secondary\)/);
+  });
+
+  it.each(["text-label-secondary", "text-muted-foreground"])(
+    "%s reads the variable at the element, so the acrylic scope re-resolves it",
+    (cls) => {
+      expect(
+        rulesFor(cls).some((r) => /color:\s*var\(--color-label-secondary\)/.test(r.body))
+      ).toBe(true);
+    }
+  );
+
+  it('text-tint-ink is the tint pulled toward the label (Badge variant="tinted")', () => {
+    expect(
+      rulesFor("text-tint-ink").some((r) =>
+        /color-mix\(in srgb, var\(--tint\) 80%, var\(--color-label\)\)/.test(r.body)
+      )
+    ).toBe(true);
   });
 });

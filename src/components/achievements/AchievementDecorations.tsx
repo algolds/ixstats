@@ -13,16 +13,11 @@ function maskVar(iconPath: string): string {
 }
 
 /**
- * The category colours that drive the identity sheet's aurora / radiance layers. Those layers read
- * `--accent` / `--accent-2` (not the primitives' `--facet-accent`), so they are set on each layer
- * itself — that also shadows shadcn's global `--accent` (fill-3) there. The card takes the same
- * category as its `accent` prop (`categoryTheme.accent`).
+ * The aurora's secondary hue (`--facet-accent-2`). The category colour itself is the card's
+ * `accent` prop (`categoryTheme.accent` → `--facet-accent`), which the aurora and radiance read.
  */
-function accentVars(categoryTheme: CategoryTheme): CSSProperties {
-  return {
-    "--accent": accentColor(categoryTheme.accent),
-    "--accent-2": accentColor(categoryTheme.accent2),
-  } as CSSProperties;
+function auroraStyle(categoryTheme: CategoryTheme): CSSProperties {
+  return { "--facet-accent-2": accentColor(categoryTheme.accent2) } as CSSProperties;
 }
 
 /**
@@ -82,8 +77,9 @@ export function JewelAchievementIcon({
  * - the 144px ghost heraldic watermark of the icon in the bottom-right corner
  *   (`facet-ghost-heraldry`).
  * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
- * `relative overflow-hidden` card (with `accent={categoryTheme.accent}`) and keep the content
- * `relative`; the hover brighten follows the card (the layers' direct parent).
+ * `relative overflow-hidden` card with `accent={categoryTheme.accent}` (the aurora and radiance
+ * take the category colour from it) and keep the content `relative`; the hover brighten follows
+ * the card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
   iconPath,
@@ -97,7 +93,6 @@ export function AchievementCardBackdrop({
   /** Adds the foil sheen (unlocked only). */
   isLegendaryOrEpic?: boolean;
 }) {
-  const accents = accentVars(categoryTheme);
   return (
     <>
       <TextureOverlay texture="dots" opacity={0.035} />
@@ -106,14 +101,13 @@ export function AchievementCardBackdrop({
         aria-hidden
         data-interactive={isUnlocked ? "true" : undefined}
         className="facet-aurora absolute -inset-px rounded-[inherit] print:hidden"
-        style={accents}
+        style={auroraStyle(categoryTheme)}
       />
 
       <span
         aria-hidden
         data-interactive={isUnlocked ? "true" : undefined}
         className="facet-radiance absolute inset-0 rounded-[inherit] print:hidden"
-        style={accents}
       />
 
       {isLegendaryOrEpic && isUnlocked && (

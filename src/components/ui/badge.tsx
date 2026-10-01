@@ -5,7 +5,12 @@ import { cn } from "~/lib/utils/cn";
 import { isNumericText } from "~/lib/design/identity";
 
 const neutral = "bg-fill-3 text-label-secondary [a&]:hover:bg-fill-2";
-const tinted = "bg-tint-fill text-tint [a&]:hover:bg-tint/20";
+/**
+ * The app tint's ink on the tint fill: the bare tint as 12px text on its own fill is 3.8:1 at worst
+ * (light, MyCountry on `background-grouped`); the ink (tint pulled 20% toward the label, as the
+ * system-colour variants) holds ≥ 4.5:1 for every app tint (token-contrast.test.ts).
+ */
+const tinted = "bg-tint-fill text-tint-ink [a&]:hover:bg-tint/20";
 
 /**
  * System-colour tinted fills: the colour's `-ink` (the hue pulled 20% toward the label) on a 15%
@@ -33,8 +38,9 @@ export type SystemTintedColor = keyof typeof SYSTEM_TINTED;
 /**
  * Facet 3 Badge (spec §7.1): status and count chips in `text-caption`, fully rounded.
  *
- * Variants: `neutral` (fill-3) · `tinted` (tint @ fill) · one per status role — `success`,
- * `warning`, `caution`, `destructive`, `info` — as the status colour's `-ink` on a 15% fill of itself ·
+ * Variants: `neutral` (fill-3) · `tinted` (the tint's ink on the tint fill) · one per status role —
+ * `success`, `warning`, `caution`, `destructive`, `info` — as the status colour's `-ink` on a 15% fill
+ * of itself ·
  * `outline` (hairline, no fill) · one per system colour — `red`, `orange`, `yellow`, `green`,
  * `mint`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`, `brown`, `gray` — as the colour's
  * `-ink` on a 15% fill (AA for 12px text; use these for categories, rarities and tags).

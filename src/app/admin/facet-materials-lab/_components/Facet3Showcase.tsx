@@ -469,13 +469,9 @@ function Facet31Identity() {
           {/* Achievement aurora / radiance / foil / ghost heraldry */}
           <FacetCard
             padding="md"
+            accent="green"
             className="group isolate overflow-hidden"
-            style={
-              {
-                "--accent": "var(--color-green)",
-                "--accent-2": "var(--color-yellow)",
-              } as React.CSSProperties
-            }
+            style={{ "--facet-accent-2": "var(--color-yellow)" } as React.CSSProperties}
           >
             <div
               aria-hidden

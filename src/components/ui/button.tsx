@@ -58,7 +58,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         filled,
-        tinted: "bg-tint-fill text-tint hover:bg-tint/20",
+        tinted: "bg-tint-fill text-tint-ink hover:bg-tint/20",
         gray,
         plain: "bg-transparent text-tint hover:bg-fill-4",
         bordered,

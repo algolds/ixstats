@@ -71,7 +71,7 @@ export function VaultParticleExplosionModal({
                 }}
                 transition={{ duration: 2.5, ease: "easeOut" }}
               >
-                <IxCreditsSymbol className="h-full w-full" strokeWidth={3.5} />
+                <IxCreditsSymbol decorative className="h-full w-full" strokeWidth={3.5} />
               </motion.div>
             ))}
 

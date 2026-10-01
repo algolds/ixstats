@@ -96,7 +96,7 @@ export function VaultPurchaseLogs() {
         accessor: (log: PurchaseLog) => Math.abs(log.credits),
         render: (_val: unknown, log: PurchaseLog) => (
           <span className="text-red inline-flex items-center gap-0.5 font-semibold tabular-nums">
-            -<IxCreditsSymbol className="h-3 w-3 shrink-0" />
+            -<IxCreditsSymbol decorative className="h-3 w-3 shrink-0" />
             {Math.abs(log.credits).toLocaleString()} IxC
           </span>
         ),

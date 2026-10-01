@@ -112,7 +112,7 @@ export function VaultWidget() {
               <div>
                 <Eyebrow className="block">IxCredits</Eyebrow>
                 <div className="flex items-center gap-2 pt-0.5">
-                  <IxCreditsSymbol className="text-yellow size-4 shrink-0" />
+                  <IxCreditsSymbol decorative className="text-yellow size-4 shrink-0" />
                   {balanceLoading ? (
                     <Skeleton className="h-5 w-16" />
                   ) : (

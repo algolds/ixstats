@@ -261,7 +261,7 @@ export const DailyBonusWidget: React.FC = () => {
                     <ChoiceCard
                       title="IxCredits"
                       description="A random roll boosted by vault level and streak, paid up to your daily earning cap"
-                      icon={<IxCreditsSymbol className="text-yellow h-6 w-6" />}
+                      icon={<IxCreditsSymbol decorative className="text-yellow h-6 w-6" />}
                       loading={claiming === "CREDITS"}
                       disabled={claiming !== null}
                       onClick={() => handleClaim("CREDITS")}
@@ -309,7 +309,7 @@ export const DailyBonusWidget: React.FC = () => {
                       transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                       className="text-yellow"
                     >
-                      <IxCreditsSymbol className="h-10 w-10" />
+                      <IxCreditsSymbol decorative className="h-10 w-10" />
                     </motion.span>
                     <div>
                       <p className="text-label text-large-title tabular-nums">

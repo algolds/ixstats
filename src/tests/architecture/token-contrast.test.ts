@@ -11,6 +11,7 @@ import path from "path";
 
 import {
   ACCENT_FILL,
+  ACRYLIC,
   APP_IDS,
   APP_TINTS,
   BACKGROUND_ROLES,
@@ -736,5 +737,177 @@ describe("Facet 3.1 HIG pass: accent contrast", () => {
     expect(FLAG_WATERMARK.light.opacity).toBe(0.14);
     expect(FLAG_WATERMARK.dark.opacity).toBe(0.18);
     expect(FLAG_WATERMARK.light.hover).toBe(0.25);
+  });
+});
+
+// ─── Facet 3.1 HIG: vibrant labels on acrylic, tinted badges (spec §16.8) ────
+
+/** `rgb(r g b / a)` → [#rrggbb, a]. */
+function parseRgba(value: string): [string, number] {
+  const match = /^rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)$/.exec(value);
+  if (!match) throw new Error(`Expected rgb(r g b / a), got "${value}"`);
+  const hex = `#${[match[1], match[2], match[3]]
+    .map((c) => Number(c).toString(16).padStart(2, "0"))
+    .join("")}`;
+  return [hex, Number(match[4])];
+}
+
+describe("Facet 3.1 HIG: acrylic tokens match src/lib/design/tokens.ts", () => {
+  it.each(APPEARANCES)("acrylic fills (%s)", (appearance) => {
+    const b = blocks.find(
+      (x) =>
+        x.stack.length === 2 &&
+        x.stack[0] === "@layer base" &&
+        x.stack[1] === (appearance === "light" ? ":root" : ':root[data-theme="dark"]') &&
+        x.decls.has("--acrylic-fill")
+    )!;
+    expect(b).toBeDefined();
+    for (const [name, value] of Object.entries(ACRYLIC[appearance].fills)) {
+      expect([name, decl(b, name)]).toEqual([name, value]);
+    }
+  });
+
+  it("the AcrylicGlow underlay strength and layers", () => {
+    const glow = fs.readFileSync(
+      path.join(ROOT, "src/components/ui/facet/identity/Glow.tsx"),
+      "utf8"
+    );
+    expect(glow).toContain(`opacity = ${ACRYLIC.glow.opacity},`);
+    const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
+    const [l1, l2, l3] = ACRYLIC.glow.layers.map((a) => `${a * 100}%, transparent)`);
+    expect(identityCss).toContain(l1);
+    expect(identityCss).toContain(l2);
+    expect(identityCss).toContain(l3);
+    expect(identityCss).toContain(`${(1 - ACRYLIC.glow.layer3TowardWhite) * 100}%, white)`);
+  });
+
+  it("material-acrylic resolves secondary labels to the vibrant role", () => {
+    const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
+    const body = identityCss.slice(identityCss.indexOf("@utility material-acrylic {"));
+    expect(body.slice(0, body.indexOf("background-color"))).toContain(
+      "--color-label-secondary: var(--color-label-vibrant-secondary);"
+    );
+  });
+});
+
+describe("Facet 3.1 HIG: vibrant labels on acrylic over any content", () => {
+  describe.each(APPEARANCES)("%s", (appearance) => {
+    // Chrome floats over arbitrary content: the worst backdrop for dark text is black, for light
+    // text white (saturate() leaves both unchanged). The glow is composited at full strength in
+    // the most damaging hue — the v2 brand blue / indigo / cyan stops (Halo, AppSidebar, TabBar,
+    // map island) and, for `FacetMaterial material="acrylic" glow` without the brand, every
+    // accent and app tint — at each gradient stop.
+    const backdrop = appearance === "light" ? "#000000" : "#ffffff";
+    const { opacity, layers, layer3TowardWhite } = ACRYLIC.glow;
+    const brand = ["blue", "indigo", "cyan"].map((n) => role(appearance, n)) as [
+      string,
+      string,
+      string,
+    ];
+
+    function glowed(base: string, [a, b, c]: [string, string, string]): string[] {
+      const l1 = [a, b, a];
+      const l2 = [c, b, a];
+      const l3 = [a, b, c].map((h) => mix(h, "#ffffff", 1 - layer3TowardWhite));
+      return [0, 1, 2].map((i) => {
+        let bg = mix(l1[i]!, base, layers[0]! * opacity);
+        bg = mix(l2[i]!, bg, layers[1]! * opacity);
+        return mix(l3[i]!, bg, layers[2]! * opacity);
+      });
+    }
+
+    it.each([false, true])("increase contrast: %s", (more) => {
+      const hues: [string, [string, string, string]][] = [
+        ["brand", brand],
+        ...ACCENTS.map(
+          ([name, v]) =>
+            [name, [v[appearance], v[appearance], v[appearance]]] as [
+              string,
+              [string, string, string],
+            ]
+        ),
+        ...Object.entries(APP_TINTS).map(([app, sets]) => {
+          const t = more ? sets[appearance].strong : sets[appearance].tint;
+          return [`${app} tint`, [t, t, t]] as [string, [string, string, string]];
+        }),
+      ];
+      const results: { fill: string; hue: string; label: string; ratio: number }[] = [];
+      for (const [fillName, value] of Object.entries(ACRYLIC[appearance].fills)) {
+        const [rgb, alpha] = parseRgba(value);
+        const base = mix(rgb, backdrop, alpha);
+        for (const [hue, stops] of hues) {
+          for (const bg of [base, ...glowed(base, stops)]) {
+            for (const label of ["label", "label-vibrant-secondary"]) {
+              results.push({
+                fill: fillName,
+                hue,
+                label,
+                ratio: contrast(role(appearance, label, more), bg),
+              });
+            }
+          }
+        }
+      }
+      // Reduce Transparency / Increase Contrast: the opaque `surface-elevated`.
+      for (const label of ["label", "label-vibrant-secondary"]) {
+        results.push({
+          fill: "surface-elevated (opaque)",
+          hue: "none",
+          label,
+          ratio: contrast(
+            role(appearance, label, more),
+            role(appearance, "surface-elevated", more)
+          ),
+        });
+      }
+      const failures = results.filter((r) => r.ratio < AA_TEXT);
+      expect(failures).toEqual([]);
+      // The vibrant role is never weaker than the plain secondary label on the opaque surfaces.
+      for (const bg of BACKGROUND_ROLES) {
+        expect(
+          contrast(role(appearance, "label-vibrant-secondary", more), role(appearance, bg, more))
+        ).toBeGreaterThanOrEqual(
+          contrast(role(appearance, "label-secondary", more), role(appearance, bg, more))
+        );
+      }
+    });
+  });
+});
+
+describe('Facet 3.1 HIG: Badge variant="tinted" (tint-ink on tint-fill)', () => {
+  it("the tinted Badge uses the tint's ink, never the bare tint, on its fill", () => {
+    const badge = fs.readFileSync(path.join(ROOT, "src/components/ui/badge.tsx"), "utf8");
+    expect(badge).toContain('const tinted = "bg-tint-fill text-tint-ink');
+    expect(badge).not.toMatch(/const tinted = "[^"]*text-tint(?![\w-])/);
+    const aliases = blocks.find(
+      (b) =>
+        b.stack.length === 1 && b.stack[0] === "@theme inline static" && b.decls.has("--color-tint")
+    )!;
+    expect(decl(aliases, "--color-tint-ink")).toBe(
+      `color-mix(in srgb, var(--tint) ${TINTED_FILL.inkMix * 100}%, var(--color-label))`
+    );
+  });
+
+  describe.each(APPEARANCES)("%s", (appearance) => {
+    describe.each([false, true])("increase contrast: %s", (more) => {
+      it.each(Object.keys(APP_TINTS))(
+        "%s: ink ≥ 4.5:1 on the tint fill (rest and link hover) over every background role",
+        (app) => {
+          const sets = APP_TINTS[app as keyof typeof APP_TINTS][appearance];
+          const tint = more ? sets.strong : sets.tint;
+          const ink = mix(tint, role(appearance, "label", more), TINTED_FILL.inkMix);
+          for (const bg of BACKGROUND_ROLES) {
+            for (const [state, alpha] of [
+              ["rest", ACCENT_FILL[appearance]],
+              ["hover", 0.2],
+            ] as const) {
+              const fill = mix(tint, role(appearance, bg, more), alpha);
+              const ratio = contrast(ink, fill);
+              expect({ app, bg, state, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+            }
+          }
+        }
+      );
+    });
   });
 });

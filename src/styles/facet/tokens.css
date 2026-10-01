@@ -63,6 +63,10 @@
   --color-label-secondary: #52525b;
   --color-label-tertiary: #a1a1aa;
   --color-label-quaternary: #d4d4d8;
+  /* HIG vibrant secondary label: `label-secondary` inside `material-acrylic` (identity.css), where
+     chrome floats over arbitrary content — ≥ 4.5:1 over a black (light) / white (dark) backdrop
+     under the thinnest acrylic fill and its glow (token-contrast.test.ts, "acrylic"). */
+  --color-label-vibrant-secondary: #46464e;
 
   /* Backgrounds & surfaces */
   --color-background: #ffffff;
@@ -114,6 +118,9 @@
   --color-tint-hover: var(--tint-hover);
   --color-on-tint: var(--on-tint);
   --color-tint-fill: var(--tint-fill);
+  /* Tint as text on its own fill (`Badge variant="tinted"`, a selected tinted chip): the tint pulled
+     20% toward the label, like the system-colour inks — the bare tint drops to 3.8:1 there. */
+  --color-tint-ink: color-mix(in srgb, var(--tint) 80%, var(--color-label));
 
   /* on- pairs for system colours */
   --color-on-red: var(--color-on-system);
@@ -590,6 +597,7 @@
     --color-label-secondary: #a1a1aa;
     --color-label-tertiary: #71717a;
     --color-label-quaternary: #52525b;
+    --color-label-vibrant-secondary: #bebec6;
 
     --color-background: #0b0c0f;
     --color-background-grouped: #0b0c0f;
@@ -741,6 +749,7 @@
   :root[data-contrast="more"] {
     --color-label-secondary: #3f3f46;
     --color-label-tertiary: #71717a;
+    --color-label-vibrant-secondary: #3f3f46;
     --color-separator: rgba(0, 0, 0, 0.2);
     --color-separator-opaque: #a1a1aa;
   }
@@ -752,6 +761,7 @@
   :root[data-theme="dark"][data-contrast="more"] {
     --color-label-secondary: #d4d4d8;
     --color-label-tertiary: #a1a1aa;
+    --color-label-vibrant-secondary: #d4d4d8;
     --color-separator: rgba(255, 255, 255, 0.24);
     --color-separator-opaque: #52525b;
   }
@@ -764,6 +774,7 @@
     :root:not([data-theme="dark"]) {
       --color-label-secondary: #3f3f46;
       --color-label-tertiary: #71717a;
+      --color-label-vibrant-secondary: #3f3f46;
       --color-separator: rgba(0, 0, 0, 0.2);
       --color-separator-opaque: #a1a1aa;
     }
@@ -775,6 +786,7 @@
     :root[data-theme="dark"] {
       --color-label-secondary: #d4d4d8;
       --color-label-tertiary: #a1a1aa;
+      --color-label-vibrant-secondary: #d4d4d8;
       --color-separator: rgba(255, 255, 255, 0.24);
       --color-separator-opaque: #52525b;
     }

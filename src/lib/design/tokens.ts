@@ -28,6 +28,9 @@ export const COLOR_ROLES = {
     "label-secondary": "#52525b",
     "label-tertiary": "#a1a1aa",
     "label-quaternary": "#d4d4d8",
+    // HIG vibrant secondary label: what `label-secondary` resolves to inside `material-acrylic`
+    // (chrome over arbitrary content) — ≥ 4.5:1 over a black / white backdrop (see `ACRYLIC`).
+    "label-vibrant-secondary": "#46464e",
     background: "#ffffff",
     "background-grouped": "#f2f3f6",
     surface: "#ffffff",
@@ -47,6 +50,7 @@ export const COLOR_ROLES = {
     "label-secondary": "#a1a1aa",
     "label-tertiary": "#71717a",
     "label-quaternary": "#52525b",
+    "label-vibrant-secondary": "#bebec6",
     background: "#0b0c0f",
     "background-grouped": "#0b0c0f",
     surface: "#16181d",
@@ -70,12 +74,14 @@ export const COLOR_ROLES_MORE_CONTRAST = {
   light: {
     "label-secondary": "#3f3f46",
     "label-tertiary": "#71717a",
+    "label-vibrant-secondary": "#3f3f46",
     separator: "rgba(0, 0, 0, 0.2)",
     "separator-opaque": "#a1a1aa",
   },
   dark: {
     "label-secondary": "#d4d4d8",
     "label-tertiary": "#a1a1aa",
+    "label-vibrant-secondary": "#d4d4d8",
     separator: "rgba(255, 255, 255, 0.24)",
     "separator-opaque": "#52525b",
   },
@@ -330,6 +336,34 @@ export const GLASS_HERO = {
  * contrast test uses for text over the glow.
  */
 export const GLOW = { opacity: 0.15, blur: 64, size: 160, blurPeak: 0.54 } as const;
+
+/**
+ * Acrylic (`material-acrylic`: Halo island, AppSidebar, TabBar, map island) as the contrast guard
+ * sees it. `fills` are the translucent fills of every state (rest, hover/focus, the two expanded
+ * stops) exactly as tokens.css declares them; `glow` is the `AcrylicGlow` underlay (three layers at
+ * `layers` alpha × `opacity`, layer 3 the hue 60% toward white). Chrome floats over arbitrary
+ * content, so the worst case is a black (light) / white (dark) backdrop under the thinnest fill
+ * plus the glow in its most damaging hue — the reason labels on acrylic use the vibrant roles.
+ */
+export const ACRYLIC = {
+  light: {
+    fills: {
+      "--acrylic-fill": "rgb(255 255 255 / 0.85)",
+      "--acrylic-fill-active": "rgb(255 255 255 / 0.9)",
+      "--acrylic-fill-expanded-from": "rgb(255 255 255 / 0.94)",
+      "--acrylic-fill-expanded-to": "rgb(250 250 253 / 0.89)",
+    },
+  },
+  dark: {
+    fills: {
+      "--acrylic-fill": "rgb(15 17 24 / 0.88)",
+      "--acrylic-fill-active": "rgb(18 20 28 / 0.92)",
+      "--acrylic-fill-expanded-from": "rgb(24 28 40 / 0.94)",
+      "--acrylic-fill-expanded-to": "rgb(13 15 22 / 0.96)",
+    },
+  },
+  glow: { opacity: 0.4, layers: [0.2, 0.15, 0.1], layer3TowardWhite: 0.4 },
+} as const;
 
 /**
  * Flag watermark (`FlagWatermark`): v2 DashboardHero opacity, hover brighten and scale. `tone` is

@@ -22,6 +22,7 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
 import { springSnappy } from "~/lib/design/motion";
+import { cn } from "~/lib/utils";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -308,33 +309,22 @@ function CommandPaletteContent({
           )}
         </AnimatePresence>
 
-        {/* DI pill — draggable for swipe-up nav tray */}
+        {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
+            a static highlight — the tour tooltip's tint ring and soft tint glow (`facet-glow`) —
+            instead of the retired looping pulse (spec §8 / §16.8: no ambient loops). It has no
+            movement, so it is the same under Reduce Motion. */}
         <motion.div
-          className={`rounded-full ${diPulseClass}`}
+          data-tour-highlight={isTourActive ? "true" : undefined}
+          className={cn(
+            "rounded-full",
+            diPulseClass,
+            isTourActive && "ring-tint/50 facet-glow ring-2"
+          )}
           animate={{
             scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,
-            boxShadow: isTourActive
-              ? [
-                  "0 0 0px color-mix(in srgb, var(--tint) 0%, transparent)",
-                  "0 0 15px color-mix(in srgb, var(--tint) 50%, transparent)",
-                  "0 0 0px color-mix(in srgb, var(--tint) 0%, transparent)",
-                ]
-              : "0 0 0px transparent",
           }}
-          transition={
-            isTourActive
-              ? {
-                  boxShadow: {
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "easeInOut",
-                  },
-                  scale: springSnappy,
-                  y: springSnappy,
-                }
-              : springSnappy
-          }
+          transition={springSnappy}
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.15}

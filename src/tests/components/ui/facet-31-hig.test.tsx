@@ -10,6 +10,8 @@ import path from "path";
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import { AchievementCardBackdrop } from "~/components/achievements/AchievementDecorations";
+import { getCategoryTheme } from "~/components/achievements/constants";
 import { Badge } from "~/components/ui/badge";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
@@ -27,6 +29,7 @@ import {
   isFacetAccent,
 } from "~/lib/design/identity";
 import { DURATION_FAST } from "~/lib/design/motion";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { SYSTEM_COLORS, TEXT_STYLES } from "~/lib/design/tokens";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
@@ -433,5 +436,89 @@ describe("typography (HIG Dynamic Type)", () => {
     expect(typographyCss).toMatch(
       /font-family: "Schibsted Grotesk";\s*src: url\("\/fonts\/Schibsted Grotesk-700\.ttf"\)[^}]*font-weight: 700;/
     );
+  });
+});
+
+// ─── HIG follow-ups (spec §16.8: vibrant labels, achievement accents, tour, IxCredits, badge) ──
+
+describe("achievement aurora / radiance follow the card's accent", () => {
+  it("the layers read --facet-accent (and --facet-accent-2), never shadcn's --accent", () => {
+    for (const cls of [".facet-aurora {", ".facet-radiance {"]) {
+      const body = identityCss.slice(identityCss.indexOf(cls));
+      const rule = body.slice(0, body.indexOf("}"));
+      expect(rule).toContain("var(--facet-accent, var(--tint))");
+      expect(rule).not.toMatch(/var\(--accent[,)-]/);
+    }
+    expect(identityCss).toContain("var(--facet-accent-2, var(--color-yellow))");
+  });
+
+  it("AchievementCardBackdrop sets only the aurora's second hue; the card's accent drives the rest", () => {
+    const theme = getCategoryTheme("Economic");
+    const { container } = render(
+      <FacetCard accent={theme.accent} data-testid="card">
+        <AchievementCardBackdrop iconPath="/x.svg" categoryTheme={theme} isUnlocked />
+      </FacetCard>
+    );
+    const card = screen.getByTestId("card");
+    expect(styleVar(card, "--facet-accent")).toBe(accentColor(theme.accent));
+    const aurora = container.querySelector(".facet-aurora")!;
+    const radiance = container.querySelector(".facet-radiance")!;
+    expect(styleVar(aurora, "--facet-accent-2")).toBe(accentColor(theme.accent2));
+    for (const layer of [aurora, radiance]) {
+      expect(styleVar(layer, "--accent")).toBe("");
+      expect(styleVar(layer, "--accent-2")).toBe("");
+    }
+    expect(radiance.getAttribute("style")).toBeNull();
+  });
+
+  it("no consumer bridges --accent onto the layers any more", () => {
+    for (const file of [
+      "src/components/achievements/AchievementDecorations.tsx",
+      "src/components/country-profile/ConditionMatrix.tsx",
+    ]) {
+      const source = fs.readFileSync(path.join(ROOT, file), "utf8");
+      expect([file, /["']--accent(-2)?["']/.test(source)]).toEqual([file, false]);
+    }
+  });
+});
+
+describe("Halo walkthrough highlight", () => {
+  it("is a static ring, not a looping pulse (spec §8: no ambient loops)", () => {
+    const source = fs.readFileSync(path.join(ROOT, "src/components/halo/index.tsx"), "utf8");
+    expect(source).not.toMatch(/repeat:\s*Infinity/);
+    expect(source).toContain('isTourActive && "ring-tint/50 facet-glow ring-2"');
+  });
+});
+
+describe("IxCreditsSymbol accessible name", () => {
+  it("names the unit by default", () => {
+    render(<IxCreditsSymbol data-testid="ixc" />);
+    const svg = screen.getByTestId("ixc");
+    expect(svg).toHaveAttribute("role", "img");
+    expect(svg).toHaveAttribute("aria-label", "IxCredits");
+    expect(screen.getByRole("img", { name: "IxCredits" })).toBe(svg);
+  });
+
+  it("is hidden when decorative or aria-hidden (a visible unit label already names it)", () => {
+    const expectHidden = () => {
+      const svg = screen.getByTestId("ixc");
+      expect(svg).toHaveAttribute("aria-hidden", "true");
+      expect(svg).not.toHaveAttribute("role");
+      expect(svg).not.toHaveAttribute("aria-label");
+    };
+    const { rerender } = render(<IxCreditsSymbol decorative data-testid="ixc" />);
+    expectHidden();
+    rerender(<IxCreditsSymbol aria-hidden data-testid="ixc" />);
+    expectHidden();
+  });
+});
+
+describe('Badge variant="tinted"', () => {
+  it("sets the tint's ink on the tint fill (AA; token-contrast.test.ts)", () => {
+    render(<Badge variant="tinted">New</Badge>);
+    const cls = classOf(screen.getByText("New"));
+    expect(cls).toMatch(/\btext-tint-ink\b/);
+    expect(cls).not.toMatch(/\btext-tint(?![\w-])/);
+    expect(cls).toMatch(/\bbg-tint-fill\b/);
   });
 });

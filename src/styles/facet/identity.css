@@ -17,8 +17,8 @@
      border-colour utility.
    - Accents: everything that mixes the app tint reads `var(--facet-accent, var(--tint))`, so the
      `accent` prop (FacetCard, CutoutCard, CutoutCardHeader, FacetMaterial) re-tints the glow, rim,
-     glass wash and header strip of that card only, without touching `--tint` for its subtree
-     (`facet-retint` does that, on request).
+     glass wash, header strip and achievement aurora / radiance of that card only, without
+     touching `--tint` for its subtree (`facet-retint` does that, on request).
    - HIG (spec §16.8): Reduce Motion drops movement (press, lift, zoom, blur-in, watermark scale);
      Reduce Transparency and Increase Contrast make the materials opaque and remove every blurred
      or translucent decorative layer (glow blobs, acrylic underlay, aurora, radiance, foil) while
@@ -207,6 +207,12 @@
    underlay) and `<Refraction edges="all" />` (edge refraction). Chrome only; never nested. */
 
 @utility material-acrylic {
+  /* HIG vibrant labels: chrome floats over arbitrary content, so secondary labels inside resolve
+     to the vibrant role (≥ 4.5:1 over a black / white backdrop under the thinnest fill and the
+     glow, light / dark / Increase Contrast — token-contrast.test.ts "acrylic"). `text-label-
+     secondary`, `text-muted-foreground` and `var(--color-label-secondary)` all follow; `label`
+     already holds (≥ 8:1). Automatic: no per-app utility needed. */
+  --color-label-secondary: var(--color-label-vibrant-secondary);
   background-color: var(--acrylic-fill);
   -webkit-backdrop-filter: blur(var(--acrylic-blur)) saturate(var(--acrylic-saturate));
   backdrop-filter: blur(var(--acrylic-blur)) saturate(var(--acrylic-saturate));
@@ -579,8 +585,11 @@
   }
 
   /* ─── Achievement backdrop (v2 AchievementCardBackdrop) ─────────────────
-     Set the colours per card with `--accent` (category colour, e.g. `var(--color-green)`) and
-     `--accent-2` (secondary hue, e.g. `var(--color-yellow)`); place each layer with utilities
+     The category colour is the card's accent: `accent="green"` on the FacetCard / CutoutCard (or
+     `facetAccentStyle()` on another element) sets `--facet-accent`, which the aurora and radiance
+     read like every identity paint (the app tint when no accent is set). The aurora's second hue
+     is `--facet-accent-2` (e.g. `var(--color-yellow)`, the default) on the layer or the card. Not
+     `--accent`: that is shadcn's (`fill-3`) and is always set. Place each layer with utilities
      (`absolute -inset-px rounded-[inherit]` / `absolute inset-0`). All decorative: aria-hidden.
      Hover intensifies when the card (direct parent) is hovered. */
 
@@ -590,8 +599,8 @@
     pointer-events: none;
     background-image: linear-gradient(
       to top right,
-      color-mix(in srgb, var(--accent, var(--tint)) 15%, transparent),
-      color-mix(in srgb, var(--accent-2, var(--color-yellow)) 10%, transparent),
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 15%, transparent),
+      color-mix(in srgb, var(--facet-accent-2, var(--color-yellow)) 10%, transparent),
       transparent
     );
     opacity: var(--aurora-opacity);
@@ -607,8 +616,8 @@
     pointer-events: none;
     background-image: linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--accent, var(--tint)) 10%, transparent),
-      color-mix(in srgb, var(--accent, var(--tint)) 5%, transparent),
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 10%, transparent),
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 5%, transparent),
       transparent
     );
     opacity: var(--radiance-opacity);
