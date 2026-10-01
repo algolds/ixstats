@@ -311,13 +311,21 @@ function unquote(value: string): string {
   return value;
 }
 
-/** The first `url(...)` that points outside the file, or null. */
+/**
+ * The first `url(...)` that points outside the file, or null. One forward pass: each `url(` is judged between itself and
+ * the `)` that closes it, and the search goes on after that `)`, so no part of the text is read twice. A `url(` that is
+ * never closed is refused at once (nothing after it could be told apart from its argument): scanning on from every
+ * later `url(` to the end of the text would be quadratic, and the text is up to 10 MB of an uploader's choosing.
+ */
 function externalUrlFunction(text: string): string | null {
   const lower = text.toLowerCase();
-  for (let at = lower.indexOf("url("); at !== -1; at = lower.indexOf("url(", at + 4)) {
-    const close = text.indexOf(")", at);
-    const argument = unquote(text.slice(at + 4, close === -1 ? text.length : close).trim());
+  let at = lower.indexOf("url(");
+  while (at !== -1) {
+    const close = text.indexOf(")", at + 4);
+    if (close === -1) return "it has a url() that is never closed";
+    const argument = unquote(text.slice(at + 4, close).trim());
     if (!isLocalReference(argument)) return "it refers to something outside the file (url())";
+    at = lower.indexOf("url(", close + 1);
   }
   return null;
 }

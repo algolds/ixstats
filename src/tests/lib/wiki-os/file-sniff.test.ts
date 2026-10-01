@@ -276,6 +276,29 @@ describe("sniffFile: SVG", () => {
     expect(svgProblem(`<svg><!-- <script>alert(1)</script> --><rect/></svg>`)).toBeNull();
   });
 
+  it("refuses a url() that is never closed, however many there are, and does it in linear time", () => {
+    // 560 KB of this took 128 s before the scan went forward only (the review's vector: each url( re-read the rest)
+    const unclosed = `<svg><style>${"url(#a ".repeat(80_000)}</style></svg>`;
+    expect(svgProblem(unclosed)).toBe("it has a url() that is never closed");
+
+    // ... and at the size limit an uploader can send
+    const started = Date.now();
+    const big = svg(`<svg><style>${"url(#a ".repeat(Math.floor(9_800_000 / 7))}</style></svg>`);
+    expect(sniffFile(big)).toMatchObject({ ok: false, code: "unsafe-svg" });
+    expect(Date.now() - started).toBeLessThan(3_000);
+  });
+
+  it("reads ten megabytes of closed url() references in linear time, and accepts them when they stay in the file", () => {
+    const started = Date.now();
+    const closed = `<svg><style>${"fill:url(#a);".repeat(Math.floor(9_800_000 / 13))}</style></svg>`;
+    expect(svgProblem(closed)).toBeNull();
+    expect(Date.now() - started).toBeLessThan(3_000);
+    // one that leaves the file, at the very end, is still found
+    expect(svgProblem(`${closed}<style>a{fill:url(//evil.example/a)}</style>`)).toBe(
+      "it refers to something outside the file (url())"
+    );
+  });
+
   it("scans a hostile SVG in linear time", () => {
     const started = Date.now();
     const nested = `<svg>${'<g a="'.repeat(30_000)}${" ".repeat(200_000)}</svg>`;
