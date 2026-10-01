@@ -188,9 +188,12 @@ const TYPEAHEAD_SQL = `
   ORDER BY tier, similarity DESC, length(title), title
   LIMIT $6::int`;
 
+/** Postgres text cannot hold a NUL character: a query with one is a 500 from the driver, so it is dropped. */
+const withoutNul = (query: string): string => query.replaceAll("\u0000", "");
+
 /** The query as text to match titles with: spaces for underscores, one space between words. */
 const normalizeQuery = (query: string): string =>
-  query.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  withoutNul(query).replace(/_/g, " ").replace(/\s+/g, " ").trim();
 
 /** `value` as the literal part of a LIKE pattern. */
 const likeLiteral = (value: string): string => value.replace(/[\\%_]/g, "\\$&");
@@ -484,7 +487,7 @@ export class NativeSearchService {
     offset = 0,
     namespace = 0
   ): Promise<{ results: SearchResultItem[]; total: number }> {
-    const trimmed = query.trim();
+    const trimmed = withoutNul(query).trim();
     if (!trimmed) return { results: [], total: 0 };
 
     return withSearchIndex(

@@ -160,6 +160,26 @@ describe("fulltextSearch (indexed)", () => {
     expect(headlineSql).toContain("left(regexp_replace(");
   });
 
+  it("drops NUL characters from the query: Postgres text cannot hold one", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+    const { NativeSearchService } = loadService();
+
+    await NativeSearchService.fulltextSearch("a\u0000b kingd\u0000om");
+
+    const [, ...pageParams] = mockQueryRaw.mock.calls[0] as [string, ...unknown[]];
+    expect(JSON.stringify(pageParams)).not.toContain("\\u0000");
+    expect(pageParams[0]).toBe("ab ");
+    expect(pageParams[5]).toBe("kingdom");
+
+    // only NULs: nothing left to search for, and the database is not asked
+    mockQueryRaw.mockClear();
+    await expect(NativeSearchService.fulltextSearch("\u0000\u0000")).resolves.toEqual({
+      results: [],
+      total: 0,
+    });
+    expect(mockQueryRaw).not.toHaveBeenCalled();
+  });
+
   it("filters by namespace and published status in SQL", async () => {
     mockQueryRaw.mockResolvedValue([]);
     const { NativeSearchService } = loadService();
@@ -395,6 +415,20 @@ describe("spotlightSearch (title typeahead)", () => {
       ["title_fuzzy", 0.8],
       ["title_fuzzy", 0.45],
     ]);
+  });
+
+  it("drops NUL characters from what the reader typed, so a\\u0000b is not a 500", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+    const { NativeSearchService } = loadService();
+
+    await NativeSearchService.spotlightSearch("a\u0000b");
+
+    const params = (mockQueryRaw.mock.calls[0] as unknown[]).slice(1);
+    expect(params).toEqual(["ixwiki", 0, "ab", "ab%", null, 10]);
+
+    mockQueryRaw.mockClear();
+    await expect(NativeSearchService.spotlightSearch("\u0000")).resolves.toEqual([]);
+    expect(mockQueryRaw).not.toHaveBeenCalled();
   });
 
   it("is empty for a blank query without asking the database", async () => {
