@@ -18,7 +18,7 @@ import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_PAINT } from "./domain-hue";
+import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
@@ -286,9 +286,10 @@ export function ExecutiveRecordFeed({
                       {/* v2 category badge: the category glyph in its domain hue. */}
                       <span
                         aria-hidden="true"
+                        style={hueAccentStyle(meta.hue)}
                         className={cn(
                           "flex size-7 shrink-0 items-center justify-center rounded-lg border",
-                          HUE_PAINT[meta.hue].badge
+                          HUE_BADGE
                         )}
                       >
                         <meta.icon className="size-3.5" />

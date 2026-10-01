@@ -146,7 +146,7 @@ export function CulturalExchangeWizard({
         ) : (
           <Button onClick={() => onComplete(data)}>
             <Check className="mr-2" />
-            Create Exchange
+            Create exchange
           </Button>
         )}
       </div>

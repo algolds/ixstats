@@ -453,8 +453,8 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                 {exchange.status === "active" && (
                   <>
                     <Button className="flex-1" onClick={() => onJoin(exchange.id, "participant")}>
-                      <User className="h-4 w-4" />
-                      Join as Participant
+                      <User aria-hidden="true" className="h-4 w-4" />
+                      Join as participant
                     </Button>
                     <Button
                       variant="outline"

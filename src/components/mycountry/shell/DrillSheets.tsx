@@ -39,7 +39,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_PAINT, hueOf } from "./domain-hue";
+import { HUE_BADGE, hueAccentStyle, hueOf } from "./domain-hue";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 
@@ -610,9 +610,10 @@ function DrillSheetsComponent({
               {/* v2: the sheet's glyph in its domain hue (gold for directives and issues) */}
               <span
                 aria-hidden="true"
+                style={hueAccentStyle(hueOf(drill?.kind) ?? "yellow")}
                 className={cn(
                   "flex size-8 shrink-0 items-center justify-center rounded-lg border",
-                  HUE_PAINT[hueOf(drill?.kind) ?? "yellow"].badge
+                  HUE_BADGE
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -626,6 +627,7 @@ function DrillSheetsComponent({
                   target="_blank"
                 >
                   Open page
+                  <span className="sr-only"> (opens in a new tab)</span>
                   <ArrowUpRight aria-hidden="true" />
                 </Link>
               </Button>

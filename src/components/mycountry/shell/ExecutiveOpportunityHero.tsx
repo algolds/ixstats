@@ -22,7 +22,7 @@ import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/Drill
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
 import { type StatusTone } from "./status-tone";
-import { HUE_PAINT, type DomainHue } from "./domain-hue";
+import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "./domain-hue";
 import { FlagWatermark, WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 import { assetUrl } from "~/lib/base-path";
 
@@ -308,7 +308,7 @@ function ExecutiveOpportunityHeroComponent({
             }
           : null;
 
-  const paint = HUE_PAINT[opportunity.hue];
+  const accent = HUE_ACCENT[opportunity.hue];
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   return (
@@ -322,17 +322,13 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        {/* The v2 priority hero (c5c6b382) on the Facet 3.1 glass hero: the priority's hue drives
-            the glass wash, border, glow and badge (v2 `borderCls`/`badgeCls`), the country's flag
-            bleeds off the top-right corner and the priority's glyph sits as a fine watermark. */}
-        <FacetCard
-          variant="glass"
-          glow
-          className="group p-5 sm:p-6"
-          style={{ "--tint": paint.color } as React.CSSProperties}
-        >
+        {/* The v2 priority hero (c5c6b382) on the Facet 3.1 glass hero: the priority's hue is the
+            card's accent — the glass wash, border, glow and badge (v2 `borderCls`/`badgeCls`) —
+            the country's flag bleeds off the top-right corner and the priority's glyph sits as a
+            fine watermark. */}
+        <FacetCard variant="glass" glow accent={accent} className="group p-5 sm:p-6">
           <FlagWatermark src={flagUrl} />
-          <WatermarkGlyph icon={Icon} className={cn("opacity-[0.06]", paint.glyph)} />
+          <WatermarkGlyph icon={Icon} className="text-facet-accent opacity-[0.06]" />
           <Button
             type="button"
             variant="ghost"
@@ -351,7 +347,7 @@ function ExecutiveOpportunityHeroComponent({
                 <span
                   className={cn(
                     "text-footnote inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold",
-                    paint.badge
+                    HUE_BADGE
                   )}
                 >
                   <Icon aria-hidden="true" className="size-3.5 shrink-0" />
@@ -405,7 +401,7 @@ function ExecutiveOpportunityHeroComponent({
                   onClick={secondary.onClick}
                   className="bg-surface h-11 sm:h-9"
                 >
-                  <Compass aria-hidden="true" className={paint.glyph} />
+                  <Compass aria-hidden="true" className="text-facet-accent" />
                   <span>{secondary.label}</span>
                 </Button>
               )}
@@ -417,9 +413,12 @@ function ExecutiveOpportunityHeroComponent({
   );
 }
 
-/** v2 CTA arrow: dimmed at rest, drifting up-right on hover (no drift under Reduce Motion). */
+/**
+ * v2 CTA arrow: dimmed at rest, drifting up-right on hover and keyboard focus (no drift under
+ * Reduce Motion).
+ */
 const CTA_ARROW =
-  "opacity-70 transition-[opacity,translate] duration-150 group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5 group-hover/cta:opacity-100 motion-reduce:group-hover/cta:translate-x-0 motion-reduce:group-hover/cta:translate-y-0";
+  "opacity-70 transition-[opacity,translate] duration-150 group-hover/cta:opacity-100 group-focus-visible/cta:opacity-100 motion-safe:group-hover/cta:translate-x-0.5 motion-safe:group-hover/cta:-translate-y-0.5 motion-safe:group-focus-visible/cta:translate-x-0.5 motion-safe:group-focus-visible/cta:-translate-y-0.5";
 
 const DRILL_LABEL: Partial<Record<Opportunity["domain"], string>> = {
   defense: "defense",

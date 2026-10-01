@@ -89,8 +89,8 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
           )}
 
           <Button size="sm" onClick={onCreateExchange}>
-            <Plus className="h-3.5 w-3.5" />
-            Create Exchange
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+            Create exchange
           </Button>
         </div>
       </div>

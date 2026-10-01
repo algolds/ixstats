@@ -20,7 +20,7 @@ import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import type { StatusTone } from "./status-tone";
-import { HUE_PAINT, type DomainHue } from "./domain-hue";
+import { HUE_BADGE, hueAccentStyle, type DomainHue } from "./domain-hue";
 import {
   DiplomacyGraphic,
   DefenseGraphic,
@@ -134,9 +134,10 @@ export const DOMAIN_TILES: {
 /**
  * One domain destination, restored from c5c6b382: the domain's glyph in its v2 hue badge, title,
  * a real-data peek and the up-right arrow, over the domain's fine-stroke architectural watermark.
- * Hover lifts the tile (`facet-lift`), brightens the watermark and drifts the arrow; press scales
- * it (`facet-press`). The tile is opaque (`bg-surface`) so it never stacks blur on the glass
- * command bar it sits in.
+ * Hover lifts the tile (`facet-lift`), brightens the watermark and drifts the arrow — keyboard
+ * focus shows the same affordances; press scales it (`facet-press`). The domain hue is the tile's
+ * Facet accent (badge, watermark, hover border). The tile is opaque (`bg-surface`) so it never
+ * stacks blur on the glass command bar it sits in.
  */
 export function DomainTileButton({
   tile,
@@ -151,16 +152,16 @@ export function DomainTileButton({
 }) {
   const Icon = tile.icon;
   const Graphic = tile.graphic;
-  const paint = HUE_PAINT[tile.hue];
   return (
     <button
       type="button"
       onClick={onSelect}
+      style={hueAccentStyle(tile.hue)}
       className={cn(
         "group rounded-row border-separator bg-surface text-label shadow-card relative flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 overflow-hidden border p-3 text-left select-none",
+        "hover:border-facet-accent/40 focus-visible:border-facet-accent/40",
         "facet-press facet-press-subtle facet-lift",
-        focusRing,
-        paint.hoverBorder
+        focusRing
       )}
     >
       <Graphic />
@@ -168,8 +169,8 @@ export function DomainTileButton({
         <span
           aria-hidden="true"
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-lg border transition-[scale] duration-150 group-hover:scale-105 motion-reduce:group-hover:scale-100",
-            paint.badge
+            "flex size-9 shrink-0 items-center justify-center rounded-lg border transition-[scale] duration-150 motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105",
+            HUE_BADGE
           )}
         >
           <Icon className="size-4 shrink-0" />
@@ -186,7 +187,7 @@ export function DomainTileButton({
       </span>
       <ArrowUpRight
         aria-hidden="true"
-        className="text-label-tertiary group-hover:text-label relative size-4 shrink-0 transition-[color,translate] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+        className="text-label-tertiary group-hover:text-label group-focus-visible:text-label relative size-4 shrink-0 transition-[color,translate] duration-150 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
       />
     </button>
   );

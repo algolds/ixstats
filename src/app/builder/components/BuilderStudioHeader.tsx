@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import {
@@ -19,9 +19,8 @@ import {
   XmarkCircle as XCircle,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
-import { GOLD_GLASS_RIM } from "~/components/mycountry/shell/domain-hue";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -138,10 +137,8 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
           {/* v2 studio bar (c5c6b382): a gold-rimmed glass bar over the builder canvas */}
           <FacetCard
             variant="glass"
-            className={cn(
-              "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3",
-              GOLD_GLASS_RIM
-            )}
+            rim="gold"
+            className="flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3"
           >
             {/* Left Group: Back Button & Step Context */}
             <div className="flex shrink-0 items-center gap-2">
@@ -166,7 +163,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                     size="icon"
                     onClick={handleReset}
                     className="text-label-secondary hover:bg-destructive/10 hover:text-destructive h-8 w-8 shrink-0"
-                    aria-label={mode === "edit" ? "Discard Changes & Exit" : "Restart Builder"}
+                    aria-label={mode === "edit" ? "Discard changes and exit" : "Restart builder"}
                   >
                     {mode === "edit" ? (
                       <XCircle aria-hidden="true" className="h-3.5 w-3.5" />
@@ -176,7 +173,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-caption">
-                  {mode === "edit" ? "Discard Changes & Exit" : "Restart Builder"}
+                  {mode === "edit" ? "Discard changes and exit" : "Restart builder"}
                 </TooltipContent>
               </Tooltip>
 
@@ -191,7 +188,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
 
             {/* Center: Connected Step Progression Track */}
             <nav
-              aria-label="Wizard Steps"
+              aria-label="Builder steps"
               className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto py-0.5 sm:gap-2"
               style={{ scrollbarWidth: "none" }}
             >
@@ -221,7 +218,11 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                         onClick={() => onNavigate(stepKey)}
                         aria-current="step"
                         data-cuelume-press="tick"
-                        className="border-tint/40 bg-tint/15 text-yellow-ink text-caption shadow-card flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold active:scale-[0.97]"
+                        className={cn(
+                          "border-tint/40 bg-tint/15 text-yellow-ink text-caption shadow-card facet-press facet-press-sm relative flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold",
+                          focusRing,
+                          hitSlop
+                        )}
                       >
                         <Icon aria-hidden="true" className="text-tint h-3.5 w-3.5" />
                         <span className="whitespace-nowrap">{label}</span>
@@ -235,26 +236,31 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             disabled={!isAccessible}
                             onClick={() => isAccessible && onNavigate(stepKey)}
                             className={cn(
-                              "text-caption flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 transition-[color,background-color,border-color,opacity,transform] active:scale-[0.97]",
+                              "text-caption facet-press facet-press-sm relative flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2",
+                              focusRing,
+                              hitSlop,
                               isCompleted
                                 ? "border-green/40 bg-green/15 text-green-ink hover:bg-green/25 cursor-pointer"
                                 : isAccessible
                                   ? "border-separator bg-surface text-label-secondary hover:bg-fill-3 hover:text-label cursor-pointer"
                                   : "border-separator bg-surface text-label-secondary cursor-not-allowed opacity-40"
                             )}
-                            aria-label={label}
+                            aria-label={`${label}${isCompleted ? ", completed" : isAccessible ? "" : ", locked"}`}
                             data-cuelume-press="tick"
                           >
                             {isCompleted ? (
-                              <Check className="h-3 w-3 stroke-[2.5]" />
+                              <Check aria-hidden="true" className="h-3 w-3 stroke-[2.5]" />
                             ) : (
-                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              <span
+                                aria-hidden="true"
+                                className="h-1.5 w-1.5 rounded-full bg-current"
+                              />
                             )}
                             <span className="text-footnote hidden lg:inline">{label}</span>
                           </motion.button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="text-caption">
-                          {label} {isCompleted ? "(Completed)" : isAccessible ? "" : "(Locked)"}
+                          {label} {isCompleted ? "(completed)" : isAccessible ? "" : "(locked)"}
                         </TooltipContent>
                       </Tooltip>
                     )}
@@ -294,7 +300,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                       openGuide({ tab: "milestones", section: activeSection });
                     }}
                     className="shrink-0 gap-2"
-                    aria-label="Open Step Guide"
+                    aria-label="Open the step guide"
                   >
                     <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Guide</span>

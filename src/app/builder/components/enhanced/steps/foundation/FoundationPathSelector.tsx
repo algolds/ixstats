@@ -66,7 +66,7 @@ export function FoundationPathSelector({
             <span>Skip to Step 2: Archetype</span>
             <ArrowRight
               aria-hidden
-              className="duration-fast ease-out-facet transition-transform group-hover:translate-x-0.5"
+              className="duration-fast ease-out-facet transition-[translate] motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5"
             />
           </Button>
         </div>

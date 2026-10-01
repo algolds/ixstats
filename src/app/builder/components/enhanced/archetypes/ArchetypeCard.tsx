@@ -29,10 +29,12 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
 
   return (
     // v2 (c5c6b382): emerald selection — border, ring and glow — with a hover lift and accent rim.
+    // Selected, the card's accent is green and re-tints its subtree (the "Selected" button).
     <FacetCard
       lift
       glow={isSelected ? "shadow" : false}
-      style={isSelected ? ({ "--tint": "var(--color-green)" } as React.CSSProperties) : undefined}
+      accent={isSelected ? "green" : undefined}
+      retint={isSelected}
       className={cn(
         "flex h-full flex-col justify-between gap-4 p-5",
         isSelected ? "ring-green/60 ring-2" : "hover:border-green/30"
@@ -83,7 +85,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
             }}
             disabled={isSelected}
             variant={isSelected ? "tinted" : "filled"}
-            className={cn("flex-1", isSelected && "bg-green/15 text-green-ink")}
+            className="flex-1"
             size="sm"
           >
             <CheckCircle aria-hidden />

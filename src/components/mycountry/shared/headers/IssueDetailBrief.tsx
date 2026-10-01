@@ -76,7 +76,7 @@ interface ResponseOption {
 /**
  * v2 issue drill — the modern twin of the legacy IssueDetailModal. Renders inside
  * the right-side drill sheet with recon / respond / dismiss, and a post-resolve
- * "Declare Follow-Up Directive" CTA wired to the composer pre-fill conduit.
+ * "Declare follow-up Directive" CTA wired to the composer pre-fill conduit.
  */
 export interface IssueDetailBriefProps {
   issueId: string;
@@ -295,8 +295,8 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               }}
               className="mt-1"
             >
-              <Command className="h-4 w-4" />
-              Declare Follow-Up Directive
+              <Command aria-hidden="true" className="h-4 w-4" />
+              Declare follow-up Directive
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           )}

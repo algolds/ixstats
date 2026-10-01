@@ -305,7 +305,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           <div className="flex shrink-0 sm:self-start">
             <Button
               size="default"
-              className="group rounded-row bg-blue text-headline text-on-blue shadow-card hover:bg-blue h-10 w-full cursor-pointer justify-center gap-2 px-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.96] sm:w-auto"
+              className="group rounded-row bg-blue text-headline text-on-blue shadow-card hover:bg-blue h-10 w-full cursor-pointer justify-center gap-2 px-5 sm:w-auto"
               onClick={onContinue}
               disabled={isLoading}
             >
@@ -314,7 +314,10 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
               ) : (
                 <>
                   <span>Continue</span>
-                  <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="h-4 w-4 transition-[translate] duration-150 motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5"
+                  />
                 </>
               )}
             </Button>
@@ -414,14 +417,17 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
           <Button
             size="lg"
-            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2 px-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2 px-8"
             onClick={onContinue}
             disabled={isLoading}
           >
             {isLoading ? (
               <div className="border-separator border-t-separator h-5 w-5 animate-spin rounded-full border-2" />
             ) : (
-              <ArrowRight className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5" />
+              <ArrowRight
+                aria-hidden="true"
+                className="h-5 w-5 transition-[translate] duration-150 motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5"
+              />
             )}
             <span>Continue</span>
           </Button>

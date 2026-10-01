@@ -24,7 +24,6 @@ import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
-import { GOLD_GLASS_RIM } from "./domain-hue";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -198,7 +197,8 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       <FacetCard
         variant="glass"
         glow="shadow"
-        className={cn("group flex flex-col gap-3 p-4", GOLD_GLASS_RIM)}
+        rim="gold"
+        className="group flex flex-col gap-3 p-4"
         aria-labelledby="national-standing-title"
         role="region"
       >
@@ -215,7 +215,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
             </h2>
             {country?.name && (
               <div className="mt-1 flex min-w-0 items-center gap-2">
-                <span className="border-separator bg-surface rounded-control-sm shadow-card flex shrink-0 items-center justify-center overflow-hidden border p-0.5 transition-[scale] duration-200 group-hover:scale-105 motion-reduce:group-hover:scale-100">
+                <span className="border-separator bg-surface rounded-control-sm shadow-card flex shrink-0 items-center justify-center overflow-hidden border p-0.5 transition-[scale] duration-200 motion-safe:group-hover:scale-105">
                   <UnifiedCountryFlag
                     countryName={country.name}
                     flagUrl={flagUrl}
@@ -253,13 +253,13 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 aria-pressed={showExactPop}
                 title={showExactPop ? "Show compact population" : "Show exact population"}
                 className={cn(
-                  "group/pop text-footnote rounded-control-sm facet-press facet-press-sm flex cursor-pointer items-center gap-2",
+                  "group/pop text-footnote rounded-control-sm facet-press facet-press-sm flex cursor-pointer items-center gap-2 pointer-coarse:min-h-11",
                   focusRing
                 )}
               >
                 <Users aria-hidden="true" className="text-label-secondary size-3.5" />
                 <span className="text-label-secondary">Population</span>
-                <strong className="text-label font-data font-semibold tabular-nums group-hover/pop:underline">
+                <strong className="text-label font-data font-semibold tabular-nums group-hover/pop:underline group-focus-visible/pop:underline">
                   {formattedPop}
                 </strong>
               </button>
@@ -342,13 +342,15 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   label={ring.label}
                 />
                 <div className="min-w-0 flex-1">
-                  <span className="text-label-secondary group-hover/ring:text-label text-footnote block truncate transition-colors">
+                  <span className="text-label-secondary group-hover/ring:text-label group-focus-visible/ring:text-label text-footnote block truncate transition-colors">
                     {ring.label}
                   </span>
                   {known ? (
+                    // The ring's hue as text, pulled halfway to the label so it reads ≥ 4.5:1
+                    // (a raw amber/cyan ring colour is < 3:1 on the light surface).
                     <span
                       className="text-headline font-data font-semibold tabular-nums"
-                      style={{ color: ring.color }}
+                      style={{ color: `color-mix(in srgb, ${ring.color} 50%, var(--color-label))` }}
                     >
                       {ring.value}
                       <span className="text-label-secondary text-footnote font-normal">/100</span>

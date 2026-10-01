@@ -101,11 +101,11 @@ export function getThemeColorClasses(
 export function getComplexityColor(complexity: "Low" | "Medium" | "High"): string {
   switch (complexity) {
     case "Low":
-      return "text-green";
+      return "text-green-ink";
     case "Medium":
-      return "text-yellow";
+      return "text-yellow-ink";
     case "High":
-      return "text-red";
+      return "text-red-ink";
     default:
       return "text-label-secondary";
   }

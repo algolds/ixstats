@@ -482,7 +482,7 @@ function SearchResultItemInline({
       onClick={onSelect}
       onFocus={onFocus}
       className={cn(
-        "group rounded-row flex cursor-pointer items-start gap-3 border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+        "group rounded-row facet-press facet-press-subtle flex cursor-pointer items-start gap-3 border p-3 text-left",
         isFocused && "ring-blue/50 ring-2",
         isSelected ? "border-blue/40 bg-blue/10" : "bg-surface hover:bg-fill-3 border-separator"
       )}
@@ -506,7 +506,13 @@ function SearchResultItemInline({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <h4 className="text-label text-body truncate font-medium">{result.title}</h4>
-          <ExternalLink className="text-label-secondary h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+          <ExternalLink
+            aria-hidden="true"
+            className={cn(
+              "text-label-secondary h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100",
+              isFocused && "opacity-100"
+            )}
+          />
         </div>
 
         {/* Key Indicators or Snippet */}

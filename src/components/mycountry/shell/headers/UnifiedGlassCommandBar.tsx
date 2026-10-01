@@ -21,7 +21,6 @@ import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountr
 import { assetUrl } from "~/lib/base-path";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
-import { GOLD_GLASS_RIM } from "../domain-hue";
 import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
@@ -116,7 +115,8 @@ export function UnifiedGlassCommandBar({
     <FacetCard
       variant="glass"
       glow
-      className={cn("flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5", GOLD_GLASS_RIM)}
+      rim="gold"
+      className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5"
     >
       {/* Top row (v2): the MyCountry logo, then the tools and the one gold primary action */}
       <div className="relative flex flex-wrap items-center justify-between gap-3">

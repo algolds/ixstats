@@ -8,23 +8,24 @@ import {
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { HUE_PAINT, type DomainHue } from "./domain-hue";
+import { hueAccentStyle, type DomainHue } from "./domain-hue";
 
 /**
  * Fine-stroke architectural watermarks behind the four domain tiles, restored from the pre-Facet
  * overview (c5c6b382): each domain's arcs and glyph in its own hue (Diplomacy cyan, Defense red,
  * Politics indigo, Economy green — system colours, no `dark:` pair), strokes ≤1px, arcs at .15 and
- * the glyph at .10 → .20 with the v2 hover drift (scale 105%, dropped under Reduce Motion).
- * Decorative only: aria-hidden, not printed, no pointer events. The tile must be
- * `relative overflow-hidden` and `group`, with its content `relative`.
+ * the glyph at .10 → .20 with the v2 hover drift (scale 105%, dropped under Reduce Motion) — on
+ * hover and on keyboard focus of the tile. The hue is the layer's own Facet accent
+ * (`text-facet-accent`). Decorative only: aria-hidden, not printed, no pointer events. The tile
+ * must be `relative overflow-hidden` and `group`, with its content `relative`.
  */
 
 const LAYER =
   "pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] select-none print:hidden";
 const ARCS =
-  "absolute -right-6 -bottom-6 size-36 opacity-[0.15] transition-[opacity,scale] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.22] motion-reduce:group-hover:scale-100";
+  "text-facet-accent absolute -right-6 -bottom-6 size-36 opacity-[0.15] transition-[opacity,scale] duration-300 ease-out group-hover:opacity-[0.22] group-focus-visible:opacity-[0.22] motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105";
 const GLYPH =
-  "absolute -right-1 -bottom-1 size-16 opacity-[0.1] transition-[opacity,scale] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.2] motion-reduce:group-hover:scale-100";
+  "text-facet-accent absolute -right-1 -bottom-1 size-16 opacity-[0.1] transition-[opacity,scale] duration-300 ease-out group-hover:opacity-[0.2] group-focus-visible:opacity-[0.2] motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105";
 
 function GraphicLayer({
   className,
@@ -37,11 +38,15 @@ function GraphicLayer({
   arcs: React.ReactNode;
   glyph: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
 }) {
-  const paint = HUE_PAINT[hue].glyph;
   return (
-    <span aria-hidden="true" data-slot="tile-graphic" className={cn(LAYER, className)}>
+    <span
+      aria-hidden="true"
+      data-slot="tile-graphic"
+      className={cn(LAYER, className)}
+      style={hueAccentStyle(hue)}
+    >
       <svg
-        className={cn(ARCS, paint)}
+        className={ARCS}
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -49,7 +54,7 @@ function GraphicLayer({
       >
         {arcs}
       </svg>
-      <Glyph className={cn(GLYPH, paint)} strokeWidth={1} />
+      <Glyph className={GLYPH} strokeWidth={1} />
     </span>
   );
 }

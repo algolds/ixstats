@@ -65,14 +65,14 @@ export function PremiumPreviewFrame({
           className="sticky top-(--shell-top-offset) z-30 px-3 py-2 sm:px-4"
         >
           <div className="flex items-center gap-3">
-            <Crown className="text-yellow h-4 w-4 shrink-0" />
+            <Crown aria-hidden="true" className="text-yellow h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">
               <span className="text-label text-headline">{meta.label} preview</span>
               <p className="text-label-secondary text-footnote truncate">{meta.blurb}</p>
             </div>
             <Button variant="default" size="sm" className="shrink-0" onClick={handleUpgrade}>
               Upgrade
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
             </Button>
           </div>
         </GlassPanel>

@@ -25,7 +25,7 @@ import {
   Plus,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { CurrencyIcon } from "./CurrencyIcon";
@@ -238,20 +238,23 @@ export const CultureForm = React.memo(
                 soundEffects.press();
                 setImagePickerField(imageKey);
               }}
-              className="group border-separator bg-fill-3 rounded-control relative size-12 shrink-0 overflow-hidden border transition-transform hover:scale-105 active:scale-95"
+              className={cn(
+                "group border-separator bg-fill-3 rounded-control facet-press facet-press-sm facet-lift relative size-12 shrink-0 overflow-hidden border",
+                focusRing
+              )}
               title="Upload or search emblem on IxWiki"
               data-cuelume-press
             >
               {typeof imgVal === "string" && imgVal ? (
                 <img src={imgVal} alt={label} className="h-full w-full object-cover" />
               ) : (
-                <div className="text-label-tertiary group-hover:text-teal flex h-full w-full items-center justify-center">
-                  <Image className="h-5 w-5" />
+                <div className="text-label-tertiary group-hover:text-teal group-focus-visible:text-teal flex h-full w-full items-center justify-center">
+                  <Image aria-hidden="true" className="h-5 w-5" />
                 </div>
               )}
               <div
                 className={cn(
-                  "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100",
+                  "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
                   IMAGE_SCRIM_LIGHT
                 )}
               >

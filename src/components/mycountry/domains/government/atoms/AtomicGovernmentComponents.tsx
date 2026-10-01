@@ -387,12 +387,12 @@ export function AtomicGovernmentComponents({
               onClick={builder.clearSelection}
               disabled={builder.selectedComponents.length === 0}
             >
-              <RotateCcw className="h-4 w-4" />
-              Reset Selection
+              <RotateCcw aria-hidden="true" className="h-4 w-4" />
+              Reset selection
             </Button>
             <Button onClick={handleSave} disabled={!builder.validation.isValid} size="lg">
-              <Save className="h-4 w-4" />
-              Save Government Configuration
+              <Save aria-hidden="true" className="h-4 w-4" />
+              Save government configuration
             </Button>
           </div>
         )}

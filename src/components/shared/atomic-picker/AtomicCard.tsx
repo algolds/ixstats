@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Badge, badgeVariants, SYSTEM_TINTED, type SystemTintedColor } from "~/components/ui/badge";
+import { Badge, badgeVariants, type SystemTintedColor } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
@@ -32,7 +32,8 @@ export interface AtomicCardProps<TType extends string = string> {
 
 /**
  * v2 (c5c6b382) colour identity: each component's own `color` paints its icon chip, its category
- * badge and its selected border — the v2 Tailwind hues mapped onto the Facet system colours.
+ * badge and its selected ring — the v2 Tailwind hues mapped onto the Facet system colours, applied
+ * as the card's Facet accent (`accent`; the chip and ring read `facet-accent`).
  */
 const COMPONENT_HUE: Record<string, SystemTintedColor> = {
   emerald: "green",
@@ -48,23 +49,6 @@ const COMPONENT_HUE: Record<string, SystemTintedColor> = {
   cyan: "cyan",
   zinc: "gray",
   gray: "gray",
-};
-
-// A ring, not a border: the card's own `border-separator` wins Tailwind's utility order.
-const SELECTED_RING: Record<SystemTintedColor, string> = {
-  red: "ring-red/50",
-  orange: "ring-orange/50",
-  yellow: "ring-yellow/50",
-  green: "ring-green/50",
-  mint: "ring-mint/50",
-  teal: "ring-teal/50",
-  cyan: "ring-cyan/50",
-  blue: "ring-blue/50",
-  indigo: "ring-indigo/50",
-  purple: "ring-purple/50",
-  pink: "ring-pink/50",
-  brown: "ring-brown/50",
-  gray: "ring-gray/50",
 };
 
 /** Complexity reads as a semantic status: high is costly, medium a caution, low easy. */
@@ -104,10 +88,12 @@ function AtomicCardComponent<TType extends string = string>({
 
   return (
     <FacetCard
+      accent={hue}
       data-state={isSelected ? "selected" : undefined}
       className={cn(
         "group rounded-row flex flex-col justify-between p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
-        isSelected ? cn(SELECTED_RING[hue], "ring-2") : "hover:border-separator-opaque",
+        // A ring, not a border: the card's own `border-separator` wins Tailwind's utility order.
+        isSelected ? "ring-facet-accent/50 ring-2" : "hover:border-separator-opaque",
         disabled && "pointer-events-none opacity-50",
         !isSelected && !canSelectMore && "opacity-60"
       )}
@@ -118,10 +104,7 @@ function AtomicCardComponent<TType extends string = string>({
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <span
               aria-hidden="true"
-              className={cn(
-                "rounded-control flex size-9 shrink-0 items-center justify-center",
-                SYSTEM_TINTED[hue]
-              )}
+              className="rounded-control bg-facet-accent-fill text-facet-accent flex size-9 shrink-0 items-center justify-center"
             >
               <Icon className="h-5 w-5" />
             </span>
@@ -141,7 +124,11 @@ function AtomicCardComponent<TType extends string = string>({
             aria-label={isSelected ? `Deselect ${component.name}` : `Select ${component.name}`}
             onClick={handleClick}
           >
-            {isSelected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {isSelected ? (
+              <Check aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              <Plus aria-hidden="true" className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -173,7 +160,7 @@ function AtomicCardComponent<TType extends string = string>({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-footnote max-w-xs">
-                <p className="text-green font-semibold">Synergies ({synergisticWith.length})</p>
+                <p className="text-green-ink font-semibold">Synergies ({synergisticWith.length})</p>
                 <ul className="text-footnote mt-1 list-disc space-y-0.5 pl-3">
                   {synergisticWith.map((s, idx) => (
                     <li key={idx}>

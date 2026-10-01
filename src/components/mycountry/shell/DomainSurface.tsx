@@ -13,8 +13,7 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import { HUE_PAINT, DOMAIN_HUE } from "./domain-hue";
-import { TintGlow } from "~/components/ui/facet/identity/Glow";
+import { DOMAIN_HUE, HUE_ACCENT, HUE_BADGE } from "./domain-hue";
 import { WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 
 const EmbassiesAndRelationsPanel = dynamic(
@@ -67,31 +66,23 @@ function DomainSurfaceComponent({
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];
   const meta = DOMAIN_META[domain];
-  const paint = HUE_PAINT[DOMAIN_HUE[domain]];
+  const accent = HUE_ACCENT[DOMAIN_HUE[domain]];
 
   return (
     <div className="space-y-6">
-      {/* Domain hero (c5c6b382) on the Facet 3.1 glass hero: the domain's v2 hue on the top
-          accent, the glow blob, the icon badge and the fine-stroke glyph watermark; the gold
-          primary starts a directive with a suggested goal for this domain. */}
-      <FacetCard
-        variant="glass"
-        glow="shadow"
-        className="group overflow-hidden p-5"
-        style={{ "--tint": paint.color } as React.CSSProperties}
-      >
-        <TintGlow color={paint.color} className="-z-10" />
+      {/* Domain hero (c5c6b382) on the Facet 3.1 glass hero: the domain's v2 hue is the card's
+          accent (glass wash, border, glow blob and tinted shadow), and paints the top accent, the
+          icon badge and the fine-stroke glyph watermark; the gold primary starts a directive
+          with a suggested goal for this domain. */}
+      <FacetCard variant="glass" glow accent={accent} className="group overflow-hidden p-5">
         {/* v2 `border-t-2 border-t-<hue>/40` accent (drawn as a bar: the material owns the border) */}
         <span
           aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 h-0.5 opacity-40",
-            paint.fill
-          )}
+          className="bg-facet-accent pointer-events-none absolute inset-x-0 top-0 h-0.5 opacity-40"
         />
         <WatermarkGlyph
           icon={meta.icon}
-          className={cn("-right-3 -bottom-4 size-24 opacity-[0.06]", paint.glyph)}
+          className="text-facet-accent -right-3 -bottom-4 size-24 opacity-[0.06]"
         />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">
@@ -99,7 +90,7 @@ function DomainSurfaceComponent({
               aria-hidden="true"
               className={cn(
                 "rounded-control flex size-11 shrink-0 items-center justify-center border",
-                paint.badge
+                HUE_BADGE
               )}
             >
               <meta.icon className="size-5" />
@@ -122,7 +113,7 @@ function DomainSurfaceComponent({
             <span>Declare a Directive</span>
             <ArrowUpRight
               aria-hidden="true"
-              className="opacity-60 transition-[opacity,translate] duration-150 group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5 group-hover/cta:opacity-100 motion-reduce:group-hover/cta:translate-x-0 motion-reduce:group-hover/cta:translate-y-0"
+              className="opacity-60 transition-[opacity,translate] duration-150 group-hover/cta:opacity-100 group-focus-visible/cta:opacity-100 motion-safe:group-hover/cta:translate-x-0.5 motion-safe:group-hover/cta:-translate-y-0.5 motion-safe:group-focus-visible/cta:translate-x-0.5 motion-safe:group-focus-visible/cta:-translate-y-0.5"
             />
           </Button>
         </div>

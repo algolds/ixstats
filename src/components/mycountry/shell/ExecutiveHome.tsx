@@ -21,7 +21,6 @@ import {
   CATEGORY_STYLE,
 } from "./ExecutiveActionCards";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
-import { GOLD_RIM } from "./domain-hue";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 
@@ -76,19 +75,21 @@ function DeclareRailButton({ countryId, onDeclare }: { countryId: string; onDecl
         type="button"
         onClick={onDeclare}
         className={cn(
-          "group bg-surface text-label rounded-card shadow-card text-body relative flex w-full cursor-pointer items-center justify-center gap-3 border p-3 font-semibold select-none",
-          "facet-press facet-lift",
-          GOLD_RIM,
+          "group bg-surface text-label rounded-card shadow-card text-body relative flex min-h-11 w-full cursor-pointer items-center justify-center gap-3 border p-3 font-semibold select-none",
+          // The v2 `.facet-mycountry` gold rim on a native button (`rim="gold"` off a card).
+          "facet-gold-rim facet-press facet-lift",
           focusRing
         )}
       >
         <span
           aria-hidden="true"
-          className="facet-gold rounded-control-sm flex size-8 items-center justify-center transition-[scale] duration-150 group-hover:scale-105 motion-reduce:group-hover:scale-100"
+          className="facet-gold rounded-control-sm flex size-8 items-center justify-center transition-[scale] duration-150 motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105"
         >
           <Command className="size-4" />
         </span>
-        <span className="group-hover:text-tint transition-colors">Declare a new Directive</span>
+        <span className="group-hover:text-tint group-focus-visible:text-tint transition-colors">
+          Declare a new Directive
+        </span>
       </button>
     );
   }

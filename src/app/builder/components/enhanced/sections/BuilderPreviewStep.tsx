@@ -4,7 +4,7 @@ import React, { useState, memo } from "react";
 import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { HUE_PAINT, type DomainHue } from "~/components/mycountry/shell/domain-hue";
+import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "~/components/mycountry/shell/domain-hue";
 import {
   WhiteFlag as Flag,
   City as Building2,
@@ -60,7 +60,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <PreviewSection
           id="identity"
-          title="National Identity"
+          title="National identity"
           icon={Flag}
           hue="yellow"
           badge={nationalIdentity?.countryName || "Unspecified"}
@@ -75,7 +75,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           title="Government"
           icon={Building2}
           hue="cyan"
-          badge={`${governmentComponents.length} Institutions`}
+          badge={`${governmentComponents.length} institutions`}
           collapsed={Boolean(collapsedSections.government)}
           onToggle={toggleSection}
         >
@@ -105,28 +105,30 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         <div className="flex items-center gap-3">
           <BarChart3 aria-hidden="true" className="text-label-secondary h-5 w-5" />
           <span className="text-label text-headline">
-            {mode === "edit" ? "Country profile" : "Ready to Create"}
+            {mode === "edit" ? "Country profile" : "Ready to create"}
           </span>
           <Badge
             variant="outline"
             className={
-              readinessScore >= 80 ? "border-green/40 text-green" : "border-tint/40 text-tint"
+              readinessScore >= 80 ? "border-green/40 text-green-ink" : "border-tint/40 text-tint"
             }
           >
-            {readinessScore}% Complete
+            <span className="font-data tabular-nums">{readinessScore}%</span> complete
           </Badge>
         </div>
 
         <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-5 gap-y-1">
           <span className="flex items-baseline gap-2">
-            <span className="text-label font-semibold tabular-nums">
+            <span className="text-label font-data font-semibold tabular-nums">
               {governmentComponents.length}
             </span>
             Institutions
           </span>
           {populationLabel ? (
             <span className="flex items-baseline gap-2">
-              <span className="text-label font-semibold tabular-nums">{populationLabel}</span>
+              <span className="text-label font-data font-semibold tabular-nums">
+                {populationLabel}
+              </span>
               Population
             </span>
           ) : null}
@@ -155,6 +157,7 @@ interface PreviewSectionProps {
 /**
  * A collapsible preview card (v2, c5c6b382): the builder's chevron texture, the section glyph in
  * its accent badge and an accent count badge, with a header button that shows/hides the content.
+ * The section hue is the card's Facet accent.
  */
 function PreviewSection({
   id,
@@ -168,7 +171,12 @@ function PreviewSection({
 }: PreviewSectionProps) {
   const contentId = `builder-preview-${id}`;
   return (
-    <FacetCard texture="chevron" textureOpacity={0.03} className="rounded-card overflow-hidden">
+    <FacetCard
+      accent={HUE_ACCENT[hue]}
+      texture="chevron"
+      textureOpacity={0.03}
+      className="rounded-card overflow-hidden"
+    >
       <FacetCardHeader className="p-0">
         <h3 className="m-0">
           <button
@@ -185,7 +193,7 @@ function PreviewSection({
                 aria-hidden="true"
                 className={cn(
                   "flex size-7 shrink-0 items-center justify-center rounded-lg border",
-                  HUE_PAINT[hue].badge
+                  HUE_BADGE
                 )}
               >
                 <Icon aria-hidden="true" className="h-4 w-4" />

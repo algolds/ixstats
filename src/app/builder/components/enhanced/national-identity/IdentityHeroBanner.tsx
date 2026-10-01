@@ -220,13 +220,13 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               {displayFlag ? (
                 <img
                   src={displayFlag}
-                  alt={`${displayCountryName} Flag`}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover/flag:scale-105"
+                  alt={`${displayCountryName} flag`}
+                  className="h-full w-full object-cover transition-[scale] duration-300 motion-safe:group-focus-within/flag:scale-105 motion-safe:group-hover/flag:scale-105"
                 />
               ) : (
                 <div className="text-label-secondary flex h-full w-full flex-col items-center justify-center gap-2 p-2 text-center">
-                  <Flag className="text-label-tertiary h-6 w-6" />
-                  <span className="text-caption">No Flag</span>
+                  <Flag aria-hidden="true" className="text-label-tertiary h-6 w-6" />
+                  <span className="text-caption">No flag</span>
                 </div>
               )}
 
@@ -246,8 +246,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     onSelectFlag();
                   }}
                   className={IMAGE_SCRIM_ACTION}
-                  title="Search IxWiki Repository"
-                  aria-label="Search IxWiki Repository"
+                  title="Search the IxWiki repository"
+                  aria-label="Search the IxWiki repository"
                 >
                   <ImageIcon aria-hidden />
                 </Button>
@@ -260,8 +260,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     flagInputRef.current?.click();
                   }}
                   className={IMAGE_SCRIM_ACTION}
-                  title="Upload Custom Flag"
-                  aria-label="Upload Custom Flag"
+                  title="Upload a custom flag"
+                  aria-label="Upload a custom flag"
                   disabled={isUploadingFlag}
                 >
                   <Upload aria-hidden />
@@ -279,7 +279,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     className="h-full w-full object-contain p-0.5"
                   />
                 ) : (
-                  <Shield className="text-label-tertiary h-5 w-5" />
+                  <Shield aria-hidden="true" className="text-label-tertiary h-5 w-5" />
                 )}
 
                 {/* Coat of Arms Hover Action Scrim */}
@@ -299,8 +299,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                       onSelectCoatOfArms();
                     }}
                     className={cn("rounded-full", IMAGE_SCRIM_ACTION)}
-                    title="Change Coat of Arms"
-                    aria-label="Change Coat of Arms"
+                    title="Change coat of arms"
+                    aria-label="Change coat of arms"
                   >
                     <ImageIcon aria-hidden className="size-3.5" />
                   </Button>
@@ -348,7 +348,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             {/* National Motto Quote */}
             {motto && (
               <div className="text-footnote text-tint flex items-center gap-2 pt-0.5 italic">
-                <Quote className="h-3 w-3 shrink-0 opacity-70" />
+                <Quote aria-hidden="true" className="h-3 w-3 shrink-0 opacity-70" />
                 <span className="truncate">“{motto}”</span>
               </div>
             )}
@@ -367,7 +367,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             }}
           >
             <Flag aria-hidden className="text-tint" />
-            <span>Select Flag</span>
+            <span>Select flag</span>
           </Button>
 
           <Button
@@ -380,7 +380,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             }}
           >
             <Shield aria-hidden className="text-teal" />
-            <span>Select Emblem</span>
+            <span>Select emblem</span>
           </Button>
         </div>
       </div>

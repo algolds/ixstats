@@ -349,12 +349,13 @@ export function ArchetypeGrid({
             return (
               <motion.div key={arch.id} variants={itemVariants} className="h-full">
                 {/* v2 (c5c6b382): a CutoutCard with the dot texture; the selected preset takes
-                    the gold border, ring and glow, and the title warms to gold on hover. */}
+                    the gold border, ring and glow, and the title warms to gold on hover. The
+                    card holds buttons, so it is not itself a button (HIG, spec §16.8): the
+                    title is the toggle, stretched over the card (`after:inset-0`); the other
+                    controls sit above it (`relative z-10`). */}
                 <CutoutCard
                   variant="card"
-                  onClick={() => setLocalSelectedArchetype(arch)}
-                  aria-pressed={isSelected}
-                  aria-label={`${arch.name}${isSelected ? " (selected)" : ""}`}
+                  interactive
                   glow={isSelected}
                   texture="dots"
                   textureOpacity={isSelected ? 0.05 : 0.03}
@@ -369,7 +370,7 @@ export function ArchetypeGrid({
                       <div className={cn("rounded-control p-2", styleClasses)}>
                         <IconComponent className="size-5" aria-hidden />
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="relative z-10 flex items-center gap-2">
                         <Button
                           type="button"
                           variant="gray"
@@ -384,15 +385,25 @@ export function ArchetypeGrid({
                           <span>Details</span>
                         </Button>
                         {isSelected && (
-                          <span className="facet-gold flex size-5 items-center justify-center rounded-full">
+                          <span
+                            aria-hidden="true"
+                            className="facet-gold flex size-5 items-center justify-center rounded-full"
+                          >
                             <Check aria-hidden className="size-3 stroke-[3]" />
                           </span>
                         )}
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-title-3 text-label group-hover/cutout:text-tint transition-colors duration-200">
-                        {arch.name}
+                      <h3 className="text-title-3 text-label">
+                        <button
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() => setLocalSelectedArchetype(arch)}
+                          className="group-hover/cutout:text-tint focus-visible:text-tint focus-visible:after:outline-tint cursor-pointer text-left transition-colors duration-200 select-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2"
+                        >
+                          {arch.name}
+                        </button>
                       </h3>
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant="neutral">{arch.region}</Badge>
@@ -409,7 +420,7 @@ export function ArchetypeGrid({
                   {/* Faction traits / characteristics */}
                   <div className="space-y-3">
                     <div className="border-separator border-t pt-3">
-                      <div className="flex items-center gap-1">
+                      <div className="relative z-10 flex w-fit items-center gap-1">
                         <span className="text-caption text-label-secondary">
                           Traits & modifiers
                         </span>
@@ -432,7 +443,7 @@ export function ArchetypeGrid({
                     {/* Stat Bars (Growth, Innovation, Stability) */}
                     {arch.growthMetrics && (
                       <div className="border-separator space-y-2 border-t pt-3">
-                        <div className="flex items-center gap-1">
+                        <div className="relative z-10 flex w-fit items-center gap-1">
                           <span className="text-caption text-label-secondary">
                             Alignment profile
                           </span>
@@ -443,9 +454,11 @@ export function ArchetypeGrid({
                         </div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                           <div className="space-y-1">
-                            <div className="text-footnote text-label-secondary flex justify-between tabular-nums">
+                            <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Innovation</span>
-                              <span>{arch.growthMetrics.innovationIndex || 50}%</span>
+                              <span className="font-data tabular-nums">
+                                {arch.growthMetrics.innovationIndex || 50}%
+                              </span>
                             </div>
                             <Progress
                               value={arch.growthMetrics.innovationIndex || 50}
@@ -455,9 +468,11 @@ export function ArchetypeGrid({
                             />
                           </div>
                           <div className="space-y-1">
-                            <div className="text-footnote text-label-secondary flex justify-between tabular-nums">
+                            <div className="text-footnote text-label-secondary flex justify-between">
                               <span>Stability</span>
-                              <span>{arch.growthMetrics.stability || 50}%</span>
+                              <span className="font-data tabular-nums">
+                                {arch.growthMetrics.stability || 50}%
+                              </span>
                             </div>
                             <Progress
                               value={arch.growthMetrics.stability || 50}
@@ -472,7 +487,7 @@ export function ArchetypeGrid({
                   </div>
 
                   {/* Card Action Buttons */}
-                  <div className="border-separator flex items-center gap-2 border-t pt-3">
+                  <div className="border-separator relative z-10 flex items-center gap-2 border-t pt-3">
                     <Button
                       type="button"
                       onClick={(e) => {
@@ -485,7 +500,7 @@ export function ArchetypeGrid({
                       className="flex-1"
                     >
                       <Check aria-hidden />
-                      {isSelected ? "Model Selected" : "Select & Apply →"}
+                      {isSelected ? "Model selected" : "Select & apply"}
                     </Button>
                     <Button
                       type="button"

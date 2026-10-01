@@ -910,9 +910,11 @@ export function MeetingScheduler({
                     type="button"
                     size="sm"
                     onClick={handleAddQuickAgendaTopic}
+                    aria-label="Add agenda topic"
+                    title="Add agenda topic"
                     className="text-caption h-8 cursor-pointer px-3 font-semibold"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

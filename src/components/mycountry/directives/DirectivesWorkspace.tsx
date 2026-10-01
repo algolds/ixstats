@@ -292,7 +292,7 @@ export function DirectivesWorkspace({
               action={
                 !readOnly && (
                   <Button className="max-sm:h-11" onClick={() => setView("new")}>
-                    <Plus /> Declare a directive
+                    <Plus aria-hidden="true" /> Declare a directive
                   </Button>
                 )
               }

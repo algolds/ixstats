@@ -274,9 +274,12 @@ export function OverviewTab({
                           href={titleToWikiOSRoute(country.wikiPageTitle || country.name)}
                           className="group/wikilink text-tint text-caption inline-flex items-center gap-2 font-semibold transition-colors hover:underline"
                         >
-                          <BookOpen className="h-3.5 w-3.5" />
+                          <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
                           <span>Read full page</span>
-                          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/wikilink:translate-x-0.5" />
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 transition-[translate] duration-200 motion-safe:group-hover/wikilink:translate-x-0.5 motion-safe:group-focus-visible/wikilink:translate-x-0.5"
+                          />
                         </Link>
                       </div>
                     </div>

@@ -39,7 +39,7 @@ import {
   useAgendaInbox,
 } from "./agenda";
 import { STATUS_TEXT } from "./status-tone";
-import { HUE_PAINT } from "./domain-hue";
+import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 
 const MAILBOXES: AgendaMailbox[] = ["all", "action", "issues", "directives", "elections"];
 
@@ -174,9 +174,10 @@ function ExecutiveAgendaComponent({
           <div className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden="true"
+              style={hueAccentStyle("cyan")}
               className={cn(
                 "flex size-9 shrink-0 items-center justify-center rounded-xl border",
-                HUE_PAINT.cyan.badge
+                HUE_BADGE
               )}
             >
               <Calendar className="size-4" />
@@ -190,7 +191,7 @@ function ExecutiveAgendaComponent({
                 {unread.length > 0 ? (
                   <Badge
                     variant="tinted"
-                    className="tabular-nums"
+                    className="font-data tabular-nums"
                     data-testid="agenda-unread-count"
                   >
                     {unread.length}

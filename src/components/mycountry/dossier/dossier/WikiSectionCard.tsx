@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
@@ -157,7 +157,7 @@ export function WikiSectionCard({
                   }
                   className="text-footnote gap-2"
                 >
-                  Read Full Section <ArrowRight className="h-3.5 w-3.5" />
+                  Read full section <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
                 </Button>
               </div>
             )}
@@ -166,7 +166,7 @@ export function WikiSectionCard({
             {section.images && section.images.length > 0 && (
               <div className="border-separator space-y-2 border-t pt-2">
                 <Eyebrow className="flex items-center gap-2">
-                  <ImageIcon className="h-3.5 w-3.5" />
+                  <ImageIcon aria-hidden="true" className="h-3.5 w-3.5" />
                   Section media ({section.images.length})
                 </Eyebrow>
 
@@ -182,8 +182,10 @@ export function WikiSectionCard({
                     const resolvedSrc = resolveImageUrl(fileName, wikiSource);
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={index}
+                        aria-label={`Open ${fileName}`}
                         onClick={() => {
                           if (wikiSource === "ixwiki") {
                             router.push(titleToWikiOSPath(`File:${fileName}`));
@@ -191,23 +193,26 @@ export function WikiSectionCard({
                             window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
                           }
                         }}
-                        className="group border-separator bg-fill-3 hover:border-ring/40 rounded-row shadow-card relative aspect-video cursor-pointer overflow-hidden border transition-[background-color,border-color,transform] duration-150"
+                        className={cn(
+                          "group border-separator bg-fill-3 hover:border-ring/40 rounded-row shadow-card facet-press facet-press-subtle relative block aspect-video w-full cursor-pointer overflow-hidden border text-left",
+                          focusRing
+                        )}
                       >
                         <img
                           src={resolvedSrc}
-                          alt={`Media asset from ${section.title}`}
+                          alt=""
                           className="h-full w-full object-cover object-center"
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
                             (e.currentTarget.style.display = "none")
                           }
                         />
-                        <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                           <span className="text-footnote max-w-[80%] truncate text-white tabular-nums">
                             {fileName}
                           </span>
-                          <Maximize2 className="h-3 w-3 shrink-0 text-white" />
+                          <Maximize2 aria-hidden="true" className="h-3 w-3 shrink-0 text-white" />
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
