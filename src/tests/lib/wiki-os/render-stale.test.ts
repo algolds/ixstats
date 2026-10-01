@@ -8,6 +8,7 @@ import {
   invalidateDependents,
   invalidateTemplateDependents,
   renderStaleBatch,
+  RENDERER_VERSION,
 } from "~/lib/wiki-os/services/render-service";
 
 const mockFindUnique = jest.fn();
@@ -46,6 +47,12 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
 }));
 
 const HTML = '<div class="mw-parser-output"><p>Intro.</p></div>';
+
+/** What makes an article stale: never rendered or edited since (the marker), or an outdated bundle. */
+const STALE_OR = [
+  { htmlSyncedAt: null },
+  { renderedView: { path: ["rendererVersion"], not: RENDERER_VERSION } },
+];
 
 let ids = 0;
 const freshIds = (count: number) => Array.from({ length: count }, () => `stale-${++ids}`);
@@ -120,7 +127,7 @@ describe("renderStaleBatch", () => {
     await expect(renderStaleBatch()).resolves.toEqual({ rendered: 3, failed: 0 });
 
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { status: "PUBLISHED", htmlSyncedAt: null, wikitext: { not: "" } },
+      where: { status: "PUBLISHED", OR: STALE_OR, wikitext: { not: "" } },
       orderBy: { updatedAt: "asc" },
       take: 20,
       select: { id: true },
@@ -200,5 +207,77 @@ describe("renderStaleBatch", () => {
     expect(result.rendered).toBeLessThan(6);
     expect(result.rendered).toBeGreaterThan(0);
     now.mockRestore();
+  });
+});
+
+describe("renderStaleBatch: which articles are stale", () => {
+  interface Row {
+    id: string;
+    htmlSyncedAt: Date | null;
+    renderedView: { rendererVersion?: string } | null;
+  }
+  const SYNCED = new Date("2026-09-30T10:00:00Z");
+
+  /**
+   * `where` as Postgres evaluates it for the filters the batch uses. `not` on a JSON path is
+   * `(col #> path) <> value`: NULL, so no match, when the column is NULL or lacks the key.
+   */
+  function matches(row: Row, where: { OR: typeof STALE_OR }): boolean {
+    return where.OR.some((branch) => {
+      if ("htmlSyncedAt" in branch) return row.htmlSyncedAt === null;
+      const version = row.renderedView?.rendererVersion;
+      return version !== undefined && version !== branch.renderedView.not;
+    });
+  }
+
+  it("lists never-rendered and edited-since rows, and outdated bundles, and skips current ones", async () => {
+    const [stale, outdated, current, legacy, keyless] = freshIds(5);
+    const rows: Row[] = [
+      { id: stale!, htmlSyncedAt: null, renderedView: { rendererVersion: RENDERER_VERSION } },
+      {
+        id: outdated!,
+        htmlSyncedAt: SYNCED,
+        renderedView: { rendererVersion: "2:oldfingerprint" },
+      },
+      { id: current!, htmlSyncedAt: SYNCED, renderedView: { rendererVersion: RENDERER_VERSION } },
+      // never rendered by this pipeline, or a bundle with no version: left as before (NULL <> x is not true)
+      { id: legacy!, htmlSyncedAt: SYNCED, renderedView: null },
+      { id: keyless!, htmlSyncedAt: SYNCED, renderedView: {} },
+    ];
+    mockFindMany.mockImplementation(async ({ where }: { where: { OR: typeof STALE_OR } }) =>
+      rows.filter((row) => matches(row, where)).map(({ id }) => ({ id }))
+    );
+    mockFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      title: `Title of ${where.id}`,
+      source: "ixwiki",
+      wikitext: `text of ${where.id}`,
+      contentHtml: null,
+    }));
+
+    await expect(renderStaleBatch()).resolves.toEqual({ rendered: 2, failed: 0 });
+
+    expect(mockUpdateMany.mock.calls.map(([args]) => args.where.id).sort()).toEqual(
+      [stale, outdated].sort()
+    );
+  });
+
+  it("asks only for published articles with text, with the same order and backoff as before", async () => {
+    const [broken] = freshIds(1);
+    staleArticles([broken!]);
+    mockRender.mockResolvedValue(null);
+    await renderStaleBatch();
+
+    await renderStaleBatch(7);
+
+    expect(mockFindMany.mock.calls[1]?.[0]).toMatchObject({
+      where: {
+        status: "PUBLISHED",
+        OR: STALE_OR,
+        wikitext: { not: "" },
+        id: { notIn: expect.arrayContaining([broken]) },
+      },
+      orderBy: { updatedAt: "asc" },
+      take: 7,
+    });
   });
 });

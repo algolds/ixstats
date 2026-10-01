@@ -571,8 +571,11 @@ export interface StaleBatchResult {
  * Render up to `limit` stale articles, oldest first, two at a time, as background work (a reader's or an
  * editor's render goes before them). Run every minute by the `wiki-render-stale` cron job: a changed
  * template marks every page that uses it stale (`invalidateDependents`), and this brings their views up
- * to date without a reader having to wait. An article that failed is left out for a while (doubling,
- * up to an hour) so a page MediaWiki cannot render never keeps the rest of the queue waiting.
+ * to date without a reader having to wait. Stale also means outdated: a published article whose bundle
+ * was built by another renderer version (a bumped transform, a changed sanitizer) is rendered again,
+ * so a deploy that changes the version brings every stored view up to date. An article that failed is
+ * left out for a while (doubling, up to an hour) so a page MediaWiki cannot render never keeps the rest
+ * of the queue waiting.
  */
 export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
   const now = Date.now();
@@ -582,7 +585,12 @@ export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
   const stale = await db.wikiArticle.findMany({
     where: {
       status: "PUBLISHED",
-      htmlSyncedAt: null,
+      // `not` on a JSON path never matches a NULL column (SQL NULL <> x is not true): those rows are
+      // either never rendered (htmlSyncedAt null, listed by the first branch) or legacy, as before
+      OR: [
+        { htmlSyncedAt: null },
+        { renderedView: { path: ["rendererVersion"], not: RENDERER_VERSION } },
+      ],
       wikitext: { not: "" },
       ...(backingOff.length > 0 ? { id: { notIn: backingOff } } : {}),
     },
