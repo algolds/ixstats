@@ -14,7 +14,9 @@
  *  - `comment-url`: `soup` with the comment-inside-an-unquoted-url shapes (`url(a/*)*` + `/`) over-represented;
  *  - `host`: url() arguments built from allowed and foreign hosts, odd separators, `)`, escapes and quotes;
  *  - `sibling`: selectors that start with the root (or an escaped spelling of it) and then ask for siblings,
- *    ancestors or combinators in every gap spelling.
+ *    ancestors or combinators in every gap spelling;
+ *  - `strings`: values that mix string literals holding `url(` (and `\\78 url(a)`, `\\2d url(a)`, whose `url(` vanishes
+ *    when unescaped) with real, foreign and escaped urls, in `content`, custom properties and image properties.
  */
 import { scopeTemplateStyles } from "../../src/lib/utils/scope-template-styles";
 import { OWN_ORIGIN, violations } from "./template-styles-oracle";
@@ -149,12 +151,49 @@ function siblingSheet(rnd: Rng): string {
   return rnd() < 0.2 ? `@media screen{${rule}}.d{color:blue}` : `${rule}.d{color:blue}`;
 }
 
+const STRING_QUOTES = ['"', "'"];
+const STRING_INSIDE = [
+  "url(", "URL(", "url(a)", "\\78 url(a)", "\\2d url(a)", "x url(", "(", ")", "url( ", "url(x", "\\75 rl(", "u\\72l(a)", "-url(a)", "a", " ",
+  "\\22 ", "\\27 ", "\\\\", "/*", "*/",
+];
+const REAL_URLS = [
+  "url(https://evil.example/x.png)", "url(https://ixwiki.com/a.png)", "url(a.png)", "url(//evil.example/x)", "url('https://evil.example/y')",
+  'url("https://evil.example/z")', "url(\\68ttps://evil.example/q)", "url( https://evil.example/w )", "URL(https://evil.example/x)",
+];
+const DECOY_OPEN = ['"url("', "'url('", '"URL("', '"x url("'];
+const DECOY_CLOSE = ['")"', "')'", '"x)"', '")x"'];
+const DECOY_HIDE = ['"\\78 url(a)"', '"\\2d url(a)"', "'\\78 url(a)'", '"\\75 rl(a)"', '"url(a)"'];
+const STRING_FILL = [" ", " ", "\t", "", "/**/"];
+const STRING_PROPERTIES = ["content", "--x", "cursor", "background", "list-style-image"];
+
+function stringsSheet(rnd: Rng): string {
+  const literal = (): string => {
+    const quote = pick(rnd, STRING_QUOTES);
+    let body = "";
+    for (let i = Math.floor(rnd() * 4); i > 0; i--) body += pick(rnd, STRING_INSIDE);
+    return quote + body + quote;
+  };
+  let value = "";
+  if (rnd() < 0.3) {
+    // the decoy: a string opens a fake url(, a real url follows, a string closes it, and a last string holds a `url(`
+    // that vanishes when unescaped, so that counting `url(` before and after unescaping agrees
+    value = `${pick(rnd, DECOY_OPEN)} ${pick(rnd, REAL_URLS)} ${pick(rnd, DECOY_CLOSE)} ${pick(rnd, DECOY_HIDE)}`;
+  }
+  for (let i = value ? 0 : 2 + Math.floor(rnd() * 6); i > 0; i--) {
+    if (rnd() < 0.45) value += literal();
+    else value += rnd() < 0.7 ? pick(rnd, REAL_URLS) : pick(rnd, ["counter(x)", "attr(x)", "none", "normal"]);
+    value += pick(rnd, STRING_FILL);
+  }
+  return `.a::before{${pick(rnd, STRING_PROPERTIES)}:${value}}`;
+}
+
 export const GENERATORS: Readonly<Record<string, { seed: number; make: (rnd: Rng) => string }>> = {
   general: { seed: 12345, make: general },
   soup: { seed: 4242, make: (rnd) => soupSheet(rnd, SOUP) },
   "comment-url": { seed: 777, make: (rnd) => soupSheet(rnd, COMMENT_SOUP) },
   host: { seed: 31337, make: hostSheet },
   sibling: { seed: 2024, make: siblingSheet },
+  strings: { seed: 1, make: stringsSheet },
 };
 
 export interface FuzzReport {
