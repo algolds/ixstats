@@ -40,7 +40,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { capWikiPermissions } from "~/lib/wiki-os/rights";
+import { capWikiPermissions, type Right } from "~/lib/wiki-os/rights";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 
@@ -191,11 +191,65 @@ describe("the upload name is canonicalized before it is authorized and stored", 
   });
 });
 
+describe("the File: page an upload creates (review minor 1)", () => {
+  it("is held to create protection: a salted title cannot be uploaded to by someone the salt keeps out", async () => {
+    restrict("File:Flag.png", "create", "sysop");
+
+    await expect(upload(member(), "Flag.png")).rejects.toMatchObject({
+      message: expect.stringMatching(/^titleprotected: /),
+    });
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+    expect(tables.wikiArticle.rows.filter((row) => row.title === "File:Flag.png")).toEqual([]);
+    expect(tables.wikiMirrorJob.rows).toHaveLength(0);
+
+    // an administrator may; and a salted title does not hold back a file whose page exists already
+    await expect(upload(sysop(), "Flag.png")).resolves.toMatchObject({ result: "Success" });
+    await expect(upload(member(), "Flag.png", { bytes: png(9) })).resolves.toMatchObject({
+      result: "Warning",
+    });
+  });
+
+  it("needs the edit and createpage rights, which MediaWiki needs on top of upload (a bot password with only the upload grant has neither)", async () => {
+    const capped = async (rights: Right[]) => {
+      const ctx = member();
+      await capWikiPermissions(ctx, new Set(rights));
+      return ctx;
+    };
+
+    await expect(
+      uploadFile({ ctx: await capped(["read", "upload"]), bytes: png(), filename: "Flag.png" })
+    ).rejects.toMatchObject({ message: expect.stringMatching(/^permissiondenied: .*"edit"/) });
+    await expect(
+      uploadFile({
+        ctx: await capped(["read", "edit", "upload"]),
+        bytes: png(),
+        filename: "Flag.png",
+      })
+    ).rejects.toMatchObject({
+      message: expect.stringMatching(/^permissiondenied: .*"createpage"/),
+    });
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+
+    await expect(
+      uploadFile({
+        ctx: await capped(["read", "edit", "createpage", "upload"]),
+        bytes: png(),
+        filename: "Flag.png",
+      })
+    ).resolves.toMatchObject({ result: "Success" });
+  });
+
+  it("is not held back by the namespace rule that keeps File: pages to administrators: an autoconfirmed member, no administrator, uploads and gets the page", async () => {
+    await expect(upload(member(), "Flag.png")).resolves.toMatchObject({ result: "Success" });
+    expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("File:Flag.png");
+  });
+});
+
 describe("replacing a file needs the reupload right", () => {
   it("a bot password with only the upload grant may add a file, not replace one", async () => {
     const uploadOnly = async () => {
       const ctx = member();
-      await capWikiPermissions(ctx, new Set(["read", "edit", "upload"]));
+      await capWikiPermissions(ctx, new Set(["read", "edit", "createpage", "upload"]));
       return ctx;
     };
     await expect(

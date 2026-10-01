@@ -28,7 +28,12 @@ import { hashFile, sha1Base36ToHex } from "../core/file-hash";
 import { MediaAssetService, type MediaAssetRecord } from "../core/media-asset-service";
 import { canonicalizeTitle } from "../core/title";
 import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
-import { authorizeAction, requireRight, requireUploadTitle } from "../permissions";
+import {
+  authorizeAction,
+  authorizeFilePageCreation,
+  requireRight,
+  requireUploadTitle,
+} from "../permissions";
 import { commitWikitextSave, deletedPage } from "./edit-service";
 import { enqueueUploadJob, scheduleMirrorKick } from "./mirror-outbox";
 import { releaseStagedFileUnlessNeeded, withStagedFileLock } from "./staged-uploads";
@@ -346,6 +351,8 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   if (current.page?.status === "ARCHIVED") throw deletedPage();
   const replaced = isTaken(current);
   if (replaced) await requireRight(ctx, "reupload");
+  // The page of a new file is created by this upload: MediaWiki needs edit and createpage for that, and honours create protection.
+  if (!current.page) await authorizeFilePageCreation(ctx, title);
 
   const warnings = await warningsOf(current, name, sha1);
   if (!request.ignoreWarnings && Object.keys(warnings).length > 0) {

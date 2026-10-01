@@ -62,7 +62,7 @@ export const GRANT_DESCRIPTIONS: Readonly<Record<BotGrant, string>> = {
   rollback: "Roll back edits (also needs the edit grant)",
   blockusers: "Block and unblock users",
   import: "Import pages",
-  uploadfile: "Upload new files",
+  uploadfile: "Upload new files (also needs the edit and create grants: a new file gets its page)",
   uploadeditmovefile: "Upload, replace and move files",
 };
 
