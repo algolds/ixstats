@@ -243,8 +243,7 @@ function* tagsOf(text: string): Generator<SvgTag> {
 // ---------------------------------------------------------------------------
 
 /** The part of an element name after any namespace prefix, lower-cased (`svg:script` is `script`). */
-export const localName = (name: string): string =>
-  name.slice(name.lastIndexOf(":") + 1).toLowerCase();
+const localName = (name: string): string => name.slice(name.lastIndexOf(":") + 1).toLowerCase();
 
 /** What is wrong with one start tag, or null. */
 function tagProblem({ name, attrs }: SvgTag): string | null {
@@ -304,7 +303,7 @@ function declaredEncoding(text: string): string | null {
   );
 }
 
-export type SvgScan = { problem: string } | { problem: null; root: SvgTag };
+type SvgScan = { problem: string } | { problem: null; root: SvgTag };
 
 /**
  * Read `text` (an SVG document, its BOM and leading white space gone): either what is wrong with it, as a fragment that
@@ -355,9 +354,4 @@ function scan(text: string): SvgScan {
   if (depth !== 0) throw malformed("an element is never closed");
   const outside = externalUrlFunction(css);
   return outside ? { problem: outside } : { problem: null, root };
-}
-
-/** Why `text` (an SVG document) must not be served, or null when it is clean: the reason finishes "This SVG was refused because ...". */
-export function svgProblem(text: string): string | null {
-  return scanSvg(text).problem;
 }

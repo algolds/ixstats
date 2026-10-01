@@ -4,7 +4,10 @@
  * hostile files must be refused and every legitimate one accepted, plus the bounds (attribute count and length, linear time).
  */
 import { sniffFile } from "~/lib/wiki-os/core/file-sniff";
-import { svgProblem } from "~/lib/wiki-os/core/svg-scan";
+import { scanSvg } from "~/lib/wiki-os/core/svg-scan";
+
+/** Why an SVG text is refused, or null. */
+const svgProblem = (text: string) => scanSvg(text).problem;
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const NS = 'xmlns="http://www.w3.org/2000/svg"';

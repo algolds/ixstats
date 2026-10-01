@@ -9,7 +9,10 @@ import {
   sniffFile,
   type SniffResult,
 } from "~/lib/wiki-os/core/file-sniff";
-import { svgProblem } from "~/lib/wiki-os/core/svg-scan";
+import { scanSvg } from "~/lib/wiki-os/core/svg-scan";
+
+/** Why an SVG text is refused, or null. */
+const svgProblem = (text: string) => scanSvg(text).problem;
 
 const bytes = (...parts: Array<number | number[] | string>): Uint8Array =>
   Uint8Array.from(
