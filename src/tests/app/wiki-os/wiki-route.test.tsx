@@ -456,6 +456,35 @@ describe("Special: pages (plan 412 step 3)", () => {
     expect((await outcome(["Special:FilePath", "Nope.svg"])).signal).toBe("not-found");
   });
 
+  it("Special:FilePath does not double the base path: redirect() adds it, so an already prefixed URL loses it", async () => {
+    const saved = process.env.BASE_PATH;
+    process.env.BASE_PATH = "/projects/ixstats";
+    try {
+      mockFileInfo.mockResolvedValue({
+        url: "/projects/ixstats/api/mediawiki/ixwiki/images/6/61/Flag.svg",
+      });
+      expect((await outcome(["Special:FilePath", "Flag.svg"])).signal).toBe(
+        "redirect:/api/mediawiki/ixwiki/images/6/61/Flag.svg"
+      );
+      // Not on a segment boundary, not site-relative or without the prefix: left alone.
+      mockFileInfo.mockResolvedValue({ url: "/projects/ixstatsX/a.svg" });
+      expect((await outcome(["Special:FilePath", "A.svg"])).signal).toBe(
+        "redirect:/projects/ixstatsX/a.svg"
+      );
+      mockFileInfo.mockResolvedValue({ url: "/images/uploads/Flag.svg" });
+      expect((await outcome(["Special:FilePath", "Flag.svg"])).signal).toBe(
+        "redirect:/images/uploads/Flag.svg"
+      );
+      mockFileInfo.mockResolvedValue({ url: "https://ixwiki.com/projects/ixstats/x.svg" });
+      expect((await outcome(["Special:FilePath", "X.svg"])).signal).toBe(
+        "redirect:https://ixwiki.com/projects/ixstats/x.svg"
+      );
+    } finally {
+      if (saved === undefined) delete process.env.BASE_PATH;
+      else process.env.BASE_PATH = saved;
+    }
+  });
+
   it("Special:AllPages and PrefixIndex list pages from a cursor", async () => {
     mockListPages.mockResolvedValue({
       pages: [

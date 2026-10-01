@@ -3,6 +3,7 @@ import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { PageList } from "~/components/wiki-os/reader/PageList";
+import { getBasePath } from "~/lib/base-path";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type { SpecialAction, SpecialTarget } from "~/lib/wiki-os/wiki-path";
 import { api } from "~/trpc/server";
@@ -21,12 +22,22 @@ async function randomPage(): Promise<never> {
   return redirect(`/wiki/${canon.urlPath}`);
 }
 
+/**
+ * `url` as `redirect()` wants it. Next adds the base path to a site-relative redirect itself, and the
+ * image URLs WikiOS builds may already carry it (`withBasePath`), which would double it; a
+ * protocol-relative URL would be taken for a path on this site.
+ */
+function redirectTarget(url: string): string {
+  if (url.startsWith("//")) return `https:${url}`;
+  const base = getBasePath();
+  return base && url.startsWith(`${base}/`) ? url.slice(base.length) : url;
+}
+
 /** `Special:FilePath/<file>`: the file's own URL. */
 async function filePath(file: string): Promise<never> {
   const info = await orNotFound(api.wikios.getFileInfo({ file }));
   if (!info) notFound();
-  // A protocol-relative URL would be taken for a path on this site.
-  return redirect(info.url.startsWith("//") ? `https:${info.url}` : info.url);
+  return redirect(redirectTarget(info.url));
 }
 
 async function pageList(action: ListAction) {
