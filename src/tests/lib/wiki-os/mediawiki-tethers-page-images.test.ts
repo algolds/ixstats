@@ -120,6 +120,27 @@ describe("getPageImages for IxWiki", () => {
     expect(images?.[1]).toMatchObject({ width: 0, height: 0 });
   });
 
+  it("leaves out a file whose File: page was deleted, though the page still names it", async () => {
+    mocked.wikiArticle.findFirst.mockResolvedValue(links("Gone.png", "Kept.png"));
+    mocked.wikiAsset.findMany.mockResolvedValue([asset("Gone.png"), asset("Kept.png")]);
+    mocked.wikiArticle.findMany.mockResolvedValue([{ title: "File:Gone.png" }]);
+
+    const images = await getPageImages("Caphiria");
+
+    expect(images?.map((image) => image.title)).toEqual(["File:Kept.png"]);
+    expect(mocked.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      source: "ixwiki",
+      status: "ARCHIVED",
+    });
+    // The deleted file does not count against the limit either.
+    mocked.wikiArticle.findFirst.mockResolvedValue(links("Gone.png", "Kept.png", "Other.png"));
+    mocked.wikiAsset.findMany.mockResolvedValue([asset("Kept.png"), asset("Other.png")]);
+    expect((await getPageImages("Caphiria", { limit: 2 }))?.map((image) => image.title)).toEqual([
+      "File:Kept.png",
+      "File:Other.png",
+    ]);
+  });
+
   it("applies the limit before looking the assets up", async () => {
     mocked.wikiArticle.findFirst.mockResolvedValue(links("A.png", "B.png", "C.png"));
     mocked.wikiAsset.findMany.mockResolvedValue([asset("A.png"), asset("B.png")]);

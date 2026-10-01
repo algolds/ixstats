@@ -6,6 +6,7 @@
 
 import { db } from "~/server/db";
 import { MediaAssetService } from "~/lib/wiki-os/core";
+import { withoutArchivedFiles } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type { PageImage } from "./types";
 
@@ -36,8 +37,8 @@ const MIN_ILLUSTRATION_SIDE = 100;
 /**
  * The images a published IxWiki page uses (the files its last render reported, `wiki_image_links`),
  * with the URLs and size WikiOS holds for each (`wiki_assets`), in file-name order; null when the page
- * is missing, deleted or uses none. A file with no asset row is skipped, as is an icon (under 100 px on
- * both sides, when the size is known) and anything that is not an image.
+ * is missing, deleted or uses none. A file with no asset row is skipped, as is a file whose `File:` page is
+ * deleted, an icon (under 100 px on both sides, when the size is known) and anything that is not an image.
  */
 export async function ixwikiGetPageImages(
   title: string,
@@ -52,10 +53,14 @@ export async function ixwikiGetPageImages(
       select: { imageLinks: { select: { fileName: true }, orderBy: { fileName: "asc" } } },
     });
     const excludePatterns = opts?.excludePatterns ?? [];
-    const fileNames = (article?.imageLinks ?? [])
+    const used = (article?.imageLinks ?? [])
       .map((link) => link.fileName)
-      .filter((name) => !excludePatterns.some((pattern) => pattern.test(`File:${name}`)))
-      .slice(0, opts?.limit ?? DEFAULT_PAGE_IMAGE_LIMIT);
+      .filter((name) => !excludePatterns.some((pattern) => pattern.test(`File:${name}`)));
+    // A file whose page WikiOS deleted is gone, though the page still names it.
+    const fileNames = (await withoutArchivedFiles(used)).slice(
+      0,
+      opts?.limit ?? DEFAULT_PAGE_IMAGE_LIMIT
+    );
     if (fileNames.length === 0) return null;
 
     const assets = await MediaAssetService.findAssets(fileNames);

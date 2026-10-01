@@ -10,6 +10,7 @@ jest.mock("~/server/db", () => ({
   db: {
     wikiCategory: { findMany: jest.fn() },
     wikiAsset: { findMany: jest.fn() },
+    wikiArticle: { findMany: jest.fn() },
     $queryRaw: jest.fn(),
   },
   isDatabaseReadOnly: true,
@@ -26,6 +27,7 @@ import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard"
 const mocked = db as unknown as {
   wikiCategory: { findMany: jest.Mock };
   wikiAsset: { findMany: jest.Mock };
+  wikiArticle: { findMany: jest.Mock };
   $queryRaw: jest.Mock;
 };
 
@@ -46,6 +48,7 @@ beforeEach(() => {
   titles = [];
   mocked.wikiCategory.findMany.mockResolvedValue([]);
   mocked.wikiAsset.findMany.mockResolvedValue([]);
+  mocked.wikiArticle.findMany.mockResolvedValue([]); // no File: page is deleted
   mocked.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) =>
     strings.join("?").includes("count(*)") ? counts : titles.map((title) => ({ title }))
   );
@@ -167,6 +170,30 @@ describe("searchFiles for IxWiki", () => {
         mime: "image/png",
       },
     ]);
+    expect(guard.calls()).toEqual([]);
+  });
+
+  it("leaves out an asset whose File: page was deleted, reading on to fill the page", async () => {
+    const make = (title: string) => ({ ...asset, title, filename: title.replace(/ /g, "_") });
+    const first = ["A one.png", "A two.png"].map(make);
+    const second = ["B three.png", "B four.png"].map(make);
+    mocked.wikiAsset.findMany
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second)
+      .mockResolvedValue([]);
+    // "A one.png" has a deleted File: page (the query for archived titles answers it).
+    mocked.wikiArticle.findMany.mockImplementation(
+      async ({ where }: { where: { status: string; title: { in: string[] } } }) =>
+        where.status === "ARCHIVED"
+          ? where.title.in.filter((title) => title === "File:A one.png").map((title) => ({ title }))
+          : []
+    );
+
+    const result = await search().searchFiles({ query: "png", limit: 2, wiki: "ixwiki" });
+
+    expect(result.map((file) => file.title)).toEqual(["File:A two.png", "File:B three.png"]);
+    // The second batch started after the first: skip, not a repeat of the first page.
+    expect(mocked.wikiAsset.findMany.mock.calls.map(([args]) => args.skip)).toEqual([0, 2]);
     expect(guard.calls()).toEqual([]);
   });
 
