@@ -336,6 +336,35 @@ describe("old WikiOS URLs (plan 412 step 1)", () => {
     expect((await outcome(["history", "Foo_bar"])).signal).toBe("redirect:/util/history/Foo_bar");
   });
 
+  it("an action asked of an article that exists is honoured before the old-URL redirects (plan 412 review)", async () => {
+    // "Foo/talk" exists as a page: ?action=raw is its raw text, not a redirect to Talk:Foo.
+    mockMissingPages.mockResolvedValue([]);
+    expect((await outcome(["Foo", "talk"], { action: "raw" })).signal).toBe(
+      "redirect:/api/wiki/raw?path=Foo%2Ftalk&action=raw"
+    );
+    // So is the tool slug's article: "Search" exists, ?action=raw reads it, no /util/search.
+    expect((await outcome(["search"], { action: "raw", oldid: "7" })).signal).toBe(
+      "redirect:/api/wiki/raw?path=Search&action=raw&oldid=7"
+    );
+    expect((await outcome(["Foo", "edit"], { action: "history" })).tree).not.toBeNull();
+    expect(
+      propsOf((await outcome(["Foo", "edit"], { action: "history" })).tree, "PageHistoryView")
+    ).toMatchObject({
+      title: "Foo/edit",
+    });
+    expect((await outcome(["search"], { oldid: "a b" })).signal).toBe("not-found");
+
+    // With no such article the old URL does what it always did, whatever the query says.
+    mockMissingPages.mockResolvedValue(["Foo/talk"]);
+    expect((await outcome(["Foo", "talk"], { action: "raw" })).signal).toBe(
+      "redirect:/wiki/Talk:Foo"
+    );
+    mockMissingPages.mockResolvedValue(["Search"]);
+    expect((await outcome(["search"], { action: "raw" })).signal).toBe(
+      "redirect:/util/search?action=raw"
+    );
+  });
+
   it("/<title>/edit goes to ?action=edit, /<title>/talk to the talk page", async () => {
     mockMissingPages.mockResolvedValue(["Foo bar/edit"]);
     expect((await outcome(["foo_bar", "edit"])).signal).toBe("redirect:/wiki/Foo_bar?action=edit");

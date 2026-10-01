@@ -50,16 +50,31 @@ export type SpecialAction =
   /** No such special page (or one this tree does not serve yet). */
   | { type: "unknown" };
 
-export type WikiPathTarget =
+/** What a title in the URL asks for: one view of its page, or its raw wikitext. */
+export type TitleTarget =
   /** A title MediaWiki would refuse, or a revision reference that cannot be one. */
   | { kind: "invalid"; raw: string }
   | { kind: "article"; source: WikiSource; canon: CanonicalTitle; view: ArticleView }
-  | { kind: "raw"; canon: CanonicalTitle; ref: string | null }
+  | { kind: "raw"; canon: CanonicalTitle; ref: string | null };
+
+export type WikiPathTarget =
+  | TitleTarget
   | { kind: "special"; name: string; action: SpecialAction }
-  /** An old WikiOS tool slug: go to `href` unless an article titled `canon.title` exists. */
-  | { kind: "tool-redirect"; canon: CanonicalTitle; href: string }
-  /** An old `/<title>/edit` or `/<title>/talk` path: go to `href` unless an article titled `canon.title` exists. */
-  | { kind: "legacy-redirect"; canon: CanonicalTitle; href: string };
+  /**
+   * An old WikiOS tool slug: go to `href` unless an article titled `canon.title` exists, in which
+   * case the page is `ifArticle`: whatever the query string asks of that article (`?action=raw`,
+   * `?oldid=`, ...) is honoured on the article before any tool redirect applies.
+   */
+  | { kind: "tool-redirect"; canon: CanonicalTitle; href: string; ifArticle: TitleTarget }
+  /** An old `/<title>/edit` or `/<title>/talk` path: as `tool-redirect`, `href` unless an article titled `canon.title` exists. */
+  | { kind: "legacy-redirect"; canon: CanonicalTitle; href: string; ifArticle: TitleTarget };
+
+/** A redirect rule for an old URL, before the article it yields to is known. */
+type LegacyRule = {
+  kind: "tool-redirect" | "legacy-redirect";
+  canon: CanonicalTitle;
+  href: string;
+};
 
 const SPECIAL_PATH = /^special:([^/]*)(?:\/(.*))?$/i;
 /** Revision references are MediaWiki rev_ids or WikiOS row ids (cuids): letters, digits, "_" and "-". */
@@ -186,7 +201,7 @@ function resolveToolRedirect(
   parts: readonly string[],
   canon: CanonicalTitle,
   query: SearchParamsLike
-): WikiPathTarget | null {
+): LegacyRule | null {
   const first = parts[0] ?? "";
   const tool = first.replace(/[\s_]+/g, "-");
   if (tool !== tool.toLowerCase()) return null;
@@ -205,7 +220,7 @@ function resolveLegacySuffix(
   text: string,
   canon: CanonicalTitle,
   query: SearchParamsLike
-): WikiPathTarget | null {
+): LegacyRule | null {
   const match = /^(.+)\/(edit|talk)$/.exec(text);
   const base = match && canonicalizeTitle(match[1] ?? "");
   if (!match || !base) return null;
@@ -392,6 +407,16 @@ function specialAction(key: string, argument: string, query: SearchParamsLike): 
 // The entry point
 // ---------------------------------------------------------------------------
 
+/** What the query string asks of the IxWiki page `canon`: its raw wikitext or one view of it. */
+function titleTarget(text: string, canon: CanonicalTitle, query: SearchParamsLike): TitleTarget {
+  if (queryParam(query, "action") === "raw") {
+    const ref = readRef(query, "oldid");
+    return ref === false ? { kind: "invalid", raw: text } : { kind: "raw", canon, ref };
+  }
+  const view = resolveView(query);
+  return view ? { kind: "article", source: "ixwiki", canon, view } : { kind: "invalid", raw: text };
+}
+
 function resolveIxWikiPath(
   text: string,
   parts: readonly string[],
@@ -410,17 +435,10 @@ function resolveIxWikiPath(
   const canon = canonicalizeTitle(text);
   if (!canon) return { kind: "invalid", raw: text };
 
+  const target = titleTarget(text, canon, query);
   const legacy =
     resolveLegacySuffix(text, canon, query) ?? resolveToolRedirect(parts, canon, query);
-  if (legacy) return legacy;
-
-  if (queryParam(query, "action") === "raw") {
-    const ref = readRef(query, "oldid");
-    return ref === false ? { kind: "invalid", raw: text } : { kind: "raw", canon, ref };
-  }
-
-  const view = resolveView(query);
-  return view ? { kind: "article", source: "ixwiki", canon, view } : { kind: "invalid", raw: text };
+  return legacy ? { ...legacy, ifArticle: target } : target;
 }
 
 /**

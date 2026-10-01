@@ -399,6 +399,39 @@ describe("resolveWikiPath: old WikiOS URLs", () => {
     expect(resolveWikiPath(["Special:Random", "talk"]).kind).toBe("special");
   });
 
+  it("what the query string asks of an article is kept for when the article exists (plan 412 review)", () => {
+    expect(resolveWikiPath(["Foo", "talk"], { action: "raw" })).toMatchObject({
+      kind: "legacy-redirect",
+      href: "/wiki/Talk:Foo",
+      canon: { title: "Foo/talk" },
+      ifArticle: { kind: "raw", canon: { title: "Foo/talk" }, ref: null },
+    });
+    expect(resolveWikiPath(["search"], { action: "raw", oldid: "7" })).toMatchObject({
+      kind: "tool-redirect",
+      ifArticle: { kind: "raw", canon: { title: "Search" }, ref: "7" },
+    });
+    expect(resolveWikiPath(["Foo", "edit"], { action: "history" })).toMatchObject({
+      kind: "legacy-redirect",
+      ifArticle: { kind: "article", view: { type: "history" } },
+    });
+    expect(resolveWikiPath(["search"], { oldid: "5" })).toMatchObject({
+      ifArticle: { kind: "article", view: { type: "revision", ref: "5" } },
+    });
+    expect(resolveWikiPath(["search"], { diff: "prev", oldid: "5" })).toMatchObject({
+      ifArticle: { kind: "article", view: { type: "diff", oldid: "5", diff: "prev" } },
+    });
+    expect(resolveWikiPath(["search"], { action: "info" })).toMatchObject({
+      ifArticle: { kind: "article", view: { type: "info" } },
+    });
+    // A plain visit is a plain read; a bad revision reference is invalid for the article too.
+    expect(resolveWikiPath(["search"])).toMatchObject({
+      ifArticle: { kind: "article", view: { type: "read" } },
+    });
+    expect(resolveWikiPath(["search"], { oldid: "a b" })).toMatchObject({
+      ifArticle: { kind: "invalid" },
+    });
+  });
+
   it("Talk:X is an ordinary page", () => {
     const target = article(resolveWikiPath(["Talk:X"]));
     expect(target.canon).toMatchObject({ title: "Talk:X", namespaceId: 1 });

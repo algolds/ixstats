@@ -13,6 +13,7 @@ import {
   type ArticleTarget,
   type LegacyTarget,
   type SearchParamsLike,
+  type TitleTarget,
 } from "~/lib/wiki-os/wiki-path";
 import ArticlePageClient from "./ArticlePageClient";
 import { articleTargetMetadata } from "./_lib/metadata";
@@ -75,30 +76,11 @@ function articleOf(target: ArticleTarget, segments: readonly string[], query: Se
   return ixwikiArticle(target, segments, query);
 }
 
-/** An old tool slug or `/edit` / `/talk` path: redirect, unless a page of that title exists. */
-async function legacyOf(
-  target: LegacyTarget,
-  segments: readonly string[],
-  query: SearchParamsLike
-) {
-  await redirectUnlessArticle(target);
-  const view = { type: "read", followRedirect: true, redirectedFrom: null } as const;
-  return articleOf(
-    { kind: "article", source: "ixwiki", canon: target.canon, view },
-    segments,
-    query
-  );
-}
-
-export default async function WikiPage({ params, searchParams }: RouteProps) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const target = resolveWikiPath(slug, query);
-
+/** The page of a title in the URL: one view of its article, its raw text, or a 404. */
+function titleOf(target: TitleTarget, segments: readonly string[], query: SearchParamsLike) {
   switch (target.kind) {
     case "invalid":
       return notFound();
-    case "special":
-      return specialView(target);
     case "raw": {
       // Normally the proxy answers this URL itself; this takes the same contract: `path` and `action`.
       const oldid = target.ref ? `&oldid=${encodeURIComponent(target.ref)}` : "";
@@ -106,10 +88,36 @@ export default async function WikiPage({ params, searchParams }: RouteProps) {
         `/api/wiki/raw?path=${encodeURIComponent(target.canon.urlPath)}&action=raw${oldid}`
       );
     }
+    case "article":
+      return articleOf(target, segments, query);
+  }
+}
+
+/**
+ * An old tool slug or `/edit` / `/talk` path: redirect, unless a page of that title exists. Then it
+ * is that page, in whatever view the query string asks (`?action=raw`, `?oldid=`, ...): the rules for
+ * old URLs apply only where no article would be shadowed.
+ */
+async function legacyOf(
+  target: LegacyTarget,
+  segments: readonly string[],
+  query: SearchParamsLike
+) {
+  await redirectUnlessArticle(target);
+  return titleOf(target.ifArticle, segments, query);
+}
+
+export default async function WikiPage({ params, searchParams }: RouteProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const target = resolveWikiPath(slug, query);
+
+  switch (target.kind) {
+    case "special":
+      return specialView(target);
     case "tool-redirect":
     case "legacy-redirect":
       return legacyOf(target, slug, query);
-    case "article":
-      return articleOf(target, slug, query);
+    default:
+      return titleOf(target, slug, query);
   }
 }
