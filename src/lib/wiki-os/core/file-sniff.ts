@@ -25,7 +25,8 @@ export interface SniffedFile {
 }
 
 /** MediaWiki-style codes (`filetype-badmime`, `empty-file`, ...) with the sentence that explains them. */
-export type SniffFailureCode = "empty-file" | "filetype-badmime" | "corrupt" | "unsafe-svg";
+export type SniffFailureCode =
+  "empty-file" | "filetype-badmime" | "corrupt" | "unsafe-svg" | "file-too-large";
 
 export type SniffResult =
   { ok: true; file: SniffedFile } | { ok: false; code: SniffFailureCode; reason: string };
@@ -229,7 +230,7 @@ function svgText(bytes: Uint8Array): string | null {
   }
 }
 
-function sniffSvg(bytes: Uint8Array): SniffResult | null {
+function sniffSvg(bytes: Uint8Array, maxBytes: number): SniffResult | null {
   const text = svgText(bytes);
   if (text === null) {
     // not UTF-8: refused as an unsafe SVG when it starts like one, else it is just not a file we take
@@ -242,6 +243,13 @@ function sniffSvg(bytes: Uint8Array): SniffResult | null {
       : null;
   }
   if (!SVG_START.test(text)) return null;
+  // before the scan: its cost grows with the size
+  if (bytes.length > maxBytes) {
+    return fail(
+      "file-too-large",
+      `The SVG is larger than the ${maxBytes / 1_000_000} MB limit for SVG files.`
+    );
+  }
   if (!SVG_ROOT.test(text)) return corrupt("SVG image");
   const scan = scanSvg(text);
   if (scan.problem !== null)
@@ -257,8 +265,12 @@ function sniffSvg(bytes: Uint8Array): SniffResult | null {
 /** The first bytes of a PDF, as MediaWiki's own detection reads them. */
 const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46, 0x2d];
 
-/** What `bytes` is, from the bytes alone: one of the accepted kinds with its size, or why it is refused. */
-export function sniffFile(bytes: Uint8Array): SniffResult {
+/**
+ * What `bytes` is, from the bytes alone: one of the accepted kinds with its size, or why it is refused. An SVG over
+ * `maxSvgBytes` is refused before it is scanned; the default is no limit of its own (a file already staged is not held to a
+ * limit that changed since, and the 10 MB limit of every upload was applied where it came in).
+ */
+export function sniffFile(bytes: Uint8Array, maxSvgBytes = Infinity): SniffResult {
   if (bytes.length === 0) return fail("empty-file", "The file you submitted was empty.");
   if (startsWith(bytes, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return sniffPng(bytes);
   if (startsWith(bytes, 0xff, 0xd8, 0xff)) return sniffJpeg(bytes);
@@ -266,7 +278,7 @@ export function sniffFile(bytes: Uint8Array): SniffResult {
   if (ascii(bytes, 0, 4) === "RIFF" && ascii(bytes, 8, 4) === "WEBP") return sniffWebp(bytes);
   if (startsWith(bytes, ...PDF_MAGIC)) return ok("pdf", null, null);
   return (
-    sniffSvg(bytes) ??
+    sniffSvg(bytes, maxSvgBytes) ??
     fail("filetype-badmime", "The file is not a PNG, JPEG, GIF, WebP, SVG or PDF file.")
   );
 }

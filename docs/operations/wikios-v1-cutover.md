@@ -446,7 +446,9 @@ truncates the clone at that size, which no route can tell from a cut-off file); 
 bytes); (3) PHP `upload_max_filesize` and `post_max_size` (16M now) and MediaWiki's `$wgMaxUploadSize`; only then the
 constant. A raster of more than 12.5 megapixels is refused as too large (MediaWiki's `$wgMaxImageArea` default: it cannot thumbnail
 a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in the same
-env file to the same number, or WikiOS refuses what MediaWiki would take. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
+env file to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
+deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in the same env file to change it. It cannot
+go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
 files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them.
 
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the

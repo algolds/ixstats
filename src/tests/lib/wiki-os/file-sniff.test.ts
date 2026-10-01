@@ -337,6 +337,34 @@ describe("sniffFile: SVG", () => {
   });
 });
 
+describe("the SVG size limit (review)", () => {
+  const sized = (bytes: number) => {
+    const shell = `<svg xmlns="http://www.w3.org/2000/svg"><!----></svg>`;
+    return svg(
+      `<svg xmlns="http://www.w3.org/2000/svg"><!--${"x".repeat(bytes - shell.length)}--></svg>`
+    );
+  };
+
+  it("refuses an SVG over the limit before it is scanned, and takes one at it", () => {
+    const limit = 100_000;
+    expect(sized(limit + 1).length).toBe(limit + 1);
+    expect(sniffFile(sized(limit + 1), limit)).toMatchObject({
+      ok: false,
+      code: "file-too-large",
+      reason: "The SVG is larger than the 0.1 MB limit for SVG files.",
+    });
+    expect(sniffFile(sized(limit), limit)).toMatchObject({ ok: true });
+  });
+
+  it("holds only an SVG to it, and sets no limit of its own by default", () => {
+    expect(sniffFile(sized(100_000))).toMatchObject({ ok: true });
+    expect(sniffFile(new Uint8Array(200_000).fill(120), 1_000)).toMatchObject({
+      ok: false,
+      code: "filetype-badmime",
+    });
+  });
+});
+
 describe("extension rules", () => {
   it("reads the extension of a name", () => {
     expect(fileExtension("Flag of Eurth.PNG")).toBe("png");

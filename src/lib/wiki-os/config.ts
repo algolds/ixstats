@@ -188,6 +188,18 @@ export function getMaxImageArea(): number {
   return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_IMAGE_AREA;
 }
 
+/**
+ * The largest SVG upload, in bytes: half the general limit. An SVG is read by a scan (core/svg-scan.ts) that takes
+ * about a second at 10 MB in the worst case, and MediaWiki deployments commonly cap SVGs at a few megabytes. Set
+ * WIKIOS_MAX_SVG_BYTES to change it (never above `MAX_UPLOAD_BYTES`, which holds first). Server only.
+ */
+export const DEFAULT_MAX_SVG_BYTES = 5_000_000;
+
+export function getMaxSvgBytes(): number {
+  const configured = Number(process.env.WIKIOS_MAX_SVG_BYTES);
+  return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_SVG_BYTES;
+}
+
 /** Where WikiOS keeps an upload until MediaWiki holds it too: WIKIOS_UPLOAD_DIR, else `.wikios-uploads` under the app. Server only. */
 export function getUploadDir(): string {
   return process.env.WIKIOS_UPLOAD_DIR || `${process.cwd()}/.wikios-uploads`;

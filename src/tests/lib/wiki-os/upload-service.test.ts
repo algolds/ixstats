@@ -571,6 +571,50 @@ describe("the pixel area limit (review minor 3)", () => {
   });
 });
 
+describe("the SVG size limit", () => {
+  afterEach(() => delete process.env.WIKIOS_MAX_SVG_BYTES);
+
+  const svgOf = (bytes: number) => {
+    const shell = `<svg xmlns="http://www.w3.org/2000/svg"><!----></svg>`;
+    return new TextEncoder().encode(
+      `<svg xmlns="http://www.w3.org/2000/svg"><!--${"x".repeat(bytes - shell.length)}--></svg>`
+    );
+  };
+
+  it("refuses an SVG over 5 MB as too large, stages nothing, and takes one at the limit", async () => {
+    const failure = await uploadFile(
+      request({ bytes: svgOf(5_000_001), filename: "Map.svg" })
+    ).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(UploadError);
+    expect(failure).toMatchObject({ code: "file-too-large" });
+    expect((failure as UploadError).message).toContain("5 MB limit for SVG files");
+    expect(staged()).toEqual([]);
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+
+    await expect(
+      uploadFile(request({ bytes: svgOf(5_000_000), filename: "Map.svg" }))
+    ).resolves.toMatchObject({ result: "Success" });
+  });
+
+  it("follows WIKIOS_MAX_SVG_BYTES, and ignores a bad value; a raster is not held to it", async () => {
+    process.env.WIKIOS_MAX_SVG_BYTES = "6000000";
+    await expect(
+      uploadFile(request({ bytes: svgOf(5_500_000), filename: "Map.svg" }))
+    ).resolves.toMatchObject({ result: "Success" });
+
+    process.env.WIKIOS_MAX_SVG_BYTES = "plenty";
+    await expect(
+      uploadFile(request({ bytes: svgOf(5_500_000), filename: "Other.svg" }))
+    ).rejects.toMatchObject({ code: "file-too-large" });
+
+    process.env.WIKIOS_MAX_SVG_BYTES = "1000";
+    await expect(uploadFile(request({ filename: "Flag.png" }))).resolves.toMatchObject({
+      result: "Success",
+    });
+  });
+});
+
 describe("descriptionWikitext", () => {
   it("writes the two sections and a link for each valid category", () => {
     expect(

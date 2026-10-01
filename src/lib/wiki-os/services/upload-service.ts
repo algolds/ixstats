@@ -22,7 +22,7 @@
 
 import { db } from "~/server/db";
 import { getWikiActorLabel, type WikiAuthContext } from "../auth";
-import { getMaxImageArea, MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "../config";
+import { getMaxImageArea, getMaxSvgBytes, MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "../config";
 import { extensionMatches, fileExtension, sniffFile, type SniffedFile } from "../core/file-sniff";
 import { hashFile, sha1Base36ToHex } from "../core/file-hash";
 import { MediaAssetService, type MediaAssetRecord } from "../core/media-asset-service";
@@ -127,7 +127,7 @@ function checkedFile(bytes: Uint8Array, name: string): SniffedFile {
       `The file is larger than the ${MAX_UPLOAD_BYTES / MEGABYTE} MB limit.`
     );
   }
-  const sniffed = sniffFile(bytes);
+  const sniffed = sniffFile(bytes, getMaxSvgBytes());
   if (!sniffed.ok) throw new UploadError(sniffed.code, sniffed.reason);
   checkImageArea(sniffed.file);
   const extension = fileExtension(name);
