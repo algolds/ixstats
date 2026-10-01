@@ -1,13 +1,12 @@
 /** Plan 412: the page furniture of the /wiki/<path> route: tabs, notices, lists and the 404. */
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 
-const mockPush = jest.fn();
 let mockPathname = "/wiki/Foo";
 let mockSignedIn = true;
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
-  useRouter: () => ({ push: mockPush }),
 }));
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: true }),
@@ -17,11 +16,13 @@ jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
 }));
 const mockResolveAuthor = jest.fn();
 const mockPermissions = jest.fn();
+const mockEditAccess = jest.fn();
 jest.mock("~/trpc/react", () => ({
   api: {
     users: { resolveWikiAuthor: { useQuery: (...a: unknown[]) => mockResolveAuthor(...a) } },
     wikios: {
       getUserPermissions: { useQuery: (...a: unknown[]) => mockPermissions(...a) },
+      getEditAccess: { useQuery: (...a: unknown[]) => mockEditAccess(...a) },
       getRevisionHtml: {
         useQuery: () => ({ data: undefined, error: null, refetch: jest.fn() }),
       },
@@ -48,6 +49,7 @@ beforeEach(() => {
   mockSignedIn = true;
   mockResolveAuthor.mockReturnValue({ data: null });
   mockPermissions.mockReturnValue({ data: { rights: [] } });
+  mockEditAccess.mockReturnValue({ data: { allowed: true, reason: null } });
 });
 
 describe("ArticleTabs (Page / Discussion)", () => {
@@ -83,30 +85,66 @@ describe("ArticleTabs (Page / Discussion)", () => {
 });
 
 describe("the 404 page", () => {
-  it("names the page the URL asked for, and offers to create it to a signed-in reader", () => {
+  it("names the page the URL asked for, says there is no text, and offers a signed-in reader who may create it a link to the editor", () => {
     mockPathname = "/wiki/foo_bar/baz";
     render(<WikiNotFound />);
 
-    expect(screen.getByText(/Foo bar\/baz/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
-    expect(mockPush).toHaveBeenCalledWith("/wiki/Foo_bar/baz?action=edit");
+    expect(screen.getByRole("heading", { level: 1, name: "Foo bar/baz" })).toBeInTheDocument();
+    expect(screen.getByText("There is currently no text in this page.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /create this page/i })).toHaveAttribute(
+      "href",
+      "/wiki/Foo_bar/baz?action=edit&redlink=1"
+    );
+    expect(screen.getByRole("link", { name: /search for this title/i })).toHaveAttribute(
+      "href",
+      "/util/search?q=Foo%20bar%2Fbaz"
+    );
+    expect(mockEditAccess).toHaveBeenCalledWith(
+      { title: "Foo bar/baz" },
+      expect.objectContaining({ enabled: true })
+    );
   });
 
   it("offers no creation to a signed-out reader, nor for a Special: page or a title MediaWiki refuses", () => {
     mockSignedIn = false;
     const { unmount } = render(<WikiNotFound />);
-    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /create this page/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /search for this title/i })).toBeInTheDocument();
     unmount();
 
     mockSignedIn = true;
     mockPathname = "/wiki/Special:NoSuchThing";
     const special = render(<WikiNotFound />);
-    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /create this page/i })).not.toBeInTheDocument();
     special.unmount();
 
     mockPathname = "/wiki/a%5Bb";
     render(<WikiNotFound />);
-    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /create this page/i })).not.toBeInTheDocument();
+  });
+
+  it("offers no creation to a signed-in reader the server says may not create the page (protected, blocked, namespace)", () => {
+    mockPathname = "/wiki/Template:Flag";
+    mockEditAccess.mockReturnValue({ data: { allowed: false, reason: "namespace" } });
+    render(<WikiNotFound />);
+    expect(screen.queryByRole("link", { name: /create this page/i })).not.toBeInTheDocument();
+
+    mockEditAccess.mockReturnValue({ data: undefined });
+    cleanup();
+    render(<WikiNotFound />);
+    // not yet known: no link rather than a link that may lead to a refusal
+    expect(screen.queryByRole("link", { name: /create this page/i })).not.toBeInTheDocument();
+  });
+
+  it("is in the HTML the server renders: heading, message and search link, with no create link for the anonymous render", () => {
+    mockSignedIn = false;
+    mockPathname = "/wiki/Nowhere_land";
+    const html = renderToString(<WikiNotFound />);
+
+    expect(html).toMatch(/<h1[^>]*>Nowhere land<\/h1>/);
+    expect(html).toContain("There is currently no text in this page.");
+    expect(html).toContain('href="/util/search?q=Nowhere%20land"');
+    expect(html).not.toMatch(/create this page/i);
   });
 });
 
