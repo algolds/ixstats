@@ -176,9 +176,12 @@ export interface FakeWikiDb {
   stash: Table;
   stashItem: Table;
   $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
-  /** Records the statement (its `?` placeholders) and its values; changes no table. */
+  /**
+   * Records the statement (its `?` placeholders) and its values; changes no table. `pg_advisory_xact_lock(hashtext(key))`
+   * is understood: it waits for the transaction that holds the key, and holds it until its own ends.
+   */
   $executeRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<number>;
-  /** Only `pg_advisory_xact_lock(hashtext(key))` is understood: it waits for the transaction that holds the key, and holds it until its own ends. */
+  /** Returns no rows. The real client cannot read the `void` the advisory lock returns: asking it to is an error here too. */
   $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
 }
 
@@ -257,12 +260,18 @@ export function createFakeWikiDb() {
         for (const release of transaction.releases) release();
       }
     },
-    $queryRaw: async (strings, ...values) => {
-      if (strings.join("?").includes("pg_advisory_xact_lock"))
-        await acquireAdvisoryLock(String(values[0]));
+    $queryRaw: async (strings) => {
+      if (strings.join("?").includes("pg_advisory_xact_lock")) {
+        // what Prisma does with a `SELECT` of a `void` column: the lock must be taken with $executeRaw
+        throw new Error("Failed to deserialize column of type 'void'");
+      }
       return [];
     },
     $executeRaw: async (strings, ...values) => {
+      if (strings.join("?").includes("pg_advisory_xact_lock")) {
+        await acquireAdvisoryLock(String(values[0]));
+        return 0;
+      }
       executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
       return 0;
     },

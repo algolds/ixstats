@@ -23,7 +23,8 @@ type Tx = Prisma.TransactionClient;
 /** Run `work` in a transaction that holds the advisory lock of the staged file `sha1` until it ends. */
 export function withStagedFileLock<T>(sha1: string, work: (tx: Tx) => Promise<T>): Promise<T> {
   return db.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`wiki-upload:${sha1}`}))`;
+    // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`wiki-upload:${sha1}`}))`;
     return work(tx);
   });
 }
