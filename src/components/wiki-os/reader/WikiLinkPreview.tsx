@@ -3,6 +3,7 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -578,6 +579,8 @@ export function MentionPopover({
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
   const [isMounted, setIsMounted] = useState(false);
+  // the server's and the first client render's HTML: one object per string, or React 19 writes it again
+  const rawMarkup = useHtmlMarkup(html);
 
   useEffect(() => {
     // oxlint-disable-next-line
@@ -619,7 +622,7 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
   }, [root, missing]);
 
   if (!isMounted || !parsedContent) {
-    return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <Tag className={className} dangerouslySetInnerHTML={rawMarkup} />;
   }
 
   return <Tag className={className}>{parsedContent}</Tag>;

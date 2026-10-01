@@ -5,6 +5,7 @@
 import "~/styles/wiki-os/editors.css";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { api } from "~/trpc/react";
 import {
   EditorView,
@@ -78,6 +79,8 @@ export function WikiSourceEditor({
   const [lineCount, setLineCount] = useState(1);
 
   const previewMutation = api.wikios.previewWikitext.useMutation();
+  // the preview's HTML as one object per string: the cursor moves re-render this component on every key
+  const previewMarkup = useHtmlMarkup(previewMutation.data?.html || "<em>Loading preview...</em>");
   const previewTimerRef = useRef<NodeJS.Timeout | null>(null);
   const refreshPreviewRef = useRef<() => void>(() => {});
 
@@ -437,9 +440,7 @@ export function WikiSourceEditor({
               </div>
               <div
                 className="wikios-editor-preview-content wikios-article-body"
-                dangerouslySetInnerHTML={{
-                  __html: previewMutation.data?.html || "<em>Loading preview...</em>",
-                }}
+                dangerouslySetInnerHTML={previewMarkup}
               />
             </div>
           )}

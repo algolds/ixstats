@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { Puzzle, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { useEditorModalContext } from "../context/EditorModalContext";
 import { useTemplateSchema } from "../hooks/useTemplateSchema";
 
@@ -158,6 +159,8 @@ function TemplateEditorDialog({
     { template: templateName, params: values },
     { enabled: showPreview, staleTime: 0 }
   );
+  // one object per preview HTML: a new one each render would write the preview's DOM again (React 19)
+  const previewMarkup = useHtmlMarkup(previewQuery.data ?? "");
 
   const schemaKeySet = React.useMemo(() => new Set(paramList.map((p) => p.key)), [paramList]);
   const extraKeys = React.useMemo(
@@ -243,7 +246,7 @@ function TemplateEditorDialog({
           {showPreview && previewQuery.data && (
             <div
               className="wikios-ti-preview"
-              dangerouslySetInnerHTML={{ __html: previewQuery.data }}
+              dangerouslySetInnerHTML={previewMarkup}
             />
           )}
         </div>
