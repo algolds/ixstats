@@ -2,8 +2,9 @@
  * sister-render-service.ts: the reader's HTML for a page of another wiki (`?source=iiwiki|althistory`).
  *
  * The page's wikitext is rendered by **that wiki's own parser** (`action=parse&text=&title=` on its own
- * api.php), so its templates, parser functions and modules resolve against its own pages, never against
- * IxWiki's (plan 415, BUG-09: they used to be posted to IxWiki's engine, which has other templates).
+ * api.php, called directly: never through the development proxy, which forwards GET only), so its
+ * templates, parser functions and modules resolve against its own pages, never against IxWiki's (plan 415,
+ * BUG-09: they used to be posted to IxWiki's engine, which has other templates).
  * The request carries the allow-listed `IxStats-Builder` user agent and goes through the bridge's fetch
  * helper, which keeps iiwiki's Cloudflare circuit breaker. The answer is transformed for the reader and
  * sanitized like any other article HTML (another wiki's HTML is as untrusted as a user's), and cached per
@@ -14,7 +15,7 @@ import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { Cache } from "~/lib/cache";
 import { fetchExternalWiki } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 import type { SisterWikiSource, WikiArticle } from "~/lib/wiki-os/adapters/mediawiki/bridge/types";
-import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { sisterApiUrl } from "~/lib/wiki-os/config";
 import {
   stripConflictingStyles,
   transformArticleHtml,
@@ -67,7 +68,7 @@ function parseForm(article: WikiArticle): URLSearchParams {
 
 async function renderOnItsWiki(source: SisterWikiSource, article: WikiArticle): Promise<SisterRender> {
   const response = await fetchExternalWiki(
-    getMediaWikiApiUrl(source),
+    sisterApiUrl(source),
     RENDER_TIMEOUT_MS,
     parseForm(article)
   );

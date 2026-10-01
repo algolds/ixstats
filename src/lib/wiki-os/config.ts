@@ -221,6 +221,15 @@ export function wikiReaderPath(title: string, source: WikiSource = "ixwiki"): st
 }
 
 /**
+ * A sister wiki's own `api.php`, whatever the environment: no dev proxy (`IIWIKI_DEV_PROXY_URL`, or the maps host's
+ * relay in development), which only forwards GET. For a request that must be a POST (`action=parse&text=`).
+ */
+export function sisterApiUrl(source: Exclude<WikiSource, "ixwiki">): string {
+  const wiki = WIKI_SOURCES[source];
+  return `${wiki.baseUrl}${wiki.apiEndpoint}`;
+}
+
+/**
  * Get the appropriate MediaWiki API URL based on context and wiki source. IxWiki's is the internal
  * one (the private render engine when configured): this is for server-side calls.
  */

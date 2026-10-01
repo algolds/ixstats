@@ -59,6 +59,20 @@ describe("renderSisterArticle: the request", () => {
     expect(fetchSpy.mock.calls[0]![1]!.method).toBe("POST");
   });
 
+  it("calls the sister's api.php directly even when a development proxy is configured (the proxy forwards GET only)", async () => {
+    const previous = process.env.IIWIKI_DEV_PROXY_URL;
+    process.env.IIWIKI_DEV_PROXY_URL = "http://localhost:3003/api/mediawiki/iiwiki/api.php";
+    try {
+      await renderSisterArticle("iiwiki", article());
+    } finally {
+      if (previous === undefined) delete process.env.IIWIKI_DEV_PROXY_URL;
+      else process.env.IIWIKI_DEV_PROXY_URL = previous;
+    }
+
+    expect(requestedUrl().host).toBe("iiwiki.com");
+    expect(fetchSpy.mock.calls[0]![1]!.method).toBe("POST");
+  });
+
   it("asks that wiki's parser to render the text under the page's title, and never to parse a page of its own", async () => {
     const page = article({ title: "Portal:Eurth", wikitext: "{{Eurth portal}}" });
 
