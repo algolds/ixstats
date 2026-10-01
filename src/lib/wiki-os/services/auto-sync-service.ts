@@ -62,6 +62,13 @@ const lastStats: AutoSyncStats = {
 const INBOUND_LOCK = "wikios-inbound-sync";
 /** A cycle's lock is held at most this long (its cron job is cut off at 10 minutes). */
 const CYCLE_LOCK_TIMEOUT_MS = 12 * 60_000;
+/** A cycle starts no new step after this long: it must end well inside the lock above, with its marks correct. */
+const CYCLE_STEP_BUDGET_MS = 9 * 60_000;
+/** A cycle that finds the lock taken (a webhook's import, a reader's) tries again this many times, this far apart. */
+const LOCK_RETRIES = 3;
+const LOCK_RETRY_WAIT_MS = 2_000;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const SINGLE_PAGE_LOCK_TIMEOUT_MS = 60_000;
 
 function errorMessage(err: unknown): string {
@@ -114,6 +121,31 @@ async function writeHighWater(key: string, value: string): Promise<void> {
   await db.systemConfig.upsert({ where: { key }, create: { key, value }, update: { value } });
 }
 
+/** The log mark is "<timestamp>|<log id>": events at the mark's second up to that id are done (applied, or skipped for good). */
+const LOG_MARK_SEPARATOR = "|";
+
+interface LogMark {
+  timestamp: string;
+  logid: number | null;
+}
+
+function parseLogMark(value: string | null): LogMark | null {
+  if (!value) return null;
+  const [timestamp = "", id] = value.split(LOG_MARK_SEPARATOR);
+  const logid = Number(id);
+  return { timestamp, logid: id !== undefined && Number.isInteger(logid) ? logid : null };
+}
+
+/**
+ * The events the mark has not covered. A list read from a timestamp starts at that second, so its last
+ * event(s) come back; an event skipped on purpose leaves no log row to recognise it by, so the id says it is done.
+ */
+function pastMark(events: LogEvent[], mark: LogMark | null): LogEvent[] {
+  const doneUpTo = mark?.logid;
+  if (!mark || doneUpTo === null || doneUpTo === undefined) return events;
+  return events.filter((event) => event.timestamp !== mark.timestamp || event.logid > doneUpTo);
+}
+
 /**
  * Entries of a MediaWiki list to sync, oldest first. Without a high-water mark only the latest `limit`
  * are read; with one, every entry since it (up to MAX_LIST_PAGES pages). `names` is the list's own
@@ -158,6 +190,8 @@ interface StepResult {
 interface SyncStep {
   stream: Stream;
   timestamp: string;
+  /** What the stream's high-water mark becomes once this step is done (a timestamp, for the log with its id). */
+  mark: string;
   /** What a failure holds back: later steps about the same page wait for the retry. */
   subject: string;
   label: string;
@@ -170,6 +204,7 @@ function editStep(rc: RecentChange): SyncStep {
   return {
     stream: "edits",
     timestamp: rc.timestamp,
+    mark: rc.timestamp,
     subject: plainTitle(rc.title),
     label: rc.title,
     run: async () => {
@@ -187,6 +222,7 @@ function logStep(event: LogEvent): SyncStep {
   return {
     stream: "log",
     timestamp: event.timestamp,
+    mark: `${event.timestamp}${LOG_MARK_SEPARATOR}${event.logid}`,
     subject: plainTitle(event.title),
     label: `${event.type}/${event.action} ${event.title}`,
     run: async () => ({ ...NOTHING, applied: (await applyLogEvent(event)) === "applied" ? 1 : 0 }),
@@ -209,17 +245,26 @@ interface StepsResult extends StepResult {
 }
 
 /**
- * Run the steps in order. A stream's high-water mark never passes a failed step, so the failure is
- * retried next cycle; later steps about other pages still run, those about the failed page wait (they
- * would be applied before the revision they build on).
+ * Run the steps in order until `deadline`. A stream's high-water mark never passes a step that was not
+ * applied: not a failed one (retried next cycle), not one held back because an earlier step about the same
+ * page failed (applied before the revision it builds on, it would be wrong), and not one the deadline cut
+ * off. Steps about other pages still run after a failure.
  */
-async function runSteps(steps: SyncStep[]): Promise<StepsResult> {
+async function runSteps(steps: SyncStep[], deadline: number): Promise<StepsResult> {
   const result: StepsResult = { ...NOTHING, highWater: { edits: null, log: null } };
   const blocked = new Set<string>();
   const failedStreams = new Set<Stream>();
 
   for (const step of chronological(steps)) {
-    if (!blocked.has(step.subject)) {
+    if (Date.now() >= deadline) {
+      console.warn(
+        "[WikiAutoSync] The cycle's time budget is spent: the rest waits for the next one."
+      );
+      break;
+    }
+    if (blocked.has(step.subject)) {
+      failedStreams.add(step.stream);
+    } else {
       try {
         const done = await step.run();
         result.created += done.created;
@@ -233,7 +278,7 @@ async function runSteps(steps: SyncStep[]): Promise<StepsResult> {
       }
     }
     if (!failedStreams.has(step.stream) && step.timestamp) {
-      result.highWater[step.stream] = step.timestamp;
+      result.highWater[step.stream] = step.mark;
     }
   }
   return result;
@@ -265,23 +310,28 @@ async function runCycle(limit: number): Promise<void> {
         `[WikiAutoSync] Pushed ${repushed} articles back to MediaWiki that were parked without a re-push.`
       );
     }
-    const [rcMark, logMark] = await Promise.all([
+    const deadline = Date.now() + CYCLE_STEP_BUDGET_MS;
+    const [rcMark, logMarkValue] = await Promise.all([
       readHighWater(RC_HWM_KEY),
       readHighWater(LOG_HWM_KEY),
     ]);
+    const logMark = parseLogMark(logMarkValue);
     const changes = await collectOrNothing("recent changes", () =>
       collectList(rcMark, limit, "rc", fetchRecentChangesPage)
     );
-    const events = await collectOrNothing("log events", () =>
-      collectList(logMark, limit, "le", fetchLogEventsPage)
+    const events = pastMark(
+      await collectOrNothing("log events", () =>
+        collectList(logMark?.timestamp ?? null, limit, "le", fetchLogEventsPage)
+      ),
+      logMark
     );
     lastStats.pagesChecked = changes.length + events.length;
 
-    const done = await runSteps([...changes.map(editStep), ...events.map(logStep)]);
+    const done = await runSteps([...changes.map(editStep), ...events.map(logStep)], deadline);
     if (done.highWater.edits && done.highWater.edits !== rcMark) {
       await writeHighWater(RC_HWM_KEY, done.highWater.edits);
     }
-    if (done.highWater.log && done.highWater.log !== logMark) {
+    if (done.highWater.log && done.highWater.log !== logMarkValue) {
       await writeHighWater(LOG_HWM_KEY, done.highWater.log);
     }
 
@@ -302,14 +352,20 @@ async function runCycle(limit: number): Promise<void> {
 }
 
 /**
- * One sync cycle, unless another is running (in this or any other process): then the last stats are
- * returned and nothing is read. Never throws.
+ * One sync cycle, unless another sync keeps running (in this or any other process) through three retries
+ * 2 s apart: then the last stats are returned and nothing is read. Never throws.
  */
 export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
   try {
-    await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), {
-      timeoutMs: CYCLE_LOCK_TIMEOUT_MS,
-    });
+    // A single-page import (the webhook, a reader) holds the lock for a moment: wait for it a little
+    // rather than skip a whole cycle.
+    for (let attempt = 0; attempt <= LOCK_RETRIES; attempt++) {
+      const outcome = await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), {
+        timeoutMs: CYCLE_LOCK_TIMEOUT_MS,
+      });
+      if (outcome.ran || attempt === LOCK_RETRIES) break;
+      await sleep(LOCK_RETRY_WAIT_MS);
+    }
   } catch (err) {
     // The lock itself could not be taken (the database is down): nothing ran.
     console.error("[WikiAutoSync] Could not start a cycle:", errorMessage(err));

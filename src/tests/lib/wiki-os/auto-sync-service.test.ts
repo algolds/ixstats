@@ -431,7 +431,7 @@ describe("log events in the cycle", () => {
     expect(first?.get("leprop")).toContain("details");
     expect(second?.get("lecontinue")).toBe("y");
     expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
-    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
     expect(highWaterWritten(HWM_KEY)).toBeUndefined();
   });
 
@@ -446,7 +446,7 @@ describe("log events in the cycle", () => {
     expect(params?.get("lelimit")).toBe("30");
     expect(params?.get("ledir")).toBeNull();
     expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
-    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
   });
 
   it("applies edits and log events in the order MediaWiki recorded them, a log event first within one second", async () => {
@@ -510,10 +510,90 @@ describe("log events in the cycle", () => {
     await runAutoSyncCycle();
 
     expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2, 4]);
-    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z");
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|1");
     expect(highWaterWritten(HWM_KEY)).toBe("2026-09-27T10:00:05Z");
     expect(importPageRevisions).toHaveBeenCalledTimes(1);
     consoleError.mockRestore();
+  });
+
+  it("holds the log mark behind an event held back because an earlier edit of the same page failed, and applies it once the failure clears", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY
+        ? { value: "2026-09-27T08:00:00Z" }
+        : { value: "2026-09-27T09:00:00Z" }
+    );
+    rcResponses = [{ changes: [change("P", 5, 1)] }];
+    logResponses = [
+      {
+        events: [
+          logEvent("protect", "protect", "P", 7, 2),
+          logEvent("protect", "protect", "Q", 8, 3),
+        ],
+      },
+    ];
+    failingRevisions = new Set([5]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    // P's edit failed: its protect waits, Q's applies; the log mark did not pass P's protect.
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([8]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBeUndefined();
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+
+    // The failure clears: the next cycle reads the log from the same mark and applies P's protect.
+    failingRevisions = new Set();
+    mwRevisions = new Map([[5, { title: "P", revid: 5 }]]);
+    rcResponses = [{ changes: [change("P", 5, 1)] }];
+    logResponses = [
+      {
+        events: [
+          logEvent("protect", "protect", "P", 7, 2),
+          logEvent("protect", "protect", "Q", 8, 3),
+        ],
+      },
+    ];
+    applyEvent.mockClear();
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([7, 8]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:03Z|8");
+    consoleError.mockRestore();
+  });
+
+  it("does not apply, or warn of, an event the mark already covers (a skipped one comes back at the mark's second)", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T10:00:02Z|2" } : null
+    );
+    logResponses = [
+      {
+        events: [
+          logEvent("move", "move", "A", 1, 2),
+          logEvent("move", "move", "B", 2, 2),
+          logEvent("move", "move", "C", 3, 2),
+          logEvent("move", "move", "D", 4, 3),
+        ],
+      },
+    ];
+
+    await runAutoSyncCycle();
+
+    // The list is read from the mark's second; events 1 and 2 are done, 3 and 4 are new.
+    expect(logCalls()[0]?.get("lestart")).toBe("2026-09-27T10:00:02Z");
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([3, 4]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:03Z|4");
+  });
+
+  it("reads a log mark written before it carried an id (a bare timestamp) as covering nothing but the older seconds", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T10:00:02Z" } : null
+    );
+    logResponses = [{ events: [logEvent("move", "move", "A", 1, 2)] }];
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent).toHaveBeenCalledTimes(1);
   });
 
   it("an ignored or skipped event does not hold the mark back", async () => {
@@ -527,7 +607,7 @@ describe("log events in the cycle", () => {
 
     await runAutoSyncCycle();
 
-    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z|2");
   });
 });
 
@@ -1085,15 +1165,80 @@ describe("the advisory lock", () => {
     expect(importPageRevisions).toHaveBeenCalledTimes(1);
   });
 
-  it("a cycle that finds the lock taken reads nothing and returns the stats it has", async () => {
+  /** Run a cycle with the clock under test control: the waits between lock retries are not real. */
+  const cycleWithFakeTimers = async () => {
+    jest.useFakeTimers();
+    try {
+      const running = runAutoSyncCycle();
+      await jest.advanceTimersByTimeAsync(10_000);
+      return await running;
+    } finally {
+      jest.useRealTimers();
+    }
+  };
+
+  it("a cycle that keeps finding the lock taken tries four times, 2 s apart, then reads nothing and returns the stats it has", async () => {
     mockQueryRaw.mockResolvedValue([{ locked: false }]);
     rcResponses = [{ changes: [change("A", 1, 1)] }];
 
-    const stats = await runAutoSyncCycle();
+    const stats = await cycleWithFakeTimers();
 
+    expect(mockQueryRaw).toHaveBeenCalledTimes(4);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockSystemConfigFindUnique).not.toHaveBeenCalled();
     expect(stats).toHaveProperty("pagesChecked");
+  });
+
+  it("a cycle that finds the lock taken by a single-page import runs once it is free (a retry, not a skipped cycle)", async () => {
+    mockQueryRaw
+      .mockResolvedValueOnce([{ locked: false }])
+      .mockResolvedValueOnce([{ locked: false }])
+      .mockResolvedValue([{ locked: true }]);
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
+
+    await cycleWithFakeTimers();
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(3);
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts no new step once the 9-minute budget is spent, and the marks stay behind the steps it did not apply", async () => {
+    jest.useFakeTimers({
+      now: new Date("2026-09-27T10:00:00Z"),
+      doNotFake: ["setTimeout", "setImmediate", "nextTick"],
+    });
+    try {
+      mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+      rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2), change("C", 3, 3)] }];
+      mwRevisions = new Map([
+        [1, { title: "A", revid: 1 }],
+        [2, { title: "B", revid: 2 }],
+        [3, { title: "C", revid: 3 }],
+      ]);
+      // The first page takes ten minutes to sync.
+      importPageRevisions.mockImplementationOnce(async () => {
+        jest.setSystemTime(new Date("2026-09-27T10:10:00Z"));
+        return {
+          created: false,
+          inserted: 1,
+          filled: 0,
+          skipped: 0,
+          conflicts: 0,
+          headUpdated: true,
+        };
+      });
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+      await runAutoSyncCycle();
+
+      expect(importPageRevisions).toHaveBeenCalledTimes(1);
+      expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("time budget"));
+      warn.mockRestore();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("the webhook's single-page sync takes the same lock without waiting and answers false when it is busy", async () => {
@@ -1176,7 +1321,7 @@ describe("failures are counted, not swallowed", () => {
     expect(stats.failures).toBe(1);
     expect(stats.lastError).toContain("reading recent changes");
     expect(applyEvent).toHaveBeenCalledTimes(1);
-    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z");
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z|1");
     expect(highWaterWritten(HWM_KEY)).toBeUndefined();
     consoleError.mockRestore();
   });
