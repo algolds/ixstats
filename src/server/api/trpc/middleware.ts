@@ -469,6 +469,17 @@ export const publicRateLimit = createRateLimitMiddleware({
 });
 
 /**
+ * Article reads (`wikios.getArticleHtml`): their own bucket, `wiki_read`, 600 requests a minute per
+ * client. A reader who hover-prefetches links, or a page that opens a dozen previews, would run through
+ * the shared 100/min `public` bucket and then be told that pages that exist are missing.
+ */
+export const wikiReadRateLimit = createRateLimitMiddleware({
+  max: 600,
+  windowMs: 60000,
+  namespace: "wiki_read",
+});
+
+/**
  * Cached reads. The key carries the viewer's realm unless it is IxWorld (ruling E-q), because realm-scoped
  * listings fall back to it when the input names none. An all-realms read ("*") is never cached: whether
  * "*" applies depends on the caller being a site admin (ruling E-o).

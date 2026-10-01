@@ -5,7 +5,12 @@
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+  wikiReadProcedure,
+} from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import {
@@ -109,7 +114,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * ALL transformation (images, links, infobox extraction, TOC, notices)
    * happens here server-side. Client renders with zero regex work.
    */
-  getArticleHtml: publicProcedure
+  getArticleHtml: wikiReadProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),

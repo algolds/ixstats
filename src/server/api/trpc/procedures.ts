@@ -17,6 +17,7 @@ import {
   lightMutationRateLimit,
   readOnlyRateLimit,
   publicRateLimit,
+  wikiReadRateLimit,
   standardCacheMiddleware,
   userCacheMiddleware,
   staticCacheMiddleware,
@@ -62,6 +63,9 @@ export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLi
 export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
 
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
+
+/** Public article reads, on their own generous `wiki_read` bucket (see `wikiReadRateLimit`). */
+export const wikiReadProcedure = publicProcedure.use(wikiReadRateLimit);
 
 // Cached procedure variants
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
