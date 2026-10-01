@@ -182,9 +182,10 @@ export async function loadRevisionAuthors(
     }),
   ]);
 
-  // The article's owner is asked only when the ledger leaves the creator unnamed.
+  // The article's owner is asked only when the ledger leaves the creator unnamed, never when the creator's user was
+  // hidden (revision deletion): the owner of a page a hidden user made is that very user.
   const oldestAuthor = oldest && visibleAuthor(oldest);
-  const ownerName = oldestAuthor ? null : await ownerWikiUsername(article.authorId);
+  const ownerName = oldest?.userDeleted || oldestAuthor ? null : await ownerWikiUsername(article.authorId);
   if (!oldest || !newest) {
     return authorInfoWithoutRevisions(ownerName, article.createdAt, article.updatedAt);
   }
