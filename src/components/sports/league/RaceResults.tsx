@@ -138,7 +138,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
             <TableRow key={d.driverId} className="transition-transform active:scale-[0.99]">
               <TableCell className="font-semibold">
                 {i === 0 ? (
-                  <Badge className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-1.5 py-0 font-semibold">
+                  <Badge className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-2 py-0 font-semibold">
                     P1
                   </Badge>
                 ) : (

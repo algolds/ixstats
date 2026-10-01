@@ -17,6 +17,7 @@ import {
   ImportCompleteStep,
   type ImportResult,
 } from "./import/ImportConfirmStep";
+import { Button } from "~/components/ui/button";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -141,12 +142,15 @@ function ImportDeckTab() {
                   <Alert variant="destructive" className="border-red/30 bg-red/5">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{errorMessage}</AlertDescription>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Dismiss error"
                       onClick={() => setErrorMessage("")}
-                      className="text-label-secondary hover:text-label absolute top-3 right-3"
+                      className="text-label-secondary absolute top-2 right-2"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </Alert>
                 </motion.div>
               )}

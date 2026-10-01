@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { Copy, Check } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface StashImageCardProps {
   imgInfo: any;
@@ -40,15 +41,17 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
         </div>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
+      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+        <Button
+          variant="gray"
+          size="icon-sm"
+          aria-label="Copy Wikitext Link"
           onClick={handleCopy}
-          className="rounded-control-sm duration-fast bg-black/60 p-1 text-white transition-colors hover:bg-black/80"
           title="Copy Wikitext Link"
+          className="size-6 bg-black/60 text-white hover:bg-black/80"
         >
           {copied ? <Check className="text-green h-3 w-3" /> : <Copy className="h-3 w-3" />}
-        </button>
+        </Button>
       </div>
 
       <div className="text-footnote absolute inset-x-0 bottom-0 truncate bg-black/60 p-1 text-white">

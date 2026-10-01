@@ -15,7 +15,7 @@ export function ChapterNavigator() {
   return (
     <div className="border-separator flex flex-col gap-2 border-t pt-4">
       <span className="text-subhead text-label-secondary px-1">Chapters</span>
-      <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto">
+      <div className="flex max-h-40 flex-col gap-2 overflow-y-auto">
         {activeTrack.chapters.map((chap, idx) => {
           const isActive = currentTime >= chap.startTime && currentTime < chap.endTime;
           return (

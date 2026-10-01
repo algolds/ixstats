@@ -21,6 +21,7 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { MEDIA_THEME_OPTIONS } from "~/lib/wiki-os/transformers/media-theme";
 import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
 
 interface WikiOSArticleToolbarWidgetProps {
   title: string;
@@ -67,11 +68,14 @@ export function WikiOSArticleToolbarWidget({
         )}
 
         {/* Margin */}
-        <button
-          type="button"
+        <Button
+          variant="tinted"
+          size="icon-lg"
+          aria-pressed={isMarginOpen}
+          aria-label="Margin"
           onClick={() => toggleMargin()}
           className={cn(
-            "rail-glow-highlighter rail-animate-wiggle rounded-row shadow-card flex h-10 w-10 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+            "rail-glow-highlighter rail-animate-wiggle rounded-row shadow-card size-10 border",
             isMarginOpen
               ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-margin-accent/40 shadow-margin-accent/20 ring-2"
               : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
@@ -79,17 +83,19 @@ export function WikiOSArticleToolbarWidget({
           title={isMarginOpen ? "Hide Margin (T)" : "Show Margin (Threads, Markup) [T]"}
         >
           <Highlighter className="size-4.5" />
-        </button>
+        </Button>
 
         {/* Media Theme Quick Cycle */}
-        <button
-          type="button"
+        <Button
+          variant="tinted"
+          size="icon-lg"
+          aria-label={`Media theme: ${mediaThemeMode}`}
           onClick={cycleMediaThemeMode}
-          className="rounded-row border-teal/20 bg-teal/5 text-teal hover:bg-teal/15 flex h-10 w-10 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+          className="rounded-row border-teal/20 bg-teal/5 text-teal hover:bg-teal/15 size-10 border"
           title={`Media Theme: ${mediaThemeMode} (Click to cycle Auto / Plinth / Raw)`}
         >
           {getModeIcon(mediaThemeMode)}
-        </button>
+        </Button>
 
         {/* Stash */}
         <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
@@ -99,7 +105,7 @@ export function WikiOSArticleToolbarWidget({
 
   return (
     <FacetCard className="w-48 overflow-hidden">
-      <div className="border-separator text-subhead text-label flex items-center gap-1.5 border-b px-3 py-2.5">
+      <div className="border-separator text-subhead text-label flex items-center gap-2 border-b px-3 py-3">
         <FileEdit className="text-tint size-3.5" aria-hidden="true" />
         Page Tools
       </div>
@@ -107,21 +113,23 @@ export function WikiOSArticleToolbarWidget({
       <div className="space-y-0.5 p-2">
         {/* Edit */}
         {isSignedIn && (
-          <Link href={withBasePath(`/wiki/${slug}/edit`)} className={toolRowClassName}>
-            <FileEdit className="text-tint size-3.5 shrink-0" aria-hidden="true" />
-            <span>Edit Article</span>
-          </Link>
+          <Button asChild variant="ghost" className={toolRowClassName}>
+            <Link href={withBasePath(`/wiki/${slug}/edit`)}>
+              <FileEdit className="text-tint size-3.5 shrink-0" aria-hidden="true" />
+              <span>Edit Article</span>
+            </Link>
+          </Button>
         )}
 
         {/* Margin */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           aria-pressed={isMarginOpen}
           onClick={() => toggleMargin()}
           className={cn(
             toolRowClassName,
             "justify-between",
-            isMarginOpen && "bg-margin-bg text-label"
+            isMarginOpen && "bg-margin-bg hover:bg-margin-bg text-label"
           )}
         >
           <span className="flex items-center gap-2">
@@ -131,30 +139,30 @@ export function WikiOSArticleToolbarWidget({
           <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary border px-1">
             T
           </kbd>
-        </button>
+        </Button>
 
         {/* History */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => setActiveModal("history")}
           className={toolRowClassName}
         >
           <Clock className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <span>Revision History</span>
-        </button>
+        </Button>
 
         {/* Backlinks */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => setActiveModal("backlinks")}
           className={toolRowClassName}
         >
           <Link2 className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <span>What Links Here</span>
-        </button>
+        </Button>
 
         {/* Media theme */}
-        <div className="border-separator mt-2 space-y-1.5 border-t px-1 pt-2">
+        <div className="border-separator mt-2 space-y-2 border-t px-1 pt-2">
           <div className="flex items-center justify-between">
             <span className="text-subhead text-label-secondary">Media Theme</span>
             <span className="text-caption text-label-secondary capitalize">{mediaThemeMode}</span>
@@ -182,5 +190,6 @@ export function WikiOSArticleToolbarWidget({
   );
 }
 
+/** A command row in the Page Tools card (a ghost `Button`). */
 const toolRowClassName =
-  "flex w-full items-center gap-2 rounded-control-sm px-2 py-1.5 text-left text-callout text-label transition-colors duration-fast hover:bg-fill-4";
+  "text-callout text-label h-auto w-full justify-start px-2 py-2 font-normal";

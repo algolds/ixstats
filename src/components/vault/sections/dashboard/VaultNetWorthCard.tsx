@@ -70,7 +70,7 @@ export function VaultNetWorthCard({
 
         {/* Quick stats inline interactive pills */}
         <div className="border-separator text-footnote mt-5 flex flex-wrap gap-2 border-t pt-4">
-          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium select-none">
+          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
             <Layers className="text-tint h-3.5 w-3.5 shrink-0" />
             <span>
               Cards:{" "}
@@ -79,13 +79,13 @@ export function VaultNetWorthCard({
               </strong>
             </span>
           </div>
-          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium select-none">
+          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
             <Package className="text-indigo h-3.5 w-3.5 shrink-0" />
             <span>
               Packs: <strong className="text-label font-semibold">{unopenedPacks}</strong>
             </span>
           </div>
-          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-1.5 rounded-full border px-3 py-1 font-medium select-none">
+          <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
             <ShoppingBag className="text-blue h-3.5 w-3.5 shrink-0" />
             <span>
               Auctions: <strong className="text-label font-semibold">{activeAuctions}</strong>

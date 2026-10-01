@@ -18,6 +18,7 @@ import {
 } from "iconoir-react";
 
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { formatCompact } from "~/lib/format/compact";
 
 interface MarginInspectTabProps {
@@ -128,9 +129,9 @@ export function MarginInspectTab({
   };
 
   return (
-    <div className="animate-in fade-in space-y-3.5 duration-150">
+    <div className="animate-in fade-in space-y-4 duration-150">
       {/* 1. Article Topology & Lore Structure */}
-      <div className="rounded-card border-separator bg-surface space-y-3 border p-3.5">
+      <div className="rounded-card border-separator bg-surface space-y-3 border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Compass className="text-margin-accent h-4 w-4" />
@@ -162,7 +163,7 @@ export function MarginInspectTab({
           {pageTierInfo.description}
         </p>
 
-        <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary space-y-1 border p-2.5">
+        <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary space-y-1 border p-3">
           <span className="text-margin-accent text-subhead block">Linkage Recommendation</span>
           <p className="text-label-secondary leading-snug">{pageTierInfo.guideline}</p>
         </div>
@@ -177,10 +178,10 @@ export function MarginInspectTab({
       )}
 
       {!isLoading && matchedCountry && (
-        <div className="rounded-card border-separator bg-surface space-y-3 border p-3.5">
+        <div className="rounded-card border-separator bg-surface space-y-3 border p-4">
           {/* Nation Dossier Header */}
-          <div className="border-separator flex items-start justify-between gap-2 border-b pb-2.5">
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div className="border-separator flex items-start justify-between gap-2 border-b pb-3">
+            <div className="flex min-w-0 items-center gap-2">
               {matchedCountry.flagUrl ? (
                 <img
                   src={matchedCountry.flagUrl}
@@ -196,7 +197,7 @@ export function MarginInspectTab({
                 <h4 className="text-caption text-label truncate font-semibold">
                   {matchedCountry.name}
                 </h4>
-                <div className="text-caption text-green flex items-center gap-1.5 font-semibold">
+                <div className="text-caption text-green flex items-center gap-2 font-semibold">
                   <span className="bg-green/70 h-1.5 w-1.5 rounded-full" />
                   <span>Simulation Active</span>
                 </div>
@@ -215,7 +216,7 @@ export function MarginInspectTab({
 
           {/* Metric Comparison Grid */}
           <div className="text-footnote grid grid-cols-2 gap-2">
-            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-2.5">
+            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-3">
               <div className="text-caption text-label-secondary flex items-center gap-1">
                 <Users className="text-teal h-3 w-3" />
                 <span>Population</span>
@@ -225,7 +226,7 @@ export function MarginInspectTab({
               </div>
             </div>
 
-            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-2.5">
+            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-3">
               <div className="text-caption text-label-secondary flex items-center gap-1">
                 <DollarSign className="text-green h-3 w-3" />
                 <span>Gross Domestic Product</span>
@@ -237,7 +238,7 @@ export function MarginInspectTab({
           </div>
 
           {/* Additional Registry Facts */}
-          <div className="border-separator text-footnote space-y-1.5 border-t pt-1">
+          <div className="border-separator text-footnote space-y-2 border-t pt-1">
             {matchedCountry.continent && (
               <div className="text-label-secondary flex items-center justify-between">
                 <span>Continental Region</span>
@@ -256,14 +257,14 @@ export function MarginInspectTab({
 
           {/* Action: Propose Diff Patch */}
           {isAuthenticated && (
-            <button
-              type="button"
+            <Button
+              size="lg"
               onClick={handleGenerateFactDiff}
-              className="bg-margin-accent hover:bg-margin-accent/90 rounded-row text-caption flex w-full cursor-pointer items-center justify-center gap-2 p-2.5 font-semibold text-(--margin-badge-text) transition-transform active:scale-[0.98]"
+              className="bg-margin-accent hover:bg-margin-accent-hover w-full text-(--margin-badge-text)"
             >
-              <Edit3 className="h-3.5 w-3.5" />
+              <Edit3 className="size-3.5" />
               <span>Propose edit with live stats</span>
-            </button>
+            </Button>
           )}
         </div>
       )}

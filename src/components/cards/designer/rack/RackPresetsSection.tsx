@@ -46,7 +46,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
 
       {/* Preset List */}
       {presets.length > 0 ? (
-        <div className="max-h-40 space-y-1.5 overflow-y-auto pt-1">
+        <div className="max-h-40 space-y-2 overflow-y-auto pt-1">
           {presets.map((preset) => (
             <div
               key={preset.id}
@@ -67,7 +67,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeletePreset(preset.id)}
-                  className="text-label-secondary hover:text-destructive text-footnote h-6 px-1.5"
+                  className="text-label-secondary hover:text-destructive text-footnote h-6 px-2"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>

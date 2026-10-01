@@ -15,7 +15,6 @@ import {
   Trash as Trash2,
   DesignPencil as Edit3,
   Quote,
-  Search,
   Crown,
   Copy,
   Leaf as Sprout,
@@ -29,6 +28,15 @@ import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { DiffViewer } from "~/components/diff-viewer";
 import { MarginUserAvatar, type CommentAuthor } from "../shared/MarginUserAvatar";
 import { MarginCategoryHelpModal } from "../modals/MarginCategoryHelpModal";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Textarea } from "~/components/ui/textarea";
+
+/** The Margin's highlighter accent on a filled `Button` (its identity colour, not the app tint). */
+const MARGIN_FILLED = "bg-margin-accent text-(--margin-badge-text) hover:bg-margin-accent-hover";
 
 export const LORE_DIMENSIONS = [
   {
@@ -157,22 +165,24 @@ function HoldToResolveButton({
 
   if (isResolved) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="tinted"
+        size="sm"
         onClick={() => onResolveToggle(false)}
-        className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2.5 py-1 font-semibold transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]"
+        className="bg-green/10 text-green hover:bg-green/20"
         title="Reopen discussion thread"
       >
-        <Check className="h-3 w-3" />
+        <Check className="size-3" />
         <span>Resolved (click to reopen)</span>
-      </button>
+      </Button>
     );
   }
 
   return (
     <div className="relative inline-flex select-none">
-      <button
-        type="button"
+      <Button
+        variant="bordered"
+        size="sm"
         onMouseDown={startHold}
         onMouseUp={cancelHold}
         onMouseLeave={cancelHold}
@@ -180,10 +190,10 @@ function HoldToResolveButton({
         onTouchEnd={cancelHold}
         disabled={isPending}
         className={cn(
-          "rounded-control text-caption relative cursor-pointer overflow-hidden border px-2.5 py-1 font-semibold transition-[background-color,border-color,transform] duration-100",
+          "overflow-hidden",
           holding
-            ? "border-green/60 bg-green/20 text-green scale-95"
-            : "border-separator bg-surface text-label-secondary hover:border-separator hover:text-label"
+            ? "border-green/60 bg-green/20 text-green hover:bg-green/20 scale-95"
+            : "text-label-secondary hover:text-label"
         )}
       >
         {holding && (
@@ -196,7 +206,7 @@ function HoldToResolveButton({
           <Check className="text-green h-3 w-3" />
           <span>{holding ? "Keep holding..." : "Hold to resolve"}</span>
         </span>
-      </button>
+      </Button>
     </div>
   );
 }
@@ -328,7 +338,7 @@ function ThreadCard({
       {/* Header Bar */}
       <div
         onClick={onToggleExpand}
-        className="group hover:bg-fill-4 flex cursor-pointer items-start justify-between gap-2.5 p-2.5 transition-colors select-none"
+        className="group hover:bg-fill-4 flex cursor-pointer items-start justify-between gap-2 p-3 transition-colors select-none"
       >
         <MarginUserAvatar
           author={thread.createdBy}
@@ -339,10 +349,10 @@ function ThreadCard({
 
         <div className="min-w-0 flex-1">
           {/* Top metadata: Lore Dimension, Author, Country, Anchor */}
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
             {dimensionInfo && (
               <span
-                className="py-0.2 rounded-control-sm text-caption inline-flex items-center gap-1 px-1.5 font-semibold"
+                className="py-0.2 rounded-control-sm text-caption inline-flex items-center gap-1 px-2 font-semibold"
                 style={{
                   backgroundColor: `color-mix(in srgb, ${dimensionInfo.color === "#fef036" ? "var(--margin-accent)" : dimensionInfo.color} 18%, transparent)`,
                   color:
@@ -382,17 +392,17 @@ function ThreadCard({
 
           {/* Selected text quote if anchored */}
           {thread.selectedText && (
-            <div className="rounded-control border-margin-accent bg-margin-bg text-footnote text-label-secondary mt-1.5 line-clamp-2 border-l-2 p-2 leading-snug italic">
+            <div className="rounded-control border-margin-accent bg-margin-bg text-footnote text-label-secondary mt-2 line-clamp-2 border-l-2 p-2 leading-snug italic">
               &ldquo;{thread.selectedText}&rdquo;
             </div>
           )}
         </div>
 
         {/* Status Pill & Expand Chevron */}
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           <span
             className={cn(
-              "py-0.2 text-eyebrow rounded-full px-1.5 leading-none",
+              "py-0.2 text-eyebrow rounded-full px-2 leading-none",
               isResolved
                 ? "border-green/30 bg-green/10 text-green border"
                 : "border-separator bg-surface-secondary text-label-secondary border"
@@ -423,10 +433,10 @@ function ThreadCard({
               return (
                 <div
                   key={comment.id}
-                  className="group rounded-row border-separator bg-surface-secondary text-footnote relative space-y-1.5 border p-2.5"
+                  className="group rounded-row border-separator bg-surface-secondary text-footnote relative space-y-2 border p-3"
                 >
                   <div className="text-footnote text-label-secondary flex items-center justify-between">
-                    <div className="text-label flex items-center gap-1.5 font-semibold">
+                    <div className="text-label flex items-center gap-2 font-semibold">
                       <MarginUserAvatar
                         author={comment.author}
                         size="xs"
@@ -444,37 +454,40 @@ function ThreadCard({
                     <div className="flex items-center gap-2">
                       <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
                       {isAuthenticated && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           onClick={() =>
                             handleQuoteComment(comment.author.username, comment.content)
                           }
-                          className="rounded-control-sm text-label-secondary cursor-pointer p-0.5 opacity-0 transition-[opacity,color] duration-100 group-hover:opacity-100 hover:text-(--margin-accent-text)"
+                          className="text-label-secondary opacity-0 group-hover:opacity-100 hover:text-(--margin-accent-text) focus-visible:opacity-100"
                           title="Quote in reply"
+                          aria-label="Quote in reply"
                         >
-                          <Quote className="h-3 w-3" />
-                        </button>
+                          <Quote className="size-3" />
+                        </Button>
                       )}
                     </div>
                   </div>
 
-                  <p className="text-label pl-6.5 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-label pl-7 leading-relaxed whitespace-pre-wrap">
                     {comment.content}
                   </p>
 
                   {/* Interactive Suggested Edit DiffViewer */}
                   {comment.suggestedEdit && (
-                    <div className="space-y-1.5 pt-1 pl-6.5">
+                    <div className="space-y-2 pt-1 pl-7">
                       <div className="text-caption flex items-center justify-between font-semibold text-(--margin-accent-text)">
                         <span className="flex items-center gap-1">
                           <Edit3 className="h-3 w-3" />
                           <span>Suggested edit</span>
                         </span>
 
-                        <button
-                          type="button"
+                        <Button
+                          variant="bordered"
+                          size="sm"
                           onClick={() => handleCopyReplacement(comment.id, comment.suggestedEdit!)}
-                          className="rounded-control-sm border-margin-border bg-margin-bg text-footnote hover:bg-margin-bg/80 flex cursor-pointer items-center gap-1 border px-1.5 py-0.5 text-(--margin-accent-text) transition-transform duration-100 active:scale-[0.98]"
+                          className="border-margin-border bg-margin-bg hover:bg-margin-bg/80 text-(--margin-accent-text)"
                         >
                           {copiedReplacementId === comment.id ? (
                             <>
@@ -487,7 +500,7 @@ function ThreadCard({
                               <span>Copy replacement</span>
                             </>
                           )}
-                        </button>
+                        </Button>
                       </div>
 
                       <div className="rounded-row border-separator overflow-hidden border">
@@ -532,18 +545,20 @@ function ThreadCard({
             </div>
 
             {isAuthenticated && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => {
                   if (confirm("Delete this discussion thread?")) {
                     deleteThreadMutation.mutate({ threadId: thread.id });
                   }
                 }}
-                className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors"
+                className="text-label-secondary hover:text-red"
                 title="Delete thread"
+                aria-label="Delete thread"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+                <Trash2 className="size-3.5" />
+              </Button>
             )}
           </div>
 
@@ -551,33 +566,35 @@ function ThreadCard({
           {isAuthenticated && (
             <form onSubmit={handleReplySubmit} className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="sm"
+                  aria-pressed={showSuggestEdit}
                   onClick={() => setShowSuggestEdit((prev) => !prev)}
                   className={cn(
-                    "rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[background-color,border-color,color] duration-100 active:scale-[0.98]",
                     showSuggestEdit
-                      ? "border-margin-border bg-margin-bg text-(--margin-accent-text)"
-                      : "border-separator bg-surface text-label-secondary hover:text-label"
+                      ? "border-margin-border bg-margin-bg hover:bg-margin-bg text-(--margin-accent-text)"
+                      : "text-label-secondary hover:text-label"
                   )}
                 >
-                  <Edit3 className="h-3 w-3 text-(--margin-accent-text)" />
+                  <Edit3 className="size-3 text-(--margin-accent-text)" />
                   <span>{showSuggestEdit ? "Suggested edit enabled" : "Suggest edit"}</span>
-                </button>
+                </Button>
               </div>
 
               {/* Secondary textarea for suggested edit replacement */}
               {showSuggestEdit && (
-                <div className="rounded-row border-margin-border bg-margin-bg space-y-2 border p-2.5">
+                <div className="rounded-row border-margin-border bg-margin-bg space-y-2 border p-3">
                   <span className="text-caption font-semibold text-(--margin-accent-text)">
                     Proposed replacement:
                   </span>
-                  <textarea
+                  <Textarea
                     rows={2}
                     value={suggestedReplacement}
                     onChange={(e) => setSuggestedReplacement(e.target.value)}
                     placeholder="Type replacement text..."
-                    className="rounded-control border-separator bg-surface text-footnote text-label focus:border-margin-accent w-full border px-2.5 py-1.5 tabular-nums outline-none"
+                    aria-label="Proposed replacement"
+                    className="text-footnote min-h-0 tabular-nums"
                   />
                   {thread.selectedText && suggestedReplacement && (
                     <div className="pt-1">
@@ -595,21 +612,22 @@ function ThreadCard({
               )}
 
               <div className="flex gap-2">
-                <input
+                <Input
                   ref={replyInputRef}
                   type="text"
                   placeholder="Write a reply..."
+                  aria-label="Write a reply"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  className="rounded-row border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-margin-accent flex-1 border px-3 py-1.5 transition-colors outline-none"
+                  className="flex-1"
                 />
-                <button
+                <Button
                   type="submit"
                   disabled={!replyText.trim() || postCommentMutation.isPending}
-                  className="bg-margin-accent hover:bg-margin-accent/90 rounded-row text-caption cursor-pointer px-3.5 py-1.5 font-semibold text-(--margin-badge-text) transition-transform duration-100 active:scale-[0.98] disabled:opacity-40"
+                  className={MARGIN_FILLED}
                 >
                   Reply
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -720,70 +738,53 @@ export function MarginThreadsTab({
   }, [threads, filter, searchQuery]);
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       {/* Top Filter Bar: Search, Status, New Button */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           {/* Status Segmented Pill */}
-          <div className="rounded-row border-separator bg-fill-4 flex items-center border p-0.5">
-            {(
-              [
-                { id: "OPEN", label: "Open" },
-                { id: "ALL", label: "All" },
-              ] as const
-            ).map((f) => {
-              const isActive = filter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilter(f.id)}
-                  className={cn(
-                    "rounded-control text-caption cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]",
-                    isActive
-                      ? "border-yellow/50 bg-surface text-label border font-semibold"
-                      : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedControl
+            size="sm"
+            aria-label="Thread status"
+            value={filter}
+            onValueChange={setFilter}
+            options={[
+              { value: "OPEN", label: "Open" },
+              { value: "ALL", label: "All" },
+            ]}
+          />
 
           {isAuthenticated && (
-            <button
-              type="button"
+            <Button
+              size="sm"
+              aria-expanded={showNewThread}
               onClick={() => setShowNewThread((prev) => !prev)}
-              className="bg-margin-accent hover:bg-margin-accent/90 rounded-row border-yellow/50 text-caption flex shrink-0 cursor-pointer items-center gap-1.5 border px-3 py-1 font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
+              className={cn("shrink-0", MARGIN_FILLED)}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
               <span>New Thread</span>
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Instant Search Bar */}
-        <div className="relative">
-          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search discussions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-row border-separator bg-fill-4 text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 focus:bg-surface w-full border py-1.5 pr-3 pl-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none"
-          />
-        </div>
+        <SearchField
+          placeholder="Search discussions..."
+          aria-label="Search discussions"
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          size="sm"
+        />
       </div>
 
       {/* New Thread Composer */}
       {showNewThread && (
         <form
           onSubmit={handleCreateSubmit}
-          className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-3 border p-3.5"
+          className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-3 border p-4"
         >
           {/* Composer Header */}
-          <div className="border-separator text-caption text-label flex items-center gap-1.5 border-b pb-1.5 font-semibold">
+          <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-2 font-semibold">
             <MarginUserAvatar
               author={{
                 id: currentUserId || "you",
@@ -806,43 +807,45 @@ export function MarginThreadsTab({
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-eyebrow text-label-secondary">Category</span>
-              <button
-                type="button"
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => {
                   setShowCategoryHelp(true);
                 }}
-                className="text-caption text-label flex cursor-pointer items-center gap-1 font-semibold transition-colors hover:underline"
+                className="text-label h-auto px-0"
               >
-                <HelpCircle className="text-yellow h-3 w-3" />
+                <HelpCircle className="text-yellow size-3" />
                 <span>Category Guide</span>
-              </button>
+              </Button>
             </div>
-            <div className="grid grid-cols-5 gap-1">
-              {LORE_DIMENSIONS.map((dim) => {
-                const isSelected = selectedDimension === dim.id;
-                return (
-                  <button
-                    key={dim.id}
-                    type="button"
-                    onClick={() => setSelectedDimension(dim.id)}
-                    className={cn(
-                      "rounded-row flex cursor-pointer flex-col items-center border px-1 py-1.5 text-center transition-[background-color,border-color,color,box-shadow] duration-100 select-none active:scale-[0.98]",
-                      isSelected
-                        ? "bg-margin-accent/20 border-yellow/60 text-label ring-yellow/40 font-semibold ring-1"
-                        : "border-separator bg-surface text-label-secondary hover:text-label"
-                    )}
-                    title={dim.desc}
+            <RadioCardGroup
+              aria-label="Category"
+              value={selectedDimension}
+              onValueChange={setSelectedDimension}
+              className="grid grid-cols-5 gap-1"
+            >
+              {LORE_DIMENSIONS.map((dim) => (
+                // The wrapper carries the native hover hint (RadioCard's `title` is its heading).
+                <span key={dim.id} title={dim.desc} className="flex">
+                  <RadioCard
+                    value={dim.id}
+                    indicator={false}
+                    aria-label={dim.label}
+                    className="flex-col items-center gap-0 px-1 py-2 text-center"
                   >
-                    <span className="text-footnote">{dim.emoji}</span>
+                    <span className="text-footnote" aria-hidden>
+                      {dim.emoji}
+                    </span>
                     <span className="text-caption mt-0.5 font-semibold">{dim.short}</span>
-                  </button>
-                );
-              })}
-            </div>
+                  </RadioCard>
+                </span>
+              ))}
+            </RadioCardGroup>
           </div>
 
           {draftQuote && (
-            <div className="bg-margin-accent/15 rounded-row border-yellow/40 text-footnote text-label-secondary space-y-1 border p-2.5">
+            <div className="bg-margin-accent/15 rounded-row border-yellow/40 text-footnote text-label-secondary space-y-1 border p-3">
               <span className="text-subhead text-label">Referenced passage:</span>
               <p className="text-footnote text-label line-clamp-2 italic">
                 &ldquo;{draftQuote}&rdquo;
@@ -850,46 +853,49 @@ export function MarginThreadsTab({
             </div>
           )}
 
-          <input
+          <Input
             type="text"
             placeholder="Thread title..."
+            aria-label="Thread title"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            className="rounded-row border-separator bg-background text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 w-full border px-3 py-1.5 transition-colors outline-none"
           />
 
-          <textarea
+          <Textarea
             placeholder="Add context, questions, or evidence..."
+            aria-label="Thread content"
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             rows={3}
-            className="resize-vertical rounded-row border-separator bg-background text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 w-full border px-3 py-1.5 transition-colors outline-none"
+            className="min-h-0"
           />
 
           {/* Toggle Propose Suggested Edit Diff */}
           <div className="space-y-2">
-            <button
-              type="button"
+            <Button
+              variant="bordered"
+              size="sm"
+              aria-pressed={showNewSuggestEdit}
               onClick={() => setShowNewSuggestEdit((prev) => !prev)}
               className={cn(
-                "rounded-control text-caption flex cursor-pointer items-center gap-1.5 border px-2 py-1 font-semibold transition-[background-color,border-color,color] duration-100 active:scale-[0.98]",
                 showNewSuggestEdit
-                  ? "bg-margin-accent/20 border-yellow/50 text-label font-semibold"
-                  : "border-separator text-label-secondary hover:text-label"
+                  ? "bg-margin-accent/20 hover:bg-margin-accent/20 border-yellow/50 text-label"
+                  : "text-label-secondary hover:text-label"
               )}
             >
-              <Edit3 className="text-yellow h-3 w-3" />
+              <Edit3 className="text-yellow size-3" />
               <span>{showNewSuggestEdit ? "Include text diff" : "Suggest edit"}</span>
-            </button>
+            </Button>
 
             {showNewSuggestEdit && (
-              <div className="bg-margin-accent/10 rounded-row border-yellow/40 space-y-2 border p-2.5">
-                <textarea
+              <div className="bg-margin-accent/10 rounded-row border-yellow/40 space-y-2 border p-3">
+                <Textarea
                   rows={2}
                   value={newSuggestedEdit}
                   onChange={(e) => setNewSuggestedEdit(e.target.value)}
                   placeholder="Type replacement text..."
-                  className="rounded-control border-separator bg-surface text-footnote text-label focus:border-yellow/60 w-full border px-2.5 py-1.5 tabular-nums outline-none"
+                  aria-label="Proposed replacement"
+                  className="text-footnote min-h-0 tabular-nums"
                 />
                 {draftQuote && newSuggestedEdit && (
                   <DiffViewer
@@ -906,23 +912,25 @@ export function MarginThreadsTab({
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setShowNewThread(false);
                 onClearDraftQuote?.();
               }}
-              className="rounded-row text-caption text-label-secondary hover:text-label px-3 py-1 font-semibold"
+              className="text-label-secondary"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              size="sm"
               disabled={!newTitle.trim() || !newContent.trim() || createThreadMutation.isPending}
-              className="bg-margin-accent hover:bg-margin-accent/90 rounded-row text-caption cursor-pointer px-3.5 py-1.5 font-semibold text-(--margin-badge-text) active:scale-[0.98] disabled:opacity-40"
+              className={MARGIN_FILLED}
             >
               {createThreadMutation.isPending ? "Posting..." : "Post thread"}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -937,7 +945,7 @@ export function MarginThreadsTab({
 
       {/* Empty State */}
       {!isLoading && filteredThreads.length === 0 && (
-        <div className="text-label-secondary space-y-1.5 py-12 text-center">
+        <div className="text-label-secondary space-y-2 py-12 text-center">
           <MessageSquare className="text-label-secondary mx-auto mb-2 h-8 w-8 opacity-50" />
           <p className="text-caption text-label font-semibold">No discussions yet</p>
           <p className="text-footnote text-label-secondary mx-auto max-w-xs">

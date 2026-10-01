@@ -6,8 +6,16 @@
 import React, { memo } from "react";
 import { Bookmark, MediaImage as ImageIcon } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { StashImageCard } from "../StashImageCard";
 import { useEditorModalContext } from "../../context/EditorModalContext";
+import { Button } from "~/components/ui/button";
 
 export interface StashDropdownProps {
   onInsertImage: (filename: string) => void;
@@ -22,31 +30,37 @@ export const StashDropdown = memo(function StashDropdown({
 
   return (
     <Popover open={modal.stashesOpen} onOpenChange={modal.setStashesOpen}>
-      <PopoverTrigger
-        className="wikios-editor-format-btn"
-        title="Stashed Images"
-        onClick={onBeforeOpen}
-      >
-        <Bookmark className="h-3.5 w-3.5" />
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-label-secondary"
+          title="Stashed Images"
+          aria-label="Stashed Images"
+          onClick={onBeforeOpen}
+        >
+          <Bookmark className="size-3.5" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="text-label flex w-80 flex-col gap-2 p-3">
         <div className="border-separator flex items-center justify-between border-b pb-2">
-          <span className="text-caption text-label-secondary flex items-center gap-1.5 font-semibold">
+          <span className="text-caption text-label-secondary flex items-center gap-2 font-semibold">
             <Bookmark className="text-yellow h-3.5 w-3.5" />
             <span>Stash Explorer</span>
           </span>
           {modal.stashes.length > 1 && (
-            <select
-              value={modal.activeStashId}
-              onChange={(e) => modal.setSelectedStashId(e.target.value)}
-              className="rounded-control-sm border-separator bg-fill-4 text-footnote text-label-secondary border px-2 py-0.5 outline-none"
-            >
-              {modal.stashes.map((s) => (
-                <option key={s.id} value={s.id} className="bg-surface-secondary text-label">
-                  {s.name} ({s.itemCount})
-                </option>
-              ))}
-            </select>
+            <Select value={modal.activeStashId} onValueChange={modal.setSelectedStashId}>
+              <SelectTrigger size="sm" aria-label="Stash" className="max-w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {modal.stashes.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} ({s.itemCount})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
@@ -59,7 +73,7 @@ export const StashDropdown = memo(function StashDropdown({
             </div>
           </div>
         ) : (
-          <div className="grid max-h-56 grid-cols-4 gap-1.5 overflow-y-auto p-1">
+          <div className="grid max-h-56 grid-cols-4 gap-2 overflow-y-auto p-1">
             {modal.imageItems.map((item) => {
               const cleanTitle = item.pageTitle.replace(/^commons:/, "");
               const filename = cleanTitle.replace(/^File:/, "");

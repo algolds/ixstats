@@ -7,6 +7,7 @@ import { withBasePath } from "~/lib/base-path";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import Link from "next/link";
 import { OpenBook as BookOpen } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface MatchEvent {
   id: string;
@@ -126,19 +127,19 @@ export function LatestResults({
                         key={match.id}
                         onClick={() => onMatchClick?.(match.id)}
                         className={cn(
-                          "bg-fill-3 rounded-row flex items-center justify-between p-2.5 transition-colors",
+                          "bg-fill-3 rounded-row flex items-center justify-between p-3 transition-colors",
                           onMatchClick && "cursor-pointer"
                         )}
                       >
                         {/* Home Team */}
                         <div className="flex flex-1 items-center gap-2">
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               onTeamClick?.(match.homeTeamId);
                             }}
-                            className="group flex items-center gap-2 text-left hover:underline"
+                            className="group h-auto gap-2 p-0 text-left font-normal hover:bg-transparent hover:underline"
                           >
                             <div className="border-separator bg-background shadow-card flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5">
                               {match.homeLogo ? (
@@ -162,7 +163,7 @@ export function LatestResults({
                             >
                               {match.homeShortName || match.homeTeamName}
                             </span>
-                          </button>
+                          </Button>
                           {match.homeWikiSlug && (
                             <Link
                               href={titleToWikiOSPath(match.homeWikiSlug)}
@@ -176,7 +177,7 @@ export function LatestResults({
                         </div>
 
                         {/* Scores */}
-                        <div className="bg-surface-secondary border-separator rounded-control mx-2 flex items-center gap-1.5 border px-2.5 py-1 shadow-inner">
+                        <div className="bg-surface-secondary border-separator rounded-control mx-2 flex items-center gap-2 border px-3 py-1 shadow-inner">
                           <span
                             className={cn(
                               "text-footnote font-semibold tabular-nums",
@@ -208,13 +209,13 @@ export function LatestResults({
                               <BookOpen className="h-3 w-3" />
                             </Link>
                           )}
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               onTeamClick?.(match.awayTeamId);
                             }}
-                            className="group flex items-center gap-2 text-right hover:underline"
+                            className="group h-auto gap-2 p-0 text-right font-normal hover:bg-transparent hover:underline"
                           >
                             <span
                               className={cn(
@@ -238,7 +239,7 @@ export function LatestResults({
                                 />
                               )}
                             </div>
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     );
@@ -251,7 +252,7 @@ export function LatestResults({
 
         {/* Swipe Pagination Dots */}
         {visibleMatchDays.length > 1 && (
-          <div className="mt-3 flex items-center justify-center gap-1.5">
+          <div className="mt-3 flex items-center justify-center gap-2">
             {visibleMatchDays.map((_, idx) => (
               <div
                 key={idx}

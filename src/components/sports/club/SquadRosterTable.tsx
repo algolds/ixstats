@@ -92,36 +92,51 @@ export function SquadRosterTable({
         {/* Table Header */}
         <thead>
           <tr className="border-separator bg-fill-4 text-eyebrow text-label-secondary border-b select-none">
-            <th
-              onClick={() => handleSort("number")}
-              className="hover:text-label w-12 cursor-pointer px-3 py-3 text-center transition"
+            <SortableTh
+              field="number"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="w-12 px-3 py-3 text-center"
             >
               #
-            </th>
-            <th
-              onClick={() => handleSort("name")}
-              className="hover:text-label min-w-[200px] cursor-pointer px-4 py-3 transition"
+            </SortableTh>
+            <SortableTh
+              field="name"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="min-w-[200px] px-4 py-3"
             >
               Athlete
-            </th>
-            <th
-              onClick={() => handleSort("position")}
-              className="hover:text-label cursor-pointer px-3 py-3 text-center transition"
+            </SortableTh>
+            <SortableTh
+              field="position"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               Pos
-            </th>
-            <th
-              onClick={() => handleSort("age")}
-              className="hover:text-label cursor-pointer px-3 py-3 text-center transition"
+            </SortableTh>
+            <SortableTh
+              field="age"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               Age
-            </th>
-            <th
-              onClick={() => handleSort("overall")}
-              className="hover:text-label cursor-pointer px-3 py-3 text-center transition"
+            </SortableTh>
+            <SortableTh
+              field="overall"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               OVR
-            </th>
+            </SortableTh>
 
             {/* Sport-Adaptive Columns */}
             {isHockey ? (
@@ -256,7 +271,7 @@ export function SquadRosterTable({
                 {/* Actions */}
                 <td className="px-4 py-3 text-right">
                   <div
-                    className="flex items-center justify-end gap-1.5"
+                    className="flex items-center justify-end gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {onListPlayer && (
@@ -279,3 +294,37 @@ export function SquadRosterTable({
 }
 
 export default SquadRosterTable;
+
+/** A sortable column header: the `<th>` carries `aria-sort`, a button inside toggles it. */
+function SortableTh({
+  field,
+  sortField,
+  sortAsc,
+  onSort,
+  className,
+  children,
+}: {
+  field: SortField;
+  sortField: SortField;
+  sortAsc: boolean;
+  onSort: (field: SortField) => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const active = sortField === field;
+  return (
+    <th aria-sort={active ? (sortAsc ? "ascending" : "descending") : "none"} className={className}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onSort(field)}
+        className={cn(
+          "text-eyebrow h-auto px-1 py-0.5",
+          active ? "text-label" : "text-label-secondary hover:text-label"
+        )}
+      >
+        {children}
+      </Button>
+    </th>
+  );
+}

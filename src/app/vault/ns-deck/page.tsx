@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { ImportWizard } from "~/components/cards/ns-import";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { Button } from "~/components/ui/button";
 
 export default function NSImportPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function NSImportPage() {
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     1
                   </div>
                   <div>
@@ -61,7 +62,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     2
                   </div>
                   <div>
@@ -74,7 +75,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     3
                   </div>
                   <div>
@@ -86,7 +87,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     4
                   </div>
                   <div>
@@ -121,20 +122,18 @@ export default function NSImportPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowWizard(true)}
-              className="rounded-control text-title-3 text-label hover:bg-fill-2 w-full px-6 py-4 font-semibold transition-colors"
-            >
+            <Button size="lg" onClick={() => setShowWizard(true)} className="w-full">
               Start Import Wizard
-            </button>
+            </Button>
 
             <div className="text-center">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => router.push("/vault")}
-                className="text-body text-label-secondary hover:text-label transition-colors"
+                className="text-label-secondary"
               >
                 Back to MyVault
-              </button>
+              </Button>
             </div>
 
             <NationStatesAttribution className="text-center" />

@@ -150,7 +150,7 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
         </div>
 
         {trace && trace.length > 0 ? (
-          <div className="max-h-64 space-y-2.5 overflow-y-auto pr-1">
+          <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
             {isGenerating ? (
               <div
                 role="status"

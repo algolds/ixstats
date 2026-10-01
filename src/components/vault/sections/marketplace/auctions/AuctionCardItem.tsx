@@ -49,6 +49,10 @@ export function AuctionCardItem({
 
       {/* Artwork thumbnail — click to view details */}
       <button
+        type="button"
+        // Duplicate pointer target for the artwork; keyboard users use the details button.
+        tabIndex={-1}
+        aria-hidden="true"
         onClick={() => onShowDetails(auction)}
         className="border-separator rounded-control-sm relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden border"
       >
@@ -66,9 +70,10 @@ export function AuctionCardItem({
       </button>
 
       {/* Info — click to view details */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => onShowDetails(auction)}
-        className="relative z-10 flex min-w-0 flex-1 flex-col justify-between text-left"
+        className="relative z-10 h-auto min-w-0 flex-1 flex-col items-stretch justify-between gap-0 p-0 text-left font-normal whitespace-normal hover:bg-transparent"
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-label text-footnote truncate font-semibold">{title}</span>
@@ -93,7 +98,7 @@ export function AuctionCardItem({
             {minsLeft > 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : `${minsLeft}m`}
           </span>
         </div>
-      </button>
+      </Button>
 
       {/* Bidding Actions */}
       <div className="relative z-10 flex flex-col items-end justify-between gap-2 select-none">
@@ -105,7 +110,7 @@ export function AuctionCardItem({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {/* Custom bid input */}
           <div className="flex items-center gap-1">
             <Input

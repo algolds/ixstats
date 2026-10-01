@@ -85,7 +85,7 @@ export function LeagueMasthead({
         <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">
           <Link
             href={withBasePath("/myleague")}
-            className="hover:text-label flex items-center gap-1.5 transition-colors active:scale-[0.98]"
+            className="hover:text-label flex items-center gap-2 transition-colors active:scale-[0.98]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Leagues</span>
@@ -109,7 +109,7 @@ export function LeagueMasthead({
       {/* ─── Masthead Main Identity Row ─── */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: League Crest & Identity */}
-        <div className="flex items-center gap-4.5">
+        <div className="flex items-center gap-4">
           <div className="rounded-card border-separator bg-surface-secondary shadow-card flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-20 sm:w-20">
             {league.logo ? (
               <img
@@ -122,12 +122,12 @@ export function LeagueMasthead({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-title-1 sm:text-large-title text-label">{league.name}</h1>
               <Badge
                 variant="outline"
-                className={cn("text-eyebrow px-2.5 py-0.5", sportTheme.badgeClass)}
+                className={cn("text-eyebrow px-3 py-0.5", sportTheme.badgeClass)}
               >
                 {sportTheme.name}
               </Badge>

@@ -262,11 +262,11 @@ export function VisualInfoboxPreviewCard({
             <tr>
               <th
                 scope="row"
-                className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-1.5 text-right"
+                className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-2 text-right"
               >
                 Anthem
               </th>
-              <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-1.5 font-normal">
+              <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-2 font-normal">
                 {anthem}
               </td>
             </tr>
@@ -278,7 +278,7 @@ export function VisualInfoboxPreviewCard({
               <tr>
                 <th
                   colSpan={2}
-                  className="infobox-header text-label border-separator bg-fill-4 text-eyebrow border-t border-b px-3 py-1.5 text-center"
+                  className="infobox-header text-label border-separator bg-fill-4 text-eyebrow border-t border-b px-3 py-2 text-center"
                 >
                   {sec.title}
                 </th>
@@ -292,11 +292,11 @@ export function VisualInfoboxPreviewCard({
                   <tr key={p.name} className="hover:bg-fill-4 transition-colors">
                     <th
                       scope="row"
-                      className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-1.5 text-right align-top break-words"
+                      className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-2 text-right align-top break-words"
                     >
                       {p.label || p.name.replace(/_/g, " ")}
                     </th>
-                    <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-1.5 align-top font-normal break-words">
+                    <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-2 align-top font-normal break-words">
                       {rawVal}
                     </td>
                   </tr>

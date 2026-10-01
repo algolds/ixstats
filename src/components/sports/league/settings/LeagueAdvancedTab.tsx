@@ -225,7 +225,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
       <div className="border-separator space-y-3 border-t pt-4">
         <Label className="text-subhead text-label-secondary">Custom Engine Rules</Label>
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="games-per-season" className="text-footnote">
               Games Per Season
             </Label>
@@ -238,7 +238,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               className="text-footnote h-8"
             />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="double-rr" className="text-footnote">
               Double Round Robin
             </Label>
@@ -255,7 +255,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="playoff-format" className="text-footnote">
               Playoff Format
             </Label>
@@ -270,7 +270,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="rng-seed" className="text-footnote">
               RNG Seed Override
             </Label>
@@ -308,7 +308,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
             {overrideMatchId && (
               <div className="bg-fill-4 border-separator rounded-control space-y-3 border p-3">
                 <div className="flex items-center justify-around gap-2">
-                  <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                     <span className="text-label-secondary text-footnote w-full truncate text-center font-semibold">
                       {activeMatches.find((m: any) => m.id === overrideMatchId)?.homeTeam.name}
                     </span>
@@ -323,7 +323,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
                     />
                   </div>
                   <span className="text-label-tertiary text-headline">VS</span>
-                  <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                     <span className="text-label-secondary text-footnote w-full truncate text-center font-semibold">
                       {activeMatches.find((m: any) => m.id === overrideMatchId)?.awayTeam.name}
                     </span>

@@ -5,6 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Medal, Tournament as Swords, Trophy } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface BracketViewProps {
   brackets: Array<{
@@ -94,7 +95,7 @@ function BracketRounds({
       )}
     >
       <div className="border-separator flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
             <Swords className="h-5 w-5" />
           </div>
@@ -118,14 +119,14 @@ function BracketRounds({
             <div key={round} className="space-y-3">
               <div className="flex items-center gap-2">
                 {isFinalRound ? (
-                  <Badge className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-2.5 py-0.5">
+                  <Badge className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5">
                     <Trophy className="mr-1 h-3.5 w-3.5" />
                     Championship Final
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-separator bg-fill-4 text-eyebrow text-label px-2.5 py-0.5"
+                    className="border-separator bg-fill-4 text-eyebrow text-label px-3 py-0.5"
                   >
                     {round === 1
                       ? "First Round"
@@ -151,19 +152,19 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
+                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
                         isCompleted && "border-separator bg-surface-secondary"
                       )}
                     >
                       {/* Fighter 1 */}
                       <div className="min-w-0 flex-1">
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
                           onClick={() => onTeamClick?.(b.fighter1Id)}
                           disabled={!onTeamClick}
                           className={cn(
-                            "group block w-full truncate text-left transition",
-                            onTeamClick && "cursor-pointer hover:underline active:scale-[0.98]"
+                            "group block h-auto w-full truncate p-0 text-left font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
                           )}
                         >
                           <span
@@ -181,7 +182,7 @@ function BracketRounds({
                               <Medal className="text-yellow ml-1 inline h-3.5 w-3.5" />
                             )}
                           </span>
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Result Pill */}
@@ -201,13 +202,13 @@ function BracketRounds({
 
                       {/* Fighter 2 */}
                       <div className="min-w-0 flex-1 text-right">
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
                           onClick={() => onTeamClick?.(b.fighter2Id)}
                           disabled={!onTeamClick}
                           className={cn(
-                            "group block w-full truncate text-right transition",
-                            onTeamClick && "cursor-pointer hover:underline active:scale-[0.98]"
+                            "group block h-auto w-full truncate p-0 text-right font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
                           )}
                         >
                           <span
@@ -225,7 +226,7 @@ function BracketRounds({
                             )}
                             {b.fighter2Name ?? b.fighter2Id}
                           </span>
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );

@@ -50,7 +50,7 @@ export function MarginCategoryHelpModal({
           </p>
 
           {LORE_DIMENSIONS.map((dim) => (
-            <div key={dim.id} className="rounded-row bg-surface-secondary space-y-1.5 p-3">
+            <div key={dim.id} className="rounded-row bg-surface-secondary space-y-2 p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-body">{dim.emoji}</span>

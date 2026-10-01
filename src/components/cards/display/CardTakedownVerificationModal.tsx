@@ -18,6 +18,16 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+
+/** Select items cannot carry an empty value; this stands for "no reason given". */
+const NO_REASON = "__none__";
 
 export interface CardTakedownVerificationModalProps {
   isOpen: boolean;
@@ -94,7 +104,7 @@ export function CardTakedownVerificationModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="border-separator bg-surface rounded-card shadow-card p-6 sm:max-w-md">
         <DialogHeader className="space-y-2">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="rounded-row border-red/30 bg-red/10 text-red border p-2">
               <ShieldAlert className="h-5 w-5" />
             </div>
@@ -136,7 +146,7 @@ export function CardTakedownVerificationModal({
             </div>
 
             {/* Verification Instructions — OAuth-style steps */}
-            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote space-y-2.5 border p-3">
+            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote space-y-2 border p-3">
               <div className="flex items-center justify-between">
                 <span className="text-label text-eyebrow">How to verify ownership</span>
                 <a
@@ -202,26 +212,33 @@ export function CardTakedownVerificationModal({
               </div>
 
               <div className="space-y-2">
-                <label className="text-label-secondary text-footnote block font-semibold">
+                <label
+                  id="takedown-reason-label"
+                  className="text-label-secondary text-footnote block font-semibold"
+                >
                   Basis for Removal <span className="text-label-tertiary">(Optional)</span>
                 </label>
-                <select
-                  value={selectedReason}
-                  onChange={(e) => setSelectedReason(e.target.value)}
-                  className="border-separator bg-background text-label rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full cursor-pointer border px-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
+                <Select
+                  value={selectedReason || NO_REASON}
+                  onValueChange={(v) => setSelectedReason(v === NO_REASON ? "" : v)}
                 >
-                  <option value="">— Select a reason —</option>
-                  <option value="I am the nation owner and rights holder of this flag artwork.">
-                    I am the rights holder of this flag artwork
-                  </option>
-                  <option value="This flag was created by me and used without my consent.">
-                    Created by me, used without my consent
-                  </option>
-                  <option value="Privacy concern: I do not want my nation's flag publicly displayed here.">
-                    Privacy concern — do not display my flag
-                  </option>
-                  <option value="custom">Other / Custom reason…</option>
-                </select>
+                  <SelectTrigger aria-labelledby="takedown-reason-label" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_REASON}>— Select a reason —</SelectItem>
+                    <SelectItem value="I am the nation owner and rights holder of this flag artwork.">
+                      I am the rights holder of this flag artwork
+                    </SelectItem>
+                    <SelectItem value="This flag was created by me and used without my consent.">
+                      Created by me, used without my consent
+                    </SelectItem>
+                    <SelectItem value="Privacy concern: I do not want my nation's flag publicly displayed here.">
+                      Privacy concern — do not display my flag
+                    </SelectItem>
+                    <SelectItem value="custom">Other / Custom reason…</SelectItem>
+                  </SelectContent>
+                </Select>
                 {selectedReason === "custom" && (
                   <input
                     type="text"
@@ -237,7 +254,7 @@ export function CardTakedownVerificationModal({
 
             {/* Error Display */}
             {takedownMutation.error && (
-              <div className="rounded-row border-red/30 bg-red/10 text-footnote text-red flex items-start gap-2 border p-2.5">
+              <div className="rounded-row border-red/30 bg-red/10 text-footnote text-red flex items-start gap-2 border p-3">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{takedownMutation.error.message}</p>
               </div>
@@ -256,7 +273,7 @@ export function CardTakedownVerificationModal({
               >
                 {takedownMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                     Validating Identity...
                   </>
                 ) : (

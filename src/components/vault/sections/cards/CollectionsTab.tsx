@@ -98,44 +98,46 @@ export function CollectionsTab({
         <div className="space-y-2">
           {collections.map((collection) => (
             <div key={collection.id}>
-              <button
-                onClick={() => setExpandedId(expandedId === collection.id ? null : collection.id)}
+              {/* Disclosure and delete are sibling buttons (a button may not contain a button). */}
+              <div
                 className={cn(
-                  "bg-surface-secondary border-separator rounded-control flex w-full items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  expandedId === collection.id
-                    ? "border-yellow/30"
-                    : "border-separator hover:border-foreground/20"
+                  "bg-surface-secondary rounded-control flex w-full items-center gap-2 border pr-3 transition-[border-color]",
+                  expandedId === collection.id ? "border-yellow/30" : "border-separator"
                 )}
               >
-                <div className="flex items-center gap-2.5">
-                  <Folder className="text-tint h-4 w-4" />
-                  <div>
-                    <span className="text-footnote font-semibold">{collection.name}</span>
-                    <p className="text-label-secondary text-footnote">
-                      {collection._count?.items ?? 0} cards
-                      {collection.isPublic && " • Public"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red hover:bg-red/10 h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteCollection.mutate({ collectionId: collection.id });
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                  {expandedId === collection.id ? (
-                    <ChevronDown className="h-3 w-3 rotate-180 transition-transform" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3 transition-transform" />
-                  )}
-                </div>
-              </button>
+                <Button
+                  variant="ghost"
+                  aria-expanded={expandedId === collection.id}
+                  onClick={() => setExpandedId(expandedId === collection.id ? null : collection.id)}
+                  className="h-auto min-w-0 flex-1 justify-between p-3 text-left font-normal hover:bg-transparent"
+                >
+                  <span className="flex items-center gap-2">
+                    <Folder className="text-tint h-4 w-4" />
+                    <span>
+                      <span className="text-footnote block font-semibold">{collection.name}</span>
+                      <span className="text-label-secondary text-footnote block">
+                        {collection._count?.items ?? 0} cards
+                        {collection.isPublic && " • Public"}
+                      </span>
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3 w-3 transition-transform",
+                      expandedId === collection.id && "rotate-180"
+                    )}
+                  />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Delete ${collection.name}`}
+                  className="text-red hover:bg-red/10 size-6"
+                  onClick={() => deleteCollection.mutate({ collectionId: collection.id })}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
 
               {/* Expanded cards */}
               <AnimatePresence>

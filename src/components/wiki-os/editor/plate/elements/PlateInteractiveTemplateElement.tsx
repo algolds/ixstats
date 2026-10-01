@@ -26,6 +26,7 @@ import {
   Page as FormIcon,
   Puzzle as TemplateIcon,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface PlateTemplateBlockProps {
   attributes: Record<string, unknown>;
@@ -151,7 +152,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         className="group rounded-row border-separator bg-surface text-footnote hover:border-tint/50 hover:bg-surface relative flex items-center justify-between gap-3 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
       >
         {/* Left: Icon, Template Name & Summary */}
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             className={cn(
               "rounded-control text-caption flex h-6 items-center justify-center border px-2",
@@ -185,31 +186,31 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
         </div>
 
         {/* Right: Quick Action Buttons */}
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           {!readOnly && (
             <>
-              <button
-                type="button"
-                data-cuelume-press="droplet"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => {
                   setIsModalOpen(true);
                 }}
-                className="rounded-control bg-tint/10 text-caption text-tint hover:bg-tint/20 flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 title="Edit template parameters"
               >
                 <EditIcon className="h-3 w-3" />
                 <span>Edit</span>
-              </button>
+              </Button>
 
-              <button
-                type="button"
-                data-cuelume-press="droplet"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Remove template"
                 onClick={handleDelete}
-                className="rounded-control text-label-secondary hover:bg-red/10 hover:text-red flex h-7 w-7 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 title="Remove template"
+                className="text-label-secondary hover:bg-red/10 hover:text-red"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -221,7 +222,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           {/* Header */}
           <DialogHeader className="border-separator border-b p-5 pb-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-3 pr-6">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <span
                   className={cn(
                     "rounded-control text-caption flex h-7 w-7 items-center justify-center font-semibold",
@@ -309,7 +310,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             value={val}
                             placeholder={meta.example || meta.default || `Enter ${key}...`}
                             onChange={(e) => handleParamChange(key, e.target.value)}
-                            className="rounded-control border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border px-3 py-1.5 focus:outline-none"
+                            className="rounded-control border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border px-3 py-2 focus:outline-none"
                           />
                         )}
                       </div>
@@ -337,7 +338,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             disabled={readOnly}
                             value={val}
                             onChange={(e) => handleParamChange(key, e.target.value)}
-                            className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-full border px-3 py-1.5 focus:outline-none"
+                            className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-full border px-3 py-2 focus:outline-none"
                           />
                         </div>
                       );
@@ -355,38 +356,32 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                           placeholder="Param name"
                           value={newParamKey}
                           onChange={(e) => setNewParamKey(e.target.value)}
-                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-1/3 border px-3 py-1.5 focus:outline-none"
+                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-1/3 border px-3 py-2 focus:outline-none"
                         />
                         <input
                           type="text"
                           placeholder="Param value"
                           value={newParamVal}
                           onChange={(e) => setNewParamVal(e.target.value)}
-                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 flex-1 border px-3 py-1.5 focus:outline-none"
+                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 flex-1 border px-3 py-2 focus:outline-none"
                         />
-                        <button
-                          type="submit"
-                          className="rounded-control bg-tint text-caption text-on-tint hover:bg-tint/90 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                        >
+                        <Button size="sm" type="submit">
                           Add
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddParam(false)}
-                          className="rounded-control border-separator text-footnote text-label-secondary hover:text-label border px-2.5 py-1.5"
-                        >
+                        </Button>
+                        <Button variant="gray" size="sm" onClick={() => setShowAddParam(false)}>
                           Cancel
-                        </button>
+                        </Button>
                       </form>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        variant="link"
+                        size="sm"
                         onClick={() => setShowAddParam(true)}
-                        className="text-caption text-tint flex cursor-pointer items-center gap-1.5 font-semibold hover:underline"
+                        className="h-auto px-0"
                       >
                         <PlusIcon className="h-3 w-3" />
                         <span>Add custom parameter</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -420,7 +415,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                     <div className="border-separator text-caption text-label mb-2 border-b pb-2 text-center font-semibold">
                       {params["name"] || params["title"] || templateName}
                     </div>
-                    <div className="text-footnote space-y-1.5">
+                    <div className="text-footnote space-y-2">
                       {Object.entries(params).map(([k, v]) => {
                         if (/^\d+$/.test(k) || !v) return null;
                         return (
@@ -449,7 +444,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   disabled={readOnly}
                   value={rawWikitext}
                   onChange={(e) => handleRawChange(e.target.value)}
-                  className="rounded-row border-separator bg-fill-4 text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border p-3.5 tabular-nums focus:outline-none"
+                  className="rounded-row border-separator bg-fill-4 text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border p-4 tabular-nums focus:outline-none"
                   placeholder="{{TemplateName|param=value}}"
                 />
                 <p className="text-footnote text-label-secondary mt-2">
@@ -461,33 +456,27 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
           {/* Footer Actions */}
           <DialogFooter className="border-separator bg-fill-4 flex items-center justify-between border-t p-4 sm:justify-between">
-            <button
-              type="button"
+            <Button
+              variant="plain"
+              size="sm"
               onClick={handleDelete}
-              className="rounded-control text-caption text-red hover:bg-red/10 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="text-red hover:bg-red/10"
             >
               <TrashIcon className="h-3.5 w-3.5" />
               <span>Remove Template</span>
-            </button>
+            </Button>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-control border-separator bg-background text-caption text-label-secondary hover:text-label cursor-pointer border px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-              >
+              <Button variant="gray" onClick={() => setIsModalOpen(false)}>
                 Close
-              </button>
-              <button
-                type="button"
-                data-cuelume-press="droplet"
+              </Button>
+              <Button
                 onClick={() => {
                   setIsModalOpen(false);
                 }}
-                className="rounded-control bg-tint text-caption text-on-tint hover:bg-tint/90 cursor-pointer px-4 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 Done
-              </button>
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

@@ -108,7 +108,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
 
         {/* Player Name and Team Details */}
         <div className="pt-2 text-center">
-          <div className="flex items-center justify-center gap-1.5">
+          <div className="flex items-center justify-center gap-2">
             <h3 className="text-label text-title-2">
               {player.firstName} {player.lastName}
             </h3>
@@ -131,7 +131,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
         </div>
 
         {/* Statistics Grid */}
-        <div className="bg-fill-3 border-separator divide-separator rounded-card mt-4 grid grid-cols-3 divide-x border p-2.5 shadow-inner">
+        <div className="bg-fill-3 border-separator divide-separator rounded-card mt-4 grid grid-cols-3 divide-x border p-3 shadow-inner">
           {defaultStats.map((stat, idx) => (
             <div key={idx} className="px-1 text-center">
               <span className="text-label-secondary text-eyebrow block">{stat.label}</span>

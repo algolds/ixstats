@@ -14,6 +14,14 @@ import { LoreCategory, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { getCategoryLabel, getCategoryTheme } from "~/lib/cards/category-theme";
 import { getCategorySubcategories } from "~/lib/cards/subcategory-registry";
 import type { CardDesignState } from "../types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface RackIdentitySectionProps {
   state: CardDesignState;
@@ -37,7 +45,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
         variant="outline"
         size="sm"
         onClick={onOpenLoreImport}
-        className="border-tint/30 bg-tint-fill text-tint flex w-full items-center justify-between px-3.5"
+        className="border-tint/30 bg-tint-fill text-tint flex w-full items-center justify-between px-4"
       >
         <div className="flex items-center gap-2">
           <Search className="text-tint h-4 w-4" />
@@ -77,10 +85,10 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
 
       {/* Category Selector Grid */}
       <div>
-        <label className="text-label-secondary text-footnote mb-1.5 block font-medium">
+        <label className="text-label-secondary text-footnote mb-2 block font-medium">
           Lore Category & Subcategory
         </label>
-        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {BROWSABLE_CATEGORIES.map((cat: LoreCategory, index: number) => {
             const isSelected = state.category === cat;
             const isPopoverOpen = activePopoverCat === cat;
@@ -105,16 +113,15 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                 }}
               >
                 <PopoverTrigger asChild>
-                  <button
-                    type="button"
+                  <Button
+                    variant={isSelected ? "tinted" : "bordered"}
+                    aria-pressed={isSelected}
                     className={cn(
-                      "focus-visible:outline-tint rounded-row text-footnote duration-fast flex w-full cursor-pointer items-center justify-between gap-1 border p-2 text-left font-medium transition-colors focus-visible:outline-2",
-                      isSelected
-                        ? "bg-tint-fill text-tint border-tint"
-                        : "border-separator bg-surface hover:bg-fill-3 text-label"
+                      "rounded-row text-footnote h-auto w-full justify-between gap-1 p-2 text-left font-medium",
+                      isSelected ? "border-tint border" : "bg-surface text-label"
                     )}
                   >
-                    <div className="flex min-w-0 items-center gap-1.5">
+                    <div className="flex min-w-0 items-center gap-2">
                       <CategoryIcon
                         category={cat}
                         treatment="seal"
@@ -131,17 +138,17 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                         )}
                       />
                     )}
-                  </button>
+                  </Button>
                 </PopoverTrigger>
 
                 {/* Subcategory Popover */}
                 {subcats.length > 0 && (
                   <PopoverContent
                     align={isRightEdge ? "end" : "start"}
-                    className="w-64 space-y-2.5 p-3 sm:w-72"
+                    className="w-64 space-y-2 p-3 sm:w-72"
                   >
-                    <div className="border-separator flex items-center justify-between border-b pb-1.5">
-                      <div className="flex min-w-0 items-center gap-1.5">
+                    <div className="border-separator flex items-center justify-between border-b pb-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <CategoryIcon
                           category={cat}
                           treatment="seal"
@@ -153,17 +160,19 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                         </span>
                       </div>
 
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-pressed={showCustomSubInput}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowCustomSubInput((s) => !s);
                         }}
-                        className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-control-sm text-footnote flex cursor-pointer items-center gap-1 p-1 transition-colors"
+                        className="text-label-secondary hover:text-label text-footnote h-auto gap-1 p-1"
                       >
                         <Pencil className="text-tint h-3 w-3" />
                         <span>{showCustomSubInput ? "Presets" : "Edit"}</span>
-                      </button>
+                      </Button>
                     </div>
 
                     {showCustomSubInput ? (
@@ -177,22 +186,22 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                         className="text-footnote h-8 font-medium"
                       />
                     ) : (
-                      <div className="flex max-h-44 flex-wrap items-center gap-1.5 overflow-y-auto pr-0.5">
+                      <div className="flex max-h-44 flex-wrap items-center gap-2 overflow-y-auto pr-0.5">
                         {subcats.map((sub) => {
                           const isSubSelected = state.subcategory === sub.label;
                           return (
-                            <button
+                            <Button
+                              variant={isSubSelected ? "filled" : "bordered"}
+                              size="sm"
+                              aria-pressed={isSubSelected}
                               key={sub.id}
-                              type="button"
                               onClick={() => {
                                 onChange((p) => ({ ...p, subcategory: sub.label }));
                                 setActivePopoverCat(null);
                               }}
                               className={cn(
-                                "rounded-row text-footnote duration-fast flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 text-left font-medium transition-colors",
-                                isSubSelected
-                                  ? "bg-tint text-on-tint border-tint"
-                                  : "border-separator bg-surface hover:bg-fill-3 text-label"
+                                "rounded-row text-footnote justify-start",
+                                isSubSelected ? "border-tint border" : "bg-surface text-label"
                               )}
                             >
                               <img
@@ -204,7 +213,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                                 )}
                               />
                               <span className="truncate">{sub.label}</span>
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -220,40 +229,34 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
       {/* Season Selector */}
       <div className="flex items-center justify-between">
         <label className="text-label-secondary text-footnote font-medium">Card Season</label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {showSeasonDropdown ? (
-            <select
-              value={state.season || 1}
-              onChange={(e) => {
-                onChange((p) => ({ ...p, season: Number(e.target.value) || 1 }));
+            <Select
+              value={String(state.season || 1)}
+              onValueChange={(v) => {
+                onChange((p) => ({ ...p, season: Number(v) || 1 }));
                 setShowSeasonDropdown(false);
               }}
-              className="border-separator bg-fill-3 text-label focus-visible:outline-tint rounded-control-sm text-footnote h-7 w-auto cursor-pointer border px-2 font-medium focus-visible:outline-2"
             >
-              {[1, 2, 3, 4, 5].map((s) => (
-                <option key={s} value={s}>
-                  Season {s}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger size="sm" aria-label="Card season">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    Season {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => onChange((p) => ({ ...p, season: s }))}
-                  className={cn(
-                    "text-footnote rounded-control-sm duration-fast h-7 cursor-pointer px-2 font-medium tabular-nums transition-colors",
-                    (state.season || 1) === s
-                      ? "bg-tint text-on-tint"
-                      : "bg-fill-3 text-label-secondary hover:text-label"
-                  )}
-                >
-                  S{s}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Card season"
+              value={String(state.season || 1)}
+              onValueChange={(v) => onChange((p) => ({ ...p, season: Number(v) }))}
+              options={[1, 2, 3, 4].map((s) => ({ value: String(s), label: `S${s}` }))}
+            />
           )}
         </div>
       </div>

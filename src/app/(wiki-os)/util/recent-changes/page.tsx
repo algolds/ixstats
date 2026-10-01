@@ -16,6 +16,7 @@ import {
   PagePlus as FilePlus,
   Filter,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -219,17 +220,19 @@ export default function RecentChangesPage() {
                     onClick={() => hasMultiple && toggleExpand(group.title)}
                   >
                     {hasMultiple ? (
-                      <button
-                        type="button"
-                        className="wikios-rc-expand-btn"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-expanded={isExpanded}
                         aria-label={isExpanded ? "Collapse" : "Expand"}
+                        className="text-label-secondary size-5 shrink-0"
                       >
                         {isExpanded ? (
                           <ChevronDown className="h-3.5 w-3.5" />
                         ) : (
                           <ChevronRight className="h-3.5 w-3.5" />
                         )}
-                      </button>
+                      </Button>
                     ) : (
                       <span className="wikios-rc-expand-btn">
                         {group.isNew ? (
@@ -300,7 +303,7 @@ export default function RecentChangesPage() {
                     (() => {
                       const action = getSemanticAction(group.edits[0]);
                       return action.isPill ? (
-                        <div className="text-footnote mt-1 flex items-center gap-1.5 pl-6">
+                        <div className="text-footnote mt-1 flex items-center gap-2 pl-6">
                           <span
                             className={`text-caption inline-flex items-center rounded-full px-2 py-0.5 ${action.pillClass}`}
                           >

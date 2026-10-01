@@ -79,16 +79,16 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                 <FileText className="text-label-secondary h-7 w-7" />
               </div>
             )}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Link
                   href={withBasePath("/wiki/categories")}
-                  className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                  className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <span>Nations</span>
                 </Link>
                 {country.economicTier && (
-                  <span className="bg-fill-2 text-label-secondary border-separator text-caption rounded-full border px-2.5 py-0.5 font-semibold">
+                  <span className="bg-fill-2 text-label-secondary border-separator text-caption rounded-full border px-3 py-0.5 font-semibold">
                     {country.economicTier}
                   </span>
                 )}
@@ -100,10 +100,10 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           </div>
 
           {/* Quick Action Navigation Buttons */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={withBasePath(`/wiki/${slug}`)}
-              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-3.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ExternalLink className="text-tint h-3.5 w-3.5" />
               <span>Wiki Article</span>
@@ -111,7 +111,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
             <Link
               href={withBasePath(`/countries/${country.slug ?? country.id}`)}
-              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-3.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               <span>National Dashboard</span>

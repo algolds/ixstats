@@ -43,6 +43,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { Button } from "~/components/ui/button";
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
@@ -250,7 +251,7 @@ export function WikiOSUnifiedSidebar({
     );
 
     const wrapperClass = cn(
-      "flex items-center px-2.5 py-1 rounded-row transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out group outline-none relative",
+      "flex items-center px-3 py-1 rounded-row transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out group outline-none relative",
       isLocalHoverExpanded
         ? "w-max z-50 border border-separator bg-surface shadow-floating pr-4"
         : "w-full border-transparent bg-transparent hover:bg-fill-4",
@@ -307,9 +308,9 @@ export function WikiOSUnifiedSidebar({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="wikios-sidebar group/sidebar border-separator hover:border-tint/15 relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r pr-1.5 pb-2 transition-colors duration-300 select-none"
+      className="wikios-sidebar group/sidebar border-separator hover:border-tint/15 relative flex h-[calc(100vh-10rem)] w-full flex-col justify-start border-r pr-2 pb-2 transition-colors duration-300 select-none"
     >
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         {/* Profile widget */}
         {(() => {
           const profileIndex = rowIndex++;
@@ -407,14 +408,17 @@ export function WikiOSUnifiedSidebar({
             isActive: pathname === "/stashes" || pathname.startsWith("/stashes/"),
             badge:
               isArticlePage && isSignedIn ? (
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="icon-sm"
+                  aria-pressed={isCurrentPageStashed}
+                  aria-label="Stash current article"
                   onClick={handleToggleCurrentPageStash}
                   className={cn(
-                    "rounded-control-sm cursor-pointer p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+                    "size-6",
                     isCurrentPageStashed
-                      ? "border-red/40 bg-red/25 text-red hover:bg-red/35 border"
-                      : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-red border"
+                      ? "border-red/40 bg-red/25 text-red hover:bg-red/35"
+                      : "bg-fill-4 text-label-secondary hover:text-red"
                   )}
                   title={
                     isCurrentPageStashed
@@ -427,7 +431,7 @@ export function WikiOSUnifiedSidebar({
                   ) : (
                     <Plus className="h-3 w-3" />
                   )}
-                </button>
+                </Button>
               ) : undefined,
             index: rowIndex++,
           })}
@@ -514,7 +518,7 @@ export function WikiOSUnifiedSidebar({
                       <button
                         type="button"
                         className={cn(
-                          "group rounded-row relative flex cursor-pointer items-center px-2.5 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-in-out",
+                          "group rounded-row relative flex cursor-pointer items-center px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-in-out",
                           isMoreHovered
                             ? "border-separator bg-surface shadow-floating z-50 w-max border pr-4"
                             : "hover:bg-fill-4 w-full border-transparent bg-transparent"
@@ -540,14 +544,14 @@ export function WikiOSUnifiedSidebar({
                       side="right"
                       align="start"
                       sideOffset={12}
-                      className="text-label w-56 p-1.5"
+                      className="text-label w-56 p-2"
                     >
-                      <div className="border-separator text-eyebrow text-label-secondary mb-1 border-b px-2.5 py-1">
+                      <div className="border-separator text-eyebrow text-label-secondary mb-1 border-b px-3 py-1">
                         Page Tools
                       </div>
                       <DropdownMenuItem
                         onClick={() => setActiveModal("history")}
-                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-2.5 py-2 transition-colors"
+                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 transition-colors"
                       >
                         <Clock className="text-yellow h-3.5 w-3.5 shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -559,7 +563,7 @@ export function WikiOSUnifiedSidebar({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setActiveModal("backlinks")}
-                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-2.5 py-2 transition-colors"
+                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 transition-colors"
                       >
                         <Link2 className="text-teal h-3.5 w-3.5 shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -572,7 +576,7 @@ export function WikiOSUnifiedSidebar({
                       <DropdownMenuItem asChild>
                         <Link
                           href={withBasePath("/util")}
-                          className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-2.5 py-2 transition-colors"
+                          className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 transition-colors"
                         >
                           <Wrench className="text-teal h-3.5 w-3.5 shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -588,7 +592,7 @@ export function WikiOSUnifiedSidebar({
                         onClick={() => {
                           if (typeof window !== "undefined") window.print();
                         }}
-                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-2.5 py-2 transition-colors"
+                        className="rounded-row text-caption hover:bg-fill-3 focus:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 transition-colors"
                       >
                         <Printer className="text-green h-3.5 w-3.5 shrink-0" />
                         <div className="min-w-0 flex-1">

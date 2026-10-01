@@ -9,6 +9,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 // Curated worldbuilding-relevant categories organized by theme
 interface CategoryGroup {
@@ -388,7 +389,7 @@ export function CommonsCategoryBrowser({
   return (
     <div className="flex h-full flex-col overflow-y-auto py-2">
       {/* Search */}
-      <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-1.5 border px-2.5 py-1.5 transition-colors">
+      <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-2 border px-3 py-2 transition-colors">
         <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" />
         <input
           type="text"
@@ -399,7 +400,7 @@ export function CommonsCategoryBrowser({
         />
       </div>
 
-      <div className="space-y-0.5 overflow-y-auto px-1.5">
+      <div className="space-y-0.5 overflow-y-auto px-2">
         {isSearching ? (
           /* Autocomplete search results */
           <>
@@ -492,13 +493,16 @@ function CategoryGroupSection({
 
   return (
     <div className="mb-1">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={isGroupOpen}
         onClick={onToggleGroup}
-        className="text-eyebrow text-label-secondary hover:text-label rounded-control-sm flex w-full cursor-pointer items-center gap-1.5 px-2 py-1 transition-colors active:scale-[0.98]"
+        className="text-eyebrow text-label-secondary hover:text-label h-auto w-full justify-start px-2 py-1"
       >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
-      </button>
+      </Button>
       {isGroupOpen &&
         group.categories.map((cat) => (
           <CategoryRow
@@ -568,41 +572,50 @@ function CategoryRow({
     <div>
       <div
         className={cn(
-          "group/row rounded-control-sm text-footnote hover:bg-fill-3 flex items-center gap-1.5 px-2 py-1 transition-colors select-none",
+          "group/row rounded-control-sm text-footnote hover:bg-fill-3 flex items-center gap-2 px-2 py-1 transition-colors select-none",
           isActive && "bg-tint-fill text-tint",
           isBrowsingThisCat && "bg-fill-3 text-label font-semibold"
         )}
       >
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-expanded={isExpanded}
           onClick={onExpand}
-          className="text-label-secondary hover:text-label rounded-control-sm flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center transition-transform active:scale-[0.98]"
           aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
+          className="text-label-secondary hover:text-label size-5"
         >
           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-current={isBrowsingThisCat ? "true" : undefined}
           onClick={() => onBrowse(name)}
-          className="text-footnote text-label-secondary hover:text-label flex-1 cursor-pointer truncate text-left transition-colors select-none"
           title={`Browse ${name}`}
+          className="text-footnote text-label-secondary hover:text-label h-auto min-w-0 flex-1 justify-start truncate px-0 font-normal hover:bg-transparent"
         >
           {name}
-        </button>
+        </Button>
         {totalCount != null && totalCount > 0 && (
           <span className="text-footnote text-label-secondary mr-1 shrink-0 tabular-nums">
             {totalCount.toLocaleString()}
           </span>
         )}
-        <button
+        <Button
+          variant="bordered"
+          size="icon-sm"
+          aria-pressed={isActive}
           onClick={onToggle}
           className={cn(
-            "rounded-control-sm border-separator text-footnote text-label-secondary hover:border-tint hover:text-tint flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+            "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
             isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
           )}
           title={isActive ? "Remove filter" : "Add as filter"}
           aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
         >
           {isActive ? "✓" : "+"}
-        </button>
+        </Button>
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
@@ -610,11 +623,14 @@ function CategoryRow({
           {subcats.map((sub) => {
             const isSubActive = browsingCategory === sub;
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-current={isSubActive ? "true" : undefined}
                 key={sub}
                 onClick={() => onBrowse(sub)}
                 className={cn(
-                  "text-footnote rounded-control-sm hover:bg-fill-4 flex w-full cursor-pointer items-center gap-1.5 px-1.5 py-1 text-left transition-colors active:scale-[0.98]",
+                  "text-footnote h-auto w-full justify-start px-2 py-1 font-normal",
                   isSubActive ? "text-tint font-semibold" : "text-label-secondary hover:text-label"
                 )}
                 title={`Browse ${sub}`}
@@ -626,7 +642,7 @@ function CategoryRow({
                   )}
                 />
                 <span className="truncate">{sub}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

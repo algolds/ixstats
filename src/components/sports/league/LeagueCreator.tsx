@@ -412,7 +412,7 @@ export function LeagueCreator({
       </DialogDescription>
 
       {/* League Name */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="league-name">League Name</Label>
         <Input
           id="league-name"
@@ -425,7 +425,7 @@ export function LeagueCreator({
       </div>
 
       {/* Team Count */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="team-count">
           Number of Teams ({selectedPreset?.minTeamCount}–{selectedPreset?.maxTeamCount})
         </Label>
@@ -452,7 +452,7 @@ export function LeagueCreator({
 
       {/* Match cadence (table-based archetypes) */}
       {!isCircuit && !isBoxing && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="match-interval">IxDays Between Matchdays</Label>
           <Input
             id="match-interval"
@@ -478,7 +478,7 @@ export function LeagueCreator({
 
       {/* Divisions (only for division_conference) */}
       {isDivisionConference && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="divisions">Number of Divisions</Label>
           <Input
             id="divisions"
@@ -500,7 +500,7 @@ export function LeagueCreator({
 
       {/* Weight Classes (only for boxing/bracket sports marked as boxing) */}
       {isBoxing && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="weight-classes">Weight Classes</Label>
           <Input
             id="weight-classes"
@@ -514,7 +514,7 @@ export function LeagueCreator({
 
       {/* Race Count (only for circuit/F1) */}
       {isCircuit && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="race-count">Number of Races (16–22)</Label>
           <Input
             id="race-count"
@@ -607,7 +607,7 @@ export function LeagueCreator({
 
       {/* Archetype preview */}
       {archetypeLabel && (
-        <div className="border-separator bg-fill-3 rounded-control border px-3 py-2.5">
+        <div className="border-separator bg-fill-3 rounded-control border px-3 py-3">
           <p className="text-label-secondary text-footnote leading-relaxed">
             <span className="text-label font-medium">{archetypeLabel}</span>
             {" — "}

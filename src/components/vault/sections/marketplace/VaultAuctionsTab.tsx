@@ -166,7 +166,7 @@ export function VaultAuctionsTab() {
           <h3 className="text-label-secondary text-eyebrow">Auction House</h3>
         </div>
         <Button size="sm" onClick={() => setCreateAuctionOpen(true)}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> Sell Card
+          <Plus className="mr-2 h-3.5 w-3.5" /> Sell Card
         </Button>
       </div>
 
@@ -293,31 +293,31 @@ export function VaultAuctionsTab() {
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
             <TabsTrigger value="browse">
-              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Browse Auctions
+              <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Browse Auctions
             </TabsTrigger>
             <TabsTrigger value="ending">
-              <Clock className="mr-1.5 h-3.5 w-3.5" /> Ending Soon
+              <Clock className="mr-2 h-3.5 w-3.5" /> Ending Soon
             </TabsTrigger>
             <TabsTrigger value="listings" className="relative">
-              <Store className="mr-1.5 h-3.5 w-3.5" /> My Listings
+              <Store className="mr-2 h-3.5 w-3.5" /> My Listings
               {myListings.length > 0 && (
-                <span className="bg-tint text-caption text-on-tint ml-1.5 rounded-full px-1.5 leading-4 tabular-nums">
+                <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {myListings.length}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="bids" className="relative">
-              <Gavel className="mr-1.5 h-3.5 w-3.5" /> My Bids
+              <Gavel className="mr-2 h-3.5 w-3.5" /> My Bids
               {myBids.length > 0 && (
-                <span className="bg-blue text-footnote text-on-blue ml-1.5 rounded-full px-1.5 py-0 leading-none font-semibold">
+                <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {myBids.length}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="history" className="relative">
-              <History className="mr-1.5 h-3.5 w-3.5" /> History
+              <History className="mr-2 h-3.5 w-3.5" /> History
               {myHistory.length > 0 && (
-                <span className="bg-green text-footnote text-on-green ml-1.5 rounded-full px-1.5 py-0 leading-none font-semibold">
+                <span className="bg-green text-footnote text-on-green ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {myHistory.length}
                 </span>
               )}
@@ -345,7 +345,7 @@ export function VaultAuctionsTab() {
                   className="bg-transparent"
                   onClick={() => setCreateAuctionOpen(true)}
                 >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> List a Card
+                  <Plus className="mr-2 h-3.5 w-3.5" /> List a Card
                 </Button>
               </div>
             ) : (
@@ -429,7 +429,7 @@ export function VaultAuctionsTab() {
                   className="bg-transparent"
                   onClick={() => setCreateAuctionOpen(true)}
                 >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Sell a Card
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Sell a Card
                 </Button>
               </div>
             ) : (
@@ -443,7 +443,7 @@ export function VaultAuctionsTab() {
                       key={auction.id}
                       className="rounded-control border-yellow/25 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <Store className="text-tint h-4 w-4" />
                         <div>
                           <span className="text-footnote text-label font-semibold">
@@ -513,7 +513,7 @@ export function VaultAuctionsTab() {
                       key={auction.id}
                       className="rounded-control border-blue/25 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <Gavel className="text-blue h-4 w-4" />
                         <div>
                           <span className="text-footnote text-label font-semibold">
@@ -579,7 +579,7 @@ export function VaultAuctionsTab() {
                       key={auction.id}
                       className="rounded-control border-green/15 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <History className="text-green h-4 w-4" />
                         <div>
                           <span className="text-footnote text-label font-semibold">
@@ -595,7 +595,7 @@ export function VaultAuctionsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "text-eyebrow rounded-full border px-1.5 py-0 leading-none",
+                            "text-eyebrow rounded-full border px-2 py-0 leading-none",
                             badgeColor
                           )}
                         >

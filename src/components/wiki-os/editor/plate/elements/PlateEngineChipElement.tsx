@@ -4,6 +4,7 @@ import React from "react";
 import { useElement, usePath, useReadOnly } from "platejs/react";
 import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 import type { ChipEngineEl } from "../wiki-html";
+import { Button } from "~/components/ui/button";
 
 const chipTone: Record<string, string> = {
   CountryData: "border-yellow/30 bg-yellow/10 text-yellow",
@@ -34,13 +35,14 @@ export function PlateEngineChipElement({
       >
         <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />⚡ {el.label}
         {!readOnly && path && (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => cb.openTemplateEditor(el.id!)}
-            className="rounded-control-sm text-footnote ml-0.5 px-1 underline opacity-60 hover:opacity-100 active:scale-[0.98]"
+            className="text-footnote ml-0.5 h-auto px-1 text-inherit underline opacity-60 hover:opacity-100"
           >
             edit
-          </button>
+          </Button>
         )}
       </span>
     </span>

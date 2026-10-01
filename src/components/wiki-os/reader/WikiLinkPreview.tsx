@@ -171,10 +171,10 @@ function domNodeToReact(
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-3.5 border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+          className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
         >
           <div className="min-w-0 flex-1 text-left">
-            <div className="mb-1 flex items-center gap-1.5">
+            <div className="mb-1 flex items-center gap-2">
               <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
               <span className="text-eyebrow text-label-secondary">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
@@ -241,7 +241,7 @@ function domNodeToReact(
 
       // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
       let badgeStyle =
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
+        "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
       if (isLeague) {
         badgeStyle +=
           "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30";

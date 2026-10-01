@@ -47,7 +47,7 @@ export function ImportStepIndicator({ currentStep }: { currentStep: WizardStep }
             {/* Label */}
             <span
               className={cn(
-                "text-footnote ml-1.5 hidden font-semibold sm:inline",
+                "text-footnote ml-2 hidden font-semibold sm:inline",
                 isComplete && "text-green",
                 isCurrent && "text-tint",
                 !isComplete && !isCurrent && "text-label-tertiary"

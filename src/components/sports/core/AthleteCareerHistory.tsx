@@ -15,7 +15,7 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
   const seasons = data?.seasons ?? [];
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Eyebrow>Career</Eyebrow>
         {data && seasons.length > 0 && (
@@ -32,21 +32,21 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
           <table className="text-footnote w-full">
             <thead className="bg-fill-4 text-label-secondary">
               <tr>
-                <th className="px-3 py-1.5 text-left font-medium">Season</th>
+                <th className="px-3 py-2 text-left font-medium">Season</th>
                 <th
-                  className="px-2 py-1.5 text-right font-medium"
+                  className="px-2 py-2 text-right font-medium"
                   title="Matches with a shot, goal or assist"
                 >
                   Matches
                 </th>
-                <th className="px-2 py-1.5 text-right font-medium">Goals</th>
-                <th className="px-3 py-1.5 text-right font-medium">Assists</th>
+                <th className="px-2 py-2 text-right font-medium">Goals</th>
+                <th className="px-3 py-2 text-right font-medium">Assists</th>
               </tr>
             </thead>
             <tbody className="divide-separator divide-y">
               {seasons.map((season) => (
                 <tr key={season.seasonId}>
-                  <td className="text-label px-3 py-1.5 font-semibold">
+                  <td className="text-label px-3 py-2 font-semibold">
                     Season {season.seasonNumber}
                     {season.awards.map((award) => (
                       <span
@@ -58,9 +58,9 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
                       </span>
                     ))}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{season.matches}</td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{season.goals}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{season.assists}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{season.matches}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{season.goals}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{season.assists}</td>
                 </tr>
               ))}
             </tbody>

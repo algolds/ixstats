@@ -16,6 +16,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { springSmooth } from "~/lib/design/motion";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
+import { Button } from "~/components/ui/button";
 
 export interface WikiEditorHeaderProps {
   title: string;
@@ -73,11 +74,11 @@ export function WikiEditorHeader({
           <>
             <span className="wikios-editor-titlebar-name">
               <span className="mr-1 font-medium opacity-50">Editing</span>
-              <span className="mr-1.5 opacity-30">:</span>
+              <span className="mr-2 opacity-30">:</span>
               {title}
             </span>
             {isDirty && (
-              <span className="wikios-ve-dirty text-eyebrow text-tint ml-1.5 opacity-80">
+              <span className="wikios-ve-dirty text-eyebrow text-tint ml-2 opacity-80">
                 Unsaved
               </span>
             )}
@@ -108,7 +109,7 @@ export function WikiEditorHeader({
           <FacetMaterial
             material="thin"
             title="Toggle Editing Mode (Source / Canvas)"
-            className="text-caption shadow-floating flex items-center gap-2 rounded-full px-3 py-1.5 select-none"
+            className="text-caption shadow-floating flex items-center gap-2 rounded-full px-3 py-2 select-none"
           >
             <span className={isVisual ? "text-label-secondary" : "text-label"}>Source</span>
             <Switch
@@ -128,27 +129,29 @@ export function WikiEditorHeader({
       <div className={isVisual ? "wikios-ve-titlebar-actions" : "wikios-editor-titlebar-actions"}>
         {extraActions}
 
-        <button
-          className="wikios-editor-btn-cancel duration-fast transition-transform active:scale-[0.98]"
+        <Button
+          variant="bordered"
+          size="icon-sm"
           onClick={onCancel}
-          type="button"
           title="Cancel"
           aria-label="Cancel"
+          className="border-red/25 text-red hover:border-red hover:bg-red/10 rounded-full"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
 
         <Popover open={saveDropdownOpen} onOpenChange={setSaveDropdownOpen}>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="wikios-editor-btn-save duration-fast transition-transform active:scale-[0.98]"
+            <Button
+              variant="bordered"
+              size="icon-sm"
               disabled={saving}
               title="Save options"
               aria-label="Save options"
+              className="border-green/25 text-green hover:border-green hover:bg-green/10 rounded-full"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent
             align="end"
@@ -156,42 +159,42 @@ export function WikiEditorHeader({
             className="text-label w-52 p-1"
           >
             <div className="text-footnote flex flex-col gap-0.5">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setSaveDropdownOpen(false);
                   setSaveActionType("publish");
                   setShowSavePanel(true);
                 }}
-                className="rounded-control text-body duration-fast hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left transition-colors"
+                className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <Save className="text-green h-3.5 w-3.5" />
                 <span>Save and Publish</span>
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setSaveDropdownOpen(false);
                   handleSaveDraft();
                 }}
-                className="rounded-control text-body duration-fast hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left transition-colors"
+                className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <FileText className="text-tint h-3.5 w-3.5" />
                 <span>Save as Draft</span>
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setSaveDropdownOpen(false);
                   setSaveActionType("session");
                   if (!summary) setSummary("Session save");
                   setShowSavePanel(true);
                 }}
-                className="rounded-control text-body duration-fast hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2.5 py-1.5 text-left transition-colors"
+                className="text-body text-label h-auto w-full justify-start px-3 py-2 font-normal"
               >
                 <Bookmark className="text-yellow h-3.5 w-3.5" />
                 <span>Save Session</span>
-              </button>
+              </Button>
             </div>
           </PopoverContent>
         </Popover>

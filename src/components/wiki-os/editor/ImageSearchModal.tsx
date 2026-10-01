@@ -9,8 +9,15 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
-import { Input, fieldStyles } from "~/components/ui/input";
+import { Input } from "~/components/ui/input";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 
 interface ImageSearchModalProps {
@@ -23,6 +30,8 @@ type ModalTab = "search" | "upload";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"];
 const MAX_SIZE_MB = 10;
+/** Select items cannot carry an empty value; "Full size" is the empty wikitext size. */
+const FULL_SIZE = "full";
 
 export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
   const [tab, setTab] = useState<ModalTab>("search");
@@ -193,38 +202,43 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                     </label>
 
                     <div className="wikios-img-insert-row">
-                      <label className="wikios-img-insert-label">
-                        Size
-                        <select
-                          value={size}
-                          onChange={(e) => setSize(e.target.value)}
-                          className={cn(
-                            fieldStyles,
-                            "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-                          )}
+                      <div className="wikios-img-insert-label">
+                        <span id="wikios-img-insert-size">Size</span>
+                        <Select
+                          value={size || FULL_SIZE}
+                          onValueChange={(v) => setSize(v === FULL_SIZE ? "" : v)}
                         >
-                          <option value="thumb">Thumbnail</option>
-                          <option value="frame">Frame</option>
-                          <option value="frameless">Frameless</option>
-                          <option value="">Full size</option>
-                        </select>
-                      </label>
-                      <label className="wikios-img-insert-label">
-                        Align
-                        <select
-                          value={align}
-                          onChange={(e) => setAlign(e.target.value)}
-                          className={cn(
-                            fieldStyles,
-                            "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-                          )}
-                        >
-                          <option value="right">Right</option>
-                          <option value="left">Left</option>
-                          <option value="center">Center</option>
-                          <option value="none">None</option>
-                        </select>
-                      </label>
+                          <SelectTrigger
+                            aria-labelledby="wikios-img-insert-size"
+                            className="w-full"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="thumb">Thumbnail</SelectItem>
+                            <SelectItem value="frame">Frame</SelectItem>
+                            <SelectItem value="frameless">Frameless</SelectItem>
+                            <SelectItem value={FULL_SIZE}>Full size</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="wikios-img-insert-label">
+                        <span id="wikios-img-insert-align">Align</span>
+                        <Select value={align} onValueChange={setAlign}>
+                          <SelectTrigger
+                            aria-labelledby="wikios-img-insert-align"
+                            className="w-full"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="right">Right</SelectItem>
+                            <SelectItem value="left">Left</SelectItem>
+                            <SelectItem value="center">Center</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <Button onClick={handleInsert}>Insert Image</Button>

@@ -8,9 +8,10 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { withBasePath } from "~/lib/base-path";
-import { cn } from "~/lib/utils";
 import { Trophy, Sparks as Sparkles, Activity, Calendar } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 export interface LeagueArchiveTabProps {
   leagueId: string;
@@ -74,21 +75,19 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
         </div>
 
         {completedSeasons.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <RadioCardGroup
+            aria-label="Season"
+            value={activeSeasonData ? String(activeSeasonData.seasonNumber) : null}
+            onValueChange={(v) => setSelectedSeasonNumber(Number(v))}
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          >
             {completedSeasons.map((season) => {
-              const isSelected = activeSeasonData?.seasonNumber === season.seasonNumber;
               return (
-                <button
-                  type="button"
+                <RadioCard
                   key={season.seasonId}
-                  aria-pressed={isSelected}
-                  onClick={() => setSelectedSeasonNumber(season.seasonNumber)}
-                  className={cn(
-                    "group focus-visible:outline-tint rounded-card duration-fast ease-out-facet relative flex cursor-pointer flex-col justify-between overflow-hidden border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]",
-                    isSelected
-                      ? "border-tint bg-tint-fill"
-                      : "border-separator bg-surface hover:bg-fill-4"
-                  )}
+                  value={String(season.seasonNumber)}
+                  indicator={false}
+                  className="group rounded-card flex-col items-stretch justify-between gap-0 overflow-hidden p-4"
                 >
                   <div className="flex items-center justify-between">
                     <Badge variant="caution">Season {season.seasonNumber}</Badge>
@@ -133,10 +132,10 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                       Season in progress
                     </div>
                   )}
-                </button>
+                </RadioCard>
               );
             })}
-          </div>
+          </RadioCardGroup>
         ) : (
           <FacetCard padding="lg" className="text-footnote text-label-secondary text-center">
             No completed seasons yet. The title will be engraved here upon season finish.
@@ -164,15 +163,15 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
               <table className="text-footnote w-full text-left tabular-nums">
                 <thead>
                   <tr className="border-separator text-eyebrow text-label-secondary border-b">
-                    <th className="py-2.5 pl-3">Pos</th>
-                    <th className="py-2.5">Club</th>
-                    <th className="py-2.5 text-center">P</th>
-                    <th className="py-2.5 text-center">W</th>
-                    <th className="py-2.5 text-center">D</th>
-                    <th className="py-2.5 text-center">L</th>
-                    <th className="py-2.5 text-right">GF</th>
-                    <th className="py-2.5 text-right">GA</th>
-                    <th className="py-2.5 pr-3 text-right">PTS</th>
+                    <th className="py-3 pl-3">Pos</th>
+                    <th className="py-3">Club</th>
+                    <th className="py-3 text-center">P</th>
+                    <th className="py-3 text-center">W</th>
+                    <th className="py-3 text-center">D</th>
+                    <th className="py-3 text-center">L</th>
+                    <th className="py-3 text-right">GF</th>
+                    <th className="py-3 text-right">GA</th>
+                    <th className="py-3 pr-3 text-right">PTS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-separator divide-y">
@@ -245,32 +244,35 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
               </div>
 
               {records.topChampions.length > 0 ? (
-                <div className="space-y-2">
+                <FacetListSection variant="plain" aria-label="Championship leaderboard">
                   {records.topChampions.map((team, idx) => (
-                    <button
-                      type="button"
+                    <FacetRow
                       key={team.teamId}
                       onClick={() => focusOrganization(team.teamId)}
-                      className="bg-surface-secondary hover:bg-fill-3 focus-visible:outline-tint rounded-row duration-fast flex w-full cursor-pointer items-center justify-between p-2.5 text-left transition-colors focus-visible:outline-2"
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <span className="text-footnote text-label-secondary font-semibold tabular-nums">
-                          #{idx + 1}
+                      leading={
+                        <span className="flex items-center gap-2">
+                          <span className="text-footnote text-label-secondary font-semibold tabular-nums">
+                            #{idx + 1}
+                          </span>
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: team.color || "#3b82f6" }}
+                          />
                         </span>
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: team.color || "#3b82f6" }}
-                        />
-                        <span className="text-footnote text-label truncate font-semibold">
+                      }
+                      title={
+                        <span className="text-footnote block truncate font-semibold">
                           {team.teamName}
                         </span>
-                      </div>
-                      <Badge variant="caution" className="tabular-nums">
-                        {team.titles} {team.titles === 1 ? "Title" : "Titles"}
-                      </Badge>
-                    </button>
+                      }
+                      trailing={
+                        <Badge variant="caution" className="tabular-nums">
+                          {team.titles} {team.titles === 1 ? "Title" : "Titles"}
+                        </Badge>
+                      }
+                    />
                   ))}
-                </div>
+                </FacetListSection>
               ) : (
                 <p className="text-footnote text-label-secondary py-2">No champions crowned yet.</p>
               )}

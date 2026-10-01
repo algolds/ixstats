@@ -3,9 +3,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Search, GraphUp as BarChart2, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Input, fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
 
@@ -80,7 +88,7 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
         <div className="space-y-2">
           <label className="text-subhead text-label block">1. Select Country</label>
           <div className="relative">
-            <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+            <Search className="text-label-secondary absolute top-3 left-3 h-4 w-4" />
             <Input
               ref={firstInputRef}
               type="text"
@@ -99,35 +107,34 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
                 Loading...
               </div>
             )}
-            {!isLoading &&
-              countries?.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCountry({ id: c.id, name: c.name })}
-                  className={cn(
-                    "text-headline flex w-full items-center justify-between px-3 py-2 text-left transition-colors",
-                    selectedCountry?.id === c.id
-                      ? "bg-tint-fill text-tint"
-                      : "text-label hover:bg-fill-3"
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    {c.flagUrl && (
-                      <img
-                        src={c.flagUrl}
-                        alt=""
-                        className="border-separator rounded-control-sm h-3 w-5 border object-cover"
-                      />
-                    )}
-                    {c.name}
-                  </span>
-                  {viewerCountryId && c.id === viewerCountryId && (
-                    <span className="bg-green/15 text-caption text-green rounded-full px-1.5 py-0.5">
-                      My Country
-                    </span>
-                  )}
-                </button>
-              ))}
+            {!isLoading && countries && countries.length > 0 && (
+              <FacetListSection variant="plain" aria-label="Countries">
+                {countries.map((c) => (
+                  <FacetRow
+                    key={c.id}
+                    onClick={() => setSelectedCountry({ id: c.id, name: c.name })}
+                    selected={selectedCountry?.id === c.id}
+                    selectionStyle="tint"
+                    accessory="check"
+                    leading={
+                      c.flagUrl ? (
+                        <img
+                          src={c.flagUrl}
+                          alt=""
+                          className="border-separator rounded-control-sm h-3 w-5 border object-cover"
+                        />
+                      ) : undefined
+                    }
+                    title={c.name}
+                    trailing={
+                      viewerCountryId && c.id === viewerCountryId ? (
+                        <Badge variant="success">My Country</Badge>
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </FacetListSection>
+            )}
             {!isLoading && countries?.length === 0 && (
               <div className="text-label-secondary text-footnote p-3 text-center">
                 No countries found.
@@ -149,25 +156,21 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
 
         {/* Step 2: Select Stat */}
         <div className="space-y-2">
-          <label className="text-subhead text-label block">2. Choose Stat Attribute</label>
-          <select
-            value={selectedStat}
-            onChange={(e) => setSelectedStat(e.target.value)}
-            className={cn(
-              fieldStyles,
-              "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-            )}
-          >
-            {STAT_FIELDS.map((stat) => (
-              <option
-                key={stat.value}
-                value={stat.value}
-                className="bg-surface-elevated text-label"
-              >
-                {stat.label}
-              </option>
-            ))}
-          </select>
+          <label id="country-stats-attribute" className="text-subhead text-label block">
+            2. Choose Stat Attribute
+          </label>
+          <Select value={selectedStat} onValueChange={setSelectedStat}>
+            <SelectTrigger aria-labelledby="country-stats-attribute" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STAT_FIELDS.map((stat) => (
+                <SelectItem key={stat.value} value={stat.value}>
+                  {stat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Preview syntax */}

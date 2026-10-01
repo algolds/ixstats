@@ -213,7 +213,7 @@ export const DailyBonusWidget: React.FC = () => {
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="border-yellow/40 text-footnote w-full justify-start gap-2 px-2.5 font-semibold"
+        className="border-yellow/40 text-footnote w-full justify-start gap-2 px-3 font-semibold"
       >
         <Trophy aria-hidden="true" className="text-yellow h-3.5 w-3.5 shrink-0" />
         <span className="flex-1 text-left leading-tight select-none">Claim daily reward</span>
@@ -343,7 +343,7 @@ export const DailyBonusWidget: React.FC = () => {
                         />
                       )}
                     </motion.div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <p className="text-label text-headline max-w-60 truncate">
                         {claimResult.cardAwarded.title}
                       </p>

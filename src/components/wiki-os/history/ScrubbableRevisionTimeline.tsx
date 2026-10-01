@@ -15,6 +15,15 @@ import {
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface RevisionItem {
   id: string;
@@ -39,7 +48,7 @@ interface ScrubbableRevisionTimelineProps {
 function ByteDelta({ delta }: { delta?: number }) {
   if (!delta) return null;
   return (
-    <span className={`ml-1.5 ${delta > 0 ? "text-green" : "text-red"}`}>
+    <span className={`ml-2 ${delta > 0 ? "text-green" : "text-red"}`}>
       ({delta > 0 ? "+" : ""}
       {delta.toLocaleString()})
     </span>
@@ -131,46 +140,29 @@ export function ScrubbableRevisionTimeline({
           {/* Action Tools */}
           <div className="flex items-center gap-2">
             {/* Split / Unified Layout Toggle */}
-            <div className="border-separator bg-fill-3 rounded-row flex border p-0.5">
-              <button
-                type="button"
-                onClick={() => setLayout("unified")}
-                className={cn(
-                  "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  layout === "unified"
-                    ? "bg-background text-label shadow-card"
-                    : "text-label-secondary hover:text-label"
-                )}
-              >
-                <AlignLeft className="h-3.5 w-3.5" />
-                Unified
-              </button>
-              <button
-                type="button"
-                onClick={() => setLayout("split")}
-                className={cn(
-                  "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  layout === "split"
-                    ? "bg-background text-label shadow-card"
-                    : "text-label-secondary hover:text-label"
-                )}
-              >
-                <Columns2 className="h-3.5 w-3.5" />
-                Split
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Diff layout"
+              value={layout}
+              onValueChange={setLayout}
+              options={[
+                { value: "unified", label: "Unified", icon: <AlignLeft /> },
+                { value: "split", label: "Split", icon: <Columns2 /> },
+              ]}
+            />
 
             {/* Rollback Latest Author */}
             {revisions.length >= 2 && revisions[0]?.author === revisions[1]?.author && (
-              <button
-                type="button"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => rollbackMutation.mutate({ title })}
                 disabled={rollbackMutation.isPending}
-                className="rounded-row border-red/30 bg-red/10 text-caption text-red hover:bg-red/20 inline-flex items-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="bg-red/10 text-red hover:bg-red/20"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
                 {rollbackMutation.isPending ? "Rolling back…" : `Rollback ${revisions[0]?.author}`}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -255,17 +247,21 @@ export function ScrubbableRevisionTimeline({
           <div className="rounded-row border-yellow/30 bg-yellow/5 space-y-1 border p-3">
             <div className="flex items-center justify-between">
               <span className="text-eyebrow text-yellow">Revision B (Older)</span>
-              <select
-                value={compareRevIndex}
-                onChange={(e) => setCompareRevIndex(parseInt(e.target.value, 10))}
-                className="border-separator bg-background text-label rounded-control text-footnote h-6 border px-2 focus:outline-none"
+              <Select
+                value={String(compareRevIndex)}
+                onValueChange={(v) => setCompareRevIndex(parseInt(v, 10))}
               >
-                {revisions.map((r, idx) => (
-                  <option key={r.id} value={idx}>
-                    {idx === 0 ? "Latest" : `r${r.id}`} • {r.author}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" aria-label="Compare revision" className="max-w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {revisions.map((r, idx) => (
+                    <SelectItem key={r.id} value={String(idx)}>
+                      {idx === 0 ? "Latest" : `r${r.id}`} • {r.author}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-label text-footnote flex items-center gap-2">
               <User className="text-label-secondary h-3.5 w-3.5" />
@@ -297,14 +293,15 @@ export function ScrubbableRevisionTimeline({
             <span className="text-label-secondary text-footnote">
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
-            <button
-              type="button"
+            <Button
+              variant="tinted"
+              size="sm"
               onClick={() => setUndoTarget(compareRev)}
-              className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 inline-flex items-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="bg-yellow/10 text-yellow hover:bg-yellow/20"
             >
               <Undo className="h-3.5 w-3.5" />
               Revert to this version
-            </button>
+            </Button>
           </div>
         )}
 
@@ -321,8 +318,8 @@ export function ScrubbableRevisionTimeline({
               This will create a new revision restoring the exact text.
             </p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                size="sm"
                 disabled={revertMutation.isPending}
                 onClick={() => {
                   revertMutation.mutate({
@@ -331,17 +328,13 @@ export function ScrubbableRevisionTimeline({
                     summary: `Reverted to revision ${undoTarget.id} by ${undoTarget.author}`,
                   });
                 }}
-                className="rounded-control bg-yellow text-caption hover:bg-yellow/70 px-3 py-1.5 font-semibold text-black active:scale-[0.98]"
+                className="bg-yellow hover:bg-yellow/80 text-black"
               >
                 {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setUndoTarget(null)}
-                className="border-separator bg-fill-3 text-label hover:bg-fill-3 rounded-control text-caption border px-3 py-1.5"
-              >
+              </Button>
+              <Button variant="gray" size="sm" onClick={() => setUndoTarget(null)}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -43,7 +43,7 @@ export function ImportVerifyStep({
       {/* Instructions */}
       <FacetCard className="rounded-row space-y-3 p-5">
         <h4 className="text-label text-headline">Instructions</h4>
-        <ol className="text-label-secondary text-body list-inside space-y-2.5">
+        <ol className="text-label-secondary text-body list-inside space-y-2">
           <li className="flex items-start gap-2">
             <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
               1
@@ -74,7 +74,7 @@ export function ImportVerifyStep({
           href={verificationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-3.5 transition-colors active:scale-[0.98]"
+          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-4 transition-colors active:scale-[0.98]"
         >
           <ExternalLink className="h-4 w-4" />
           Open NationStates Verification Page

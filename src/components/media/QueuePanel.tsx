@@ -5,6 +5,7 @@ import React from "react";
 import { useIxMediaActions, useIxMediaState } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export function QueuePanel() {
   const { queue, currentIndex } = useIxMediaState();
@@ -22,13 +23,15 @@ export function QueuePanel() {
       <div className="flex items-center justify-between">
         <h3 className="text-subhead text-label-secondary">Up Next</h3>
         {queue.length > 0 && (
-          <button
+          <Button
+            variant="plain"
+            size="sm"
             onClick={clearQueue}
-            className="text-caption text-red duration-fast flex items-center gap-1 transition-opacity hover:opacity-80"
+            className="text-red hover:bg-red/10"
           >
             <XCircle className="h-3.5 w-3.5" />
             Clear Queue
-          </button>
+          </Button>
         )}
       </div>
 
@@ -78,22 +81,28 @@ export function QueuePanel() {
                   </span>
 
                   {!isActive && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Play now"
                       onClick={() => playTrack(track)}
-                      className="text-label-secondary hover:text-label p-1 transition-colors"
                       title="Play now"
+                      className="text-label-secondary"
                     >
                       <Play className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove from queue"
                     onClick={() => removeFromQueue(idx)}
-                    className="text-label-secondary hover:text-red p-1 transition-colors"
                     title="Remove from queue"
+                    className="text-label-secondary hover:text-red"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </FacetCard>
             );

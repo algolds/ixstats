@@ -64,7 +64,7 @@ export function WikiSlashMenu({
             ? { position: "fixed", top: anchorRect.top, left: anchorRect.left, transform: "none" }
             : undefined
         }
-        className="w-72 p-1.5"
+        className="w-72 p-2"
       >
         <Command loop shouldFilter={false} value={query}>
           <CommandInput
@@ -88,7 +88,7 @@ export function WikiSlashMenu({
                       if (editor) item.execute(editor);
                       onSelect(item);
                     }}
-                    className="rounded-control flex cursor-pointer items-center gap-2 px-2.5 py-1.5 active:scale-[0.98]"
+                    className="rounded-control flex cursor-pointer items-center gap-2 px-3 py-2 active:scale-[0.98]"
                   >
                     <span className="text-label-secondary text-footnote w-5 text-center tabular-nums">
                       {item.icon}

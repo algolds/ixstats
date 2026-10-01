@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 export interface CreateAuctionModalProps {
   open: boolean;
@@ -117,11 +118,11 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
-            <label className="text-label-secondary text-eyebrow mb-1.5 block">
+            <label className="text-label-secondary text-eyebrow mb-2 block">
               Select Card to Sell
             </label>
             {inventoryLoading ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="rounded-control bg-fill-4 h-10" />
                 ))}
@@ -131,57 +132,57 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                 No cards in inventory
               </p>
             ) : (
-              <div className="border-separator rounded-control bg-surface-secondary max-h-48 space-y-1 overflow-y-auto border p-1.5">
+              <div className="border-separator rounded-control bg-surface-secondary max-h-48 space-y-1 overflow-y-auto border p-2">
                 {cards.length > 0 ? (
-                  cards.map((card: any) => (
-                    <button
-                      key={card.id}
-                      onClick={() => setSelectedCardId(card.id)}
-                      className={cn(
-                        "rounded-control-sm flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                        selectedCardId === card.id
-                          ? "bg-yellow/10 ring-yellow/35 ring-1"
-                          : "hover:bg-surface-secondary"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="bg-fill-3 border-separator relative h-8 w-8 shrink-0 overflow-hidden rounded border">
-                          <CardHolographicCover
-                            cardType={card.cardType}
-                            rarity={card.rarity}
-                            title={card.title}
-                          />
-                          {card.artwork && (
-                            <img
-                              src={proxyCardArtwork(card.artwork)}
-                              alt={card.title}
-                              className="absolute inset-0 h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                              }}
+                  <FacetListSection variant="plain" aria-label="Cards in inventory">
+                    {cards.map((card: any) => (
+                      <FacetRow
+                        key={card.id}
+                        onClick={() => setSelectedCardId(card.id)}
+                        selected={selectedCardId === card.id}
+                        selectionStyle="tint"
+                        itemClassName="rounded-control-sm overflow-hidden"
+                        leading={
+                          <span className="bg-fill-3 border-separator relative block h-8 w-8 shrink-0 overflow-hidden rounded border">
+                            <CardHolographicCover
+                              cardType={card.cardType}
+                              rarity={card.rarity}
+                              title={card.title}
                             />
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-footnote text-label font-semibold">
-                            {card.title}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-eyebrow ml-2",
-                              rarityColor[card.rarity] || "text-label-secondary"
+                            {card.artwork && (
+                              <img
+                                src={proxyCardArtwork(card.artwork)}
+                                alt={card.title}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
                             )}
-                          >
-                            {card.rarity}
                           </span>
-                        </div>
-                      </div>
-                      <span className="text-footnote text-yellow flex items-center gap-0.5 tabular-nums">
-                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                        {(card.marketValue || 0).toLocaleString()}
-                      </span>
-                    </button>
-                  ))
+                        }
+                        title={
+                          <span className="text-footnote font-semibold">
+                            {card.title}
+                            <span
+                              className={cn(
+                                "text-eyebrow ml-2",
+                                rarityColor[card.rarity] || "text-label-secondary"
+                              )}
+                            >
+                              {card.rarity}
+                            </span>
+                          </span>
+                        }
+                        trailing={
+                          <span className="text-footnote text-yellow flex items-center gap-0.5 tabular-nums">
+                            <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                            {(card.marketValue || 0).toLocaleString()}
+                          </span>
+                        }
+                      />
+                    ))}
+                  </FacetListSection>
                 ) : (
                   <div className="text-footnote text-label-secondary py-6 text-center">
                     No available cards — all your cards are either already listed or locked in

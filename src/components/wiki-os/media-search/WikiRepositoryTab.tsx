@@ -15,7 +15,6 @@ import {
   ZoomIn,
   ControlSlider as SlidersHorizontal,
 } from "iconoir-react";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
@@ -24,6 +23,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CommonsImage } from "./types";
 import { getImageType, getImageOrientation } from "./types";
 import { MyStashTab } from "./MyStashTab";
+import { SearchField } from "~/components/ui/search-field";
 
 function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): CommonsImage[] {
   const seen = new Set(existing.map((img) => img.pageid));
@@ -317,7 +317,7 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                   isCategoryExpanded
                     ? "border-tint/40 bg-tint-fill text-tint hover:bg-tint-fill"
                     : "border-separator text-label-secondary hover:text-label hover:bg-fill-3"
@@ -333,37 +333,23 @@ export function WikiRepositoryTab({
         {wikiSource !== "stash" && (
           <>
             {/* Search input with 1-tap clear */}
-            <div className="relative">
-              <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder={
-                  wikiSource === "commons"
-                    ? 'Search Commons... e.g. "medieval castle", "royal portrait"'
-                    : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files...`
-                }
-                value={wikiSearchQuery}
-                onChange={(e) => setWikiSearchQuery(e.target.value)}
-                className="text-footnote bg-fill-4 border-separator focus-visible:bg-background focus-visible:ring-ring h-9 pr-8 pl-9 focus-visible:ring-1"
-              />
-              {wikiSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setWikiSearchQuery("")}
-                  className="text-label-secondary hover:text-label hover:bg-fill-3 absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                  title="Clear search"
-                  aria-label="Clear search"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+            <SearchField
+              placeholder={
+                wikiSource === "commons"
+                  ? 'Search Commons... e.g. "medieval castle", "royal portrait"'
+                  : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files...`
+              }
+              aria-label="Search files"
+              value={wikiSearchQuery}
+              onValueChange={setWikiSearchQuery}
+            />
 
             {/* Filters bar */}
             {isCategoryExpanded && (
               <div className="text-footnote flex flex-wrap items-center justify-between gap-3 pt-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* File Type Segmented Control */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-footnote text-label-secondary select-none">Type:</span>
                     <SegmentedControl
                       aria-label="Filter by file type"
@@ -380,7 +366,7 @@ export function WikiRepositoryTab({
                   </div>
 
                   {/* Orientation Segmented Control */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-footnote text-label-secondary select-none">Orient:</span>
                     <SegmentedControl
                       aria-label="Filter by orientation"
@@ -398,60 +384,63 @@ export function WikiRepositoryTab({
                 </div>
 
                 {(fileTypeFilter !== "all" || orientationFilter !== "all") && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => {
                       setFileTypeFilter("all");
                       setOrientationFilter("all");
                     }}
-                    className="text-caption text-label-secondary hover:text-label cursor-pointer underline underline-offset-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                    className="text-label-secondary h-auto px-0"
                   >
                     Reset Filters
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
 
             {/* Active Category Chips */}
             {wikiSource === "commons" && activeCategories.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {activeCategories.map((cat) => (
                   <span
                     key={cat}
-                    className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5"
+                    className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-1 rounded-full border px-3 py-0.5"
                   >
                     <span>{cat}</span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => handleToggleCategory(cat)}
-                      className="text-label-secondary hover:text-label hover:bg-fill-2 cursor-pointer rounded-full p-0.5 transition-colors active:scale-[0.98]"
                       title={`Remove ${cat} filter`}
                       aria-label={`Remove ${cat} filter`}
+                      className="text-label-secondary size-5 rounded-full"
                     >
                       <X className="h-2.5 w-2.5" />
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
             )}
 
             {browsingCategory && !isSearchMode && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                <span className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5">
+              <div className="mt-1 flex flex-wrap gap-2">
+                <span className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-2 rounded-full border px-3 py-0.5">
                   <span className="text-label-secondary">Browsing:</span>
                   <span className="font-semibold">{browsingCategory}</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => {
                       setBrowsingCategory(null);
                       setWikiImages([]);
                     }}
-                    className="text-label-secondary hover:text-label hover:bg-fill-2 cursor-pointer rounded-full p-0.5 transition-colors active:scale-[0.98]"
                     title="Clear folder filter"
                     aria-label="Clear folder filter"
+                    className="text-label-secondary size-5 rounded-full"
                   >
                     <X className="h-2.5 w-2.5" />
-                  </button>
+                  </Button>
                 </span>
               </div>
             )}
@@ -496,7 +485,7 @@ export function WikiRepositoryTab({
               </div>
             ) : filteredWikiImages.length > 0 ? (
               <div className="flex-1">
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                   {filteredWikiImages.map((img, index) => {
                     const isSelected = selectedImageObj?.pageid === img.pageid;
                     const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
@@ -505,6 +494,7 @@ export function WikiRepositoryTab({
                       <button
                         key={`${img.pageid}-${img.title}-${index}`}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => onSelectImage(img)}
                         onDoubleClick={onDoubleClickConfirm}
                         className={cn(
@@ -534,7 +524,7 @@ export function WikiRepositoryTab({
                             onContextMenu={(e) => e.preventDefault()}
                           />
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                            <div className="border-separator shadow-card rounded-full border bg-black/60 p-1.5 text-white">
+                            <div className="border-separator shadow-card rounded-full border bg-black/60 p-2 text-white">
                               <ZoomIn className="h-4 w-4" />
                             </div>
                           </div>

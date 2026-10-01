@@ -244,10 +244,7 @@ export function StashWelcomeModal({
               {currentSteps.map((step) => {
                 const Icon = step.icon;
                 return (
-                  <div
-                    key={step.title}
-                    className="rounded-row bg-surface-secondary space-y-1.5 p-3"
-                  >
+                  <div key={step.title} className="rounded-row bg-surface-secondary space-y-2 p-3">
                     <div className="flex items-center gap-2">
                       <div className="rounded-control-sm bg-fill-3 flex size-6 shrink-0 items-center justify-center">
                         <Icon className={cn("size-3.5", step.color)} aria-hidden="true" />

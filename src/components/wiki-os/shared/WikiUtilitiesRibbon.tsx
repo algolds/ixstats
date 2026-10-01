@@ -20,6 +20,7 @@ import {
 import { motion } from "motion/react";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 interface WikiUtilitiesRibbonProps {
   onSearchClick?: () => void;
@@ -88,7 +89,7 @@ export function WikiUtilitiesRibbon({
   return (
     <div
       className={cn(
-        "border-separator bg-surface rounded-card mb-6 flex flex-col gap-2.5 border p-1.5 select-none sm:flex-row sm:items-center sm:justify-between",
+        "border-separator bg-surface rounded-card mb-6 flex flex-col gap-2 border p-2 select-none sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
@@ -105,7 +106,7 @@ export function WikiUtilitiesRibbon({
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               className={cn(
-                "rounded-row text-caption relative z-10 flex shrink-0 items-center gap-1.5 px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+                "rounded-row text-caption relative z-10 flex shrink-0 items-center gap-2 px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 isActive
                   ? "font-semibold text-black"
                   : "text-label-secondary hover:bg-fill-3 hover:text-label"
@@ -131,36 +132,28 @@ export function WikiUtilitiesRibbon({
       </div>
 
       {/* Quick Launch Action Buttons */}
-      <div className="border-separator flex shrink-0 items-center gap-1.5 border-t pt-1.5 sm:border-t-0 sm:pt-0 sm:pl-2">
+      <div className="border-separator flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0 sm:pl-2">
         {onSearchClick && (
-          <button
-            type="button"
+          <Button
+            variant="gray"
+            size="sm"
             onClick={onSearchClick}
-            data-cuelume-press="tap"
-            data-cuelume-hover="tick"
-            className="border-separator bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label rounded-row text-caption inline-flex cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Spotlight Search (⌘K)"
+            className="text-label-secondary"
           >
             <Search className="text-label-secondary h-3.5 w-3.5" />
             <span className="hidden md:inline">Search</span>
             <kbd className="border-separator bg-surface py-0.2 text-label-secondary rounded-control-sm text-footnote hidden border px-1 tabular-nums lg:inline-block">
               ⌘K
             </kbd>
-          </button>
+          </Button>
         )}
 
         {onCreatePageClick && (
-          <button
-            type="button"
-            onClick={onCreatePageClick}
-            data-cuelume-press="tap"
-            data-cuelume-hover="tick"
-            className="bg-tint/15 border-tint/30 text-tint hover:bg-tint/25 rounded-row text-caption inline-flex cursor-pointer items-center gap-1 border px-2.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            title="Create New Page"
-          >
+          <Button variant="tinted" size="sm" onClick={onCreatePageClick} title="Create New Page">
             <Plus className="h-3.5 w-3.5" />
             <span>New Page</span>
-          </button>
+          </Button>
         )}
       </div>
     </div>

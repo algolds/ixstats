@@ -12,13 +12,14 @@ import {
 } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { DOMAIN_CATEGORIES } from "./_components/constants";
 import { DomainCategoriesGrid } from "./_components/DomainCategoriesGrid";
 import { AlphabetIndexBar } from "./_components/AlphabetIndexBar";
 import { SovereignNationsGrid } from "./_components/SovereignNationsGrid";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export default function CategoriesIndexPage() {
   const reduceMotion = useReducedMotion();
@@ -112,8 +113,8 @@ export default function CategoriesIndexPage() {
               </p>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-3.5 py-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-4 py-2">
                 <Layers className="text-tint h-4 w-4" />
                 <div className="text-left">
                   <div className="text-label text-caption font-semibold">12 Domains</div>
@@ -121,7 +122,7 @@ export default function CategoriesIndexPage() {
                 </div>
               </div>
 
-              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-3.5 py-2">
+              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-4 py-2">
                 <IconoirGlobe className="text-green h-4 w-4" />
                 <div className="text-left">
                   <div className="text-label text-caption font-semibold">
@@ -135,7 +136,7 @@ export default function CategoriesIndexPage() {
 
           <div className="relative z-10 mt-6">
             <div className="relative flex items-center">
-              <Search className="text-label-secondary pointer-events-none absolute left-3.5 h-4 w-4" />
+              <Search className="text-label-secondary pointer-events-none absolute left-4 h-4 w-4" />
               <input
                 type="text"
                 value={searchQuery}
@@ -149,12 +150,15 @@ export default function CategoriesIndexPage() {
                 className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-tint focus:ring-tint/20 w-full border py-3 pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
               />
               {searchQuery && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Clear search"
                   onClick={() => setSearchQuery("")}
-                  className="text-label-secondary hover:text-label hover:bg-fill-3 absolute right-3.5 rounded-full p-1 transition-colors"
+                  className="text-label-secondary absolute right-3 rounded-full"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -162,41 +166,16 @@ export default function CategoriesIndexPage() {
 
         {/* Navigation Tabs */}
         <div className="border-separator flex flex-col items-start justify-between gap-4 border-b pb-3 sm:flex-row sm:items-center">
-          <div className="bg-fill-3 border-separator rounded-row flex items-center gap-1.5 border p-1">
-            <button
-              onClick={() => setActiveTab("domains")}
-              className={cn(
-                "rounded-control text-caption cursor-pointer px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "domains"
-                  ? "text-label bg-surface shadow-card"
-                  : "text-label-secondary hover:text-label"
-              )}
-            >
-              Domain Portals
-            </button>
-            <button
-              onClick={() => setActiveTab("all-categories")}
-              className={cn(
-                "rounded-control text-caption cursor-pointer px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "all-categories"
-                  ? "text-label bg-surface shadow-card"
-                  : "text-label-secondary hover:text-label"
-              )}
-            >
-              All Categories (A–Z)
-            </button>
-            <button
-              onClick={() => setActiveTab("nations")}
-              className={cn(
-                "rounded-control text-caption cursor-pointer px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "nations"
-                  ? "text-label bg-surface shadow-card"
-                  : "text-label-secondary hover:text-label"
-              )}
-            >
-              Countries ({countries.length})
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="Category views"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            options={[
+              { value: "domains", label: "Domain Portals" },
+              { value: "all-categories", label: "All Categories (A–Z)" },
+              { value: "nations", label: `Countries (${countries.length})` },
+            ]}
+          />
 
           <div className="text-label-secondary text-caption">
             {activeTab === "domains" && `${filteredDomains.length} domains available`}

@@ -11,6 +11,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 import { useNotify } from "~/hooks/useNotify";
 import type { StashedQuoteItem } from "./types";
+import { Button } from "~/components/ui/button";
 
 interface StashQuotesListProps {
   quotes: StashedQuoteItem[];
@@ -42,7 +43,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
         return (
           <div
             key={q.id}
-            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2.5 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             {/* Left Highlighter Ink Bar */}
             <div
@@ -57,18 +58,19 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             <div className="flex items-center justify-between gap-2 pl-2">
               <Link
                 href={withBasePath(`/wiki/${q.pageSlug}`)}
-                className="text-caption text-label hover:text-tint flex max-w-sm items-center gap-1.5 truncate font-semibold transition-colors"
+                className="text-caption text-label hover:text-tint flex max-w-sm items-center gap-2 truncate font-semibold transition-colors"
               >
                 <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{cleanArticleTitle}</span>
               </Link>
 
               <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="sm"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 cursor-pointer items-center gap-1 border px-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Copy quote"
+                  className="bg-fill-4 text-label-secondary hover:text-label gap-1 px-2"
                 >
                   {copiedId === q.id ? (
                     <>
@@ -81,7 +83,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                       <span>Copy</span>
                     </>
                   )}
-                </button>
+                </Button>
 
                 <Link
                   href={withBasePath(`/wiki/${q.pageSlug}`)}
@@ -102,7 +104,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
             {/* Lore Significance Note if present */}
             {q.comment && q.comment !== "Saved quote" && (
-              <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary ml-2 space-y-0.5 border p-2.5">
+              <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary ml-2 space-y-0.5 border p-3">
                 <div className="text-caption text-label flex items-center gap-1 font-semibold">
                   <MessageSquare className="text-tint h-3 w-3" />
                   <span>Lore Note</span>

@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useIxMedia } from "./MediaContext";
 import { Button } from "~/components/ui/button";
-import { fieldStyles } from "~/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { Slider } from "~/components/ui/slider";
-import { cn } from "~/lib/utils";
 import {
   Play,
   Pause,
@@ -20,6 +18,13 @@ import { WaveformVisualizer } from "./WaveformVisualizer";
 import { QueuePanel } from "./QueuePanel";
 import { ChapterNavigator } from "./ChapterNavigator";
 import { TranscriptViewer } from "./TranscriptViewer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
@@ -106,7 +111,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
         {/* Volume and speed */}
         <div className="border-separator grid grid-cols-2 gap-4 border-t pt-4">
           <div className="flex flex-col gap-2">
-            <span className="text-footnote text-label-secondary flex items-center gap-1.5">
+            <span className="text-footnote text-label-secondary flex items-center gap-2">
               <Volume2 className="size-3.5" aria-hidden="true" />
               Volume
             </span>
@@ -120,27 +125,28 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             />
           </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-footnote text-label-secondary flex items-center gap-1.5">
+          <div className="flex flex-col gap-2">
+            <span
+              id="media-player-speed"
+              className="text-footnote text-label-secondary flex items-center gap-2"
+            >
               <Gauge className="size-3.5" aria-hidden="true" />
               Speed
             </span>
-            <select
-              value={speed}
-              onChange={(e) => changeSpeed(Number(e.target.value))}
-              className={cn(
-                fieldStyles,
-                "rounded-control-sm text-footnote h-(--control-height-sm) w-full px-2"
-              )}
-            >
-              <option value="0.5">0.5x</option>
-              <option value="0.75">0.75x</option>
-              <option value="1.0">1.0x (Normal)</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-              <option value="2.0">2.0x</option>
-            </select>
-          </label>
+            <Select value={String(speed)} onValueChange={(v) => changeSpeed(Number(v))}>
+              <SelectTrigger size="sm" aria-labelledby="media-player-speed" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0.5">0.5x</SelectItem>
+                <SelectItem value="0.75">0.75x</SelectItem>
+                <SelectItem value="1">1.0x (Normal)</SelectItem>
+                <SelectItem value="1.25">1.25x</SelectItem>
+                <SelectItem value="1.5">1.5x</SelectItem>
+                <SelectItem value="2">2.0x</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <ChapterNavigator />

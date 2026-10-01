@@ -9,6 +9,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface ArticleSearchProps {
   wikiSource: "ixwiki" | "iiwiki";
@@ -107,12 +109,15 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
         )}
 
         {!loading && searchQuery && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={() => {
               setSearchQuery("");
               setSuggestions([]);
             }}
-            className="text-label-secondary hover:text-label absolute top-1/2 right-3 -translate-y-1/2"
+            className="text-label-secondary absolute top-1/2 right-2 -translate-y-1/2"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -121,27 +126,27 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
                 clipRule="evenodd"
               />
             </svg>
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 max-h-96 w-full overflow-y-auto border">
-          {suggestions.map((suggestion, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelect(suggestion.title)}
-              className="first:rounded-t-control last:rounded-b-control hover:bg-fill-3 w-full px-4 py-3 text-left transition-colors"
-            >
-              <div className="text-label font-semibold">{suggestion.title}</div>
-              {suggestion.snippet && (
-                <div className="text-body text-label-secondary mt-1 line-clamp-2">
-                  {suggestion.snippet}
-                </div>
-              )}
-            </button>
-          ))}
+          <FacetListSection variant="plain" aria-label="Article suggestions">
+            {suggestions.map((suggestion, idx) => (
+              <FacetRow
+                key={idx}
+                onClick={() => handleSelect(suggestion.title)}
+                title={suggestion.title}
+                subtitle={
+                  suggestion.snippet ? (
+                    <span className="line-clamp-2">{suggestion.snippet}</span>
+                  ) : undefined
+                }
+              />
+            ))}
+          </FacetListSection>
         </div>
       )}
 

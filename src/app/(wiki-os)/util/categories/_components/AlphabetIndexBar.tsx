@@ -6,6 +6,7 @@ import { Folder } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { ALPHABET } from "./constants";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface AlphabetIndexBarProps {
   activeLetter: string;
@@ -27,24 +28,21 @@ export function AlphabetIndexBar({
   return (
     <div className="space-y-6">
       {/* A–Z Letter Selector */}
-      <div className="border-separator no-scrollbar rounded-card bg-surface flex items-center gap-1 overflow-x-auto border p-1.5">
-        {ALPHABET.map((char) => {
-          const isActive = activeLetter === char && !searchQuery.trim();
-          return (
-            <button
-              key={char}
-              onClick={() => onSelectLetter(char)}
-              className={cn(
-                "rounded-control text-caption flex h-8 min-w-[32px] cursor-pointer items-center justify-center px-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                isActive
-                  ? "bg-tint text-on-tint shadow-card scale-105"
-                  : "text-label-secondary hover:text-label hover:bg-fill-2"
-              )}
-            >
+      <div className="border-separator no-scrollbar rounded-card bg-surface flex items-center gap-1 overflow-x-auto border p-2">
+        <ToggleGroup
+          type="single"
+          size="sm"
+          aria-label="Category index"
+          value={searchQuery.trim() ? "" : activeLetter}
+          onValueChange={(char) => onSelectLetter(char || activeLetter)}
+          className="flex items-center gap-1"
+        >
+          {ALPHABET.map((char) => (
+            <ToggleGroupItem key={char} value={char} className="text-caption min-w-8 font-semibold">
               {char}
-            </button>
-          );
-        })}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
 
       {/* Category Results Grid */}
@@ -61,7 +59,7 @@ export function AlphabetIndexBar({
                 `/wiki/categories/${encodeURIComponent(cat.name.replace(/ /g, "_"))}`
               )}
               className={cn(
-                "group rounded-row relative flex flex-col justify-between overflow-hidden p-3.5",
+                "group rounded-row relative flex flex-col justify-between overflow-hidden p-4",
                 "border-separator border",
                 "bg-surface",
                 "",
@@ -69,7 +67,7 @@ export function AlphabetIndexBar({
                 "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
               )}
             >
-              <div className="flex items-start gap-2.5">
+              <div className="flex items-start gap-2">
                 <Folder className="text-tint mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-label text-caption group-hover:text-tint truncate font-semibold transition-colors">

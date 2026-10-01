@@ -158,7 +158,7 @@ export function VaultSidebarNav({
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
-              "focus-visible:outline-tint text-footnote flex shrink-0 items-center gap-1.5 rounded-control px-3 py-2 font-medium transition-colors duration-fast focus-visible:outline-2 focus-visible:-outline-offset-2",
+              "focus-visible:outline-tint text-footnote flex shrink-0 items-center gap-2 rounded-control px-3 py-2 font-medium transition-colors duration-fast focus-visible:outline-2 focus-visible:-outline-offset-2",
               isActive ? item.activeColor : "text-label-secondary hover:bg-fill-3 hover:text-label"
             );
 
@@ -199,7 +199,7 @@ export function VaultSidebarNav({
           const isActive = item.id === activeId;
           const Icon = item.icon;
           const cls = cn(
-            "focus-visible:outline-tint text-body flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2.5 py-2 text-left font-medium transition-colors duration-fast outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+            "focus-visible:outline-tint text-body flex w-full cursor-pointer items-center gap-2 rounded-control px-3 py-2 text-left font-medium transition-colors duration-fast outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
             isActive ? item.activeColor : "text-label hover:bg-fill-4"
           );
           const content = (

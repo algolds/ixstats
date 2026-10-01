@@ -20,7 +20,6 @@ import {
   SystemRestart as Loader2,
   Xmark as X,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   Dialog,
@@ -47,6 +46,7 @@ import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardDesignState } from "./types";
 import type { LoreCategory } from "~/lib/cards/category-enums";
 import type { CardRarity } from "@prisma/client";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface LoreImportDrawerProps {
   isOpen: boolean;
@@ -229,7 +229,7 @@ export function LoreImportDrawer({
                   <TabsTrigger
                     key={key}
                     value={key}
-                    className="rounded-control-sm text-footnote flex items-center justify-center gap-1.5 font-medium"
+                    className="rounded-control-sm text-footnote flex items-center justify-center gap-2 font-medium"
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span>{cfg.name}</span>
@@ -251,13 +251,15 @@ export function LoreImportDrawer({
               className="text-footnote h-9 pr-8 pl-9"
             />
             {query && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Clear search"
                 onClick={() => setQuery("")}
-                className="text-label-secondary hover:text-label absolute top-1/2 right-2.5 -translate-y-1/2"
+                className="text-label-secondary absolute top-1/2 right-2 size-6 -translate-y-1/2"
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -303,54 +305,51 @@ export function LoreImportDrawer({
                 <p className="text-label-tertiary text-footnote mt-1">Try another keyword.</p>
               </div>
             ) : (
-              searchResults.items.map((item, idx) => {
-                const isSelected =
-                  selectedItem?.id === item.id || selectedItem?.title === item.title;
-                const itemImg = (item as any).imageUrl as string | null | undefined;
-                return (
-                  <button
-                    key={`${item.id}-${idx}`}
-                    type="button"
-                    onClick={() => setSelectedItem(item)}
-                    className={cn(
-                      "rounded-control flex w-full items-start gap-2.5 border p-2.5 text-left transition-colors",
-                      isSelected
-                        ? "bg-fill-3 border-accent text-accent-foreground shadow-card"
-                        : "hover:bg-fill-3 text-label border-transparent"
-                    )}
-                  >
-                    {/* Search Entry Thumbnail */}
-                    <div className="bg-fill-3 border-separator rounded-control-sm flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
-                      {itemImg ? (
-                        <img
-                          src={proxyCardArtwork(itemImg)}
-                          alt={item.title}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <BookOpen className="text-label-tertiary h-4 w-4" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex w-full items-center justify-between gap-1.5">
-                        <span className="text-footnote truncate font-semibold">{item.title}</span>
-                        {"stashName" in item && Boolean((item as any).stashName) && (
-                          <Badge variant="secondary" className="text-footnote shrink-0 px-1.5 py-0">
+              <FacetListSection variant="plain" aria-label="Search results">
+                {searchResults.items.map((item, idx) => {
+                  const isSelected =
+                    selectedItem?.id === item.id || selectedItem?.title === item.title;
+                  const itemImg = (item as any).imageUrl as string | null | undefined;
+                  return (
+                    <FacetRow
+                      key={`${item.id}-${idx}`}
+                      onClick={() => setSelectedItem(item)}
+                      selected={isSelected}
+                      selectionStyle="tint"
+                      itemClassName="rounded-control overflow-hidden"
+                      leading={
+                        <span className="bg-fill-3 border-separator rounded-control-sm flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
+                          {itemImg ? (
+                            <img
+                              src={proxyCardArtwork(itemImg)}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <BookOpen className="text-label-tertiary h-4 w-4" />
+                          )}
+                        </span>
+                      }
+                      title={
+                        <span className="text-footnote block truncate font-semibold">
+                          {item.title}
+                        </span>
+                      }
+                      subtitle={<span className="line-clamp-2">{item.snippet}</span>}
+                      trailing={
+                        "stashName" in item && Boolean((item as any).stashName) ? (
+                          <Badge variant="secondary" className="text-footnote shrink-0 px-2 py-0">
                             {(item as any).stashName}
                           </Badge>
-                        )}
-                      </div>
-                      <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2 leading-relaxed">
-                        {item.snippet}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })
+                        ) : undefined
+                      }
+                    />
+                  );
+                })}
+              </FacetListSection>
             )}
           </div>
 
@@ -365,7 +364,7 @@ export function LoreImportDrawer({
                       <h3 className="text-label text-headline leading-tight">
                         {selectedItem.title}
                       </h3>
-                      <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1.5">
+                      <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-2">
                         <span>Source: {SOURCE_CONFIGS[source].name}</span>
                         {selectedItem.stashName && (
                           <>
@@ -377,7 +376,7 @@ export function LoreImportDrawer({
                     </div>
 
                     {activeMetadata && (
-                      <div className="flex shrink-0 items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-2">
                         <Badge variant="outline" className="text-footnote font-semibold">
                           {activeMetadata.rarity}
                         </Badge>
@@ -390,7 +389,7 @@ export function LoreImportDrawer({
 
                   {/* Metadata Chips */}
                   {activeMetadata && (
-                    <div className="border-separator bg-surface rounded-control text-footnote grid grid-cols-3 gap-2 border p-2.5">
+                    <div className="border-separator bg-surface rounded-control text-footnote grid grid-cols-3 gap-2 border p-3">
                       <div className="flex items-center gap-2">
                         <Tag className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div className="truncate">
@@ -426,7 +425,7 @@ export function LoreImportDrawer({
 
                   {/* Wiki Image Preview Banner */}
                   {activeMetadata?.imageUrl && (
-                    <div className="border-separator bg-surface rounded-control flex items-center gap-3 border p-2.5">
+                    <div className="border-separator bg-surface rounded-control flex items-center gap-3 border p-3">
                       <div className="bg-fill-3 border-separator rounded-control-sm relative h-14 w-14 shrink-0 overflow-hidden border">
                         <img
                           src={proxyCardArtwork(activeMetadata.imageUrl)}
@@ -439,9 +438,9 @@ export function LoreImportDrawer({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-label text-footnote flex items-center gap-1.5 font-semibold">
+                        <div className="text-label text-footnote flex items-center gap-2 font-semibold">
                           <span>Wiki Article Image Detected</span>
-                          <Badge variant="secondary" className="text-footnote px-1.5 py-0">
+                          <Badge variant="secondary" className="text-footnote px-2 py-0">
                             Auto-Import
                           </Badge>
                         </div>
@@ -454,7 +453,7 @@ export function LoreImportDrawer({
 
                   {/* Formatted Excerpt Preview */}
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-label-secondary text-footnote font-medium">
                         Wikitext Excerpt
@@ -462,7 +461,7 @@ export function LoreImportDrawer({
                       <span className="text-label-secondary text-footnote">MediaWiki Parser</span>
                     </div>
 
-                    <div className="border-separator bg-surface text-label rounded-control text-footnote max-h-52 overflow-y-auto border p-3.5 leading-relaxed">
+                    <div className="border-separator bg-surface text-label rounded-control text-footnote max-h-52 overflow-y-auto border p-4 leading-relaxed">
                       {isLoadingMeta && source !== "iiwiki" ? (
                         <div className="text-label-secondary flex items-center justify-center gap-2 py-8">
                           <Loader2 className="text-tint h-4 w-4 animate-spin" />
@@ -497,7 +496,7 @@ export function LoreImportDrawer({
                     <Button
                       size="sm"
                       onClick={() => handleApplyImport(true)}
-                      className="text-footnote gap-1.5"
+                      className="text-footnote gap-2"
                     >
                       <Check className="h-3.5 w-3.5" />
                       Import to Card

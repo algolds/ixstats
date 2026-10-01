@@ -11,6 +11,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { LoreCardGenerator } from "~/components/cards/lore";
+import { Button } from "~/components/ui/button";
 
 export default function LoreGeneratorPage() {
   const router = useRouter();
@@ -135,12 +136,13 @@ export default function LoreGeneratorPage() {
 
         {/* Back Button */}
         <div className="mt-6 text-center">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => router.push("/vault")}
-            className="text-body text-label-secondary hover:text-label transition-colors"
+            className="text-label-secondary"
           >
             Back to MyVault
-          </button>
+          </Button>
         </div>
       </div>
     </div>

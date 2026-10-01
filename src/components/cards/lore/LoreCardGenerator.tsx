@@ -17,6 +17,8 @@ import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { ArticleSearch } from "./ArticleSearch";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface LoreCardGeneratorProps {
   onRequestSubmitted?: (requestId: string) => void;
@@ -103,22 +105,16 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       <div>
         <label className="text-body text-label mb-2 block font-medium">Wiki Source</label>
         <div className="flex gap-3">
-          <button
-            onClick={() => setSelectedWikiSource("ixwiki")}
-            className={`rounded-control flex-1 px-4 py-3 font-semibold transition-colors ${
-              selectedWikiSource === "ixwiki" ? "bg-gold-400 text-label" : "bg-fill-3 text-label"
-            }`}
-          >
-            IxWiki
-          </button>
-          <button
-            onClick={() => setSelectedWikiSource("iiwiki")}
-            className={`rounded-control flex-1 px-4 py-3 font-semibold transition-colors ${
-              selectedWikiSource === "iiwiki" ? "bg-gold-400 text-label" : "bg-fill-3 text-label"
-            }`}
-          >
-            IIWiki
-          </button>
+          <SegmentedControl
+            fullWidth
+            aria-label="Wiki source"
+            value={selectedWikiSource}
+            onValueChange={setSelectedWikiSource}
+            options={[
+              { value: "ixwiki", label: "IxWiki" },
+              { value: "iiwiki", label: "IIWiki" },
+            ]}
+          />
         </div>
       </div>
 
@@ -146,14 +142,14 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       )}
 
       {/* Cost Display */}
-      <div className="bg-gold-500/10 border-gold-400/20 rounded-control border p-4">
+      <div className="bg-yellow/10 border-yellow/20 rounded-control border p-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-body text-label-secondary">Request Cost</div>
             {tokenBalance > 0 ? (
-              <div className="text-gold-400 text-title-1">Free (Token Available)</div>
+              <div className="text-yellow text-title-1">Free (Token Available)</div>
             ) : (
-              <div className="text-gold-400 text-title-1 flex items-center gap-1">
+              <div className="text-yellow text-title-1 flex items-center gap-1">
                 <IxCreditsSymbol className="text-yellow h-6 w-6 shrink-0" />
                 50
               </div>
@@ -173,21 +169,22 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       </div>
 
       {/* Submit Button */}
-      <button
+      <Button
+        size="lg"
         onClick={handleSubmitRequest}
         disabled={!selectedArticle || requestLoreCardMutation.isPending}
-        className="rounded-control text-label hover:bg-fill-2 w-full px-6 py-4 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full"
       >
         {requestLoreCardMutation.isPending ? (
           "Submitting..."
         ) : tokenBalance > 0 ? (
           "Request Lore Card (Free with Token)"
         ) : (
-          <span className="inline-flex items-center justify-center gap-1.5">
+          <span className="inline-flex items-center justify-center gap-2">
             Request Lore Card (50 <IxCreditsSymbol className="h-4 w-4 shrink-0" />)
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Recent Requests */}
       {myRequests.data && myRequests.data.requests.length > 0 && (
@@ -231,9 +228,9 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
           {myRequests.data.total > 5 && (
             <div className="mt-3 text-center">
-              <button className="text-gold-400 hover:text-gold-300 text-body">
+              <Button variant="link" size="sm" className="h-auto px-0">
                 View all ({myRequests.data.total} total)
-              </button>
+              </Button>
             </div>
           )}
         </div>

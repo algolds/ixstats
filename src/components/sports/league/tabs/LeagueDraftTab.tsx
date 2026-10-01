@@ -32,7 +32,7 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
         </div>
         <Badge
           variant="outline"
-          className="border-separator bg-fill-4 text-footnote text-label w-fit px-2.5 py-1 font-semibold"
+          className="border-separator bg-fill-4 text-footnote text-label w-fit px-3 py-1 font-semibold"
         >
           {picks.length} Selections
         </Badge>

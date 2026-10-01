@@ -27,6 +27,9 @@ import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { StepIndicator } from "~/components/ui/step-indicator";
 
 export interface TradeOfferModalProps {
   open: boolean;
@@ -256,37 +259,30 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
             </DialogHeader>
 
             {/* Step indicator */}
-            <div className="mb-4 flex shrink-0 items-center justify-center gap-2">
-              {STEPS.map((s, idx) => (
-                <React.Fragment key={s}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (s === "partner") {
-                        setStep("partner");
-                        return;
-                      }
-                      if (s === "cards" && !searchRecipient) return;
-                      if (
-                        s === "review" &&
-                        (!searchRecipient ||
-                          selectedYourCards.length === 0 ||
-                          selectedTheirCards.length === 0)
-                      )
-                        return;
-                      setStep(s);
-                    }}
-                    className={cn(
-                      "text-footnote focus-visible:outline-tint duration-fast cursor-pointer rounded-full px-4 py-1.5 font-medium transition-colors focus-visible:outline-2",
-                      step === s ? "bg-tint-fill text-tint" : "text-label-secondary hover:bg-fill-4"
-                    )}
-                  >
-                    {idx + 1}. {STEP_LABELS[s]}
-                  </button>
-                  {idx < STEPS.length - 1 && <div className="bg-fill-2 h-px w-6" />}
-                </React.Fragment>
-              ))}
-            </div>
+            <StepIndicator
+              aria-label="Trade steps"
+              className="mb-4 shrink-0 justify-center"
+              steps={STEPS.map((s) => ({ id: s, label: STEP_LABELS[s] }))}
+              current={STEPS.indexOf(step)}
+              navigable="all"
+              onStepClick={(idx) => {
+                const s = STEPS[idx];
+                if (!s) return;
+                if (s === "partner") {
+                  setStep("partner");
+                  return;
+                }
+                if (s === "cards" && !searchRecipient) return;
+                if (
+                  s === "review" &&
+                  (!searchRecipient ||
+                    selectedYourCards.length === 0 ||
+                    selectedTheirCards.length === 0)
+                )
+                  return;
+                setStep(s);
+              }}
+            />
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto">
@@ -304,39 +300,38 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   </div>
 
                   <div className="max-h-64 space-y-1 overflow-y-auto">
-                    {displayUsers.map((user) => (
-                      <button
-                        key={user.id}
-                        type="button"
-                        onClick={() => {
-                          setSearchRecipient(user.id);
-                          setSelectedPartnerName(user.countryName || user.leader);
-                          setPartnerSearchText("");
-                        }}
-                        className={cn(
-                          "rounded-control duration-fast hover:bg-fill-4 flex w-full cursor-pointer items-center gap-3 p-2 text-left transition-colors",
-                          searchRecipient === user.id && "bg-tint-fill"
-                        )}
-                      >
-                        <UnifiedCountryFlag
-                          countryName={user.countryName || user.leader}
-                          flagUrl={user.flag}
-                          size="md"
-                          className="h-8 w-8 rounded object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-headline text-label truncate">
-                            {user.countryName || "Unknown"}
-                          </p>
-                          <p className="text-footnote text-label-secondary truncate">
-                            {user.leader}
-                          </p>
-                        </div>
-                        <span className="border-yellow/20 text-footnote text-yellow shrink-0 rounded border px-1.5 py-0.5 font-semibold">
-                          {user.economicTier}
-                        </span>
-                      </button>
-                    ))}
+                    {displayUsers.length > 0 && (
+                      <FacetListSection variant="plain" aria-label="Trade partners">
+                        {displayUsers.map((user) => (
+                          <FacetRow
+                            key={user.id}
+                            onClick={() => {
+                              setSearchRecipient(user.id);
+                              setSelectedPartnerName(user.countryName || user.leader);
+                              setPartnerSearchText("");
+                            }}
+                            selected={searchRecipient === user.id}
+                            selectionStyle="tint"
+                            itemClassName="rounded-control overflow-hidden"
+                            leading={
+                              <UnifiedCountryFlag
+                                countryName={user.countryName || user.leader}
+                                flagUrl={user.flag}
+                                size="md"
+                                className="h-8 w-8 rounded object-cover"
+                              />
+                            }
+                            title={
+                              <span className="block truncate">
+                                {user.countryName || "Unknown"}
+                              </span>
+                            }
+                            subtitle={<span className="block truncate">{user.leader}</span>}
+                            trailing={<Badge variant="caution">{user.economicTier}</Badge>}
+                          />
+                        ))}
+                      </FacetListSection>
+                    )}
                     {displayUsers.length === 0 && partnerSearchText.length >= 2 && (
                       <p className="text-footnote text-label-secondary py-8 text-center">
                         No results
@@ -345,12 +340,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   </div>
 
                   <div className="flex justify-end pt-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setStep("cards")}
-                      disabled={!searchRecipient}
-                      className="bg-blue text-footnote text-on-blue font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                    >
+                    <Button size="sm" onClick={() => setStep("cards")} disabled={!searchRecipient}>
                       Next: Select Cards
                     </Button>
                   </div>
@@ -372,20 +362,21 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           Trading with {selectedPartnerName}
                         </span>
                       </div>
-                      <button
-                        type="button"
+                      <Button
+                        variant="link"
+                        size="sm"
                         onClick={() => setStep("partner")}
-                        className="text-footnote text-blue"
+                        className="h-auto px-0"
                       >
                         Change
-                      </button>
+                      </Button>
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {/* Your Cards */}
                     <div className="flex flex-col">
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-2 flex items-center justify-between">
                         <span className="text-eyebrow text-label-secondary">
                           Your Cards ({selectedYourCards.length})
                         </span>
@@ -394,65 +385,40 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         </span>
                       </div>
                       <div className="rounded-control border-separator max-h-64 space-y-1 overflow-y-auto border p-1">
-                        {yourCards.map((card) => {
-                          const selected = selectedYourCards.includes(card.id);
-                          return (
-                            <button
+                        <FacetListSection variant="plain" aria-label="Your cards">
+                          {yourCards.map((card) => (
+                            <FacetRow
                               key={card.id}
-                              type="button"
                               onClick={() => toggleYourCard(card.id)}
-                              className={cn(
-                                "rounded-control-sm text-footnote flex w-full items-center gap-2 p-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                                selected ? "bg-tint-fill" : "hover:bg-fill-4"
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                  selected ? "border-tint bg-tint text-on-tint" : "border-separator"
-                                )}
-                              >
-                                {selected && (
-                                  <svg
-                                    className="size-3"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={3}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                              <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
-                                <Image
-                                  src={proxyCardArtwork(card.artwork)}
-                                  alt=""
-                                  width={20}
-                                  height={28}
-                                  className="h-full w-full object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                              <span className="text-label min-w-0 flex-1 truncate font-medium">
-                                {card.title}
-                              </span>
-                              <span className="text-footnote text-label-secondary shrink-0 tabular-nums">
-                                {card.marketValue.toLocaleString()}
-                              </span>
-                            </button>
-                          );
-                        })}
+                              selected={selectedYourCards.includes(card.id)}
+                              selectionStyle="tint"
+                              accessory="check"
+                              itemClassName="rounded-control-sm overflow-hidden"
+                              leading={
+                                <span className="block h-7 w-5 shrink-0 overflow-hidden rounded">
+                                  <Image
+                                    src={proxyCardArtwork(card.artwork)}
+                                    alt=""
+                                    width={20}
+                                    height={28}
+                                    className="h-full w-full object-cover"
+                                    unoptimized
+                                  />
+                                </span>
+                              }
+                              title={
+                                <span className="block truncate font-medium">{card.title}</span>
+                              }
+                              trailing={card.marketValue.toLocaleString()}
+                            />
+                          ))}
+                        </FacetListSection>
                       </div>
                     </div>
 
                     {/* Their Cards */}
                     <div className="flex flex-col">
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-2 flex items-center justify-between">
                         <span className="text-eyebrow text-label-secondary">
                           Their Cards ({selectedTheirCards.length})
                         </span>
@@ -468,61 +434,34 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         </div>
                       ) : (
                         <div className="rounded-control border-separator max-h-64 space-y-1 overflow-y-auto border p-1">
-                          {theirCards.map((card) => {
-                            const selected = selectedTheirCards.includes(card.id);
-                            return (
-                              <button
+                          <FacetListSection variant="plain" aria-label="Their cards">
+                            {theirCards.map((card) => (
+                              <FacetRow
                                 key={card.id}
-                                type="button"
                                 onClick={() => toggleTheirCard(card.id)}
-                                className={cn(
-                                  "rounded-control-sm text-footnote flex w-full items-center gap-2 p-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                                  selected ? "bg-tint-fill" : "hover:bg-fill-4"
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                    selected
-                                      ? "border-tint bg-tint text-on-tint"
-                                      : "border-separator"
-                                  )}
-                                >
-                                  {selected && (
-                                    <svg
-                                      className="size-3"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={3}
-                                        d="M5 13l4 4L19 7"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                                <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
-                                  <Image
-                                    src={proxyCardArtwork(card.artwork)}
-                                    alt=""
-                                    width={20}
-                                    height={28}
-                                    className="h-full w-full object-cover"
-                                    unoptimized
-                                  />
-                                </div>
-                                <span className="text-label min-w-0 flex-1 truncate font-medium">
-                                  {card.title}
-                                </span>
-                                <span className="text-footnote text-label-secondary shrink-0 tabular-nums">
-                                  {card.marketValue.toLocaleString()}
-                                </span>
-                              </button>
-                            );
-                          })}
+                                selected={selectedTheirCards.includes(card.id)}
+                                selectionStyle="tint"
+                                accessory="check"
+                                itemClassName="rounded-control-sm overflow-hidden"
+                                leading={
+                                  <span className="block h-7 w-5 shrink-0 overflow-hidden rounded">
+                                    <Image
+                                      src={proxyCardArtwork(card.artwork)}
+                                      alt=""
+                                      width={20}
+                                      height={28}
+                                      className="h-full w-full object-cover"
+                                      unoptimized
+                                    />
+                                  </span>
+                                }
+                                title={
+                                  <span className="block truncate font-medium">{card.title}</span>
+                                }
+                                trailing={card.marketValue.toLocaleString()}
+                              />
+                            ))}
+                          </FacetListSection>
                         </div>
                       )}
                     </div>
@@ -563,7 +502,6 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       size="sm"
                       onClick={() => setStep("review")}
                       disabled={selectedYourCards.length === 0 || selectedTheirCards.length === 0}
-                      className="bg-blue text-footnote text-on-blue font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Next: Review
                     </Button>

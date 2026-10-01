@@ -181,7 +181,7 @@ export function UploadTab({
           >
             {isUploading ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Uploading...
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Uploading...
               </>
             ) : (
               "Select File"

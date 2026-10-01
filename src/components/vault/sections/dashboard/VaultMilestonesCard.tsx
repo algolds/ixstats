@@ -66,7 +66,7 @@ export function VaultMilestonesCard({
   return (
     <FacetCard padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
             <Trophy className="text-yellow h-4.5 w-4.5" />
           </div>
@@ -77,7 +77,7 @@ export function VaultMilestonesCard({
         </span>
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-4">
         {milestones.map((m, idx) => {
           const progress = Math.min(100, Math.round((m.current / m.max) * 100));
           const isComplete = progress >= 100;
@@ -85,7 +85,7 @@ export function VaultMilestonesCard({
           return (
             <div
               key={idx}
-              className="border-separator bg-fill-4 hover:bg-fill-3 rounded-card space-y-1.5 border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="border-separator bg-fill-4 hover:bg-fill-3 rounded-card space-y-2 border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               <div className="text-footnote flex items-center justify-between">
                 <span className="text-label font-semibold">{m.title}</span>

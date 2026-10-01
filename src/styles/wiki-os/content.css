@@ -184,32 +184,6 @@
     border-bottom: 1px solid var(--color-separator);
   }
 
-  .wikios-sticky-toc-search-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--wikios-text-dim);
-    cursor: pointer;
-    transition:
-      color 0.12s,
-      background 0.12s;
-  }
-
-  .wikios-sticky-toc-search-btn:hover {
-    color: var(--wikios-text);
-    background: var(--color-fill-3);
-  }
-
-  [data-theme="light"] .wikios-sticky-toc-search-btn:hover,
-  :is(html.light, html[data-theme="light"]) .wikios-sticky-toc-search-btn:hover {
-    background: var(--color-fill-4);
-  }
-
   .wikios-sticky-toc-search-container {
     display: flex;
     align-items: center;
@@ -285,65 +259,6 @@
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
-  }
-
-  .wikios-sticky-toc-search-nav-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--wikios-text-dim);
-    cursor: pointer;
-    transition:
-      color 0.12s,
-      background 0.12s;
-    flex-shrink: 0;
-  }
-
-  .wikios-sticky-toc-search-nav-btn:hover:not(:disabled) {
-    color: var(--wikios-text);
-    background: var(--color-fill-3);
-  }
-
-  [data-theme="light"] .wikios-sticky-toc-search-nav-btn:hover:not(:disabled),
-  :is(html.light, html[data-theme="light"]) .wikios-sticky-toc-search-nav-btn:hover:not(:disabled) {
-    background: var(--color-fill-4);
-  }
-
-  .wikios-sticky-toc-search-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .wikios-sticky-toc-search-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--wikios-text-dim);
-    cursor: pointer;
-    transition:
-      color 0.12s,
-      background 0.12s;
-    flex-shrink: 0;
-  }
-
-  .wikios-sticky-toc-search-close:hover {
-    color: var(--wikios-text);
-    background: var(--color-fill-3);
-  }
-
-  [data-theme="light"] .wikios-sticky-toc-search-close:hover,
-  :is(html.light, html[data-theme="light"]) .wikios-sticky-toc-search-close:hover {
-    background: var(--color-fill-4);
   }
 
   /* Inline text search highlighting */
@@ -1469,10 +1384,6 @@
     flex-shrink: 0;
     border-radius: 4px;
     transition: background 0.1s;
-  }
-
-  button.wikios-rc-expand-btn:hover {
-    background: var(--color-fill-3);
   }
 
   .wikios-rc-group-title {

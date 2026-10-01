@@ -37,7 +37,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const imgInfo = resolvedImagesMap.get(item.pageTitle);
           const cleanTitle = item.pageTitle.replace(/^commons:File:/, "").replace(/_/g, " ");
@@ -69,21 +69,22 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
                 </div>
 
                 {/* Remove button */}
-                <button
-                  type="button"
+                <Button
+                  variant="gray"
+                  size="icon-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="bg-surface-elevated text-label-secondary shadow-floating duration-fast hover:bg-red hover:text-on-red absolute top-2 right-2 flex size-7 items-center justify-center rounded-full opacity-0 transition-[color,background-color,opacity] group-hover:opacity-100 focus-visible:opacity-100"
                   title="Remove from stash"
                   aria-label="Remove from stash"
+                  className="bg-surface-elevated text-label-secondary shadow-floating hover:bg-red hover:text-on-red absolute top-2 right-2 size-7 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 >
                   <X className="size-3.5" aria-hidden="true" />
-                </button>
+                </Button>
               </div>
 
-              <div className="flex flex-1 flex-col justify-between gap-1 p-2.5">
+              <div className="flex flex-1 flex-col justify-between gap-1 p-3">
                 <span
                   className="text-caption text-label group-hover:text-tint truncate font-semibold transition-colors"
                   title={cleanTitle}
@@ -268,7 +269,7 @@ export function StashedImageModal({
           )}
         </dl>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Eyebrow>Wikitext Copy Format</Eyebrow>
           <SegmentedControl
             aria-label="Wikitext copy format"

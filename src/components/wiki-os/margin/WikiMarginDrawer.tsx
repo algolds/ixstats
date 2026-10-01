@@ -269,7 +269,7 @@ export function WikiMarginDrawer({
                       <span className="flex items-center gap-1">
                         {tab.label}
                         {tab.badge !== undefined && (
-                          <span className="bg-margin-accent text-caption rounded-full px-1.5 leading-4 text-(--margin-badge-text) tabular-nums">
+                          <span className="bg-margin-accent text-caption rounded-full px-2 leading-4 text-(--margin-badge-text) tabular-nums">
                             {tab.badge}
                           </span>
                         )}

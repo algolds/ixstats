@@ -78,7 +78,7 @@ const CommonsCard = memo(function CommonsCard({
         {!imageLoaded && !imageError && <Skeleton className="absolute inset-0 rounded-none" />}
 
         {imageError ? (
-          <div className="text-label-secondary absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center">
+          <div className="text-label-secondary absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
             <ImageIcon className="h-6 w-6 opacity-40" />
             <span className="text-eyebrow opacity-70">
               {img.mime ? img.mime.split("/")[1] : "Image"}
@@ -106,7 +106,7 @@ const CommonsCard = memo(function CommonsCard({
         </div>
       </div>
 
-      <div className="wikios-commons-card-info flex flex-col gap-0.5 p-2.5">
+      <div className="wikios-commons-card-info flex flex-col gap-0.5 p-3">
         <span className="wikios-commons-card-title text-caption text-label-secondary group-hover:text-label truncate transition-colors">
           {cleanTitle}
         </span>
@@ -128,7 +128,7 @@ function ShimmerSkeletonGrid({ count = 8 }: { count?: number }) {
           className="wikios-commons-card border-separator bg-surface overflow-hidden border"
         >
           <Skeleton className="aspect-[4/3] w-full rounded-none" />
-          <div className="space-y-2 p-2.5">
+          <div className="space-y-2 p-3">
             <Skeleton className="rounded-control-sm h-3 w-3/4" />
             <Skeleton className="rounded-control-sm h-3 w-1/3" />
           </div>
@@ -176,7 +176,7 @@ export function CommonsResultsGrid({
               onClick={onClearFilters}
               className="text-footnote border-separator hover:bg-fill-4"
             >
-              <RefreshDouble className="mr-1.5 h-3.5 w-3.5" />
+              <RefreshDouble className="mr-2 h-3.5 w-3.5" />
               Reset Filters
             </Button>
           )}

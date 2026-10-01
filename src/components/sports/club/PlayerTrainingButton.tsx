@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Button } from "~/components/ui/button";
 
 interface PlayerTrainingButtonProps {
   playerId: string;
@@ -48,18 +49,15 @@ export function PlayerTrainingButton({
           {attributes.map((attr) => {
             const val = currentRatings[attr] ?? 50;
             return (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 key={attr}
                 disabled={trainPlayer.isPending}
                 onClick={() => {
                   trainPlayer.mutate({ playerId, attributeFocus: attr });
                   setOpen(false);
                 }}
-                className={cn(
-                  "hover:bg-fill-3 text-body text-label focus-visible:outline-tint rounded-control-sm duration-fast flex w-full cursor-pointer items-center justify-between px-2 py-1.5 transition-colors focus-visible:outline-2",
-                  trainPlayer.isPending && "opacity-50"
-                )}
+                className="text-body text-label h-auto w-full justify-between px-2 py-2 font-normal"
               >
                 <div className="flex items-center gap-2">
                   <TrendingUp className="text-green size-3.5" aria-hidden />
@@ -74,7 +72,7 @@ export function PlayerTrainingButton({
                   </Badge>
                   <span className="text-label-secondary text-footnote tabular-nums">25c</span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>

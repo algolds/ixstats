@@ -38,7 +38,7 @@ export function ImportNationStep({
     <div className="space-y-6">
       {/* Hero visual / Header */}
       <div className="flex flex-col items-center py-4 text-center">
-        <div className="mb-2.5 flex items-center justify-center gap-2.5">
+        <div className="mb-2 flex items-center justify-center gap-2">
           <h2 className="text-label text-large-title select-none">Trading Cards</h2>
           <div className="relative h-7 w-10 shrink-0 select-none">
             <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2" />
@@ -105,7 +105,7 @@ export function ImportNationStep({
       </div>
 
       {/* Safety Disclaimer */}
-      <FacetCard className="text-label-secondary rounded-row text-footnote flex items-start gap-2.5 p-4 select-none">
+      <FacetCard className="text-label-secondary rounded-row text-footnote flex items-start gap-2 p-4 select-none">
         <ShieldCheck className="text-blue mt-0.5 h-4 w-4 shrink-0" />
         <div className="space-y-0.5">
           <p className="text-label font-semibold">Important</p>
@@ -155,15 +155,17 @@ export function ImportNationStep({
             <FacetCard className="rounded-row space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <label className="text-label text-headline">Your Nation Name</label>
-                <button
+                <Button
+                  variant="link"
+                  size="sm"
                   onClick={() => {
                     setNationName("");
                     setShowNameInput(false);
                   }}
-                  className="text-label-secondary hover:text-label text-footnote underline transition-colors"
+                  className="text-label-secondary h-auto px-0 underline"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
               <div className="relative">
                 <Globe className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />

@@ -2,9 +2,10 @@ import React from "react";
 import { ShieldAlert } from "iconoir-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
+import { Button } from "~/components/ui/button";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 interface TitleStepProps {
   title: string;
@@ -35,7 +36,7 @@ export function TitleStep({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label htmlFor="wikios-create-title" className="text-subhead text-label-secondary">
           Page title
         </label>
@@ -51,23 +52,27 @@ export function TitleStep({
           placeholder="Enter article title..."
         />
         {existsWarning && (
-          <div className="rounded-control bg-red/10 text-footnote text-red flex items-start gap-2 p-2.5">
+          <div className="rounded-control bg-red/10 text-footnote text-red flex items-start gap-2 p-3">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <span className="font-semibold">Page already exists.</span> You can{" "}
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => {
                   onClose();
                   router.push(
                     withBasePath(`/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}`)
                   );
                 }}
-                className="text-tint font-medium underline"
+                className="h-auto px-0 align-baseline underline"
               >
                 view
-              </button>{" "}
+              </Button>{" "}
               or{" "}
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => {
                   onClose();
                   router.push(
@@ -76,10 +81,10 @@ export function TitleStep({
                     )
                   );
                 }}
-                className="text-tint font-medium underline"
+                className="h-auto px-0 align-baseline underline"
               >
                 edit
-              </button>{" "}
+              </Button>{" "}
               it instead.
             </div>
           </div>
@@ -89,7 +94,7 @@ export function TitleStep({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-subhead text-label-secondary block">Preferred editor</span>
-          <label className="flex cursor-pointer items-center gap-1.5 select-none">
+          <label className="flex cursor-pointer items-center gap-2 select-none">
             <Checkbox
               checked={rememberChoice}
               onCheckedChange={(checked) => onRememberChoiceChange(checked === true)}
@@ -97,40 +102,23 @@ export function TitleStep({
             <span className="text-footnote text-label-secondary">Remember choice</span>
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            aria-pressed={editorMode === "visual"}
-            onClick={() => setEditorMode("visual")}
-            className={cn(
-              "rounded-row duration-fast flex flex-col items-start border p-3 text-left transition-colors",
-              editorMode === "visual"
-                ? "border-tint bg-tint-fill text-label"
-                : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3"
-            )}
-          >
-            <span className="text-headline text-label">Canvas Editor</span>
-            <span className="text-footnote text-label-secondary mt-0.5">
-              Immersive editing experience
-            </span>
-          </button>
-          <button
-            type="button"
-            aria-pressed={editorMode === "source"}
-            onClick={() => setEditorMode("source")}
-            className={cn(
-              "rounded-row duration-fast flex flex-col items-start border p-3 text-left transition-colors",
-              editorMode === "source"
-                ? "border-tint bg-tint-fill text-label"
-                : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3"
-            )}
-          >
-            <span className="text-headline text-label">Source Editor</span>
-            <span className="text-footnote text-label-secondary mt-0.5">
-              Old-school wikitext editing experience
-            </span>
-          </button>
-        </div>
+        <RadioCardGroup
+          aria-label="Preferred editor"
+          value={editorMode}
+          onValueChange={(v) => setEditorMode(v as "visual" | "source")}
+          className="grid grid-cols-2 gap-3"
+        >
+          <RadioCard
+            value="visual"
+            title="Canvas Editor"
+            description="Immersive editing experience"
+          />
+          <RadioCard
+            value="source"
+            title="Source Editor"
+            description="Old-school wikitext editing experience"
+          />
+        </RadioCardGroup>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { useSidebar } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
+import { Button } from "~/components/ui/button";
 
 export interface ActiveCountryData {
   id?: string;
@@ -115,7 +116,7 @@ export function ActiveCountryUnifiedWidget({
     <div className="relative w-full" ref={popoverRef}>
       <div
         className={cn(
-          "group rounded-row relative flex items-center px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
+          "group rounded-row relative flex items-center px-3 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none",
           isLocalHoverExpanded
             ? "border-separator bg-surface shadow-floating z-50 w-max border pr-4"
             : "hover:bg-fill-4 w-full border-transparent bg-transparent"
@@ -158,9 +159,9 @@ export function ActiveCountryUnifiedWidget({
       </div>
 
       {isCollapsed && popoverOpen && (
-        <div className="animate-in fade-in slide-in-from-left-2 rounded-row border-yellow/20 bg-surface shadow-floating absolute bottom-0 left-[calc(100%+12px)] z-50 w-60 border p-3.5 duration-150">
+        <div className="animate-in fade-in slide-in-from-left-2 rounded-row border-yellow/20 bg-surface shadow-floating absolute bottom-0 left-[calc(100%+12px)] z-50 w-60 border p-4 duration-150">
           {/* Header */}
-          <div className="border-separator mb-2.5 flex items-center gap-2.5 border-b pb-2.5">
+          <div className="border-separator mb-2 flex items-center gap-2 border-b pb-3">
             <div className="rounded-control-sm relative flex shrink-0 items-center justify-center overflow-hidden">
               <UnifiedCountryFlag countryName={countryName} size="sm" showTooltip={false} />
             </div>
@@ -176,7 +177,7 @@ export function ActiveCountryUnifiedWidget({
           </div>
 
           {/* Base Stats */}
-          <div className="text-footnote space-y-1.5">
+          <div className="text-footnote space-y-2">
             <div className="flex justify-between">
               <span className="text-label-secondary">Population:</span>
               <span className="text-label font-semibold">
@@ -221,22 +222,22 @@ export function ActiveCountryUnifiedWidget({
 
           {/* Vitality Summary */}
           {rings && (
-            <div className="border-separator mt-2.5 border-t pt-2.5">
-              <div className="text-subhead text-label-secondary mb-1.5">Vitality Indices</div>
-              <div className="text-footnote grid grid-cols-2 gap-1.5">
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-1.5 py-1">
+            <div className="border-separator mt-2 border-t pt-3">
+              <div className="text-subhead text-label-secondary mb-2">Vitality Indices</div>
+              <div className="text-footnote grid grid-cols-2 gap-2">
+                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
                   <span className="text-label-secondary">Econ:</span>
                   <span className="text-green font-semibold">{rings.economicVitality}</span>
                 </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-1.5 py-1">
+                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
                   <span className="text-label-secondary">Well:</span>
                   <span className="text-tint font-semibold">{rings.populationWellbeing}</span>
                 </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-1.5 py-1">
+                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
                   <span className="text-label-secondary">Diplo:</span>
                   <span className="text-teal font-semibold">{rings.diplomaticStanding ?? "—"}</span>
                 </div>
-                <div className="bg-fill-4 rounded-control-sm flex justify-between px-1.5 py-1">
+                <div className="bg-fill-4 rounded-control-sm flex justify-between px-2 py-1">
                   <span className="text-label-secondary">Gov:</span>
                   <span className="text-indigo font-semibold">
                     {rings.governmentalEfficiency ?? "—"}
@@ -248,16 +249,17 @@ export function ActiveCountryUnifiedWidget({
 
           {/* Actions Button */}
           <div className="mt-3">
-            <button
+            <Button
+              variant="tinted"
+              size="sm"
               onClick={() => {
                 setPopoverOpen(false);
                 setActionsMenuOpen(true);
               }}
-              className="rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 flex w-full items-center justify-center gap-1 border px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-              type="button"
+              className="bg-yellow/10 text-yellow hover:bg-yellow/20 w-full"
             >
               {isOwnCountry ? "Manage Country" : "Country Actions"}
-            </button>
+            </Button>
           </div>
         </div>
       )}

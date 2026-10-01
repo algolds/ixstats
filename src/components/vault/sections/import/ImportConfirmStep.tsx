@@ -180,7 +180,7 @@ export function ImportCompleteStep({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 + idx * 0.05 }}
                 className={cn(
-                  "rounded-control relative overflow-hidden border p-1.5",
+                  "rounded-control relative overflow-hidden border p-2",
                   card.rarity === "LEGENDARY" && "border-yellow/40 bg-yellow/10",
                   card.rarity === "EPIC" && "border-purple/40 bg-purple/10",
                   card.rarity === "ULTRA_RARE" && "border-red/40 bg-red/10",

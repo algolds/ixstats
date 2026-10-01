@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "~/lib/utils";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
@@ -16,6 +15,8 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { Button } from "~/components/ui/button";
 
 interface DiagnosticSectionProps {
   searchFilter: string;
@@ -120,23 +121,27 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       </div>
 
       {/* Card Selector Pills */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <RadioCardGroup
+        aria-label="Diagnostics"
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as NonNullable<typeof activeTab>)}
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+      >
         {filteredCards.map((card) => {
           const Icon = card.icon;
-          const isSelected = activeTab === card.id;
           return (
-            <button
+            <RadioCard
               key={card.id}
-              type="button"
-              data-cuelume-press="soft"
-              data-cuelume-hover="tick"
-              onClick={() => setActiveTab(activeTab === card.id ? null : (card.id as any))}
-              className={cn(
-                "group rounded-row flex flex-col justify-between border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
-                isSelected
-                  ? "border-tint/60 bg-surface ring-tint/30 shadow-card ring-1"
-                  : "border-separator bg-surface hover:border-tint/30 hover:bg-surface"
-              )}
+              value={card.id}
+              indicator={false}
+              // Pressing the open diagnostic again closes its inspector.
+              onClick={(e) => {
+                if (activeTab === card.id) {
+                  e.preventDefault();
+                  setActiveTab(null);
+                }
+              }}
+              className="group flex-col items-stretch justify-between gap-0 p-4"
             >
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -160,10 +165,10 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               <div className="text-label-secondary text-footnote mt-2 tabular-nums opacity-60">
                 {card.legacyAlias}
               </div>
-            </button>
+            </RadioCard>
           );
         })}
-      </div>
+      </RadioCardGroup>
 
       {/* Live Data Inspector Table (Collapsed by Default) */}
       <AnimatePresence>
@@ -175,7 +180,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
             transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
             className="border-separator bg-surface rounded-row shadow-card overflow-hidden border"
           >
-            <div className="border-separator bg-fill-4 flex items-center justify-between border-b px-4 py-2.5">
+            <div className="border-separator bg-fill-4 flex items-center justify-between border-b px-4 py-3">
               <span className="text-label text-caption">
                 Live Inspector:{" "}
                 <span className="text-tint font-semibold">
@@ -186,15 +191,16 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                 <span className="text-label-secondary text-footnote">
                   Showing top results from PostgreSQL index
                 </span>
-                <button
-                  type="button"
-                  data-cuelume-press="tap"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close Inspector"
                   onClick={() => setActiveTab(null)}
-                  className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm p-1 active:scale-[0.98]"
                   title="Close Inspector"
+                  className="text-label-secondary"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
 

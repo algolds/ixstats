@@ -319,7 +319,7 @@ export function WikiOSHeader({
 
       {/* Title card */}
       <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
-        <div className="rounded-row border-separator bg-surface shadow-floating space-y-2.5 border p-4 text-left sm:p-5">
+        <div className="rounded-row border-separator bg-surface shadow-floating space-y-2 border p-4 text-left sm:p-5">
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />
@@ -336,7 +336,7 @@ export function WikiOSHeader({
                 <PopoverTrigger asChild>
                   <button
                     className={cn(
-                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
                       badgeConfig.classes,
                       showCelebration &&
                         primaryAward.category === "LOREWARD" &&

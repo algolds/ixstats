@@ -348,7 +348,7 @@ export function LeagueSettingsModal({
           </Button>
           <Button onClick={handleSave} disabled={updateLeague.isPending || isUploading}>
             {updateLeague.isPending || isUploading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : null}
             Save Changes
           </Button>

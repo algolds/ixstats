@@ -17,6 +17,7 @@ import {
   Page as FileText,
   ArrowRight,
 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export default function WhatLinksHereHubPage() {
   const searchParams = useSearchParams();
@@ -78,7 +79,7 @@ export default function WhatLinksHereHubPage() {
               </div>
 
               {activeTarget && (
-                <div className="border-separator rounded-card bg-surface shadow-card flex shrink-0 items-center gap-2.5 border px-4 py-2">
+                <div className="border-separator rounded-card bg-surface shadow-card flex shrink-0 items-center gap-2 border px-4 py-2">
                   <LinkIcon className="text-yellow h-4 w-4" />
                   <div className="text-left">
                     <div className="text-label text-caption max-w-[160px] truncate font-semibold">
@@ -95,7 +96,7 @@ export default function WhatLinksHereHubPage() {
             {/* Target Article Search Form */}
             <form onSubmit={handleSearch} className="pt-2">
               <div className="relative flex items-center">
-                <Search className="text-label-secondary pointer-events-none absolute left-3.5 h-4 w-4" />
+                <Search className="text-label-secondary pointer-events-none absolute left-4 h-4 w-4" />
                 <input
                   type="text"
                   value={searchInput}
@@ -103,12 +104,13 @@ export default function WhatLinksHereHubPage() {
                   placeholder="Enter target page title (e.g. Caphiria, History of Urcea, Caphirian dollar)..."
                   className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-yellow focus:ring-yellow/20 w-full border py-3 pr-24 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
                 />
-                <button
+                <Button
+                  size="sm"
                   type="submit"
-                  className="rounded-row bg-yellow text-caption text-on-yellow shadow-card hover:bg-yellow absolute right-2 cursor-pointer px-4 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="bg-yellow text-on-yellow hover:bg-yellow/90 absolute right-2"
                 >
                   Inspect
-                </button>
+                </Button>
               </div>
             </form>
           </div>

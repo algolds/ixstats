@@ -69,11 +69,11 @@ function LeafRenderer(props: any) {
 }
 
 const BLOCK_CLASS: Record<string, string> = {
-  h1: "wikios-ve-h1 mb-3 mt-6 border-b border-separator pb-1.5 text-title-1 text-label",
+  h1: "wikios-ve-h1 mb-3 mt-6 border-b border-separator pb-2 text-title-1 text-label",
   h2: "wikios-ve-h2 mb-2 mt-5 border-b border-separator pb-1 text-title-2 text-label",
-  h3: "wikios-ve-h3 mb-1.5 mt-4 text-title-3 text-label",
+  h3: "wikios-ve-h3 mb-2 mt-4 text-title-3 text-label",
   h4: "wikios-ve-h4 mb-1 mt-3 text-headline text-label",
-  h5: "wikios-ve-h5 mb-1 mt-2.5 text-eyebrow text-label",
+  h5: "wikios-ve-h5 mb-1 mt-2 text-eyebrow text-label",
   h6: "wikios-ve-h6 mb-1 mt-2 text-caption font-semibold text-label-secondary",
 };
 
@@ -107,7 +107,7 @@ function ElementRenderer(props: any) {
       return (
         <blockquote
           {...attributes}
-          className="border-tint/40 bg-tint/5 text-label-secondary my-2 border-l-4 px-3 py-1.5 italic"
+          className="border-tint/40 bg-tint/5 text-label-secondary my-2 border-l-4 px-3 py-2 italic"
         >
           {children}
         </blockquote>
@@ -191,7 +191,7 @@ function ElementRenderer(props: any) {
       return (
         <th
           {...attributes}
-          className="border-separator bg-fill-2 text-label focus-within:ring-tint/50 focus-within:bg-tint/10 min-w-[90px] border p-2.5 text-left font-semibold transition-colors focus-within:ring-1"
+          className="border-separator bg-fill-2 text-label focus-within:ring-tint/50 focus-within:bg-tint/10 min-w-[90px] border p-3 text-left font-semibold transition-colors focus-within:ring-1"
         >
           {children}
         </th>
@@ -200,7 +200,7 @@ function ElementRenderer(props: any) {
       return (
         <td
           {...attributes}
-          className="border-separator text-label focus-within:ring-tint/50 focus-within:bg-tint/5 min-w-[90px] border p-2.5 transition-colors focus-within:ring-1"
+          className="border-separator text-label focus-within:ring-tint/50 focus-within:bg-tint/5 min-w-[90px] border p-3 transition-colors focus-within:ring-1"
         >
           {children}
         </td>
@@ -242,7 +242,7 @@ function ElementRenderer(props: any) {
         <span
           {...attributes}
           contentEditable={false}
-          className="rounded-control-sm bg-fill-2 border-separator text-footnote text-label hover:bg-fill-3 mx-0.5 inline-flex items-center gap-1 border px-1.5 py-0.5 align-baseline tabular-nums transition-colors select-none"
+          className="rounded-control-sm bg-fill-2 border-separator text-footnote text-label hover:bg-fill-3 mx-0.5 inline-flex items-center gap-1 border px-2 py-0.5 align-baseline tabular-nums transition-colors select-none"
         >
           <span className="text-tint font-semibold">{"{{"}</span>
           <span>{element.templateName || (element as any).name || "template"}</span>

@@ -66,7 +66,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "rounded-control text-eyebrow shadow-card inline-flex items-center gap-1 border px-2.5 py-1",
+            "rounded-control text-eyebrow shadow-card inline-flex items-center gap-1 border px-3 py-1",
             card.wikiSource === "iiwiki"
               ? "border-green/30 bg-green/15 text-green"
               : "border-wiki/30 bg-wiki/15 text-wiki"
@@ -78,7 +78,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
 
         {resolvedCategory && categoryLabel && (
           <span
-            className="border-separator bg-surface text-label rounded-control text-footnote shadow-card inline-flex items-center gap-1.5 border px-2.5 py-1 font-semibold"
+            className="border-separator bg-surface text-label rounded-control text-footnote shadow-card inline-flex items-center gap-2 border px-3 py-1 font-semibold"
             style={
               categoryTheme
                 ? {
@@ -99,7 +99,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         )}
 
         {cleanAuthor && (
-          <span className="rounded-control border-yellow/30 bg-yellow/15 text-footnote text-yellow shadow-card inline-flex items-center gap-1 border px-2.5 py-1 font-semibold">
+          <span className="rounded-control border-yellow/30 bg-yellow/15 text-footnote text-yellow shadow-card inline-flex items-center gap-1 border px-3 py-1 font-semibold">
             <PenTool className="text-yellow h-3 w-3" />
             {cleanAuthor}
           </span>

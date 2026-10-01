@@ -17,6 +17,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { sanitizeUserContent } from "~/lib/utils";
 
 import type { StashedPageItem } from "./types";
+import { Button } from "~/components/ui/button";
 
 interface StashPagesListProps {
   items: StashedPageItem[];
@@ -77,7 +78,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                   <h3 className="text-headline text-label group-hover/title:text-tint truncate transition-colors">
                     {cleanTitle}
                   </h3>
-                  <div className="text-footnote text-label-secondary flex flex-wrap items-center gap-2.5 pt-0.5">
+                  <div className="text-footnote text-label-secondary flex flex-wrap items-center gap-2 pt-0.5">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(item.savedAt).toLocaleDateString("en-US", {
@@ -106,24 +107,26 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(`/wiki/${item.pageSlug}`)}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Read article"
                 >
                   <span>Read</span>
                   <ArrowRight className="h-3 w-3" />
                 </Link>
 
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="icon-sm"
+                  aria-label="Remove from collection"
                   onClick={(e) => {
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-7 w-7 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Remove from collection"
+                  className="bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
 

@@ -290,25 +290,25 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
           <div
             className={cn(
-              "pointer-events-none absolute top-1.5 left-1.5 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
+              "pointer-events-none absolute top-2 left-2 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute top-1.5 right-1.5 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
+              "pointer-events-none absolute top-2 right-2 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute bottom-1.5 left-1.5 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
+              "pointer-events-none absolute bottom-2 left-2 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute right-1.5 bottom-1.5 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
+              "pointer-events-none absolute right-2 bottom-2 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
@@ -475,13 +475,13 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 const hideLabel = isNsImportLabel && !categoryLabel;
                 if (hideLabel) {
                   return (
-                    <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-1.5 font-semibold tracking-wider text-amber-400 uppercase">
+                    <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-amber-400 uppercase">
                       <span>{designMeta.customSubtitle || card.rarity}</span>
                     </p>
                   );
                 }
                 return (
-                  <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-1.5 font-semibold tracking-wider text-white/80 uppercase">
+                  <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-white/80 uppercase">
                     {showLabel ? (
                       <>
                         <span>{categoryLabel}</span>
@@ -510,7 +510,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               {/* Stat bars — ONLY for nation/NS_IMPORT cards (numeric stats are dropped for lore categories) */}
               {!hideStats && !isLoreCard && Object.keys(stats.base).length > 0 && (
                 <div className="space-y-2">
-                  <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-1.5">
+                  <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-2">
                     {Object.entries(stats.base).map(([key, stat]) => (
                       <div key={key} className="flex-1 space-y-0.5">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
@@ -537,7 +537,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   <div className="text-footnote line-clamp-2 leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>
-                  <div className="text-footnote mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-white/50">
+                  <div className="text-footnote mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-white/50">
                     <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>

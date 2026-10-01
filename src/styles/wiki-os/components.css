@@ -49,50 +49,6 @@
 
   /* Main Left/Center Interactive Viewport Pane */
 
-  /* Top-Right Corner Dismiss Button */
-
-  .wikios-lightbox-top-close-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 32px;
-    padding: 0 12px 0 10px;
-    border-radius: 9999px;
-    border: 1px solid var(--color-separator);
-    background: var(--color-surface-elevated);
-    color: var(--color-label);
-    cursor: pointer;
-    box-shadow: var(--shadow-card);
-    transition:
-      background 120ms ease-out,
-      border-color 120ms ease-out,
-      color 120ms ease-out,
-      transform 100ms ease-out;
-  }
-
-  .wikios-lightbox-top-close-btn:hover {
-    background: color-mix(in srgb, var(--color-red) 28%, transparent);
-    border-color: color-mix(in srgb, var(--color-red) 50%, transparent);
-    color: var(--color-label);
-  }
-
-  .wikios-lightbox-top-close-btn:active {
-    transform: scale(0.92);
-  }
-
-  [data-theme="light"] .wikios-lightbox-top-close-btn {
-    background: var(--color-surface-elevated);
-    border-color: var(--color-separator);
-    color: var(--wikios-text);
-    box-shadow: var(--shadow-card);
-  }
-
-  [data-theme="light"] .wikios-lightbox-top-close-btn:hover {
-    background: color-mix(in srgb, var(--color-red) 15%, transparent);
-    border-color: color-mix(in srgb, var(--color-red) 40%, transparent);
-    color: var(--color-red);
-  }
-
   /* Floating Facet Bottom Dock (Apple Photos / Quick Look Style) */
 
   .wikios-lightbox-bottom-dock {
@@ -152,58 +108,6 @@
     border-color: var(--color-separator);
   }
 
-  .wikios-lightbox-icon-btn,
-  .wikios-lightbox-pill-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 26px;
-    border-radius: 9999px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    transition:
-      background 120ms ease-out,
-      color 120ms ease-out,
-      transform 100ms ease-out;
-  }
-
-  .wikios-lightbox-icon-btn {
-    width: 26px;
-    padding: 0;
-  }
-
-  .wikios-lightbox-pill-btn {
-    padding: 0 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    min-width: 46px;
-  }
-
-  .wikios-lightbox-icon-btn:hover,
-  .wikios-lightbox-pill-btn:hover {
-    background: var(--color-fill-2);
-    color: var(--color-label);
-  }
-
-  [data-theme="light"] .wikios-lightbox-icon-btn:hover,
-  [data-theme="light"] .wikios-lightbox-pill-btn:hover {
-    background: var(--color-fill-3);
-    color: var(--wikios-text);
-  }
-
-  .wikios-lightbox-icon-btn:active,
-  .wikios-lightbox-pill-btn:active {
-    transform: scale(0.94);
-  }
-
-  .wikios-lightbox-icon-btn:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    transform: none;
-  }
-
   .wikios-lightbox-v-divider {
     width: 1px;
     height: 14px;
@@ -213,50 +117,6 @@
 
   [data-theme="light"] .wikios-lightbox-v-divider {
     background: var(--color-fill-2);
-  }
-
-  .wikios-lightbox-action-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 9999px;
-    border: 1px solid var(--color-separator);
-    background: var(--color-fill-3);
-    color: inherit;
-    cursor: pointer;
-    transition:
-      background 120ms ease-out,
-      color 120ms ease-out,
-      border-color 120ms ease-out,
-      transform 100ms ease-out;
-    text-decoration: none;
-  }
-
-  .wikios-lightbox-action-btn:hover {
-    background: var(--color-fill-2);
-    color: var(--color-label);
-  }
-
-  .wikios-lightbox-action-btn--active {
-    background: color-mix(in srgb, var(--tint) 30%, transparent);
-    border-color: color-mix(in srgb, var(--tint) 55%, transparent);
-    color: var(--tint);
-  }
-
-  [data-theme="light"] .wikios-lightbox-action-btn {
-    background: var(--color-fill-4);
-    border-color: var(--color-separator);
-  }
-
-  [data-theme="light"] .wikios-lightbox-action-btn:hover {
-    background: var(--color-fill-3);
-    color: var(--wikios-text);
-  }
-
-  .wikios-lightbox-action-btn:active {
-    transform: scale(0.92);
   }
 
   /* Main Interactive Stage */
@@ -416,27 +276,6 @@
     border-color: var(--color-separator);
   }
 
-  .wikios-lightbox-flank-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 9999px;
-    border: none;
-    background: transparent;
-    color: var(--wikios-text-dim, #a1a1aa);
-    cursor: pointer;
-    transition:
-      background 120ms ease,
-      color 120ms ease;
-  }
-
-  .wikios-lightbox-flank-close:hover {
-    background: var(--wikios-surface-hover, var(--color-fill-3));
-    color: var(--wikios-text, #ffffff);
-  }
-
   .wikios-lightbox-flank-box {
     border-radius: 12px;
     border: 1px solid var(--wikios-border, var(--color-separator));
@@ -456,75 +295,6 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--wikios-text-dim, #a1a1aa);
-  }
-
-  .wikios-lightbox-flank-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border: 1px solid var(--wikios-border, var(--color-separator));
-    background: var(--wikios-surface-card, var(--color-fill-4));
-    color: inherit;
-    cursor: pointer;
-    transition:
-      background 120ms ease,
-      border-color 120ms ease,
-      transform 100ms ease;
-  }
-
-  .wikios-lightbox-flank-btn:hover {
-    background: var(--wikios-surface-hover, var(--color-fill-3));
-    border-color: var(--wikios-border-focus, color-mix(in srgb, var(--tint) 50%, transparent));
-  }
-
-  .wikios-lightbox-flank-btn:active {
-    transform: scale(0.95);
-  }
-
-  [data-theme="light"] .wikios-lightbox-flank-btn {
-    border-color: var(--color-separator);
-    background: var(--color-fill-4);
-  }
-
-  [data-theme="light"] .wikios-lightbox-flank-btn:hover {
-    background: var(--color-fill-3);
-    border-color: var(--color-separator);
-  }
-
-  .wikios-lightbox-flank-stash {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 7px 12px;
-    border-radius: 9px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border: 1px solid color-mix(in srgb, var(--color-green) 35%, transparent);
-    background: color-mix(in srgb, var(--color-green) 12%, transparent);
-    color: var(--color-green);
-    cursor: pointer;
-    transition:
-      background 120ms ease,
-      transform 100ms ease;
-  }
-
-  .wikios-lightbox-flank-stash:hover {
-    background: color-mix(in srgb, var(--color-green) 22%, transparent);
-    color: var(--color-green);
-  }
-
-  .wikios-lightbox-flank-stash:active {
-    transform: scale(0.96);
-  }
-
-  .wikios-lightbox-flank-stash:disabled {
-    opacity: 0.7;
-    cursor: default;
   }
 
   .wikios-lightbox-side-link {
@@ -791,27 +561,6 @@
     border-top: 1px solid var(--wikios-border);
     padding-top: 6px;
     margin-top: 6px;
-  }
-
-  .wikios-stash-popover-action {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    width: 100%;
-    padding: 4px 6px;
-    border: none;
-    background: transparent;
-    color: var(--wikios-text-dim);
-    font-size: 0.75rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: 0.15s;
-    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
-  }
-
-  .wikios-stash-remove:hover {
-    background: color-mix(in srgb, var(--color-red) 10%, transparent);
-    color: var(--color-red);
   }
 
   /* Popover empty state */
@@ -1168,42 +917,6 @@
     flex-wrap: wrap;
     gap: 6px;
     padding: 8px 0;
-  }
-
-  .wikios-commons-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--wikios-accent);
-    background: color-mix(in srgb, var(--tint) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--tint) 20%, transparent);
-    cursor: pointer;
-    transition: 0.15s;
-    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
-  }
-
-  .wikios-commons-chip:hover {
-    background: color-mix(in srgb, var(--tint) 18%, transparent);
-  }
-
-  .wikios-commons-chip--browse {
-    color: var(--wikios-text-muted);
-    background: var(--color-fill-4);
-    border-color: var(--wikios-border);
-    cursor: default;
-  }
-
-  .wikios-commons-chip--browse button {
-    cursor: pointer;
-    opacity: 0.6;
-  }
-
-  .wikios-commons-chip--browse button:hover {
-    opacity: 1;
   }
 
   /* Three-panel layout */

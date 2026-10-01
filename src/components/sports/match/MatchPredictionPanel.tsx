@@ -6,7 +6,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { soundCues } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 type Outcome = "home" | "away" | "draw";
 
@@ -76,30 +76,28 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2">
+          <RadioCardGroup
+            aria-label="Predicted outcome"
+            value={outcome}
+            onValueChange={(v) => setOutcome(v as Outcome)}
+            className="grid grid-cols-3 gap-2"
+          >
             {options.map((o) => (
-              <button
+              <RadioCard
                 key={o.id}
-                type="button"
-                onClick={() => {
-                  setOutcome(o.id);
-                }}
-                className={cn(
-                  "rounded-row text-footnote border px-2 py-2 font-semibold transition",
-                  outcome === o.id
-                    ? "border-green/40 bg-green/15 text-green"
-                    : "border-separator text-label-secondary hover:text-label"
-                )}
+                value={o.id}
+                indicator={false}
+                className="text-footnote flex-col items-stretch gap-0 px-2 py-2 text-center font-semibold"
               >
                 <span className="block truncate">{o.label}</span>
                 {data && (
-                  <span className="text-label-secondary block font-normal">
+                  <span className="text-label-secondary block font-normal tabular-nums">
                     {data.pool[o.id].toLocaleString()}
                   </span>
                 )}
-              </button>
+              </RadioCard>
             ))}
-          </div>
+          </RadioCardGroup>
           <div className="flex items-center gap-2">
             <Input
               type="number"

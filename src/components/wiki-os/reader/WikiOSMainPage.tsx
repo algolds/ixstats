@@ -114,7 +114,7 @@ function BlurbPromptModal({
         </DialogHeader>
 
         {/* Responses */}
-        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2.5 overflow-y-auto px-5 py-3">
+        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
             <p className="text-label-secondary text-body py-6 text-center">
               No responses yet. Be the first!
@@ -125,11 +125,11 @@ function BlurbPromptModal({
             <div
               key={r.id}
               className={cn(
-                "rounded-card border p-3.5",
+                "rounded-card border p-4",
                 r.featured ? "border-yellow/30 bg-yellow/5" : "bg-fill-4 border-separator"
               )}
             >
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2">
                 {r.country?.flag && (
                   <img
                     src={r.country.flag}
@@ -172,7 +172,7 @@ function BlurbPromptModal({
         <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
             href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="text-footnote text-tint hover:text-wiki-hover inline-flex items-center gap-1.5 transition-colors"
+            className="text-footnote text-tint hover:text-wiki-hover inline-flex items-center gap-2 transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt

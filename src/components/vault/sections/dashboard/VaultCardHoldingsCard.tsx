@@ -30,19 +30,21 @@ export function VaultCardHoldingsCard({
   return (
     <FacetCard padding="lg" className="overflow-hidden">
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
             <Layers className="text-tint h-4.5 w-4.5" />
           </div>
           <span className="text-label-secondary text-eyebrow">Card Holdings</span>
         </div>
         {featuredCards.length > 0 && (
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => onNavigate?.("cards")}
-            className="text-footnote text-yellow flex items-center gap-1 font-semibold transition-transform hover:underline active:scale-95"
+            className="text-footnote text-yellow h-auto gap-1 px-0 font-semibold"
           >
             Manage Portfolio <ArrowRight className="h-3 w-3" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -63,7 +65,7 @@ export function VaultCardHoldingsCard({
             onClick={() => onNavigate?.("import")}
             className="border-yellow/30 bg-yellow/10 text-footnote text-yellow hover:bg-yellow/20 h-8 rounded-full font-semibold active:scale-95"
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> NS Import
+            <Download className="mr-2 h-3.5 w-3.5" /> NS Import
           </Button>
         </div>
       ) : (

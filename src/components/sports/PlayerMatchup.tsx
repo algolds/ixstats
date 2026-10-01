@@ -134,7 +134,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
           const pctA = total > 0 ? (valA / total) * 100 : 50;
 
           return (
-            <div key={key} className="space-y-1.5">
+            <div key={key} className="space-y-2">
               <div className="text-footnote flex justify-between font-semibold">
                 <span
                   className={cn(

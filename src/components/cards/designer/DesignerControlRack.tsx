@@ -16,6 +16,7 @@ import { RackAppearanceSection } from "./rack/RackAppearanceSection";
 import { RackEconomySection } from "./rack/RackEconomySection";
 import { RackPresetsSection } from "./rack/RackPresetsSection";
 import { RackPublishBar } from "./rack/RackPublishBar";
+import { Button } from "~/components/ui/button";
 
 export interface DesignerControlRackProps {
   state: CardDesignState;
@@ -58,10 +59,12 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
       <div className="flex flex-col space-y-4">
         {/* Section 1: Overview & Basic Info */}
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.identity}
             onClick={() => toggleSection("identity")}
-            className="text-label hover:bg-fill-3 text-headline flex w-full items-center justify-between p-4 transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
               <BookOpen className="text-tint h-4 w-4" />
@@ -73,7 +76,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
                 openSections.identity && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.identity && (
             <div className="border-separator space-y-4 border-t p-4 pt-0">
@@ -88,10 +91,12 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
 
         {/* Section 2: Appearance & Artwork */}
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.materials}
             onClick={() => toggleSection("materials")}
-            className="text-label hover:bg-fill-3 text-headline flex w-full items-center justify-between p-4 transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
               <Gem className="text-tint h-4 w-4" />
@@ -103,7 +108,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
                 openSections.materials && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.materials && (
             <div className="border-separator space-y-4 border-t p-4 pt-0">
@@ -118,10 +123,12 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
 
         {/* Section 3: Economy & Print Supply */}
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.economy}
             onClick={() => toggleSection("economy")}
-            className="text-label hover:bg-fill-3 text-headline flex w-full items-center justify-between p-4 transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
               <Coins className="text-tint h-4 w-4" />
@@ -133,7 +140,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
                 openSections.economy && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.economy && (
             <div className="border-separator space-y-3 border-t p-4 pt-0">
@@ -144,10 +151,12 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
 
         {/* Section 4: Design Presets */}
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.presets}
             onClick={() => toggleSection("presets")}
-            className="text-label hover:bg-fill-3 text-headline flex w-full items-center justify-between p-4 transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
               <FolderOpen className="text-tint h-4 w-4" />
@@ -159,7 +168,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
                 openSections.presets && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.presets && (
             <div className="border-separator space-y-3 border-t p-4 pt-0">

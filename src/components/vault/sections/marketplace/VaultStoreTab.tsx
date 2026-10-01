@@ -376,7 +376,7 @@ export function VaultStoreTab() {
                       marketplace to get some!
                     </p>
                     <Button size="sm" onClick={() => setStoreTab("boosters")}>
-                      <Store className="mr-1.5 h-3.5 w-3.5" /> Browse Marketplace
+                      <Store className="mr-2 h-3.5 w-3.5" /> Browse Marketplace
                     </Button>
                   </div>
                 ))}

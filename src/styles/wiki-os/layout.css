@@ -26,28 +26,6 @@
 
   /* Action buttons (used on error pages etc.) */
 
-  .wikios-action-btn {
-    display: inline-flex;
-    align-items: center;
-    height: 30px;
-    padding: 0 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--wikios-accent);
-    background: color-mix(in srgb, var(--tint) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--tint) 20%, transparent);
-    text-decoration: none;
-    transition:
-      background 0.15s,
-      border-color 0.15s;
-  }
-
-  .wikios-action-btn:hover {
-    background: color-mix(in srgb, var(--tint) 18%, transparent);
-    border-color: color-mix(in srgb, var(--tint) 35%, transparent);
-  }
-
   /* ---------------------------------------------------------------------------
      Body Layout
      --------------------------------------------------------------------------- */

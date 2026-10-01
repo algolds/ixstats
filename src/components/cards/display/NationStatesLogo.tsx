@@ -36,7 +36,7 @@ export function NationStatesBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "rounded-control-sm border-blue/30 bg-blue/20 shadow-card inline-flex items-center justify-center gap-1 border px-1.5 py-0.5",
+        "rounded-control-sm border-blue/30 bg-blue/20 shadow-card inline-flex items-center justify-center gap-1 border px-2 py-0.5",
         className
       )}
       title="NationStates Card"

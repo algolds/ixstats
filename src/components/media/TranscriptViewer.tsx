@@ -42,7 +42,7 @@ export function TranscriptViewer() {
               ref={isActive ? activeRef : null}
               onClick={() => seekTrack(seg.startTime)}
               className={cn(
-                "rounded-control-sm text-footnote duration-fast cursor-pointer border p-1.5 leading-relaxed transition-colors",
+                "rounded-control-sm text-footnote duration-fast cursor-pointer border p-2 leading-relaxed transition-colors",
                 isActive
                   ? "border-tint/20 bg-tint-fill text-tint pl-2 font-medium"
                   : "text-label-secondary hover:bg-fill-4 hover:text-label border-transparent"

@@ -54,7 +54,7 @@ export function EditorialMastheadHeader({
       />
 
       {/* Top Bar: Breadcrumb */}
-      <div className="text-label-secondary text-eyebrow mb-3.5 flex items-center gap-1">
+      <div className="text-label-secondary text-eyebrow mb-4 flex items-center gap-1">
         <CategoryBreadcrumb title={title} />
       </div>
 
@@ -66,16 +66,16 @@ export function EditorialMastheadHeader({
 
       {/* Metadata & Awards Ledger */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-1">
-        <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-3.5 gap-y-2">
+        <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-4 gap-y-2">
           {/* Author Attribution */}
           {creatorName && (
-            <div className="flex items-center gap-1.5 font-medium">
+            <div className="flex items-center gap-2 font-medium">
               <span className="text-label-secondary text-footnote font-normal">Author:</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-1.5 rounded-full border bg-black/5 px-2.5 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 {creatorAvatar ? (
                   <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
@@ -101,14 +101,14 @@ export function EditorialMastheadHeader({
           {lastEditorName &&
             creatorName &&
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
-              <div className="flex items-center gap-1.5 font-medium">
+              <div className="flex items-center gap-2 font-medium">
                 <span className="text-label-secondary select-none">•</span>
                 <span className="text-label-secondary text-footnote font-normal">Updated by:</span>
                 <Link
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-1.5 rounded-full border bg-black/5 px-2.5 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   {lastEditorAvatar ? (
                     <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
@@ -132,11 +132,11 @@ export function EditorialMastheadHeader({
 
           {/* Updated Timestamp */}
           {lastModified && (
-            <div className="text-label-secondary text-footnote flex items-center gap-1.5">
+            <div className="text-label-secondary text-footnote flex items-center gap-2">
               {(creatorName || lastEditorName) && (
                 <span className="text-label-secondary select-none">•</span>
               )}
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 <Calendar className="text-label-secondary h-3.5 w-3.5" />
                 {new Date(lastModified).toLocaleDateString(undefined, {
                   month: "short",
@@ -154,7 +154,7 @@ export function EditorialMastheadHeader({
             <PopoverTrigger asChild>
               <button
                 className={cn(
-                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
                   badgeConfig.classes,
                   showCelebration &&
                     primaryAward.category === "LOREWARD" &&
@@ -182,7 +182,7 @@ export function EditorialMastheadHeader({
               side="bottom"
               align="end"
               sideOffset={8}
-              className="text-footnote w-72 space-y-2.5 p-3.5"
+              className="text-footnote w-72 space-y-2 p-4"
             >
               <div className="text-label-secondary text-eyebrow text-left">
                 Article Distinctions

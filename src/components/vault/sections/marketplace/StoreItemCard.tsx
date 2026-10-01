@@ -147,7 +147,7 @@ export function StoreItemCard({
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div
             className={cn(
-              "rounded-row bg-surface-secondary mb-2 border p-3.5 shadow-inner",
+              "rounded-row bg-surface-secondary mb-2 border p-4 shadow-inner",
               colors.border
             )}
           >
@@ -160,7 +160,7 @@ export function StoreItemCard({
         </div>
 
         {/* Card Button / Footer */}
-        <div className="border-separator flex w-full flex-col gap-1 border-t pt-1.5">
+        <div className="border-separator flex w-full flex-col gap-1 border-t pt-2">
           {item.category === "cosmetics" && onPreview && (
             <Button
               variant="outline"

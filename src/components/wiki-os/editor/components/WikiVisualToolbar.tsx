@@ -32,6 +32,7 @@ import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { WikiEditorHeader } from "./WikiEditorHeader";
+import { Button } from "~/components/ui/button";
 
 export interface WikiVisualToolbarProps {
   title: string;
@@ -284,11 +285,7 @@ export function WikiVisualToolbar({
             onClick={insertHR}
           />
           <VEBtn
-            icon={
-              <span className="wikios-ve-heading-label" style={{ fontSize: 9 }}>
-                ref
-              </span>
-            }
+            icon={<span className="wikios-ve-heading-label">ref</span>}
             title="Insert reference"
             onClick={insertRef}
           />
@@ -325,20 +322,20 @@ function VEBtn({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      data-cuelume-press="droplet"
+    <Button
+      variant={active ? "tinted" : "ghost"}
+      size="icon-sm"
+      aria-pressed={active}
+      // mousedown (not click) so the editor keeps its selection.
       onMouseDown={(e) => {
         e.preventDefault();
         onClick();
       }}
-      className={cn(
-        "wikios-ve-toolbar-btn transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
-        active && "wikios-ve-toolbar-btn-active font-semibold"
-      )}
+      className={cn("w-8", !active && "text-label-secondary")}
       title={title}
+      aria-label={title}
     >
       {icon}
-    </button>
+    </Button>
   );
 }

@@ -11,7 +11,6 @@ import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPa
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import {
-  Search,
   Xmark as X,
   Globe,
   Database,
@@ -19,11 +18,13 @@ import {
   Folder,
   Sparks as Sparkles,
 } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
+import { SearchField } from "~/components/ui/search-field";
 
 interface CommonsImage {
   pageid: number;
@@ -342,14 +343,16 @@ export default function RepositoryPage() {
         {/* Header bar */}
         <div className="wikios-commons-header flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="wikios-commons-header-left flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Open Welcome Guide"
               onClick={() => setWelcomeOpen(true)}
-              className="text-label-secondary hover:bg-fill-4 hover:text-tint cursor-pointer rounded-full p-1 transition-colors active:scale-[0.98]"
               title="Open Welcome Guide"
-              type="button"
+              className="text-label-secondary hover:text-tint rounded-full"
             >
               <HelpCircle className="h-4 w-4" />
-            </button>
+            </Button>
             <SegmentedControl
               asTabs
               aria-label="Repository sources"
@@ -381,7 +384,7 @@ export default function RepositoryPage() {
               variant="outline"
               size="sm"
               onClick={() => setMobileCategoriesOpen(true)}
-              className="text-footnote border-separator hover:bg-fill-3 flex h-8 items-center gap-1.5 px-2.5 active:scale-[0.98] lg:hidden"
+              className="text-footnote border-separator hover:bg-fill-3 flex h-8 items-center gap-2 px-3 active:scale-[0.98] lg:hidden"
               title="Browse Categories"
             >
               <Folder className="text-tint h-3.5 w-3.5" />
@@ -389,41 +392,25 @@ export default function RepositoryPage() {
             </Button>
           </div>
 
-          <div className="rounded-control border-separator bg-fill-3 focus-within:border-separator flex flex-1 items-center gap-2 border px-3 py-1.5 transition-colors">
-            <Search className="text-label-secondary pointer-events-none h-4 w-4 shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder={
-                tab === "commons"
-                  ? 'Search Commons... e.g. "medieval castle", "15th century portrait"'
-                  : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files... e.g. "map", "flag"`
-              }
-              className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  handleSearch("");
-                  setAllImages([]);
-                }}
-                className="text-label-secondary hover:text-label hover:bg-fill-3 cursor-pointer rounded-full p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                title="Clear search"
-                aria-label="Clear search"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+          <SearchField
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            onClear={() => setAllImages([])}
+            placeholder={
+              tab === "commons"
+                ? 'Search Commons... e.g. "medieval castle", "15th century portrait"'
+                : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files... e.g. "map", "flag"`
+            }
+            aria-label="Search files"
+            containerClassName="flex-1"
+          />
         </div>
 
         {/* Filter controls */}
         <div className="border-separator text-footnote mb-3 flex flex-wrap items-center justify-between gap-4 border-b px-1 pb-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {/* File Type Filter */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span className="text-footnote text-label-secondary select-none">Type:</span>
               <SegmentedControl
                 aria-label="Filter by file type"
@@ -440,7 +427,7 @@ export default function RepositoryPage() {
             </div>
 
             {/* Orientation Filter */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span className="text-footnote text-label-secondary select-none">Orientation:</span>
               <SegmentedControl
                 aria-label="Filter by orientation"
@@ -459,31 +446,34 @@ export default function RepositoryPage() {
 
           {/* Clear filters trigger */}
           {isFilterActive && (
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="sm"
               onClick={handleClearFilters}
-              className="text-caption text-label-secondary hover:text-label cursor-pointer underline underline-offset-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="text-label-secondary h-auto px-0"
             >
               Clear Filters
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Starter Category Exploration Chips when cold start */}
         {tab === "commons" && !isSearchMode && !browsingCategory && (
-          <div className="mb-3 flex flex-wrap items-center gap-1.5 px-1 py-1">
+          <div className="mb-3 flex flex-wrap items-center gap-2 px-1 py-1">
             <span className="text-eyebrow text-label-secondary mr-1 flex items-center gap-1">
               <Sparkles className="text-yellow h-3 w-3" />
               Quick Explore:
             </span>
             {STARTER_CATEGORIES.map((cat) => (
-              <button
+              <Button
+                variant="bordered"
+                size="sm"
                 key={cat.category}
                 onClick={() => handleBrowseCategory(cat.category)}
-                className="border-separator bg-fill-4 text-caption text-label-secondary hover:border-tint/30 hover:bg-tint/10 hover:text-tint inline-flex items-center rounded-full border px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="text-label-secondary hover:text-tint rounded-full"
               >
                 {cat.label}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -492,14 +482,17 @@ export default function RepositoryPage() {
         {tab === "commons" && activeCategories.length > 0 && (
           <div className="wikios-commons-chips">
             {activeCategories.map((cat) => (
-              <button
+              <Button
+                variant="tinted"
+                size="sm"
+                aria-label={`Remove ${cat}`}
                 key={cat}
                 onClick={() => handleToggleCategory(cat)}
-                className="wikios-commons-chip transition-transform active:scale-[0.98]"
+                className="rounded-full"
               >
                 {cat}
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -507,18 +500,21 @@ export default function RepositoryPage() {
         {/* Browsing category label */}
         {browsingCategory && !isSearchMode && (
           <div className="wikios-commons-chips">
-            <span className="wikios-commons-chip wikios-commons-chip--browse">
+            <Badge variant="neutral" className="gap-1 py-0 pr-0.5">
               Browsing: {browsingCategory}
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Stop browsing category"
                 onClick={() => {
                   setBrowsingCategory(null);
                   setAllImages([]);
                 }}
-                className="transition-transform active:scale-[0.98]"
+                className="size-5 rounded-full"
               >
                 <X className="h-3 w-3" />
-              </button>
-            </span>
+              </Button>
+            </Badge>
           </div>
         )}
 

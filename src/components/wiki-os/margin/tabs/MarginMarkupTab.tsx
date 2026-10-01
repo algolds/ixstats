@@ -23,6 +23,7 @@ import { soundCues } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { MarginShareModal } from "../modals/MarginShareModal";
+import { Button } from "~/components/ui/button";
 
 interface AnnotationItem {
   id: string;
@@ -156,7 +157,7 @@ export function MarginMarkupTab({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       {/* Header Info & Export Action */}
       <div className="border-separator text-footnote text-label-secondary flex items-center justify-between border-b pb-2">
         <span className="text-caption text-label font-semibold">
@@ -164,10 +165,10 @@ export function MarginMarkupTab({
         </span>
 
         {annotations.length > 0 && (
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={handleExportAllMarkdown}
-            className="bg-margin-accent hover:bg-margin-accent/90 rounded-control border-yellow/50 text-caption flex cursor-pointer items-center gap-1 border px-2.5 py-0.5 font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+            className="bg-margin-accent hover:bg-margin-accent-hover text-(--margin-badge-text)"
           >
             {copiedAll ? (
               <>
@@ -180,7 +181,7 @@ export function MarginMarkupTab({
                 <span>Export notes</span>
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -194,8 +195,8 @@ export function MarginMarkupTab({
 
       {/* Empty State */}
       {!isLoading && annotations.length === 0 && (
-        <div className="text-label-secondary space-y-1.5 py-12 text-center">
-          <div className="bg-margin-accent/20 rounded-card border-yellow/50 text-yellow mx-auto mb-2.5 flex h-10 w-10 items-center justify-center border">
+        <div className="text-label-secondary space-y-2 py-12 text-center">
+          <div className="bg-margin-accent/20 rounded-card border-yellow/50 text-yellow mx-auto mb-2 flex h-10 w-10 items-center justify-center border">
             <Highlighter className="h-5 w-5 opacity-90" />
           </div>
           <p className="text-caption text-label font-semibold">No highlights yet</p>
@@ -207,7 +208,7 @@ export function MarginMarkupTab({
 
       {/* Annotation List */}
       {!isLoading && annotations.length > 0 && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {annotations.map((ann) => {
             const isSelected = selectedAnnotationId === ann.id;
             const isStashedQuote = ann.comment === "Saved quote";
@@ -242,13 +243,13 @@ export function MarginMarkupTab({
 
                 {/* Top Metadata Row: Swatch indicator, Type tag, Actions */}
                 <div className="text-footnote flex items-center justify-between gap-1 pl-1">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full ring-1 ring-white/20"
                       style={{ backgroundColor: swatchColor }}
                     />
                     {isStashedQuote ? (
-                      <span className="py-0.2 rounded-control-sm border-red/25 bg-red/15 text-eyebrow text-red flex items-center gap-1 border px-1.5">
+                      <span className="py-0.2 rounded-control-sm border-red/25 bg-red/15 text-eyebrow text-red flex items-center gap-1 border px-2">
                         <Bookmark className="h-2.5 w-2.5" /> Quote
                       </span>
                     ) : (
@@ -258,47 +259,53 @@ export function MarginMarkupTab({
 
                   {/* Micro Actions (Visible on hover or mobile) */}
                   <div className="flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShareTarget({ quote: ann.selectedText, note: ann.comment });
                       }}
-                      className="rounded-control text-label-secondary hover:bg-fill-4 hover:text-label cursor-pointer p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                      className="text-label-secondary"
                       title="Share and export"
+                      aria-label="Share and export"
                     >
-                      <Share2 className="h-3 w-3" />
-                    </button>
+                      <Share2 className="size-3" />
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopy(ann.id, ann.selectedText);
                       }}
-                      className="rounded-control text-label-secondary hover:bg-fill-4 hover:text-label cursor-pointer p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                      className="text-label-secondary"
                       title="Copy quote"
+                      aria-label="Copy quote"
                     >
                       {copiedId === ann.id ? (
                         <Check className="text-green h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
-                    </button>
+                    </Button>
 
                     {isAuthenticated && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteAnnotationMutation.mutate({ id: ann.id });
                         }}
                         disabled={deleteAnnotationMutation.isPending}
-                        className="rounded-control text-label-secondary hover:bg-red/10 hover:text-red cursor-pointer p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                        className="text-label-secondary hover:bg-red/10 hover:text-red"
                         title="Delete highlight"
+                        aria-label="Delete highlight"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        <Trash2 className="size-3" />
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -321,17 +328,18 @@ export function MarginMarkupTab({
 
                 {/* Bottom Action Strip */}
                 <div className="border-separator text-footnote flex items-center justify-between border-t pt-1">
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJumpToText(ann.selectedText);
                     }}
-                    className="group/jump text-label hover:text-yellow flex cursor-pointer items-center gap-1 font-semibold transition-transform duration-100 active:scale-[0.98]"
+                    className="group/jump text-label h-auto gap-1 px-0"
                   >
                     <span>Jump to text</span>
-                    <ArrowUpRight className="text-yellow h-3 w-3 transition-transform group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5" />
-                  </button>
+                    <ArrowUpRight className="text-yellow size-3 transition-transform group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5" />
+                  </Button>
 
                   <Link
                     href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(articleTitle)}`}

@@ -7,7 +7,9 @@ import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
 import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
@@ -334,43 +336,39 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
           </div>
 
           {/* Markers Picker */}
-          <div className="shrink-0 space-y-1.5">
-            <label className="text-subhead text-label block">Quick Select Existing Marker</label>
+          <div className="shrink-0 space-y-2">
+            <h4 className="text-subhead text-label block">Quick Select Existing Marker</h4>
             <div className="border-separator divide-separator bg-fill-4 rounded-control text-footnote max-h-36 scrollbar-thin divide-y overflow-y-auto border">
               {isMapBundleLoading && (
-                <div className="text-label-secondary flex items-center gap-1.5 p-3">
+                <div className="text-label-secondary flex items-center gap-2 p-3">
                   <Loader2 className="text-label-secondary h-3 w-3 animate-spin" /> Loading
                   features...
                 </div>
               )}
-              {!isMapBundleLoading &&
-                cities.map((c: any) => (
-                  <button
-                    key={`city-${c.id}`}
-                    type="button"
-                    onClick={() => handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)}
-                    className="hover:bg-fill-3 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
-                  >
-                    <span className="text-headline text-label">{c.name}</span>
-                    <span className="text-label-secondary text-eyebrow">
-                      {c.isNationalCapital ? "Capital" : "City"}
-                    </span>
-                  </button>
-                ))}
-              {!isMapBundleLoading &&
-                pois.map((p: any) => (
-                  <button
-                    key={`poi-${p.id}`}
-                    type="button"
-                    onClick={() => handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)}
-                    className="hover:bg-fill-3 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
-                  >
-                    <span className="text-label">{p.name}</span>
-                    <span className="bg-fill-3 text-label-secondary text-footnote rounded-full px-1.5 capitalize">
-                      {p.category}
-                    </span>
-                  </button>
-                ))}
+              {!isMapBundleLoading && (cities.length > 0 || pois.length > 0) && (
+                <FacetListSection variant="plain" aria-label="Existing markers">
+                  {cities.map((c: any) => (
+                    <FacetRow
+                      key={`city-${c.id}`}
+                      onClick={() => handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)}
+                      title={c.name}
+                      trailing={c.isNationalCapital ? "Capital" : "City"}
+                    />
+                  ))}
+                  {pois.map((p: any) => (
+                    <FacetRow
+                      key={`poi-${p.id}`}
+                      onClick={() => handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)}
+                      title={p.name}
+                      trailing={
+                        <Badge variant="neutral" className="capitalize">
+                          {p.category}
+                        </Badge>
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              )}
               {!isMapBundleLoading && cities.length === 0 && pois.length === 0 && (
                 <div className="text-label-secondary p-3 text-center">
                   No markers found in database.
@@ -381,7 +379,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
           {/* Shared parameters */}
           <div className="shrink-0 space-y-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-subhead text-label block">
                 {activeTab === "coords" ? "Link Label (Required)" : "Marker Title (Optional)"}
               </label>
@@ -391,11 +389,11 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 placeholder={activeTab === "coords" ? "e.g. Royal Palace" : "e.g. My Capital"}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-2.5 py-1.5"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-2"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-subhead text-label block">Map Zoom level ({zoom})</label>
               <input
                 type="range"
@@ -418,22 +416,22 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
           {/* Embed parameters */}
           {activeTab === "mapembed" && (
             <div className="border-separator shrink-0 space-y-3 border-t pt-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-subhead text-label block">Embed Height (px)</label>
                 <Input
                   type="number"
                   value={embedHeight}
                   onChange={(e) => setEmbedHeight(parseInt(e.target.value) || 400)}
-                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-2.5 py-1"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-1"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-subhead text-label block">Embed Width</label>
                 <Input
                   type="text"
                   value={embedWidth}
                   onChange={(e) => setEmbedWidth(e.target.value)}
-                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-2.5 py-1"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-1"
                 />
               </div>
               <label className="flex cursor-pointer items-center gap-2 py-1">
@@ -487,7 +485,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
               <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
               {/* Status Indicator overlay */}
               <div className="pointer-events-none absolute top-4 left-4 z-10">
-                <div className="border-separator bg-surface text-label rounded-control text-footnote shadow-floating flex items-center gap-2 border p-2.5">
+                <div className="border-separator bg-surface text-label rounded-control text-footnote shadow-floating flex items-center gap-2 border p-3">
                   <Compass className="animate-spin-slow text-green h-4 w-4" />
                   <span>Click on map to capture pin coords</span>
                 </div>

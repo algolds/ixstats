@@ -91,16 +91,18 @@ export function SportsCommandBar({
       {/* Right: Active Focus Indicator & Actions */}
       <div className="flex items-center gap-2">
         {focus && (
-          <div className="bg-tint-fill text-tint text-footnote flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium">
+          <div className="bg-tint-fill text-tint text-footnote flex items-center gap-2 rounded-full px-3 py-1 font-medium">
             <span className="capitalize">{focus.type} Focus</span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Clear Focus"
               onClick={clearFocus}
-              className="hover:text-label cursor-pointer rounded-full p-0.5 transition-colors"
               title="Clear Focus"
+              className="size-5 rounded-full"
             >
               <Xmark className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         )}
 

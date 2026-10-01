@@ -12,6 +12,7 @@ import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
 import { TableVirtuoso } from "react-virtuoso";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import type { Prisma } from "@prisma/client";
+import { Button } from "~/components/ui/button";
 
 export interface DraftPick {
   id: string;
@@ -149,7 +150,7 @@ export function DraftPicksView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Search */}
         <div className="relative max-w-xs flex-1">
-          <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+          <Search className="text-label-secondary absolute top-3 left-3 h-4 w-4" />
           <Input
             placeholder="Search players, teams..."
             className="pl-9"
@@ -212,23 +213,26 @@ export function DraftPicksView({
                       className="h-3 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: pick.team.color ?? "var(--color-text-muted)" }}
                     />
-                    <button
+                    <Button
+                      variant="link"
+                      size="sm"
                       onClick={() => onTeamClick?.(pick.team.id)}
-                      className="cursor-pointer text-left font-medium hover:underline"
+                      className="text-label h-auto px-0 font-medium"
                     >
                       {pick.team.name}
-                    </button>
+                    </Button>
                   </div>
                 </TableCell>
                 <TableCell>
                   {pick.player ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="sm"
                       onClick={() => pick.player?.id && focusAthlete(pick.player.id)}
-                      className="text-label hover:text-tint cursor-pointer text-left font-medium transition-colors hover:underline"
+                      className="text-label hover:text-tint h-auto px-0 font-medium"
                     >
                       {pick.player.firstName} {pick.player.lastName}
-                    </button>
+                    </Button>
                   ) : (
                     <span className="text-label-secondary">Skipped / No Pick</span>
                   )}

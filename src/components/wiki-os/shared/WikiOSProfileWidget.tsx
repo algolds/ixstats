@@ -92,7 +92,7 @@ export function WikiOSProfileWidget({
         <TooltipTrigger asChild>
           <Link
             href={profileHref}
-            className="hover:bg-fill-4 rounded-row flex items-center justify-center px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="hover:bg-fill-4 rounded-row flex items-center justify-center px-3 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             {renderAvatar(true)}
           </Link>
@@ -110,7 +110,7 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={profileHref}
-        className="group rounded-row border-separator bg-surface shadow-floating relative z-50 flex w-max items-center border px-2.5 py-1 pr-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
+        className="group rounded-row border-separator bg-surface shadow-floating relative z-50 flex w-max items-center border px-3 py-1 pr-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
       >
         {renderAvatar(true)}
         <span className="text-caption text-label-secondary group-hover:text-label w-auto flex-1 overflow-hidden pl-3 text-left font-semibold whitespace-nowrap opacity-100">
@@ -132,7 +132,7 @@ export function WikiOSProfileWidget({
       }
     >
       <TextureOverlay texture="chevron" opacity={0.06} className="rounded-row" />
-      <div className="relative z-10 flex items-center gap-2.5">
+      <div className="relative z-10 flex items-center gap-2">
         {renderAvatar(true)}
         <div className="min-w-0 flex-1">
           <div className="text-headline text-label truncate">{displayName}</div>
@@ -146,7 +146,7 @@ export function WikiOSProfileWidget({
 
       <div className="border-separator relative z-10 mt-2 flex flex-col gap-1 border-t pt-2">
         {registration && (
-          <div className="text-footnote text-label-secondary flex items-center gap-1.5">
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
             <Calendar className="text-label-secondary h-3 w-3 shrink-0" />
             <span className="truncate">
               Joined{" "}
@@ -158,19 +158,19 @@ export function WikiOSProfileWidget({
           </div>
         )}
         {editCount != null && (
-          <div className="text-footnote text-label-secondary flex items-center gap-1.5">
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
             <FileText className="text-label-secondary h-3 w-3 shrink-0" />
             <span className="truncate">{editCount.toLocaleString()} edits</span>
           </div>
         )}
         {lorescore > 0 && (
-          <div className="text-footnote text-label-secondary flex items-center gap-1.5">
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
             <Scroll className="text-indigo h-3 w-3 shrink-0" />
             <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
           </div>
         )}
         {lorewards > 0 && (
-          <div className="text-footnote text-label-secondary flex items-center gap-1.5">
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
             <Trophy className="text-yellow h-3 w-3 shrink-0" />
             <span className="truncate">
               {lorewards.toLocaleString()} Loreward{lorewards !== 1 ? "s" : ""} won

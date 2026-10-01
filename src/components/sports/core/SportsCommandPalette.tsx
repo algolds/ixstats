@@ -65,7 +65,7 @@ export function SportsCommandPalette({
           {onSimulateNext && (
             <CommandItem
               onSelect={() => runCommand(onSimulateNext)}
-              className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+              className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
             >
               <Play className="text-tint h-4 w-4 fill-current" />
               <span>Simulate Next Match</span>
@@ -76,7 +76,7 @@ export function SportsCommandPalette({
             <>
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("standings"))}
-                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Trophy className="text-yellow h-4 w-4" />
                 <span>View Standings Matrix</span>
@@ -84,7 +84,7 @@ export function SportsCommandPalette({
 
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("schedule"))}
-                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Calendar className="text-teal h-4 w-4" />
                 <span>View Schedule & Fixtures</span>
@@ -92,7 +92,7 @@ export function SportsCommandPalette({
 
               <CommandItem
                 onSelect={() => runCommand(() => onNavigateSection("history"))}
-                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Book className="text-indigo h-4 w-4" />
                 <span>View Competition Almanac</span>
@@ -110,7 +110,7 @@ export function SportsCommandPalette({
               <CommandItem
                 key={team.id}
                 onSelect={() => runCommand(() => focusOrganization(team.id))}
-                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+                className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
               >
                 <Shield className="text-teal h-4 w-4" />
                 <span>{team.name}</span>
@@ -125,7 +125,7 @@ export function SportsCommandPalette({
         <CommandGroup heading="Portals">
           <CommandItem
             onSelect={() => runCommand(() => router.push(withBasePath("/myleague")))}
-            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
             <Trophy className="text-label-secondary h-4 w-4" />
             <span>Browse Competitions (MyLeague)</span>
@@ -133,7 +133,7 @@ export function SportsCommandPalette({
 
           <CommandItem
             onSelect={() => runCommand(() => router.push(withBasePath("/myclub")))}
-            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2.5 px-3 py-2 font-semibold"
+            className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
             <Shield className="text-label-secondary h-4 w-4" />
             <span>Franchise Headquarters (MyClub)</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
+import { Button } from "~/components/ui/button";
 
 /** The reader's "no such page" state. Only an IxWiki page can be created from WikiOS. */
 export function ArticleNotFound({
@@ -20,13 +21,7 @@ export function ArticleNotFound({
       </p>
       {wikiSource === "ixwiki" && (
         <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={onCreate}
-            className="wikios-action-btn rounded-control bg-tint text-caption text-on-tint hover:bg-tint cursor-pointer px-4 py-2 font-semibold transition-colors"
-          >
-            Create this page
-          </button>
+          <Button onClick={onCreate}>Create this page</Button>
         </div>
       )}
     </div>

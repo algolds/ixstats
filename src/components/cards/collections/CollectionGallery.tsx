@@ -24,6 +24,14 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface CollectionGalleryProps {
   /** Show leaderboard section */
@@ -137,16 +145,17 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
           {/* Sort dropdown */}
           <div className="flex items-center gap-2">
             <Filter className="text-label-secondary h-4 w-4" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-surface-secondary border-separator rounded-control text-body text-label cursor-pointer border border-none px-3 py-2 outline-none"
-            >
-              <option value="newest">Newest</option>
-              <option value="mostValuable">Most Valuable</option>
-              <option value="mostCards">Most Cards</option>
-              <option value="topRated">Top Rated</option>
-            </select>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger aria-label="Sort collections">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="mostValuable">Most Valuable</SelectItem>
+                <SelectItem value="mostCards">Most Cards</SelectItem>
+                <SelectItem value="topRated">Top Rated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -160,27 +169,20 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-title-2 text-label flex items-center gap-2">
-              <Trophy className="text-gold-400 h-5 w-5" />
+              <Trophy className="text-yellow h-5 w-5" />
               Top Collections
             </h2>
-            <div className="flex gap-2">
-              {(["mostValuable", "mostComplete", "mostCards"] as const).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setLeaderboardCategory(cat)}
-                  className={cn(
-                    "rounded-control text-footnote px-3 py-1 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    leaderboardCategory === cat
-                      ? "bg-fill-3 text-label"
-                      : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  {cat === "mostValuable" && "Value"}
-                  {cat === "mostComplete" && "Complete"}
-                  {cat === "mostCards" && "Cards"}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Leaderboard ranking"
+              value={leaderboardCategory}
+              onValueChange={setLeaderboardCategory}
+              options={[
+                { value: "mostValuable", label: "Value" },
+                { value: "mostComplete", label: "Complete" },
+                { value: "mostCards", label: "Cards" },
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -191,13 +193,13 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 className="bg-surface-secondary border-separator rounded-control border p-3 transition-transform"
               >
                 <div className="mb-2 flex items-start justify-between">
-                  <span className="text-gold-400 text-footnote font-semibold">
+                  <span className="text-yellow text-footnote font-semibold">
                     #{collection.rank}
                   </span>
                   {collection.isPublic ? (
                     <Globe className="text-blue h-3 w-3" />
                   ) : (
-                    <Lock className="text-gold-400 h-3 w-3" />
+                    <Lock className="text-yellow h-3 w-3" />
                   )}
                 </div>
                 <h3 className="text-headline text-label mb-1 truncate">{collection.name}</h3>
@@ -251,7 +253,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                         {collection.isPublic ? (
                           <Globe className="text-blue ml-2 h-4 w-4 shrink-0" />
                         ) : (
-                          <Lock className="text-gold-400 ml-2 h-4 w-4 shrink-0" />
+                          <Lock className="text-yellow ml-2 h-4 w-4 shrink-0" />
                         )}
                       </div>
 

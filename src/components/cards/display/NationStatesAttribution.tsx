@@ -6,6 +6,7 @@
  */
 import { NationStatesLogo } from "./NationStatesLogo";
 import { ShieldAlert } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export function NationStatesAttribution({
   className,
@@ -16,9 +17,9 @@ export function NationStatesAttribution({
 }) {
   return (
     <div
-      className={`border-separator bg-surface text-label-secondary rounded-control text-footnote flex shrink-0 items-center justify-between gap-2.5 border px-2.5 py-1.5 leading-tight ${className ?? ""}`}
+      className={`border-separator bg-surface text-label-secondary rounded-control text-footnote flex shrink-0 items-center justify-between gap-2 border px-3 py-2 leading-tight ${className ?? ""}`}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-1.5">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0" />
         <p className="min-w-0 flex-1">
           Data via official{" "}
@@ -38,14 +39,15 @@ export function NationStatesAttribution({
       {onRequestTakedown && (
         <>
           <div className="bg-border/60 h-4 w-px shrink-0" />
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={onRequestTakedown}
-            className="text-red inline-flex shrink-0 items-center gap-1 font-medium transition-colors hover:underline"
+            className="text-red h-auto shrink-0 gap-1 px-0"
           >
             <ShieldAlert className="h-3 w-3 shrink-0" />
             <span>Verify & Request Takedown</span>
-          </button>
+          </Button>
         </>
       )}
     </div>

@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
 
 interface SearchModalProps {
   open: boolean;
@@ -110,7 +111,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary hidden shrink-0 border px-1.5 py-0.5 sm:inline">
+          <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary hidden shrink-0 border px-2 py-0.5 sm:inline">
             ESC
           </kbd>
         </div>
@@ -122,7 +123,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               <li key={item.title}>
                 <button
                   className={cn(
-                    "flex w-full flex-col px-4 py-2.5 text-left transition-colors",
+                    "flex w-full flex-col px-4 py-3 text-left transition-colors",
                     idx === selectedIndex ? "bg-fill-4" : "hover:bg-fill-4"
                   )}
                   onClick={() => navigate(item.title)}
@@ -158,16 +159,17 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         {/* Footer */}
         {query.length >= 2 && (
           <div className="border-separator border-t px-4 py-2">
-            <button
-              className="text-footnote text-tint duration-fast hover:text-tint-hover transition-colors"
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => {
                 onClose();
                 navigateWithBasePath(`/wiki/search?q=${encodeURIComponent(query)}`, router);
               }}
-              type="button"
+              className="h-auto px-0"
             >
               Full search for &ldquo;{query}&rdquo; →
-            </button>
+            </Button>
           </div>
         )}
 

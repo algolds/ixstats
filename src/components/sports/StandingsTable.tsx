@@ -13,6 +13,7 @@ import {
   StatDown as TrendingDown,
 } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
+import { Button } from "~/components/ui/button";
 
 export interface StandingsRow {
   id: string;
@@ -147,21 +148,22 @@ export function StandingsTable({
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="bordered"
+          size="sm"
           onClick={() => exportStandingsCsv(title, standings)}
-          className="text-label-secondary hover:text-label border-separator bg-fill-3 rounded-row text-footnote flex w-fit cursor-pointer items-center gap-1.5 border px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           title="Export CSV"
+          className="text-label-secondary w-fit"
         >
           <Download className="h-3.5 w-3.5" />
           <span>Export Matrix</span>
-        </button>
+        </Button>
       </div>
 
       {groups.map((group, groupIdx) => (
         <div key={groupIdx} className="mb-8 last:mb-0">
           {group.label && (
-            <div className="text-label-secondary border-separator text-eyebrow mb-3 flex items-center gap-2 border-b pb-1.5">
+            <div className="text-label-secondary border-separator text-eyebrow mb-3 flex items-center gap-2 border-b pb-2">
               <span className="bg-tint h-2 w-2 rounded-full" />
               <span>{group.label}</span>
             </div>
@@ -218,7 +220,7 @@ export function StandingsTable({
                     >
                       {/* Rank with indicator */}
                       <td className="py-3 pl-3 text-center font-semibold">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-2">
                           {isLeader ? (
                             <span className="bg-yellow/20 text-footnote text-yellow flex h-5 w-5 items-center justify-center rounded-full font-semibold">
                               1

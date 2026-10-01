@@ -24,6 +24,7 @@ import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 
 export interface CardOverviewTabProps {
   card: CardInstance;
@@ -271,16 +272,16 @@ export function CardOverviewTab({
 
           return (
             <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-              <h3 className="text-label text-label-secondary text-eyebrow mb-2 flex items-center gap-1.5">
+              <h3 className="text-label text-label-secondary text-eyebrow mb-2 flex items-center gap-2">
                 <Layers className="text-tint h-3.5 w-3.5" />
                 Card Specifications
               </h3>
 
-              <div className="divide-separator text-footnote space-y-2.5 divide-y">
+              <div className="divide-separator text-footnote space-y-2 divide-y">
                 {resolvedCategory && (
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-label-secondary font-medium">Category</span>
-                    <span className="text-label inline-flex items-center gap-1.5 font-semibold">
+                    <span className="text-label inline-flex items-center gap-2 font-semibold">
                       <CategoryIcon
                         category={resolvedCategory}
                         treatment="seal"
@@ -332,40 +333,24 @@ export function CardOverviewTab({
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
           {onTrade && (
-            <button
-              onClick={() => onTrade(card)}
-              className={cn(
-                "border-separator bg-fill-3 rounded-control border px-4 py-3",
-                "text-label text-body font-semibold",
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-              )}
-            >
+            <Button variant="gray" size="lg" onClick={() => onTrade(card)}>
               Trade
-            </button>
+            </Button>
           )}
           {onList && (
-            <button
-              onClick={() => onList(card)}
-              className={cn(
-                "border-separator bg-fill-3 rounded-control border px-4 py-3",
-                "text-label text-body font-semibold",
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-              )}
-            >
+            <Button variant="gray" size="lg" onClick={() => onList(card)}>
               List
-            </button>
+            </Button>
           )}
           {onViewCollection && card.countryId && (
-            <button
+            <Button
+              variant="gray"
+              size="lg"
               onClick={() => onViewCollection(card.countryId!)}
-              className={cn(
-                "border-separator bg-fill-3 rounded-control col-span-2 border px-4 py-3",
-                "text-label text-body font-semibold",
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-              )}
+              className="col-span-2"
             >
               View Collection
-            </button>
+            </Button>
           )}
         </div>
       </motion.div>

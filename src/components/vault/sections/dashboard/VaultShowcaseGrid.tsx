@@ -5,6 +5,7 @@ import { Book, ArrowRight, Xmark as X } from "iconoir-react";
 import { VaultCardHoldingsCard } from "./VaultCardHoldingsCard";
 import { VaultMilestonesCard } from "./VaultMilestonesCard";
 import type { CardInstance } from "~/types/cards-display";
+import { Button } from "~/components/ui/button";
 
 export interface VaultShowcaseGridProps {
   hasImported?: boolean;
@@ -40,14 +41,16 @@ export function VaultShowcaseGrid({
   return (
     <div className="facet-layout-sidebar-span-1 space-y-6">
       {!isNoticeDismissed && (
-        <div className="rounded-row border-yellow/25 bg-yellow/10 shadow-card relative overflow-hidden border p-3.5">
-          <button
+        <div className="rounded-row border-yellow/25 bg-yellow/10 shadow-card relative overflow-hidden border p-4">
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onDismissNotice}
-            className="text-label-secondary hover:text-label hover:bg-fill-3 absolute top-2.5 right-2.5 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             aria-label="Dismiss notice"
+            className="text-label-secondary absolute top-2 right-2 rounded-full"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
 
           <div className="flex gap-3">
             <div className="rounded-control bg-yellow/20 text-yellow flex h-8 w-8 shrink-0 items-center justify-center">
@@ -59,21 +62,25 @@ export function VaultShowcaseGrid({
                 Browse the lore Card Gallery, collect the nations and figures of the world, and earn
                 IxCredits as your collection grows.
               </p>
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => onNavigate?.("cards")}
-                className="text-footnote text-yellow mt-1.5 inline-flex items-center gap-1 font-semibold hover:underline"
+                className="text-footnote text-yellow mt-2 h-auto gap-1 px-0 font-semibold"
               >
                 Open the Card Gallery <ArrowRight className="h-2.5 w-2.5" />
-              </button>
+              </Button>
               {hasImported === false && (
                 <p className="text-label-secondary text-footnote pt-1 leading-relaxed">
                   Play NationStates?{" "}
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => onNavigate?.("import")}
-                    className="text-yellow font-semibold hover:underline"
+                    className="text-yellow h-auto px-0 align-baseline font-semibold"
                   >
                     Import your deck
-                  </button>{" "}
+                  </Button>{" "}
                   too.
                 </p>
               )}

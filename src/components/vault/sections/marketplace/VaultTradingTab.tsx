@@ -63,12 +63,8 @@ export function VaultTradingTab() {
           <ArrowRightLeft className="text-blue h-4.5 w-4.5" />
           <h3 className="text-label-secondary text-eyebrow">P2P Trading Hub</h3>
         </div>
-        <Button
-          onClick={() => setCreateTradeOpen(true)}
-
-          size="sm"
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> New Trade
+        <Button onClick={() => setCreateTradeOpen(true)} size="sm">
+          <Plus className="mr-2 h-3.5 w-3.5" /> New Trade
         </Button>
       </div>
 
@@ -106,31 +102,31 @@ export function VaultTradingTab() {
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="active" className="relative">
-              <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" /> Active Offer List
+              <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Active Offer List
               {activeTrades && activeTrades.length > 0 && (
-                <span className="bg-blue text-footnote text-on-blue ml-1.5 rounded-full px-1.5 py-0 leading-none font-semibold">
+                <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {activeTrades.length}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="incoming" className="relative">
-              <Inbox className="mr-1.5 h-3.5 w-3.5" /> Incoming Offers
+              <Inbox className="mr-2 h-3.5 w-3.5" /> Incoming Offers
               {incomingTrades.length > 0 && (
-                <span className="bg-green text-footnote text-on-green ml-1.5 rounded-full px-1.5 py-0 leading-none font-semibold">
+                <span className="bg-green text-footnote text-on-green ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {incomingTrades.length}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="outgoing" className="relative">
-              <Send className="mr-1.5 h-3.5 w-3.5" /> Sent Offers
+              <Send className="mr-2 h-3.5 w-3.5" /> Sent Offers
               {outgoingTrades.length > 0 && (
-                <span className="bg-tint text-caption text-on-tint ml-1.5 rounded-full px-1.5 leading-4 tabular-nums">
+                <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {outgoingTrades.length}
                 </span>
               )}
             </TabsTrigger>
             <TabsTrigger value="history" className="relative">
-              <History className="mr-1.5 h-3.5 w-3.5" /> Trade History
+              <History className="mr-2 h-3.5 w-3.5" /> Trade History
             </TabsTrigger>
           </TabsList>
 
@@ -156,7 +152,7 @@ export function VaultTradingTab() {
                   Start trading by creating a new offer
                 </p>
                 <Button onClick={() => setCreateTradeOpen(true)} size="sm">
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}
@@ -201,7 +197,7 @@ export function VaultTradingTab() {
                   You haven't sent any trade offers yet
                 </p>
                 <Button onClick={() => setCreateTradeOpen(true)} size="sm">
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}

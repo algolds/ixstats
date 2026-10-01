@@ -244,7 +244,7 @@ export function DynamicStatSpan({
           )}
         </div>
 
-        <div className="border-separator text-footnote text-label-secondary flex flex-col gap-1 border-t pt-2.5">
+        <div className="border-separator text-footnote text-label-secondary flex flex-col gap-1 border-t pt-3">
           {metadata?.countryName && (
             <div className="flex justify-between">
               <span>Country</span>

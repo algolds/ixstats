@@ -266,7 +266,7 @@ export function LeagueScheduleTab({
                 >
                   {/* Top Bar: Match status & Rivalry Tag */}
                   <div className="border-separator flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <Badge variant={isCompleted ? "success" : "caution"}>
                         {isCompleted ? "Final Result" : "Scheduled"}
                       </Badge>
@@ -287,7 +287,7 @@ export function LeagueScheduleTab({
                   <div className="grid grid-cols-5 items-center gap-2 py-4">
                     {/* Home Team */}
                     <div
-                      className="col-span-2 flex min-w-0 items-center gap-2.5"
+                      className="col-span-2 flex min-w-0 items-center gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         onTeamClick?.(m.homeTeam.id);
@@ -318,7 +318,7 @@ export function LeagueScheduleTab({
                     {/* Center Score / VS Badge */}
                     <div className="col-span-1 text-center">
                       {isCompleted ? (
-                        <div className="text-title-3 text-label flex items-center justify-center gap-1.5 tabular-nums">
+                        <div className="text-title-3 text-label flex items-center justify-center gap-2 tabular-nums">
                           <span className={cn(homeScore > awayScore && "text-green")}>
                             {homeScore}
                           </span>
@@ -336,7 +336,7 @@ export function LeagueScheduleTab({
 
                     {/* Away Team */}
                     <div
-                      className="col-span-2 flex min-w-0 items-center justify-end gap-2.5 text-right"
+                      className="col-span-2 flex min-w-0 items-center justify-end gap-2 text-right"
                       onClick={(e) => {
                         e.stopPropagation();
                         onTeamClick?.(m.awayTeam.id);

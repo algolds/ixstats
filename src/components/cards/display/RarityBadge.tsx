@@ -49,8 +49,8 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
     // Size-specific classes
     const sizeClasses = {
       small: "px-2 py-0.5 text-footnote gap-1",
-      medium: "px-2.5 py-1 text-footnote gap-1.5",
-      large: "px-3.5 py-1.5 text-body gap-2",
+      medium: "px-3 py-1 text-footnote gap-2",
+      large: "px-4 py-2 text-body gap-2",
     };
 
     return (

@@ -9,10 +9,18 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Input, fieldStyles } from "~/components/ui/input";
+import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
@@ -163,7 +171,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
           <div className="space-y-2">
             <label className="text-subhead text-label block">Find Company</label>
             <div className="relative">
-              <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+              <Search className="text-label-secondary absolute top-3 left-3 h-4 w-4" />
               <Input
                 ref={searchInputRef}
                 type="text"
@@ -182,24 +190,25 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                   Searching...
                 </div>
               )}
-              {!searchLoading &&
-                businesses?.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBusiness({ name: b.name })}
-                    className={cn(
-                      "text-headline flex w-full items-center justify-between px-3 py-2 text-left transition-colors",
-                      selectedBusiness?.name === b.name
-                        ? "bg-tint-fill text-tint"
-                        : "text-label hover:bg-fill-3"
-                    )}
-                  >
-                    <span>{b.name}</span>
-                    <span className="bg-fill-3 text-label-secondary text-footnote rounded-full px-2 py-0.5 capitalize">
-                      {b.category}
-                    </span>
-                  </button>
-                ))}
+              {!searchLoading && businesses && businesses.length > 0 && (
+                <FacetListSection variant="plain" aria-label="Businesses">
+                  {businesses.map((b) => (
+                    <FacetRow
+                      key={b.id}
+                      onClick={() => setSelectedBusiness({ name: b.name })}
+                      selected={selectedBusiness?.name === b.name}
+                      selectionStyle="tint"
+                      accessory="check"
+                      title={b.name}
+                      trailing={
+                        <Badge variant="neutral" className="capitalize">
+                          {b.category}
+                        </Badge>
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              )}
               {!searchLoading && businesses?.length === 0 && (
                 <div className="text-label-secondary text-footnote p-3 text-center">
                   No matching businesses found.
@@ -225,21 +234,21 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
           {/* Field selection */}
           <div className="space-y-2">
-            <label className="text-subhead text-label block">Select Attribute Field</label>
-            <select
-              value={selectedField}
-              onChange={(e) => setSelectedField(e.target.value)}
-              className={cn(
-                fieldStyles,
-                "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-              )}
-            >
-              {BUSINESS_FIELDS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
+            <label id="business-stats-field" className="text-subhead text-label block">
+              Select Attribute Field
+            </label>
+            <Select value={selectedField} onValueChange={setSelectedField}>
+              <SelectTrigger aria-labelledby="business-stats-field" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUSINESS_FIELDS.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedBusiness && (
@@ -289,20 +298,20 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               </div>
 
               <div className="space-y-1">
-                <label className="text-subhead text-label block">POI Category</label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-                  )}
-                >
-                  <option value="commercial">Commercial Shop / Retail</option>
-                  <option value="office">Corporate Office / Finance</option>
-                  <option value="industrial">Industrial Facility</option>
-                  <option value="factory">Factory / Manufacturing</option>
-                </select>
+                <label id="business-poi-category" className="text-subhead text-label block">
+                  POI Category
+                </label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger aria-labelledby="business-poi-category" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="commercial">Commercial Shop / Retail</SelectItem>
+                    <SelectItem value="office">Corporate Office / Finance</SelectItem>
+                    <SelectItem value="industrial">Industrial Facility</SelectItem>
+                    <SelectItem value="factory">Factory / Manufacturing</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -340,7 +349,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               </div>
 
               {createError && (
-                <div className="rounded-control bg-red/10 text-footnote text-red flex items-center gap-1.5 p-2">
+                <div className="rounded-control bg-red/10 text-footnote text-red flex items-center gap-2 p-2">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                   <span>{createError}</span>
                 </div>

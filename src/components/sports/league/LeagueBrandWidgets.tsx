@@ -14,7 +14,7 @@ export function ReigningChampionWidget({
   seasonNumber,
 }: ReigningChampionWidgetProps) {
   return (
-    <div className="bg-surface-secondary border-separator rounded-card border-yellow/30 bg-yellow/10 shadow-card flex items-center gap-3 border p-3.5">
+    <div className="bg-surface-secondary border-separator rounded-card border-yellow/30 bg-yellow/10 shadow-card flex items-center gap-3 border p-4">
       <div className="rounded-row border-yellow/40 bg-yellow/20 shadow-card flex h-10 w-10 shrink-0 items-center justify-center border">
         <Trophy className="text-yellow h-5 w-5" />
       </div>

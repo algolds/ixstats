@@ -254,13 +254,14 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
       <FacetCard padding="lg" className="overflow-hidden">
         <div className="grid grid-cols-3 items-center gap-4 text-center">
           {/* Home Team */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            aria-label={`Focus ${match.homeTeam.name}`}
             onClick={() => {
               onClose?.();
               focusOrganization(match.homeTeam.id);
             }}
-            className="focus-visible:outline-tint rounded-row duration-fast hover:bg-fill-4 flex cursor-pointer flex-col items-center gap-2 p-2 transition-colors focus-visible:outline-2 active:scale-[0.98]"
+            className="rounded-row h-auto flex-col gap-2 p-2 font-normal whitespace-normal"
           >
             <div
               className="border-separator bg-surface-secondary rounded-row text-title-1 flex size-16 items-center justify-center overflow-hidden border sm:size-20"
@@ -276,7 +277,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               {match.homeTeam.name}
             </h3>
             <span className="text-footnote text-label-secondary">Home</span>
-          </button>
+          </Button>
 
           {/* Central Scoreboard */}
           <div className="flex flex-col items-center justify-center gap-2">
@@ -296,13 +297,14 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
           </div>
 
           {/* Away Team */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            aria-label={`Focus ${match.awayTeam.name}`}
             onClick={() => {
               onClose?.();
               focusOrganization(match.awayTeam.id);
             }}
-            className="focus-visible:outline-tint rounded-row duration-fast hover:bg-fill-4 flex cursor-pointer flex-col items-center gap-2 p-2 transition-colors focus-visible:outline-2 active:scale-[0.98]"
+            className="rounded-row h-auto flex-col gap-2 p-2 font-normal whitespace-normal"
           >
             <div
               className="border-separator bg-surface-secondary rounded-row text-title-1 flex size-16 items-center justify-center overflow-hidden border sm:size-20"
@@ -318,7 +320,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               {match.awayTeam.name}
             </h3>
             <span className="text-footnote text-label-secondary">Away</span>
-          </button>
+          </Button>
         </div>
       </FacetCard>
 
@@ -355,7 +357,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               {trace.slice(0, 8).map((evt, idx) => (
                 <div
                   key={idx}
-                  className="bg-surface-elevated text-caption shadow-floating absolute -translate-x-1/2 -translate-y-1/2 rounded-full px-1.5 py-0.5 tabular-nums"
+                  className="bg-surface-elevated text-caption shadow-floating absolute -translate-x-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 tabular-nums"
                   style={{
                     left: `${20 + ((idx * 9) % 60)}%`,
                     top: `${30 + ((idx * 13) % 40)}%`,
@@ -428,7 +430,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                     <h4 className="text-subhead text-label-secondary">
                       Tactical breakdown & key insights
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {analysisFacts.tacticalKeynotes.map((note, idx) => (
                         <p key={idx} className="text-body text-label flex items-start gap-2">
                           <span className="text-tint font-semibold">•</span>

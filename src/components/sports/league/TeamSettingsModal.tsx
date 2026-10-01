@@ -250,9 +250,9 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   className="text-footnote"
                 >
                   {isUploading && uploadingType === "logo" ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    <Upload className="mr-2 h-3.5 w-3.5" />
                   )}
                   {isUploading && uploadingType === "logo" ? "Uploading..." : "Upload Image"}
                 </Button>
@@ -263,7 +263,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   onClick={() => setMediaSearchFor("logo")}
                   className="text-footnote"
                 >
-                  <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
+                  <ImageIcon className="mr-2 h-3.5 w-3.5" />
                   Browse Media
                 </Button>
                 {logoPreviewSrc && (
@@ -274,7 +274,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     onClick={handleRemoveLogo}
                     className="text-destructive"
                   >
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
                     Remove
                   </Button>
                 )}
@@ -325,9 +325,9 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   className="text-footnote"
                 >
                   {isUploading && uploadingType === "cover" ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    <Upload className="mr-2 h-3.5 w-3.5" />
                   )}
                   {isUploading && uploadingType === "cover" ? "Uploading..." : "Upload Image"}
                 </Button>
@@ -338,7 +338,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   onClick={() => setMediaSearchFor("cover")}
                   className="text-footnote"
                 >
-                  <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
+                  <ImageIcon className="mr-2 h-3.5 w-3.5" />
                   Browse Media
                 </Button>
                 {coverPreviewSrc && (
@@ -349,7 +349,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     onClick={handleRemoveCover}
                     className="text-destructive"
                   >
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
                     Remove
                   </Button>
                 )}
@@ -380,7 +380,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={updateTeam.isPending}>
-            {updateTeam.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+            {updateTeam.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
             Save Changes
           </Button>
         </DialogFooter>

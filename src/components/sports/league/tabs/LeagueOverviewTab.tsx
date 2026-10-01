@@ -24,6 +24,7 @@ import { LatestResults, type MatchEvent } from "~/components/sports/LatestResult
 import { StandingsTable, type StandingsRow } from "~/components/sports/StandingsTable";
 import type { SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
 import { cn } from "~/lib/utils";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface StandingLeader {
   teamId: string;
@@ -268,53 +269,53 @@ export function LeagueOverviewTab({
                 Top Teams
               </h3>
 
-              <div className="space-y-2">
+              <FacetListSection variant="plain" aria-label="Top teams">
                 {topContenders.map((contender, idx) => {
                   const ptsGap = contender.points - leaderPoints;
                   return (
-                    <button
-                      type="button"
+                    <FacetRow
                       key={contender.team.id}
                       onClick={() => onTeamClick(contender.teamId)}
-                      className={cn(
-                        "group focus-visible:outline-tint rounded-row duration-fast hover:bg-fill-3 flex w-full cursor-pointer items-center justify-between p-2.5 text-left transition-colors focus-visible:outline-2",
-                        idx === 0 ? "bg-yellow/10" : "bg-surface-secondary"
-                      )}
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <span className="text-footnote text-label-secondary w-4 text-center font-semibold tabular-nums">
-                          {idx + 1}
+                      itemClassName={cn("rounded-row overflow-hidden", idx === 0 && "bg-yellow/10")}
+                      leading={
+                        <span className="flex items-center gap-2">
+                          <span className="text-footnote text-label-secondary w-4 text-center font-semibold tabular-nums">
+                            {idx + 1}
+                          </span>
+                          <span className="border-separator bg-surface rounded-control-sm flex size-7 shrink-0 items-center justify-center overflow-hidden border">
+                            {contender.team.logo ? (
+                              <img
+                                src={withBasePath(contender.team.logo)}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Shield className="text-label-secondary size-3.5" aria-hidden />
+                            )}
+                          </span>
                         </span>
-                        <div className="border-separator bg-surface rounded-control-sm flex size-7 shrink-0 items-center justify-center overflow-hidden border">
-                          {contender.team.logo ? (
-                            <img
-                              src={withBasePath(contender.team.logo)}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <Shield className="text-label-secondary size-3.5" aria-hidden />
-                          )}
-                        </div>
-                        <span className="text-label text-footnote truncate font-medium">
+                      }
+                      title={
+                        <span className="text-footnote block truncate font-medium">
                           {contender.team.name}
                         </span>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <span className="text-footnote text-label font-semibold tabular-nums">
-                          {contender.points} pts
-                        </span>
-                        {idx > 0 && (
-                          <span className="text-footnote text-label-secondary block tabular-nums">
-                            {ptsGap} pts
+                      }
+                      trailing={
+                        <span className="shrink-0 text-right">
+                          <span className="text-footnote text-label block font-semibold tabular-nums">
+                            {contender.points} pts
                           </span>
-                        )}
-                      </div>
-                    </button>
+                          {idx > 0 && (
+                            <span className="text-footnote text-label-secondary block tabular-nums">
+                              {ptsGap} pts
+                            </span>
+                          )}
+                        </span>
+                      }
+                    />
                   );
                 })}
-              </div>
+              </FacetListSection>
             </FacetCard>
           )}
         </div>

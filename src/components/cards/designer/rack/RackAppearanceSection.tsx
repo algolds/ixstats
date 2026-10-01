@@ -25,12 +25,12 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
       {/* Artwork subsection */}
       <div className="border-separator bg-fill-4 rounded-control space-y-3 border p-3">
         <div className="flex items-center justify-between">
-          <div className="text-label text-footnote flex items-center gap-1.5 font-semibold">
+          <div className="text-label text-footnote flex items-center gap-2 font-semibold">
             <ImageIcon className="text-tint h-4 w-4" />
             <span>Card Artwork & Media</span>
           </div>
           {state.artworkUrl && (
-            <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5">
+            <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
                 checked={state.enableArtwork}
@@ -44,7 +44,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
 
         {state.artworkUrl ? (
           <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2">
               <div className="bg-fill-3 border-separator rounded-control flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
                 <img
                   src={proxyCardArtwork(state.artworkUrl)}
@@ -134,7 +134,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           </div>
 
           {state.emblemIcon ? (
-            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-1.5">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
               <div className="flex items-center gap-2">
                 <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
                   <img
@@ -179,14 +179,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           </div>
 
           {/* Emblem Color Swatches */}
-          <div className="border-separator space-y-1.5 border-t pt-2">
+          <div className="border-separator space-y-2 border-t pt-2">
             <div className="flex items-center justify-between">
               <span className="text-label text-footnote font-semibold">Emblem Color</span>
               <span className="text-tint text-footnote font-mono">
                 {state.emblemColor ? state.emblemColor.toUpperCase() : "Auto"}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               {COLOR_PRESETS.map((preset) => {
                 const isActive = (state.emblemColor || "") === preset.value;
                 return (
@@ -194,6 +194,8 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                     key={`emblem-${preset.id}`}
                     type="button"
                     title={preset.label}
+                    aria-label={preset.label}
+                    aria-pressed={isActive}
                     onClick={() => onChange((p) => ({ ...p, emblemColor: preset.value }))}
                     className={cn(
                       "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -237,7 +239,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           </div>
 
           {state.watermarkIcon ? (
-            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-1.5">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
               <div className="flex items-center gap-2">
                 <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
                   <img
@@ -284,14 +286,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
           </div>
 
           {/* Watermark Color Swatches */}
-          <div className="border-separator space-y-1.5 border-t pt-2">
+          <div className="border-separator space-y-2 border-t pt-2">
             <div className="flex items-center justify-between">
               <span className="text-label text-footnote font-semibold">Watermark Color</span>
               <span className="text-tint text-footnote font-mono">
                 {state.watermarkColor ? state.watermarkColor.toUpperCase() : "Auto"}
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               {COLOR_PRESETS.map((preset) => {
                 const isActive = (state.watermarkColor || "") === preset.value;
                 return (
@@ -299,6 +301,8 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                     key={`watermark-${preset.id}`}
                     type="button"
                     title={preset.label}
+                    aria-label={preset.label}
+                    aria-pressed={isActive}
                     onClick={() => onChange((p) => ({ ...p, watermarkColor: preset.value }))}
                     className={cn(
                       "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -347,7 +351,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               variant="ghost"
               size="sm"
               onClick={() => onChange((p) => ({ ...p, accentColorOverride: "" }))}
-              className="text-label-secondary text-footnote h-6 px-1.5"
+              className="text-label-secondary text-footnote h-6 px-2"
             >
               Reset
             </Button>

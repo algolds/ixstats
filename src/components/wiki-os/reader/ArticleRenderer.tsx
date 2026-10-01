@@ -627,7 +627,7 @@ export function ArticleRenderer({
           if (!creatorName && !lastModified) return null;
 
           return (
-            <div className="text-label-secondary text-footnote mt-2.5 mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1 xl:hidden">
+            <div className="text-label-secondary text-footnote mt-2 mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 xl:hidden">
               {creatorName && (
                 <span className="text-label font-medium">
                   By <span className="font-semibold">{creatorName}</span>

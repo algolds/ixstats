@@ -112,10 +112,7 @@ export function ClubTransfersSection({
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search
-                  className="text-label-secondary absolute top-2.5 left-2.5 size-4"
-                  aria-hidden
-                />
+                <Search className="text-label-secondary absolute top-3 left-3 size-4" aria-hidden />
                 <Input
                   placeholder="Search player name..."
                   value={searchQuery}

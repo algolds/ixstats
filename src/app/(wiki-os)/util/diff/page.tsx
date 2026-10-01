@@ -2,7 +2,6 @@
 // src/app/(wiki-os)/wiki/diff/page.tsx
 // WikiOS Native Revision Diff Comparator with DiffViewer
 
-import { cn } from "~/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -11,6 +10,8 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { DiffViewer } from "~/components/diff-viewer";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export default function DiffPage() {
   const searchParams = useSearchParams();
@@ -46,7 +47,7 @@ export default function DiffPage() {
         <div>
           <Link
             href={withBasePath("/util")}
-            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-1.5 transition-colors"
+            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Utilities
@@ -79,49 +80,32 @@ export default function DiffPage() {
 
                 {/* Layout Switcher */}
                 <div className="flex items-center gap-2">
-                  <div className="border-separator bg-fill-3 rounded-row flex border p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setLayout("unified")}
-                      className={cn(
-                        "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                        layout === "unified"
-                          ? "bg-background text-label shadow-card"
-                          : "text-label-secondary hover:text-label"
-                      )}
-                    >
-                      <AlignLeft className="h-3.5 w-3.5" />
-                      Unified
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLayout("split")}
-                      className={cn(
-                        "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                        layout === "split"
-                          ? "bg-background text-label shadow-card"
-                          : "text-label-secondary hover:text-label"
-                      )}
-                    >
-                      <Columns2 className="h-3.5 w-3.5" />
-                      Split
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    size="sm"
+                    aria-label="Diff layout"
+                    value={layout}
+                    onValueChange={setLayout}
+                    options={[
+                      { value: "unified", label: "Unified", icon: <AlignLeft /> },
+                      { value: "split", label: "Split", icon: <Columns2 /> },
+                    ]}
+                  />
 
                   {/* Undo Button */}
                   {!undoConfirm ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="tinted"
+                      size="sm"
                       onClick={() => setUndoConfirm(true)}
-                      className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 inline-flex items-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                      className="bg-yellow/10 text-yellow hover:bg-yellow/20"
                     >
                       <Undo className="h-3.5 w-3.5" />
                       Revert to r{data.from.revid}
-                    </button>
+                    </Button>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
                         disabled={revertMutation.isPending || !revContent}
                         onClick={() => {
                           if (revContent) {
@@ -132,17 +116,13 @@ export default function DiffPage() {
                             });
                           }
                         }}
-                        className="rounded-row bg-yellow text-caption hover:bg-yellow/70 px-3 py-1.5 font-semibold text-black active:scale-[0.98]"
+                        className="bg-yellow hover:bg-yellow/80 text-black"
                       >
                         {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUndoConfirm(false)}
-                        className="border-separator bg-fill-3 text-label hover:bg-fill-2 rounded-row text-caption border px-3 py-1.5"
-                      >
+                      </Button>
+                      <Button variant="gray" size="sm" onClick={() => setUndoConfirm(false)}>
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

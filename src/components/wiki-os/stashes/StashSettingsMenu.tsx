@@ -134,7 +134,7 @@ export function StashSettingsMenu({
 
         <PopoverContent align="end" className="w-76 space-y-2 p-2 select-none">
           {/* Header: swatch + title */}
-          <div className="border-separator flex min-w-0 items-center gap-2.5 border-b px-2 pt-1 pb-2">
+          <div className="border-separator flex min-w-0 items-center gap-2 border-b px-2 pt-1 pb-2">
             <span
               className="size-3.5 shrink-0 rounded-full"
               style={{ backgroundColor: stash.color }}
@@ -149,7 +149,7 @@ export function StashSettingsMenu({
           </div>
 
           {/* Colour */}
-          <div className="rounded-row bg-surface-secondary space-y-2 p-2.5">
+          <div className="rounded-row bg-surface-secondary space-y-2 p-3">
             <span className="text-subhead text-label-secondary block">Theme Color</span>
             <div
               className="flex items-center justify-between gap-1"
@@ -200,7 +200,7 @@ export function StashSettingsMenu({
                     }
                   }}
                 />
-                <div className="flex items-center justify-end gap-1.5">
+                <div className="flex items-center justify-end gap-2">
                   <Button variant="gray" size="sm" onClick={() => setIsRenaming(false)}>
                     Cancel
                   </Button>
@@ -214,23 +214,23 @@ export function StashSettingsMenu({
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => setIsRenaming(true)} className={ROW}>
+              <Button variant="ghost" onClick={() => setIsRenaming(true)} className={ROW}>
                 <span className={ICON}>
                   <Pencil className="size-3.5" aria-hidden="true" />
                 </span>
                 <span>Rename Collection</span>
-              </button>
+              </Button>
             )}
 
-            <button type="button" onClick={handleShareLink} className={ROW}>
+            <Button variant="ghost" onClick={handleShareLink} className={ROW}>
               <span className={ICON}>
                 <ShareIos className="size-3.5" aria-hidden="true" />
               </span>
               <span>Copy Share Link</span>
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => {
                 onExportMarkdown();
                 setIsOpen(false);
@@ -241,10 +241,10 @@ export function StashSettingsMenu({
                 <Download className="size-3.5" aria-hidden="true" />
               </span>
               <span>Export as Markdown (.md)</span>
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => {
                 onExportJson();
                 setIsOpen(false);
@@ -255,14 +255,14 @@ export function StashSettingsMenu({
                 <FileJson className="size-3.5" aria-hidden="true" />
               </span>
               <span>Export as JSON (.json)</span>
-            </button>
+            </Button>
           </div>
 
           {/* Destructive: delete (confirmed in an AlertDialog) */}
           {!stash.isDefault && (
             <div className="border-separator border-t pt-1">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setIsOpen(false);
                   setShowDeleteConfirm(true);
@@ -273,7 +273,7 @@ export function StashSettingsMenu({
                   <Trash2 className="size-3.5" aria-hidden="true" />
                 </span>
                 <span>Delete Collection</span>
-              </button>
+              </Button>
             </div>
           )}
         </PopoverContent>
@@ -311,7 +311,7 @@ export function StashSettingsMenu({
   );
 }
 
-const ROW =
-  "flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2 py-2 text-left text-body text-label transition-colors duration-fast hover:bg-fill-4";
+/** A command row in the settings popover (a ghost `Button`). */
+const ROW = "text-body text-label h-auto w-full justify-start px-2 py-2 font-normal";
 const ICON =
   "flex size-6 shrink-0 items-center justify-center rounded-control-sm bg-fill-3 text-label-secondary";

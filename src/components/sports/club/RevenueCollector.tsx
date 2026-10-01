@@ -61,7 +61,7 @@ export function RevenueCollector({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="text-body flex items-center justify-between">
-            <span className="text-label-secondary flex items-center gap-1.5">
+            <span className="text-label-secondary flex items-center gap-2">
               <Ticket className="h-3.5 w-3.5" />
               Ticket Revenue ({matchesWaiting} home {matchesWaiting === 1 ? "match" : "matches"} ×{" "}
               {perHomeMatch.toLocaleString()}c)
@@ -71,7 +71,7 @@ export function RevenueCollector({
             </span>
           </div>
           <div className="text-body flex items-center justify-between">
-            <span className="text-label-secondary flex items-center gap-1.5">
+            <span className="text-label-secondary flex items-center gap-2">
               <BadgeDollarSign className="h-3.5 w-3.5" />
               {sponsor?.name ?? "No sponsor"}
               {pending && pending.wins > 0
@@ -83,7 +83,7 @@ export function RevenueCollector({
             </span>
           </div>
           <div className="border-separator text-headline flex items-center justify-between border-t pt-2">
-            <span className="text-label flex items-center gap-1.5">
+            <span className="text-label flex items-center gap-2">
               <TrendingUp className="text-success size-3.5" aria-hidden />
               Collect Match Revenue
             </span>
@@ -104,7 +104,7 @@ export function RevenueCollector({
           className="w-full"
           size="sm"
         >
-          {collect.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+          {collect.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
           {total > 0 ? "Collect Revenue" : "No new match revenue"}
         </Button>
       </CardContent>

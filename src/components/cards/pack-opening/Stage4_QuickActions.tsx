@@ -10,6 +10,7 @@ import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pa
 import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { Button } from "~/components/ui/button";
 
 /** Placeholder quick-sell estimate per rarity, in IxCredits. */
 const RARITY_ESTIMATED_VALUE: Record<string, number> = {
@@ -129,12 +130,9 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
 
           {/* Bulk mode toggle */}
           <div className="mt-4 flex items-center gap-4">
-            <button
-              onClick={() => setBulkMode(!bulkMode)}
-              className="rounded-control bg-fill-3 text-body text-label hover:bg-fill-2 px-4 py-2 font-medium transition-colors"
-            >
+            <Button variant="gray" aria-pressed={bulkMode} onClick={() => setBulkMode(!bulkMode)}>
               {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
-            </button>
+            </Button>
 
             {bulkMode && selectedCards.size > 0 && (
               <motion.div
@@ -142,24 +140,30 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
                 animate={{ scale: 1 }}
                 className="flex gap-2"
               >
-                <button
+                <Button
+                  variant="tinted"
+                  size="sm"
                   onClick={() => handleBulkAction("junk")}
-                  className="rounded-control bg-red/20 text-body text-red hover:bg-red/30 px-3 py-1 font-medium"
+                  className="bg-red/15 text-red hover:bg-red/25"
                 >
                   Junk ({selectedCards.size})
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="tinted"
+                  size="sm"
                   onClick={() => handleBulkAction("keep")}
-                  className="rounded-control bg-green/20 text-body text-green hover:bg-green/30 px-3 py-1 font-medium"
+                  className="bg-green/15 text-green hover:bg-green/25"
                 >
                   Keep ({selectedCards.size})
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="tinted"
+                  size="sm"
                   onClick={() => handleBulkAction("list")}
-                  className="rounded-control bg-blue/20 text-body text-blue hover:bg-blue/30 px-3 py-1 font-medium"
+                  className="bg-blue/15 text-blue hover:bg-blue/25"
                 >
                   List ({selectedCards.size})
-                </button>
+                </Button>
               </motion.div>
             )}
           </div>
@@ -198,18 +202,17 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="tinted"
+                size="lg"
                 onClick={handleCollectAll}
-                className="rounded-control bg-green/20 text-green hover:bg-green/30 px-6 py-3 font-medium transition-colors"
+                className="bg-green/15 text-green hover:bg-green/25"
               >
                 Collect All
-              </button>
-              <button
-                onClick={onComplete}
-                className="rounded-control bg-blue/20 text-blue hover:bg-blue/30 px-6 py-3 font-medium transition-colors"
-              >
+              </Button>
+              <Button size="lg" onClick={onComplete}>
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </motion.div>
@@ -345,27 +348,33 @@ const CardActionItem = React.memo<CardActionItemProps>(
             transition={{ delay: index * 0.05 + 0.3 }}
             className="mt-2 flex gap-1"
           >
-            <button
+            <Button
+              variant="tinted"
+              size="sm"
               onClick={() => onAction(card.id, "junk")}
-              className="bg-red/20 text-footnote text-red hover:bg-red/30 flex-1 rounded py-1 font-medium"
               title="Junk for credits"
+              className="bg-red/15 text-red hover:bg-red/25 flex-1"
             >
               Junk
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="tinted"
+              size="sm"
               onClick={() => onAction(card.id, "keep")}
-              className="bg-green/20 text-footnote text-green hover:bg-green/30 flex-1 rounded py-1 font-medium"
               title="Keep in collection"
+              className="bg-green/15 text-green hover:bg-green/25 flex-1"
             >
               Keep
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="tinted"
+              size="sm"
               onClick={() => onAction(card.id, "list")}
-              className="bg-blue/20 text-footnote text-blue hover:bg-blue/30 flex-1 rounded py-1 font-medium"
               title="List on marketplace"
+              className="bg-blue/15 text-blue hover:bg-blue/25 flex-1"
             >
               List
-            </button>
+            </Button>
           </motion.div>
         )}
 

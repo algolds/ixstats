@@ -14,6 +14,7 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 // ─── Attribute badge styling ────────────────────────────────────────────────
 function attributeBadgeClass(value: number): string {
@@ -88,7 +89,7 @@ function OrganizationFocusContent({
   return (
     <div className="space-y-5">
       {/* Club Identity Header */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-4">
         <div
           className="rounded-card border-separator shadow-card text-title-1 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border"
           style={{ backgroundColor: team.color ? `${team.color}20` : "rgba(255,255,255,0.05)" }}
@@ -100,7 +101,7 @@ function OrganizationFocusContent({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <h3 className="text-headline text-label truncate">{team.name}</h3>
           </div>
           <p className="text-footnote text-label-secondary truncate font-medium">
@@ -126,7 +127,7 @@ function OrganizationFocusContent({
       </Button>
 
       {/* Top Squad Athletes Preview */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-eyebrow text-label-secondary">
             Key Athletes ({activePlayers.length})
@@ -134,49 +135,46 @@ function OrganizationFocusContent({
           <span className="text-footnote text-label-tertiary font-semibold">Click to focus</span>
         </div>
 
-        <div className="space-y-1.5">
+        <FacetListSection aria-label="Top players">
           {topPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
             const ovr = ratings.overall ?? 50;
 
             return (
-              <button
+              <FacetRow
                 key={player.id}
-                type="button"
                 onClick={() => focusAthlete(player.id)}
-                className="rounded-row border-separator bg-fill-4 hover:bg-fill-3 flex w-full cursor-pointer items-center justify-between border p-2.5 text-left transition active:scale-[0.98]"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="rounded-control border-separator bg-fill-3 h-7 w-7 shrink-0 overflow-hidden border">
+                leading={
+                  <span className="rounded-control border-separator bg-fill-3 block h-7 w-7 shrink-0 overflow-hidden border">
                     <img
                       src={getPlayerPhotoUrl(player)}
                       alt=""
                       className="h-full w-full object-cover"
                     />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-footnote text-label truncate font-semibold">
-                      {player.firstName} {player.lastName}
-                    </p>
-                    <p className="text-footnote text-label-secondary font-medium">
-                      {player.position} · Age {player.age}
-                    </p>
-                  </div>
-                </div>
-
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-footnote px-1.5 py-0.5 font-semibold",
-                    attributeBadgeClass(ovr)
-                  )}
-                >
-                  {ovr}
-                </Badge>
-              </button>
+                  </span>
+                }
+                title={
+                  <span className="text-footnote block truncate font-semibold">
+                    {player.firstName} {player.lastName}
+                  </span>
+                }
+                subtitle={`${player.position} · Age ${player.age}`}
+                trailing={
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-footnote px-2 py-0.5 font-semibold tabular-nums",
+                      attributeBadgeClass(ovr)
+                    )}
+                  >
+                    {ovr}
+                  </Badge>
+                }
+                accessory="chevron"
+              />
             );
           })}
-        </div>
+        </FacetListSection>
       </div>
     </div>
   );
@@ -236,7 +234,7 @@ function AthleteFocusContent({
   return (
     <div className="space-y-5">
       {/* Athlete Identity Header */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-4">
         <div className="rounded-card border-separator bg-fill-3 shadow-card relative h-16 w-16 shrink-0 overflow-hidden border">
           <img
             src={getPlayerPhotoUrl(athlete)}
@@ -246,7 +244,7 @@ function AthleteFocusContent({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <h3 className="text-headline text-label truncate">
               {athlete.firstName} {athlete.lastName}
             </h3>
@@ -280,24 +278,24 @@ function AthleteFocusContent({
 
       {/* Team Link */}
       {athlete.team && (
-        <button
-          type="button"
-          onClick={() => athlete.team && focusOrganization(athlete.team.id)}
-          className="rounded-row border-separator bg-surface hover:bg-fill-3 flex w-full cursor-pointer items-center justify-between border p-2.5 text-left transition active:scale-[0.98]"
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            <Shield className="text-teal h-4 w-4 shrink-0" />
-            <span className="text-footnote text-label truncate font-semibold">
-              {athlete.team.name}
-            </span>
-          </div>
-          <span className="text-footnote text-label-secondary font-semibold">Focus Club →</span>
-        </button>
+        <FacetListSection aria-label="Club">
+          <FacetRow
+            onClick={() => athlete.team && focusOrganization(athlete.team.id)}
+            leading={<Shield className="text-teal h-4 w-4 shrink-0" />}
+            title={
+              <span className="text-footnote block truncate font-semibold">
+                {athlete.team.name}
+              </span>
+            }
+            trailing="Focus Club"
+            accessory="chevron"
+          />
+        </FacetListSection>
       )}
 
       {/* Ratings & Skills Matrix */}
       {skillKeys.length > 0 && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <span className="text-eyebrow text-label-secondary">Attributes & Skills</span>
           <div className="grid grid-cols-2 gap-2">
             {skillKeys.map((key) => {
@@ -368,16 +366,16 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
 
         <div className="flex items-center justify-between gap-4 px-2">
           {/* Home */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => focusOrganization(match.homeTeam.id)}
-            className="group min-w-0 flex-1 cursor-pointer text-center hover:underline active:scale-[0.98]"
+            className="group h-auto min-w-0 flex-1 flex-col gap-0 px-2 py-1 text-center"
           >
             <p className="text-footnote text-label group-hover:text-tint truncate font-semibold">
               {match.homeTeam.name}
             </p>
             <span className="text-footnote text-label-secondary">Focus Club →</span>
-          </button>
+          </Button>
 
           {/* Score */}
           <div className="text-title-2 text-label rounded-row bg-fill-3 border-separator border px-3 py-1">
@@ -385,16 +383,16 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
           </div>
 
           {/* Away */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => focusOrganization(match.awayTeam.id)}
-            className="group min-w-0 flex-1 cursor-pointer text-center hover:underline active:scale-[0.98]"
+            className="group h-auto min-w-0 flex-1 flex-col gap-0 px-2 py-1 text-center"
           >
             <p className="text-footnote text-label group-hover:text-tint truncate font-semibold">
               {match.awayTeam.name}
             </p>
             <span className="text-footnote text-label-secondary">Focus Club →</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -421,22 +419,23 @@ export function SportsFocusPanel({
       )}
     >
       {/* Header bar with dismiss */}
-      <div className="border-separator mb-4 flex items-center justify-between border-b pb-3.5">
+      <div className="border-separator mb-4 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <Badge variant="tinted" className="capitalize">
             {focus.type} Focus
           </Badge>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={clearFocus}
-          className="text-label-secondary hover:text-label hover:bg-fill-3 cursor-pointer rounded-full p-1 transition-colors"
           title="Close Focus"
           aria-label="Close focus"
+          className="text-label-secondary rounded-full"
         >
           <Xmark className="size-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Body switched on focus.type */}

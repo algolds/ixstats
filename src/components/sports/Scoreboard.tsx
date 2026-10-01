@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 export interface TeamInfo {
   id: string;
@@ -51,10 +52,10 @@ export function Scoreboard({
         <div className="flex flex-col gap-4">
           {/* Home Team */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => onTeamClick?.(homeTeam.id)}
-              className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left hover:underline"
+              className="group h-auto min-w-0 flex-1 justify-start gap-3 p-0 text-left font-normal whitespace-normal hover:bg-transparent hover:underline"
             >
               <div className="border-separator bg-background shadow-card flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1">
                 {homeTeam.logo ? (
@@ -86,7 +87,7 @@ export function Scoreboard({
                   </div>
                 )}
               </div>
-            </button>
+            </Button>
             {isCompleted && (
               <span className="text-label text-title-3 shrink-0 tabular-nums">
                 {homeScore ?? 0}
@@ -105,10 +106,10 @@ export function Scoreboard({
 
           {/* Away Team */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => onTeamClick?.(awayTeam.id)}
-              className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left hover:underline"
+              className="group h-auto min-w-0 flex-1 justify-start gap-3 p-0 text-left font-normal whitespace-normal hover:bg-transparent hover:underline"
             >
               <div className="border-separator bg-background shadow-card flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1">
                 {awayTeam.logo ? (
@@ -140,7 +141,7 @@ export function Scoreboard({
                   </div>
                 )}
               </div>
-            </button>
+            </Button>
             {isCompleted && (
               <span className="text-label text-title-3 shrink-0 tabular-nums">
                 {awayScore ?? 0}

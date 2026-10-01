@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -40,9 +41,9 @@ export default function SearchPage() {
             className="wikios-fullsearch-input"
             autoFocus
           />
-          <button type="submit" className="wikios-action-btn">
+          <Button variant="tinted" type="submit">
             Search
-          </button>
+          </Button>
         </form>
 
         {isLoading && (

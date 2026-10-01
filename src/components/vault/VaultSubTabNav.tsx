@@ -52,7 +52,7 @@ export function VaultSubTabNav<T extends string>({
             tab.badgeCount !== undefined && tab.badgeCount > 0 ? (
               <>
                 {tab.label}
-                <span className="bg-tint text-on-tint text-caption ml-1 rounded-full px-1.5 tabular-nums">
+                <span className="bg-tint text-on-tint text-caption ml-1 rounded-full px-2 tabular-nums">
                   {tab.badgeCount}
                 </span>
               </>

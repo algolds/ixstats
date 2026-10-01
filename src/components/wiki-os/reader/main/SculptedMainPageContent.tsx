@@ -108,8 +108,8 @@ export function SculptedMainPageContent({
 
           <div className="flex flex-1 flex-col gap-3">
             {/* Expanded 12 Primary Categories Matrix (3-Column Grid) */}
-            <div className="rounded-card border-separator bg-surface sm:rounded-card border p-2.5 sm:p-3">
-              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2">
+            <div className="rounded-card border-separator bg-surface sm:rounded-card border p-3 sm:p-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2">
                 {categories.map((cat) => {
                   const Icon = CATEGORY_ICONS[cat.name] || IconoirGlobe;
                   return (
@@ -119,7 +119,7 @@ export function SculptedMainPageContent({
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className={cn(
-                        "rounded-row flex items-center gap-2.5 p-2 sm:p-2.5",
+                        "rounded-row flex items-center gap-2 p-2 sm:p-3",
                         "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                       )}
                     >
@@ -139,13 +139,13 @@ export function SculptedMainPageContent({
             </div>
 
             {/* Bottom: Structured World Almanac Spotlight Card */}
-            <div className="group rounded-card border-separator bg-surface sm:rounded-card relative flex flex-1 flex-col justify-between overflow-hidden border p-4 sm:p-4.5">
+            <div className="group rounded-card border-separator bg-surface sm:rounded-card relative flex flex-1 flex-col justify-between overflow-hidden border p-4 sm:p-5">
               <TextureOverlay texture="paperGrain" opacity={0.05} />
 
               {/* Eyebrow Header: Badge + Byline + Category Link */}
-              <div className="border-separator mb-3 flex items-center justify-between gap-2 border-b pb-2.5">
+              <div className="border-separator mb-3 flex items-center justify-between gap-2 border-b pb-3">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <div className="border-tint/20 bg-tint/10 text-caption text-tint inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold">
+                  <div className="border-tint/20 bg-tint/10 text-caption text-tint inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
                     <IconoirGlobe className="text-tint h-3.5 w-3.5" />
                     <span>World Almanac</span>
                   </div>
@@ -207,7 +207,7 @@ export function SculptedMainPageContent({
                   {/* Editorial Text Column */}
                   <div className="flex h-full min-w-0 flex-1 flex-col justify-between py-0.5">
                     <div>
-                      <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="text-eyebrow text-tint truncate">
                           {almanacSpotlight.category}
                         </span>
@@ -224,12 +224,12 @@ export function SculptedMainPageContent({
                         </h3>
                       </Link>
 
-                      <p className="text-label-secondary text-footnote sm:text-callout mt-1.5 line-clamp-3 leading-relaxed font-normal">
+                      <p className="text-label-secondary text-footnote sm:text-callout mt-2 line-clamp-3 leading-relaxed font-normal">
                         {almanacSpotlight.excerpt}
                       </p>
                     </div>
 
-                    <div className="border-separator mt-3 flex items-center justify-between border-t pt-2.5">
+                    <div className="border-separator mt-3 flex items-center justify-between border-t pt-3">
                       <Link
                         href={withBasePath(`/wiki/${almanacSpotlight.slug}`)}
                         data-cuelume-press="droplet"
@@ -266,7 +266,7 @@ export function SculptedMainPageContent({
             </Link>
           </div>
 
-          <div className="rounded-card border-separator bg-surface sm:rounded-card relative flex flex-1 flex-col justify-between overflow-hidden border p-2.5 sm:p-3">
+          <div className="rounded-card border-separator bg-surface sm:rounded-card relative flex flex-1 flex-col justify-between overflow-hidden border p-3 sm:p-3">
             {visibleChanges.length > 0 ? (
               <ul className="divide-separator flex flex-1 flex-col justify-between divide-y">
                 {visibleChanges.map((rc, idx) => {
@@ -284,13 +284,13 @@ export function SculptedMainPageContent({
                   return (
                     <li
                       key={idx}
-                      className="hover:bg-fill-4 group rounded-card flex flex-1 items-start justify-between gap-3 px-3 py-2.5 transition-colors duration-150"
+                      className="hover:bg-fill-4 group rounded-card flex flex-1 items-start justify-between gap-3 px-3 py-3 transition-colors duration-150"
                     >
-                      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                      <div className="flex min-w-0 flex-1 items-start gap-2">
                         <ActivityItemThumbnail src={rc.thumbnail} title={rc.title} />
 
                         <div className="flex min-w-0 flex-1 flex-col">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <Link
                               href={withBasePath(
                                 `/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
@@ -312,14 +312,14 @@ export function SculptedMainPageContent({
 
                           {/* Edit Notes / Summary */}
                           {rc.comment && rc.comment.trim() && (
-                            <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote mt-1 flex max-w-fit items-center gap-1 border px-1.5 py-0.5">
+                            <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote mt-1 flex max-w-fit items-center gap-1 border px-2 py-0.5">
                               <EditPencil className="text-label-secondary h-2.5 w-2.5 shrink-0" />
                               <span className="truncate font-sans italic">{rc.comment}</span>
                             </div>
                           )}
 
                           {/* Author & Timestamp */}
-                          <div className="text-label-secondary text-footnote mt-1 flex items-center gap-1.5">
+                          <div className="text-label-secondary text-footnote mt-1 flex items-center gap-2">
                             <span className="text-label-secondary font-medium">{rc.user}</span>
                             <span className="opacity-40">·</span>
                             <span>{formatMWTimeAgo(rc.timestamp)}</span>
@@ -330,7 +330,7 @@ export function SculptedMainPageContent({
                       {/* Byte Diff Pill */}
                       <span
                         className={cn(
-                          "bg-fill-4 border-separator rounded-control-sm text-caption mt-0.5 flex shrink-0 items-center gap-1 border px-1.5 py-0.5 font-semibold tabular-nums",
+                          "bg-fill-4 border-separator rounded-control-sm text-caption mt-0.5 flex shrink-0 items-center gap-1 border px-2 py-0.5 font-semibold tabular-nums",
                           diffClass
                         )}
                         title={`${rc.oldLen} → ${rc.newLen} bytes`}
@@ -414,7 +414,7 @@ export function SculptedMainPageContent({
                     "focus-visible:ring-tint block text-left transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   )}
                 >
-                  <div className="bg-fill-4 border-separator rounded-row relative mb-2.5 h-16 w-full overflow-hidden border">
+                  <div className="bg-fill-4 border-separator rounded-row relative mb-2 h-16 w-full overflow-hidden border">
                     {c.flagUrl ? (
                       <img
                         src={c.flagUrl}
@@ -431,7 +431,7 @@ export function SculptedMainPageContent({
                   <span className="text-label group-hover:text-tint text-caption truncate font-semibold transition-colors">
                     {c.name}
                   </span>
-                  <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-1.5 truncate tabular-nums">
+                  <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-2 truncate tabular-nums">
                     {c.population ? <span>Pop {formatNumber(c.population, 1)}</span> : null}
                     {c.population && c.gdp ? <span className="opacity-40">·</span> : null}
                     {c.gdp ? <span>{formatCurrency(c.gdp)}</span> : null}

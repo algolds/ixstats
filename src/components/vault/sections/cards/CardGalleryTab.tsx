@@ -190,7 +190,7 @@ export function CardGalleryTab({
     <div className="space-y-4">
       {/* Library stats banner (NS source) */}
       {(source === "all" || source === "ns") && libraryStats && libraryStats.totalCards > 0 && (
-        <div className="rounded-row border-separator bg-fill-4 flex flex-wrap items-center gap-4 border px-4 py-2.5">
+        <div className="rounded-row border-separator bg-fill-4 flex flex-wrap items-center gap-4 border px-4 py-3">
           <div className="flex items-center gap-2">
             <Layers className="text-tint h-3.5 w-3.5" />
             <span className="text-footnote text-label font-semibold">
@@ -199,7 +199,7 @@ export function CardGalleryTab({
             <span className="text-label-secondary text-footnote">cards in library</span>
           </div>
           {libraryStats.cardsByRegion?.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <MapPin className="text-label-secondary h-3 w-3" />
               <span className="text-label-secondary text-footnote">
                 Top:{" "}

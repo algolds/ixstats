@@ -187,7 +187,7 @@ export function RepositoryWelcomeModal({
                 </div>
 
                 <div className="rounded-row bg-surface-secondary p-3 text-left">
-                  <div className="mb-1.5 flex items-center gap-2">
+                  <div className="mb-2 flex items-center gap-2">
                     <Eye className="text-tint size-4" aria-hidden="true" />
                     <span className="text-headline text-label">Visual-First Discovery</span>
                   </div>
@@ -210,7 +210,7 @@ export function RepositoryWelcomeModal({
                   const Icon = step.icon;
                   return (
                     <div key={step.title} className="rounded-row bg-surface-secondary p-3">
-                      <div className="mb-1.5 flex items-center gap-2">
+                      <div className="mb-2 flex items-center gap-2">
                         <Icon className={cn("size-3.5 shrink-0", step.color)} aria-hidden="true" />
                         <span className="text-caption text-label">{step.title}</span>
                       </div>
@@ -245,14 +245,14 @@ export function RepositoryWelcomeModal({
 
             {activeTab === 3 && (
               <motion.div key="faq-tab" {...tabMotion} className="space-y-3 text-left">
-                <h3 className="text-subhead text-label-secondary flex items-center gap-1.5">
+                <h3 className="text-subhead text-label-secondary flex items-center gap-2">
                   <Info className="text-tint size-3.5" aria-hidden="true" />
                   Common questions
                 </h3>
                 <div className="space-y-3">
                   {REPOSITORY_FAQ.map((faq) => (
                     <div key={faq.q} className="space-y-1">
-                      <h4 className="text-caption text-label flex items-start gap-1.5">
+                      <h4 className="text-caption text-label flex items-start gap-2">
                         <span className="text-tint">Q:</span>
                         {faq.q}
                       </h4>

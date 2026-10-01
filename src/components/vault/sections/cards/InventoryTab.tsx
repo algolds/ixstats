@@ -203,7 +203,7 @@ export function InventoryTab({
                     disabled
                     className="text-label-secondary opacity-50"
                   >
-                    <Folder className="mr-1.5 h-3.5 w-3.5" /> Move
+                    <Folder className="mr-2 h-3.5 w-3.5" /> Move
                   </Button>
                   <Button
                     variant="outline"
@@ -211,7 +211,7 @@ export function InventoryTab({
                     disabled
                     className="text-label-secondary opacity-50"
                   >
-                    <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> List Market
+                    <ShoppingBag className="mr-2 h-3.5 w-3.5" /> List Market
                   </Button>
 
                   <div className="border-separator flex items-center gap-2 border-l pl-2">
@@ -227,12 +227,12 @@ export function InventoryTab({
                     >
                       {junkCardsMutation.isPending ? (
                         <>
-                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                           Junking...
                         </>
                       ) : (
                         <>
-                          <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Junk
+                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Junk
                         </>
                       )}
                     </Button>

@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
+import { Button } from "~/components/ui/button";
 
 interface ArticleCompanionHUDProps {
   title: string;
@@ -56,41 +57,46 @@ function IxWikiPageTools({
   return (
     <>
       {/* Backlinks & Revision History Mini-Grid */}
-      <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-        <button
-          type="button"
+      <div className="grid grid-cols-2 gap-2 pt-0.5">
+        <Button
+          variant="bordered"
+          size="sm"
+          aria-label="What Links Here"
           onClick={() => {
             onOpenBacklinks?.();
           }}
-          className="text-label-secondary hover:text-label rounded-row border-separator bg-fill-4 text-caption hover:bg-fill-4 flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
           title="What Links Here"
+          className="bg-fill-4 text-label-secondary hover:text-label"
         >
           <LinkIcon className="text-teal h-3 w-3" />
           <span>Backlinks</span>
-        </button>
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant="bordered"
+          size="sm"
+          aria-label="Revision History"
           onClick={() => {
             onOpenHistory?.();
           }}
-          className="text-label-secondary hover:text-label rounded-row border-separator bg-fill-4 text-caption hover:bg-fill-4 flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
           title="Revision History"
+          className="bg-fill-4 text-label-secondary hover:text-label"
         >
           <Clock className="text-label-secondary h-3 w-3" />
           <span>History</span>
-        </button>
+        </Button>
       </div>
 
       {/* Margin notes — quiet status row (not a primary button). Left rail remains the control. */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => {
           onOpenMargin?.("threads");
         }}
-        className="group border-separator text-label-secondary hover:text-label text-caption mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 transition-colors"
+        className="group text-label-secondary hover:text-label text-caption mt-1 w-full justify-between px-2 font-normal"
       >
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <ChatBubble className="text-yellow/80 group-hover:text-yellow h-3 w-3" />
           <span>Margin notes</span>
           {notes > 0 ? (
@@ -102,7 +108,7 @@ function IxWikiPageTools({
           )}
         </span>
         <span className="text-label-secondary group-hover:text-label transition-colors">→</span>
-      </button>
+      </Button>
     </>
   );
 }
@@ -188,9 +194,9 @@ export function ArticleCompanionHUD({
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
       <div className="bg-surface rounded-card border-separator border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-        <div className="border-separator mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
+        <div className="border-separator mb-2 flex items-center justify-between gap-2 border-b pb-2">
           {awardsData?.hasLoreward && (
-            <span className="border-yellow/30 bg-yellow/15 text-caption text-yellow inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-semibold">
+            <span className="border-yellow/30 bg-yellow/15 text-caption text-yellow inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold">
               <Trophy className="h-2.5 w-2.5" />
               Awarded
             </span>
@@ -210,13 +216,13 @@ export function ArticleCompanionHUD({
 
           {/* Original Creator / Author — with IxnayID avatar when available */}
           {creatorName && (
-            <div className="border-separator text-footnote flex items-center justify-between border-t pt-1.5">
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-2">
               <span className="text-label-secondary">Created by</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors"
+                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-2 font-semibold transition-colors"
                 title={`Original Author: ${creatorName}`}
               >
                 {creatorAvatar ? (
@@ -253,7 +259,7 @@ export function ArticleCompanionHUD({
 
           {/* Last Updated Timestamp */}
           {effectiveLastModified && (
-            <div className="border-separator text-footnote flex items-center justify-between border-t pt-1.5">
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-2">
               <span className="text-label-secondary">Last Updated</span>
               <span className="text-label text-caption tabular-nums">
                 {new Date(effectiveLastModified).toLocaleDateString(undefined, {
@@ -273,7 +279,7 @@ export function ArticleCompanionHUD({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                 )}
-                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors"
+                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-2 font-medium transition-colors"
                 title={`Last edited by ${lastEditorName}`}
               >
                 {lastEditorAvatar ? (
@@ -296,7 +302,7 @@ export function ArticleCompanionHUD({
 
           {/* Other Contributors Section */}
           {otherContributors.length > 0 && (
-            <div className="border-separator space-y-1.5 border-t pt-2">
+            <div className="border-separator space-y-2 border-t pt-2">
               <div className="text-footnote flex items-center justify-between">
                 <span className="text-label-secondary flex items-center gap-1 font-medium">
                   <Users className="text-teal h-3 w-3" />
@@ -315,7 +321,7 @@ export function ArticleCompanionHUD({
                       href={withBasePath(
                         `/wiki/User:${encodeURIComponent(contrib.username.replace(/ /g, "_"))}`
                       )}
-                      className="text-label rounded-control-sm border-separator bg-fill-4 text-caption hover:bg-fill-4 hover:text-teal inline-flex max-w-[140px] items-center gap-1 truncate border px-1.5 py-0.5 transition-colors"
+                      className="text-label rounded-control-sm border-separator bg-fill-4 text-caption hover:bg-fill-4 hover:text-teal inline-flex max-w-[140px] items-center gap-1 truncate border px-2 py-0.5 transition-colors"
                       title={`${contrib.username} (${contrib.editCount || 1} edits)`}
                     >
                       <span>{contrib.username}</span>
@@ -329,13 +335,15 @@ export function ArticleCompanionHUD({
                 )}
 
                 {otherContributors.length > 3 && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="sm"
+                    aria-expanded={showAllContributors}
                     onClick={() => setShowAllContributors((v) => !v)}
-                    className="text-caption text-teal hover:text-teal cursor-pointer px-1 py-0.5 font-semibold transition-colors"
+                    className="text-teal h-auto px-1 py-0.5"
                   >
                     {showAllContributors ? "Show less" : `+${otherContributors.length - 3} more`}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -344,11 +352,12 @@ export function ArticleCompanionHUD({
       </div>
 
       {/* 2. Quick Actions Glass Control Center */}
-      <div className="bg-surface rounded-card border-separator space-y-1.5 border p-2.5">
+      <div className="bg-surface rounded-card border-separator space-y-2 border p-3">
         {/* Listen / Voice Narrator Toggle */}
         {narrator && (
-          <button
-            type="button"
+          <Button
+            variant="bordered"
+            aria-pressed={narrator.isPlaying}
             onClick={() => {
               if (narrator.isPlaying) {
                 narrator.pause();
@@ -357,10 +366,10 @@ export function ArticleCompanionHUD({
               }
             }}
             className={cn(
-              "group rounded-row text-caption flex w-full cursor-pointer items-center justify-between px-2.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
+              "group rounded-row text-caption w-full justify-between px-3 font-semibold",
               narrator.isPlaying
-                ? "border-teal/40 bg-teal/20 text-teal border"
-                : "text-label border-separator bg-fill-4 hover:bg-fill-4 border"
+                ? "border-teal/40 bg-teal/20 text-teal hover:bg-teal/20"
+                : "text-label bg-fill-4"
             )}
           >
             <div className="flex items-center gap-2">
@@ -378,11 +387,11 @@ export function ArticleCompanionHUD({
                 <span className="bg-teal/70 h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full" />
               </span>
             ) : (
-              <span className="border-teal/30 bg-teal/15 text-eyebrow text-teal rounded-full border px-1.5 py-0.5 leading-none">
+              <span className="border-teal/30 bg-teal/15 text-eyebrow text-teal rounded-full border px-2 py-0.5 leading-none">
                 Beta
               </span>
             )}
-          </button>
+          </Button>
         )}
 
         {!readOnly && (
@@ -399,7 +408,7 @@ export function ArticleCompanionHUD({
       {categories.length > 0 && (
         <div className="bg-surface rounded-card border-separator border p-3">
           <div className="text-label-secondary font-brand text-eyebrow mb-2">Categories</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             {categories.slice(0, 4).map((cat) => {
               const cleanCat = typeof cat === "string" ? cat : ((cat as any)?.title ?? "");
               if (!cleanCat) return null;

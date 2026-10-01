@@ -294,7 +294,7 @@ const IxnayEmblem = React.memo(
             activeTheme.medallionGlow
           )}
         />
-        <div className="rounded-control absolute inset-1.5 -rotate-45 border border-white/40" />
+        <div className="rounded-control absolute inset-2 -rotate-45 border border-white/40" />
 
         {/* Holographic Logo Container — Masked Strictly to Logo Vector Paths */}
         <div className="relative z-10 flex h-full w-full items-center justify-center p-2">
@@ -422,7 +422,7 @@ const CardBackHeader = React.memo(
         {showRarity ? (
           <span
             className={cn(
-              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-bold tracking-wider transition-colors duration-300",
+              "flex items-center gap-2 rounded-full border px-2 py-0.5 font-bold tracking-wider transition-colors duration-300",
               activeTheme.badgeBg,
               activeTheme.badgeBorder,
               activeTheme.textPrimary
@@ -539,7 +539,7 @@ export const CardBack = React.memo<CardBackProps>(
         onPointerMove={!performanceMode ? handlePointerMove : undefined}
         onPointerLeave={!performanceMode ? handlePointerLeave : undefined}
         className={cn(
-          "rounded-sheet relative flex h-full min-h-full w-full min-w-full flex-col justify-between overflow-hidden p-3.5 select-none",
+          "rounded-sheet relative flex h-full min-h-full w-full min-w-full flex-col justify-between overflow-hidden p-4 select-none",
           "shadow-floating border-2 bg-slate-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           rarityTheme.borderOuter,
           rarityTheme.cardGlow,

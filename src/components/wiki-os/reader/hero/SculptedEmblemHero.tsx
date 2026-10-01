@@ -38,6 +38,7 @@ import { getPrimeMeridianWeather, type WeatherIconType } from "~/lib/ixtime/weat
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
 import { FeaturedArticleRefractionCard, FeaturedThumbnailFrame } from "./FeaturedImageRefraction";
 import type { WikiHeroProps } from "./types";
+import { Button } from "~/components/ui/button";
 
 // oxlint-disable-next-line eslint/no-unused-vars
 function WeatherIcon({ icon, className }: { icon: WeatherIconType; className?: string }) {
@@ -200,7 +201,7 @@ export function SculptedEmblemHero({
           whileHover={reduceMotion ? {} : { scale: 1.04, y: -2 }}
           whileTap={reduceMotion ? {} : { scale: 0.96 }}
           transition={{ type: "spring", stiffness: 360, damping: 24 }}
-          className="relative mb-2.5 flex items-center justify-center sm:mb-3"
+          className="relative mb-2 flex items-center justify-center sm:mb-3"
           aria-label="IxWiki Home"
         >
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
@@ -216,7 +217,7 @@ export function SculptedEmblemHero({
             size="hero"
             className="group-hover/brand:text-label leading-none transition-colors"
           />
-          <div className="mt-1.5 flex items-center justify-center">
+          <div className="mt-2 flex items-center justify-center">
             <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none tracking-[0.18em]">
               Worldbuilding Encyclopedia
             </span>
@@ -229,7 +230,7 @@ export function SculptedEmblemHero({
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-30 mt-3 w-full max-w-xl px-4 sm:mt-3.5"
+        className="relative z-30 mt-3 w-full max-w-xl px-4 sm:mt-4"
       >
         <HeroSpotlightSearch placeholderHints={searchPlaceholders} />
       </motion.div>
@@ -239,7 +240,7 @@ export function SculptedEmblemHero({
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 flex w-full flex-wrap items-center justify-center gap-2 pt-1 pb-2 sm:gap-2.5"
+        className="relative z-10 flex w-full flex-wrap items-center justify-center gap-2 pt-1 pb-2 sm:gap-2"
       >
         {/* Action 1: Award-Winning Lore */}
         <Link
@@ -247,7 +248,7 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "border-separator border",
             "bg-surface",
             "",
@@ -265,7 +266,7 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "border-separator border",
             "bg-surface",
             "",
@@ -283,7 +284,7 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "border-separator border",
             "bg-surface",
             "",
@@ -301,12 +302,12 @@ export function SculptedEmblemHero({
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.16 }}
-        className="relative z-10 mt-4 grid w-full max-w-6xl grid-cols-1 gap-2.5 px-4 sm:mt-5 sm:gap-3 md:grid-cols-2"
+        className="relative z-10 mt-4 grid w-full max-w-6xl grid-cols-1 gap-2 px-4 sm:mt-5 sm:gap-3 md:grid-cols-2"
       >
         {/* Tile: Timeline (Milestones & Canon Historical Events) */}
         <div
           className={cn(
-            "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+            "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
             "border-separator border",
             "bg-surface",
             "",
@@ -316,42 +317,40 @@ export function SculptedEmblemHero({
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
           <div className="mb-1 flex w-full items-center justify-between">
-            <span className="text-eyebrow text-yellow flex items-center gap-1.5">
+            <span className="text-eyebrow text-yellow flex items-center gap-2">
               <History className="h-3.5 w-3.5" /> Timeline
             </span>
             {/* Apple-grade stepper pill */}
             <div className="rounded-control-sm border-separator bg-fill-4 flex items-center gap-0.5 border px-1 py-0.5">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setChronicleIndex((prev) =>
                     prev === 0 ? CANON_CHRONICLE_EVENTS.length - 1 : prev - 1
                   );
                 }}
-                data-cuelume-press="tick"
-                data-cuelume-hover="tick"
-                className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-[0.98]"
                 aria-label="Previous historical event"
+                className="text-label-secondary size-6"
               >
                 <ChevronLeft className="h-3 w-3" />
-              </button>
+              </Button>
               <span className="text-label-secondary text-caption px-1 tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setChronicleIndex((prev) => (prev + 1) % CANON_CHRONICLE_EVENTS.length);
                 }}
-                data-cuelume-press="tick"
-                data-cuelume-hover="tick"
-                className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-[0.98]"
                 aria-label="Next historical event"
+                className="text-label-secondary size-6"
               >
                 <ChevronRight className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -372,8 +371,8 @@ export function SculptedEmblemHero({
                   data-cuelume-hover="tick"
                   className="group/event block transition-transform active:scale-[0.98]"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow shrink-0 border px-1.5 font-semibold tabular-nums">
+                  <div className="flex items-center gap-2">
+                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow shrink-0 border px-2 font-semibold tabular-nums">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
                     <span className="text-label text-caption group-hover/event:text-yellow sm:text-callout truncate leading-tight font-semibold transition-colors">
@@ -397,7 +396,7 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
               "border-separator border",
               "bg-surface",
               "",
@@ -407,7 +406,7 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-tint flex items-center gap-1.5">
+              <span className="text-eyebrow text-tint flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <div className="flex items-center gap-1">
@@ -444,7 +443,7 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
               "border-separator border",
               "bg-surface",
               "",
@@ -454,7 +453,7 @@ export function SculptedEmblemHero({
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-tint flex items-center gap-1.5">
+              <span className="text-eyebrow text-tint flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
@@ -487,9 +486,9 @@ export function SculptedEmblemHero({
             mode={refractionMode}
           >
             {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
-            <div className="relative z-10 mb-3.5 flex items-center justify-between gap-2 sm:mb-4">
+            <div className="relative z-10 mb-4 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold">
+                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
                   <Star className="fill-yellow text-yellow h-3.5 w-3.5" />
                   <span>Featured Article</span>
                 </div>
@@ -500,7 +499,7 @@ export function SculptedEmblemHero({
                     typeof creator === "object" ? (creator as any)?.username : creator;
                   if (!creatorName) return null;
                   return (
-                    <div className="text-label-secondary text-caption hidden items-center gap-1.5 sm:flex">
+                    <div className="text-label-secondary text-caption hidden items-center gap-2 sm:flex">
                       <span className="text-label-secondary select-none">·</span>
                       <span className="flex items-center gap-1">
                         {featuredArticleData?.authorInfo?.creatorAvatar ? (
@@ -576,7 +575,7 @@ export function SculptedEmblemHero({
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
-                      className="text-label group/cta text-caption hover:text-yellow inline-flex items-center gap-1.5 font-semibold transition-colors"
+                      className="text-label group/cta text-caption hover:text-yellow inline-flex items-center gap-2 font-semibold transition-colors"
                     >
                       <span>Read full article</span>
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cta:translate-x-1" />

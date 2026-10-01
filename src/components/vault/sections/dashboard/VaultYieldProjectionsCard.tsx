@@ -49,7 +49,7 @@ export function VaultYieldProjectionsCard({
   return (
     <FacetCard padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row border-blue/30 bg-blue/15 text-blue shadow-card flex h-8 w-8 items-center justify-center border">
             <TrendingUp className="text-blue h-4.5 w-4.5" />
           </div>
@@ -64,12 +64,12 @@ export function VaultYieldProjectionsCard({
           >
             {isClaimPending ? (
               <>
-                <Loader2 className="text-label mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="text-label mr-2 h-3.5 w-3.5 animate-spin" />
                 Claiming...
               </>
             ) : (
               <>
-                <Gift className="text-label mr-1.5 h-3.5 w-3.5" />
+                <Gift className="text-label mr-2 h-3.5 w-3.5" />
                 Claim Daily Bonus
               </>
             )}
@@ -90,7 +90,7 @@ export function VaultYieldProjectionsCard({
               <span className="text-label-secondary text-eyebrow block">
                 Treasury Revenue Forecasts
               </span>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Daily Treasury Yield</span>
                   <span className="text-blue flex items-center gap-0.5 font-semibold tabular-nums">
@@ -126,9 +126,9 @@ export function VaultYieldProjectionsCard({
               <span className="text-label-secondary text-eyebrow block">
                 Active Multipliers & Streaks
               </span>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="text-footnote flex items-center justify-between">
-                  <span className="text-label-secondary flex items-center gap-1.5 font-medium">
+                  <span className="text-label-secondary flex items-center gap-2 font-medium">
                     <Flame className="fill-orange/20 text-orange h-3.5 w-3.5" /> Active Streak
                   </span>
                   <span className="text-orange font-semibold tabular-nums">{loginStreak} Days</span>

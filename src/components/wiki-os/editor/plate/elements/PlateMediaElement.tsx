@@ -6,6 +6,7 @@ import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
 import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { Button } from "~/components/ui/button";
 
 /** Stashed/Commons media block — original figure HTML or AST-resolved image rendered. */
 export function PlateMediaElement({
@@ -80,20 +81,21 @@ export function PlateMediaElement({
               </div>
             )}
             {caption && (
-              <figcaption className="text-footnote text-label-secondary mt-1.5 text-center">
+              <figcaption className="text-footnote text-label-secondary mt-2 text-center">
                 {caption}
               </figcaption>
             )}
           </figure>
         )}
         {!readOnly && (
-          <button
-            type="button"
+          <Button
+            variant="gray"
+            size="sm"
             onClick={handleDelete}
-            className="rounded-control text-caption absolute top-2 right-2 z-10 bg-black/60 px-2 py-0.5 font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 active:scale-[0.98]"
+            className="absolute top-2 right-2 z-10 bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 focus-visible:opacity-100"
           >
             Remove
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -24,6 +24,8 @@ interface CreateStashPopoverProps {
   existingNames?: string[];
   triggerClassName?: string;
   triggerLabel?: string;
+  /** Button style of the default trigger. @default "filled" */
+  triggerVariant?: React.ComponentProps<typeof Button>["variant"];
   children?: React.ReactNode;
 }
 
@@ -33,6 +35,7 @@ export function CreateStashPopover({
   existingNames = [],
   triggerClassName,
   triggerLabel = "New Collection",
+  triggerVariant,
   children,
 }: CreateStashPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,7 +87,12 @@ export function CreateStashPopover({
         {children ? (
           <div className="inline-block cursor-pointer">{children}</div>
         ) : (
-          <Button size="sm" className={triggerClassName} title="Create a new collection">
+          <Button
+            size="sm"
+            variant={triggerVariant}
+            className={triggerClassName}
+            title="Create a new collection"
+          >
             <Plus aria-hidden="true" />
             <span>{triggerLabel}</span>
           </Button>
@@ -112,7 +120,7 @@ export function CreateStashPopover({
 
         {/* Error message */}
         {error && (
-          <p className="rounded-control bg-red/10 text-footnote text-red flex items-center gap-1.5 p-2">
+          <p className="rounded-control bg-red/10 text-footnote text-red flex items-center gap-2 p-2">
             <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </p>
@@ -136,7 +144,7 @@ export function CreateStashPopover({
           </label>
 
           {/* Colour swatch picker */}
-          <div className="rounded-row bg-surface-secondary space-y-2 p-2.5">
+          <div className="rounded-row bg-surface-secondary space-y-2 p-3">
             <span className="text-subhead text-label-secondary block">Color Tag</span>
             <div
               className="flex items-center justify-between gap-1"

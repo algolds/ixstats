@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { Button } from "~/components/ui/button";
 
 export default function RandomPage() {
   const router = useRouter();
@@ -31,9 +32,9 @@ export default function RandomPage() {
       ) : (
         <div className="wikios-error rounded-card border-separator bg-surface border p-6">
           <p className="text-body text-label-secondary">Could not fetch a random page.</p>
-          <button onClick={() => refetch()} className="wikios-action-btn mt-3">
+          <Button variant="tinted" size="sm" onClick={() => refetch()} className="mt-3">
             Try again
-          </button>
+          </Button>
         </div>
       )}
     </WikiOSLayout>

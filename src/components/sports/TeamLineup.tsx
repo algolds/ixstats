@@ -159,13 +159,13 @@ export function TeamLineup({
                         {player.number ?? initials}
 
                         {/* Rating Overlay Badge */}
-                        <div className="border-separator bg-surface text-caption text-label absolute -top-1.5 -right-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
+                        <div className="border-separator bg-surface text-caption text-label absolute -top-2 -right-2 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
                           {player.overallRating}
                         </div>
                       </div>
 
                       {/* Mini Name underneath */}
-                      <span className="rounded-control-sm text-caption mt-1 max-w-[70px] truncate bg-black/60 px-1.5 py-0.5 leading-none text-white">
+                      <span className="rounded-control-sm text-caption mt-1 max-w-[70px] truncate bg-black/60 px-2 py-0.5 leading-none text-white">
                         {player.lastName}
                       </span>
                     </div>
@@ -179,7 +179,7 @@ export function TeamLineup({
                       {SPORTS_ABBREVIATIONS[player.position] || player.position} #
                       {player.number ?? "--"}
                     </div>
-                    <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-1.5">
+                    <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-2">
                       <span className="text-label-secondary font-semibold">RATING:</span>
                       <span className="text-green font-semibold tabular-nums">
                         {player.overallRating} Overall

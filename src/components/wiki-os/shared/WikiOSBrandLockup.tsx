@@ -62,7 +62,7 @@ export function WikiOSBrandLockup({
       <motion.div
         whileTap={{ scale: PRESS_SCALE }}
         transition={springSnappy}
-        className="relative mb-2.5 flex cursor-pointer items-center justify-center"
+        className="relative mb-2 flex cursor-pointer items-center justify-center"
       >
         {/* The Laurel Logo */}
         <IxWikiLogo size={84} className="text-tint relative size-18 sm:size-22" />

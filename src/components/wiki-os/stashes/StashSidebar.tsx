@@ -9,7 +9,6 @@ import {
   Trash as Trash2,
   Check,
   Xmark as X,
-  Plus,
   SystemRestart as Loader2,
   Folder as FolderIcon,
 } from "iconoir-react";
@@ -17,6 +16,8 @@ import { cn } from "~/lib/utils";
 
 import { PRESET_COLORS, type StashHeaderItem } from "./types";
 import { CreateStashPopover } from "./CreateStashPopover";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 
 interface StashSidebarProps {
   stashes: StashHeaderItem[];
@@ -80,7 +81,7 @@ export function StashSidebar({
       </div>
 
       {/* Collection List */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {stashes.map((s) => {
           const isActive = activeStashId === s.id;
           const isEditing = editingStash === s.id;
@@ -91,19 +92,17 @@ export function StashSidebar({
               key={s.id}
               className={cn(
                 "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-                isActive
-                  ? "border-separator bg-surface shadow-card ring-separator ring-1"
-                  : "hover:border-separator hover:bg-surface-secondary border-transparent"
+                isActive ? "bg-tint-fill border-transparent" : "hover:bg-fill-4 border-transparent"
               )}
             >
               {isEditing ? (
                 /* Inline Edit State */
-                <div className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-2.5 border p-3 duration-150">
-                  <input
+                <div className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-2 border p-3 duration-150">
+                  <Input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="rounded-row border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint w-full border px-2.5 py-1.5 transition-colors outline-none"
+                    aria-label="Collection name"
                     autoFocus
                     placeholder="Collection name..."
                     onKeyDown={(e) => {
@@ -113,16 +112,25 @@ export function StashSidebar({
                   />
 
                   {/* Preset Colors Swatches */}
-                  <div className="flex items-center justify-between gap-1 px-0.5 pt-0.5">
+                  <div
+                    className="flex items-center justify-between gap-1 px-0.5 pt-0.5"
+                    role="radiogroup"
+                    aria-label="Color Tag"
+                  >
                     {PRESET_COLORS.map((c) => (
+                      // A colour swatch (data colour), exposed as a radio like CreateStashPopover's.
                       <button
                         key={c}
                         type="button"
+                        role="radio"
+                        aria-checked={editColor === c}
+                        aria-label={c}
+                        title={c}
                         onClick={() => setEditColor(c)}
                         className={cn(
                           "relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-[0.98]",
                           editColor === c
-                            ? "scale-115 ring-2 ring-white/80"
+                            ? "ring-tint ring-offset-surface ring-2 ring-offset-2"
                             : "opacity-80 hover:opacity-100"
                         )}
                         style={{ backgroundColor: c }}
@@ -133,40 +141,33 @@ export function StashSidebar({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-end gap-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setEditingStash(null)}
-                      className="rounded-row text-caption text-label-secondary hover:bg-fill-4 hover:text-label cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                    >
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <Button variant="gray" size="sm" onClick={() => setEditingStash(null)}>
                       Cancel
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      size="sm"
                       onClick={() => handleSaveEdit(s.id)}
                       disabled={isUpdating || !editName.trim()}
-                      className="rounded-row bg-tint text-caption text-on-tint hover:bg-tint-hover cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-40"
                     >
                       Save
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 /* Standard Collection Item */
-                <div className="flex items-center justify-between p-1.5">
+                <div className="flex items-center justify-between p-2">
                   <button
                     type="button"
                     onClick={() => {
                       onSelectStash(s.id);
                     }}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-2 py-1 text-left"
+                    aria-current={isActive ? "true" : undefined}
+                    className="rounded-control focus-visible:outline-tint flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 px-2 py-1 text-left outline-none focus-visible:outline-2"
                   >
                     <span
                       className="h-3 w-3 shrink-0 rounded-full transition-transform"
-                      style={{
-                        backgroundColor: s.color,
-                        boxShadow: isActive ? `0 0 10px ${s.color}80` : undefined,
-                      }}
+                      style={{ backgroundColor: s.color }}
                     />
                     <span
                       className={cn(
@@ -184,71 +185,79 @@ export function StashSidebar({
                     {/* Item count badge */}
                     <span
                       className={cn(
-                        "rounded-control-sm text-caption px-1.5 py-0.5 font-semibold transition-opacity",
+                        "rounded-control-sm text-caption px-2 py-0.5 font-semibold transition-opacity",
                         isActive ? "bg-surface text-label" : "bg-fill-4 text-label-secondary",
-                        "group-hover:pointer-events-none group-hover:opacity-0"
+                        "group-focus-within:opacity-0 group-hover:pointer-events-none group-hover:opacity-0"
                       )}
                     >
                       {s.itemCount}
                     </span>
 
                     {/* Action buttons */}
-                    <div className="absolute right-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        type="button"
+                    <div className="absolute right-2 flex items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                      <Button
+                        variant="bordered"
+                        size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleStartEdit(s);
                         }}
-                        className="rounded-control border-separator bg-surface text-label-secondary hover:bg-fill-3 hover:text-label flex h-6 w-6 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                        className="bg-surface text-label-secondary size-6"
                         title="Edit collection"
+                        aria-label="Edit collection"
                       >
-                        <Pencil className="h-3 w-3" />
-                      </button>
+                        <Pencil className="size-3" />
+                      </Button>
 
                       {!s.isDefault &&
                         (isDeletingThis ? (
                           <div className="rounded-control border-red/40 bg-surface shadow-card flex items-center gap-1 border p-0.5">
-                            <button
-                              type="button"
+                            <Button
+                              variant="destructive"
+                              size="icon-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleConfirmDelete(s.id);
                               }}
                               disabled={isDeleting}
-                              className="rounded-control-sm bg-red text-on-red hover:bg-red flex h-5 w-5 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                              className="size-5"
                               title="Confirm delete"
+                              aria-label="Confirm delete"
                             >
                               {isDeleting ? (
                                 <Loader2 className="h-2.5 w-2.5 animate-spin" />
                               ) : (
                                 <Check className="h-2.5 w-2.5" />
                               )}
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setConfirmDelete(null);
                               }}
-                              className="rounded-control-sm text-label-secondary hover:bg-fill-4 hover:text-label flex h-5 w-5 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                              className="text-label-secondary size-5"
                               title="Cancel"
+                              aria-label="Cancel delete"
                             >
                               <X className="h-2.5 w-2.5" />
-                            </button>
+                            </Button>
                           </div>
                         ) : (
-                          <button
-                            type="button"
+                          <Button
+                            variant="bordered"
+                            size="icon-sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               setConfirmDelete(s.id);
                             }}
-                            className="rounded-control border-separator bg-surface text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-6 w-6 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                            className="bg-surface text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red size-6"
                             title="Delete collection"
+                            aria-label="Delete collection"
                           >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                            <Trash2 className="size-3" />
+                          </Button>
                         ))}
                     </div>
                   </div>
@@ -264,16 +273,9 @@ export function StashSidebar({
         onCreate={onCreateStash}
         isCreating={isCreating}
         existingNames={stashes.map((s) => s.name)}
-        triggerClassName="w-full justify-center"
-      >
-        <button
-          type="button"
-          className="rounded-card border-separator text-caption text-label-secondary hover:border-yellow/40 hover:bg-yellow/5 hover:text-yellow flex w-full cursor-pointer items-center justify-center gap-2 border border-dashed px-3 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          <span>New Collection</span>
-        </button>
-      </CreateStashPopover>
+        triggerVariant="bordered"
+        triggerClassName="w-full justify-center border-dashed text-label-secondary"
+      />
     </aside>
   );
 }

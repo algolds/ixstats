@@ -359,11 +359,11 @@ export function MarginGutterPins({
           >
             {/* Elevated Flyout Tooltip (Floats above pin to avoid blocking article text) */}
             {isHovered && hasFlyout && (
-              <div className="animate-in fade-in zoom-in-95 rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-1.5 whitespace-nowrap duration-150">
+              <div className="animate-in fade-in zoom-in-95 rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-2 whitespace-nowrap duration-150">
                 {isCluster ? (
                   <>
                     <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-1 font-semibold">
-                      <span className="py-0.2 bg-margin-accent rounded-control-sm text-caption px-1.5 font-semibold text-(--margin-badge-text)">
+                      <span className="py-0.2 bg-margin-accent rounded-control-sm text-caption px-2 font-semibold text-(--margin-badge-text)">
                         Cluster
                       </span>
                       <span>({pin.count} items)</span>
@@ -380,8 +380,8 @@ export function MarginGutterPins({
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 bg-margin-accent rounded-control-sm text-eyebrow px-1.5 text-(--margin-badge-text)">
+                  <div className="flex items-center gap-2">
+                    <span className="py-0.2 bg-margin-accent rounded-control-sm text-eyebrow px-2 text-(--margin-badge-text)">
                       {isAnnotation ? "Note" : "Thread"}
                     </span>
                     <span className="opacity-40">·</span>

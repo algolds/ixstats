@@ -8,6 +8,7 @@ import { withBasePath } from "~/lib/base-path";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
 
 import type { StashedThreadItem } from "./types";
+import { Button } from "~/components/ui/button";
 
 interface StashThreadsListProps {
   items: StashedThreadItem[];
@@ -26,12 +27,12 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
         return (
           <div
             key={item.id}
-            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2.5 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             <div className="flex items-start justify-between gap-3">
               <Link
                 href={withBasePath(forumUrl)}
-                className="group/title flex min-w-0 flex-1 items-center gap-2.5"
+                className="group/title flex min-w-0 flex-1 items-center gap-2"
               >
                 <div className="rounded-row border-orange/30 bg-orange/15 text-orange flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
                   <MessageSquare className="h-4 w-4" />
@@ -49,7 +50,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                         year: "numeric",
                       })}
                     </span>
-                    <span className="py-0.2 rounded-control-sm border-orange/25 bg-orange/15 text-eyebrow text-orange border px-1.5">
+                    <span className="py-0.2 rounded-control-sm border-orange/25 bg-orange/15 text-eyebrow text-orange border px-2">
                       Forum
                     </span>
                   </div>
@@ -59,24 +60,26 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(forumUrl)}
-                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Open forum thread"
                 >
                   <span>Open</span>
                   <ArrowUpRight className="h-3 w-3" />
                 </Link>
 
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="icon-sm"
+                  aria-label="Remove from stash"
                   onClick={(e) => {
                     e.stopPropagation();
                     onUnstash(item.pageTitle);
                   }}
-                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-7 w-7 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Remove from stash"
+                  className="bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>

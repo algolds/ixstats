@@ -58,7 +58,7 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
           {matchDay && (
             <Badge
               variant="outline"
-              className="border-separator text-footnote px-1.5 py-0 font-semibold"
+              className="border-separator text-footnote px-2 py-0 font-semibold"
             >
               Round {matchDay}
             </Badge>
@@ -105,7 +105,7 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
               {/* Score / Status */}
               <div className="mx-2 flex shrink-0 flex-col items-center justify-center">
                 {isCompleted ? (
-                  <div className="text-footnote text-label bg-fill-3 rounded-control-sm flex items-center gap-1 px-1.5 py-0.5 font-semibold tabular-nums">
+                  <div className="text-footnote text-label bg-fill-3 rounded-control-sm flex items-center gap-1 px-2 py-0.5 font-semibold tabular-nums">
                     <span>{match.homeScore ?? 0}</span>
                     <span className="text-label-tertiary">:</span>
                     <span>{match.awayScore ?? 0}</span>

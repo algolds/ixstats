@@ -17,6 +17,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 
 interface HeroSpotlightSearchProps {
   className?: string;
@@ -167,7 +168,7 @@ export function HeroSpotlightSearch({
           setIsOpen(true);
         }}
         className={cn(
-          "rounded-row flex w-full cursor-text items-center justify-between gap-2.5 px-3.5 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 sm:px-4",
+          "rounded-row flex w-full cursor-text items-center justify-between gap-2 px-4 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 sm:px-4",
           "border-separator border",
           "bg-surface",
           "",
@@ -176,7 +177,7 @@ export function HeroSpotlightSearch({
             : "hover:border-separator hover:bg-surface"
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <Search
             className={cn("h-4 w-4 shrink-0 transition-colors", isOpen ? "text-tint" : "text-tint")}
           />
@@ -199,20 +200,22 @@ export function HeroSpotlightSearch({
 
         {/* Clear Button or Cmd+K Badge */}
         {query ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={(e) => {
               e.stopPropagation();
               setQuery("");
               inputRef.current?.focus();
             }}
-            className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-1 transition-colors hover:bg-black/5"
             title="Clear search"
+            className="text-label-secondary size-6"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         ) : (
-          <kbd className="border-separator bg-surface text-label-secondary rounded-control-sm text-caption hidden shrink-0 border px-1.5 py-0.5 sm:inline-flex">
+          <kbd className="border-separator bg-surface text-label-secondary rounded-control-sm text-caption hidden shrink-0 border px-2 py-0.5 sm:inline-flex">
             ⌘K
           </kbd>
         )}
@@ -226,10 +229,10 @@ export function HeroSpotlightSearch({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-card border-separator bg-surface shadow-floating absolute top-full right-0 left-0 z-50 mt-2 min-w-[320px] overflow-hidden border p-1.5"
+            className="rounded-card border-separator bg-surface shadow-floating absolute top-full right-0 left-0 z-50 mt-2 min-w-[320px] overflow-hidden border p-2"
           >
             {/* Header / Results Count */}
-            <div className="text-label-secondary border-separator text-eyebrow mb-1 flex items-center justify-between border-b px-2.5 py-1.5">
+            <div className="text-label-secondary border-separator text-eyebrow mb-1 flex items-center justify-between border-b px-3 py-2">
               <span>
                 {isLoading
                   ? "Searching encyclopedia..."
@@ -249,14 +252,14 @@ export function HeroSpotlightSearch({
                 onClick={() => handleCreatePage(query.trim())}
                 onMouseEnter={() => setSelectedIndex(results.length)}
                 className={cn(
-                  "group rounded-row mb-1 flex w-full cursor-pointer items-center justify-between gap-2.5 border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "group rounded-row mb-1 flex w-full cursor-pointer items-center justify-between gap-2 border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   selectedIndex === results.length
                     ? "border-tint/35 bg-tint/15 text-tint font-semibold"
                     : "border-tint/20 bg-tint/5 text-tint hover:bg-tint/10"
                 )}
               >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="rounded-control bg-tint/20 text-tint shrink-0 p-1.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="rounded-control bg-tint/20 text-tint shrink-0 p-2">
                     <Plus className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0">
@@ -298,7 +301,7 @@ export function HeroSpotlightSearch({
                       onClick={() => navigateToArticle(item.title)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={cn(
-                        "group rounded-row flex w-full cursor-pointer items-center justify-between gap-3 px-2.5 py-2 text-left transition-colors",
+                        "group rounded-row flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left transition-colors",
                         isSelected
                           ? "border-tint/20 bg-tint/10 border"
                           : "hover:bg-fill-4 border border-transparent"
@@ -335,7 +338,7 @@ export function HeroSpotlightSearch({
                         )}
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <span
                               className={cn(
                                 "text-caption truncate font-semibold",
@@ -345,7 +348,7 @@ export function HeroSpotlightSearch({
                               {displayTitle}
                             </span>
                             {isCat && (
-                              <span className="py-0.2 rounded-control-sm bg-yellow/15 text-caption text-yellow px-1.5">
+                              <span className="py-0.2 rounded-control-sm bg-yellow/15 text-caption text-yellow px-2">
                                 Category
                               </span>
                             )}
@@ -370,7 +373,7 @@ export function HeroSpotlightSearch({
                     onClick={() => navigateToSearchPage(query.trim())}
                     onMouseEnter={() => setSelectedIndex(results.length + 1)}
                     className={cn(
-                      "border-separator rounded-row mt-1 flex w-full cursor-pointer items-center justify-between border-t px-2.5 py-2 text-left transition-colors",
+                      "border-separator rounded-row mt-1 flex w-full cursor-pointer items-center justify-between border-t px-3 py-2 text-left transition-colors",
                       selectedIndex === results.length + 1
                         ? "bg-tint/10 text-tint font-semibold"
                         : "text-label-secondary hover:text-label hover:bg-fill-4"
@@ -390,7 +393,7 @@ export function HeroSpotlightSearch({
             )}
 
             {/* Micro navigation tip footer */}
-            <div className="text-label-secondary border-separator text-footnote mt-1 flex items-center justify-between border-t px-2.5 pt-1.5 pb-0.5 select-none">
+            <div className="text-label-secondary border-separator text-footnote mt-1 flex items-center justify-between border-t px-3 pt-2 pb-0.5 select-none">
               <span>↑↓ Navigate</span>
               <span>↵ Select / Create</span>
               <span>Esc Close</span>

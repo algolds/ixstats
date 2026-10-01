@@ -173,7 +173,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   {isIIWiki && <IIWikiBadge size="sm" />}
                   {isLoreCard && resolvedCategory && categoryLabel && (
                     <span
-                      className="border-separator text-label text-caption inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+                      className="border-separator text-label text-caption inline-flex items-center gap-2 rounded-full border px-3 py-1"
                       style={
                         categoryTheme
                           ? {
@@ -221,26 +221,26 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
             <div className="border-separator shrink-0 border-b px-4 sm:px-6">
               <TabsList className="bg-transparent">
                 <TabsTrigger value="overview">
-                  <Info className="mr-1.5 h-3.5 w-3.5" />
+                  <Info className="mr-2 h-3.5 w-3.5" />
                   Overview
                 </TabsTrigger>
                 <TabsTrigger value="market">
-                  <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+                  <BarChart3 className="mr-2 h-3.5 w-3.5" />
                   Market & Provenance
                 </TabsTrigger>
                 {isNsImportCard && (
                   <TabsTrigger value="stats">
-                    <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
+                    <TrendingUp className="mr-2 h-3.5 w-3.5" />
                     Stats
                   </TabsTrigger>
                 )}
                 <TabsTrigger value="lore">
-                  <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+                  <BookOpen className="mr-2 h-3.5 w-3.5" />
                   Lore
                 </TabsTrigger>
                 {comparisonCard && comparisonStats && (
                   <TabsTrigger value="compare">
-                    <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
+                    <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
                     Compare
                   </TabsTrigger>
                 )}

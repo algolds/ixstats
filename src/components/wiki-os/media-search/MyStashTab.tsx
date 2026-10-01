@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CommonsImage } from "./types";
+import { Button } from "~/components/ui/button";
 
 interface MyStashTabProps {
   selectedImageObj: CommonsImage | null;
@@ -164,37 +165,39 @@ export function MyStashTab({
             className="text-footnote bg-fill-4 border-separator focus-visible:bg-background focus-visible:ring-ring h-9 pr-8 pl-9 focus-visible:ring-1"
           />
           {stashSearchQuery && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setStashSearchQuery("")}
-              className="text-label-secondary hover:text-label hover:bg-fill-3 absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               title="Clear search"
               aria-label="Clear search"
+              className="text-label-secondary absolute top-1/2 right-2 size-6 -translate-y-1/2 rounded-full"
             >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Breadcrumb row */}
-        <div className="text-label-secondary border-separator text-footnote flex items-center gap-1.5 border-t py-1.5">
-          <button
-            type="button"
+        <div className="text-label-secondary border-separator text-footnote flex items-center gap-2 border-t py-2">
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => {
               setStashViewMode("stashes");
               setSelectedStashId(null);
               onSelectImage(null as any);
               setStashSearchQuery("");
             }}
-            className="hover:text-label flex cursor-pointer items-center gap-1 font-semibold transition-colors active:scale-[0.98]"
+            className="text-label-secondary hover:text-label h-auto gap-1 px-0 font-semibold"
           >
             <Bookmark className="h-3.5 w-3.5" />
             <span>Stashes</span>
-          </button>
+          </Button>
           {selectedStashId && (
             <>
               <span>/</span>
-              <span className="text-label flex items-center gap-1.5 font-semibold">
+              <span className="text-label flex items-center gap-2 font-semibold">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: selectedStashColor || "var(--color-info)" }}
@@ -229,7 +232,7 @@ export function MyStashTab({
                     }}
                     className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
                   >
-                    <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
                       <div className="min-w-0">
                         <p className="text-label text-caption truncate font-semibold">
@@ -254,7 +257,7 @@ export function MyStashTab({
                 <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
               </div>
             ) : filteredPageImages.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {filteredPageImages.map((img) => {
                   const isSelected = selectedImageObj?.pageid === img.pageid;
                   const cleanTitle = (img.title || "").replace(/^File:/, "").replace(/_/g, " ");
@@ -263,12 +266,13 @@ export function MyStashTab({
                     <button
                       key={img.pageid}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
                         "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
                         isSelected
-                          ? "border-tint ring-primary/30 shadow-card ring-2"
+                          ? "border-tint ring-tint/30 shadow-card ring-2"
                           : "border-separator hover:border-separator"
                       )}
                       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
@@ -288,7 +292,7 @@ export function MyStashTab({
                           onContextMenu={(e) => e.preventDefault()}
                         />
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                          <div className="border-separator shadow-card rounded-full border bg-black/60 p-1.5 text-white">
+                          <div className="border-separator shadow-card rounded-full border bg-black/60 p-2 text-white">
                             <ZoomIn className="h-4 w-4" />
                           </div>
                         </div>

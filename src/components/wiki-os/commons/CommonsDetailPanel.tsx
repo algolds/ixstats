@@ -179,7 +179,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
             />
           )}
           <span className="duration-fast pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-            <span className="bg-surface-elevated text-caption text-label shadow-floating flex items-center gap-1.5 rounded-full px-3 py-1.5">
+            <span className="bg-surface-elevated text-caption text-label shadow-floating flex items-center gap-2 rounded-full px-3 py-2">
               <ZoomIn className="size-3.5" aria-hidden="true" />
               Click to Zoom
             </span>
@@ -189,7 +189,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
 
       {/* Actions and format selector */}
       <div className="border-separator space-y-3 border-b p-3">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Eyebrow>Wikitext Copy Format</Eyebrow>
           <SegmentedControl
             aria-label="Wikitext copy format"
@@ -206,7 +206,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
           />
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           <Button size="sm" variant="bordered" onClick={handleCopy} className="flex-1">
             {copied ? (
               <Check className="text-green" aria-hidden="true" />
@@ -255,26 +255,26 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
       {/* Metadata */}
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
         <dl className="divide-separator text-footnote divide-y">
-          <div className="flex items-center justify-between gap-3 py-1.5">
+          <div className="flex items-center justify-between gap-3 py-2">
             <dt className="text-label-secondary">Dimensions</dt>
             <dd className="text-label font-medium tabular-nums">
               {image.width} × {image.height}
             </dd>
           </div>
           {image.mime && (
-            <div className="flex items-center justify-between gap-3 py-1.5">
+            <div className="flex items-center justify-between gap-3 py-2">
               <dt className="text-label-secondary">Type</dt>
               <dd className="text-label font-medium">{image.mime}</dd>
             </div>
           )}
           {image.artist && (
-            <div className="flex items-center justify-between gap-3 py-1.5">
+            <div className="flex items-center justify-between gap-3 py-2">
               <dt className="text-label-secondary">Artist</dt>
               <dd className="text-label max-w-[160px] truncate font-medium">{image.artist}</dd>
             </div>
           )}
           {image.license && (
-            <div className="flex items-center justify-between gap-3 py-1.5">
+            <div className="flex items-center justify-between gap-3 py-2">
               <dt className="text-label-secondary">License</dt>
               <dd className="text-label font-medium">{image.license}</dd>
             </div>

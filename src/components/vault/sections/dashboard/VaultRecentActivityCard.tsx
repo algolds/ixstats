@@ -23,7 +23,7 @@ export interface VaultRecentActivityCardProps {
 export function VaultRecentActivityCard({ loading, activities }: VaultRecentActivityCardProps) {
   return (
     <FacetCard padding="lg" className="overflow-hidden">
-      <div className="border-separator mb-4 flex items-center gap-2.5 border-b pb-4">
+      <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
         <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
           <History className="text-label-secondary h-4.5 w-4.5" />
         </div>
@@ -31,7 +31,7 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
       </div>
 
       {loading ? (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="bg-fill-3 rounded-card h-12 w-full" />
           ))}

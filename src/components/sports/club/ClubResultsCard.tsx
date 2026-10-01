@@ -172,7 +172,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
         <h3 className="text-headline text-label">Last 5 Results</h3>
         <div className="divide-separator divide-y">
           {recent.map((r) => (
-            <div key={r.id} className="text-body flex items-center gap-3 py-2.5">
+            <div key={r.id} className="text-body flex items-center gap-3 py-3">
               <span className="text-label-secondary text-footnote w-20 shrink-0 tabular-nums">
                 {fmt(r.resolvedIxTime)}
               </span>

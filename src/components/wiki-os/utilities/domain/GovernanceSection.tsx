@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "~/lib/utils";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
@@ -17,6 +16,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 
 import { withBasePath } from "~/lib/base-path";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { Button } from "~/components/ui/button";
 
 interface GovernanceSectionProps {
   searchFilter: string;
@@ -103,23 +104,27 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
       </div>
 
       {/* Selector Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <RadioCardGroup
+        aria-label="Governance tools"
+        value={selectedTab}
+        onValueChange={(v) => setSelectedTab(v as "archive" | "logs" | "protection")}
+        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+      >
         {filteredTools.map((tool) => {
           const Icon = tool.icon;
-          const isSelected = selectedTab === tool.id;
           return (
-            <button
+            <RadioCard
               key={tool.id}
-              type="button"
-              data-cuelume-press="soft"
-              data-cuelume-hover="tick"
-              onClick={() => setSelectedTab(selectedTab === tool.id ? null : (tool.id as any))}
-              className={cn(
-                "group rounded-row flex flex-col justify-between border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
-                isSelected
-                  ? "border-tint/60 bg-surface ring-tint/30 shadow-card ring-1"
-                  : "border-separator bg-surface hover:border-tint/30 hover:bg-surface"
-              )}
+              value={tool.id}
+              indicator={false}
+              // Pressing the open tool again closes its console.
+              onClick={(e) => {
+                if (selectedTab === tool.id) {
+                  e.preventDefault();
+                  setSelectedTab(null);
+                }
+              }}
+              className="group flex-col items-stretch justify-between gap-0 p-4"
             >
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -144,10 +149,10 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                 <span className="tabular-nums opacity-60">{tool.legacyAlias}</span>
                 <NavArrowRight className="h-3 w-3 opacity-60" />
               </div>
-            </button>
+            </RadioCard>
           );
         })}
-      </div>
+      </RadioCardGroup>
 
       {/* Live Governance Drawer (Collapsed by Default) */}
       <AnimatePresence>
@@ -159,7 +164,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
             transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
             className="border-separator bg-surface rounded-row shadow-card overflow-hidden border"
           >
-            <div className="border-separator bg-fill-4 flex items-center justify-between border-b px-4 py-2.5">
+            <div className="border-separator bg-fill-4 flex items-center justify-between border-b px-4 py-3">
               <span className="text-label text-caption">
                 Active Governance Console:{" "}
                 <span className="text-tint font-semibold">
@@ -174,15 +179,16 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                 <span className="text-label-secondary text-footnote">
                   Authoritative PostgreSQL Transaction Layer
                 </span>
-                <button
-                  type="button"
-                  data-cuelume-press="tap"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close Console"
                   onClick={() => setSelectedTab(null)}
-                  className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm p-1 active:scale-[0.98]"
                   title="Close Console"
+                  className="text-label-secondary"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -206,16 +212,14 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                               <p className="text-label-secondary text-footnote">{item.summary}</p>
                             )}
                           </div>
-                          <button
-                            type="button"
-                            data-cuelume-press="press"
-                            data-cuelume-hover="tick"
+                          <Button
+                            variant="tinted"
+                            size="sm"
                             onClick={() => handleRestore(item.title, item.slug)}
                             disabled={restoringSlug === item.slug}
-                            className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-2.5 py-1 transition-colors active:scale-[0.98] disabled:opacity-50"
                           >
                             {restoringSlug === item.slug ? "Restoring..." : "Restore to Published"}
-                          </button>
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -242,7 +246,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                           className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="bg-fill-3 text-label-secondary rounded-control-sm text-eyebrow px-1.5 py-0.5 tabular-nums">
+                            <span className="bg-fill-3 text-label-secondary rounded-control-sm text-eyebrow px-2 py-0.5 tabular-nums">
                               {log.action}
                             </span>
                             <span className="text-label font-medium">{log.title}</span>
@@ -279,7 +283,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     href={withBasePath("/admin/wikios-settings")}
                     data-cuelume-press="press"
                     data-cuelume-hover="tick"
-                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-1.5 transition-colors active:scale-[0.98]"
+                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors active:scale-[0.98]"
                   >
                     Open Sysop Panel
                   </Link>

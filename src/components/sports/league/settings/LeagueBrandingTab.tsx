@@ -92,9 +92,9 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               className="text-footnote"
             >
               {isUploading ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                <Upload className="mr-2 h-3.5 w-3.5" />
               )}
               {isUploading ? "Uploading..." : "Upload Image"}
             </Button>
@@ -105,7 +105,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               onClick={() => onOpenMediaSearch("logo")}
               className="text-footnote"
             >
-              <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
+              <ImageIcon className="mr-2 h-3.5 w-3.5" />
               Browse Media
             </Button>
             {previewSrc && (
@@ -116,7 +116,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
                 onClick={onRemoveLogo}
                 className="text-destructive"
               >
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
                 Remove
               </Button>
             )}
@@ -161,7 +161,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               onClick={() => onOpenMediaSearch("cover")}
               className="text-footnote"
             >
-              <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
+              <ImageIcon className="mr-2 h-3.5 w-3.5" />
               Browse Media
             </Button>
             {coverUrl && (
@@ -172,7 +172,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
                 onClick={() => setCoverUrl("")}
                 className="text-destructive text-footnote"
               >
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
                 Remove
               </Button>
             )}

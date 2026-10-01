@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { Button } from "~/components/ui/button";
 
 interface StickyTocProps {
   entries: TocEntry[];
@@ -184,45 +185,53 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
               )}
             </div>
             <div className="wikios-sticky-toc-search-nav">
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Previous match"
                 onClick={handlePrev}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Previous match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
                 <ChevronUp className="h-3 w-3" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Next match"
                 onClick={handleNext}
                 disabled={matchCount === 0}
-                className="wikios-sticky-toc-search-nav-btn"
                 title="Next match"
-                type="button"
+                className="text-label-secondary size-6 shrink-0"
               >
                 <ChevronDown className="h-3 w-3" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close search"
                 onClick={handleCloseSearch}
-                className="wikios-sticky-toc-search-close"
                 title="Close search"
-                type="button"
+                className="text-label-secondary hover:text-red size-6 shrink-0"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <>
             <span>On this page</span>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Find on page"
               onClick={() => setShowSearch(true)}
-              className="wikios-sticky-toc-search-btn"
               title="Find on page"
-              type="button"
+              className="text-label-secondary size-6 shrink-0"
             >
               <Search className="h-3 w-3" />
-            </button>
+            </Button>
           </>
         )}
       </div>

@@ -87,8 +87,8 @@ export function EnhancedCategoryBrowser({
           </div>
 
           {/* Quick Metrics Deck */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-            <div className="border-separator rounded-card bg-surface shadow-card flex items-center gap-2.5 border px-4 py-2.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="border-separator rounded-card bg-surface shadow-card flex items-center gap-2 border px-4 py-3">
               <div className="rounded-row bg-green/10 text-green flex h-8 w-8 shrink-0 items-center justify-center">
                 <FileText className="h-4 w-4" />
               </div>
@@ -99,7 +99,7 @@ export function EnhancedCategoryBrowser({
             </div>
 
             {subcategories.length > 0 && (
-              <div className="border-separator rounded-card bg-surface shadow-card flex items-center gap-2.5 border px-4 py-2.5">
+              <div className="border-separator rounded-card bg-surface shadow-card flex items-center gap-2 border px-4 py-3">
                 <div className="rounded-row bg-tint/10 text-tint flex h-8 w-8 shrink-0 items-center justify-center">
                   <Folder className="h-4 w-4" />
                 </div>
@@ -117,7 +117,7 @@ export function EnhancedCategoryBrowser({
 
       {/* ── Subcategories Section ── */}
       {subcategories.length > 0 && (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
             <Folder className="text-tint h-4 w-4" />
             <h2 className="text-label text-headline text-subhead">
@@ -133,7 +133,7 @@ export function EnhancedCategoryBrowser({
                   href={withBasePath(
                     `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                   )}
-                  className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint inline-flex items-center gap-2 border px-3.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
+                  className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 >
                   <Folder className="text-tint/70 group-hover:text-tint h-3.5 w-3.5 shrink-0 transition-colors" />
                   <span>{name}</span>
@@ -146,7 +146,7 @@ export function EnhancedCategoryBrowser({
 
       {/* ── Pages in Category Grid ── */}
       {pages.length > 0 && (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
             <FileText className="text-green h-4 w-4" />
             <h2 className="text-label text-headline text-subhead">

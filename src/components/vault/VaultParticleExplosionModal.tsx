@@ -83,7 +83,7 @@ export function VaultParticleExplosionModal({
               transition={springGentle}
               className="bg-surface-elevated rounded-sheet border-separator shadow-sheet relative flex flex-col items-center border px-10 py-7 text-center"
             >
-              <div className="bg-tint-fill text-tint mb-3 rounded-full p-3.5">
+              <div className="bg-tint-fill text-tint mb-3 rounded-full p-4">
                 {icon || <Sparkles className="h-7 w-7" />}
               </div>
               <h3 className="text-label text-title-3">{title}</h3>

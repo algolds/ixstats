@@ -79,7 +79,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
           {card.wikiSource === "ixwiki" ? (
             <Link
               href={wikiUrl}
-              className="text-tint text-footnote inline-flex items-center gap-1.5 pt-1 font-semibold hover:underline"
+              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Read full article on IxWiki
@@ -89,7 +89,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               href={wikiUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-tint text-footnote inline-flex items-center gap-1.5 pt-1 font-semibold hover:underline"
+              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Read full article on IIWiki

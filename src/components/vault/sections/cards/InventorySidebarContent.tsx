@@ -69,13 +69,13 @@ export function InventorySidebarContent({
           <span className="text-label-secondary text-eyebrow">My Cards</span>
           <Layers className="text-teal h-3.5 w-3.5" />
         </div>
-        <div className="mt-1.5 flex items-baseline gap-1">
+        <div className="mt-2 flex items-baseline gap-1">
           <span className="text-title-2 text-teal tabular-nums">
             {totalCards} / {150 + capacityBoost}
           </span>
           <span className="text-label-secondary text-footnote">cards</span>
         </div>
-        <div className="text-footnote mt-1.5 flex items-center gap-3">
+        <div className="text-footnote mt-2 flex items-center gap-3">
           <div className="flex items-center gap-1">
             <IxCreditsSymbol className="text-yellow h-3 w-3 shrink-0" />
             <span className="text-yellow font-semibold">
@@ -96,15 +96,18 @@ export function InventorySidebarContent({
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           placeholder="Search cards..."
-          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6.5"
+          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6"
         />
         {filters.search && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
-            className="absolute top-1/2 right-1.5 -translate-y-1/2"
+            className="text-label-secondary absolute top-1/2 right-1 size-5 -translate-y-1/2"
           >
             <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -121,7 +124,7 @@ export function InventorySidebarContent({
             filters.rarity !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
+          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Rarity" />
         </SelectTrigger>
         <SelectContent>
@@ -148,7 +151,7 @@ export function InventorySidebarContent({
             filters.cardType !== "all" && "border-teal/30 bg-teal/20 text-teal font-semibold"
           )}
         >
-          <FileText className="mr-1.5 h-3 w-3 shrink-0" />
+          <FileText className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Type" />
         </SelectTrigger>
         <SelectContent>
@@ -172,7 +175,7 @@ export function InventorySidebarContent({
             filters.season !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+          <Calendar className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Season" />
         </SelectTrigger>
         <SelectContent>
@@ -232,7 +235,7 @@ export function InventorySidebarContent({
 
         {/* Multi-Select & Hide Value */}
         <div className="flex flex-col gap-1">
-          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-1.5 transition-colors">
+          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-2 transition-colors">
             <Checkbox
               checked={selectMode}
               onCheckedChange={(checked) => setSelectMode(checked as boolean)}
@@ -240,7 +243,7 @@ export function InventorySidebarContent({
             />
             <span className="text-footnote font-medium">Multi-Select Mode</span>
           </label>
-          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-1.5 transition-colors">
+          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-2 transition-colors">
             <Checkbox
               checked={hideValue}
               onCheckedChange={(checked) => setHideValue(checked as boolean)}
@@ -256,12 +259,14 @@ export function InventorySidebarContent({
         filters.rarity !== "all" ||
         filters.cardType !== "all" ||
         filters.season !== "all") && (
-        <button
+        <Button
+          variant="bordered"
+          size="sm"
           onClick={onResetFilters}
-          className="border-separator text-label-secondary hover:text-label hover:bg-fill-3 rounded-control text-footnote flex w-full items-center justify-center gap-1 border py-1.5 font-semibold transition-colors"
+          className="text-label-secondary w-full"
         >
           <X className="h-3 w-3" /> Clear Filters
-        </button>
+        </Button>
       )}
     </div>
   );

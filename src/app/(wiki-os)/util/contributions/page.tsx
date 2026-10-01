@@ -12,6 +12,7 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { withBasePath } from "~/lib/base-path";
 import { User as UserIcon, Search, Folder as FolderTree, Clock, GitCommit } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export default function ContributionsHubPage() {
   const searchParams = useSearchParams();
@@ -74,7 +75,7 @@ export default function ContributionsHubPage() {
               </div>
 
               {activeUser && (
-                <div className="border-separator rounded-card bg-surface shadow-card flex shrink-0 items-center gap-2.5 border px-4 py-2">
+                <div className="border-separator rounded-card bg-surface shadow-card flex shrink-0 items-center gap-2 border px-4 py-2">
                   <UserIcon className="text-green h-4 w-4" />
                   <div className="text-left">
                     <div className="text-label text-caption font-semibold">{activeUser}</div>
@@ -89,7 +90,7 @@ export default function ContributionsHubPage() {
             {/* User Search Input Form */}
             <form onSubmit={handleSearch} className="pt-2">
               <div className="relative flex items-center">
-                <Search className="text-label-secondary pointer-events-none absolute left-3.5 h-4 w-4" />
+                <Search className="text-label-secondary pointer-events-none absolute left-4 h-4 w-4" />
                 <input
                   type="text"
                   value={username}
@@ -97,12 +98,13 @@ export default function ContributionsHubPage() {
                   placeholder="Enter editor username (e.g. Admin, LoreKeeper, your handle)..."
                   className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-green focus:ring-green/20 w-full border py-3 pr-24 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
                 />
-                <button
+                <Button
+                  size="sm"
                   type="submit"
-                  className="rounded-row bg-green text-caption text-on-green shadow-card hover:bg-green absolute right-2 cursor-pointer px-4 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="bg-green text-on-green hover:bg-green/90 absolute right-2"
                 >
                   Lookup
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -139,12 +141,12 @@ export default function ContributionsHubPage() {
                   <div className="flex min-w-0 items-start gap-3 sm:items-center">
                     <div className="flex shrink-0 items-center gap-1">
                       {c.isNew && (
-                        <span className="rounded-control-sm border-green/20 bg-green/15 text-caption text-green border px-1.5 py-0.5 font-semibold">
+                        <span className="rounded-control-sm border-green/20 bg-green/15 text-caption text-green border px-2 py-0.5 font-semibold">
                           NEW
                         </span>
                       )}
                       {c.minor && (
-                        <span className="rounded-control-sm border-tint/20 bg-tint/15 text-caption text-tint border px-1.5 py-0.5 font-semibold">
+                        <span className="rounded-control-sm border-tint/20 bg-tint/15 text-caption text-tint border px-2 py-0.5 font-semibold">
                           m
                         </span>
                       )}
@@ -181,7 +183,7 @@ export default function ContributionsHubPage() {
                     {!c.isNew && (
                       <Link
                         href={withBasePath(`/wiki/diff?to=${c.revid}`)}
-                        className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-2.5 py-1 font-semibold transition-colors"
+                        className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-3 py-1 font-semibold transition-colors"
                       >
                         <GitCommit className="text-label-secondary h-3 w-3" />
                         <span>diff</span>

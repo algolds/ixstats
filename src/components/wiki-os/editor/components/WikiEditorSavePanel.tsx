@@ -4,6 +4,7 @@
 
 import React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface WikiEditorSavePanelProps {
   showSavePanel: boolean;
@@ -45,15 +46,10 @@ export function WikiEditorSavePanel({
         <input type="checkbox" checked={minor} onChange={(e) => setMinor(e.target.checked)} />
         Minor
       </label>
-      <button
-        className="rounded-control bg-tint text-caption text-on-tint hover:bg-tint-hover flex h-8 items-center justify-center px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:scale-100 disabled:opacity-50"
-        onClick={onSave}
-        type="button"
-        disabled={saving}
-      >
+      <Button size="sm" onClick={onSave} disabled={saving}>
         {saving ? (
           <>
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             Saving...
           </>
         ) : saveActionType === "publish" ? (
@@ -61,7 +57,7 @@ export function WikiEditorSavePanel({
         ) : (
           "Save Session"
         )}
-      </button>
+      </Button>
     </div>
   );
 }

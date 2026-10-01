@@ -12,11 +12,11 @@ export function CollectionsSidebarContent({
   return (
     <div className="space-y-3">
       <Button size="sm" onClick={onCreateCollection} className="w-full">
-        <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Collection
+        <Plus className="mr-2 h-3.5 w-3.5" /> Create Collection
       </Button>
 
-      <div className="rounded-control bg-yellow/5 p-2.5">
-        <div className="flex items-center gap-1.5">
+      <div className="rounded-control bg-yellow/5 p-3">
+        <div className="flex items-center gap-2">
           <BookOpen className="text-tint h-3 w-3 shrink-0" />
           <span className="text-label-secondary text-eyebrow">Tip</span>
         </div>

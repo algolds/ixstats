@@ -114,14 +114,14 @@ export function SportsSidebarNav({
           className
         )}
       >
-        <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
+        <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto">
           {filteredItems.map((item) => {
             const isActive = item.id === activeSection;
             const Icon = item.icon;
             const noteCount = notifications?.[item.id] ?? 0;
 
             const buttonClass = cn(
-              "focus-visible:outline-tint text-footnote relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control px-3 py-2 font-medium transition-colors duration-fast outline-none select-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+              "focus-visible:outline-tint text-footnote relative flex shrink-0 cursor-pointer items-center gap-2 rounded-control px-3 py-2 font-medium transition-colors duration-fast outline-none select-none focus-visible:outline-2 focus-visible:-outline-offset-2",
               isActive
                 ? "bg-tint-fill text-tint"
                 : "text-label-secondary hover:bg-fill-3 hover:text-label"
@@ -199,7 +199,7 @@ export function SportsSidebarNav({
                 <div className="flex items-center justify-between">
                   <span className="truncate">{item.label}</span>
                   {noteCount > 0 && (
-                    <span className="text-caption bg-yellow/15 text-yellow rounded-full px-1.5 tabular-nums">
+                    <span className="text-caption bg-yellow/15 text-yellow rounded-full px-2 tabular-nums">
                       {noteCount}
                     </span>
                   )}

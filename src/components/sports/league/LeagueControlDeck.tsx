@@ -150,7 +150,7 @@ export function LeagueControlDeck({
       </div>
 
       {/* ─── 2. Live Lobby Featured Toggle ─── */}
-      <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-2.5">
+      <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-3">
         <div className="space-y-0.5">
           <span className="text-footnote text-label block font-semibold">
             Feature on Sports Page

@@ -9,7 +9,7 @@ export function SourceWikiNote({ title, wikiSource }: { title: string; wikiSourc
   const { name, baseUrl } = WIKI_SOURCES[wikiSource];
   const origin = baseUrl.replace(/\/+$/u, "");
   return (
-    <p className="text-label-secondary text-footnote mt-2 mb-3 flex items-center gap-1.5 px-1">
+    <p className="text-label-secondary text-footnote mt-2 mb-3 flex items-center gap-2 px-1">
       <Lock className="h-3 w-3 shrink-0" aria-hidden />
       <span>From {name} — read only ·</span>
       <a

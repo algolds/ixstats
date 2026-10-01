@@ -165,7 +165,7 @@ export function LineupBuilder({
                       type="button"
                       aria-pressed={isStarter}
                       onClick={() => handleToggleStarter(player.id)}
-                      className="focus-visible:outline-tint text-label rounded-row flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+                      className="focus-visible:outline-tint text-label rounded-row flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
                     >
                       {player.number && (
                         <span className="text-label-secondary text-footnote w-6 text-center font-medium tabular-nums">
@@ -173,7 +173,7 @@ export function LineupBuilder({
                         </span>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <span className="text-body truncate font-medium">
                             {player.firstName} {player.lastName}
                           </span>
@@ -222,7 +222,7 @@ export function LineupBuilder({
           </div>
 
           <Button onClick={handleSave} disabled={setLineup.isPending} className="w-full" size="sm">
-            {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+            {setLineup.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
             Save Lineup
           </Button>
         </CardContent>

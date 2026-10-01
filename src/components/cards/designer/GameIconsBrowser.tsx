@@ -166,7 +166,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           </DialogHeader>
 
           {/* Search & Tag Filter Toolbar */}
-          <div className="border-separator bg-fill-4 space-y-2.5 border-b p-3">
+          <div className="border-separator bg-fill-4 space-y-2 border-b p-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
@@ -179,13 +179,15 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                   autoFocus
                 />
                 {searchQuery && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Clear search"
                     onClick={() => setSearchQuery("")}
-                    className="text-label-secondary hover:text-label absolute top-1/2 right-2.5 -translate-y-1/2"
+                    className="text-label-secondary absolute top-1/2 right-2 size-6 -translate-y-1/2"
                   >
                     <X className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -205,7 +207,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
             </div>
 
             {/* Category Tag Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
               {CATEGORY_TAG_PRESETS.map((preset) => {
                 const isActive = activeTag === preset.tag;
                 const IconComponent = preset.icon;
@@ -216,7 +218,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                     variant={isActive ? "default" : "outline"}
                     size="sm"
                     onClick={() => setActiveTag(preset.tag)}
-                    className="rounded-control-sm text-footnote h-7 shrink-0 gap-1 px-2.5 font-medium"
+                    className="rounded-control-sm text-footnote h-7 shrink-0 gap-1 px-3 font-medium"
                   >
                     {IconComponent && <IconComponent className="h-3 w-3" />}
                     <span>{preset.label}</span>
@@ -254,6 +256,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                           onSelect(icon, targetSlot);
                           onClose();
                         }}
+                        aria-pressed={isSelected}
                         title={`${icon.name} (by ${icon.author})`}
                         className={cn(
                           "group rounded-control relative flex aspect-square flex-col items-center justify-center border p-2 text-center transition-colors",

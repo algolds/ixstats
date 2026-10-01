@@ -197,12 +197,12 @@ export function WikiOSLayout({
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
-      <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-3.5 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
+      <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-4 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
             <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-[0.98]">
               <WikiOSLogomark className="text-label h-7 w-auto transition-transform duration-300" />
-              <div className="text-label-secondary group-hover:text-label-secondary text-caption flex items-center gap-1.5 font-[var(--wikios-font-brand)]">
+              <div className="text-label-secondary group-hover:text-label-secondary text-caption flex items-center gap-2 font-[var(--wikios-font-brand)]">
                 <span className="text-label-secondary group-hover:text-label font-semibold">
                   Powered by wikiOS
                 </span>

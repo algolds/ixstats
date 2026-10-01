@@ -28,7 +28,11 @@ import {
 } from "~/lib/wiki-os/transformers/resolve-highres-image";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+
+/** Round dock action (reset, download, file page, inspector). */
+const LIGHTBOX_ACTION = "border-separator rounded-full border";
 
 /**
  * Hook: Attach to an article container ref to intercept image clicks and open the lightbox.
@@ -345,15 +349,17 @@ function ImageLightboxModal({
         <DialogTitle className="sr-only">{cleanTitle}</DialogTitle>
         {/* Top-right dismiss button (Esc) */}
         <div className="z-raised absolute top-4 right-4 sm:top-5 sm:right-6">
-          <button
-            type="button"
+          <Button
+            variant="bordered"
+            size="sm"
             onClick={triggerClose}
-            className="wikios-lightbox-top-close-btn"
+            className="bg-surface-elevated shadow-card hover:border-red/40 hover:bg-red/15 hover:text-red rounded-full"
             title="Dismiss Lightbox (Esc)"
+            aria-label="Close"
           >
             <X className="size-4" aria-hidden="true" />
             <span className="text-caption text-label-secondary">Esc</span>
-          </button>
+          </Button>
         </div>
 
         {/* Main Viewport Stage */}
@@ -424,18 +430,20 @@ function ImageLightboxModal({
                       <Sparkles className="text-yellow h-3.5 w-3.5 shrink-0" />
                       <h3 className="text-subhead text-label truncate">Media Details</h3>
                     </div>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => setShowInspector(false)}
-                      className="wikios-lightbox-flank-close"
+                      className="text-label-secondary rounded-full"
                       title="Close Inspector"
+                      aria-label="Close inspector"
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                      <X className="size-3.5" />
+                    </Button>
                   </div>
 
                   {/* Body */}
-                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3.5">
+                  <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                     {/* File Details Card */}
                     <div className="wikios-lightbox-flank-box">
                       <span className="wikios-lightbox-side-label">File Details</span>
@@ -443,7 +451,7 @@ function ImageLightboxModal({
                         {cleanTitle}
                       </p>
                       {imgNaturalSize && (
-                        <div className="text-footnote text-label-secondary mt-1.5 flex items-center gap-2">
+                        <div className="text-footnote text-label-secondary mt-2 flex items-center gap-2">
                           <span className="wikios-lightbox-badge">{fileExt}</span>
                           <span>
                             {imgNaturalSize.width} × {imgNaturalSize.height} px
@@ -455,13 +463,14 @@ function ImageLightboxModal({
                     {/* Wikitext Copy Generator */}
                     <div className="wikios-lightbox-flank-box">
                       <span className="wikios-lightbox-side-label">Wikitext Formats</span>
-                      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                      <div className="mt-2 grid grid-cols-2 gap-2">
                         {(["thumb", "embed", "raw", "url"] as const).map((fmt) => (
-                          <button
+                          <Button
                             key={fmt}
-                            type="button"
+                            variant="bordered"
+                            size="sm"
                             onClick={() => handleCopyFormat(fmt)}
-                            className="wikios-lightbox-flank-btn"
+                            className="bg-fill-4 justify-start gap-1"
                           >
                             {copiedFormat === fmt ? (
                               <Check className="text-green h-3.5 w-3.5 shrink-0" />
@@ -477,18 +486,19 @@ function ImageLightboxModal({
                                     ? "Raw"
                                     : "URL"}
                             </span>
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
 
                     {/* Stash Action */}
                     {isAuthenticated && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="tinted"
+                        size="sm"
                         onClick={handleStash}
                         disabled={stashMutation.isPending || stashMutation.isSuccess}
-                        className="wikios-lightbox-flank-stash"
+                        className="bg-green/10 text-green hover:bg-green/20 w-full"
                       >
                         <Bookmark
                           className={cn(
@@ -503,7 +513,7 @@ function ImageLightboxModal({
                               ? "Stashing..."
                               : "Bookmark in Stash"}
                         </span>
-                      </button>
+                      </Button>
                     )}
 
                     {/* External Description Link */}
@@ -548,46 +558,53 @@ function ImageLightboxModal({
 
           {/* Center: Zoom Segmented Controls */}
           <div className="wikios-lightbox-segmented-group">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => handleZoomChange(-0.25)}
               disabled={scale <= 0.5}
-              className="wikios-lightbox-icon-btn"
+              className="rounded-full"
               title="Zoom out (-)"
+              aria-label="Zoom out"
             >
-              <ZoomOut className="h-3.5 w-3.5" />
-            </button>
+              <ZoomOut className="size-3.5" />
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleToggle2x}
-              className="wikios-lightbox-pill-btn"
+              className="text-caption min-w-12 rounded-full px-2 font-semibold tabular-nums"
               title="Toggle 1x / 2x zoom (Z)"
             >
               <span>{Math.round(scale * 100)}%</span>
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => handleZoomChange(0.25)}
               disabled={scale >= 4}
-              className="wikios-lightbox-icon-btn"
+              className="rounded-full"
               title="Zoom in (+)"
+              aria-label="Zoom in"
             >
-              <ZoomIn className="h-3.5 w-3.5" />
-            </button>
+              <ZoomIn className="size-3.5" />
+            </Button>
           </div>
 
           {/* Reset Zoom */}
           {scale !== 1 && (
-            <button
-              type="button"
+            <Button
+              variant="gray"
+              size="icon-sm"
               onClick={handleResetZoom}
-              className="wikios-lightbox-action-btn"
+              className={LIGHTBOX_ACTION}
               title="Reset zoom (0)"
+              aria-label="Reset zoom"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
+              <RotateCcw className="size-3.5" />
+            </Button>
           )}
 
           <div className="wikios-lightbox-v-divider" />
@@ -595,45 +612,50 @@ function ImageLightboxModal({
           {/* Right Action Icons */}
           <div className="flex items-center gap-1">
             {/* Direct Download */}
-            <a
-              href={currentSrc}
-              download={image.filename || "wiki-image"}
-              target="_blank"
-              rel="noreferrer"
-              className="wikios-lightbox-action-btn"
-              title="Download full-resolution original"
-            >
-              <Download className="h-3.5 w-3.5" />
-            </a>
+            <Button asChild variant="gray" size="icon-sm" className={LIGHTBOX_ACTION}>
+              <a
+                href={currentSrc}
+                download={image.filename || "wiki-image"}
+                target="_blank"
+                rel="noreferrer"
+                title="Download full-resolution original"
+                aria-label="Download original"
+              >
+                <Download className="size-3.5" />
+              </a>
+            </Button>
 
             {/* External File Description Page */}
             {image.fileUrl && (
-              <a
-                href={
-                  image.fileUrl.startsWith("/")
-                    ? `https://ixwiki.com${image.fileUrl}`
-                    : image.fileUrl
-                }
-                target="_blank"
-                rel="noreferrer"
-                className="wikios-lightbox-action-btn"
-                title="Inspect MediaWiki File Description Page"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
+              <Button asChild variant="gray" size="icon-sm" className={LIGHTBOX_ACTION}>
+                <a
+                  href={
+                    image.fileUrl.startsWith("/")
+                      ? `https://ixwiki.com${image.fileUrl}`
+                      : image.fileUrl
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Inspect MediaWiki File Description Page"
+                  aria-label="Open file description page"
+                >
+                  <ExternalLink className="size-3.5" />
+                </a>
+              </Button>
             )}
 
             {/* Repository Inspector / Info Drawer Toggle */}
-            <button
-              type="button"
+            <Button
+              variant={showInspector ? "tinted" : "gray"}
+              size="icon-sm"
+              aria-pressed={showInspector}
               onClick={() => setShowInspector((prev) => !prev)}
-              className={`wikios-lightbox-action-btn ${
-                showInspector ? "wikios-lightbox-action-btn--active" : ""
-              }`}
+              className={cn(LIGHTBOX_ACTION, showInspector && "border-tint/50")}
               title="Toggle Repository Info & Wikitext Inspector (I)"
+              aria-label="Media details"
             >
-              <Info className="h-3.5 w-3.5" />
-            </button>
+              <Info className="size-3.5" />
+            </Button>
           </div>
         </div>
       </DialogContent>

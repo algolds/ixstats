@@ -19,6 +19,7 @@ import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { StashManagerModal } from "./StashManagerModal";
+import { Button } from "~/components/ui/button";
 
 interface StashButtonProps {
   title: string;
@@ -194,6 +195,8 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   return (
                     <div key={s.id} className="wikios-stash-circle-wrapper">
                       <button
+                        aria-pressed={active}
+                        aria-label={s.name}
                         onClick={() => handleToggleStash(s.id)}
                         className={cn(
                           "wikios-stash-color-circle",
@@ -217,6 +220,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                     }}
                     className="wikios-stash-color-circle wikios-stash-see-all"
                     title="All stashes"
+                    aria-label="All stashes"
                     type="button"
                   >
                     <Plus className="h-2.5 w-2.5" />
@@ -229,11 +233,12 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
             {/* Quick actions when stashed */}
             {isStashed && (
               <div className="wikios-stash-popover-actions">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => unstashMutation.mutate({ pageTitle: title })}
-                  className="wikios-stash-popover-action wikios-stash-remove"
+                  className="text-label-secondary hover:bg-red/10 hover:text-red w-full justify-start gap-1 px-2"
                   disabled={unstashMutation.isPending}
-                  type="button"
                 >
                   {unstashMutation.isPending ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -241,15 +246,18 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                     <X className="h-3 w-3" />
                   )}
                   Remove from all
-                </button>
-                <Link
-                  href={withBasePath("/stashes")}
-                  className="wikios-stash-popover-action"
-                  onClick={() => setShowPopover(false)}
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="text-label-secondary w-full justify-start gap-1 px-2"
                 >
-                  <ChevronRight className="h-3 w-3" />
-                  My Stashes
-                </Link>
+                  <Link href={withBasePath("/stashes")} onClick={() => setShowPopover(false)}>
+                    <ChevronRight className="h-3 w-3" />
+                    My Stashes
+                  </Link>
+                </Button>
               </div>
             )}
           </div>
@@ -349,6 +357,8 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                 return (
                   <div key={s.id} className="wikios-stash-circle-wrapper">
                     <button
+                      aria-pressed={active}
+                      aria-label={s.name}
                       onClick={() => handleToggleStash(s.id)}
                       className={cn(
                         "wikios-stash-color-circle",
@@ -372,6 +382,7 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   }}
                   className="wikios-stash-color-circle wikios-stash-see-all"
                   title="All stashes"
+                  aria-label="All stashes"
                   type="button"
                 >
                   <Plus className="h-2.5 w-2.5" />
@@ -384,11 +395,12 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           {/* Quick actions when stashed */}
           {isStashed && (
             <div className="wikios-stash-popover-actions">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => unstashMutation.mutate({ pageTitle: title })}
-                className="wikios-stash-popover-action wikios-stash-remove"
+                className="text-label-secondary hover:bg-red/10 hover:text-red w-full justify-start gap-1 px-2"
                 disabled={unstashMutation.isPending}
-                type="button"
               >
                 {unstashMutation.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -396,15 +408,18 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
                   <X className="h-3 w-3" />
                 )}
                 Remove from all
-              </button>
-              <Link
-                href={withBasePath("/stashes")}
-                className="wikios-stash-popover-action"
-                onClick={() => setShowPopover(false)}
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-label-secondary w-full justify-start gap-1 px-2"
               >
-                <ChevronRight className="h-3 w-3" />
-                My Stashes
-              </Link>
+                <Link href={withBasePath("/stashes")} onClick={() => setShowPopover(false)}>
+                  <ChevronRight className="h-3 w-3" />
+                  My Stashes
+                </Link>
+              </Button>
             </div>
           )}
         </div>

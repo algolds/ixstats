@@ -407,7 +407,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               </div>
             )}
 
-            <div className="card-art-linear-t relative w-full from-black/70 via-black/30 to-transparent px-2 pt-4 pb-1.5">
+            <div className="card-art-linear-t relative w-full from-black/70 via-black/30 to-transparent px-2 pt-4 pb-2">
               {packName && size !== "sm" && (
                 <p
                   className={cn(

@@ -47,7 +47,7 @@ export function MetadataStep({
   setTechFields,
 }: MetadataStepProps) {
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className="text-subhead text-label-secondary block">Template Metadata</label>
         <span className="text-footnote text-label-secondary italic">Optional - Skip to create</span>

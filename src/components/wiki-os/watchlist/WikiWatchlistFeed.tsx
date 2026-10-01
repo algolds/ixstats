@@ -2,13 +2,15 @@
 // src/components/wiki-os/watchlist/WikiWatchlistFeed.tsx
 // Native Stash Watchlist Activity Feed with inline DiffViewer & unread indicators
 
-import { cn } from "~/lib/utils";
 import * as React from "react";
 import Link from "next/link";
 import { Eye, EyeClosed, Check, Search, Calendar, Refresh as RefreshCw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export function WikiWatchlistFeed() {
   const [days, setDays] = React.useState<number>(7);
@@ -84,67 +86,59 @@ export function WikiWatchlistFeed() {
           {/* Action Bar */}
           <div className="flex flex-wrap items-center gap-2">
             {unreadCount > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="gray"
+                size="sm"
                 onClick={() => markAllVisitedMutation.mutate()}
                 disabled={markAllVisitedMutation.isPending}
-                className="border-separator bg-fill-3 text-label hover:bg-fill-3 rounded-row text-caption inline-flex items-center gap-1.5 border px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               >
                 <Check className="text-green h-3.5 w-3.5" />
                 Mark all as visited
-              </button>
+              </Button>
             )}
 
-            <button
-              type="button"
+            <Button
+              variant="gray"
+              size="icon"
+              aria-label="Refresh Watchlist"
               onClick={() => void refetch()}
               disabled={isRefetching}
-              className="border-separator bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label rounded-row inline-flex h-8 w-8 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               title="Refresh Watchlist"
+              className="text-label-secondary"
             >
               <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Filters Bar */}
         <div className="border-separator mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Timeframe Selector */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Calendar className="text-label-secondary mr-1 h-4 w-4" />
-            {[
-              { label: "24h", val: 1 },
-              { label: "3d", val: 3 },
-              { label: "7d", val: 7 },
-              { label: "30d", val: 30 },
-            ].map((t) => (
-              <button
-                key={t.val}
-                type="button"
-                onClick={() => setDays(t.val)}
-                className={cn(
-                  "rounded-control text-caption px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]",
-                  days === t.val
-                    ? "bg-tint/20 border-tint/40 text-tint border font-semibold"
-                    : "bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
+            <SegmentedControl
+              size="sm"
+              aria-label="Timeframe"
+              value={String(days)}
+              onValueChange={(v) => setDays(Number(v))}
+              options={[
+                { value: "1", label: "24h" },
+                { value: "3", label: "3d" },
+                { value: "7", label: "7d" },
+                { value: "30", label: "30d" },
+              ]}
+            />
           </div>
 
           {/* Search Filter */}
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-            <input
-              type="text"
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              placeholder="Filter changes…"
-              className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint/60 focus:ring-tint/60 rounded-row text-footnote h-8 w-full border pr-3 pl-8 focus:ring-1 focus:outline-none"
-            />
-          </div>
+          <SearchField
+            size="sm"
+            value={filterQuery}
+            onValueChange={setFilterQuery}
+            placeholder="Filter changes…"
+            aria-label="Filter changes"
+            containerClassName="flex-1 sm:max-w-xs"
+          />
         </div>
       </div>
 
@@ -197,12 +191,12 @@ export function WikiWatchlistFeed() {
                           {item.articleTitle}
                         </Link>
                         {item.namespacePrefix && (
-                          <span className="bg-fill-2 text-label-secondary rounded-control-sm text-caption px-1.5 py-0.5">
+                          <span className="bg-fill-2 text-label-secondary rounded-control-sm text-caption px-2 py-0.5">
                             {item.namespacePrefix}
                           </span>
                         )}
                         {item.minor && (
-                          <span className="rounded-control-sm bg-yellow/15 text-caption text-yellow px-1.5 py-0.5 font-semibold">
+                          <span className="rounded-control-sm bg-yellow/15 text-caption text-yellow px-2 py-0.5 font-semibold">
                             m
                           </span>
                         )}
@@ -243,27 +237,25 @@ export function WikiWatchlistFeed() {
 
                   {/* Row Actions */}
                   <div className="flex items-center gap-2 self-end sm:self-center">
-                    <button
-                      type="button"
+                    <Button
+                      variant={isExpanded ? "tinted" : "gray"}
+                      size="sm"
+                      aria-expanded={isExpanded}
                       onClick={() => setExpandedRevId(isExpanded ? null : item.id)}
-                      className={cn(
-                        "rounded-row text-caption px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]",
-                        isExpanded
-                          ? "bg-tint/20 border-tint/40 text-tint border"
-                          : "border-separator bg-fill-3 text-label hover:bg-fill-3 border"
-                      )}
                     >
                       {isExpanded ? "Hide Diff" : "Inline Diff"}
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Unwatch page"
                       onClick={() => unwatchMutation.mutate({ pageTitle: item.articleTitle })}
-                      className="text-label-secondary hover:bg-fill-3 rounded-row hover:text-red p-1.5 transition-colors"
                       title="Unwatch page"
+                      className="text-label-secondary hover:text-red"
                     >
                       <EyeClosed className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 

@@ -19,7 +19,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {domains.map((domain, index) => {
           const Icon = domain.icon;
           return (
@@ -62,7 +62,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                     </div>
                   </div>
 
-                  <div className="bg-fill-3 text-label-secondary group-hover:text-label group-hover:bg-tint/10 rounded-full p-1.5 transition-colors">
+                  <div className="bg-fill-3 text-label-secondary group-hover:text-label group-hover:bg-tint/10 rounded-full p-2 transition-colors">
                     <ArrowRight className="h-3.5 w-3.5 -rotate-45 transition-transform duration-200 group-hover:rotate-0" />
                   </div>
                 </div>
@@ -73,7 +73,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                 </p>
 
                 {/* Footer Badge */}
-                <div className="border-separator text-caption text-tint mt-4 flex items-center justify-between border-t pt-2.5 font-semibold">
+                <div className="border-separator text-caption text-tint mt-4 flex items-center justify-between border-t pt-3 font-semibold">
                   <span>Open {domain.name} Portal</span>
                   <span className="text-label-secondary group-hover:text-label transition-colors">
                     Category:{domain.name} →

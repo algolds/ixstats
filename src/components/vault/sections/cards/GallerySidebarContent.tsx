@@ -22,6 +22,7 @@ import {
 } from "~/components/ui/select";
 import type { CardRarity } from "@prisma/client";
 import type { GallerySource } from "./types";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export function GallerySidebarContent({
   source,
@@ -58,32 +59,28 @@ export function GallerySidebarContent({
     <div className="space-y-3">
       {/* Source Toggle */}
       <div>
-        <p className="text-label-secondary text-eyebrow mb-1.5">Source</p>
-        <div className="flex gap-1">
-          {(["all", "ns", "lore"] as GallerySource[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setSource(s)}
-              className={cn(
-                "rounded-control-sm text-footnote flex flex-1 items-center justify-center gap-1 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                source === s
-                  ? "bg-tint-fill text-tint font-medium"
-                  : "text-label-secondary hover:text-label hover:bg-fill-3"
-              )}
-            >
-              {s === "all" ? (
-                "All"
-              ) : s === "ns" ? (
+        <p className="text-label-secondary text-eyebrow mb-2">Source</p>
+        <SegmentedControl
+          size="sm"
+          fullWidth
+          aria-label="Card source"
+          value={source}
+          onValueChange={setSource}
+          options={[
+            { value: "all" as GallerySource, label: "All" },
+            {
+              value: "ns" as GallerySource,
+              label: (
                 <span className="flex items-center gap-1">
                   <NationStatesLogo size="xs" />
                   NS
                 </span>
-              ) : (
-                "Lore"
-              )}
-            </button>
-          ))}
-        </div>
+              ),
+              "aria-label": "NationStates",
+            },
+            { value: "lore" as GallerySource, label: "Lore" },
+          ]}
+        />
       </div>
 
       {/* Search */}
@@ -93,15 +90,18 @@ export function GallerySidebarContent({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search cards..."
-          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6.5"
+          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6"
         />
         {search && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={() => setSearch("")}
-            className="absolute top-1/2 right-1.5 -translate-y-1/2"
+            className="text-label-secondary absolute top-1/2 right-1 size-5 -translate-y-1/2"
           >
             <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -116,7 +116,7 @@ export function GallerySidebarContent({
             season !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+          <Calendar className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Season" />
         </SelectTrigger>
         <SelectContent>
@@ -135,7 +135,7 @@ export function GallerySidebarContent({
             rarity !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
+          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Rarity" />
         </SelectTrigger>
         <SelectContent>
@@ -195,8 +195,8 @@ export function GallerySidebarContent({
           onClick={onRequestLoreCard}
           className="border-wiki/30 text-wiki hover:bg-wiki/10 w-full"
         >
-          <BookOpen className="mr-1.5 h-3 w-3" /> Request Lore Card
-          <span className="bg-yellow/10 text-footnote text-yellow ml-1.5 flex items-center gap-0.5 rounded-full px-1.5 py-0 font-semibold">
+          <BookOpen className="mr-2 h-3 w-3" /> Request Lore Card
+          <span className="bg-yellow/10 text-footnote text-yellow ml-2 flex items-center gap-0.5 rounded-full px-2 py-0 font-semibold">
             <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
             50
           </span>
@@ -205,12 +205,14 @@ export function GallerySidebarContent({
 
       {/* Clear */}
       {(search || rarity !== "all" || season !== "all") && (
-        <button
+        <Button
+          variant="bordered"
+          size="sm"
           onClick={onClearFilters}
-          className="border-separator text-label-secondary hover:text-label hover:bg-fill-3 rounded-control text-footnote flex w-full items-center justify-center gap-1 border py-1.5 font-semibold transition-colors"
+          className="text-label-secondary w-full"
         >
           <X className="h-3 w-3" /> Clear Filters
-        </button>
+        </Button>
       )}
     </div>
   );

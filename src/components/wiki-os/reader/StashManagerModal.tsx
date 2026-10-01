@@ -6,7 +6,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Bookmark,
-  Check,
   Plus,
   WarningCircle as AlertCircle,
   SystemRestart as Loader2,
@@ -24,6 +23,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -101,43 +101,29 @@ export function StashManagerModal({
             </div>
           )}
 
-          {allStashes.map((s) => {
-            const active = activeIds.has(s.id);
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onToggle(s.id)}
-                className={cn(
-                  "rounded-control duration-fast flex w-full items-center gap-3 px-3 py-2 text-left transition-colors",
-                  active ? "bg-tint-fill" : "hover:bg-fill-4"
-                )}
-              >
-                <span
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ background: s.color }}
-                  aria-hidden="true"
+          {allStashes.length > 0 && (
+            <FacetListSection variant="plain" aria-label="Stashes">
+              {allStashes.map((s) => (
+                <FacetRow
+                  key={s.id}
+                  onClick={() => onToggle(s.id)}
+                  selected={activeIds.has(s.id)}
+                  selectionStyle="tint"
+                  accessory="check"
+                  itemClassName="rounded-control overflow-hidden"
+                  leading={
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ background: s.color }}
+                      aria-hidden="true"
+                    />
+                  }
+                  title={<span className="block truncate font-normal">{s.name}</span>}
+                  trailing={`${s.itemCount} pages`}
                 />
-                <span className="text-body text-label min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="text-footnote text-label-secondary tabular-nums">
-                  {s.itemCount} pages
-                </span>
-                <span
-                  className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-full",
-                    active ? "bg-tint text-on-tint" : "bg-fill-3 text-label-secondary"
-                  )}
-                >
-                  {active ? (
-                    <Check className="size-3.5" aria-hidden="true" />
-                  ) : (
-                    <Plus className="size-3.5" aria-hidden="true" />
-                  )}
-                </span>
-              </button>
-            );
-          })}
+              ))}
+            </FacetListSection>
+          )}
 
           {/* Create new stash */}
           {showCreate ? (
@@ -209,17 +195,17 @@ export function StashManagerModal({
               </div>
             </div>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="plain"
               onClick={() => setShowCreate(true)}
-              className="rounded-control text-body text-tint duration-fast hover:bg-fill-4 flex w-full items-center gap-2 px-3 py-2 text-left transition-colors"
+              className="text-body w-full justify-start px-3 font-normal"
             >
               <Plus className="size-4" aria-hidden="true" />
               Create new stash
               <span className="text-footnote text-label-secondary ml-auto tabular-nums">
                 {allStashes.length}/25
               </span>
-            </button>
+            </Button>
           )}
         </div>
 
