@@ -111,7 +111,7 @@ describe("action=upload", () => {
     });
   });
 
-  it("answers an identical re-upload that was told to go on as a success that says nothing changed", async () => {
+  it("refuses an identical re-upload that was told to go on with fileexists-no-change, as MediaWiki does", async () => {
     const same: UploadResult = {
       result: "Success",
       replaced: true,
@@ -127,13 +127,13 @@ describe("action=upload", () => {
       sha1: "a".repeat(40),
     };
     const wiki = await setup({ services: { uploadFile: async () => same } });
-    wiki.data.files!.push({ name: "Flag of Eurth.png", timestamp: "2026-09-01T10:00:00Z" });
 
     const body = await wiki.upload({ filename: "Flag of Eurth.png", ignorewarnings: "1" });
 
-    expect(body.upload).toMatchObject({
-      result: "Success",
-      warnings: { nochange: { timestamp: "2026-09-01T10:00:00Z" } },
+    expect(body.upload).toBeUndefined();
+    expect(body.error).toMatchObject({
+      code: "fileexists-no-change",
+      info: "The upload is an exact duplicate of the current version of [[:File:Flag of Eurth.png]].",
     });
   });
 

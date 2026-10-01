@@ -209,7 +209,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 `getCategories`, `getCategoryMembers`, `getCategoryTotalCounts`, `getParentCategories`, `getSubcategories`, `searchCategories`, `autocompleteCategories`
 
 **Editor** (`editing.ts`):
-`previewWikitext`, `saveWikitext`, `uploadFile`, `revertToRevision`, `rollback`, `restoreArticle`
+`previewWikitext`, `saveWikitext`, `revertToRevision`, `rollback`, `restoreArticle`. File uploads are not a tRPC call: they go through `POST /api/wiki/upload` (the raw file as the request body, plan 411) and api.php's `action=upload`, both ending in `services/upload-service.ts`.
 
 **Templates** (`templates.ts`):
 `searchTemplates`, `getTemplateData`, `getTemplatePreview`

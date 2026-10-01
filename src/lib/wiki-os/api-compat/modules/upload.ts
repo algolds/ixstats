@@ -10,7 +10,8 @@
  * `copyuploaddisabled`, as MediaWiki answers when the feature is off), by stash (`filekey`, `stash`) and in chunks
  * (`offset`, `chunk`, `filesize`, `async`).
  * A warning is answered as MediaWiki answers it (`result: Warning`, `warnings`); the bot sends the file again with
- * `ignorewarnings` to go on.
+ * `ignorewarnings` to go on, except for the same bytes as the current version, which MediaWiki refuses either way
+ * (`fileexists-no-change`, checked against a real MediaWiki 1.45): nothing is stored.
  */
 
 import { ApiError, missingOneOf, missingParam } from "../errors";
@@ -107,13 +108,17 @@ export async function runUpload(rc: ApiContext): Promise<JsonObject> {
       },
     };
   }
+  // The same bytes as the current version, told to go on: nothing was stored, and MediaWiki refuses it the same way.
+  if (result.noChange) {
+    throw new ApiError(
+      "fileexists-no-change",
+      `The upload is an exact duplicate of the current version of [[:${result.title}]].`
+    );
+  }
   return {
     upload: {
       result: "Success",
       filename: underscored(result.filename),
-      ...(result.noChange
-        ? { warnings: { nochange: { timestamp: mwTimestamp(current?.timestamp ?? rc.now) } } }
-        : {}),
       imageinfo: current ? { ...uploadImageInfo(current, rc.deps.siteUrl) } : {},
     },
   };
