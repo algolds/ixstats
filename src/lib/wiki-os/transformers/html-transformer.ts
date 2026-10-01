@@ -3,7 +3,6 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { parseInert } from "./inert-dom";
 import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
@@ -462,6 +461,11 @@ export function appendSectionEditLinks(root: Element | DocumentFragment, slug: s
     link.textContent = "Edit";
     heading.append(link);
   }
+}
+
+/** Takes the links `appendSectionEditLinks` added back out of the live tree (the viewer can no longer edit). */
+export function removeSectionEditLinks(root: Element | DocumentFragment): void {
+  for (const link of Array.from(root.querySelectorAll(".wikios-section-edit-link"))) link.remove();
 }
 
 function styleEditSectionLinks(html: string): string {

@@ -409,6 +409,30 @@ describe("ArticleRenderer first paint and signing in (plan 413)", () => {
     expect(view.container.querySelector("p")).toBe(paragraph); // the same node: nothing was re-injected
   });
 
+  it("signing out takes the section edit links back out, in place", () => {
+    const view = renderArticle("ixwiki");
+    const paragraph = view.container.querySelector("p");
+    expect(view.container.querySelector(".wikios-section-edit-link")).not.toBeNull();
+
+    mockSignedIn = false;
+    view.rerender(
+      <ArticleRenderer
+        title="Portal:Eurth"
+        contentHtml={content}
+        infoboxHtml={null}
+        noticesHtml={null}
+        toc={[]}
+        categories={[]}
+        lastModified={null}
+        wikiSource="ixwiki"
+        authorInfo={null}
+      />
+    );
+
+    expect(view.container.querySelector(".wikios-section-edit-link")).toBeNull();
+    expect(view.container.querySelector("p")).toBe(paragraph);
+  });
+
   it("a re-render (the companion collapsing) does not write the article's HTML again: React 19 does that for a new {__html} object", () => {
     const view = renderArticle("ixwiki");
     const paragraph = view.container.querySelector("p");

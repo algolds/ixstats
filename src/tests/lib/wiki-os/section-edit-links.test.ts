@@ -1,4 +1,4 @@
-import { appendSectionEditLinks } from "~/lib/wiki-os/transformers/html-transformer";
+import { appendSectionEditLinks, removeSectionEditLinks } from "~/lib/wiki-os/transformers/html-transformer";
 import { findSectionLine } from "~/lib/wiki-os/wikitext/section-locator";
 
 /** The HTML of `html` after the links are appended to its live tree. */
@@ -41,6 +41,22 @@ describe("appendSectionEditLinks", () => {
     expect(root.querySelector("h2")).toBe(heading);
     expect(root.querySelectorAll(".wikios-section-edit-link")).toHaveLength(1);
     expect(root.querySelector("p")?.textContent).toBe("text");
+  });
+});
+
+describe("removeSectionEditLinks", () => {
+  test("takes the appended links out again and leaves the headings and the rest alone", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<h2 id="A">Alpha</h2><h3 id="B">Beta</h3><p>text</p>';
+    const heading = root.querySelector("h2");
+    appendSectionEditLinks(root, "Foo");
+    expect(root.querySelectorAll(".wikios-section-edit-link")).toHaveLength(2);
+
+    removeSectionEditLinks(root);
+
+    expect(root.innerHTML).toBe('<h2 id="A">Alpha</h2><h3 id="B">Beta</h3><p>text</p>');
+    expect(root.querySelector("h2")).toBe(heading);
+    removeSectionEditLinks(root); // none left: nothing to do
   });
 });
 

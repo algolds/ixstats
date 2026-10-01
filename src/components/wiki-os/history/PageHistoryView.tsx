@@ -89,12 +89,30 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
         </div>
 
         {/* Interactive Scrubbable Timeline */}
-        <ScrubbableRevisionTimeline
-          title={title}
-          slug={slug}
-          revisions={mappedRevisions}
-          isLoading={isLoading}
-        />
+        {first.error ? (
+          <div
+            role="alert"
+            className="border-destructive/40 bg-destructive/10 flex flex-col items-center gap-3 rounded-2xl border p-8 text-center"
+          >
+            <p className="text-destructive text-sm font-medium">
+              The history of {title} could not be loaded: {first.error.message}
+            </p>
+            <button
+              type="button"
+              onClick={() => void first.refetch()}
+              className="border-border/50 bg-secondary/60 text-foreground hover:bg-secondary rounded-xl border px-4 py-2 text-xs font-semibold"
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
+          <ScrubbableRevisionTimeline
+            title={title}
+            slug={slug}
+            revisions={mappedRevisions}
+            isLoading={isLoading}
+          />
+        )}
 
         {hasMore && (
           <div className="flex flex-col items-center gap-2">

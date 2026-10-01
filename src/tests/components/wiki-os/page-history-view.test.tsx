@@ -17,10 +17,12 @@ const entry = (revid: string) => ({
 });
 
 const mockFetch = jest.fn();
-let firstPage: { revisions: ReturnType<typeof entry>[]; hasMore: boolean } = {
+let firstPage: { revisions: ReturnType<typeof entry>[]; hasMore: boolean } | undefined = {
   revisions: [entry("r3"), entry("r2")],
   hasMore: true,
 };
+let firstError: { message: string } | null = null;
+const mockRefetch = jest.fn();
 const timelineProps = jest.fn();
 
 jest.mock("~/trpc/react", () => ({
@@ -28,7 +30,12 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({ wikios: { getHistory: { fetch: mockFetch } } }),
     wikios: {
       getHistory: {
-        useQuery: () => ({ data: firstPage, isLoading: false }),
+        useQuery: () => ({
+          data: firstPage,
+          isLoading: false,
+          error: firstError,
+          refetch: mockRefetch,
+        }),
       },
     },
   },
@@ -46,6 +53,7 @@ jest.mock("~/components/wiki-os/history/ScrubbableRevisionTimeline", () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   firstPage = { revisions: [entry("r3"), entry("r2")], hasMore: true };
+  firstError = null;
 });
 
 describe("PageHistoryView paging", () => {
@@ -77,5 +85,20 @@ describe("PageHistoryView paging", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Too many requests");
     expect(screen.getByRole("button", { name: "Older 50" })).toBeInTheDocument();
+  });
+});
+
+describe("PageHistoryView when the history cannot be loaded", () => {
+  it("says so, with the reason and a way to try again, instead of 'no revision history'", () => {
+    firstPage = undefined;
+    firstError = { message: "Too many requests" };
+    render(<PageHistoryView title="Foo" slug="Foo" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("The history of Foo could not be loaded");
+    expect(screen.getByRole("alert")).toHaveTextContent("Too many requests");
+    expect(screen.queryByTestId("timeline")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 });

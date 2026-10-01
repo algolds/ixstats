@@ -182,10 +182,16 @@ export function WikiOSMainPage() {
 
   // One answer for the whole page (featured article, almanac, recent changes, counts, topic tiles,
   // prompt): the route reads it on the server, so it is in the first HTML and not fetched again.
-  const { data: main } = api.wikios.getMainPage.useQuery(undefined, {
+  const {
+    data: main,
+    error: mainError,
+    refetch: refetchMain,
+  } = api.wikios.getMainPage.useQuery(undefined, {
     staleTime: MAIN_PAGE_STALE_MS,
     refetchOnWindowFocus: false,
   });
+  // A page that could not be read says so; its sections must not stay skeletons for good
+  const mainFailed = !main && !!mainError;
   const categories = main?.categories ?? [];
   const featured = main?.featured ?? null;
   const recentChanges = main?.recentChanges;
@@ -300,6 +306,19 @@ export function WikiOSMainPage() {
 
         {/* ── 2. Redesigned Main Content Area (Layout-Aware) ── */}
         <main className="w-full">
+          {mainFailed && (
+            <div
+              role="alert"
+              className="border-destructive/40 bg-destructive/10 mb-4 flex flex-col items-center gap-3 rounded-2xl border p-6 text-center"
+            >
+              <p className="text-destructive text-sm font-medium">
+                The Main Page could not be loaded: {mainError.message}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetchMain()}>
+                Try again
+              </Button>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {variant === "editorial-masthead" ? (
               <motion.div
@@ -312,10 +331,10 @@ export function WikiOSMainPage() {
                 <EditorialMainPageContent
                   categories={categories}
                   recentChanges={recentChanges}
-                  isLoadingRecent={!main}
+                  isLoadingRecent={!main && !mainFailed}
                   countries={randomCountries}
                   almanacSpotlight={almanacSpotlightData}
-                  isLoadingAlmanac={!main}
+                  isLoadingAlmanac={!main && !mainFailed}
                 />
               </motion.div>
             ) : (
@@ -329,10 +348,10 @@ export function WikiOSMainPage() {
                 <SculptedMainPageContent
                   categories={categories}
                   recentChanges={recentChanges}
-                  isLoadingRecent={!main}
+                  isLoadingRecent={!main && !mainFailed}
                   countries={randomCountries}
                   almanacSpotlight={almanacSpotlightData}
-                  isLoadingAlmanac={!main}
+                  isLoadingAlmanac={!main && !mainFailed}
                 />
               </motion.div>
             )}

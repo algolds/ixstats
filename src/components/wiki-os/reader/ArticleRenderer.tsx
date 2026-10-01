@@ -6,7 +6,11 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { appendSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import {
+  appendSectionEditLinks,
+  removeSectionEditLinks,
+  type TocEntry,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
@@ -442,11 +446,14 @@ export function ArticleRenderer({
   }, [hydrated, contentHtml]);
 
   // A signed-in reader's section edit links are added to the live article, in place: signing in
-  // resolves after hydration, and the article's HTML is never written again for it.
+  // resolves after hydration, and the article's HTML is never written again for it. Signing out
+  // takes them out the same way.
   const canEdit = isAuthenticated && !readOnly;
   useEffect(() => {
     const container = contentRef.current;
-    if (canEdit && container) appendSectionEditLinks(container, slug);
+    if (!container) return;
+    if (canEdit) appendSectionEditLinks(container, slug);
+    else removeSectionEditLinks(container);
   }, [canEdit, slug, processedHtml]);
   // React writes a `dangerouslySetInnerHTML` element's HTML again whenever the prop is a new object,
   // even for the same string (React 19): built here once per HTML, so a re-render (a section change in
