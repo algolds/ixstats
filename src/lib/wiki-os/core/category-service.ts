@@ -4,6 +4,7 @@
  * Manages category creation, subcategory trees, and member lookups via PostgreSQL.
  */
 
+import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 
@@ -16,7 +17,71 @@ export interface CategoryTreeItem {
   subcategories: CategoryTreeItem[];
 }
 
+/** A category page lists this many members; the next page starts where `CategoryMemberPage.next` says. */
+export const CATEGORY_PAGE_SIZE = 200;
+
+export interface CategoryMember {
+  /** The member's full title, namespace prefix included. */
+  title: string;
+  namespace: number;
+}
+
+export interface CategoryMemberPage {
+  members: CategoryMember[];
+  /** Every member of the category, not only this page's. */
+  total: number;
+  /** Where the next page starts (a `from` value), or null at the end. */
+  next: string | null;
+}
+
+interface MemberRow {
+  title: string;
+  namespace: number;
+  sortKey: string;
+}
+
 export class CategoryService {
+  /**
+   * One page of a category's members in MediaWiki's order: by sort key (the page title when it has
+   * none), case-insensitively, starting at `from`. Members of every namespace are listed; the
+   * caller tells subcategories (14), files (6) and pages apart.
+   */
+  static async getMemberPage(
+    category: string,
+    { from, limit }: { from: string; limit: number }
+  ): Promise<CategoryMemberPage> {
+    const name = category
+      .replace(/^Category:/i, "")
+      .replace(/_/g, " ")
+      .trim();
+    const slug = toArticleSlug(name);
+    const inCategory = Prisma.sql`c."slug" = ${slug} OR lower(c."name") = lower(${name})`;
+
+    const [rows, totals] = await Promise.all([
+      db.$queryRaw<MemberRow[]>`
+        SELECT a."title" AS "title", a."namespace" AS "namespace",
+               COALESCE(m."sortKey", a."title") AS "sortKey"
+        FROM wiki_category_members m
+        JOIN wiki_categories c ON c."id" = m."categoryId"
+        JOIN wiki_articles a ON a."id" = m."articleId"
+        WHERE (${inCategory}) AND a."source" = 'ixwiki'
+          AND upper(COALESCE(m."sortKey", a."title")) >= upper(${from})
+        ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"
+        LIMIT ${limit + 1}`,
+      db.$queryRaw<Array<{ total: bigint }>>`
+        SELECT count(*) AS "total"
+        FROM wiki_category_members m
+        JOIN wiki_categories c ON c."id" = m."categoryId"
+        JOIN wiki_articles a ON a."id" = m."articleId"
+        WHERE (${inCategory}) AND a."source" = 'ixwiki'`,
+    ]);
+
+    const members = rows
+      .slice(0, limit)
+      .map((row) => ({ title: row.title, namespace: row.namespace }));
+    return { members, total: Number(totals[0]?.total ?? 0), next: rows[limit]?.sortKey ?? null };
+  }
+
   /**
    * Get Category Details and Direct Members (Articles & Subcategories)
    */

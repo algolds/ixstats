@@ -12,6 +12,7 @@
  *  - stash:                 lore stash CRUD and item management
  *  - watchlist-annotations: user watchlist + page annotations
  *  - user-talk:             user info, contributions, talk pages, backlinks
+ *  - page-views:            page info, page lists, category member pages, file info (plan 412)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -25,6 +26,7 @@ import { wikiosWatchlistAnnotationsRouter } from "./watchlist-annotations";
 import { wikiosUserTalkRouter } from "./user-talk";
 import { wikiosDiscussionsRouter } from "./discussions";
 import { wikiosUtilitiesRouter } from "./utilities";
+import { wikiosPageViewsRouter } from "./page-views";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -37,5 +39,6 @@ export const wikiosRouter = mergeRouters(
   wikiosWatchlistAnnotationsRouter,
   wikiosUserTalkRouter,
   wikiosDiscussionsRouter,
-  wikiosUtilitiesRouter
+  wikiosUtilitiesRouter,
+  wikiosPageViewsRouter
 );

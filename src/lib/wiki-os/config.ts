@@ -104,12 +104,17 @@ export function parseWikiSource(value: string | null | undefined): WikiSource {
   return value && isWikiSource(value) ? value : "ixwiki";
 }
 
-/** `wikios.getArticleHtml` input: an IxWiki page by title alone, so the reader and hover prefetch share one cache key. */
+/**
+ * `wikios.getArticleHtml` input: an IxWiki page by title alone, so the reader, the server render and
+ * hover prefetch share one cache key. `followRedirect: false` is `?redirect=no`: the redirect page itself.
+ */
 export function articleHtmlInput(
   title: string,
-  source: WikiSource
-): { title: string; wikiSource?: WikiSource } {
-  return source === "ixwiki" ? { title } : { title, wikiSource: source };
+  source: WikiSource,
+  { followRedirect = true }: { followRedirect?: boolean } = {}
+): { title: string; wikiSource?: WikiSource; redirect?: "no" } {
+  if (source !== "ixwiki") return { title, wikiSource: source };
+  return followRedirect ? { title } : { title, redirect: "no" };
 }
 
 /** The WikiOS reader path for a page; a page of another wiki carries `?source=`. */

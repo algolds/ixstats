@@ -504,16 +504,57 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
     nowSpy.mockRestore();
   });
 
-  it("does not look at MediaWiki for a system route or a title it would refuse", async () => {
-    await expect(caller().getArticleHtml({ title: "Utilities" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+  it("does not look at MediaWiki for a title it would refuse", async () => {
     await expect(caller().getArticleHtml({ title: "a[b" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
 
     expect(findArticleForView).not.toHaveBeenCalled();
     expect(syncSinglePage).not.toHaveBeenCalled();
+  });
+
+  it("a WikiOS tool name is an ordinary title: plan 412 redirects the old slugs in the route, not here", async () => {
+    findArticleForView.mockResolvedValue(head({ title: "Utilities" }));
+    setRow(freshBundleRow("<p>The utilities of Eurth.</p>"));
+
+    const result = await caller().getArticleHtml({ title: "Utilities" });
+
+    expect(findArticleForView).toHaveBeenCalledWith("Utilities");
+    expect(result.title).toBe("Utilities");
+  });
+});
+
+describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
+  beforeEach(() => {
+    findArticleForView.mockImplementation(async (title: string) => head({ title }));
+    setRow(freshBundleRow("<p>The Republic.</p>"));
+    jest.mocked(resolveRedirect).mockImplementation(async (title: string) =>
+      title === "Old name" ? { title: "New name", fragment: "History" } : { title, fragment: null }
+    );
+  });
+
+  it("follows a redirect and says where it came from and which section it points to", async () => {
+    const result = await caller().getArticleHtml({ title: "old_name" });
+
+    expect(findArticleForView).toHaveBeenCalledWith("New name");
+    expect(result).toMatchObject({
+      title: "New name",
+      resolvedFrom: "Old name",
+      redirectFragment: "History",
+    });
+  });
+
+  it("?redirect=no shows the redirect page itself", async () => {
+    const result = await caller().getArticleHtml({ title: "Old name", redirect: "no" });
+
+    expect(resolveRedirect).not.toHaveBeenCalled();
+    expect(findArticleForView).toHaveBeenCalledWith("Old name");
+    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
+  });
+
+  it("a page that is not a redirect has neither", async () => {
+    const result = await caller().getArticleHtml({ title: "Aurelia" });
+    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
   });
 });
 

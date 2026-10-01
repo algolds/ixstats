@@ -46,6 +46,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1).max(500),
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        /** "no" shows a redirect page itself instead of following it (`?redirect=no`). */
+        redirect: z.literal("no").optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -115,6 +117,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
           lastModified: null,
           isRedirect: false,
           redirectTarget: null,
+          redirectFragment: null,
           resolvedFrom: null,
           wikiSource,
           authorInfo,
@@ -133,36 +136,13 @@ export const wikiosPageContentRouter = createTRPCRouter({
         });
       }
       const rawTitle = canon.title;
-      const rawTitleLower = rawTitle.toLowerCase().replace(/[\s_]+/g, "-");
-      const RESERVED_SYSTEM_ROUTES = new Set([
-        "utilities",
-        "categories",
-        "category-index",
-        "recent-changes",
-        "recentchanges",
-        "templates",
-        "sandbox",
-        "search",
-        "watchlist",
-        "repository",
-        "history",
-        "diff",
-        "whatlinkshere",
-        "lorewards",
-        "specialpages",
-      ]);
 
-      if (
-        RESERVED_SYSTEM_ROUTES.has(rawTitleLower) ||
-        RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase())
-      ) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `"${input.title}" is a system tool route.`,
-        });
-      }
-
-      const { title: resolvedTitle } = await resolveRedirect(rawTitle);
+      // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
+      // other, and the old slugs redirect to their tool in the route, not in this query.
+      const { title: resolvedTitle, fragment: redirectFragment } =
+        input.redirect === "no"
+          ? { title: rawTitle, fragment: null }
+          : await resolveRedirect(rawTitle);
 
       const view = await getArticleView(resolvedTitle, () => resolveActiveCountryId(ctx)).catch(
         (error: Error) => {
@@ -184,6 +164,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
         ...view,
         isRedirect: false,
         redirectTarget: null,
+        /** The section the redirect points to, or null. */
+        redirectFragment,
         resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
         wikiSource: "ixwiki" as const,
         // The reader fetches authorship lazily (getArticleAuthors) so it never holds the article back.

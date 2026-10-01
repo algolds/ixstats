@@ -2,6 +2,11 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories
 // rely on the ambient global.
 jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
+const mockGetRevisionView = jest.fn();
+jest.mock("~/lib/wiki-os/services/revision-view-service", () => ({
+  __esModule: true,
+  getRevisionView: (...args: unknown[]) => mockGetRevisionView(...args),
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),
@@ -16,6 +21,7 @@ import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 
 const caller = () =>
   createCallerFactory(wikiosHistoryDiffRouter)(
@@ -67,5 +73,53 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402)", () => {
       code: "PRECONDITION_FAILED",
       message: "Revision text has not been imported yet.",
     });
+  });
+});
+
+describe("wikiosHistoryDiffRouter.getRevisionHtml (plan 412)", () => {
+  const view = {
+    title: "Foo",
+    timestamp: "2026-06-01T00:00:00.000Z",
+    contentHtml: "<p>old</p>",
+    infoboxHtml: null,
+    noticesHtml: null,
+    toc: [],
+    renderQuality: "rendered" as const,
+  };
+
+  it("returns the rendered revision", async () => {
+    mockGetRevisionView.mockResolvedValue({ status: "ok", view });
+
+    await expect(caller().getRevisionHtml({ ref: "123" })).resolves.toEqual(view);
+    expect(mockGetRevisionView).toHaveBeenCalledWith("123");
+  });
+
+  it("is NOT_FOUND for an unknown revision and PRECONDITION_FAILED for one with no text", async () => {
+    mockGetRevisionView.mockResolvedValueOnce({ status: "missing" });
+    await expect(caller().getRevisionHtml({ ref: "1" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+
+    mockGetRevisionView.mockResolvedValueOnce({ status: "text-unavailable" });
+    await expect(caller().getRevisionHtml({ ref: "2" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "Revision text has not been imported yet.",
+    });
+  });
+
+  it("is TOO_MANY_REQUESTS when MediaWiki could not be asked, never a wrong page", async () => {
+    mockGetRevisionView.mockRejectedValue(new ThrottledError("Rendering old revisions"));
+    await expect(caller().getRevisionHtml({ ref: "3" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+  });
+
+  it("refuses a reference that cannot be a revision's, without looking it up", async () => {
+    for (const ref of ["", "a b", "x;y", "a".repeat(65)]) {
+      await expect(caller().getRevisionHtml({ ref })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+    }
+    expect(mockGetRevisionView).not.toHaveBeenCalled();
   });
 });

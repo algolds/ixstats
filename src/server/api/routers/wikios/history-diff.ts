@@ -7,7 +7,9 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
+import { getRevisionView } from "~/lib/wiki-os/services/revision-view-service";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import {
   getArticleHistoryShadow,
@@ -112,5 +114,31 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       const result = await getRevisionWikitextShadow(input.revid);
       if (!result) throw new Error("Revision not found");
       return result;
+    }),
+
+  /**
+   * One old revision rendered for the reader (`?oldid=`). Nothing is stored; see
+   * revision-view-service. The revision's page is the `title` in the answer: the caller compares it
+   * with the page the URL named.
+   */
+  getRevisionHtml: rateLimitedPublicProcedure
+    .input(z.object({ ref: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/) }))
+    .query(async ({ input }) => {
+      const result = await getRevisionView(input.ref).catch((error: Error) => {
+        if (error instanceof ThrottledError) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+        }
+        throw error;
+      });
+      if (result.status === "missing") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Revision not found" });
+      }
+      if (result.status === "text-unavailable") {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Revision text has not been imported yet.",
+        });
+      }
+      return result.view;
     }),
 });
