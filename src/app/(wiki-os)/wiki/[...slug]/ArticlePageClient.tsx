@@ -15,6 +15,7 @@ import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
 import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
+import { WikiEditGate } from "~/components/wiki-os/editor/WikiEditGate";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
   articleHtmlInput,
@@ -156,13 +157,15 @@ export default function ArticlePageClient({
     }
   }, [isAuthLoaded, isSignedIn, data, refetch]);
 
-  // Background idle wikitext warmup so clicking Edit is 0ms. Only a signed-in reader can edit:
-  // an anonymous reader never pays for the wikitext (up to 2 MB) of every page they open.
+  // Background idle warmup so clicking Edit is 0ms: the wikitext the editor opens on, and the answer the edit
+  // gate (WikiEditGate) waits for. Only a signed-in reader can edit: an anonymous reader never pays for the
+  // wikitext (up to 2 MB) of every page they open, and the gate does not ask the server for them.
   useEffect(() => {
     if (data && !isMainPage && isIxWiki && isSignedIn) {
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
+          void utils.wikios.getEditAccess.prefetch({ title }, { staleTime: 60 * 1000 });
         });
       }
     }
@@ -218,18 +221,20 @@ export default function ArticlePageClient({
     <WikiOSLayout readOnly={!isIxWiki}>
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
-          <WikiEditBridge
-            title={title}
-            initialMode={mode === "visual" ? "visual" : "source"}
-            initialSection={
-              initialEdit?.section && initialEdit.section !== "new"
-                ? initialEdit.section
-                : undefined
-            }
-            newSection={initialEdit?.section === "new"}
-            onClose={handleExitEdit}
-            onSaveSuccess={handleSaveSuccess}
-          />
+          <WikiEditGate title={title} onClose={handleExitEdit}>
+            <WikiEditBridge
+              title={title}
+              initialMode={mode === "visual" ? "visual" : "source"}
+              initialSection={
+                initialEdit?.section && initialEdit.section !== "new"
+                  ? initialEdit.section
+                  : undefined
+              }
+              newSection={initialEdit?.section === "new"}
+              onClose={handleExitEdit}
+              onSaveSuccess={handleSaveSuccess}
+            />
+          </WikiEditGate>
         ) : (
           <>
             {isIxWiki && <ArticleTabs title={title} />}

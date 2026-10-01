@@ -413,6 +413,48 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
   });
 });
 
+describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => {
+  const blankRow = (title: string) => ({
+    renderedView: null,
+    htmlSyncedAt: null,
+    title,
+    wikitext: "",
+    contentHtml: null,
+  });
+
+  it("serves an existing page with an empty current revision as an empty article, not a missing one", async () => {
+    findArticleForView.mockResolvedValue(
+      head({ htmlSyncedAt: null, title: "Talk:Paulastra", emptyText: true, categories: [] })
+    );
+    setRow(blankRow("Talk:Paulastra"));
+
+    const result = await caller().getArticleHtml({ title: "Talk:Paulastra" });
+
+    expect(result).toMatchObject({
+      title: "Talk:Paulastra",
+      contentHtml: "",
+      infoboxHtml: null,
+      noticesHtml: null,
+      toc: [],
+      categories: [],
+      lastModified: EDITED.toISOString(),
+      stale: false,
+    });
+    expect(syncSinglePage).not.toHaveBeenCalled(); // the page is there: nothing to import
+  });
+
+  it("keeps a stub (no empty current revision) not found", async () => {
+    findArticleForView.mockResolvedValue(
+      head({ htmlSyncedAt: null, title: "Talk:Stubbed", emptyText: false })
+    );
+    setRow(blankRow("Talk:Stubbed"));
+
+    await expect(caller().getArticleHtml({ title: "Talk:Stubbed" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
+
 describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
   it("imports the page once, then is not found", async () => {
     findArticleForView.mockResolvedValue(null);

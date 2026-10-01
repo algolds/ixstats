@@ -1,4 +1,5 @@
 import {
+  articleElementHtml,
   buildExpectations,
   evaluateExpectation,
   ixstatesPath,
@@ -313,6 +314,105 @@ describe("buildExpectations", () => {
   });
 });
 
+describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified by it)", () => {
+  const BODY_ROW = /article body text/;
+  const bodyRow = (partial: Partial<ChecklistOptions> = {}) =>
+    buildExpectations(checklist(partial)).find((expectation) => BODY_ROW.test(expectation.name));
+
+  it("is left out without a sentence to look for", () => {
+    expect(bodyRow()).toBeUndefined();
+    expect(bodyRow({ articleText: null })).toBeUndefined();
+  });
+
+  it("asks for the article as an anonymous page load and wants the sentence in the HTML", () => {
+    const expectation = bodyRow({ article: "Pelaxia", articleText: "Pelaxia is a country" });
+    expect(expectation).toMatchObject({
+      path: "/wiki/Pelaxia",
+      via: "public",
+      expectStatus: 200,
+      expectArticleText: "Pelaxia is a country",
+      headers: { accept: "text/html" },
+      standalone: true,
+    });
+  });
+
+  it("falls back to the page, and holds on a lone WikiOS process (--standalone)", () => {
+    const options = { ...parse(["--standalone", "--article-text", "words"]) };
+    const rows = planChecks(options).map((check) => check.expectation);
+    expect(rows.find((expectation) => BODY_ROW.test(expectation.name))?.path).toBe("/wiki/Main_Page");
+  });
+
+  const ARTICLE = '<div class="wikios-article-body wikios-article-content"><div id="wikios-lean-x-body">';
+  const LEAD = "Pelaxia is a country in Eurth.";
+  const DEEP = "Its ports handle most of the continent's grain";
+
+  it("fails when the page comes back without the article body, as an SSR stash miss does", () => {
+    const expectation = bodyRow({ articleText: DEEP })!;
+    const miss = evaluateExpectation(
+      expectation,
+      observed({ body: `<main><h1>Pelaxia</h1>${ARTICLE}</div></div></main>` })
+    );
+    expect(miss.ok).toBe(false);
+    expect(miss.failures[0]).toContain(`the article element does not include ${JSON.stringify(DEEP)}`);
+    expect(
+      evaluateExpectation(
+        expectation,
+        observed({ body: `<main>${ARTICLE}<p>${DEEP}, and its mines the metals.</p></div></div></main>` })
+      ).ok
+    ).toBe(true);
+  });
+
+  it("does not pass on text that is only in the meta tags: a lead sentence is the description, og and twitter text", () => {
+    const expectation = bodyRow({ articleText: LEAD })!;
+    const head =
+      `<head><title>Pelaxia — IxWiki</title><meta name="description" content="${LEAD}"/>` +
+      `<meta property="og:description" content="${LEAD}"/><meta name="twitter:description" content="${LEAD}"/></head>`;
+    // the page with no article body: the lead is in <head> and, once the metadata streams in, in a hidden div
+    const body =
+      `<body><main><h1>Pelaxia</h1>${ARTICLE}</div></div></main>` +
+      `<div hidden><meta name="description" content="${LEAD}"/></div></body>`;
+    const result = evaluateExpectation(expectation, observed({ body: `<html>${head}${body}</html>` }));
+    expect(result.ok).toBe(false);
+  });
+
+  it("does not pass on text that is only in the page data (the flight carries the metadata and, without lean mode, the article)", () => {
+    const expectation = bodyRow({ articleText: LEAD })!;
+    const flight = `<script>self.__next_f.push([1,"{\\"description\\":\\"${LEAD}\\"}"])</script>`;
+    const result = evaluateExpectation(
+      expectation,
+      observed({ body: `<body><main>${ARTICLE}</div></div></main>${flight}</body>` })
+    );
+    expect(result.ok).toBe(false);
+  });
+
+  it("passes on a sentence in the article element even when the same words are in the meta tags too", () => {
+    const expectation = bodyRow({ articleText: LEAD })!;
+    const html = `<head><meta name="description" content="${LEAD}"/></head><body>${ARTICLE}<p>${LEAD}</p></div></div></body>`;
+    expect(evaluateExpectation(expectation, observed({ body: html })).ok).toBe(true);
+  });
+
+  it("fails a page with no article element at all (an error page, a soft 404)", () => {
+    const expectation = bodyRow({ articleText: LEAD })!;
+    expect(evaluateExpectation(expectation, observed({ body: `<body><p>${LEAD}</p></body>` })).ok).toBe(false);
+  });
+});
+
+describe("articleElementHtml", () => {
+  it("starts at the article element (its class attribute) and drops scripts, meta, link and title tags", () => {
+    const html =
+      '<head><meta name="description" content="lead"/></head><body><title>T</title>' +
+      '<div class="wikios-article-body wikios-article-content"><p>deep</p><link rel="x" href="lead"/>' +
+      "<script>lead</script></div></body>";
+    expect(articleElementHtml(html)).toBe(
+      'class="wikios-article-body wikios-article-content"><p>deep</p></div></body>'
+    );
+  });
+
+  it("is empty for a page with no article element", () => {
+    expect(articleElementHtml("<body><p>x</p></body>")).toBe("");
+  });
+});
+
 describe("ixstatesPath", () => {
   it("returns the path without a trailing slash, empty for a bare host", () => {
     expect(ixstatesPath("https://ixwiki.com/projects/ixstates")).toBe("/projects/ixstates");
@@ -333,6 +433,8 @@ describe("parseArgs", () => {
       revid: "1",
       subpage: "Template:Infobox_country/doc",
       category: "Category:Countries",
+      article: "Main_Page",
+      articleText: null,
       standalone: false,
     });
   });
@@ -359,6 +461,10 @@ describe("parseArgs", () => {
           "Template:Foo/doc",
           "--category",
           "Category:X",
+          "--article",
+          "Long_article",
+          "--article-text",
+          "A sentence from the body",
           "--standalone",
         ],
         {}
@@ -373,7 +479,16 @@ describe("parseArgs", () => {
       revid: "77",
       subpage: "Template:Foo/doc",
       category: "Category:X",
+      article: "Long_article",
+      articleText: "A sentence from the body",
       standalone: true,
+    });
+  });
+
+  it("checks the article body text of --page unless --article names another one", () => {
+    expect(parse(["--page", "Ixnay", "--article-text", "Some words"])).toMatchObject({
+      article: "Ixnay",
+      articleText: "Some words",
     });
   });
 

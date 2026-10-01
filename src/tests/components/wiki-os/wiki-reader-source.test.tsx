@@ -6,8 +6,10 @@ import ArticlePageClient, {
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
+const mockEditAccessPrefetch = jest.fn();
 const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
+const mockGate = jest.fn();
 const mockLayout = jest.fn();
 const mockSetActiveModal = jest.fn();
 let mockSearch = "";
@@ -19,7 +21,12 @@ jest.mock("next/navigation", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ wikios: { getWikitext: { prefetch: mockPrefetch } } }),
+    useUtils: () => ({
+      wikios: {
+        getWikitext: { prefetch: mockPrefetch },
+        getEditAccess: { prefetch: mockEditAccessPrefetch },
+      },
+    }),
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
 }));
@@ -46,6 +53,13 @@ jest.mock("~/components/wiki-os/reader/WikiOSMainPage", () => ({
 }));
 jest.mock("~/components/wiki-os/reader/ArticleTabs", () => ({
   ArticleTabs: ({ title }: { title: string }) => <nav data-testid="tabs">{title}</nav>,
+}));
+// the gate that opens the editor only for someone who may edit has its own tests (wiki-edit-gate.test.tsx)
+jest.mock("~/components/wiki-os/editor/WikiEditGate", () => ({
+  WikiEditGate: ({ children, title }: { children: ReactNode; title: string }) => {
+    mockGate({ title });
+    return <>{children}</>;
+  },
 }));
 jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
   WikiEditBridge: (props: Record<string, unknown>) => {
@@ -148,10 +162,19 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     mockSignedIn = false;
     render(<Reader title="Aurelia" />);
     expect(mockPrefetch).not.toHaveBeenCalled();
+    expect(mockEditAccessPrefetch).not.toHaveBeenCalled();
 
     mockSignedIn = true;
     render(<Reader title="Aurelia" />);
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+    // and the answer the edit gate waits for, so Edit opens the editor at once
+    expect(mockEditAccessPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+  });
+
+  it("warms nothing for another wiki's page, whoever is signed in", () => {
+    found();
+    render(<Reader wikiSource="iiwiki" />);
+    expect(mockEditAccessPrefetch).not.toHaveBeenCalled();
   });
 
   it("passes the page's own authorship through untouched: an IxWiki page gets none and loads it itself (plan 404)", () => {
@@ -386,6 +409,12 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(mockEditor).toHaveBeenCalledWith(
         expect.objectContaining({ initialSection: undefined, newSection: true })
       );
+    });
+
+    it("opens the editor through the edit gate, so a reader who cannot edit sees the source instead", () => {
+      found("Aurelia");
+      render(<Reader title="Aurelia" initialEdit={{ mode: "source", section: null }} />);
+      expect(mockGate).toHaveBeenCalledWith({ title: "Aurelia" });
     });
 
     it("?action=edit in the address bar opens it too, without a server hint", () => {

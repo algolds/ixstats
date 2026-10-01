@@ -5,6 +5,8 @@ import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 
 /** What the mocked Plate canvas reports as its value; the real serializer turns it into wikitext. */
 let mockNodes: unknown[] = [];
+/** The canvas's change callback, so a test can report an edit after the mount report. */
+let reportValue: (nodes: unknown[]) => void = () => undefined;
 const mockNotifyError = jest.fn();
 const mockNotifyWarning = jest.fn();
 let mockUserId: string | null = "user_alice";
@@ -36,10 +38,11 @@ jest.mock("~/components/wiki-os/editor/hooks/useWikiVisualFormatting", () => ({
   }),
 }));
 jest.mock("~/components/wiki-os/editor/components/WikiVisualToolbar", () => ({
-  WikiVisualToolbar: (props: { onSave: () => void; handleSaveDraft: () => void }) => (
-    <div>
+  WikiVisualToolbar: (props: { isDirty: boolean; onSave: () => void; handleSaveDraft: () => void; onSwitchToSource: () => void }) => (
+    <div data-testid="toolbar" data-dirty={String(props.isDirty)}>
       <button onClick={props.onSave}>publish</button>
       <button onClick={props.handleSaveDraft}>save-draft</button>
+      <button onClick={props.onSwitchToSource}>to-source</button>
     </div>
   ),
 }));
@@ -54,6 +57,7 @@ jest.mock("~/components/wiki-os/editor/plate/PlateWikiEditor", () => ({
   }) => {
     React.useEffect(() => {
       props.onEditorReady({});
+      reportValue = (nodes) => props.onValueChange(nodes, "<p>html that must never be saved</p>", "");
       props.onValueChange(mockNodes, "<p>html that must never be saved</p>", "");
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -172,5 +176,41 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     const messages = mockNotifyWarning.mock.calls.map((call) => call[1] as string);
     expect(messages.some((m) => /#REDIRECT/.test(m))).toBe(true);
     expect(messages.some((m) => /not closed/.test(m))).toBe(true);
+  });
+
+  describe("dirty state (F2: the mount report is not an edit)", () => {
+    const dirty = () => screen.getByTestId("toolbar").getAttribute("data-dirty");
+
+    it("is clean when the canvas has only reported the document it opened", () => {
+      setup();
+      expect(dirty()).toBe("false");
+    });
+
+    it("becomes dirty when a later report differs from the opened document", () => {
+      setup();
+      act(() => reportValue([paragraph("Edited text, and more.")]));
+      expect(dirty()).toBe("true");
+    });
+
+    it("stays clean when a later report serializes to the opened text", () => {
+      setup();
+      act(() => reportValue([paragraph("Edited text.")]));
+      expect(dirty()).toBe("false");
+    });
+
+    it("does not report the mere opening of the visual editor as unsaved work when switching to source", () => {
+      const onSwitchToSource = jest.fn();
+      setup({ onSwitchToSource });
+      fireEvent.click(screen.getByText("to-source"));
+      expect(onSwitchToSource).toHaveBeenCalledWith(false, "Edited text.");
+    });
+
+    it("reports unsaved work when switching to source after an edit", () => {
+      const onSwitchToSource = jest.fn();
+      setup({ onSwitchToSource });
+      act(() => reportValue([paragraph("Changed.")]));
+      fireEvent.click(screen.getByText("to-source"));
+      expect(onSwitchToSource).toHaveBeenCalledWith(true, "Changed.");
+    });
   });
 });

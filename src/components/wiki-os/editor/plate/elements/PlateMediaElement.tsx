@@ -3,7 +3,7 @@
 import React from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
-import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
+import { useOptionalPlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 
@@ -21,12 +21,8 @@ export function PlateMediaElement({
   const readOnly = useReadOnly();
   // one object per HTML: a new one each render would write the figure's DOM again (React 19)
   const htmlMarkup = useHtmlMarkup(el?.html ?? "");
-  let cb: ReturnType<typeof usePlateWikiCallbacks> | null = null;
-  try {
-    cb = usePlateWikiCallbacks();
-  } catch {
-    // rendered outside the PlateWikiCallbacks provider — media callbacks disabled
-  }
+  // null outside the PlateWikiCallbacks provider: media callbacks are disabled then
+  const cb = useOptionalPlateWikiCallbacks();
 
   if (!el) return <div {...attributes}>{children}</div>;
 

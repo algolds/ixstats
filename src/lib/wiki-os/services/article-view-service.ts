@@ -114,6 +114,18 @@ interface SharedView {
   cacheKey: string | null;
 }
 
+/** What a page whose text is empty shows: nothing, as MediaWiki does (the chrome and the title, no body). */
+const EMPTY_VIEW: SharedView = {
+  contentHtml: "",
+  infoboxHtml: null,
+  noticesHtml: null,
+  toc: [],
+  chipKeys: [],
+  renderQuality: "rendered",
+  stale: false,
+  cacheKey: null,
+};
+
 export interface ArticleView extends Omit<SharedView, "chipKeys" | "cacheKey"> {
   /** The canonical title as stored. */
   title: string;
@@ -159,7 +171,23 @@ const pendingViewKey = (head: ArticleViewHead) =>
   `pending:${head.id}:${head.lastModified?.getTime() ?? 0}:${head.htmlSyncedAt?.getTime() ?? 0}`;
 
 /**
- * The viewer-independent view of an article, or null when it has no content to show (a stub).
+ * The view served while the article has no fresh bundle: the older bundle, else the local fallback. With
+ * neither there is no text to show: an empty current revision makes it an empty page, anything else (a
+ * stub, whose text was never imported, has no such revision) is nothing to show.
+ */
+function pendingView(
+  head: ArticleViewHead,
+  loaded: Awaited<ReturnType<typeof loadViewBundle>>,
+  fallback: ViewBundle | null
+): SharedView | null {
+  if (loaded) return toSharedView(loaded.bundle, "rendered", null);
+  if (fallback) return toSharedView(fallback, "fallback", null);
+  return head.emptyText ? EMPTY_VIEW : null;
+}
+
+/**
+ * The viewer-independent view of an article, or null when it has no content to show (a stub). A page whose
+ * current revision is empty is not a stub: it is served as an empty view.
  * A fresh bundle comes from the cache or one column read. A bundle an older renderer version built is
  * served at once as `stale` (kept for PENDING_VIEW_TTL_MS, so it is sanitized again at most that
  * often) while a background render replaces it. Otherwise the render is awaited, and whatever exists
@@ -186,9 +214,7 @@ async function readSharedView(head: ArticleViewHead): Promise<SharedView | null>
   }
 
   const fallback = loaded ? null : await renderFallbackView(head.id);
-  const pending = loaded
-    ? toSharedView(loaded.bundle, "rendered", null)
-    : fallback && toSharedView(fallback, "fallback", null);
+  const pending = pendingView(head, loaded, fallback);
   if (pending) viewCache.set(pendingViewKey(head), pending, sizeOf(pending), PENDING_VIEW_TTL_MS);
   return pending;
 }

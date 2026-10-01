@@ -85,18 +85,27 @@ The baseline is for step 11. **Rollback:** nothing changed.
 ## 1. Apply the WikiOS SQL migrations
 
 The WikiOS plans add hand-written, idempotent SQL under `prisma/manual-migrations/`. Take a dump first, then apply
-the files in filename order:
+the files in filename order, **except `2026-09-30-wikios-lead-image-canonical-path.sql`**: its header says to run it after
+the code is deployed, so it is its own step after step 5 (5b below) and the loop leaves it out:
 
 ```bash
 ( cd "$IX" && bun run db:backup )                                   # aborts non-zero on failure; dump lands in backups/
-ls "$IX"/prisma/manual-migrations/*wikios*.sql | sort               # review the list; read each file before applying
-for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | sort); do
+ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort    # review the list; read each file before applying
+for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort); do
   echo "== $f"
   docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$f" || break
 done
 ```
 
-Among them is `2026-09-30-wikios-uploads.sql` (plan 411): the `sha1` column and index of `wiki_assets` (the content hash of an
+**Canonical titles (plan 403) come first, before that loop.** `2026-09-30-wikios-canonical-titles.md` is a procedure, not a
+`.sql` file, so the loop does not run it, and the redirect backfill in the loop (`2026-09-30-wikios-redirects-backfill.sql`) and
+any XML import should see canonical titles. Follow that file's steps: back up `wiki_articles`
+(`pg_dump -t wiki_articles`), preview with `bun scripts/audit/wikios-title-duplicates.ts` (read-only), generate `fix.sql` with
+`--emit-sql` (the script reads `DATABASE_URL` and refuses anything but `localhost:5433`), review and apply it, and handle by
+hand the collision and invalid-title lists it prints as comments at the end, repeating the generate and apply steps until
+both lists are empty.
+
+Among the files in the loop is `2026-09-30-wikios-uploads.sql` (plan 411): the `sha1` column and index of `wiki_assets` (the content hash of an
 uploaded file; the new `upload` mirror job kind needs no DDL).
 
 **Rollback:** the files are additive and idempotent, so the running app is unaffected if you stop here. To undo,
@@ -172,7 +181,8 @@ WikiOS (`pm2 restart wikios --update-env`). Bot passwords themselves are not aff
 **Rate limits.** api.php counts requests per client in the buckets `wiki_api`, `wiki_api_write`, `wiki_api_login` and
 `wiki_api_render` (limits and keys in [rate-limiting.md](rate-limiting.md#wikios-buckets)); there is nothing to
 configure, but a bot that is throttled sees MediaWiki's `ratelimited` error, and a client that logs in over and over sees
-`Throttled`. The same file lists `wiki_media`, `wiki_export` and `wiki_raw`, the other WikiOS buckets.
+`Throttled`. The same file lists the other WikiOS buckets (`wiki_upload`, `wiki_media`, `wiki_export`, `wiki_raw`,
+`wiki_read`, `wiki_proxy` and the two webhook ones).
 
 **Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"` and restart the two processes: bots
 get `sessionsecretmissing` again and nothing else changes.
@@ -388,7 +398,29 @@ IXSTATES_URL=https://ixwiki.com/projects/ixstates       # <- the one that worked
 
 Edit the server-local `next.config.js` as described in `deploy/wikios/next-config-snippet.md` (WikiOS branch in
 `resolveBasePath()`, early `return []` in `rewrites()`, drop the `/api/ixwiki-proxy` rewrite), check it, then install
-the PM2 file, the runtime env and the **build** env, and deploy:
+the PM2 file, the runtime env and the **build** env, and deploy.
+
+**Two more server-local prerequisites of this build.** Neither is in git (`next.config.js` is untracked, and `public/` is
+gitignored by `/public/*`), so a fresh checkout does not carry them:
+
+1. **`optimizePackageImports` (plan 413).** In the same `next.config.js`, add `"iconoir-react"` and `"motion/react"` to the
+   `experimental.optimizePackageImports` array. Every WikiOS page imports icons from `iconoir-react` (plan 413 measured about
+   7 MB of dev chunks from it on the wiki route without the entry), and the root layout imports `motion` on every page.
+   The entry is `"motion/react"`, not `"motion"`: every import in the code is `from "motion/react"`, and Next matches the
+   specifier exactly, so a bare `"motion"` entry would do nothing. The file is the one the IxStates build reads too: the
+   entries are harmless there, and the next IxStates deploy picks them up. Check:
+
+   ```bash
+   grep -n '"iconoir-react"\|"motion/react"' "$IX/next.config.js"   # expect two lines, both inside optimizePackageImports
+   ```
+
+2. **The brand font.** `public/fonts/HostGrotesk/HostGrotesk[wght].ttf` must exist in `$IX`. The `(wiki-os)` layout loads it
+   with `next/font/local`, which resolves the file at build time and **fails the build** when it is missing. Copy it from a
+   development checkout (it is not downloaded by anything) before running the deploy script:
+
+   ```bash
+   ls -l "$IX/public/fonts/HostGrotesk/HostGrotesk[wght].ttf"      # must list the file (the quotes keep the shell from globbing the brackets)
+   ```
 
 ```bash
 bk "$IX/next.config.js" next.config.js
@@ -484,6 +516,22 @@ files MediaWiki does not hold yet, and until it says none, that directory is the
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
 file as it was (edits 1 and 2 do not affect the IxStates build). Edit 3 (dropping `/api/ixwiki-proxy`) is the change
 the plan asks for; nothing in `src/` uses that path.
+
+## 5b. Lead-image paths (plan 418, optional, after step 5)
+
+`2026-09-30-wikios-lead-image-canonical-path.sql` rewrites the stored `wiki_articles."leadImageUrl"` values to the canonical
+`/images/<shard>/<File>` path. Its header says to run it once **after the code is deployed**, which is why step 1 leaves it
+out; it is optional (the code reads both forms, so nothing breaks if it is never run). Preview what it would change (changes
+nothing), then apply it:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "SELECT \"title\", \"leadImageUrl\" FROM wiki_articles WHERE \"leadImageUrl\" ~ '/images/[0-9a-f]/[0-9a-f]{2}/' AND \"leadImageUrl\" NOT LIKE '/images/%' LIMIT 50"
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/manual-migrations/2026-09-30-wikios-lead-image-canonical-path.sql"
+```
+
+**Rollback:** restore the dump taken in step 1 (`pg_restore` into a scratch database first); the rewrite is idempotent, so a
+second run changes nothing.
 
 ## 6. Give MediaWiki the webhook secret
 
@@ -599,6 +647,90 @@ ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in
 
 **Rollback:** not needed (nothing changed).
 
+## 7b. Render convergence after the deploy (finish it before step 8)
+
+WikiOS shows an article from its **view bundle** (`wiki_articles."renderedView"`), built by sending the page's Postgres wikitext
+to the private MediaWiki. The same render also stores what MediaWiki reports about the page: **`wiki_links`,
+`wiki_template_links` and `wiki_image_links`**, categories and page properties. Those tables are empty for a page until it has
+rendered under this code, and four things read them: backlinks (`Special:WhatLinksHere`), page images and lore-card images,
+and api.php's `list=embeddedin` and `list=imageusage` (with `prop=templates|images`). So after the deploy the wiki is complete
+only once every page has rendered; how fast that happens depends on which kind of work each page is:
+
+| Page is | Served meanwhile | Rendered by | Rate |
+|---------|------------------|-------------|------|
+| **never rendered**, or stale (`"htmlSyncedAt"` NULL; step 1's `rendered-view.sql` marks every row without a bundle so) | the reader waits up to 6 s for its render, else a locally compiled fallback marked stale | the first reader, a save, or the `wiki-render-stale` job (every minute, oldest first) | **20 per minute** |
+| **outdated**: its bundle was built by another renderer version (`RENDERER_VERSION` = transform version + sanitizer fingerprint; this release changes it, and so does any later sanitizer change or the `WIKIOS_TEMPLATESTYLES` lever, step 10c) | at once, the old bundle re-sanitized by the current rules and marked stale; a reader's visit also queues its background render | `wiki-render-stale` (one scan per process finds the backlog, at the first batch with room, so a minute or so after `ixstats-cron` starts) and readers' background renders | up to **60 per minute** when no never-rendered page is waiting; otherwise what is left of the 20 |
+
+Renders run two at a time at background priority (a reader's or an editor's render goes first), a batch starts none after 45
+seconds, and a page MediaWiki fails to render is left alone for a while (doubling up to an hour) so it never holds up the
+rest. A page with no text (`wikitext` empty) is never queued.
+
+**`wiki-render-stale` must be in `CRON_ENABLED_JOBS`.** Jobs run in the PM2 app `ixstats-cron` and only those named in
+`CRON_ENABLED_JOBS` (in its `env`, in `ecosystem.config.cjs`; empty means none) are scheduled. Without it nothing renders in
+the background: only the pages a reader opens or an editor saves render, and the link tables stay empty for the rest. The
+cutover also needs `wiki-mirror` (step 3's mirror account; the outbox of WikiOS writes) and `wiki-recentchanges` (step 7's
+inbound sync) in the same list. The job runs inside `ixstats-cron`, so that process needs the render engine's URL
+(`WIKIOS_MEDIAWIKI_INTERNAL_URL`, step 4) in the env file it reads. Restart it after changing either:
+
+```bash
+grep -n 'CRON_ENABLED_JOBS' "$IX/ecosystem.config.cjs"                    # the list for ixstats-cron: it must name wiki-render-stale
+pm2 restart ixstats-cron --update-env && pm2 logs ixstats-cron --lines 30 --nostream
+```
+
+**How long it will take.** Count what is left (`unrendered` counts the stale pages, `outdated` the ones that have a current-looking
+timestamp and an older bundle; no page is in both), then divide by the rates above (never-rendered first, at 20 a minute,
+then outdated, up to 60 a minute). Read-only; run it against the database the app uses:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 <<'SQL'
+-- which renderer versions the stored bundles carry, newest render first: the first row is the current version
+-- once any page has rendered under the new code (read a page, or wait a minute for the batch); every other row is outdated
+select "renderedView"->>'rendererVersion' as version, count(*) as pages, max("htmlSyncedAt") as newest_render
+from wiki_articles
+where status = 'PUBLISHED' and wikitext <> '' and "renderedView" is not null
+group by 1 order by newest_render desc nulls last;
+
+-- what is still to do: never rendered or stale, and outdated (against the version of the newest render)
+with latest as (
+  select "renderedView"->>'rendererVersion' as version
+  from wiki_articles where "renderedView" is not null and "htmlSyncedAt" is not null
+  order by "htmlSyncedAt" desc limit 1
+)
+select count(*) filter (where "htmlSyncedAt" is null)                                  as unrendered,
+       count(*) filter (where "htmlSyncedAt" is not null and "renderedView" is not null
+                          and "renderedView"->>'rendererVersion' <> (select version from latest)) as outdated,
+       count(*)                                                                         as published_with_text
+from wiki_articles
+where status = 'PUBLISHED' and wikitext <> '';
+SQL
+```
+
+Minutes to go is about `unrendered ÷ 20 + outdated ÷ 60`. The 60 is a ceiling (a batch must finish its renders inside 45
+seconds, two at a time, so it assumes MediaWiki parses a page in about a second and a half or less), and 20 is the rate however fast
+MediaWiki is: measure instead of trusting either. Run the second query again after ten minutes and divide what fell by ten.
+Do not "speed it up" by setting `"htmlSyncedAt"` to NULL on pages that already have a bundle: that moves them from the 60 a
+minute lane to the 20 a minute one, and readers would wait for them instead of being shown the old bundle. (The
+`rendered-view.sql` migration already did that for the pages that had none.)
+
+**Verify (done when both hold).** `unrendered` is 0 and `outdated` is 0 (a page MediaWiki cannot render keeps one of them above
+0: find it with `pm2 logs ixstats-cron --lines 500 --nostream | grep 'WikiOS:render'` and fix or ignore it knowingly), and the derived tables are no
+longer empty:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 <<'SQL'
+select (select count(*) from wiki_links)          as links,
+       (select count(*) from wiki_template_links) as template_links,
+       (select count(*) from wiki_image_links)    as image_links;                    -- each must be above 0
+select count(distinct "sourceArticleId") as pages_with_links from wiki_links;       -- approaches published_with_text (a page with no links has no row)
+SQL
+# the two api.php lists that read them, against the loopback WikiOS (each must list pages):
+curl -s 'http://127.0.0.1:3560/w/api.php?action=query&list=embeddedin&eititle=Template:Infobox_country&eilimit=5&format=json' | jq -c '.query.embeddedin | length'
+curl -s 'http://127.0.0.1:3560/w/api.php?action=query&list=imageusage&iutitle=File:<an existing file>&iulimit=5&format=json' | jq -c '.query.imageusage | length'
+```
+
+**Rollback:** nothing to undo; stopping early only leaves some pages on their older bundle and without link data, which
+readers do not see (they get the bundle) and the four features above show as empty.
+
 ## 8. Cut over
 
 Do step 10a (PHP-FPM watchdog) **before** this step. Then install the nginx takeover and, right after the nginx reload,
@@ -674,6 +806,48 @@ Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Als
 `Special:` page, an image, login, and one `?action=purge` (`/wiki/Foo?action=purge` is answered by classic MediaWiki).
 
 **Rollback:** step 12.
+
+## 9a. Lean flight (after step 9, optional but recommended)
+
+A server-rendered article page carries its HTML twice: as DOM and again in the page data the browser hydrates from. In
+**lean flight** mode (`WIKIOS_LEAN_FLIGHT=1`, off in the code) the page data of an **anonymous page load** of a large article
+carries short markers instead, and the browser reads the article back from the DOM that was already sent. It was checked in a
+browser on a development build: the HTML of a long article (Pelaxia) fell from 804 KB to 479 KB raw and from 149 KB to 85 KB
+gzipped, soft navigation, back/forward and concurrent anonymous loads were correct, and there were no hydration errors. It
+only touches an anonymous `Accept: text/html` document request for an article of 20,000 or more characters of HTML
+(`LEAN_MIN_CHARS` in `src/app/(wiki-os)/wiki/[...slug]/_lib/lean-flight.ts`); signed-in readers and client-side navigations
+are served as before. The server hands the article to its own render through a per-process stash, so it needs the single
+`wikios` process the ecosystem file starts (`instances: 1`); do not turn it on behind more than one.
+
+The flag is read at run time: no rebuild, only a reload of the WikiOS process. Put it in the `env` block of
+`$WK/ecosystem.wikios.config.cjs` (the runtime env file `$WK/.env.production.local` is shared with IxStates):
+
+```bash
+bk "$WK/ecosystem.wikios.config.cjs" ecosystem.wikios.config.cjs.9a
+sudoedit "$WK/ecosystem.wikios.config.cjs"            # add to env:   WIKIOS_LEAN_FLIGHT: "1",
+pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env
+```
+
+**Verify, and keep it only if it passes.** Pick a long article (the one you would open to show someone WikiOS) and one plain
+sentence from **deep in its body, not from the lead paragraph**: words only, no quotes, ampersands or links. The lead paragraph
+is also the page's meta description and its og and twitter text, and it is in the page data, so a lead sentence would be found
+on a page that has no article body at all. The row asks the loopback WikiOS for the article as an anonymous page load and
+requires the sentence inside the article element of the first HTML (meta tags, titles and scripts are ignored), which is exactly
+what an SSR stash miss (the page served with no article body) would lack; every other row would still call that page a 200:
+
+```bash
+( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" --standalone \
+    --article <Long_article> --article-text "<a plain sentence from deep in its body>" )
+curl -s -H 'Accept: text/html' "http://127.0.0.1:3560/wiki/<Long_article>" | grep -c 'id="wikios-lean-'     # 1 or more: the mode is on for this page
+```
+
+All rows must PASS and the `grep` must print 1 or more (0 means the mode is off, or the article is shorter than the
+threshold: pick a longer one). Then open the article in a browser, signed out, with the console open: **no hydration error**,
+and the article is there.
+
+**If the row fails, or the console shows a hydration error: unset the variable.** Remove the line from the ecosystem file
+(`sudo cp -a "$BK/ecosystem.wikios.config.cjs.9a" "$WK/ecosystem.wikios.config.cjs"`) and `pm2 startOrReload
+"$WK/ecosystem.wikios.config.cjs" --update-env`; nothing else changed, and every page is served as before.
 
 ## 10. Monitor (first 24 hours)
 
@@ -849,10 +1023,12 @@ Every one of them is copied into `$BK` before its first edit.
 
 | File | Edit | Step |
 |------|------|------|
-| `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite** | 5 |
+| `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite**; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` | 5 |
+| `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | must exist (gitignored directory): `next/font/local` fails the build without it | 5 |
 | `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411) | 1c, 3c, 4, 5 |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
-| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example` | 5 |
+| `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 7b |
+| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |
 | `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | 5 |
 | `/etc/nginx/conf.d/wikios-render-internal.conf`, `wikios-upstream.conf` | new | 4, 8 |
 | `/etc/nginx/snippets/wikios-proxy-params.conf`, `wikios-takeover.conf` | new | 8 |
