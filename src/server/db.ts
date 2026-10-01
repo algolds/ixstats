@@ -241,7 +241,7 @@ const createPrismaClient = () => {
     "WikiLink",
     "WikiLog",
     "WikiWatchlist",
-    // WikiOS api.php bot logins: a read-only dev server still accepts them (bot password last-use stamp, API sessions)
+    // WikiOS bot-API logins: a read-only dev server still accepts them (bot password last-use stamp, API sessions)
     "WikiBotPassword",
     "WikiApiSession",
     // WikiOS Stash — save-for-later with annotations
