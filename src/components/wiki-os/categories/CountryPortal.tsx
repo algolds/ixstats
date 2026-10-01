@@ -82,7 +82,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <Link
-                  href={withBasePath("/wiki/categories")}
+                  href={withBasePath("/util/categories")}
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/15 dark:text-emerald-400"
                 >
                   <span>Nations</span>
@@ -183,7 +183,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                     <Link
                       key={m.title}
                       href={withBasePath(
-                        `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                        `/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                       )}
                       className="wikios-portal-pill"
                     >

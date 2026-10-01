@@ -1,3 +1,4 @@
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import React from "react";
 import {
   ShieldAlert,
@@ -72,11 +73,7 @@ export function TitleStep({
               <button
                 onClick={() => {
                   onClose();
-                  router.push(
-                    withBasePath(
-                      `/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}/edit`
-                    )
-                  );
+                  router.push(withBasePath(pageEditHref(title.trim())));
                 }}
                 className="font-medium text-[var(--wikios-text)] underline hover:text-[var(--wikios-accent)]"
               >

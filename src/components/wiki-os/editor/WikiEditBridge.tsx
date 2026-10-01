@@ -14,6 +14,7 @@ import {
   setEditorBase,
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
+import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
 import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 
 const WikiVisualEditor = dynamic(
@@ -40,6 +41,8 @@ interface WikiEditBridgeProps {
   initialMode?: "source" | "visual";
   /** Heading text to open the source editor at. */
   initialSection?: string;
+  /** "Add topic": open on the page's text with an empty new section appended (`?section=new`). */
+  newSection?: boolean;
   onClose: () => void;
   onSaveSuccess?: () => void;
 }
@@ -75,6 +78,7 @@ export function WikiEditBridge({
   title,
   initialMode = "source",
   initialSection,
+  newSection = false,
   onClose,
   onSaveSuccess,
 }: WikiEditBridgeProps) {
@@ -343,7 +347,8 @@ export function WikiEditBridge({
     return <EditorLoading text="Loading article..." />;
   }
 
-  const initialWikitextValue = activeWikitext ?? loaded.wikitext;
+  const initialWikitextValue =
+    activeWikitext ?? (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext);
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
@@ -410,7 +415,7 @@ export function WikiEditBridge({
           key={editorKey}
           title={title}
           initialWikitext={initialWikitextValue}
-          initialSection={initialSection}
+          initialSection={newSection ? NEW_SECTION_HEADING : initialSection}
           onSave={handleSourceSave}
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}

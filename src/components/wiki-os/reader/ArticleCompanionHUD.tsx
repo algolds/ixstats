@@ -221,7 +221,7 @@ export function ArticleCompanionHUD({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors hover:text-wiki"
+                className="text-foreground hover:text-wiki inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors"
                 title={`Original Author: ${creatorName}`}
               >
                 {creatorAvatar ? (
@@ -247,7 +247,8 @@ export function ArticleCompanionHUD({
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground/70">Created</span>
               <span className="text-foreground/80 text-xs font-medium tabular-nums">
-                {new Date(createdAt).toLocaleDateString(undefined, {
+                {new Date(createdAt).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -261,7 +262,8 @@ export function ArticleCompanionHUD({
             <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-xs">
               <span className="text-muted-foreground/70">Last Updated</span>
               <span className="text-foreground/90 text-xs font-medium tabular-nums">
-                {new Date(effectiveLastModified).toLocaleDateString(undefined, {
+                {new Date(effectiveLastModified).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -278,7 +280,7 @@ export function ArticleCompanionHUD({
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors hover:text-wiki"
+                className="text-foreground/90 hover:text-wiki inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors"
                 title={`Last edited by ${lastEditorName}`}
               >
                 {lastEditorAvatar ? (
@@ -414,7 +416,7 @@ export function ArticleCompanionHUD({
               return (
                 <Link
                   key={cleanCat}
-                  href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
+                  href={`/util/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
                   className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 active:scale-95"
                 >
                   {cleanCat}

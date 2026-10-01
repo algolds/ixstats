@@ -570,7 +570,7 @@ export default function StashesPage() {
                                 <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
                                   Browse the{" "}
                                   <Link
-                                    href={withBasePath("/wiki/repository")}
+                                    href={withBasePath("/util/repository")}
                                     className="font-semibold text-[var(--wikios-accent)] hover:underline"
                                   >
                                     Media Repository
