@@ -99,7 +99,7 @@ export async function runMove(rc: ApiContext): Promise<JsonObject> {
       moveTalk,
       includeArchived: rights.has("deletedhistory") && rights.has("undelete"),
     }),
-    { NOT_FOUND: "missingtitle", CONFLICT: "articleexists", BAD_REQUEST: "selfmove" }
+    { NOT_FOUND: "missingtitle", CONFLICT: "articleexists", BAD_REQUEST: "selfmove", IMMOBILE: "immobilenamespace" }
   );
   const logid = await loggedId(rc, "move", to.title, actorOf(rc).name);
   return {

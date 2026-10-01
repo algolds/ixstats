@@ -124,6 +124,8 @@ describe("action=move", () => {
       [new PageOperationError("NOT_FOUND", "no page"), "missingtitle"],
       [new PageOperationError("CONFLICT", "destination exists"), "articleexists"],
       [new PageOperationError("BAD_REQUEST", "identical"), "selfmove"],
+      // not BAD_REQUEST: a file is refused by namespace, which is not the page moved onto itself
+      [new PageOperationError("IMMOBILE", "Files cannot be moved in WikiOS yet; move them on classic MediaWiki."), "immobilenamespace"],
     ];
     for (const [error, code] of refusals) {
       const { act } = await setup({ services: { movePage: async () => { throw error; } } });

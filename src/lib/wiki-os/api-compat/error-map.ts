@@ -58,6 +58,8 @@ function fromPageCode(code: string, message: string): ApiError {
       return new ApiError("missingtitle", message);
     case "CONFLICT":
       return new ApiError("articleexists", message);
+    case "IMMOBILE":
+      return new ApiError("immobilenamespace", message);
     default:
       return new ApiError("invalidparam", message);
   }

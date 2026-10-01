@@ -24,10 +24,10 @@ If the `1.45` tag is ever unavailable, change `image:` in `docker-compose.yml` t
 |-------|---------|
 | Skin | Vector |
 | Extensions | ParserFunctions, Scribunto (`$wgScribuntoDefaultEngine = 'luastandalone'`), Cite, TemplateStyles, TemplateData, SyntaxHighlight_GeSHi (Pygments runs on the image's `python3`), Poem, PageImages, TextExtracts, Gadgets |
-| Uploads / raw HTML | `$wgEnableUploads = true`, `$wgRawHtml = false`; the production snippet adds `svg` and `pdf` to `$wgFileExtensions` (WikiOS accepts png jpg jpeg gif webp svg pdf) and the `wikios-mirror` group has `upload`, `reupload` and `movefile`, so the mirror's `action=upload` of a staged file and its `move` of a `File:` page work; the files land in the `wikios-test-mw-images` volume (`/var/www/html/images`) |
+| Uploads / raw HTML | `$wgEnableUploads = true`, `$wgRawHtml = false`; the production snippet adds `svg` and `pdf` to `$wgFileExtensions` (WikiOS accepts png jpg jpeg gif webp svg pdf) and the `wikios-mirror` group has `upload` and `reupload`, so the mirror's `action=upload` of a staged file works; the files land in the `wikios-test-mw-images` volume (`/var/www/html/images`) |
 | Bot passwords | `$wgEnableBotPasswords = true` |
 | Group `wikios-mirror` and the webhook hook | the production snippet `scripts/ops/mediawiki/wikios-localsettings.php`, mounted into the container and `require`d by `LocalSettings.php`, so the test wiki runs the same code the production `LocalSettings.php` will |
-| Bot password | `WikiOSMirror@wikios` with the grants the production runbook gives it (`basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import,delete,protect`; `uploadeditmovefile` carries `movefile`), so the mirror's edit, import, move, delete, undelete, protect and upload (plan 411) jobs all work with nothing granted by hand |
+| Bot password | `WikiOSMirror@wikios` with the grants the production runbook gives it (`basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import,delete,protect`), so the mirror's edit, import, move, delete, undelete, protect and upload (plan 411) jobs all work with nothing granted by hand |
 | PHP limits | `php-wikios-import.ini`: `upload_max_filesize` and `post_max_size` of 16M, so a page near 2 MB imports even when escaping makes its XML five times the text, and a 10 MB upload (WikiOS's limit) goes through (the runbook asks the same of production) |
 | Caches | off (parser, main, message), so every `action=parse` renders fresh |
 

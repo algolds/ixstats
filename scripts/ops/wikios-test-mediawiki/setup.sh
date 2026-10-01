@@ -23,7 +23,6 @@ ADMIN_USER="WikiOSAdmin"
 BOT_USER="WikiOSMirror"
 BOT_APP="wikios"
 # Bot password grants: the rights the `wikios-mirror` group has that a bot password can express.
-# `uploadeditmovefile` carries upload, reupload and movefile (the mirror's `move` job of a `File:` page needs the last).
 # No editinterface / editsiteconfig: WikiOS keeps those namespaces admin-only.
 BOT_GRANTS="basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import,delete,protect"
 

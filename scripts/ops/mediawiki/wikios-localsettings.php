@@ -15,8 +15,8 @@
  * What it does:
  *   1. Moves classic MediaWiki page URLs to /classic/$1 so WikiOS can own /wiki/*.
  *   2. Points canonical URLs of existing content pages at WikiOS.
- *   3. Defines the `wikios-mirror` group used by the WikiOS bot account (WikiOSMirror), which also uploads and moves
- *      files (plan 411: `upload`, `reupload`, `movefile`; svg and pdf are added to the file types).
+ *   3. Defines the `wikios-mirror` group used by the WikiOS bot account (WikiOSMirror), which also uploads files
+ *      (plan 411: `upload`, `reupload`; svg and pdf are added to the file types).
  *   4. Notifies WikiOS of every saved page (PageSaveComplete -> /api/wiki/sync-webhook).
  */
 
@@ -68,10 +68,6 @@ foreach ( [
 	'editsemiprotected',
 	'upload',
 	'reupload',
-	// A `File:` page that moves in WikiOS is moved here by the mirror's `move` job, and MediaWiki moves the file with
-	// the page only for an account that may `movefile` (without it that job fails with `permissiondenied`, ends up dead
-	// and blocks its title). The bot password's `uploadeditmovefile` grant carries this right.
-	'movefile',
 	'noratelimit',
 	'skipcaptcha',
 	// Broader than a plain mirror needs, kept on purpose. A bot password only carries these rights
@@ -107,9 +103,8 @@ foreach ( [
 
 // Uploads (plan 411): the mirror's `upload` job puts the files WikiOS holds in MediaWiki with action=upload (the file
 // itself in the request: `upload_by_url` is not needed and not granted). `upload` makes a file, `reupload` a new version
-// of one that exists; both are in the list above, and so is `movefile`, which the mirror's `move` job needs when the
-// page it moves is a `File:` page. The bot password needs the grants `uploadfile` and `uploadeditmovefile`, which
-// carries `movefile` (docs/operations/wikios-v1-cutover.md, 3c).
+// of one that exists; both are in the list above. The bot password needs the grants `uploadfile` and
+// `uploadeditmovefile` (docs/operations/wikios-v1-cutover.md, 3c).
 //
 // MediaWiki must also accept the file types WikiOS accepts (png jpg jpeg gif webp svg pdf), or a file of another
 // type ends its job dead with `filetype-banned`. This only ADDS the two types a stock wiki lacks.
@@ -120,7 +115,10 @@ foreach ( [ 'png', 'gif', 'jpg', 'jpeg', 'webp', 'svg', 'pdf' ] as $extension ) 
 }
 
 // Deliberately NOT granted: editinterface, editsitecss, editsitejs (and editsitejson/edituserjs/...),
-// upload_by_url, and reupload-shared (overwrites files of a shared repository, which this wiki does not use).
+// upload_by_url, reupload-shared (overwrites files of a shared repository, which this wiki does not use) and
+// movefile (WikiOS refuses to move File: pages in v1, so no mirror job ever moves one: files are moved on classic
+// MediaWiki by an administrator. The bot password's `uploadeditmovefile` grant would carry the right only if the
+// group had it).
 // WikiOS keeps the Template:, Module: and MediaWiki: namespaces admin-only, so the mirror account
 // must not be able to rewrite the wiki's interface messages, site CSS or site JS even if its bot
 // password leaks. Those pages are edited on classic MediaWiki by a real administrator.

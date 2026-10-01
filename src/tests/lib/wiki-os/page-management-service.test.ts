@@ -498,6 +498,44 @@ function expectLeanSelect(call: unknown[] | undefined) {
   for (const column of HEAVY) expect(select).not.toHaveProperty(column);
 }
 
+describe("PageManagementService.movePage refuses files (F37)", () => {
+  const MESSAGE = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
+
+  it.each([
+    ["a File: page", "File:Flag.png", "File:Banner.png"],
+    ["a File: page typed as a slug", "file:flag.png", "Banner"],
+    ["a page into the File: namespace", "Old name", "File:Banner.png"],
+    ["an Image: alias", "Image:Flag.png", "Banner"],
+  ])("refuses %s with IMMOBILE, before it reads or writes anything", async (_name, from, to) => {
+    const failure = await PageManagementService.movePage(from, to, "x", actor).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(PageOperationError);
+    expect(failure).toMatchObject({ code: "IMMOBILE", message: MESSAGE });
+    expect(mockFindFirst).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a page whose stored namespace is File: whatever the move was asked with (the stored page decides too)", async () => {
+    pages({ old_name: { ...original, namespace: 6 } });
+
+    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toMatchObject({
+      code: "IMMOBILE",
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not refuse a File talk: page, a Category: page or an ordinary one", async () => {
+    pages({ "file_talk:old": { id: "ft", title: "File talk:Old", namespace: 7, status: "PUBLISHED" } });
+
+    await expect(
+      PageManagementService.movePage("File talk:Old", "File talk:New", "x", actor, "ixwiki", { moveTalk: false })
+    ).resolves.toMatchObject({ success: true });
+  });
+});
+
 describe("PageManagementService.movePage and the destination's creation lock (m6)", () => {
   it("queues behind a save that is creating the destination, then checks that the destination is free", async () => {
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor);

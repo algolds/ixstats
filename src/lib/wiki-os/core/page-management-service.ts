@@ -28,7 +28,8 @@ export interface PageActor {
   name: string;
 }
 
-export type PageOperationErrorCode = "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST";
+/** IMMOBILE: the page is in a namespace WikiOS does not move pages in (the bot API's `immobilenamespace`). */
+export type PageOperationErrorCode = "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST" | "IMMOBILE";
 
 /** A refusal the caller can act on (no such page, the destination exists); routers map it to a TRPCError. */
 export class PageOperationError extends Error {
@@ -40,6 +41,15 @@ export class PageOperationError extends Error {
     this.name = "PageOperationError";
   }
 }
+
+/** The `File:` namespace. */
+const FILE_NAMESPACE = 6;
+
+/**
+ * A file cannot be moved in WikiOS in v1: its asset row (name, hash key, slug, URL) and the bytes behind it would have
+ * to move with the page, and the bytes are classic MediaWiki's to move. The refusal is the same for tRPC and the bot API.
+ */
+export const FILE_MOVE_REFUSED = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
 
 export interface MoveOneResult {
   oldTitle: string;
@@ -127,6 +137,11 @@ export class PageManagementService {
     if (!target) throw new PageOperationError("BAD_REQUEST", "Invalid title");
     if (toArticleSlug(oldSlugOrTitle) === target.slug) {
       throw new PageOperationError("BAD_REQUEST", "Old and new page names are identical.");
+    }
+    // Neither the page nor its destination may be in the File: namespace (checked again against the stored page in moveOne).
+    const from = canonicalizeTitle(oldSlugOrTitle, { source: realm });
+    if (from?.namespaceId === FILE_NAMESPACE || target.namespaceId === FILE_NAMESPACE) {
+      throw new PageOperationError("IMMOBILE", FILE_MOVE_REFUSED);
     }
 
     const result = await db.$transaction(async (tx) => {
@@ -216,6 +231,8 @@ export class PageManagementService {
       );
     }
 
+    if (original.namespace === FILE_NAMESPACE) throw new PageOperationError("IMMOBILE", FILE_MOVE_REFUSED);
+
     // A deleted page does not exist for a mover who may not see deleted pages.
     if (original.status === "ARCHIVED" && !includeArchived) {
       throw new PageOperationError(
@@ -241,9 +258,7 @@ export class PageManagementService {
     // 3. Protections follow the page; the mirrored protectionLevel follows its edit protection
     const edit = await this.moveRestrictions(tx, realm, original.title, newCanonicalTitle);
 
-    // 4. Update original article to new title and slug. (A `File:` page's `wiki_assets` row is NOT renamed with it:
-    // the row's name, MD5 key, slug and URL (staged or MediaWiki's shard path) move together with the bytes, which
-    // WikiOS cannot move itself and MediaWiki moves in the mirror's `move` job. Open item F37.)
+    // 4. Update original article to new title and slug
     const movedArticle = await tx.wikiArticle.update({
       where: { id: original.id },
       data: {

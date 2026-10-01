@@ -452,6 +452,19 @@ describe("api.php move, delete, undelete and protect", () => {
     expect(insertedInTransaction.every(Boolean)).toBe(true);
   });
 
+  it("action=move refuses a File: page with immobilenamespace (files cannot be moved in WikiOS yet), and queues nothing", async () => {
+    tables.wikiArticle.seed({ id: "a-file", source: "ixwiki", title: "File:Flag.png", slug: "file:flag.png", namespace: 6, wikitext: "A flag." });
+    const { act } = await setup();
+
+    const out = await act("move", { from: "File:Flag.png", to: "File:Banner.png", reason: "rename" });
+    const into = await act("move", { from: "Alpha", to: "File:Banner.png" });
+
+    expect(out.error).toMatchObject({ code: "immobilenamespace", info: "Files cannot be moved in WikiOS yet; move them on classic MediaWiki." });
+    expect(into.error.code).toBe("immobilenamespace");
+    expect(jobs()).toEqual([]);
+    expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("File:Flag.png");
+  });
+
   it("queues nothing for a write the service refuses", async () => {
     const { act } = await setup();
     tables.wikiArticle.reset(); // MediaWiki lists the page, WikiOS holds no article for it

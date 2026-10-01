@@ -5,6 +5,7 @@
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
+import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { toApiError } from "~/lib/wiki-os/api-compat/error-map";
 
 describe("toApiError", () => {
@@ -13,5 +14,10 @@ describe("toApiError", () => {
 
     expect(error).toMatchObject({ code: "ratelimited" });
     expect(error?.info).toContain("The page is busy");
+  });
+
+  it("answers a refused move of a file with immobilenamespace, not selfmove (which is BAD_REQUEST)", () => {
+    expect(toApiError(new PageOperationError("IMMOBILE", "no files"))).toMatchObject({ code: "immobilenamespace", info: "no files" });
+    expect(toApiError(new PageOperationError("BAD_REQUEST", "identical"))).toMatchObject({ code: "invalidparam" });
   });
 });

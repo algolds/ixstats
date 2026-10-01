@@ -222,6 +222,9 @@ async function archiveOutOfTheWay(
 
 async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applied> {
   if (event.action !== "move" && event.action !== "move_redir") return IGNORED;
+  // A `File:` page that moves in MediaWiki is renamed here like any page, but its `wiki_assets` row (name, hash key,
+  // slug, URL) is NOT re-keyed in v1: the asset keeps its old name until it is registered again under the new one.
+  // (WikiOS refuses to move files itself; both are post-v1, see the follow-ups, F37.)
   const target = moveTarget(event);
   if (!canon || !target) return SKIPPED;
 
