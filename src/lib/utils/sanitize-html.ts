@@ -13,6 +13,7 @@
 
 import DOMPurify, { type Config } from "dompurify";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
+import { nestsTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
 import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
@@ -442,6 +443,12 @@ export function wikiArticleSanitizerFingerprint(): string {
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
+  // ponytail: DOMPurify's DOM is quadratic in nesting depth (6,000 `<s>` took 5 s, 12,000 take 20): HTML nested past
+  // DOM_DEPTH_CEILING (400; real pages nest a few dozen) is shown as its escaped source, which is safe and one pass.
+  if (nestsTooDeep(html)) {
+    const escaped = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<pre class="wikios-fallback-plain">${escaped}</pre>`;
+  }
   return getArticlePurifier().sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG);
 }
 

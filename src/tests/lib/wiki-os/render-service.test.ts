@@ -589,6 +589,22 @@ describe("loadViewBundle", () => {
       warn.mockRestore();
     });
 
+    it.each([
+      ["a body nested too deep", { bodyHtml: `${"<s>".repeat(6_000)}x` }],
+      ["an infobox nested too deep", { infoboxHtml: `${"<div>".repeat(500)}x` }],
+      ["a body over the size ceiling", { bodyHtml: `<p>${"a".repeat(500_001)}</p>` }],
+    ])("is null, without sanitizing, for %s: the page is rendered again", async (_name, part) => {
+      mockFindUnique.mockResolvedValue({
+        renderedView: { ...hostile, ...part },
+        htmlSyncedAt: syncedAt,
+      });
+      const started = performance.now();
+
+      await expect(loadViewBundle("a")).resolves.toBeNull();
+
+      expect(performance.now() - started).toBeLessThan(1_000);
+    });
+
     it("keeps the template chip markers the sanitizer lets through", async () => {
       const marked = buildViewBundle('<p><a href="/wiki/Template:MyCountry:x">y</a></p>');
       mockFindUnique.mockResolvedValue({

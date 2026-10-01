@@ -193,7 +193,7 @@ async function main(): Promise<number> {
   }
   const pairs: Pair[] = [];
   const pagesOf = (kind: Target["kind"]): Page[] =>
-    kind === "html" ? html : kind === "xml" ? xml : wikitext;
+    kind === "html" || kind === "markup" ? html : kind === "xml" ? xml : wikitext;
   // The fuzz drivers are hostile by design; these two are given the input they would really get instead.
   const titles: Page[] = readLines(corpusDir, "articles-wikitext.jsonl").map((row) => ({
     label: `title:${String(row.title)}`,
@@ -245,7 +245,6 @@ async function main(): Promise<number> {
       old: async () => oldLeadParagraph,
       new: async () =>
         (await import("../../src/lib/wiki-os/main-page/lead-paragraph")).leadParagraph,
-    },
     },
     {
       name: "xml/import-reader#readExport (every event of a real dump)",

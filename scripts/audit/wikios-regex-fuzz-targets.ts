@@ -19,12 +19,15 @@
 /** What a target's call returns; the runner only times it. */
 type Result = string | number | boolean | object | null | undefined | void;
 
-export type TargetKind = "wikitext" | "html" | "xml";
+export type TargetKind = "wikitext" | "html" | "markup" | "xml";
 
 export interface Target {
   /** `folder/file#export`, as listed in this file; `@…` names the way the function is driven. */
   name: string;
-  /** What the function reads: wikitext, HTML (also fed the wikitext families) or an XML dump. */
+  /**
+   * What the function reads: wikitext, HTML (also fed the wikitext families), markup (HTML as MediaWiki serves it: only
+   * the HTML families) or an XML dump.
+   */
   kind: TargetKind;
   /** Imports the module and returns the call that takes the hostile text. */
   load: () => Promise<(input: string) => Result | Promise<Result>>;
@@ -46,6 +49,12 @@ const wikitext = (name: string, load: Target["load"], limits?: Target["limits"])
 const html = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
   name,
   kind: "html",
+  load,
+  ...(limits ? { limits } : {}),
+});
+const markup = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
+  name,
+  kind: "markup",
   load,
   ...(limits ? { limits } : {}),
 });
@@ -757,6 +766,21 @@ export const TARGETS: readonly Target[] = [
     };
   }),
 
+  // ---- lib/utils/ ------------------------------------------------------------------------------
+  markup(
+    "lib/utils/sanitize-html#sanitizeWikiArticleHtml",
+    async () => {
+      const m = await import("~/lib/utils/sanitize-html");
+      return (s) => m.sanitizeWikiArticleHtml(s);
+    },
+    {
+      // Not bounded by size in production (an article is sanitized whole, once per render); this is the most the run feeds it.
+      maxChars: 200_000,
+      slowFactor: 12,
+      why: 'DOMPurify builds a DOM, about 2.6 microseconds a character on a page of one-character elements: the DOM is the work. Elements that share an id are quadratic (jsdom\'s named properties: 29,000 `<h2 id="a">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)',
+    }
+  ),
+
   // ---- templates/ ------------------------------------------------------------------------------
   html("templates/chip-markers#markTemplateChips", async () => {
     const m = await import("~/lib/wiki-os/templates/chip-markers");
@@ -1289,6 +1313,9 @@ export const FAMILIES: readonly Family[] = [
     build: (size: number) => repeatTo(unit, size),
     only: "html" as const,
   })),
+  // nested to the depth the size allows: what a DOM pass is quadratic in
+  { ...nested("<s>…</s>", "<s>", "</s>"), only: "html" as const },
+  { ...nested("<div>…</div>", "<div>", "</div>"), only: "html" as const },
   { name: "soup:html#7", build: soup([...HTML_UNIT_TEXTS, ...WELL_FORMED], 7), only: "html" },
   {
     name: "soup:html#8",
@@ -1303,8 +1330,13 @@ export const FAMILIES: readonly Family[] = [
   { name: "soup:xml#9", build: soup([...XML_UNIT_TEXTS, ...WELL_FORMED], 9), only: "xml" },
 ];
 
-/** The families a target of `kind` is fed: wikitext ones for all, HTML ones for HTML, XML ones for XML. */
+/**
+ * The families a target of `kind` is fed: wikitext ones for all, HTML ones for HTML, XML ones for XML. Markup is fed
+ * the HTML ones alone: what MediaWiki serves has no wikitext, no comment and no element the browser does not know,
+ * which a sanitizer (DOMPurify on jsdom) removes one by one in time quadratic in the siblings.
+ */
 export function familiesFor(kind: TargetKind): Family[] {
+  if (kind === "markup") return FAMILIES.filter((family) => family.only === "html");
   return FAMILIES.filter((family) => !family.only || family.only === kind);
 }
 

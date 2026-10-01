@@ -28,6 +28,7 @@ import {
   leavesAlone,
   nestsTooDeep,
 } from "~/lib/wiki-os/transformers/inert-dom";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { slimArticleHtml } from "~/lib/wiki-os/transformers/slim-html";
@@ -654,5 +655,24 @@ describe("markTemplateChips makes at most 1,000 markers", () => {
     expect(markersIn(marked)).toBe(1_000);
     expect(marked).toContain("<p>{{CountryData:R500:population}}</p>");
     expect(marked).toContain('<p><span data-wikios-chip="CountryData:R399:population"></span></p>');
+  });
+});
+
+// ---- sanitize-html: article HTML nested too deep is shown as its source -----------------------------------------------
+
+describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
+  it("sanitizes what it sanitized, at the depth articles have", () => {
+    expect(sanitizeWikiArticleHtml('<p onclick="x">a</p><script>y</script>')).toBe("<p>a</p>");
+    expect(sanitizeWikiArticleHtml(`${"<div>".repeat(300)}a${"</div>".repeat(300)}`)).toBe(
+      `${"<div>".repeat(300)}a${"</div>".repeat(300)}`
+    );
+  });
+
+  it("shows HTML nested past the ceiling as its escaped source, at once", () => {
+    const started = performance.now();
+    const shown = sanitizeWikiArticleHtml(`${"<s>".repeat(12_000)}x<script>alert(1)</script>`);
+    expect(performance.now() - started).toBeLessThan(500); // 12,000 levels took 20 s
+    expect(shown.startsWith('<pre class="wikios-fallback-plain">&lt;s&gt;&lt;s&gt;')).toBe(true);
+    expect(shown).not.toMatch(/<s>|<script/);
   });
 });
