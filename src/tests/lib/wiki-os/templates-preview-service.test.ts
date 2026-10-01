@@ -1,59 +1,54 @@
-import {
-  renderTemplateCached,
-  canonicalPreviewInput,
-  isKnownInfoboxFamily,
-} from "~/lib/wiki-os/templates/preview-service";
-
-jest.mock("~/lib/wiki-os/templates/template-registry", () => ({
+/** @jest-environment node */
+/**
+ * The server's template preview: `canonicalPreviewInput` is order-insensitive, and `renderTemplateWithRedisCache`
+ * renders through MediaWiki's engine call and never throws. (The browser keeps no render tier of its own: the
+ * editor asks `wikios.getTemplatePreview`, see src/tests/architecture/browser-mediawiki.test.ts.)
+ */
+jest.mock("~/lib/wiki-os/templates/template-engine.server", () => ({
   getTemplatePreview: jest.fn(),
 }));
 
-import { getTemplatePreview } from "~/lib/wiki-os/templates/template-registry";
+import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
+import {
+  canonicalPreviewInput,
+  renderTemplateWithRedisCache,
+} from "~/lib/wiki-os/templates/preview-service.server";
 
 const mockRender = getTemplatePreview as jest.MockedFunction<typeof getTemplatePreview>;
 
 beforeEach(() => {
   mockRender.mockReset();
-  // REDIS_URL unset in test env → memory-only path
+  // REDIS_URL unset in test env → no Redis tier
   delete process.env.REDIS_URL;
   delete process.env.REDIS_ENABLED;
 });
 
-describe("preview-service", () => {
-  it("cache miss renders via network and reports cached:false", async () => {
+describe("preview-service.server", () => {
+  it("a render goes through the engine and reports cached:false", async () => {
     mockRender.mockResolvedValue("<p>render</p>");
-    const result = await renderTemplateCached("Quote box", { text: "hi" });
+
+    const result = await renderTemplateWithRedisCache("Quote box", { text: "hi" });
+
     expect(mockRender).toHaveBeenCalledTimes(1);
-    expect(result.html).toBe("<p>render</p>");
-    expect(result.cached).toBe(false);
+    expect(mockRender).toHaveBeenCalledWith("Quote box", { text: "hi" });
+    expect(result).toEqual({ html: "<p>render</p>", source: "network", cached: false });
   });
 
-  it("second identical call is served from cache", async () => {
-    mockRender.mockResolvedValue("<p>render2</p>");
-    await renderTemplateCached("Navbox", { group: "a" });
-    const second = await renderTemplateCached("Navbox", { group: "a" });
-    expect(second.cached).toBe(true);
-    expect(second.html).toBe("<p>render2</p>");
-    expect(mockRender).toHaveBeenCalledTimes(1);
-  });
-
-  it("param order does not change the cache key", () => {
+  it("param order does not change the cache input", () => {
     expect(canonicalPreviewInput("T", { a: "1", b: "2" })).toBe(
       canonicalPreviewInput("T", { b: "2", a: "1" })
     );
     expect(canonicalPreviewInput("T", { a: "1" })).not.toBe(canonicalPreviewInput("T", { a: "2" }));
+    expect(canonicalPreviewInput("Template:Quote box", {})).toBe(canonicalPreviewInput("quote box", {}));
   });
 
-  it("network failure degrades to empty html without throwing", async () => {
+  it("an engine failure degrades to empty html without throwing", async () => {
     mockRender.mockRejectedValue(new Error("down"));
-    const result = await renderTemplateCached("Whatever", {});
-    expect(result.html).toBe("");
-    expect(result.cached).toBe(false);
-  });
 
-  it("classifies infobox families for the component tier", () => {
-    expect(isKnownInfoboxFamily("Infobox country")).toBe(true);
-    expect(isKnownInfoboxFamily("infobox-settlement")).toBe(true);
-    expect(isKnownInfoboxFamily("Quote box")).toBe(false);
+    expect(await renderTemplateWithRedisCache("Whatever", {})).toEqual({
+      html: "",
+      source: "network",
+      cached: false,
+    });
   });
 });

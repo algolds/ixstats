@@ -55,7 +55,7 @@ describe("the bridge cache", () => {
       "intro:ixwiki:foo_bar",
       "intro:ixwiki:Foo bar",
       "wikitext:ixwiki:foo bar",
-      "pageimages:Foo bar",
+      "pageimages:ixwiki:Foo bar",
       "intro:ixwiki:Foo baz",
       "intro:iiwiki:Foo bar",
       "wikitext:ixwiki:talk:foo bar",

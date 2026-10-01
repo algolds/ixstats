@@ -5,10 +5,18 @@
  * directly from PostgreSQL `wiki_assets` with MD5 shard path computation.
  */
 
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import crypto from "crypto";
 import { DEFAULT_MEDIAWIKI_URL } from "../config";
 import { BlurHashService } from "./blurhash-service";
+import { CategoryService } from "./category-service";
+import { withoutArchivedFiles } from "./archived-titles";
+
+/** Files of a category looked at when a search is limited to it: more than any category page lists at once. */
+const MAX_CATEGORY_FILES = 1_000;
+/** Assets looked at, at most, to fill a page of results while skipping files whose page was deleted. */
+const MAX_SEARCH_SCAN = 500;
 
 export interface MediaAssetRecord {
   id: string;
@@ -129,6 +137,59 @@ export class MediaAssetService {
     }
 
     return map;
+  }
+
+  /**
+   * Assets by name: those whose title or file name contains `query`, of the given MIME types, and (when
+   * `category` is given) only the files that category lists. Alphabetical by title. An asset whose `File:`
+   * page WikiOS deleted is not listed (the search reads on past it, so a full page of `limit` comes back).
+   */
+  static async search({
+    query,
+    category,
+    fileTypes,
+    limit,
+  }: {
+    query?: string;
+    category?: string;
+    fileTypes?: readonly string[];
+    limit: number;
+  }): Promise<MediaAssetRecord[]> {
+    const where: Prisma.WikiAssetWhereInput = {};
+    const term = query?.trim();
+    if (term) {
+      where.OR = [
+        { title: { contains: term, mode: "insensitive" } },
+        { filename: { contains: term, mode: "insensitive" } },
+      ];
+    }
+    if (fileTypes && fileTypes.length > 0) where.mimeType = { in: [...fileTypes] };
+    if (category) {
+      const titles = await CategoryService.getMemberTitles(category, ["file"], MAX_CATEGORY_FILES);
+      const names = titles.map((title) => title.replace(/^File:/i, ""));
+      where.AND = [
+        {
+          OR: [
+            { title: { in: names } },
+            { filename: { in: names.map((name) => name.replace(/ /g, "_")) } },
+          ],
+        },
+      ];
+    }
+
+    const found: MediaAssetRecord[] = [];
+    for (let skip = 0; found.length < limit && skip < MAX_SEARCH_SCAN; skip += limit) {
+      const batch = await db.wikiAsset.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: { title: "asc" },
+      });
+      const visible = new Set(await withoutArchivedFiles(batch.map((asset) => asset.title)));
+      found.push(...(batch.filter((asset) => visible.has(asset.title)) as MediaAssetRecord[]));
+      if (batch.length < limit) break;
+    }
+    return found.slice(0, limit);
   }
 
   /**

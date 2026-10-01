@@ -4,6 +4,9 @@ import { sameTitle } from "~/lib/wiki-os/core/title";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 
+/** A wiki WikiOS does not hold: its pages are read from the wiki itself. */
+export type SisterWikiSource = Exclude<WikiSource, "ixwiki">;
+
 // ──────────────────────────────────────────────
 // Bridge DTO Interfaces
 // ──────────────────────────────────────────────
@@ -47,6 +50,16 @@ export interface WikiRecentChange {
   parked?: boolean;
 }
 
+/** An image used on a page, with the URLs to show it at full size and as a thumbnail. */
+export interface PageImage {
+  /** The file's title, "File:" prefix included. */
+  title: string;
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
+}
+
 export interface WikiCategoryMembers {
   category: string;
   pages: Array<{ title: string; ns: number }>;
@@ -77,7 +90,7 @@ export function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000
  * spelling it was asked for: those keys hold the raw or lower-cased title.
  */
 export function evictBridgeCacheForTitle(title: string, wiki: WikiSource): number {
-  const prefixes = [`intro:${wiki}:`, `wikitext:${wiki}:`, "pageimages:"];
+  const prefixes = [`intro:${wiki}:`, `wikitext:${wiki}:`, `pageimages:${wiki}:`];
   let evicted = 0;
   for (const key of wikiBridgeCache.keys()) {
     const prefix = prefixes.find((candidate) => key.startsWith(candidate));

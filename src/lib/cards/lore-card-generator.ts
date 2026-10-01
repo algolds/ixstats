@@ -33,9 +33,21 @@ import { getValuationConfig, computeCardValue, type CardValuationConfig } from "
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { LoreCategory, type LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
+import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
+import {
+  ixwikiAuthorInfo,
+  ixwikiCategoryTitles,
+  ixwikiImageUrls,
+  ixwikiMainNamespaceTitles,
+  ixwikiRandomTitles,
+  loadIxwikiArticle,
+  loadIxwikiPreviews,
+} from "./lore-card-ixwiki";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
+export { BOT_REGEX, cleanWikiUsername };
 export type { CardAuthorInfo };
 
 /**
@@ -99,26 +111,6 @@ export interface ArticleMetadataPreview {
 // Image presence is the primary gate; this just skips near-empty stubs.
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
-
-export const BOT_REGEX =
-  /^(.*bot|mediawiki default|maintenance script|adminimport|importbot|uploadwizard|system|anonymous)$/i;
-
-/**
- * Clean a wiki username by stripping import prefixes, namespaces, and brackets
- */
-export function cleanWikiUsername(username: string | null | undefined): string {
-  if (!username) return "";
-  let clean = String(username).trim();
-  // Strip MediaWiki XML import dump prefixes: "imported>", "Imported>", "import>", "Import>"
-  clean = clean.replace(/^(?:imported|import)\s*>\s*/i, "").trim();
-  // Strip "User:" or "user:" namespace prefix
-  clean = clean.replace(/^user:\s*/i, "").trim();
-  // Strip wiki links [[User:Foo|Foo]] or [[Foo]]
-  clean = clean.replace(/^\[\[(?:[^|\]]*\|)?([^\]]+)\]\]$/g, "$1").trim();
-  // Strip enclosing quotes
-  clean = clean.replace(/^["']|["']$/g, "").trim();
-  return clean;
-}
 
 /**
  * Category-based stat weights for lore cards.
@@ -251,6 +243,7 @@ export class WikiLoreCardGenerator {
    * Fetch article data from wiki API
    */
   async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
+    if (wikiSource === "ixwiki") return this.fetchIxwikiArticleData(title);
     try {
       // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
       if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
@@ -479,6 +472,56 @@ export class WikiLoreCardGenerator {
   }
 
   /**
+   * The data a card is made from for a published IxWiki page: read from Postgres, MediaWiki is not
+   * asked. Null when the page does not exist or has been deleted.
+   */
+  private async fetchIxwikiArticleData(title: string) {
+    try {
+      const article = await loadIxwikiArticle(title);
+      if (!article) return null;
+      return {
+        title: article.title,
+        authorInfo: article.authorInfo,
+        text: this.removeTemplates(article.wikitext),
+        rawText: article.wikitext,
+        extract: article.extract,
+        image: article.image,
+        infobox: this.parseInfobox(article.wikitext),
+        categories: article.categories,
+        links: [],
+        images: article.images,
+        inboundLinks: article.inboundLinks,
+        lastModified: article.lastModified,
+      };
+    } catch (error) {
+      console.error(`[Lore Card Generator] Error reading article "${title}":`, error);
+      return null;
+    }
+  }
+
+  /** Previews of published IxWiki pages from Postgres, in the order asked. */
+  private async fetchIxwikiMetadataBatch(titles: string[]): Promise<ArticleMetadataPreview[]> {
+    const [pages, valuationCfg, authors] = await Promise.all([
+      loadIxwikiPreviews(titles),
+      getValuationConfig(db),
+      ixwikiAuthorInfo(titles),
+    ]);
+    return pages.map((page) =>
+      this.toMetadataPreview(
+        {
+          title: page.title,
+          extract: page.extract,
+          length: page.length,
+          categories: page.categories,
+          original: page.imageUrl ? { source: page.imageUrl } : undefined,
+        },
+        valuationCfg,
+        authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
+      )
+    );
+  }
+
+  /**
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    * Used for discovery/preview so we don't run the full generateCard fetch per article
    * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity reuse
@@ -492,6 +535,7 @@ export class WikiLoreCardGenerator {
     requestedTitles: string[],
     wikiSource: WikiSource
   ): Promise<ArticleMetadataPreview[]> {
+    if (wikiSource === "ixwiki") return this.fetchIxwikiMetadataBatch(requestedTitles);
     // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
     const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
     const apiUrl = getMediaWikiApiUrl(wikiSource);
@@ -594,6 +638,7 @@ export class WikiLoreCardGenerator {
     titles: string[],
     wikiSource: WikiSource
   ): Promise<Map<string, CardAuthorInfo>> {
+    if (wikiSource === "ixwiki") return ixwikiAuthorInfo(titles);
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const resultMap = new Map<string, CardAuthorInfo>();
@@ -764,6 +809,9 @@ export class WikiLoreCardGenerator {
     limit = 10000,
     type: "page" | "file" | "page|file" = "page|file"
   ): Promise<string[]> {
+    if (wikiSource === "ixwiki") {
+      return ixwikiCategoryTitles(category, type === "page|file" ? ["page", "file"] : [type], limit);
+    }
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
@@ -811,6 +859,9 @@ export class WikiLoreCardGenerator {
    * Search live wiki categories by prefix — feeds the discovery category picker.
    */
   async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
+    if (wikiSource === "ixwiki") {
+      return CategoryService.autocomplete(prefix, Math.min(Math.max(limit, 1), 100));
+    }
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const url = new URL(apiUrl);
@@ -849,10 +900,20 @@ export class WikiLoreCardGenerator {
     categories: string[],
     wikiSource: WikiSource
   ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
     const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
       {};
+    if (wikiSource === "ixwiki") {
+      const names = categories.map((c) => c.replace(/^Category:\s*/i, "")).slice(0, 50);
+      const counts = await CategoryService.getCounts(names);
+      for (const [name, { pages, files, subcats }] of counts) {
+        const info = { size: pages + files + subcats, pages, files, subcats };
+        result[name] = info;
+        result[`Category:${name}`] = info;
+      }
+      return result;
+    }
+    const apiUrl = getMediaWikiApiUrl(wikiSource);
+    const userAgent = getWikiUserAgent(wikiSource);
 
     const formattedTitles = categories
       .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
@@ -897,6 +958,7 @@ export class WikiLoreCardGenerator {
    * List all pages in the main namespace (namespace 0, excluding redirects).
    */
   async fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
+    if (wikiSource === "ixwiki") return ixwikiMainNamespaceTitles(limit);
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const titles: string[] = [];
@@ -1008,9 +1070,13 @@ export class WikiLoreCardGenerator {
   }
 
   /**
-   * Get image URL from filename via MediaWiki API
+   * Get image URL from filename: IxWiki's from Postgres, a sister wiki's via its MediaWiki API
    */
   async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+    if (wikiSource === "ixwiki") {
+      const name = filename.replace(/^(File|Image):/i, "");
+      return (await ixwikiImageUrls([name])).get(name) ?? null;
+    }
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
@@ -1326,39 +1392,11 @@ export class WikiLoreCardGenerator {
   }
 
   /**
-   * Check if a wiki article has a page image
-   */
-  private async checkArticleHasImage(title: string, wikiSource: WikiSource): Promise<boolean> {
-    try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", title);
-      url.searchParams.set("prop", "pageimages");
-      url.searchParams.set("piprop", "original");
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
-      });
-      if (!response.ok) return false;
-
-      const data = await response.json();
-      const page = Object.values(data.query?.pages ?? {})[0] as
-        (MediaWikiPageItem & { original?: { source?: string } }) | undefined;
-      return !!page?.original?.source;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
    * Fetch random articles that have images, for lore card generation.
    * Fetches extra candidates to account for articles without images.
    */
   async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
+    if (wikiSource === "ixwiki") return ixwikiRandomTitles(count, { withImage: true });
     // One request: `generator=random` returns random pages and `prop=pageimages` tells
     // us which have an image — no per-article checkArticleHasImage loop. That loop made
     // 1 + 3N sequential calls and tripped the wiki's rate limit (429). Over-fetch via
@@ -1406,6 +1444,7 @@ export class WikiLoreCardGenerator {
    * Fetch random articles from wiki for card generation
    */
   async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
+    if (wikiSource === "ixwiki") return ixwikiRandomTitles(count, { withImage: false });
     try {
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
