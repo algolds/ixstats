@@ -31,6 +31,11 @@ jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   __esModule: true,
   MediaAssetService: { findAsset: (...a: unknown[]) => mockFindAsset(...a) },
 }));
+const mockArchived = jest.fn();
+jest.mock("~/lib/wiki-os/core/archived-titles", () => ({
+  __esModule: true,
+  archivedTitlesAmong: (...a: unknown[]) => mockArchived(...a),
+}));
 const mockFindMissing = jest.fn();
 jest.mock("~/lib/wiki-os/core/article-repository", () => ({
   __esModule: true,
@@ -47,7 +52,10 @@ import {
   SITEMAP_PAGE_SIZE,
 } from "~/lib/wiki-os/core/sitemap-service";
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockArchived.mockResolvedValue(new Set());
+});
 
 describe("listPages (Special:AllPages, Special:PrefixIndex)", () => {
   const rows = (titles: string[]) =>
@@ -142,8 +150,9 @@ describe("getPageInfo (?action=info)", () => {
 
     const info = await getPageInfo("foo_bar");
 
+    // A deleted redirect to the page is not counted.
     expect(mockArticleCount).toHaveBeenCalledWith({
-      where: { source: "ixwiki", redirectTargetSlug: "foo_bar" },
+      where: { source: "ixwiki", redirectTargetSlug: "foo_bar", status: { not: "ARCHIVED" } },
     });
     expect(info).toEqual({
       title: "Foo bar",
@@ -173,6 +182,11 @@ describe("getPageInfo (?action=info)", () => {
     const info = await getPageInfo("Foo bar");
 
     expect(info?.redirectsTo).toBe("New Name");
+    expect(mockArticleFindFirst.mock.calls[0]?.[0].where).toEqual({
+      source: "ixwiki",
+      slug: "new_name",
+      status: { not: "ARCHIVED" },
+    });
     expect(info?.created).toBeNull();
     expect(info?.length).toBe(0);
   });
@@ -204,6 +218,11 @@ describe("CategoryService.getMemberPage (Category: pages)", () => {
     // The first query is ordered by the sort key (the title when there is none), limit + 1 rows.
     const [members] = mockQueryRaw.mock.calls[0] as [string[], ...unknown[]];
     expect(members.join("?")).toContain('upper(COALESCE(m."sortKey", a."title"))');
+    // A deleted page is a member for no one, in the list and in the count.
+    const [totals] = mockQueryRaw.mock.calls[1] as [string[], ...unknown[]];
+    for (const sql of [members.join("?"), totals.join("?")]) {
+      expect(sql).toContain(`a."status" = 'PUBLISHED'`);
+    }
     expect(mockQueryRaw.mock.calls[0]).toContain(3);
   });
 
@@ -249,6 +268,15 @@ describe("getFileInfo (File: pages, Special:FilePath)", () => {
     expect(mockFindMissing).toHaveBeenCalledWith(["File:Flag.svg"]);
     // The MD5 shard of the name, served through the site's own image proxy.
     expect(info?.url).toBe("/api/mediawiki/ixwiki/images/6/61/Flag.svg");
+  });
+
+  it("is null for a file whose description page was deleted, whatever asset row is left (plan 409)", async () => {
+    mockArchived.mockResolvedValue(new Set(["File:Flag.svg"]));
+    mockFindAsset.mockResolvedValue({ url: "/images/uploads/Flag.svg", mimeType: "image/svg+xml" });
+
+    await expect(getFileInfo("Flag.svg")).resolves.toBeNull();
+    expect(mockArchived).toHaveBeenCalledWith(["File:Flag.svg"]);
+    expect(mockFindAsset).not.toHaveBeenCalled();
   });
 
   it("is null for a file WikiOS has neither an asset nor a description page for, and for a bad name", async () => {

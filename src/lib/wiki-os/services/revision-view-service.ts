@@ -68,12 +68,11 @@ function withPlaceholders(html: string | null): string | null {
   return sanitizeWikiArticleHtml(substituteChipMarkers(html, placeholderFor));
 }
 
-async function renderRevision(ref: string): Promise<RevisionViewResult> {
-  const revision = await getRevisionWikitext(ref);
-  if (!revision) return { status: "missing" };
-  if (revision.wikitext === null) return { status: "text-unavailable" };
-
-  const wikitext = revision.wikitext;
+async function renderRevision(
+  ref: string,
+  revision: { title: string; timestamp: string; wikitext: string }
+): Promise<RevisionViewResult> {
+  const { wikitext } = revision;
   const rendered = await renderLimiter.run(() =>
     renderArticleViaMediaWiki(wikitext, revision.title)
   );
@@ -95,19 +94,30 @@ async function renderRevision(ref: string): Promise<RevisionViewResult> {
 }
 
 /**
- * The rendered revision `ref` (a MediaWiki rev_id or a WikiOS revision id). Concurrent requests for
- * one revision share one render. Rejects with `ThrottledError` when MediaWiki could not be asked.
+ * The rendered revision `ref` (a MediaWiki rev_id or a WikiOS revision id), for a caller `canSee`
+ * allows the revision's page to: a revision of a deleted page is "missing" to everyone else, cached
+ * or not. Concurrent requests for one revision share one render. Rejects with `ThrottledError` when
+ * MediaWiki could not be asked.
  */
-export function getRevisionView(ref: string): Promise<RevisionViewResult> {
+export async function getRevisionView(
+  ref: string,
+  canSee: (title: string) => Promise<boolean>
+): Promise<RevisionViewResult> {
   const cached = cache.get(ref);
   if (cached) {
+    if (!(await canSee(cached.title))) return { status: "missing" };
     remember(ref, cached);
-    return Promise.resolve({ status: "ok", view: cached });
+    return { status: "ok", view: cached };
   }
+
+  const revision = await getRevisionWikitext(ref);
+  if (!revision || !(await canSee(revision.title))) return { status: "missing" };
+  if (revision.wikitext === null) return { status: "text-unavailable" };
+  const text = { ...revision, wikitext: revision.wikitext };
 
   const running = inFlight.get(ref);
   if (running) return running;
-  const attempt = renderRevision(ref).finally(() => inFlight.delete(ref));
+  const attempt = renderRevision(ref, text).finally(() => inFlight.delete(ref));
   inFlight.set(ref, attempt);
   return attempt;
 }

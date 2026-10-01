@@ -5,6 +5,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
+import { DeletedPageLinks } from "~/components/wiki-os/reader/DeletedPageLinks";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { stripBasePath, withBasePath } from "~/lib/base-path";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
@@ -38,6 +39,9 @@ export default function WikiNotFound() {
             if (canon) router.push(withBasePath(`/wiki/${canon.urlPath}?action=edit`));
           }}
         />
+        {canon && canon.namespaceId >= 0 && (
+          <DeletedPageLinks title={canon.title} enabled={isSignedIn} />
+        )}
       </div>
     </WikiOSLayout>
   );

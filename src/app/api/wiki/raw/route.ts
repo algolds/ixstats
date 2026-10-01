@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { archivedTitlesAmong } from "~/lib/wiki-os/core/archived-titles";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { resolveWikiPath } from "~/lib/wiki-os/wiki-path";
 import { resolveRateLimitIdentifier } from "~/server/api/trpc/rate-limit-identity";
@@ -26,8 +27,11 @@ async function wikitextOf(title: string, ref: string | null): Promise<string | n
   if (ref) {
     const revision = await getRevisionWikitext(ref);
     // A revision of another page is not this page's text; a null text is hidden or never imported.
-    return revision && revision.title === title ? revision.wikitext : null;
+    if (!revision || revision.title !== title) return null;
+    // The raw route knows no session: a deleted page's revisions are hidden from everyone.
+    return (await archivedTitlesAmong([title])).size > 0 ? null : revision.wikitext;
   }
+  // `findBySlug` leaves a deleted page out.
   return (await ArticleRepository.findBySlug(title))?.wikitext ?? null;
 }
 

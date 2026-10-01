@@ -43,8 +43,8 @@ interface MemberRow {
 export class CategoryService {
   /**
    * One page of a category's members in MediaWiki's order: by sort key (the page title when it has
-   * none), case-insensitively, starting at `from`. Members of every namespace are listed; the
-   * caller tells subcategories (14), files (6) and pages apart.
+   * none), case-insensitively, starting at `from`. Members of every namespace are listed (a deleted
+   * page is not a member for anyone); the caller tells subcategories (14), files (6) and pages apart.
    */
   static async getMemberPage(
     category: string,
@@ -64,7 +64,7 @@ export class CategoryService {
         FROM wiki_category_members m
         JOIN wiki_categories c ON c."id" = m."categoryId"
         JOIN wiki_articles a ON a."id" = m."articleId"
-        WHERE (${inCategory}) AND a."source" = 'ixwiki'
+        WHERE (${inCategory}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
           AND upper(COALESCE(m."sortKey", a."title")) >= upper(${from})
         ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"
         LIMIT ${limit + 1}`,
@@ -73,7 +73,7 @@ export class CategoryService {
         FROM wiki_category_members m
         JOIN wiki_categories c ON c."id" = m."categoryId"
         JOIN wiki_articles a ON a."id" = m."articleId"
-        WHERE (${inCategory}) AND a."source" = 'ixwiki'`,
+        WHERE (${inCategory}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'`,
     ]);
 
     const members = rows

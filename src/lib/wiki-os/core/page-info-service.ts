@@ -1,6 +1,8 @@
 /**
  * page-info-service.ts — the facts `?action=info` shows about a page: its id, size, creation,
- * last edit, how many pages redirect to it, its protection and its categories.
+ * last edit, how many pages redirect to it, its protection and its categories. Whether the caller
+ * may see the page at all (a deleted one is hidden) is the router's check; pages that redirect here
+ * and are deleted are not counted.
  */
 
 import { db } from "~/server/db";
@@ -49,7 +51,7 @@ export async function getPageInfo(rawTitle: string): Promise<PageInfo | null> {
 
   const redirectTarget = article.redirectTargetSlug
     ? db.wikiArticle.findFirst({
-        where: { source: "ixwiki", slug: article.redirectTargetSlug },
+        where: { source: "ixwiki", slug: article.redirectTargetSlug, status: { not: "ARCHIVED" } },
         select: { title: true },
       })
     : Promise.resolve(null);
@@ -67,7 +69,9 @@ export async function getPageInfo(rawTitle: string): Promise<PageInfo | null> {
       ...revision,
     }),
     db.wikiRevision.count({ where: { articleId: article.id } }),
-    db.wikiArticle.count({ where: { source: "ixwiki", redirectTargetSlug: canon.slug } }),
+    db.wikiArticle.count({
+      where: { source: "ixwiki", redirectTargetSlug: canon.slug, status: { not: "ARCHIVED" } },
+    }),
     db.wikiCategoryMember.count({ where: { articleId: article.id } }),
   ]);
 

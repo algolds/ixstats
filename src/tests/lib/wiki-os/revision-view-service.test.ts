@@ -37,6 +37,8 @@ import {
 } from "~/lib/wiki-os/services/revision-view-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 
+const everyone = async () => true;
+
 const revision = (title = "Aurelia", wikitext: string | null = "'''Aurelia''' is a country.") => ({
   wikitext,
   title,
@@ -53,7 +55,7 @@ beforeEach(() => {
 
 describe("getRevisionView", () => {
   it("renders the revision's own wikitext through MediaWiki and builds the reader's view of it", async () => {
-    const result = await getRevisionView("r-render");
+    const result = await getRevisionView("r-render", everyone);
 
     expect(mockGetRevision).toHaveBeenCalledWith("r-render");
     expect(mockRender).toHaveBeenCalledWith("'''Aurelia''' is a country.", "Aurelia");
@@ -69,47 +71,68 @@ describe("getRevisionView", () => {
   });
 
   it("keeps the rendered revision: the second request does not touch the database or MediaWiki", async () => {
-    await getRevisionView("r-cached");
-    await getRevisionView("r-cached");
+    await getRevisionView("r-cached", everyone);
+    await getRevisionView("r-cached", everyone);
 
     expect(mockGetRevision).toHaveBeenCalledTimes(1);
     expect(mockRender).toHaveBeenCalledTimes(1);
   });
 
   it("shares one render between concurrent requests for the same revision", async () => {
-    const [a, b] = await Promise.all([getRevisionView("r-flight"), getRevisionView("r-flight")]);
+    const [a, b] = await Promise.all([
+      getRevisionView("r-flight", everyone),
+      getRevisionView("r-flight", everyone),
+    ]);
 
     expect(mockRender).toHaveBeenCalledTimes(1);
     expect(a).toEqual(b);
   });
 
   it("keeps at most 100 revisions, least recently used out first", async () => {
-    for (let i = 0; i < MAX_CACHED_REVISIONS; i++) await getRevisionView(`lru-${i}`);
-    await getRevisionView("lru-0"); // used again: now the newest
-    await getRevisionView("lru-overflow"); // 101st: the oldest unused (lru-1) goes
+    for (let i = 0; i < MAX_CACHED_REVISIONS; i++) await getRevisionView(`lru-${i}`, everyone);
+    await getRevisionView("lru-0", everyone); // used again: now the newest
+    await getRevisionView("lru-overflow", everyone); // 101st: the oldest unused (lru-1) goes
     mockGetRevision.mockClear();
 
-    await getRevisionView("lru-0");
+    await getRevisionView("lru-0", everyone);
     expect(mockGetRevision).not.toHaveBeenCalled(); // still cached
-    await getRevisionView("lru-1");
+    await getRevisionView("lru-1", everyone);
     expect(mockGetRevision).toHaveBeenCalledTimes(1); // was dropped
   });
 
   it("compiles the wikitext locally when MediaWiki cannot render it, and does not keep that", async () => {
     mockRender.mockResolvedValue(null);
-    const first = await getRevisionView("r-fallback");
+    const first = await getRevisionView("r-fallback", everyone);
 
     expect(first).toMatchObject({ status: "ok", view: { renderQuality: "fallback" } });
-    await getRevisionView("r-fallback");
+    await getRevisionView("r-fallback", everyone);
     expect(mockGetRevision).toHaveBeenCalledTimes(2); // asked again: MediaWiki may be back
+  });
+
+  it("is missing, and never rendered, for a caller who may not see the revision's page; cached or not (plan 409)", async () => {
+    const nobody = jest.fn(async () => false);
+
+    await expect(getRevisionView("r-hidden-1", nobody)).resolves.toEqual({ status: "missing" });
+    expect(nobody).toHaveBeenCalledWith("Aurelia");
+    expect(mockRender).not.toHaveBeenCalled();
+
+    // Once the page is deleted, a view kept from before is not served either.
+    await getRevisionView("r-hidden-2", everyone);
+    mockRender.mockClear();
+    mockGetRevision.mockClear();
+    await expect(getRevisionView("r-hidden-2", nobody)).resolves.toEqual({ status: "missing" });
+    expect(mockGetRevision).not.toHaveBeenCalled();
+    await expect(getRevisionView("r-hidden-2", everyone)).resolves.toMatchObject({ status: "ok" });
   });
 
   it("is missing for an unknown revision and unavailable for one whose text was never imported", async () => {
     mockGetRevision.mockResolvedValue(null);
-    await expect(getRevisionView("r-missing")).resolves.toEqual({ status: "missing" });
+    await expect(getRevisionView("r-missing", everyone)).resolves.toEqual({ status: "missing" });
 
     mockGetRevision.mockResolvedValue(revision("Aurelia", null));
-    await expect(getRevisionView("r-hidden")).resolves.toEqual({ status: "text-unavailable" });
+    await expect(getRevisionView("r-hidden", everyone)).resolves.toEqual({
+      status: "text-unavailable",
+    });
     expect(mockRender).not.toHaveBeenCalled();
   });
 
@@ -117,7 +140,7 @@ describe("getRevisionView", () => {
     mockRender.mockResolvedValue(
       '<p>GDP: <a href="/wiki/Template:CountryData:Aurelia:gdp" title="x">gdp</a></p>'
     );
-    const result = await getRevisionView("r-chip");
+    const result = await getRevisionView("r-chip", everyone);
 
     expect(result.status === "ok" && result.view.contentHtml).toBe(
       '<p>GDP: <span class="wikios-stat-placeholder" data-key="CountryData:Aurelia:gdp"></span></p>'
@@ -126,11 +149,11 @@ describe("getRevisionView", () => {
 
   it("refuses with ThrottledError past the render budget, and remembers nothing then", async () => {
     mockLimiterRun.mockRejectedValueOnce(new ThrottledError("Rendering old revisions"));
-    await expect(getRevisionView("r-budget")).rejects.toBeInstanceOf(ThrottledError);
+    await expect(getRevisionView("r-budget", everyone)).rejects.toBeInstanceOf(ThrottledError);
     expect(mockRender).not.toHaveBeenCalled();
 
     // The same revision is rendered once the budget allows, not answered from a failed attempt.
-    await expect(getRevisionView("r-budget")).resolves.toMatchObject({ status: "ok" });
+    await expect(getRevisionView("r-budget", everyone)).resolves.toMatchObject({ status: "ok" });
     expect(mockRender).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,6 +4,7 @@
  */
 
 import { getImageUrl } from "../transformers/image-url";
+import { archivedTitlesAmong } from "./archived-titles";
 import { ArticleRepository } from "./article-repository";
 import { MediaAssetService } from "./media-asset-service";
 import { canonicalizeTitle } from "./title";
@@ -22,11 +23,14 @@ export interface FileInfo {
 /**
  * The file called `rawName` ("Flag of Eurth.svg", with or without `File:`), or null when WikiOS has
  * neither an asset row for it nor a description page: a file can only be told from a missing one by
- * one of the two, because the `images/` path is computed, not looked up.
+ * one of the two, because the `images/` path is computed, not looked up. A file whose description
+ * page was deleted is gone for everyone: its asset row is not a way back to it.
  */
 export async function getFileInfo(rawName: string): Promise<FileInfo | null> {
   const page = canonicalizeTitle(`File:${rawName.replace(/^(?:file|image):/i, "")}`);
   if (!page) return null;
+
+  if ((await archivedTitlesAmong([page.title])).size > 0) return null;
 
   const asset = await MediaAssetService.findAsset(page.base);
   if (asset) {

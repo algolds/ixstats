@@ -11,12 +11,14 @@ import { CATEGORY_PAGE_SIZE, CategoryService } from "~/lib/wiki-os/core/category
 import { getFileInfo } from "~/lib/wiki-os/core/file-page-service";
 import { getPageInfo } from "~/lib/wiki-os/core/page-info-service";
 import { listPages } from "~/lib/wiki-os/core/page-list-service";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 
 export const wikiosPageViewsRouter = createTRPCRouter({
-  /** The facts `?action=info` shows about a page. */
+  /** The facts `?action=info` shows about a page; a deleted page is "not found" to a reader who may not see it. */
   getPageInfo: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       const info = await getPageInfo(input.title);
       if (!info) {
         throw new TRPCError({ code: "NOT_FOUND", message: `"${input.title}" does not exist.` });

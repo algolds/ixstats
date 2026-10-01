@@ -11,7 +11,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { getRevisionView } from "~/lib/wiki-os/services/revision-view-service";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
-import { assertTitleVisible } from "~/lib/wiki-os/permissions";
+import { assertTitleVisible, canSeeTitle } from "~/lib/wiki-os/permissions";
 import {
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
@@ -129,13 +129,15 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    */
   getRevisionHtml: rateLimitedPublicProcedure
     .input(z.object({ ref: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/) }))
-    .query(async ({ input }) => {
-      const result = await getRevisionView(input.ref).catch((error: Error) => {
-        if (error instanceof ThrottledError) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+    .query(async ({ input, ctx }) => {
+      const result = await getRevisionView(input.ref, (title) => canSeeTitle(ctx, title)).catch(
+        (error: Error) => {
+          if (error instanceof ThrottledError) {
+            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+          }
+          throw error;
         }
-        throw error;
-      });
+      );
       if (result.status === "missing") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Revision not found" });
       }

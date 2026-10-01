@@ -24,6 +24,11 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   __esModule: true,
   getRevisionWikitext: (...args: unknown[]) => mockRevision(...args),
 }));
+const mockArchived = jest.fn();
+jest.mock("~/lib/wiki-os/core/archived-titles", () => ({
+  __esModule: true,
+  archivedTitlesAmong: (...args: unknown[]) => mockArchived(...args),
+}));
 const mockRateCheck = jest.fn();
 jest.mock("~/lib/cache/rate-limiter", () => ({
   rateLimiter: { check: (...args: unknown[]) => mockRateCheck(...args) },
@@ -61,6 +66,7 @@ const page = (n: string) => ({ params: Promise.resolve({ page: n }) });
 beforeEach(() => {
   jest.clearAllMocks();
   mockRateCheck.mockResolvedValue({ success: true });
+  mockArchived.mockResolvedValue(new Set());
 });
 
 describe("sitemap index", () => {
@@ -193,6 +199,17 @@ describe("/api/wiki/raw", () => {
 
     mockRevision.mockResolvedValue({ wikitext: null, title: "Foo", timestamp: "t" });
     expect((await raw(request("path=Foo&action=raw&oldid=78"))).status).toBe(404);
+  });
+
+  it("hides a deleted page: the current text comes from a lookup that leaves it out, the revisions are checked", async () => {
+    mockFindBySlug.mockResolvedValue(null); // ArticleRepository.findBySlug leaves ARCHIVED rows out (plan 409)
+    expect((await raw(request("path=Deleted&action=raw"))).status).toBe(404);
+    expect(mockFindBySlug).toHaveBeenCalledWith("Deleted"); // no includeArchived
+
+    mockRevision.mockResolvedValue({ wikitext: "old text", title: "Deleted", timestamp: "t" });
+    mockArchived.mockResolvedValue(new Set(["Deleted"]));
+    expect((await raw(request("path=Deleted&action=raw&oldid=9"))).status).toBe(404);
+    expect(mockArchived).toHaveBeenCalledWith(["Deleted"]);
   });
 
   it("is a 400 when it is not a raw request for a page", async () => {

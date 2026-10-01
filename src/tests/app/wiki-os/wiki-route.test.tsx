@@ -551,6 +551,58 @@ describe("namespaced pages (plan 412 step 4)", () => {
   });
 });
 
+describe("deleted pages through the route (plan 409)", () => {
+  // The route reads as an anonymous viewer, to whom getArticleHtml, getHistory, getPageInfo,
+  // getRevisionHtml and getFileInfo answer NOT_FOUND for a deleted (ARCHIVED) page.
+  const notFoundError = () => new TRPCError({ code: "NOT_FOUND" });
+
+  it("a deleted article is a 404, in the page and in the metadata", async () => {
+    fails("NOT_FOUND");
+    expect((await outcome(["Deleted_page"])).signal).toBe("not-found");
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ slug: ["Deleted_page"] }),
+        searchParams: Promise.resolve({}),
+      })
+    ).rejects.toThrow("not-found");
+  });
+
+  it("a deleted user page shows only the profile card, a deleted category page only its members, a deleted file nothing", async () => {
+    fails("NOT_FOUND");
+    expect(propsOf((await outcome(["User:Jane"])).tree, "UserProfileCard")).toMatchObject({
+      pageExists: false,
+    });
+
+    mockCategoryPage.mockResolvedValue({
+      members: [{ title: "Aurelia", namespace: 0 }],
+      total: 1,
+      next: null,
+    });
+    const category = await outcome(["Category:Countries"]);
+    expect(named(category.tree, "ArticlePageClient")).toBeUndefined();
+    expect(propsOf(category.tree, "CategoryMembers")).toMatchObject({ total: 1 });
+
+    mockFileInfo.mockResolvedValue(null); // getFileInfo leaves a deleted description page's file out
+    expect((await outcome(["File:Flag.svg"])).signal).toBe("not-found");
+  });
+
+  it("the history, info, revision and diff views of a deleted page are 404s", async () => {
+    mockPageInfo.mockRejectedValue(notFoundError());
+    expect((await outcome(["Deleted_page"], { action: "info" })).signal).toBe("not-found");
+
+    mockHistory.mockRejectedValue(notFoundError());
+    expect((await outcome(["Deleted_page"], { diff: "cur", oldid: "5" })).signal).toBe("not-found");
+
+    fails("NOT_FOUND");
+    expect((await outcome(["Deleted_page"], { oldid: "5" })).signal).toBe("not-found");
+  });
+
+  it("an old tool slug is a redirect when the article of that name is deleted (it is a red link)", async () => {
+    mockMissingPages.mockResolvedValue(["Search"]); // findMissingTitles counts an ARCHIVED page as missing
+    expect((await outcome(["search"])).signal).toBe("redirect:/util/search");
+  });
+});
+
 describe("views of a page (plan 412 step 5)", () => {
   it("?action=history is the history view in place, without reading the article", async () => {
     const { tree } = await outcome(["foo_bar"], { action: "history" });

@@ -19,12 +19,18 @@ jest.mock("~/lib/wiki-os/core/category-service", () => ({
   CATEGORY_PAGE_SIZE: 200,
   CategoryService: { getMemberPage: (...a: unknown[]) => mockMemberPage(...a) },
 }));
+const mockAssertVisible = jest.fn();
+jest.mock("~/lib/wiki-os/permissions", () => ({
+  __esModule: true,
+  assertTitleVisible: (...a: unknown[]) => mockAssertVisible(...a),
+}));
 jest.mock("~/lib/wiki-os/core/file-page-service", () => ({
   __esModule: true,
   getFileInfo: (...a: unknown[]) => mockFileInfo(...a),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
+import { TRPCError } from "@trpc/server";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageViewsRouter } from "~/server/api/routers/wikios/page-views";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -34,7 +40,10 @@ const caller = () =>
     createMockRouterContext({ auth: null, user: null }) as never
   );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockAssertVisible.mockResolvedValue(undefined);
+});
 
 describe("wikios page-view queries (plan 412)", () => {
   it("getPageInfo answers for a page and is NOT_FOUND for one that does not exist", async () => {
@@ -45,6 +54,16 @@ describe("wikios page-view queries (plan 412)", () => {
     await expect(caller().getPageInfo({ title: "Nowhere" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+
+  it("getPageInfo hides a deleted page from a reader who may not see it, before reading anything (plan 409)", async () => {
+    mockAssertVisible.mockRejectedValue(new TRPCError({ code: "NOT_FOUND" }));
+
+    await expect(caller().getPageInfo({ title: "Deleted page" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(mockAssertVisible).toHaveBeenCalledWith(expect.anything(), "Deleted page");
+    expect(mockPageInfo).not.toHaveBeenCalled();
   });
 
   it("listPages defaults to the main namespace, 200 pages from the start, and bounds its input", async () => {
