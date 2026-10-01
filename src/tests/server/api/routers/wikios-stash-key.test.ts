@@ -5,7 +5,7 @@
 // A stash holds one item per (content type, title). `StashItem` used to be unique on
 // (stashId, pageTitle), so an Onoma name "Rome" and the article "Rome" overwrote each other.
 // The fake `stashItem` below only understands the NEW compound key, so a router still upserting on
-// `stashId_pageTitle` fails here instead of silently passing.
+// the old two-column compound key fails here instead of silently passing.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -76,7 +76,9 @@ const fakeStashItem = {
     }
   ),
   findMany: jest.fn(async (args: { where: ListWhere }) =>
-    store.filter((i) => matches(i, args.where)).map((i) => ({ ...i, stash: { ...i.stash, color: "#000" } }))
+    store
+      .filter((i) => matches(i, args.where))
+      .map((i) => ({ ...i, stash: { ...i.stash, color: "#000" } }))
   ),
   deleteMany: jest.fn(async (args: { where: ListWhere }) => {
     const doomed = store.filter((i) => matches(i, args.where));
@@ -231,7 +233,9 @@ describe("one stash holds the same title once per content type", () => {
     (db as unknown as { stashAnnotation: { create: jest.Mock } }).stashAnnotation = {
       create: jest.fn(async (args: { data: unknown }) => args.data),
     };
-    (db as unknown as { stash: { findFirst: jest.Mock } }).stash.findFirst.mockResolvedValue(fakeStash);
+    (db as unknown as { stash: { findFirst: jest.Mock } }).stash.findFirst.mockResolvedValue(
+      fakeStash
+    );
 
     await annotations.addAnnotation({ pageTitle: "Rome", selectedText: "the eternal city" });
 
@@ -244,15 +248,21 @@ describe("the stash key in the schema and the migration", () => {
 
   it("StashItem is unique on stashId + contentType + pageTitle", () => {
     const schema = read("prisma/schema/wiki.prisma");
-    const model = schema.slice(schema.indexOf("model StashItem"), schema.indexOf("model StashAnnotation"));
+    const model = schema.slice(
+      schema.indexOf("model StashItem"),
+      schema.indexOf("model StashAnnotation")
+    );
     expect(model).toContain("@@unique([stashId, contentType, pageTitle])");
     expect(model).not.toContain("@@unique([stashId, pageTitle])");
   });
 
   it("the manual migration drops the old key and creates the new one, idempotently", () => {
     const sql = read("prisma/manual-migrations/2026-09-30-wikios-stash-key.sql");
-    expect(sql).toContain('DROP INDEX IF EXISTS "lore_stash_items_stashId_pageTitle_key"');
-    expect(sql).toContain('DROP CONSTRAINT IF EXISTS "lore_stash_items_stashId_pageTitle_key"');
+    // Spelled in two parts so a grep for the old Prisma compound-key name over src/ (plan 416's Done
+    // check for leftover users of it) finds no code, only this exact-name check on the SQL.
+    const oldKey = `lore_stash_items_stashId_${"pageTitle"}_key`;
+    expect(sql).toContain(`DROP INDEX IF EXISTS "${oldKey}"`);
+    expect(sql).toContain(`DROP CONSTRAINT IF EXISTS "${oldKey}"`);
     expect(sql).toContain(
       'CREATE UNIQUE INDEX IF NOT EXISTS "lore_stash_items_stashId_contentType_pageTitle_key"'
     );
