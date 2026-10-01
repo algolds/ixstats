@@ -2,7 +2,7 @@
  * Plan 406 follow-up: a parked revision (a MediaWiki edit that conflicted with WikiOS's head) is listed,
  * badged with Facet tokens, and never taken for the page's latest revision by the rollback button.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { ScrubbableRevisionTimeline } from "~/components/wiki-os/history/ScrubbableRevisionTimeline";
 
@@ -56,7 +56,10 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
 
     // Revision A (index 0) is the parked one and carries the badge; Revision B is not badged.
     expect(screen.getAllByText("conflict — not live")).toHaveLength(1);
-    // The picker of the comparison revision names it too.
+    // The picker of the comparison revision names it too (a Facet Select: its options show once open).
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Compare revision" }), {
+      key: "ArrowDown",
+    });
     expect(screen.getByRole("option", { name: /Latest.*conflict — not live/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /r2 • bob/ }).textContent).not.toContain("conflict");
   });

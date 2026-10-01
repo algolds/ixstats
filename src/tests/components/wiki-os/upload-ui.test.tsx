@@ -60,9 +60,11 @@ describe("the editor's image dialog", () => {
   function openUploadTab() {
     const onInsert = jest.fn();
     const onClose = jest.fn();
-    const view = render(<ImageSearchModal isOpen onClose={onClose} onInsert={onInsert} />);
-    fireEvent.click(screen.getByRole("button", { name: /upload/i }));
-    const input = view.container.querySelector('input[type="file"]') as HTMLInputElement;
+    render(<ImageSearchModal isOpen onClose={onClose} onInsert={onInsert} />);
+    // Facet 3: the dialog's Search / Upload tabs are a SegmentedControl (radio items)
+    fireEvent.click(screen.getByRole("radio", { name: /upload/i }));
+    // The dialog renders in a portal, outside the render container
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     return { onInsert, onClose, input };
   }
 

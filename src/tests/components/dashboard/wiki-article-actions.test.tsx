@@ -29,7 +29,8 @@ jest.mock("~/trpc/react", () => {
         },
         getStashes: query([]),
         get getArticleMarginData() {
-          return query({ threads: mockThreads });
+          // the server reports the open-thread count itself (the threads are one page of them)
+          return query({ threads: mockThreads, totalOpenCount: mockThreads.length });
         },
         stashPage: mutation((...args) => mockStash(...args)),
         unstashPage: mutation(),
