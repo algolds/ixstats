@@ -31,6 +31,8 @@ function matches(row: Row, where: Where): boolean {
     if (value === undefined && !("in" in condition || "not" in condition || "gt" in condition)) {
       return matches(row, condition); // a compound unique key: { source_title: { source, title } }
     }
+    if ("startsWith" in condition)
+      return String(value ?? "").startsWith(String(condition.startsWith));
     if ("in" in condition) return (condition.in as unknown[]).includes(value);
     if ("not" in condition) return value !== condition.not;
     if ("gt" in condition) return value !== null && (value as Date) > (condition.gt as Date);
@@ -146,6 +148,7 @@ export interface FakeWikiDb {
   wikiLink: Table;
   wikiLog: Table;
   wikiMirrorJob: Table;
+  wikiAsset: Table;
   wikiDiscussionThread: Table;
   wikiWatchlist: Table;
   stash: Table;
@@ -175,6 +178,14 @@ export function createFakeWikiDb() {
     wikiLink: createTable(),
     wikiLog: createTable(() => ({ comment: null, params: null, articleId: null })),
     wikiMirrorJob: createTable(() => ({ state: "pending", attempts: 0, payload: null })),
+    wikiAsset: createTable(() => ({
+      thumbnailUrl: null,
+      width: null,
+      height: null,
+      blurhash: null,
+      sha1: null,
+      uploaderId: null,
+    })),
     wikiDiscussionThread: createTable(),
     wikiWatchlist: createTable(() => ({ notificationTime: null })),
     stash: createTable(),

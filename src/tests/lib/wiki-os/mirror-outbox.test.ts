@@ -8,6 +8,7 @@ import {
   enqueueMoveJob,
   enqueueProtectJob,
   enqueueRevisionJob,
+  enqueueUploadJob,
   scheduleMirrorKick,
 } from "~/lib/wiki-os/services/mirror-outbox";
 
@@ -81,6 +82,27 @@ describe("the inserts", () => {
       ["delete", { reason: "spam" }],
       ["undelete", { reason: "spam" }],
     ]);
+  });
+
+  it("writes an upload job with the staged file's hash and the comment, tied to its File: page and log row", async () => {
+    await enqueueUploadJob(tx, {
+      title: "File:Flag.png",
+      articleId: "a1",
+      logId: "log1",
+      sha1: "x".repeat(31),
+      comment: "A new flag",
+    });
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        source: "ixwiki",
+        kind: "upload",
+        title: "File:Flag.png",
+        articleId: "a1",
+        logId: "log1",
+        payload: { sha1: "x".repeat(31), comment: "A new flag" },
+      },
+    });
   });
 
   it("writes a protect job with its restrictions, for a page that may not exist (no article id)", async () => {

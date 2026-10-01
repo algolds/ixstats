@@ -22,7 +22,6 @@ import {
   type WikiArticleEntity,
   type WikiRevisionSummary,
 } from "./domain-types";
-import { MediaAssetService } from "./media-asset-service";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import {
@@ -841,11 +840,6 @@ export class ArticleRepository {
         currentRef: toRevisionRef(result.revision),
       });
     }
-
-    // 5. Auto-register any new image references in PostgreSQL wiki_assets
-    void MediaAssetService.processContentImages(wikitext || providedHtml || "").catch((err) => {
-      console.warn("[ArticleRepository] Media asset processing failed:", err);
-    });
 
     return {
       article: toSavedEntity(result.article, fields, providedHtml, authorId),
