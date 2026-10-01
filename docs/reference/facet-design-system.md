@@ -284,7 +284,7 @@ new code uses `soundCues` or the primitives (dialogs and sheets already play pre
 
 A blocking, nonce'd script (`APPEARANCE_INIT_SCRIPT`, `src/lib/design/appearance.ts`) applies the stored preferences to
 `<html>` before first paint: `data-theme` (System default), `data-density`, `data-contrast`, `data-transparency`,
-`data-motion`, `data-sound` and `--text-scale`, plus the navigation shell's `data-nav` and `data-sidebar` (§12). Users change them in **Settings → Appearance & accessibility**; code
+`data-motion`, `data-sound` and `--text-scale`, plus the navigation shell's `data-nav` and `data-sidebar` (§12) and WikiOS's picture mode `data-media-theme` (`auto` | `plinth`, from the `wikios-media-theme-mode` key; `wiki-os/foundations.css` themes pictures by it). Users change them in **Settings → Appearance & accessibility**; code
 reads them through `useTheme()` (`src/context/theme-context.tsx`). Variants: `motion-reduce:`, `contrast-more:`,
 `transparency-reduced:`, `compact:`.
 

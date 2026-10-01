@@ -11,7 +11,8 @@
  * (+ legacy `.compact-mode` / `data-compact`), `data-motion="reduced"` (+ legacy
  * `.reduce-animations` / `data-reduce-animations`), `data-contrast="more"`,
  * `data-transparency="reduced"`, `data-sound="off"`, `--text-scale`, plus the existing
- * `data-typography`, `data-low-fidelity`, `data-enable-textures`, `data-interactive-hover`.
+ * `data-typography`, `data-low-fidelity`, `data-enable-textures`, `data-interactive-hover`. The inline
+ * script also writes `data-media-theme` (WikiOS's picture mode, `applyMediaTheme`).
  *
  * `applyAppearance` and `initAppearanceFromStorage` are serialised with Function#toString into
  * the inline script, so they must stay self-contained: no imports, no outer references, ES5-ish.
@@ -195,6 +196,35 @@ export function readNavPreferences(keys: NavStorageKeys, facetNavDefault: boolea
   };
 }
 
+/* ─── WikiOS media mode ─────────────────────────────────────────────────────────────────────── */
+
+/**
+ * The localStorage key of the reader's WikiOS media mode ("auto" | "plinth"), owned by
+ * `MEDIA_THEME_STORAGE_KEY` in `lib/wiki-os/transformers/media-theme.ts` (this design module does not
+ * import from wiki-os; `appearance.test.ts` keeps the two equal).
+ */
+export const MEDIA_THEME_KEY = "wikios-media-theme-mode";
+
+/**
+ * Writes `data-media-theme="auto" | "plinth"` onto the root element from the stored media mode, as
+ * `normalizeMediaMode` reads it: "plinth" (or its old name "plate") is plinth, and an unset key or
+ * any other value is auto. wiki-os/foundations.css themes pictures by it, so a dark-theme reader in
+ * plinth mode has the plate from the first frame, not after hydration. The stored value is only
+ * compared here, never copied into the script or the page. Self-contained (serialised).
+ */
+export function applyMediaTheme(root: HTMLElement, key: string): void {
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(key);
+  } catch {
+    stored = null;
+  }
+  root.setAttribute(
+    "data-media-theme",
+    stored === "plinth" || stored === "plate" ? "plinth" : "auto"
+  );
+}
+
 /** Inline, render-blocking `<head>` script body. Must carry the CSP nonce. */
 export const APPEARANCE_INIT_SCRIPT =
   `try{(${initAppearanceFromStorage.toString()})(${JSON.stringify(
@@ -202,4 +232,5 @@ export const APPEARANCE_INIT_SCRIPT =
   )},${applyAppearance.toString()})}catch(e){}` +
   `try{(${applyNavPreferences.toString()})(document.documentElement,(${readNavPreferences.toString()})(${JSON.stringify(
     NAV_STORAGE_KEYS
-  )},${JSON.stringify(FACET_NAV_DEFAULT)}))}catch(e){}`;
+  )},${JSON.stringify(FACET_NAV_DEFAULT)}))}catch(e){}` +
+  `try{(${applyMediaTheme.toString()})(document.documentElement,${JSON.stringify(MEDIA_THEME_KEY)})}catch(e){}`;
