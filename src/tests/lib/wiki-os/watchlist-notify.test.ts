@@ -248,11 +248,11 @@ describe("notifyWatchers", () => {
     const findMany = jest.mocked(db.wikiWatchlist.findMany);
     const listWatchers = findMany.getMockImplementation()!;
     // Between this change reading its watchers and claiming them, another change claims u_b.
-    findMany.mockImplementationOnce(async (args) => {
+    findMany.mockImplementationOnce((async (args: Parameters<typeof listWatchers>[0]) => {
       const rows = await listWatchers(args);
       watches.find((w) => w.userId === "u_b")!.notificationTime = new Date(0);
       return rows;
-    });
+    }) as typeof listWatchers);
 
     expect(await edit()).toBe(2);
 
