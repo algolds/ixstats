@@ -1,158 +1,50 @@
 /**
  * src/lib/wiki-os/services/auto-sync-service.ts — WikiOS recent-changes sync
  *
- * Reads MediaWiki recentchanges and incrementally synchronizes articles, revisions, and
- * categories into PostgreSQL. runAutoSyncCycle runs from the `wiki-recentchanges` cron job
- * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no
- * in-process daemon.
+ * Reads MediaWiki recent changes and log events and brings them into PostgreSQL in the order they
+ * happened, one at a time. A revision made on top of WikiOS's head is imported, WikiOS's own edits
+ * coming back are recognised, and a revision that conflicts is parked (inbound-revision-sync.ts holds
+ * the rule); deletes, moves, protections, blocks and rights changes are applied from the log
+ * (inbound-log-events.ts). runAutoSyncCycle runs from the `wiki-recentchanges` cron job
+ * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no in-process daemon.
+ *
+ * One sync runs at a time across processes (a Postgres advisory lock): revisions of a page must be
+ * applied in order, and the cron job, the webhook and the reader's import must not interleave. A failure
+ * is logged and counted, never swallowed; each cycle leaves its outcome in SystemConfig for the health
+ * telemetry (`getInboundSyncStatus`).
  */
 
+import { z } from "zod";
 import { db } from "~/server/db";
-import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
-import { extractLeadImageFromWikitext } from "../transformers/image-url";
-import { toArticleSlug, toRevisionRef } from "../core/domain-types";
-import { parseRedirect } from "../core/redirect";
-import { canonicalizeTitle, storedNamespace } from "../core/title";
-import { DEFAULT_USER_AGENT } from "../config";
-import { enqueueRender } from "./render-service";
-import { notifyWatchers } from "./watchlist-notify";
-
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
-
-function sanitize(str: string | null | undefined): string {
-  if (!str) return "";
-  return str.replace(/\0/g, "").replace(/\u0000/g, "");
-}
-
-export function isIrlOrMaintenanceCategory(name: string): boolean {
-  if (!name) return true;
-  const lower = name.toLowerCase().replace(/_/g, " ").trim();
-
-  // 0. Malformed URLs, embedded links, or HTML/wikitext artifacts
-  if (
-    lower.includes("http:") ||
-    lower.includes("https:") ||
-    lower.includes("://") ||
-    lower.includes(".com") ||
-    lower.includes(".org") ||
-    lower.includes(".net") ||
-    lower.includes("www.") ||
-    lower.includes("%2f") ||
-    lower.includes("%3a") ||
-    /[<>{}[\]%]/.test(name)
-  ) {
-    return true;
-  }
-
-  // 1. Template, Module, Navbox, Infobox, WikiProject, Glottolog, Maintenance tags
-  if (
-    lower.includes("template") ||
-    lower.includes("infobox") ||
-    lower.includes("navbox") ||
-    lower.includes("navigational") ||
-    lower.includes("wikiproject") ||
-    lower.includes("glottolog") ||
-    lower.includes("module:") ||
-    lower.includes("user:") ||
-    lower.includes("portal:") ||
-    lower.includes("wikipedia:") ||
-    lower.includes("help:") ||
-    lower.includes("disambiguation") ||
-    lower.includes("redirects") ||
-    lower.includes("tracking") ||
-    lower.includes("maintenance") ||
-    lower.includes("cleanup") ||
-    lower.includes("unreferenced") ||
-    lower.includes("stub") ||
-    lower.includes("stubs")
-  ) {
-    return true;
-  }
-
-  // 2. Real-World Births and Deaths
-  if (
-    /\b\d{1,4}\s+(?:births|deaths)\b/i.test(lower) ||
-    /\b(?:century|millennium)\s+(?:births|deaths)\b/i.test(lower) ||
-    lower === "births" ||
-    lower === "deaths" ||
-    lower === "living people" ||
-    lower === "missing people" ||
-    lower === "fat people" ||
-    lower.startsWith("people executed") ||
-    lower.startsWith("deaths from") ||
-    lower.startsWith("buried at")
-  ) {
-    return true;
-  }
-
-  // 3. Authority Control & Library Identifiers
-  if (
-    lower.includes("identifiers") ||
-    lower.includes("viaf") ||
-    lower.includes("bnf") ||
-    lower.includes("lccn") ||
-    lower.includes("gnd") ||
-    lower.includes("isni") ||
-    lower.includes("fast") ||
-    lower.includes("nla") ||
-    lower.includes("ndl") ||
-    lower.includes("worldcat")
-  ) {
-    return true;
-  }
-
-  // 4. Citation Style 1 (CS1) & Template Tracking
-  if (
-    lower.startsWith("cs1") ||
-    lower.includes("citation") ||
-    lower.includes("citations using") ||
-    lower.includes("webarchive") ||
-    lower.includes("wayback") ||
-    lower.includes("short description") ||
-    lower.includes("script errors") ||
-    lower.includes("duplicate arguments")
-  ) {
-    return true;
-  }
-
-  // 5. Language & Microformats
-  if (
-    lower.startsWith("articles containing") ||
-    lower.startsWith("articles with") ||
-    lower.startsWith("articles needing") ||
-    lower.includes("hcards") ||
-    lower.includes("lang-")
-  ) {
-    return true;
-  }
-
-  // 6. Real-World IRL Country / Political Entities (excluding IxWorld lore)
-  const irlRegex =
-    /\b(?:iran|iranian|portugal|portuguese|north america|south america|united states|u\.s\.|usa|russia|russian|china|chinese|germany|german|france|french|spain|spanish|italy|italian|japan|japanese|india|indian|brazil|brazilian|mexico|mexican|turkey|turkish|egypt|egyptian|israel|israeli|saudi|syria|syrian|iraq|iraqi|korea|korean|vietnam|vietnamese|netherlands|dutch|belgium|belgian|sweden|swedish|norway|norwegian|denmark|danish|finland|finnish|poland|polish|ukraine|ukrainian|canada|canadian|australia|australian|new zealand|argentina|chile|colombia|venezuela|peru|cuba|south africa|nigeria|kenya|ghana|morocco|algeria|tunisia|ethiopia|philippines|indonesia|malaysia|thailand|singapore|pakistan|bangladesh|ireland|irish|scotland|scottish|wales|welsh|england|english|united kingdom|british|austria|austrian|switzerland|swiss|greece|greek|hungary|hungarian|romania|romanian|bulgaria|serbia|croatia|czech|slovakia|albania|iceland|estonia|latvia|lithuania|taiwan|hong kong|latter day saint)\b/i;
-  if (irlRegex.test(lower)) {
-    return true;
-  }
-
-  // 7. Wikidata & Bot Maintenance
-  if (
-    lower.includes("wikidata") ||
-    lower.includes("templatedata") ||
-    lower.startsWith("pages ") ||
-    lower.startsWith("ixwb")
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-let isSyncing = false;
+import { withJobLock } from "~/lib/system/job-lock";
+import {
+  fetchLogEventsPage,
+  fetchRecentChangesPage,
+  plainTitle,
+  type ListPage,
+  type LogEvent,
+  type RecentChange,
+} from "./inbound-mediawiki";
+import { applyLogEvent } from "./inbound-log-events";
+import {
+  readRepushSkipped,
+  repushSkippedParks,
+  syncLatestRevision,
+  syncRevisionById,
+  type RevisionOutcome,
+} from "./inbound-revision-sync";
 
 export interface AutoSyncStats {
+  /** Recent changes and log events read in the last cycle. */
   pagesChecked: number;
   pagesUpdated: number;
   revisionsCreated: number;
+  /** Log events applied (a delete, move, protection, block or rights change). */
+  eventsApplied: number;
+  /** Reads and steps that failed in the last cycle (each is retried by the next one). */
+  failures: number;
+  /** The last failure of the last cycle that had one; null after a clean cycle. */
+  lastError: string | null;
   lastRunAt: Date | null;
 }
 
@@ -160,375 +52,403 @@ const lastStats: AutoSyncStats = {
   pagesChecked: 0,
   pagesUpdated: 0,
   revisionsCreated: 0,
+  eventsApplied: 0,
+  failures: 0,
+  lastError: null,
   lastRunAt: null,
 };
 
-/** Sync one page; never throws (returns false on any failure). */
+/** The advisory lock every sync takes (see `withJobLock`: held by an open transaction, released with it). */
+const INBOUND_LOCK = "wikios-inbound-sync";
+/** A cycle's lock is held at most this long (its cron job is cut off at 10 minutes). */
+const CYCLE_LOCK_TIMEOUT_MS = 12 * 60_000;
+/** A cycle starts no new step after this long: it must end well inside the lock above, with its marks correct. */
+const CYCLE_STEP_BUDGET_MS = 9 * 60_000;
+/** A cycle that finds the lock taken (a webhook's import, a reader's) tries again this many times, this far apart. */
+const LOCK_RETRIES = 3;
+const LOCK_RETRY_WAIT_MS = 2_000;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const SINGLE_PAGE_LOCK_TIMEOUT_MS = 60_000;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** Count a failure: it is logged where it happened, and the cycle's stats and status keep the last one. */
+function recordFailure(what: string, err: unknown): void {
+  lastStats.failures++;
+  lastStats.lastError = `${what}: ${errorMessage(err)}`;
+}
+
+/** Outcomes that left WikiOS with a new revision. */
+const CREATED: ReadonlySet<RevisionOutcome> = new Set(["fast-forward", "parked"]);
+/** Outcomes after which the page exists in WikiOS as MediaWiki has it (or as WikiOS keeps it). */
+const SYNCED: ReadonlySet<RevisionOutcome> = new Set(["known", "echo", "fast-forward", "parked"]);
+
+/**
+ * Sync one page's newest revision (the webhook, the reader's import of a page Postgres lacks). Takes
+ * the same lock as the cycle, without waiting: false when a sync is running (the cycle will pick the
+ * page up). Never throws: false on any failure, when MediaWiki has no such page, and when the revision
+ * is a conflict, which the ordered cycle parks.
+ */
 export async function syncSinglePage(title: string): Promise<boolean> {
   try {
-    return await syncPageOrThrow(title);
+    const outcome = await withJobLock(db, INBOUND_LOCK, () => syncLatestRevision(title), {
+      timeoutMs: SINGLE_PAGE_LOCK_TIMEOUT_MS,
+    });
+    return outcome.ran && SYNCED.has(outcome.result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[WikiAutoSync] Error syncing page "${title}":`, message);
+    console.error(`[WikiAutoSync] Error syncing page "${title}":`, errorMessage(err));
     return false;
   }
 }
 
-/**
- * Sync one page's current revision. Returns false when there is nothing to sync (empty title,
- * missing/deleted page); throws on HTTP or database failure so callers can retry later.
- */
-async function syncPageOrThrow(title: string): Promise<boolean> {
-  const rawTitle = sanitize(title.replace(/_/g, " ").trim());
-  const canon = canonicalizeTitle(rawTitle);
-  if (!canon) return false;
+/** SystemConfig keys holding the timestamp of the newest recent change / log event already synced. */
+const RC_HWM_KEY = "wikiAutoSync.rcHighWater";
+const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
+/** Entries per request once a high-water mark exists. */
+const PAGE_LIMIT = 50;
+/** Most pages followed (via the continue token) in one cycle, per list. */
+const MAX_LIST_PAGES = 10;
 
-  const url = new URL(API_URL);
-  url.searchParams.set("action", "query");
-  url.searchParams.set("titles", rawTitle);
-  url.searchParams.set("prop", "revisions|info");
-  url.searchParams.set("rvprop", "content|ids|timestamp|user|comment|size|flags");
-  url.searchParams.set("rvslots", "main");
-  url.searchParams.set("format", "json");
-
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!res.ok) throw new Error(`MediaWiki returned HTTP ${res.status}`);
-  const data = await res.json();
-  const pages = data?.query?.pages;
-  if (!pages) return false;
-
-  const page = Object.values(pages)[0] as any;
-  if (!page || page.pageid === undefined || page.missing !== undefined) return false;
-
-  const rev = page.revisions?.[0];
-  const wikitext = sanitize(rev?.slots?.main?.["*"] || rev?.["*"] || "");
-  const words = wikitext.split(/\s+/).filter(Boolean).length;
-  const readingTime = Math.max(1, Math.ceil(words / 200));
-  const author = sanitize(rev?.user || "MediaWiki Editor");
-  const revId = Number(rev?.revid || page.lastrevid || 0);
-  const revTimestamp = rev?.timestamp ? new Date(rev.timestamp) : new Date();
-  const cleanSum = cleanExcerpt(wikitext, 300);
-  const summary = cleanSum ? cleanSum.substring(0, 480) : null;
-  const leadImageUrl = extractLeadImageFromWikitext(wikitext);
-  const redirect = parseRedirect(wikitext);
-  const redirectTargetSlug = redirect?.title ?? null;
-  const redirectTargetFragment = redirect?.fragment ?? null;
-  const { slug, title: articleTitle } = canon;
-  // MediaWiki's namespace wins where the canonical table has no prefix for it ("Portal:" is ns 100).
-  const { namespaceId, namespacePrefix } = storedNamespace(canon, Number(page.ns || 0));
-
-  // When the wikitext changes the rendered view goes stale (`htmlSyncedAt: null`) or MediaWiki-side
-  // edits never show (NEW-2); the previous view keeps being served until the queued render lands.
-  const previous = await db.wikiArticle.findUnique({
-    where: { source_title: { source: "ixwiki", title: articleTitle } },
-    select: { wikitext: true },
-  });
-  const wikitextChanged = !previous || previous.wikitext !== wikitext;
-
-  const article = await (db as any).wikiArticle.upsert({
-    where: {
-      source_title: { source: "ixwiki", title: articleTitle },
-    },
-    create: {
-      title: articleTitle,
-      slug,
-      source: "ixwiki",
-      namespace: namespaceId,
-      namespacePrefix,
-      status: "PUBLISHED",
-      format: "WIKITEXT",
-      wikitext,
-      summary,
-      redirectTargetSlug,
-      redirectTargetFragment,
-      leadImageUrl: leadImageUrl || null,
-      wordCount: words,
-      readingTime,
-      mwPageId: Number(page.pageid),
-      mwLatestRevId: revId,
-      syncedAt: new Date(),
-    },
-    update: {
-      slug,
-      namespace: namespaceId,
-      namespacePrefix,
-      wikitext,
-      ...(wikitextChanged ? { htmlSyncedAt: null } : {}),
-      summary,
-      redirectTargetSlug,
-      redirectTargetFragment,
-      leadImageUrl: leadImageUrl || null,
-      wordCount: words,
-      readingTime,
-      mwPageId: Number(page.pageid),
-      mwLatestRevId: revId,
-      syncedAt: new Date(),
-    },
-    select: { id: true },
-  });
-  // Inbound sync is a backlog: an editor's save renders before it.
-  if (wikitextChanged) enqueueRender(article.id, { background: true });
-
-  // Record revision; (source, mwRevId) is unique, so a known revision is skipped by the DB.
-  if (revId > 0) {
-    const rawByteSize = calculateRawTextBytes(wikitext);
-    const prevRev = await db.wikiRevision.findFirst({
-      where: { articleId: article.id },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, mwRevId: true, byteSize: true },
-    });
-
-    const byteDelta = prevRev ? rawByteSize - (prevRev.byteSize || 0) : rawByteSize;
-
-    const recorded = await db.wikiRevision.createMany({
-      data: [
-        {
-          articleId: article.id,
-          mwRevId: revId,
-          author,
-          summary: sanitize(rev?.comment || "").substring(0, 480),
-          wikitext,
-          byteSize: rawByteSize,
-          byteDelta,
-          minor: Boolean(rev?.minor !== undefined),
-          format: "WIKITEXT",
-          source: "ixwiki",
-          createdAt: revTimestamp,
-        },
-      ],
-      skipDuplicates: true,
-    });
-
-    // watchlist: a MediaWiki edit that changed the text is a new head: tell the page's watchers (once
-    // each until they visit). Plan 406 rewrites this function; keep this call where the head changes.
-    if (wikitextChanged && recorded.count > 0) {
-      void notifyWatchers({
-        kind: "edited",
-        articleId: article.id,
-        title: articleTitle,
-        editor: author,
-        editorWikiUsername: author,
-        summary: sanitize(rev?.comment || ""),
-        previousRef: prevRev ? toRevisionRef(prevRev) : null,
-        currentRef: String(revId),
-      });
-    }
-  }
-
-  // Parse category tags and sync memberships
-  const catMatches = wikitext.match(/\[\[Category:([^\]|]+)(?:\|[^\]]*)?\]\]/gi) || [];
-  for (const match of catMatches) {
-    const catName = match
-      .replace(/\[\[Category:/i, "")
-      .replace(/\]\]$/, "")
-      .split("|")[0]
-      ?.trim();
-    if (!catName || isIrlOrMaintenanceCategory(catName)) continue;
-
-    const catSlug = toArticleSlug(catName);
-    const category = await (db as any).wikiCategory.upsert({
-      where: { slug: catSlug },
-      create: {
-        slug: catSlug,
-        name: catName.replace(/_/g, " "),
-      },
-      update: {},
-      select: { id: true },
-    });
-
-    await (db as any).wikiCategoryMember.upsert({
-      where: {
-        categoryId_articleId: {
-          categoryId: category.id,
-          articleId: article.id,
-        },
-      },
-      create: {
-        articleId: article.id,
-        categoryId: category.id,
-      },
-      update: {},
-    });
-  }
-
-  return true;
-}
-
-/** SystemConfig key holding the timestamp of the newest recent change already synced. */
-const HWM_KEY = "wikiAutoSync.rcHighWater";
-/** Changes per recentchanges request once a high-water mark exists. */
-const RC_PAGE_LIMIT = 50;
-/** Most recentchanges pages followed (via rccontinue) in one cycle. */
-const MAX_RC_PAGES = 10;
-
-interface RecentChange {
-  title: string;
-  revid: number;
-  timestamp: string;
-}
-
-interface RecentChangesResponse {
-  query?: { recentchanges?: Array<{ title?: string; revid?: number; timestamp?: string }> };
-  continue?: Record<string, string>;
-}
-
-interface RecentChangesPage {
-  changes: RecentChange[];
-  next: Record<string, string> | null;
-}
-
-async function readHighWater(): Promise<string | null> {
-  const row = await db.systemConfig.findUnique({
-    where: { key: HWM_KEY },
-    select: { value: true },
-  });
+async function readHighWater(key: string): Promise<string | null> {
+  const row = await db.systemConfig.findUnique({ where: { key }, select: { value: true } });
   return row?.value || null;
 }
 
-async function writeHighWater(value: string): Promise<void> {
-  await db.systemConfig.upsert({
-    where: { key: HWM_KEY },
-    create: { key: HWM_KEY, value },
-    update: { value },
-  });
+async function writeHighWater(key: string, value: string): Promise<void> {
+  await db.systemConfig.upsert({ where: { key }, create: { key, value }, update: { value } });
 }
 
-/** One recentchanges request; null when MediaWiki answers with an HTTP error. */
-async function fetchRecentChangesPage(
-  params: Record<string, string>
-): Promise<RecentChangesPage | null> {
-  const rcUrl = new URL(API_URL);
-  rcUrl.searchParams.set("action", "query");
-  rcUrl.searchParams.set("list", "recentchanges");
-  rcUrl.searchParams.set("rcprop", "title|user|timestamp|comment|sizes|flags|ids");
-  rcUrl.searchParams.set("rcnamespace", "0|1|2|4|10|14");
-  rcUrl.searchParams.set("format", "json");
-  for (const [key, value] of Object.entries(params)) rcUrl.searchParams.set(key, value);
+/** The log mark is "<timestamp>|<log id>": events at the mark's second up to that id are done (applied, or skipped for good). */
+const LOG_MARK_SEPARATOR = "|";
 
-  const res = await fetch(rcUrl.toString(), {
-    headers: { "User-Agent": DEFAULT_USER_AGENT, Accept: "application/json" },
-    signal: AbortSignal.timeout(12000),
-  });
-  if (!res.ok) return null;
+interface LogMark {
+  timestamp: string;
+  logid: number | null;
+}
 
-  const data = (await res.json()) as RecentChangesResponse;
-  const changes = (data.query?.recentchanges ?? []).map((rc) => ({
-    title: sanitize(
-      String(rc.title ?? "")
-        .replace(/_/g, " ")
-        .trim()
-    ),
-    revid: Number(rc.revid ?? 0),
-    timestamp: String(rc.timestamp ?? ""),
-  }));
-  return { changes, next: data.continue ?? null };
+function parseLogMark(value: string | null): LogMark | null {
+  if (!value) return null;
+  const [timestamp = "", id] = value.split(LOG_MARK_SEPARATOR);
+  const logid = Number(id);
+  return { timestamp, logid: id !== undefined && Number.isInteger(logid) ? logid : null };
 }
 
 /**
- * Recent changes to sync, oldest first. Without a high-water mark only the latest `limit`
- * changes are read; with one, every change since it (up to MAX_RC_PAGES pages).
+ * The events the mark has not covered. A list read from a timestamp starts at that second, so its last
+ * event(s) come back; an event skipped on purpose leaves no log row to recognise it by, so the id says it is done.
  */
-async function collectRecentChanges(
+function pastMark(events: LogEvent[], mark: LogMark | null): LogEvent[] {
+  const doneUpTo = mark?.logid;
+  if (!mark || doneUpTo === null || doneUpTo === undefined) return events;
+  return events.filter((event) => event.timestamp !== mark.timestamp || event.logid > doneUpTo);
+}
+
+/**
+ * Entries of a MediaWiki list to sync, oldest first. Without a high-water mark only the latest `limit`
+ * are read; with one, every entry since it (up to MAX_LIST_PAGES pages). `names` is the list's own
+ * parameter prefix ("rc" for recentchanges, "le" for logevents).
+ */
+async function collectList<T>(
   highWater: string | null,
-  limit: number
-): Promise<RecentChange[]> {
+  limit: number,
+  prefix: "rc" | "le",
+  fetchPage: (params: Record<string, string>) => Promise<ListPage<T>>
+): Promise<T[]> {
   if (!highWater) {
-    const latest = await fetchRecentChangesPage({ rclimit: String(limit) });
-    return (latest?.changes ?? []).reverse();
+    const latest = await fetchPage({ [`${prefix}limit`]: String(limit) });
+    return latest.entries.reverse();
   }
 
-  const changes: RecentChange[] = [];
+  const entries: T[] = [];
   let params: Record<string, string> = {
-    rcdir: "newer",
-    rcstart: highWater,
-    rclimit: String(RC_PAGE_LIMIT),
+    [`${prefix}dir`]: "newer",
+    [`${prefix}start`]: highWater,
+    [`${prefix}limit`]: String(PAGE_LIMIT),
   };
-  for (let pageCount = 0; pageCount < MAX_RC_PAGES; pageCount++) {
-    const page = await fetchRecentChangesPage(params);
-    if (!page) break;
-    changes.push(...page.changes);
+  for (let pageCount = 0; pageCount < MAX_LIST_PAGES; pageCount++) {
+    const page = await fetchPage(params);
+    entries.push(...page.entries);
     if (!page.next) break;
     params = { ...params, ...page.next };
   }
-  return changes;
+  return entries;
 }
 
-/** True when the change's page was newly synced; throws when its sync failed. */
-async function syncChange(rc: RecentChange, syncedTitles: Set<string>): Promise<boolean> {
-  if (!rc.title || rc.revid <= 0 || syncedTitles.has(rc.title)) return false;
+type Stream = "edits" | "log";
 
-  const existing = await db.wikiRevision.findFirst({
-    where: { source: "ixwiki", mwRevId: rc.revid },
-    select: { id: true },
-  });
-  if (existing) return false;
+interface StepResult {
+  /** The step left WikiOS with a new revision / a changed page / an applied log event. */
+  created: number;
+  updated: number;
+  applied: number;
+}
 
-  // The export worker records the bot revision it pushed as the article's mwLatestRevId; that
-  // revision is a WikiOS edit already held in Postgres, not a new MediaWiki-side change (NEW-4).
-  const exportedEcho = await db.wikiArticle.findFirst({
-    where: { source: "ixwiki", mwLatestRevId: rc.revid },
-    select: { id: true },
-  });
-  if (exportedEcho) return false;
+/** One recent change or log event, in the order MediaWiki recorded it. */
+interface SyncStep {
+  stream: Stream;
+  timestamp: string;
+  /** What the stream's high-water mark becomes once this step is done (a timestamp, for the log with its id). */
+  mark: string;
+  /** What a failure holds back: later steps about the same page wait for the retry. */
+  subject: string;
+  label: string;
+  run: () => Promise<StepResult>;
+}
 
-  syncedTitles.add(rc.title);
-  return syncPageOrThrow(rc.title);
+const NOTHING: StepResult = { created: 0, updated: 0, applied: 0 };
+
+function editStep(rc: RecentChange): SyncStep {
+  return {
+    stream: "edits",
+    timestamp: rc.timestamp,
+    mark: rc.timestamp,
+    subject: plainTitle(rc.title),
+    label: rc.title,
+    run: async () => {
+      const outcome = await syncRevisionById(rc.revid);
+      return {
+        created: CREATED.has(outcome) ? 1 : 0,
+        updated: outcome === "fast-forward" ? 1 : 0,
+        applied: 0,
+      };
+    },
+  };
+}
+
+function logStep(event: LogEvent): SyncStep {
+  return {
+    stream: "log",
+    timestamp: event.timestamp,
+    mark: `${event.timestamp}${LOG_MARK_SEPARATOR}${event.logid}`,
+    subject: plainTitle(event.title),
+    label: `${event.type}/${event.action} ${event.title}`,
+    run: async () => ({ ...NOTHING, applied: (await applyLogEvent(event)) === "applied" ? 1 : 0 }),
+  };
 }
 
 /**
- * Sync changes in order. The returned high-water mark never passes a failed change, so the
- * failure is retried next cycle.
+ * The order MediaWiki recorded things in: by time, and a log event before an edit of the same second
+ * (a page deleted and created again, a page moved over its redirect, is deleted or moved first).
  */
-async function syncChanges(
-  changes: RecentChange[]
-): Promise<{ updated: number; highWater: string | null }> {
-  const syncedTitles = new Set<string>();
-  let updated = 0;
-  let highWater: string | null = null;
-  let failed = false;
-
-  for (const rc of changes) {
-    try {
-      if (await syncChange(rc, syncedTitles)) updated++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[WikiAutoSync] Error syncing page "${rc.title}":`, message);
-      failed = true;
-    }
-    if (!failed && rc.timestamp) highWater = rc.timestamp;
-  }
-
-  return { updated, highWater };
+function chronological(steps: SyncStep[]): SyncStep[] {
+  const rank = (step: SyncStep) => (step.stream === "log" ? 0 : 1);
+  return [...steps].sort((a, b) =>
+    a.timestamp === b.timestamp ? rank(a) - rank(b) : a.timestamp < b.timestamp ? -1 : 1
+  );
 }
 
-export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
-  if (isSyncing) return lastStats;
-  isSyncing = true;
+interface StepsResult extends StepResult {
+  highWater: Record<Stream, string | null>;
+}
 
+/**
+ * Run the steps in order until `deadline`. A stream's high-water mark never passes a step that was not
+ * applied: not a failed one (retried next cycle), not one held back because an earlier step about the same
+ * page failed (applied before the revision it builds on, it would be wrong), and not one the deadline cut
+ * off. Steps about other pages still run after a failure.
+ */
+async function runSteps(steps: SyncStep[], deadline: number): Promise<StepsResult> {
+  const result: StepsResult = { ...NOTHING, highWater: { edits: null, log: null } };
+  const blocked = new Set<string>();
+  const failedStreams = new Set<Stream>();
+
+  for (const step of chronological(steps)) {
+    if (Date.now() >= deadline) {
+      console.warn(
+        "[WikiAutoSync] The cycle's time budget is spent: the rest waits for the next one."
+      );
+      break;
+    }
+    if (blocked.has(step.subject)) {
+      failedStreams.add(step.stream);
+    } else {
+      try {
+        const done = await step.run();
+        result.created += done.created;
+        result.updated += done.updated;
+        result.applied += done.applied;
+      } catch (err) {
+        console.error(`[WikiAutoSync] Error syncing ${step.label}:`, errorMessage(err));
+        recordFailure(step.label, err);
+        blocked.add(step.subject);
+        failedStreams.add(step.stream);
+      }
+    }
+    if (!failedStreams.has(step.stream) && step.timestamp) {
+      result.highWater[step.stream] = step.mark;
+    }
+  }
+  return result;
+}
+
+/**
+ * `collectList` that never throws: a list that cannot be read is a failure of this cycle, and the stream
+ * simply has nothing to do (its high-water mark stays), so the other stream still runs.
+ */
+async function collectOrNothing<T>(what: string, collect: () => Promise<T[]>): Promise<T[]> {
   try {
-    const previousHighWater = await readHighWater();
-    const changes = await collectRecentChanges(previousHighWater, limit);
-    lastStats.pagesChecked = changes.length;
+    return await collect();
+  } catch (err) {
+    console.error(`[WikiAutoSync] Could not read ${what}:`, errorMessage(err));
+    recordFailure(`reading ${what}`, err);
+    return [];
+  }
+}
 
-    const { updated, highWater } = await syncChanges(changes);
-    if (highWater && highWater !== previousHighWater) await writeHighWater(highWater);
-
-    lastStats.pagesUpdated = updated;
-    lastStats.lastRunAt = new Date();
-    if (updated > 0) {
+/** One cycle; the lock is held by the caller. Never throws: whatever fails is counted. */
+async function runCycle(limit: number): Promise<void> {
+  lastStats.failures = 0;
+  lastStats.lastError = null;
+  try {
+    // A mirror account configured since parks went without a re-push: push those heads now.
+    const repushed = await repushSkippedParks();
+    if (repushed > 0) {
       console.log(
-        `[WikiAutoSync] 🔄 Auto-synced ${updated} new edits from MediaWiki into PostgreSQL.`
+        `[WikiAutoSync] Pushed ${repushed} articles back to MediaWiki that were parked without a re-push.`
       );
     }
-  } catch {
-    // Non-fatal background polling error
-  } finally {
-    isSyncing = false;
-  }
+    const deadline = Date.now() + CYCLE_STEP_BUDGET_MS;
+    const [rcMark, logMarkValue] = await Promise.all([
+      readHighWater(RC_HWM_KEY),
+      readHighWater(LOG_HWM_KEY),
+    ]);
+    const logMark = parseLogMark(logMarkValue);
+    const changes = await collectOrNothing("recent changes", () =>
+      collectList(rcMark, limit, "rc", fetchRecentChangesPage)
+    );
+    const events = pastMark(
+      await collectOrNothing("log events", () =>
+        collectList(logMark?.timestamp ?? null, limit, "le", fetchLogEventsPage)
+      ),
+      logMark
+    );
+    lastStats.pagesChecked = changes.length + events.length;
 
+    const done = await runSteps([...changes.map(editStep), ...events.map(logStep)], deadline);
+    if (done.highWater.edits && done.highWater.edits !== rcMark) {
+      await writeHighWater(RC_HWM_KEY, done.highWater.edits);
+    }
+    if (done.highWater.log && done.highWater.log !== logMarkValue) {
+      await writeHighWater(LOG_HWM_KEY, done.highWater.log);
+    }
+
+    lastStats.pagesUpdated = done.updated;
+    lastStats.revisionsCreated = done.created;
+    lastStats.eventsApplied = done.applied;
+    if (done.created + done.applied > 0) {
+      console.log(
+        `[WikiAutoSync] Synced ${done.created} revisions and ${done.applied} log events from MediaWiki into PostgreSQL.`
+      );
+    }
+  } catch (err) {
+    console.error("[WikiAutoSync] Cycle failed:", errorMessage(err));
+    recordFailure("cycle", err);
+  }
+  lastStats.lastRunAt = new Date();
+  await writeStatus();
+}
+
+/**
+ * One sync cycle, unless another sync keeps running (in this or any other process) through three retries
+ * 2 s apart: then the last stats are returned and nothing is read. Never throws.
+ */
+export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
+  try {
+    // A single-page import (the webhook, a reader) holds the lock for a moment: wait for it a little
+    // rather than skip a whole cycle.
+    for (let attempt = 0; attempt <= LOCK_RETRIES; attempt++) {
+      const outcome = await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), {
+        timeoutMs: CYCLE_LOCK_TIMEOUT_MS,
+      });
+      if (outcome.ran || attempt === LOCK_RETRIES) break;
+      await sleep(LOCK_RETRY_WAIT_MS);
+    }
+  } catch (err) {
+    // The lock itself could not be taken (the database is down): nothing ran.
+    console.error("[WikiAutoSync] Could not start a cycle:", errorMessage(err));
+    recordFailure("starting the cycle", err);
+  }
   return lastStats;
+}
+
+// ---------------------------------------------------------------------------
+// Status for the health telemetry
+// ---------------------------------------------------------------------------
+
+const STATUS_KEY = "wikiAutoSync.status";
+/** A cycle that has not run for this long means the cron job is not running. */
+const STALE_AFTER_MS = 60 * 60_000;
+
+const storedStatusSchema = z.object({
+  lastRunAt: z.string(),
+  failures: z.number(),
+  lastError: z.string().nullable(),
+});
+
+export interface InboundSyncStatus {
+  /**
+   * UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures, or an
+   * edit was parked and WikiOS's text could not be pushed back (no mirror account configured).
+   */
+  status: "ACTIVE" | "DEGRADED" | "STALE" | "UNKNOWN";
+  lastRunAt: string | null;
+  failures: number;
+  lastError: string | null;
+  /** Articles parked without a re-push because WIKIOS_MEDIAWIKI_BOT_USER is not set: MediaWiki holds an edit WikiOS keeps out. */
+  repushSkipped: string[];
+}
+
+/** What the last cycle left behind. Best effort: the sync does not depend on its own telemetry. */
+async function writeStatus(): Promise<void> {
+  const value = JSON.stringify({
+    lastRunAt: lastStats.lastRunAt?.toISOString(),
+    failures: lastStats.failures,
+    lastError: lastStats.lastError,
+  });
+  try {
+    await db.systemConfig.upsert({
+      where: { key: STATUS_KEY },
+      create: { key: STATUS_KEY, value },
+      update: { value },
+    });
+  } catch (err) {
+    console.error("[WikiAutoSync] Could not store the sync status:", errorMessage(err));
+  }
+}
+
+/** Whether the inbound sync is running and how its last cycle went (read from the database, so any process can ask). */
+export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyncStatus> {
+  const row = await db.systemConfig.findUnique({
+    where: { key: STATUS_KEY },
+    select: { value: true },
+  });
+  const repushSkipped = await readRepushSkipped();
+  const unknown: InboundSyncStatus = {
+    status: "UNKNOWN",
+    lastRunAt: null,
+    failures: 0,
+    lastError: null,
+    repushSkipped,
+  };
+  if (!row) return unknown;
+
+  let stored: z.infer<typeof storedStatusSchema>;
+  try {
+    stored = storedStatusSchema.parse(JSON.parse(row.value));
+  } catch {
+    return unknown;
+  }
+  const age = now.getTime() - new Date(stored.lastRunAt).getTime();
+  const degraded = stored.failures > 0 || repushSkipped.length > 0;
+  const status = age > STALE_AFTER_MS ? "STALE" : degraded ? "DEGRADED" : "ACTIVE";
+  return {
+    status,
+    lastRunAt: stored.lastRunAt,
+    failures: stored.failures,
+    lastError: stored.lastError,
+    repushSkipped,
+  };
 }

@@ -169,6 +169,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
             minor: Boolean(c.rev_minor_edit ?? c.minor),
             diff: c.diff ?? 0,
             isNew: Boolean(c.is_new ?? c.isNew),
+            parked: c.parked === true,
           })),
           continueToken:
             contribs.length >= input.limit && contribs.length > 0
@@ -204,6 +205,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         size: rev.byteSize,
         minor: rev.minor,
         isNew: !rev.parentRevisionId,
+        parked: rev.parked,
       }));
 
       return {

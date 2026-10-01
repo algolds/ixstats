@@ -57,6 +57,7 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
             newLen,
             blurb: blurb || null,
             thumbnail: r.article.leadImageUrl || null,
+            parked: r.parked === true,
           };
         });
     }
@@ -115,6 +116,8 @@ export async function ixwikiGetHistory(
     rev_len: number;
     rev_minor_edit: number;
     diff: number;
+    /** A MediaWiki edit that did not go live (conflict): in the history, never the page's text. */
+    parked: boolean;
   }>
 > {
   try {
@@ -135,6 +138,7 @@ export async function ixwikiGetHistory(
         byteSize: true,
         byteDelta: true,
         minor: true,
+        parked: true,
         createdAt: true,
       },
     });
@@ -148,6 +152,7 @@ export async function ixwikiGetHistory(
         rev_len: r.byteSize || 0,
         rev_minor_edit: r.minor ? 1 : 0,
         diff: r.byteDelta || 0,
+        parked: r.parked === true,
       }));
     }
 
@@ -162,6 +167,7 @@ export async function ixwikiGetHistory(
         rev_len: r.size,
         rev_minor_edit: 0,
         diff: 0,
+        parked: false,
       }));
     }
 
@@ -176,6 +182,7 @@ export async function ixwikiGetHistory(
           rev_len: r.byteSize || 0,
           rev_minor_edit: r.minor ? 1 : 0,
           diff: r.byteDelta || 0,
+          parked: r.parked === true,
         },
       ];
     }
@@ -186,35 +193,27 @@ export async function ixwikiGetHistory(
   return [];
 }
 
+export interface UserContribution {
+  rev_id: number;
+  page_title: string;
+  page_namespace: number;
+  rev_timestamp: string;
+  rev_len: number;
+  diff: number;
+  rev_comment: string;
+  rev_minor_edit: number;
+  is_new: boolean;
+  /** A MediaWiki edit that did not go live (conflict): the user's, listed, never the page's text. */
+  parked: boolean;
+}
+
 export async function ixwikiGetUserContribs(
   username: string,
   limit: number = 50,
   _offset?: number,
   namespace: number = 0
-): Promise<
-  Array<{
-    rev_id: number;
-    page_title: string;
-    page_namespace: number;
-    rev_timestamp: string;
-    rev_len: number;
-    diff: number;
-    rev_comment: string;
-    rev_minor_edit: number;
-    is_new: boolean;
-  }>
-> {
-  const results: Array<{
-    rev_id: number;
-    page_title: string;
-    page_namespace: number;
-    rev_timestamp: string;
-    rev_len: number;
-    diff: number;
-    rev_comment: string;
-    rev_minor_edit: number;
-    is_new: boolean;
-  }> = [];
+): Promise<UserContribution[]> {
+  const results: UserContribution[] = [];
 
   // 1. Live MediaWiki Action API HTTP
   try {
@@ -249,6 +248,7 @@ export async function ixwikiGetUserContribs(
           rev_comment: String(c.comment || ""),
           rev_minor_edit: c.minor !== undefined ? 1 : 0,
           is_new: c.new !== undefined,
+          parked: false,
         });
       }
     }
@@ -272,6 +272,14 @@ export async function ixwikiGetUserContribs(
       },
     });
 
+    // MediaWiki lists every edit its editor made, parked ones too: WikiOS knows which never went live.
+    const parkedRevIds = new Set<number>(
+      pgRevs.filter((r) => r.parked === true && r.mwRevId).map((r) => Number(r.mwRevId))
+    );
+    for (const result of results) {
+      if (parkedRevIds.has(result.rev_id)) result.parked = true;
+    }
+
     for (const r of pgRevs) {
       const title = r.article?.title || "Untitled";
       const revId = Number(r.mwRevId || 0);
@@ -286,6 +294,7 @@ export async function ixwikiGetUserContribs(
           rev_comment: String(r.summary || ""),
           rev_minor_edit: r.minor ? 1 : 0,
           is_new: Number(r.byteSize || 0) === Number(r.byteDelta || 0),
+          parked: r.parked === true,
         });
       }
     }

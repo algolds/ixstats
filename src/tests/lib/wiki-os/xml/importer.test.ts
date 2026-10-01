@@ -6,8 +6,8 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
-import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
+import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
@@ -28,12 +28,12 @@ import {
 } from "./fake-wiki-db";
 
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateDependents: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
   notifyWatchers: jest.fn().mockResolvedValue(0),
-}));
-jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
-  LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
@@ -43,7 +43,6 @@ const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
   "utf8"
 );
-const syncLinks = jest.mocked(LinkGraphService.syncArticleLinks);
 
 async function* chunks(text: string): AsyncGenerator<string> {
   yield text;
@@ -250,14 +249,11 @@ describe("fresh import of the export-0.11 fixture", () => {
     expect(article("Testia").protectionLevel).toBe("ALL");
   });
 
-  it("syncs the link graph of each page it gave a head, outside the transaction", () => {
-    expect(syncLinks).toHaveBeenCalledTimes(5);
-    expect(syncLinks).toHaveBeenCalledWith(
-      article("Kingdom of Testia").id,
-      KINGDOM_V2,
-      "",
-      "ixwiki"
-    );
+  it("leaves the link graph, templates and categories of each page it gave a head to the render it queues (plan 406)", () => {
+    expect(enqueueRender).toHaveBeenCalledTimes(5);
+    expect(enqueueRender).toHaveBeenCalledWith(article("Kingdom of Testia").id, {
+      background: true,
+    });
   });
 
   it("imports each page in one transaction with room for a long history", () => {
@@ -276,7 +272,7 @@ describe("re-import", () => {
   it("is a no-op: everything is skipped and nothing changes", async () => {
     await importFixture();
     const before = snapshotStore();
-    syncLinks.mockClear();
+    jest.mocked(enqueueRender).mockClear();
     store.writes = 0;
 
     const again = await importFixture();
@@ -293,7 +289,7 @@ describe("re-import", () => {
     });
     expect(snapshotStore()).toEqual(before);
     expect(store.writes).toBe(0);
-    expect(syncLinks).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
   });
 });
 
@@ -376,7 +372,6 @@ describe("the page's head only moves forward", () => {
       mwLatestRevId: 9999,
       contentHtml: "<p>seeded</p>",
     });
-    expect(syncLinks).not.toHaveBeenCalledWith(seeded.id, expect.anything(), "", "ixwiki");
     expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id, expect.anything()); // its head did not change: nothing to render
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(4);
   });
@@ -395,7 +390,45 @@ describe("the page's head only moves forward", () => {
       mwPageId: 101,
     });
     expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
-    expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
+  });
+
+  it("marks the pages that transclude a page stale when its head changes (plan 406)", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+
+    await importFixture();
+
+    expect(invalidateDependents).toHaveBeenCalledWith("Kingdom of Testia", "ixwiki");
+  });
+
+  it("does not count a parked revision as the head: a dump's head still replaces an older one (plan 406)", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+    // A MediaWiki edit that did not go live, dated after everything the dump holds.
+    seedRevision(seeded.id, {
+      mwRevId: 777,
+      wikitext: "A CONFLICTING EDIT",
+      createdAt: new Date("2030-01-01T00:00:00Z"),
+      parked: true,
+      parkReason: "conflict:5",
+    });
+
+    await importFixture();
+
+    expect(article("Kingdom of Testia").wikitext).toBe(KINGDOM_V2);
+  });
+
+  it("does count a newer revision that is not parked", async () => {
+    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
+    seedRevision(seeded.id, {
+      wikitext: "NEWER LOCAL EDIT",
+      createdAt: new Date("2030-01-01T00:00:00Z"),
+      parked: false,
+    });
+
+    await importFixture();
+
+    expect(article("Kingdom of Testia").wikitext).toBe("NEWER LOCAL EDIT");
   });
 
   it("tells the watchers of an existing page whose head the dump moved, naming the dump's author", async () => {
@@ -414,6 +447,55 @@ describe("the page's head only moves forward", () => {
       summary: "typo & <nowiki> fix",
       currentRef: "1002",
     });
+  });
+
+  it("links the diff in the watchers' notification when the caller knows the head the page had (the inbound sync does)", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+
+    await ArticleRepository.importPageRevisions({
+      source: "ixwiki",
+      title: "Kingdom of Testia",
+      slug: "kingdom_of_testia",
+      namespace: 0,
+      namespacePrefix: null,
+      mwPageId: 101,
+      protectionLevel: null,
+      restrictions: [],
+      revisions: [
+        {
+          mwRevId: 1002,
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+          author: "alice",
+          authorId: null,
+          summary: "edit",
+          commentDeleted: false,
+          textDeleted: false,
+          userDeleted: false,
+          minor: false,
+          byteSize: 3,
+          byteDelta: 3,
+          sha1: mwSha1Base36("new"),
+          wikitext: "new",
+        },
+      ],
+      head: {
+        createdAt: new Date("2026-01-01T00:00:00Z"),
+        mwRevId: 1002,
+        wikitext: "new",
+        summary: null,
+        wordCount: 1,
+        readingTime: 1,
+        redirectTargetSlug: null,
+        redirectTargetFragment: null,
+      },
+      previousRef: "1001",
+      dryRun: false,
+    });
+
+    expect(notifyWatchers).toHaveBeenCalledWith(
+      expect.objectContaining({ previousRef: "1001", currentRef: "1002", editor: "alice" })
+    );
   });
 
   it("tells nobody when the dump creates the pages: nobody watches them yet", async () => {
@@ -1088,7 +1170,7 @@ describe("dry run", () => {
     expect(store.writes).toBe(0);
     expect(store.articles).toHaveLength(0);
     expect(store.revisions).toHaveLength(0);
-    expect(syncLinks).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
     expect(transactionOptions).toHaveLength(0);
   });
 

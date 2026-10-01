@@ -73,9 +73,8 @@ async function renderRevision(
   revision: { title: string; timestamp: string; wikitext: string }
 ): Promise<RevisionViewResult> {
   const { wikitext } = revision;
-  const rendered = await renderLimiter.run(() =>
-    renderArticleViaMediaWiki(wikitext, revision.title)
-  );
+  const page = await renderLimiter.run(() => renderArticleViaMediaWiki(wikitext, revision.title));
+  const rendered = page?.html ?? null;
   const html = rendered ?? parseWikitextToHtml(wikitext, "ixwiki");
   const bundle = buildViewBundle(html);
 

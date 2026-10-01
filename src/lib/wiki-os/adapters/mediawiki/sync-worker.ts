@@ -9,6 +9,7 @@
 import { executeMediaWikiWrite, updateRevisionActor } from "./write-service";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "../../core/title";
+import { invalidateTemplateDependents } from "../../services/render-service";
 
 export interface MediaWikiSyncJob {
   slug: string;
@@ -92,6 +93,10 @@ export class MediaWikiExportWorker {
         if (job.authorWikiUsername) {
           await updateRevisionActor(res.revisionId, job.authorWikiUsername);
         }
+
+        // A template or module only now has its new text in MediaWiki, which renders every page that
+        // uses it: the renders made since the save used the old copy, so those pages are stale again.
+        void invalidateTemplateDependents(job.title || job.slug);
       }
     } catch {
       if (job.attempts < 3) {

@@ -8,7 +8,6 @@ jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 import { categoryLinks, externalUrls, linkTargets, visibleText } from "~/lib/wiki-os/api-compat/scan";
-import { LinkGraphService, wikitextLinks } from "~/lib/wiki-os/core/link-graph-service";
 import { computeWikitextDiff, DiffTooLarge } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
 import { locateSection, replaceSection, sectionHeadings, sectionText } from "~/lib/wiki-os/wikitext/section-locator";
@@ -57,7 +56,6 @@ describe("the wikitext scanners are linear", () => {
         locateSection(text, 1);
         sectionText(text, 0);
         replaceSection(text, 0, "x");
-        LinkGraphService.extractLinks(text);
         const scanner = new ProtectedScanner(text);
         for (let i = 0; i < text.length; i += 1) {
           if (text.charCodeAt(i) === 60 /* < */) skipProtectedAt(text, i, true, scanner);
@@ -72,7 +70,6 @@ describe("the wikitext scanners are linear", () => {
     const { ms } = timed(() => {
       sectionHeadings(text);
       replaceSection(text, 3, "new");
-      LinkGraphService.extractLinks(text);
     });
     expect(ms).toBeLessThan(1000);
   });
@@ -130,49 +127,6 @@ describe("no scan keeps state keyed on a text's content", () => {
       expect(performance.now() - start).toBeLessThan(400);
       expect(body.error.code).toBe("nosuchsection");
     }
-  });
-});
-
-describe("the link scanner keeps the old regex's answers", () => {
-  const OLD = /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
-  const viaRegex = (text: string) => [...text.matchAll(OLD)].map((m) => ({ target: m[1]!, section: m[2], label: m[3] }));
-  const viaScanner = (text: string) => [...wikitextLinks(text)].map(({ target, section, label }) => ({ target, section, label }));
-
-  it("finds the same links, sections and labels over random texts of brackets, bars and hashes", () => {
-    let seed = 12345;
-    const next = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff);
-    const alphabet = ["[[", "]]", "[", "]", "|", "#", "a", "b c", "\n", "Category:", " "];
-    for (let round = 0; round < 5000; round++) {
-      const text = Array.from({ length: 1 + (next() % 24) }, () => alphabet[(next() >> 8) % alphabet.length]).join("");
-      expect(viaScanner(text)).toEqual(viaRegex(text));
-    }
-  });
-
-  it("matches the regex on the shapes that matter", () => {
-    const cases: Array<[string, Array<[string, string | undefined, string | undefined]>]> = [
-      ["[[A]]", [["A", undefined, undefined]]],
-      ["[[A|b]]", [["A", undefined, "b"]]],
-      ["[[A#S|b]]", [["A", "S", "b"]]],
-      ["[[A#S]]", [["A", "S", undefined]]],
-      ["[[[A]]", [["[A", undefined, undefined]]],
-      ["[[A|]]", []],
-      ["[[A#]]", []],
-      ["[[A|b]c]]", []],
-      ["[[A\nB]]", [["A\nB", undefined, undefined]]],
-      ["x [[A]] y [[B|c]] z", [["A", undefined, undefined], ["B", undefined, "c"]]],
-    ];
-    for (const [text, expected] of cases) {
-      expect(viaScanner(text).map((l) => [l.target, l.section, l.label])).toEqual(expected);
-      expect(viaRegex(text).map((l) => [l.target, l.section, l.label])).toEqual(expected);
-    }
-  });
-
-  it("builds the graph's links as before", () => {
-    const links = LinkGraphService.extractLinks("[[Beta|b]] [[Beta]] [[Gamma#Part|g]] [[File:X.png]] [[Category:Y]]");
-    expect(links.map((l) => [l.targetTitle, l.sectionAnchor, l.anchorText])).toEqual([
-      ["Beta", undefined, "b"],
-      ["Gamma", "Part", "g"],
-    ]);
   });
 });
 

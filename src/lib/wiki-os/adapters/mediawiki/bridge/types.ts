@@ -43,6 +43,8 @@ export interface WikiRecentChange {
   newLen: number;
   blurb?: string | null;
   thumbnail?: string | null;
+  /** A MediaWiki edit that conflicted with WikiOS's head: listed, but never the page's live text. */
+  parked?: boolean;
 }
 
 export interface WikiCategoryMembers {

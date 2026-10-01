@@ -158,9 +158,37 @@ test("history read-through serves local revisions when present", async () => {
   });
   expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { articleId: "art1" } })
+    expect.objectContaining({ where: { articleId: "art1", parked: false } })
   );
   expect(mockGetPageHistory).not.toHaveBeenCalled();
+});
+
+test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiRevisionFindMany.mockResolvedValue([
+    {
+      id: "rev-2",
+      mwRevId: 9002,
+      articleId: "art1",
+      createdAt: new Date("2026-06-02T00:00:00Z"),
+      author: "carol",
+      summary: "conflicting edit",
+      wikitext: "other",
+      minor: false,
+      byteSize: 5,
+      byteDelta: 1,
+      parked: true,
+    },
+  ]);
+
+  const res = await getArticleHistoryShadow("Foo", 50, undefined, "ixwiki", {
+    includeParked: true,
+  });
+
+  expect(res.revisions[0]).toMatchObject({ revid: "9002", parked: true });
+  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { articleId: "art1" } })
+  );
 });
 
 test("history read-through falls back to MediaWiki bridge when no local revisions", async () => {

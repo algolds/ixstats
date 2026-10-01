@@ -26,7 +26,11 @@ const mockRestrictionDeleteMany = jest.fn();
 const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
 
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+const mockInvalidateTemplates = jest.fn();
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateTemplateDependents: (...a: unknown[]) => mockInvalidateTemplates(...a),
+}));
 jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
   notifyWatchers: jest.fn().mockResolvedValue(0),
 }));
@@ -412,6 +416,23 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     });
   });
 
+  it("re-renders the pages that use a template or module when one is moved, archived or restored", async () => {
+    const template = { id: "t1", title: "Template:Box", namespace: 10, status: "PUBLISHED" };
+    pages({ "template:box": template });
+    await PageManagementService.movePage("template:box", "Template:Panel", "rename", actor);
+    expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box", "ixwiki");
+    expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Panel", "ixwiki");
+
+    mockInvalidateTemplates.mockClear();
+    await PageManagementService.archiveArticle("template:box", "unused", actor);
+    expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box", "ixwiki");
+
+    mockInvalidateTemplates.mockClear();
+    pages({ "template:box": { ...template, status: "ARCHIVED" } });
+    await PageManagementService.restoreArticle("template:box", actor, "ixwiki", "back");
+    expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box", "ixwiki");
+  });
+
   it("refuses to archive a missing or already archived page", async () => {
     pages({});
     await expect(
@@ -702,10 +723,12 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
 
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
 
-    expect(jest.mocked(notifyWatchers).mock.calls.map(([change]) => change.articleId).sort()).toEqual([
-      "orig",
-      "talk-orig",
-    ]);
+    expect(
+      jest
+        .mocked(notifyWatchers)
+        .mock.calls.map(([change]) => change.articleId)
+        .sort()
+    ).toEqual(["orig", "talk-orig"]);
   });
 
   it("notifies the watchers of a deleted page, leaving the deleter out", async () => {
@@ -724,7 +747,9 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
   it("notifies nobody when the move or the delete was refused", async () => {
     mockFindFirst.mockReset().mockResolvedValue(null);
 
-    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toThrow();
+    await expect(
+      PageManagementService.movePage("old_name", "new_name", "x", actor)
+    ).rejects.toThrow();
     await expect(PageManagementService.archiveArticle("Old name", "x", actor)).rejects.toThrow();
 
     expect(notifyWatchers).not.toHaveBeenCalled();

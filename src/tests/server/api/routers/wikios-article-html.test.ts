@@ -85,6 +85,19 @@ import { ArticleRepository as BarrelRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitext, resolveRedirect } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+
+/** A render of `html` that reports nothing about the page (what MediaWiki says about links and categories is plan 406's). */
+const rendered = (html: string) => ({
+  html,
+  metadata: {
+    links: null,
+    templates: null,
+    images: null,
+    categories: null,
+    displayTitle: null,
+    properties: {},
+  },
+});
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
@@ -270,7 +283,7 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     setRow({ ...freshBundleRow("<p>Old.</p>", null) });
     jest
       .mocked(renderArticleViaMediaWiki)
-      .mockResolvedValue('<div class="mw-parser-output"><p>New.</p></div>');
+      .mockResolvedValue(rendered('<div class="mw-parser-output"><p>New.</p></div>'));
 
     const result = await caller().getArticleHtml({ title: "Aurelia" });
 
@@ -290,7 +303,7 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
     setRow({ ...freshBundleRow("<p>Old.</p>", null) });
     jest
       .mocked(renderArticleViaMediaWiki)
-      .mockResolvedValue('<div class="mw-parser-output"><p>New.</p></div>');
+      .mockResolvedValue(rendered('<div class="mw-parser-output"><p>New.</p></div>'));
 
     const [first, second] = await Promise.all([
       caller().getArticleHtml({ title: "Aurelia" }),

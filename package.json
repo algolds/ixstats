@@ -122,7 +122,6 @@
     "ts:check:server": "tsc --noEmit -p tsconfig.server.json",
     "typecheck": "bun run typecheck:ui && bun run typecheck:server && bun run typecheck:trpc && bun run typecheck:db",
     "wiki:seed:categories": "bun scripts/sync-wikios-categories.ts",
-    "wiki:clean:categories": "bun scripts/cleanup-wikios-categories.ts",
     "wiki:clean:summaries": "bun scripts/cleanup-wikios-sync-summaries.ts",
     "wiki:sync:media": "bun scripts/sync-ixwiki-media.ts",
     "wiki:sync:full": "bun scripts/sync-ixwiki-full.ts",
