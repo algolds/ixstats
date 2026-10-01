@@ -79,6 +79,7 @@ export function introspectionContext(record: ParamRecord): ApiContext {
     setCookies: [],
     highLimits: false,
     budget: new SizeBudget(),
+    files: new Map(),
   };
 }
 

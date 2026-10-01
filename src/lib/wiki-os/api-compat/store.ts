@@ -29,6 +29,7 @@ import {
   listUsers,
   randomPages,
 } from "./store-lists";
+import { filesByName, listFiles } from "./store-files";
 import type {
   ApiStore,
   CategoryRow,
@@ -657,4 +658,6 @@ export const prismaApiStore: ApiStore = {
   listUsers,
   listBlocks,
   listProtectedTitles,
+  filesByName,
+  listFiles,
 };

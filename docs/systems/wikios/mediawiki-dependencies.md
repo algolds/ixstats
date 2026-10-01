@@ -122,15 +122,19 @@ These files implement or link to the MediaWiki-compatible API that WikiOS **serv
 `src/lib/wiki-os/api-compat/errors.ts`,
 `src/lib/wiki-os/api-compat/format.ts`,
 `src/lib/wiki-os/api-compat/main-params.ts`,
+`src/lib/wiki-os/api-compat/modules/file-info.ts` (`prop=imageinfo`, `list=allimages`, plan 411),
 `src/lib/wiki-os/api-compat/modules/page-ops.ts`,
 `src/lib/wiki-os/api-compat/modules/query-meta.ts`,
 `src/lib/wiki-os/api-compat/modules/query-prop.ts`,
 `src/lib/wiki-os/api-compat/params.ts`,
 `src/lib/wiki-os/api-compat/registry.ts`,
+`src/lib/wiki-os/api-compat/store-files.ts`,
 `src/lib/wiki-os/api-compat/store-lists.ts`,
 `src/lib/wiki-os/api-compat/store-types.ts`,
 `src/lib/wiki-os/api-compat/store.ts`,
 `src/lib/wiki-os/api-compat/types.ts`.
+`action=upload` (`api-compat/modules/upload.ts`, the file as a multipart part read by `src/app/w/api.php/route.ts`) goes to the
+same `uploadFile` service as the browser's upload (mirror section above): it names no MediaWiki endpoint and sends no request.
 
 ### url-only (no request)
 

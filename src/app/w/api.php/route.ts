@@ -19,6 +19,8 @@ import {
 } from "~/lib/wiki-os/api-compat/auth";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { handleApiRequest, type ApiRequestInput } from "~/lib/wiki-os/api-compat/dispatch";
+import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
+import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { API_DOCREF } from "~/lib/wiki-os/api-compat/format";
 
 export const runtime = "nodejs";
@@ -26,6 +28,13 @@ export const dynamic = "force-dynamic";
 
 /** The largest request body api.php reads: MediaWiki's 2 MB page limit plus the form's other fields. */
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
+/**
+ * The largest body of an upload (`action=upload`: a multipart POST with the file): the upload limit plus the form's
+ * other fields. Only a request that carries a session cookie may send that much (the session is checked before
+ * anything is written, but the body is read first): an anonymous caller keeps the small limit. It stays under Next's
+ * `experimental.proxyClientMaxBodySize` (10 MiB by default), which truncates a cloned body past that size.
+ */
+const MAX_UPLOAD_BODY_BYTES = MAX_UPLOAD_BYTES + 64 * 1024;
 
 const deps = createApiDeps();
 
@@ -39,11 +48,11 @@ const jsonHeaders = (errorCode: string | null): Record<string, string> => ({
 class BodyTooLarge extends Error {}
 
 /**
- * The request body, read while counting bytes: past `MAX_BODY_BYTES` the stream is cancelled and the
+ * The request body, read while counting bytes: past `maxBytes` the stream is cancelled and the
  * request refused, whatever the Content-Length header claims (or does not: a chunked body has none).
  */
-async function readBodyBytes(req: NextRequest): Promise<Uint8Array<ArrayBuffer>> {
-  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) throw new BodyTooLarge();
+async function readBodyBytes(req: NextRequest, maxBytes: number): Promise<Uint8Array<ArrayBuffer>> {
+  if (Number(req.headers.get("content-length") ?? 0) > maxBytes) throw new BodyTooLarge();
   if (!req.body) return new Uint8Array(0);
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -52,7 +61,7 @@ async function readBodyBytes(req: NextRequest): Promise<Uint8Array<ArrayBuffer>>
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > MAX_BODY_BYTES) {
+    if (total > maxBytes) {
       await reader.cancel().catch(() => undefined);
       throw new BodyTooLarge();
     }
@@ -61,18 +70,40 @@ async function readBodyBytes(req: NextRequest): Promise<Uint8Array<ArrayBuffer>>
   return Buffer.concat(chunks);
 }
 
-/** Text fields of a POST body; a file part is ignored (uploads are plan 411's). */
-async function readBody(req: NextRequest): Promise<Array<readonly [string, string]>> {
-  const bytes = await readBodyBytes(req);
+/** The fields of a POST body, and the file parts of a multipart one (`action=upload`'s `file`). */
+interface RequestBody {
+  fields: Array<readonly [string, string]>;
+  files: Map<string, RequestFile>;
+}
+
+async function readBody(req: NextRequest, hasSession: boolean): Promise<RequestBody> {
   const type = req.headers.get("content-type") ?? "";
-  if (type.includes("multipart/form-data")) {
-    // The bytes are already bounded; the platform's multipart parser reads them from memory.
-    const form = await new Response(bytes, { headers: { "content-type": type } }).formData();
-    return [...form.entries()].flatMap(([key, value]) =>
-      typeof value === "string" ? [[key, value] as const] : []
-    );
+  const multipart = type.includes("multipart/form-data");
+  const bytes = await readBodyBytes(
+    req,
+    multipart && hasSession ? MAX_UPLOAD_BODY_BYTES : MAX_BODY_BYTES
+  );
+  if (!multipart) {
+    return {
+      fields: [...new URLSearchParams(new TextDecoder().decode(bytes)).entries()],
+      files: new Map(),
+    };
   }
-  return [...new URLSearchParams(new TextDecoder().decode(bytes)).entries()];
+  // The bytes are already bounded; the platform's multipart parser reads them from memory.
+  const form = await new Response(bytes, { headers: { "content-type": type } }).formData();
+  const body: RequestBody = { fields: [], files: new Map() };
+  for (const [key, value] of form.entries()) {
+    if (typeof value === "string") {
+      body.fields.push([key, value]);
+    } else {
+      body.files.set(key, {
+        filename: value.name,
+        contentType: value.type,
+        bytes: new Uint8Array(await value.arrayBuffer()),
+      });
+    }
+  }
+  return body;
 }
 
 const tooBig = () =>
@@ -100,9 +131,10 @@ async function handle(req: NextRequest): Promise<NextResponse> {
 
   const clientKey = resolveRateLimitIdentifier(req.headers, null);
   const cookieHeader = req.headers.get("cookie");
-  let body: Array<readonly [string, string]> | null = null;
+  const sessionCookie = readCookie(cookieHeader, SESSION_COOKIE);
+  let body: RequestBody | null = null;
   try {
-    body = method === "POST" ? await readBody(req) : null;
+    body = method === "POST" ? await readBody(req, sessionCookie !== undefined) : null;
   } catch (error) {
     if (error instanceof BodyTooLarge) return tooBig();
     // A multipart body the parser cannot read.
@@ -114,8 +146,9 @@ async function handle(req: NextRequest): Promise<NextResponse> {
   const input: ApiRequestInput = {
     method,
     query: req.nextUrl.searchParams,
-    body,
-    sessionCookie: readCookie(cookieHeader, SESSION_COOKIE),
+    body: body?.fields ?? null,
+    files: body?.files,
+    sessionCookie,
     loginNonceCookie: readCookie(cookieHeader, LOGIN_NONCE_COOKIE),
     // A signed-in browser user may read through api.php; only a bot-password session writes.
     webAuthId: method === "GET" ? await webAuthId() : null,

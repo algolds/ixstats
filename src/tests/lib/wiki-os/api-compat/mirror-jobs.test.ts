@@ -30,9 +30,6 @@ jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
-  MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
-}));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
@@ -42,9 +39,13 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   wikitextToHtml: jest.fn(),
 }));
 
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
 import { loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 
 type Body = Record<string, any>;
@@ -109,11 +110,17 @@ async function setup() {
       archivePage: real.archivePage,
       restorePage: real.restorePage,
       protectPage: real.protectPage,
+      // the real upload service: it authorizes itself (the account is a sysop in the fake tables, see beforeEach)
+      uploadFile: real.uploadFile,
     },
+    grants: ["basic", "editpage", "createeditmovepage", "uploadfile", "uploadeditmovefile"],
   });
   const token = await loggedIn(wikiDeps.bot);
-  const act = (action: string, params: Record<string, string>) =>
-    wikiDeps.bot.post({ action, token, formatversion: "2", ...params }) as Promise<Body>;
+  const act = (
+    action: string,
+    params: Record<string, string>,
+    files?: Record<string, RequestFile>
+  ) => wikiDeps.bot.post({ action, token, formatversion: "2", ...params }, files) as Promise<Body>;
   return { act };
 }
 
@@ -124,10 +131,25 @@ const summary = () =>
       `${job.kind}:${job.title}${job.kind === "move" ? `->${(job.payload as { to: string }).to}` : ""}`
   );
 
+let uploadDirectory: string;
+
+beforeAll(() => {
+  uploadDirectory = mkdtempSync(join(tmpdir(), "wikios-api-upload-test-"));
+  process.env.WIKIOS_UPLOAD_DIR = uploadDirectory;
+});
+
+afterAll(() => {
+  rmSync(uploadDirectory, { recursive: true, force: true });
+  delete process.env.WIKIOS_UPLOAD_DIR;
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   fakeWikiDb.reset();
   insertedInTransaction = [];
+  // the bot password's account (HEKU in the harness) is a sysop: the real services authorize against these rows
+  tables.user.seed({ id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" });
+  tables.wikiUserGroup.seed({ userId: "u-heku", group: "sysop" });
   let inTransaction = false;
   jest.spyOn(db, "$transaction").mockImplementation(async (work) => {
     inTransaction = true;
@@ -207,6 +229,74 @@ describe("api.php action=edit", () => {
 
     expect(tables.wikiRevision.rows).toHaveLength(1);
     expect(jobs()).toEqual([]);
+  });
+});
+
+describe("api.php action=upload", () => {
+  const PNG = Uint8Array.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 8,
+    0, 0, 0, 8, 8, 6, 0, 0, 0, 1,
+  ]);
+  const part = (bytes: Uint8Array = PNG): Record<string, RequestFile> => ({
+    file: { filename: "x.png", contentType: "image/png", bytes },
+  });
+
+  it("queues the new File: page's revision job and then the upload job, both for its title, and stages the file", async () => {
+    const { act } = await setup();
+
+    const body = await act(
+      "upload",
+      { filename: "Flag of Eurth.png", comment: "A flag", text: "== Summary ==\nThe flag." },
+      part()
+    );
+
+    expect(body.upload.result).toBe("Success");
+    expect(summary()).toEqual(["revision:File:Flag of Eurth.png", "upload:File:Flag of Eurth.png"]);
+    expect(jobs()[1]).toMatchObject({
+      kind: "upload",
+      state: "pending",
+      payload: { comment: "A flag" },
+    });
+    expect(tables.wikiAsset.rows).toHaveLength(1);
+    expect(tables.wikiLog.rows.map((row) => `${row.logType}/${row.action}`)).toEqual([
+      "upload/upload",
+    ]);
+    // each job went in with the change itself (the page's save, the asset and the log)
+    expect(insertedInTransaction).toEqual([true, true]);
+  });
+
+  it("queues nothing for a file it refuses, and one job for a replacement", async () => {
+    const { act } = await setup();
+
+    const refused = await act(
+      "upload",
+      { filename: "Evil.svg" },
+      part(new TextEncoder().encode("<svg><script/></svg>"))
+    );
+    expect(refused.error.code).toBe("uploaded-script-svg");
+    expect(jobs()).toEqual([]);
+
+    await act("upload", { filename: "Flag.png", text: "x" }, part());
+    const warned = await act(
+      "upload",
+      { filename: "Flag.png" },
+      part(Uint8Array.from([...PNG, 2]))
+    );
+    expect(warned.upload.result).toBe("Warning");
+    expect(warned.upload.warnings.exists).toBe("Flag.png");
+    expect(summary()).toEqual(["revision:File:Flag.png", "upload:File:Flag.png"]);
+
+    const replaced = await act(
+      "upload",
+      { filename: "Flag.png", ignorewarnings: "1" },
+      part(Uint8Array.from([...PNG, 2]))
+    );
+    expect(replaced.upload.result).toBe("Success");
+    expect(summary()).toEqual([
+      "revision:File:Flag.png",
+      "upload:File:Flag.png",
+      "upload:File:Flag.png",
+    ]);
   });
 });
 

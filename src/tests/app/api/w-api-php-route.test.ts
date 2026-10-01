@@ -11,7 +11,8 @@ jest.mock("~/lib/wiki-os/api-compat/deps", () => ({ createApiDeps: jest.fn() }))
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
-import { fakeWiki, makeDeps, HEKU } from "../../lib/wiki-os/api-compat/harness";
+import { fakeServices, fakeWiki, makeDeps, HEKU } from "../../lib/wiki-os/api-compat/harness";
+import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 
 const mockAuth = jest.mocked(auth) as unknown as jest.Mock;
 const mockCreateDeps = jest.mocked(createApiDeps);
@@ -19,9 +20,12 @@ const mockCreateDeps = jest.mocked(createApiDeps);
 type Route = typeof import("~/app/w/api.php/route");
 let route: Route;
 let deps: Awaited<ReturnType<typeof makeDeps>>;
+let uploads: ReturnType<typeof fakeServices>;
 
 beforeAll(async () => {
-  deps = await makeDeps({ store: fakeWiki({ pages: [{ pageId: 1, title: "Alpha" }] }) });
+  const wiki = { pages: [{ pageId: 1, title: "Alpha" }], files: [] };
+  uploads = fakeServices(wiki);
+  deps = await makeDeps({ store: fakeWiki(wiki), services: uploads.services });
   mockCreateDeps.mockReturnValue(deps);
   route = await import("~/app/w/api.php/route");
 });
@@ -183,6 +187,67 @@ describe("the body limit is enforced while streaming", () => {
     const response = await post("not multipart at all", { "content-type": "multipart/form-data; boundary=xx" });
     expect(response.status).toBe(400);
     expect((await json(response)).error.code).toBe("badrequest");
+  });
+});
+
+describe("an upload: a multipart body with a file part (plan 411)", () => {
+  const MB = 1024 * 1024;
+
+  async function csrfToken(cookie: string): Promise<string> {
+    const tokens = await json(await route.GET(new NextRequest(url("action=query&meta=tokens"), { headers: { cookie } })));
+    return tokens.query.tokens.csrftoken;
+  }
+
+  const uploadForm = (bytes: Uint8Array, token: string, fields: Record<string, string> = {}) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries({ action: "upload", format: "json", formatversion: "2", filename: "Flag.png", comment: "A flag", token, ...fields })) {
+      form.set(key, value);
+    }
+    form.set("file", new Blob([bytes], { type: "image/png" }), "local-name.png");
+    return form;
+  };
+
+  beforeEach(() => {
+    uploads.calls.length = 0;
+  });
+
+  it("hands the file part to the module, byte for byte, together with the fields", async () => {
+    const { cookie } = await login();
+    const bytes = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0, 255, 128, 7]);
+
+    const response = await route.POST(new NextRequest(url(), { method: "POST", headers: { cookie }, body: uploadForm(bytes, await csrfToken(cookie)) }));
+
+    const body = await json(response);
+    expect(body.upload.result).toBe("Success");
+    const [request] = uploads.calls.find((call) => call.name === "uploadFile")!.args as [Record<string, any>];
+    expect(request).toMatchObject({ filename: "Flag.png", comment: "A flag" });
+    expect(Buffer.from(request.bytes)).toEqual(Buffer.from(bytes));
+  });
+
+  it("lets a request with a session send a file of the upload limit, which a plain request may not (4 MB)", async () => {
+    const { cookie } = await login();
+    const token = await csrfToken(cookie);
+    const big = new Uint8Array(MAX_UPLOAD_BYTES - 1000);
+
+    const accepted = await route.POST(new NextRequest(url(), { method: "POST", headers: { cookie }, body: uploadForm(big, token) }));
+    expect((await json(accepted)).upload.result).toBe("Success");
+
+    const anonymous = await route.POST(new NextRequest(url(), { method: "POST", body: uploadForm(new Uint8Array(5 * MB), token) }));
+    expect(anonymous.status).toBe(413);
+    expect((await json(anonymous)).error.code).toBe("toobig");
+  });
+
+  it("refuses a body past the upload limit even with a session, and stops reading it", async () => {
+    const { cookie } = await login();
+    const token = await csrfToken(cookie);
+
+    const response = await route.POST(
+      new NextRequest(url(), { method: "POST", headers: { cookie }, body: uploadForm(new Uint8Array(MAX_UPLOAD_BYTES + 200_000), token) })
+    );
+
+    expect(response.status).toBe(413);
+    expect((await json(response)).error.code).toBe("toobig");
+    expect(uploads.calls.filter((call) => call.name === "uploadFile")).toHaveLength(0);
   });
 });
 

@@ -308,6 +308,46 @@ export interface ProtectedTitleRow {
   expiresAt: Date | null;
 }
 
+/** A file as `prop=imageinfo` and `list=allimages` describe it: the current version of an asset WikiOS holds. */
+export interface FileRow {
+  /** The canonical file name, spaces as in the title, without `File:`. */
+  name: string;
+  /** `File:<name>`. */
+  title: string;
+  /** The `File:` page's id; 0 when WikiOS holds no page for the file. */
+  pageId: number;
+  /** As stored: a path on this site while only WikiOS has the bytes, MediaWiki's `/images/` URL once the mirror has sent them. */
+  url: string;
+  size: number;
+  /** 0 for a file with no pixels (a PDF). */
+  width: number;
+  height: number;
+  mime: string;
+  /** 40 hex digits (MediaWiki's `sha1` of an `imageinfo`); "" for an asset that was registered from MediaWiki's files and never uploaded through WikiOS. */
+  sha1: string;
+  /** When the current version was uploaded. */
+  timestamp: Date;
+  /** Who uploaded the current version; null when WikiOS has no log of it. */
+  user: string | null;
+  comment: string | null;
+}
+
+export interface FileListQuery {
+  /** Names (underscored, as MediaWiki writes `aifrom`) start with this. */
+  prefix?: string;
+  /** The listing starts at this name (inclusive) and runs in `dir`; `end` stops it. */
+  start?: string;
+  end?: string;
+  dir: "ascending" | "descending";
+  /** Up to `limit + 1` rows come back. */
+  limit: number;
+  /** Only files with this content (40 hex digits). */
+  sha1?: string;
+  mimes?: readonly string[];
+  minSize?: number;
+  maxSize?: number;
+}
+
 export interface ApiStore {
   statistics(): Promise<SiteStatistics>;
   /** Edit count and registration date of a WikiOS user (by internal id) and wiki name. */
@@ -367,4 +407,8 @@ export interface ApiStore {
   listBlocks(limit: number, cursor?: string): Promise<{ blocks: BlockListRow[]; nextCursor: string | null }>;
   /** Up to `limit + 1` create-protected titles that have no page. */
   listProtectedTitles(query: ProtectedTitleQuery): Promise<ProtectedTitleRow[]>;
+  /** The files called these canonical names (no `File:`); a file whose `File:` page was deleted is not there. */
+  filesByName(names: readonly string[]): Promise<FileRow[]>;
+  /** Up to `limit + 1` files in name order (`list=allimages`). */
+  listFiles(query: FileListQuery): Promise<FileRow[]>;
 }
