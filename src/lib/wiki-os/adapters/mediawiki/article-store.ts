@@ -38,7 +38,8 @@ export interface HistoryRevision {
 }
 
 /**
- * Read article wikitext from PostgreSQL authoritative store, falling back to MediaWiki bridge.
+ * Read article wikitext from the PostgreSQL authoritative store. IxWiki is read from there alone;
+ * only a sister wiki's page (iiwiki, althistory) is fetched from its own wiki.
  */
 export async function getArticleWikitextShadow(
   title: string,
@@ -47,7 +48,7 @@ export async function getArticleWikitextShadow(
 ): Promise<ShadowResult | null> {
   // 1. Try PostgreSQL Authoritative Repository first (<2ms)
   const article = await ArticleRepository.findBySlug(title, source, { includeArchived: true });
-  // A deleted page is gone: MediaWiki's own copy of it (step 2) is not a substitute.
+  // A deleted page is gone: MediaWiki's own copy of it is not a substitute.
   if (article?.status === "ARCHIVED" && !includeArchived) return null;
   if (article && article.wikitext) {
     return {
@@ -59,7 +60,10 @@ export async function getArticleWikitextShadow(
     };
   }
 
-  // 2. Direct MediaWiki SQL / HTTP fallback
+  // IxWiki lives in Postgres: a page it has no row for does not exist.
+  if (source === "ixwiki") return null;
+
+  // 2. A sister wiki's page: its own wiki is the source
   const direct = await getArticleWikitext(title, source);
   if (direct) {
     return {

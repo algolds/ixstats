@@ -1,14 +1,12 @@
 /**
- * pg-reader.ts — PostgreSQL Native & Live HTTP Bridge Reader
+ * pg-reader.ts — PostgreSQL reader for IxWiki
  *
- * All reads route through native PostgreSQL Prisma repositories (<1.5ms)
- * and the live MediaWiki Action API over HTTP (for real-time upstream sync).
- * Article/wikitext reads live here; the other concerns are re-exported from
- * pg-search, pg-activity, pg-taxonomy and pg-site.
+ * Every read routes through native PostgreSQL Prisma repositories (<1.5ms); MediaWiki is never asked
+ * (it is a private render engine, plan 418). Article/wikitext reads live here; the other concerns are
+ * re-exported from pg-search, pg-activity, pg-taxonomy and pg-site.
  */
 
 import { db } from "~/server/db";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { toArticleSlug, parseRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
@@ -28,56 +26,14 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
   const native = await ArticleRepository.getArticleBySlug(title, "ixwiki", {
     includeArchived: true,
   });
-  // A deleted page is gone: the live MediaWiki copy below is not a substitute.
-  if (native?.status === "ARCHIVED") return null;
-  if (native && native.wikitext) {
-    return {
-      title: native.title,
-      wikitext: native.wikitext,
-      pageId: 0,
-      length: native.wikitext.length,
-    };
-  }
-
-  // Live HTTP Fallback
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: title,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const p = pages[pageId];
-        const rev = p?.revisions?.[0];
-        const wikitext = rev?.slots?.main?.["*"] ?? rev?.["*"] ?? "";
-        return {
-          title: p.title || title,
-          wikitext,
-          pageId: Number(pageId),
-          length: wikitext.length,
-        };
-      }
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  return null;
+  // A deleted page is gone, and so is a stub row with no text: MediaWiki's copy is not a substitute.
+  if (!native || native.status === "ARCHIVED" || !native.wikitext) return null;
+  return {
+    title: native.title,
+    wikitext: native.wikitext,
+    pageId: 0,
+    length: native.wikitext.length,
+  };
 }
 
 export interface RevisionContent {
@@ -167,7 +123,7 @@ export async function ixwikiGetNamespacedWikitext(
       },
       select: { id: true, title: true, wikitext: true, namespace: true, status: true },
     });
-    // A deleted page is gone: the live MediaWiki copy below is not a substitute.
+    // A deleted page is gone: MediaWiki's copy of it is not a substitute.
     if (art?.status === "ARCHIVED") return null;
     if (art && art.wikitext) {
       return {
@@ -176,46 +132,6 @@ export async function ixwikiGetNamespacedWikitext(
         pageId: 0,
         namespace: art.namespace,
       };
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  // Live HTTP Fallback
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const fullTitle =
-      namespace === 3 ? `User talk:${title}` : namespace === 2 ? `User:${title}` : title;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: fullTitle,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const p = pages[pageId];
-        const rev = p?.revisions?.[0];
-        const wikitext = rev?.slots?.main?.["*"] ?? rev?.["*"] ?? "";
-        return {
-          title: p.title || fullTitle,
-          wikitext,
-          pageId: Number(pageId),
-          namespace,
-        };
-      }
     }
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);

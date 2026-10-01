@@ -91,30 +91,40 @@ test("fresh shadow row is served without touching MediaWiki", async () => {
   expect(mockGetArticleWikitext).not.toHaveBeenCalled();
 });
 
-test("stale/missing shadow refetches from MediaWiki and backfills", async () => {
+test("a sister wiki's missing shadow is fetched from that wiki", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 42, timestamp: "2026-06-01T00:00:00Z" });
 
-  const res = await getArticleWikitextShadow("Foo");
+  const res = await getArticleWikitextShadow("Foo", "iiwiki");
 
+  expect(mockGetArticleWikitext).toHaveBeenCalledWith("Foo", "iiwiki");
   expect(res).toMatchObject({ wikitext: "fresh body", revid: 42, fromShadow: false });
 });
 
-test("MediaWiki failure falls back to null when not found in DB", async () => {
+test("an IxWiki page Postgres lacks is null: MediaWiki is not asked (plan 418)", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue(null);
+  mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
+
+  const res = await getArticleWikitextShadow("Foo");
+
+  expect(res).toBeNull();
+  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
+});
+
+test("a sister wiki's failure falls back to null when not found in DB", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockRejectedValue(new Error("ECONNREFUSED"));
 
-  const res = await getArticleWikitextShadow("Foo").catch(() => null);
+  const res = await getArticleWikitextShadow("Foo", "iiwiki").catch(() => null);
 
   expect(res).toBeNull();
 });
 
-test("page deleted on MediaWiki returns null when not in DB", async () => {
+test("a sister wiki's page that is not there returns null when not in DB", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue(null);
 
-  const res = await getArticleWikitextShadow("Foo");
+  const res = await getArticleWikitextShadow("Foo", "iiwiki");
 
   expect(res).toBeNull();
 });
