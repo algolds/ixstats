@@ -1,3 +1,6 @@
+// The featured-article reader as it was before the regex-DoS sweep (plan F15), verbatim apart from its import paths:
+// regex-dos-transformers.test.ts holds the scanning rewrite against it. Not used by any code.
+
 // src/lib/wiki-os/main-page/featured-article.ts
 // Picks the featured-article card out of the Main Page's HTML and reads its title, image and lead
 // out for the hero. Runs on the server (main-page-service), where `parse` is a jsdom-backed
@@ -10,19 +13,8 @@
 // once more on the way to the hero's `dangerouslySetInnerHTML`.
 
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
-import { stripHtmlTags } from "../transformers/clean-markup-passes";
-import {
-  PARAGRAPHS,
-  blocks,
-  imageTags,
-  openingTags,
-  scanHtml,
-  type HtmlScan,
-  type Tag,
-} from "../transformers/html-scan";
-import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "../transformers/image-url";
-import { forwardFinder } from "../wikitext/forward-finder";
-import { parseInert, type InertFragment } from "../transformers/inert-dom";
+import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { parseInert, type InertFragment } from "~/lib/wiki-os/transformers/inert-dom";
 
 /** Where the card can be, in order of preference; the first selector that finds one wins. */
 const FEATURED_SELECTORS = [
@@ -118,7 +110,7 @@ export interface FeaturedArticleDetails {
   excerpt: string;
 }
 
-const stripTags = (html: string): string => stripHtmlTags(html).trim();
+const stripTags = (html: string): string => html.replace(/<[^>]+>/g, "").trim();
 
 /** `%`-decoded when it can be: a stray % in a link is used as written. */
 function decodeSegment(segment: string): string {
@@ -129,80 +121,36 @@ function decodeSegment(segment: string): string {
   }
 }
 
-/** An anchor to a page of the wiki: its `href` (after `/wiki/`) and its opening tag. */
-interface WikiAnchor {
-  path: string;
-  tag: Tag;
-}
-
-/**
- * The anchors that link to a page of the wiki, in order (what
- * `/<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>/gi` finds): the address is the one after
- * the last `href="` of the tag that is such a link (the expression reads greedily).
- */
-function* wikiAnchors(scan: HtmlScan, from = 0): Generator<WikiAnchor> {
-  for (const tag of openingTags(scan, ["a"], from)) {
-    const text = scan.lower.slice(tag.start, tag.end);
-    for (let at = text.lastIndexOf('href="'); at >= 3; at = text.lastIndexOf('href="', at - 1)) {
-      const match = /^(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"/.exec(
-        text.slice(at + 6)
-      );
-      if (!match) continue;
-      const pathStart = tag.start + at + 6 + match[0].length - match[1]!.length - 1;
-      yield { path: scan.html.slice(pathStart, pathStart + match[1]!.length), tag };
-      break;
-    }
-  }
-}
-
 /** The title and slug of the link the card is about; its heading is the last resort. */
 function titleOf(cardHtml: string): { title: string; slug: string } {
-  const scan = scanHtml(cardHtml);
-  const nextCloseA = forwardFinder(scan.lower, "</a>");
-  const nextCloseH3 = forwardFinder(scan.lower, "</h3>");
-  // The anchor with its text, which runs to the first `</a>` after it; and where that is.
-  const read = (anchor: WikiAnchor | undefined) => {
-    const close = anchor && nextCloseA(anchor.tag.end);
-    return anchor && close !== undefined && close !== -1
-      ? { path: anchor.path, text: cardHtml.slice(anchor.tag.end, close), close }
-      : null;
-  };
-
-  // Only the first `<h3>` can hold the link, for a later one has fewer links after it, and only the first link
-  // after it, for a later one has its `</a>` and the `</h3>` after it later still.
-  const heading = openingTags(scan, ["h3"]).next().value;
-  const inHeading = heading && read(wikiAnchors(scan, heading.end).next().value);
   const link =
-    inHeading && nextCloseH3(inHeading.close + 4) !== -1
-      ? inHeading
-      : read(wikiAnchors(scan).next().value);
+    cardHtml.match(
+      /<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i
+    ) ??
+    cardHtml.match(
+      /<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i
+    );
   if (link) {
     return {
-      title: stripTags(link.text),
-      slug: decodeSegment(link.path).replace(/ /g, "_"),
+      title: stripTags(link[2] ?? link[1] ?? ""),
+      slug: decodeSegment(link[1] ?? "").replace(/ /g, "_"),
     };
   }
-  const headingClose = heading && nextCloseH3(heading.end);
-  if (!heading || headingClose === undefined || headingClose === -1) {
-    return { title: "Featured Article", slug: "Featured_Article" };
-  }
-  const title = stripTags(cardHtml.slice(heading.end, headingClose));
+  const heading = cardHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+  if (!heading) return { title: "Featured Article", slug: "Featured_Article" };
+  const title = stripTags(heading[1] ?? "");
   return { title, slug: title.replace(/ /g, "_") };
 }
 
 /** The card's lead paragraph, without its byline and "Featured article" kicker, as plain text. */
 function excerptOf(cardHtml: string): string {
-  const scan = scanHtml(cardHtml);
-  let lead = "";
-  for (const [start, end] of blocks(scan, PARAGRAPHS)) {
-    const paragraph = cardHtml.slice(start, end);
-    const lower = paragraph.toLowerCase();
-    if (!lower.includes("byline") && !lower.includes("featured article")) {
-      lead = paragraph;
-      break;
-    }
-  }
-  return stripHtmlTags(lead)
+  const paragraphs = cardHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) ?? [];
+  const lead = paragraphs.find((p) => {
+    const lower = p.toLowerCase();
+    return !lower.includes("byline") && !lower.includes("featured article");
+  });
+  return (lead ?? "")
+    .replace(/<[^>]+>/g, "")
     .replace(/^Featured article\s*/i, "")
     .trim();
 }
@@ -211,6 +159,6 @@ function excerptOf(cardHtml: string): string {
 export function featuredArticleDetails(cardHtml: string): FeaturedArticleDetails {
   const image =
     extractLeadImageFromHtml(cardHtml) ??
-    normalizeWikiImageUrl([...imageTags(scanHtml(cardHtml))][0]?.src);
+    normalizeWikiImageUrl(cardHtml.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)?.[1]);
   return { ...titleOf(cardHtml), image, excerpt: excerptOf(cardHtml) };
 }

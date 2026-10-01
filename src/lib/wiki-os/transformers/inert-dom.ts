@@ -25,3 +25,72 @@ export function parseInert(html: string): InertFragment | null {
   template.innerHTML = html;
   return { template, document: template.content.ownerDocument, content: template.content };
 }
+
+/** Elements with no closing tag. */
+const VOID_ELEMENTS: ReadonlySet<string> = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
+]);
+
+/** A letter or digit of a tag name. */
+const isNameCode = (code: number): boolean =>
+  (code >= 97 && code <= 122) || (code >= 65 && code <= 90) || (code >= 48 && code <= 57);
+
+/**
+ * ponytail: DOM_DEPTH_CEILING, 400 open tags: the deepest nesting that is parsed into a server-side DOM. Real
+ * articles nest a few dozen deep; jsdom takes time quadratic in the depth (7 seconds at 6,000 `<s>` in a row) and
+ * overflows its stack not far past that, so a page that nests deeper is left as it is by the passes that only
+ * tidy it (`slimArticleHtml`, `markTemplateChips`).
+ */
+export const DOM_DEPTH_CEILING = 400;
+
+/**
+ * ponytail: DOM_SIZE_CEILING, 500,000 characters: the most HTML that is parsed into a server-side DOM to be
+ * tidied. jsdom builds a DOM at about a microsecond a character for ordinary HTML and several microseconds an
+ * element for HTML of nothing but one-character elements (500,000 characters of `<br>` take a second), on the
+ * thread that serves requests, so a page of 2 MB of HTML would hold it for seconds for the sake of dropping a few
+ * classes. Past this a page is left as it is; a lower ceiling when the slowest page tidied matters more than
+ * the largest.
+ */
+export const DOM_SIZE_CEILING = 500_000;
+
+/**
+ * Whether `html` holds more than DOM_DEPTH_CEILING tags open at once, counting every opening tag that is not
+ * a void element as open until a closing tag of any name closes one (an over-count: the parser also closes `<p>`
+ * and `<li>` by itself, so a page can only be passed over, never parsed too deep). One scan.
+ */
+export function nestsTooDeep(html: string): boolean {
+  let depth = 0;
+  for (let at = html.indexOf("<"); at !== -1; at = html.indexOf("<", at + 1)) {
+    const code = html.charCodeAt(at + 1);
+    if (code === 47) {
+      depth = Math.max(0, depth - 1);
+    } else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) {
+      let end = at + 2;
+      while (isNameCode(html.charCodeAt(end))) end++;
+      if (
+        !VOID_ELEMENTS.has(html.slice(at + 1, end).toLowerCase()) &&
+        ++depth > DOM_DEPTH_CEILING
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Whether a pass that only tidies HTML in a server-side DOM leaves `html` as it is: it is too long or nests too deep. */
+export const leavesAlone = (html: string): boolean =>
+  html.length > DOM_SIZE_CEILING || nestsTooDeep(html);

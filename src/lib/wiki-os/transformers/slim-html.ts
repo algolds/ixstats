@@ -9,6 +9,7 @@
 //   - class/style/title attributes left empty;
 //   - whitespace between block elements, and in a table's or list's structure.
 
+import { leavesAlone } from "./inert-dom";
 import { parseInertOnServer } from "./server-dom";
 
 /**
@@ -175,7 +176,7 @@ function isLayoutWhitespace(text: Text): boolean {
 
 /** `html` with its dead weight taken out. */
 export function slimArticleHtml(html: string): string {
-  if (!html) return html;
+  if (!html || leavesAlone(html)) return html;
   const { template, content, document } = parseInertOnServer(html);
 
   for (const element of Array.from(content.querySelectorAll("*"))) {

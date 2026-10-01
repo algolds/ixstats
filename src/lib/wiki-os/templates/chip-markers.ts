@@ -6,14 +6,15 @@
  * `<span data-wikios-chip="KEY"></span>` instead, written with the DOM at render time (before the
  * sanitizer runs), and a reader's request substitutes exactly those markers.
  *
- * Why not string surgery on the stored HTML (what `applyResolvedTemplates` does): the sanitizer's
+ * Why not string surgery on the stored HTML (what the template resolver once did): the sanitizer's
  * output serializes `<` and `>` unescaped inside attribute values, so a regex that looks for
  * `<a ...>...</a>` can be fooled by an attribute that contains `</a>` and end up publishing the rest
  * of that attribute as live markup. A marker can only ever match where a real element is, because
  * the key alphabet below holds no character the serializer escapes or that could end the marker.
  */
 
-import { extractTemplateKeys, type TemplateKey } from "./template-resolver";
+import { leavesAlone } from "../transformers/inert-dom";
+import { extractTemplateKeys, rawChipsIn, type TemplateKey } from "./template-resolver";
 
 export const CHIP_ATTRIBUTE = "data-wikios-chip";
 
@@ -31,7 +32,6 @@ const MAX_KEY_LENGTH = 200;
 
 const CHIP_SIGNS =
   /Template(?::|%3a)(?:MyCountry|CountryData|BusinessData)|\{\{(?:MyCountry|CountryData|BusinessData):/i;
-const RAW_CHIP = /\{\{((?:MyCountry|CountryData|BusinessData):[^|}]+)\}\}/g;
 
 export function isMarkableKey(key: string): boolean {
   return key.length <= MAX_KEY_LENGTH && MARKABLE_KEY.test(key);
@@ -86,11 +86,11 @@ function markRawChips(document: Document, text: string): DocumentFragment | null
   const fragment = document.createDocumentFragment();
   let last = 0;
   let marked = false;
-  for (const match of text.matchAll(RAW_CHIP)) {
-    const key = extractTemplateKeys(match[0])[0]?.key;
+  for (const chip of rawChipsIn(text)) {
+    const key = extractTemplateKeys(chip.text)[0]?.key;
     if (!key || !isMarkableKey(key)) continue;
-    fragment.append(text.slice(last, match.index), markerElement(document, key));
-    last = match.index + match[0].length;
+    fragment.append(text.slice(last, chip.index), markerElement(document, key));
+    last = chip.index + chip.text.length;
     marked = true;
   }
   if (!marked) return null;
@@ -128,7 +128,7 @@ function sharedDocument(): Document {
  * nodes, serialize. HTML with no chip in it comes back byte for byte. Server-side only (jsdom).
  */
 export function markTemplateChips(html: string): string {
-  if (!CHIP_SIGNS.test(html)) return html;
+  if (!CHIP_SIGNS.test(html) || leavesAlone(html)) return html;
 
   const document = sharedDocument();
   const holder = document.createElement("div");
