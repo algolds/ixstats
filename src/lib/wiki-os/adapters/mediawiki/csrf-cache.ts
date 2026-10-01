@@ -64,6 +64,26 @@ function mergeCookies(current: string[], newHeaders: string[]): string[] {
   return merged;
 }
 
+const BODY_EXCERPT_LENGTH = 200;
+
+/**
+ * The JSON body of an api.php answer. An answer that is not JSON (an nginx 413 page, a PHP fatal, a proxy's HTML) says
+ * what it was: its HTTP status and the start of its body, not an opaque parse error. A body that is not ok but is
+ * JSON is still an error: `what` names the call.
+ */
+export async function readApiBody(res: Response, what: string): Promise<unknown> {
+  const text = await res.text();
+  const excerpt = text.slice(0, BODY_EXCERPT_LENGTH).replace(/\s+/g, " ").trim();
+  if (!res.ok) throw new Error(`MediaWiki ${what} failed (HTTP ${res.status}): ${excerpt}`);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      `MediaWiki ${what} answered with something that is not JSON (HTTP ${res.status}): ${excerpt}`
+    );
+  }
+}
+
 /** One request of the login conversation: a GET, or a form POST with `formBody`. Its cookies join `cookies`. */
 async function loginStep<T>(
   cookies: string[],
@@ -80,9 +100,9 @@ async function loginStep<T>(
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`MediaWiki login failed: HTTP ${res.status}`);
+  const body = await readApiBody(res, "login");
   const merged = mergeCookies(cookies, res.headers.getSetCookie());
-  return { data: schema.parse(await res.json()), cookies: merged };
+  return { data: schema.parse(body), cookies: merged };
 }
 
 /** Log in as the mirror account (action=login with a bot password); throws unless MediaWiki says Success. */

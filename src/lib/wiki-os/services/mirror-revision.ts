@@ -3,9 +3,10 @@
  *
  * Revisions go out as a one-page XML export through `action=import` with `assignknownusers=1`, so MediaWiki
  * credits each to the account that made it (the verified link of the author; any other author goes out as
- * `wikios>Label`, never as a bare name that could be a MediaWiki account) at the time it was made. The worker takes every revision job of a title that waits
- * next in line (see `pickBatch`, at most 50 revisions and about 6 MB of XML) and imports them in ONE request, oldest
- * first, so a backlog costs MediaWiki one null revision, not one per edit (below).
+ * `wikios>Label`, never as a bare name that could be a MediaWiki account) at the time it was made. The worker takes
+ * every revision job of a title that waits next in line (see `pickBatch`: at most 50 revisions, and about 6 MB of
+ * XML, a revision that would pass that waits for the next batch) and imports them in ONE request, oldest first, so a
+ * backlog costs MediaWiki one null revision, not one per edit (below).
  *
  * What MediaWiki does with an import (seen against a real MediaWiki 1.45): an imported revision becomes the page's
  * current one only when it is newer than the current revision; either way MediaWiki then adds ONE null revision by
@@ -37,7 +38,7 @@ import {
 } from "../adapters/mediawiki/write-service";
 import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { contentModelFor } from "../xml/content-model";
-import { createExportWriter, toXmlTimestamp } from "../xml/export-writer";
+import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export-writer";
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
 import type { XmlRevision } from "../xml/types";
 import { MIRROR_SOURCE, revisionPayloadSchema, type RevisionPayload } from "./mirror-outbox";
@@ -49,8 +50,10 @@ const UNKNOWN_AUTHOR = "Community Contributor";
 const DEFAULT_SUMMARY = "WikiOS native edit";
 const RESTORE_SUMMARY = "Restoring the current WikiOS revision";
 const SUMMARY_LIMIT = 480;
-/** A batch stops taking revisions once its XML has reached this size (the revision that crosses it still goes in). */
+/** A batch takes no revision that would grow its XML past this size (the first revision always goes in). */
 export const MAX_BATCH_BYTES = 6 * 1024 * 1024;
+/** What a revision's XML adds besides its text: its tags, timestamp, contributor and summary. */
+const REVISION_XML_OVERHEAD = 2_000;
 /** Pages of the page's history read to find the revisions of a batch. */
 const MAX_HISTORY_PAGES = 4;
 
@@ -186,6 +189,11 @@ function contributorName(
   return verified ?? `${INTERWIKI_PREFIX}>${revision.author?.trim() || UNKNOWN_AUTHOR}`;
 }
 
+/** What `revision` would add to the XML: its text as escaped (an `&` takes five bytes) and its tags. */
+function xmlSizeOf(revision: MirroredRevision): number {
+  return Buffer.byteLength(escapeXmlText(revision.wikitext), "utf8") + REVISION_XML_OVERHEAD;
+}
+
 function requireMirrorBot(): string {
   const bot = mirrorBotName();
   if (!bot) throw new Error("WIKIOS_MEDIAWIKI_BOT_USER is not set: there is no mirror account");
@@ -195,8 +203,8 @@ function requireMirrorBot(): string {
 /**
  * Decide the batch the `jobs` (revision jobs of one title, oldest first, as `pickBatch` hands them over) make, and
  * build its XML. A restore goes alone. A revision the inbound sync already stamped, or one that went with its page,
- * is settled without being sent; the batch stops taking revisions when its XML reaches `MAX_BATCH_BYTES`. Only
- * reads: nothing is claimed or sent yet.
+ * is settled without being sent; the batch takes no revision that would grow its XML past `MAX_BATCH_BYTES`, except
+ * the first. Only reads: nothing is claimed or sent yet.
  */
 export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<RevisionBatchPlan> {
   const first = jobs[0];
@@ -222,7 +230,7 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
         members.push({ job, send: false, mwRevId: null });
       } else if (!restore && revision.mwRevId !== null) {
         members.push({ job, send: false, mwRevId: revision.mwRevId });
-      } else if (summaries.length > 0 && bytes >= MAX_BATCH_BYTES) {
+      } else if (summaries.length > 0 && bytes + xmlSizeOf(revision) > MAX_BATCH_BYTES) {
         return;
       } else {
         const payload = revisionPayloadSchema.parse(job.payload ?? {});

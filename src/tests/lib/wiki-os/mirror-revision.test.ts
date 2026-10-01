@@ -489,6 +489,39 @@ describe("when the import is refused", () => {
 
     await expect(runRevisionJob(job())).rejects.toThrow(/HTTP 502/);
   });
+
+  it("says what an oversized upload was answered with: the status and the start of the body, not a parse error", async () => {
+    const page = `<html><head><title>413 Request Entity Too Large</title></head>${"<p>x</p>".repeat(100)}</html>`;
+    globalThis.fetch = jest.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (init?.body instanceof FormData) return new Response(page, { status: 413 });
+      return wiki.fetch(input, init);
+    }) as unknown as typeof fetch;
+
+    const failure = await runRevisionJob(job()).catch((error: Error) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    const message = (failure as Error).message;
+    expect(message).toMatch(
+      /^MediaWiki import failed \(HTTP 413\): <html><head><title>413 Request Entity Too Large/
+    );
+    // the first 200 characters of the body, no more
+    expect(message.length).toBeLessThanOrEqual("MediaWiki import failed (HTTP 413): ".length + 200);
+  });
+
+  it("says so, with the status and the start of the body, when a successful answer is not JSON", async () => {
+    globalThis.fetch = jest.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (init?.body instanceof FormData) {
+        return new Response("<br />\n<b>Fatal error</b>: Allowed memory size exhausted", {
+          status: 200,
+        });
+      }
+      return wiki.fetch(input, init);
+    }) as unknown as typeof fetch;
+
+    await expect(runRevisionJob(job())).rejects.toThrow(
+      "MediaWiki import answered with something that is not JSON (HTTP 200): <br /> <b>Fatal error</b>: Allowed memory size exhausted"
+    );
+  });
 });
 
 describe("when the bot cannot log in", () => {
@@ -906,24 +939,46 @@ describe("a batch of revisions of one title", () => {
     const big = (n: number, createdAt: Date) =>
       row(n, `${String(n).repeat(1)}x`.repeat(1_600_000), createdAt);
 
-    it("stops taking revisions once the XML has reached 6 MB, and hands the rest back", async () => {
+    it("takes no revision that would grow the XML past 6 MB, and hands the rest back", async () => {
       expect(MAX_BATCH_BYTES).toBe(6 * 1024 * 1024);
       revisionsAre(big(1, AT1), big(2, AT2), big(3, AT3));
 
       const plan = await planRevisionBatch([jobFor(1), jobFor(2), jobFor(3)]);
 
-      // 3.2 MB for the first, 6.4 MB after the second: the third waits for the next batch
-      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
-      expect(Buffer.byteLength(plan.xml ?? "")).toBeGreaterThan(MAX_BATCH_BYTES);
-      expect(plan.xml?.match(/<revision>/g)).toHaveLength(2);
+      // 3.2 MB for the first, 6.4 MB with the second: it would pass the cap, so the first goes alone
+      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
+      expect(plan.xml?.match(/<revision>/g)).toHaveLength(1);
     });
 
-    it("always takes the first revision, however big", async () => {
+    it("fills the batch up to the cap, never past it", async () => {
+      const medium = (n: number, createdAt: Date) => row(n, "m".repeat(2_500_000), createdAt);
+      revisionsAre(medium(1, AT1), medium(2, AT2), medium(3, AT3));
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2), jobFor(3)]);
+
+      // 2.5 MB, 5.0 MB; a third would make 7.5 MB
+      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
+      expect(Buffer.byteLength(plan.xml ?? "")).toBeLessThanOrEqual(MAX_BATCH_BYTES);
+    });
+
+    it("counts the text as escaped: an & takes five bytes of XML", async () => {
+      const ampersands = (n: number, createdAt: Date) => row(n, "&".repeat(700_000), createdAt);
+      revisionsAre(ampersands(1, AT1), ampersands(2, AT2));
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      // 700 000 characters, but 3.5 MB of XML each: the second would make 7 MB
+      expect(plan.members).toHaveLength(1);
+      expect(Buffer.byteLength(plan.xml ?? "")).toBeLessThanOrEqual(MAX_BATCH_BYTES);
+    });
+
+    it("always takes the first revision, however big, and nothing after it", async () => {
       revisionsAre(row(1, "y".repeat(7 * 1024 * 1024), AT1), row(2, T2, AT2));
 
       const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
 
       expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
+      expect(Buffer.byteLength(plan.xml ?? "")).toBeGreaterThan(MAX_BATCH_BYTES);
     });
 
     it("takes every revision of a small batch", async () => {

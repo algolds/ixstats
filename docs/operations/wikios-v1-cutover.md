@@ -186,17 +186,19 @@ The group's rights must include `import importupload move move-subpages suppress
 (plan 407: the mirror repeats WikiOS's moves, deletions, undeletions and protections as this account; without
 `delete`, `undelete` and `protect` those jobs end up dead with `permissiondenied`).
 
-**PHP and nginx must accept an uploaded XML file of at least 8 MB.** WikiOS mirrors a revision with `action=import`,
-which uploads the page as an XML file; a page near MediaWiki's 2 MB limit is bigger once escaped, and PHP's default
-`upload_max_filesize` is 2M. Set both `upload_max_filesize` and `post_max_size` to at least 8M, and check the
+**PHP and nginx must accept an uploaded XML file of at least 16 MB.** WikiOS mirrors a revision with `action=import`,
+which uploads the page as an XML file, and XML escaping makes it bigger than the text: a 2,000,000-character page of
+`&` (MediaWiki's page limit is 2 MB) is about 10 MB of XML, and a batch of revisions is capped at about 6 MB. PHP's
+default `upload_max_filesize` is 2M. Set both `upload_max_filesize` and `post_max_size` to at least 16M, and check the
 `client_max_body_size` of the `ixwiki.com` server block (WikiOS writes through the public `api.php`; nginx's default
-is 1m):
+is 1m). An upload that is too big does not fail quietly: the job's error shows the HTTP status and the start of the
+answer, and the job ends up dead for an operator.
 
 ```bash
-sudo php-fpm8.4 -i 2>/dev/null | grep -E '^(upload_max_filesize|post_max_size)'          # both must show 8M or more
-printf 'upload_max_filesize = 8M\npost_max_size = 8M\n' | sudo tee /etc/php/8.4/fpm/conf.d/99-wikios-import.ini
+sudo php-fpm8.4 -i 2>/dev/null | grep -E '^(upload_max_filesize|post_max_size)'          # both must show 16M or more
+printf 'upload_max_filesize = 16M\npost_max_size = 16M\n' | sudo tee /etc/php/8.4/fpm/conf.d/99-wikios-import.ini
 sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm
-sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 8m or more
+sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 16m or more
 ```
 
 **Rollback:** `sudo cp -a "$BK/LocalSettings.php.step3" /ixwiki/config/LocalSettings.php && sudo rm /ixwiki/config/wikios-localsettings.php && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`

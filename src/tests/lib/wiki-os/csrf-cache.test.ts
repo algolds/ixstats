@@ -89,6 +89,24 @@ describe("getBotSessionAndToken", () => {
     await expect(getBotSessionAndToken()).rejects.toThrow(/HTTP 503/);
   });
 
+  it("names the status and the start of the body of an answer that is not JSON", async () => {
+    globalThis.fetch = jest.fn(
+      async () =>
+        new Response("<html>Cloudflare: you are being rate limited</html>", { status: 200 })
+    ) as unknown as typeof fetch;
+
+    await expect(getBotSessionAndToken()).rejects.toThrow(
+      "MediaWiki login answered with something that is not JSON (HTTP 200): <html>Cloudflare: you are being rate limited</html>"
+    );
+
+    globalThis.fetch = jest.fn(
+      async () => new Response("down for maintenance", { status: 503 })
+    ) as unknown as typeof fetch;
+    await expect(getBotSessionAndToken()).rejects.toThrow(
+      "MediaWiki login failed (HTTP 503): down for maintenance"
+    );
+  });
+
   it("does not cache a session whose login failed", async () => {
     wiki.state.loginResult = "Failed";
     await expect(getBotSessionAndToken()).rejects.toThrow();

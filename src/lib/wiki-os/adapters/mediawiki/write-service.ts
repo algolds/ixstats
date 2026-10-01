@@ -13,6 +13,7 @@ import {
   getBotSessionAndToken,
   invalidateCsrfToken,
   mediaWikiApiUrl,
+  readApiBody,
 } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -117,10 +118,7 @@ async function send<T>(
       signal,
     });
   }
-  if (!res.ok)
-    throw new Error(`MediaWiki ${params.action ?? "request"} failed (HTTP ${res.status})`);
-
-  const body: unknown = await res.json();
+  const body = await readApiBody(res, params.action ?? "request");
   const apiError = apiErrorSchema.safeParse(body);
   if (apiError.success) {
     throw new MediaWikiApiError(apiError.data.error.code, apiError.data.error.info ?? "");
