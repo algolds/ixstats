@@ -253,9 +253,9 @@ async function verifiedUsernames(
  */
 function contributorName(
   revision: MirroredRevision,
-  verifiedUsernames: ReadonlyMap<string, string>
+  usernames: ReadonlyMap<string, string>
 ): string {
-  const verified = revision.authorId ? verifiedUsernames.get(revision.authorId) : undefined;
+  const verified = revision.authorId ? usernames.get(revision.authorId) : undefined;
   return verified ?? `${INTERWIKI_PREFIX}>${revision.author?.trim() || UNKNOWN_AUTHOR}`;
 }
 
