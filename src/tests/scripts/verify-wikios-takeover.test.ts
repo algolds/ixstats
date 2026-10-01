@@ -313,6 +313,47 @@ describe("buildExpectations", () => {
   });
 });
 
+describe("the anonymous article body row (F20: WIKIOS_LEAN_FLIGHT=1 is verified by it)", () => {
+  const BODY_ROW = /article body text/;
+  const bodyRow = (partial: Partial<ChecklistOptions> = {}) =>
+    buildExpectations(checklist(partial)).find((expectation) => BODY_ROW.test(expectation.name));
+
+  it("is left out without a sentence to look for", () => {
+    expect(bodyRow()).toBeUndefined();
+    expect(bodyRow({ articleText: null })).toBeUndefined();
+  });
+
+  it("asks for the article as an anonymous page load and wants the sentence in the HTML", () => {
+    const expectation = bodyRow({ article: "Pelaxia", articleText: "Pelaxia is a country" });
+    expect(expectation).toMatchObject({
+      path: "/wiki/Pelaxia",
+      via: "public",
+      expectStatus: 200,
+      expectBodyIncludes: "Pelaxia is a country",
+      headers: { accept: "text/html" },
+      standalone: true,
+    });
+  });
+
+  it("falls back to the page, and holds on a lone WikiOS process (--standalone)", () => {
+    const options = { ...parse(["--standalone", "--article-text", "words"]) };
+    const rows = planChecks(options).map((check) => check.expectation);
+    expect(rows.find((expectation) => BODY_ROW.test(expectation.name))?.path).toBe("/wiki/Main_Page");
+  });
+
+  it("fails when the page comes back without the article body, as an SSR stash miss does", () => {
+    const expectation = bodyRow({ articleText: "Pelaxia is a country" })!;
+    const miss = evaluateExpectation(
+      expectation,
+      observed({ body: '<main><h1>Pelaxia</h1><div id="wikios-lean-x-body"></div></main>' })
+    );
+    expect(miss.failures).toEqual(['body does not include "Pelaxia is a country"']);
+    expect(
+      evaluateExpectation(expectation, observed({ body: "<p>Pelaxia is a country in Eurth.</p>" })).ok
+    ).toBe(true);
+  });
+});
+
 describe("ixstatesPath", () => {
   it("returns the path without a trailing slash, empty for a bare host", () => {
     expect(ixstatesPath("https://ixwiki.com/projects/ixstates")).toBe("/projects/ixstates");
@@ -333,6 +374,8 @@ describe("parseArgs", () => {
       revid: "1",
       subpage: "Template:Infobox_country/doc",
       category: "Category:Countries",
+      article: "Main_Page",
+      articleText: null,
       standalone: false,
     });
   });
@@ -359,6 +402,10 @@ describe("parseArgs", () => {
           "Template:Foo/doc",
           "--category",
           "Category:X",
+          "--article",
+          "Long_article",
+          "--article-text",
+          "A sentence from the body",
           "--standalone",
         ],
         {}
@@ -373,7 +420,16 @@ describe("parseArgs", () => {
       revid: "77",
       subpage: "Template:Foo/doc",
       category: "Category:X",
+      article: "Long_article",
+      articleText: "A sentence from the body",
       standalone: true,
+    });
+  });
+
+  it("checks the article body text of --page unless --article names another one", () => {
+    expect(parse(["--page", "Ixnay", "--article-text", "Some words"])).toMatchObject({
+      article: "Ixnay",
+      articleText: "Some words",
     });
   });
 

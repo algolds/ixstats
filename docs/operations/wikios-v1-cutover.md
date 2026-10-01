@@ -696,6 +696,46 @@ Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Als
 
 **Rollback:** step 12.
 
+## 9a. Lean flight (after step 9, optional but recommended)
+
+A server-rendered article page carries its HTML twice: as DOM and again in the page data the browser hydrates from. In
+**lean flight** mode (`WIKIOS_LEAN_FLIGHT=1`, off in the code) the page data of an **anonymous page load** of a large article
+carries short markers instead, and the browser reads the article back from the DOM that was already sent. It was checked in a
+browser on a development build: the HTML of a long article (Pelaxia) fell from 804 KB to 479 KB raw and from 149 KB to 85 KB
+gzipped, soft navigation, back/forward and concurrent anonymous loads were correct, and there were no hydration errors. It
+only touches an anonymous `Accept: text/html` document request for an article of 20,000 or more characters of HTML
+(`LEAN_MIN_CHARS` in `src/app/(wiki-os)/wiki/[...slug]/_lib/lean-flight.ts`); signed-in readers and client-side navigations
+are served as before. The server hands the article to its own render through a per-process stash, so it needs the single
+`wikios` process the ecosystem file starts (`instances: 1`); do not turn it on behind more than one.
+
+The flag is read at run time: no rebuild, only a reload of the WikiOS process. Put it in the `env` block of
+`$WK/ecosystem.wikios.config.cjs` (the runtime env file `$WK/.env.production.local` is shared with IxStates):
+
+```bash
+bk "$WK/ecosystem.wikios.config.cjs" ecosystem.wikios.config.cjs.9a
+sudoedit "$WK/ecosystem.wikios.config.cjs"            # add to env:   WIKIOS_LEAN_FLIGHT: "1",
+pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env
+```
+
+**Verify, and keep it only if it passes.** Pick a long article (the one you would open to show someone WikiOS) and one plain
+sentence from its body: words only, no quotes, ampersands or links. The row asks the loopback WikiOS for the article as an
+anonymous page load and requires the sentence in the first HTML, which is exactly what an SSR stash miss (the page served with
+no article body) would lack; every other row would still call that page a 200:
+
+```bash
+( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" --standalone \
+    --article <Long_article> --article-text "<a plain sentence from its body>" )
+curl -s -H 'Accept: text/html' "http://127.0.0.1:3560/wiki/<Long_article>" | grep -c 'id="wikios-lean-'     # 1 or more: the mode is on for this page
+```
+
+All rows must PASS and the `grep` must print 1 or more (0 means the mode is off, or the article is shorter than the
+threshold: pick a longer one). Then open the article in a browser, signed out, with the console open: **no hydration error**,
+and the article is there.
+
+**If the row fails, or the console shows a hydration error: unset the variable.** Remove the line from the ecosystem file
+(`sudo cp -a "$BK/ecosystem.wikios.config.cjs.9a" "$WK/ecosystem.wikios.config.cjs"`) and `pm2 startOrReload
+"$WK/ecosystem.wikios.config.cjs" --update-env`; nothing else changed, and every page is served as before.
+
 ## 10. Monitor (first 24 hours)
 
 | Watch | How |
@@ -874,7 +914,7 @@ Every one of them is copied into `$BK` before its first edit.
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | must exist (gitignored directory): `next/font/local` fails the build without it | 5 |
 | `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411) | 1c, 3c, 4, 5 |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
-| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example` | 5 |
+| `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |
 | `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | 5 |
 | `/etc/nginx/conf.d/wikios-render-internal.conf`, `wikios-upstream.conf` | new | 4, 8 |
 | `/etc/nginx/snippets/wikios-proxy-params.conf`, `wikios-takeover.conf` | new | 8 |

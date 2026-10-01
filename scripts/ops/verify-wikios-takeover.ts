@@ -11,7 +11,8 @@
  *   bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com \
  *     --ixstates "$NEXT_PUBLIC_IXSTATES_URL" [--internal http://127.0.0.1:8081] \
  *     [--file Some_Real_File.png] [--image /images/a/ab/Some_Real_File.png] \
- *     [--page Main_Page] [--revid 1] [--subpage Template:Infobox_country/doc] [--category Category:Countries]
+ *     [--page Main_Page] [--revid 1] [--subpage Template:Infobox_country/doc] [--category Category:Countries] \
+ *     [--article Some_Long_Article --article-text "a plain sentence from its body"]
  *   bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$URL" --standalone
  *
  * Exit code 1 when any expectation fails.
@@ -26,6 +27,12 @@
  *   while WIKIOS_API_SESSION_SECRET is not set).
  * - --standalone keeps only the rows that do not need the nginx takeover or classic MediaWiki on --base:
  *   WikiOS itself, plus the render engine when --internal is given.
+ * - --article-text is a plain sentence (no quotes, ampersands or links) from the body of --article (default:
+ *   --page), asked for as an anonymous page load (`Accept: text/html`, no cookie). The row catches an SSR
+ *   stash miss of lean-flight mode (WIKIOS_LEAN_FLIGHT=1), where the article's HTML is swapped for a marker in
+ *   the page data and read back from the server-rendered DOM: a miss serves the page with no article body.
+ *   Lean mode only applies to an article of 20,000 or more characters of HTML, so name a long one. Without
+ *   --article-text the row is left out.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it
  *   the /images/ row is reported as skipped rather than guessed.
  */
@@ -51,6 +58,8 @@ export interface Expectation {
   readonly standalone?: boolean;
   /** Fetched from this absolute URL instead of the origin of `via` (the configured IxStates URL). */
   readonly url?: string;
+  /** Request headers sent on top of the user agent (e.g. `accept` for an anonymous page load). */
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 export interface Observation {
@@ -75,13 +84,18 @@ export interface Options {
   readonly revid: string;
   readonly subpage: string;
   readonly category: string;
+  /** The article whose body text is checked in the page HTML (default: `page`). */
+  readonly article: string;
+  /** A plain sentence from that article's body; null leaves the row out. */
+  readonly articleText: string | null;
   readonly standalone: boolean;
 }
 
 export type ChecklistOptions = Pick<
   Options,
   "file" | "image" | "ixstates" | "page" | "revid" | "subpage" | "category"
->;
+> &
+  Partial<Pick<Options, "article" | "articleText">>;
 
 const DEFAULT_BASE = "https://ixwiki.com";
 const DEFAULT_FILE = "Example.png";
@@ -378,9 +392,28 @@ function takeoverRows(options: ChecklistOptions): Expectation[] {
   ];
 }
 
+/**
+ * The anonymous page-load row of lean-flight mode: the article's HTML must be in the first HTML response.
+ * A stash miss leaves the page with no article body, which every other row here would still call a 200.
+ */
+function articleBodyRow(options: ChecklistOptions): Expectation[] {
+  if (!options.articleText) return [];
+  return [
+    {
+      name: "anonymous article page load carries the article body text (lean-flight stash miss check)",
+      path: `/wiki/${options.article ?? options.page}`,
+      via: "public",
+      expectStatus: 200,
+      expectBodyIncludes: options.articleText,
+      headers: { accept: "text/html" },
+      standalone: true,
+    },
+  ];
+}
+
 /** The takeover checklist. `image` is optional: without a real upload path the row is left out. */
 export function buildExpectations(options: ChecklistOptions): Expectation[] {
-  const rows = [...wikiosRows(options), ...takeoverRows(options)];
+  const rows = [...wikiosRows(options), ...articleBodyRow(options), ...takeoverRows(options)];
   if (options.image) {
     rows.push({
       name: "upload served from /images/",
@@ -423,16 +456,19 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Opti
   const internal = readFlag(argv, "--internal");
   const image = readFlag(argv, "--image");
   if (image !== null && !image.startsWith("/")) throw new Error("--image must be an absolute path");
+  const page = readFlag(argv, "--page") ?? DEFAULT_PAGE;
   return {
     base: stripTrailingSlashes(readFlag(argv, "--base") ?? DEFAULT_BASE),
     ixstates: requireIxstates(argv, env),
     internal: internal === null ? null : stripTrailingSlashes(internal),
     file: readFlag(argv, "--file") ?? DEFAULT_FILE,
     image,
-    page: readFlag(argv, "--page") ?? DEFAULT_PAGE,
+    page,
     revid: readFlag(argv, "--revid") ?? DEFAULT_REVID,
     subpage: readFlag(argv, "--subpage") ?? DEFAULT_SUBPAGE,
     category: readFlag(argv, "--category") ?? DEFAULT_CATEGORY,
+    article: readFlag(argv, "--article") ?? page,
+    articleText: readFlag(argv, "--article-text"),
     standalone: argv.includes("--standalone"),
   };
 }
@@ -450,11 +486,14 @@ export function planChecks(options: Options): { expectation: Expectation; url: s
     .map((expectation) => ({ expectation, url: urlFor(expectation, options) }));
 }
 
-async function observe(url: string): Promise<Observation> {
+async function observe(
+  url: string,
+  headers: Readonly<Record<string, string>> = {}
+): Promise<Observation> {
   const response = await fetch(url, {
     redirect: "manual",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    headers: { "user-agent": USER_AGENT },
+    headers: { "user-agent": USER_AGENT, ...headers },
   });
   return {
     status: response.status,
@@ -466,7 +505,7 @@ async function observe(url: string): Promise<Observation> {
 
 async function runCheck(expectation: Expectation, url: string): Promise<Evaluation> {
   try {
-    return evaluateExpectation(expectation, await observe(url));
+    return evaluateExpectation(expectation, await observe(url, expectation.headers));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, failures: [`request failed: ${message}`] };
@@ -480,6 +519,9 @@ async function main(argv: readonly string[]): Promise<number> {
   );
   if (!options.internal) console.log("(no --internal: render-engine rows are skipped)");
   if (!options.image) console.log("(no --image: the /images/ row is skipped)");
+  if (!options.articleText) {
+    console.log("(no --article-text: the article body text row, the lean-flight check, is skipped)");
+  }
 
   let failed = 0;
   for (const { expectation, url } of planChecks(options)) {
