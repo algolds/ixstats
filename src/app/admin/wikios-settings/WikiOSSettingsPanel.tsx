@@ -27,8 +27,7 @@ export function WikiOSSettingsPanel() {
     <div className="space-y-6">
       <AdminHeader
         icon={BookOpen}
-        title="WikiOS Utilities & Health Administration"
-        description="Unified health diagnostics, link integrity, and realm governance deck."
+        title="WikiOS Settings"
       />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
