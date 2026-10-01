@@ -39,7 +39,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `renderArticleViaMediaWiki` | `action=parse&text=<Postgres wikitext>&title=` plus `prop=text\|links\|templates\|images\|categories\|properties\|displaytitle` | The render service's engine call (`services/render-service.ts`), once per revision, off the reader's path. Also the template preview's engine call (below). **Read path only for a page that was never rendered or is stale (plan 404).** Internal URL (`WIKIOS_MEDIAWIKI_INTERNAL_URL`) when configured. |
 | `src/lib/wiki-os/services/render-service.ts` (`renderArticle`, `renderStaleBatch`) | the call above, for one article | Once per revision: after a save or an inbound edit, from the render queue and the `wiki-render-stale` job; or on a reader's first view of a page that was never rendered. At most two renders at once. |
 | `src/lib/wiki-os/services/revision-view-service.ts` `getRevisionView` | the call above, for an **old revision's** Postgres wikitext | **On a read path:** `?oldid=` / a history diff view renders that revision on demand (one render per revision at a time, a limiter, the view remembered in the process; a revision of a deleted page is "missing" to a reader who may not see it). Falls back to the in-process compiler. |
-| `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
+| `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` (caller: `src/server/api/routers/wikios/editing.ts`) | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
 | `src/lib/wiki-os/api-compat/deps.ts` (`renderWikitext`) | `renderArticleViaMediaWiki(<text or old revision's wikitext>)` | WikiOS's own `/w/api.php` (plan 410): `action=parse&text=` from a bot session, or `parse&oldid=` (20/min per IP). Never the in-process compiler: a failed render answers `renderunavailable`. |
 | `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
@@ -54,11 +54,25 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 
 ### mirror (outbound, plan 407)
 
+A WikiOS write never calls MediaWiki itself. The writer inserts a row into the **outbox** (`wiki_mirror_jobs`, kinds
+`revision`, `move`, `delete`, `undelete`, `protect`) in the same transaction as the page change (`saveArticle`,
+`movePage`, `archiveArticle`, `restoreArticle`, `RightsAdminService.protect`, and the re-push of a parked head), so a
+committed change always has its job. This includes every write that arrives through WikiOS's own `/w/api.php` (plan 410):
+it reaches the same services, so one write is one job. The worker applies the jobs per title in order as the dedicated
+mirror bot account (`WIKIOS_MEDIAWIKI_BOT_USER` and `WIKIOS_MEDIAWIKI_BOT_TOKEN`; without them every job fails, and a bot
+login that fails is a failed job, never an anonymous write). Only the realm `ixwiki` is mirrored, and never the
+`MediaWiki:` namespace (the bot may not write it). Editors and admins reach none of these files from a browser.
+
 | Call site | What it does |
 | --- | --- |
-| `src/lib/wiki-os/adapters/mediawiki/write-service.ts` `executeMediaWikiWrite` | A write with the bot session: `action=edit` (the export queue) and `action=upload` (`wikios.uploadFile`). |
-| `src/lib/wiki-os/adapters/mediawiki/csrf-cache.ts` | Bot login and CSRF token. |
-| `src/lib/wiki-os/adapters/mediawiki/sync-worker.ts` | The background queue behind both (`SKIP_MEDIAWIKI_SYNC=true` stops it). Callers: `src/server/api/routers/wikios/editing.ts`, `inbound-revision-sync.ts`. |
+| `src/lib/wiki-os/services/mirror-revision.ts` | The revision jobs that wait next in line for one title (at most 50, about 6 MB of XML) go out together as ONE `action=import` with `assignknownusers=1` and `interwikiprefix=wikios`: each revision keeps its author (a verified wiki-account link by name, anyone else as `wikios>Name`) and its timestamp, and MediaWiki adds one null revision by the bot. Reads (`action=query`, `prop=revisions`) verify the newest text against MediaWiki's current revision and map each imported revision back to its MediaWiki revision (sha1 and timestamp), which is stamped on `wiki_revisions`. When the import is not current, the newest text only is sent as an `action=edit` by the bot, with a note on the job. |
+| `src/lib/wiki-os/services/mirror-page-ops.ts` | The page jobs: `action=move` (one job per page moved, talk page included), `action=delete`, `action=undelete`, `action=protect`, each after an `action=query` that checks the title's state on MediaWiki. |
+| `src/lib/wiki-os/services/mirror-worker.ts`, `src/lib/wiki-os/services/mirror-queue.ts`, `src/lib/wiki-os/services/mirror-outbox.ts` | The worker (cron job `wiki-mirror`, every minute, plus an in-process run about 2 seconds after a write, under one job lock), the per-title order, the batch picker, backoff (`min(2^attempts x 30 s, 1 h)`, dead after 8 attempts), the attempt time limit, and the insert helpers the writers call. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; the jobs accumulate. |
+| `src/lib/wiki-os/services/mirror-alerts.ts` | A Discord warning when a job goes `dead` (at most one per 30 minutes). |
+| `src/lib/wiki-os/services/mirror-admin.ts`, `src/app/admin/wikios-settings/MirrorStatusSection.tsx` | The administrator's view of the outbox in the WikiOS settings panel (`wikios.getMirrorStatus`, `requeueMirrorJob`, `discardMirrorJob`), reached through tRPC only. The panel names `WIKIOS_MEDIAWIKI_BOT_USER` and `WIKIOS_MEDIAWIKI_BOT_TOKEN` in a warning and calls MediaWiki not at all. |
+| `src/lib/wiki-os/adapters/mediawiki/write-service.ts` `postMediaWikiAction`, `executeMediaWikiWrite` | The bot session's request helpers: JSON form posts and the multipart post of an import (120 s limit; other requests 30 s), the status and a 200-character excerpt of a body that is not JSON, and `action=upload` (`wikios.uploadFile` in `src/server/api/routers/wikios/editing.ts`, the one write that does not go through the outbox: a file's bytes). |
+| `src/lib/wiki-os/adapters/mediawiki/csrf-cache.ts` | Bot login and CSRF token (a failed login throws), `mirrorBotName` and `isMirrorAccount`. |
+| `src/lib/wiki-os/adapters/mediawiki/attempt-scope.ts` | The time limit of one attempt, passed to every request of that attempt as an abort signal. |
 
 ### account-proof
 

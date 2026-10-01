@@ -15,7 +15,7 @@ const SRC = path.join(ROOT, "src");
 
 /** Modules that make a request to MediaWiki: server-side only. */
 const MEDIAWIKI_MODULES =
-  /wiki-os\/(?:adapters\/mediawiki\/(?:parsoid|write-service|csrf-cache|sync-worker)|templates\/(?:template-engine\.server|preview-service|template-data-reader)|services\/(?:render-service|inbound-mediawiki|auto-sync-service))/;
+  /wiki-os\/(?:adapters\/mediawiki\/(?:parsoid|write-service|csrf-cache|attempt-scope)|templates\/(?:template-engine\.server|preview-service|template-data-reader)|services\/(?:render-service|inbound-mediawiki|auto-sync-service|mirror-[a-z-]+))/;
 const MEDIAWIKI_HELPERS = /\b(?:getMediaWikiApiUrl|renderArticleViaMediaWiki|wikitextToHtml)\b/;
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
