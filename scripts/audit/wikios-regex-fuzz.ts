@@ -19,7 +19,7 @@
  *   bun scripts/audit/wikios-regex-fuzz.ts --only=wikitext-parser  just the targets whose name contains it
  *   bun scripts/audit/wikios-regex-fuzz.ts --family=nowiki --all   just those families, every row printed
  *   Options: --budget=200 (ms) --size=2000000 --workers=2 --hard=3000 (ms before a process is killed)
- *            --json=path (the whole table as JSON) --skipped (list what is not run) --strict (breaches of files owned by another plan fail too)
+ *            --json=path (the whole table as JSON) --skipped (just list what is not run, and why)
  *
  * No database and no network is touched: DATABASE_URL is pointed at nothing before any module loads.
  */
@@ -34,7 +34,6 @@ import {
   TARGETS,
   familiesFor,
   inputFor,
-  ownerOf,
   type Family,
   type Target,
 } from "./wikios-regex-fuzz-targets";
@@ -65,7 +64,6 @@ interface Row {
   /** The process had to be killed. */
   hung: boolean;
   threw: boolean;
-  owner: string | undefined;
   /** The milliseconds it was allowed. */
   budget: number;
 }
@@ -150,7 +148,6 @@ interface Options {
   family: string | null;
   all: boolean;
   skipped: boolean;
-  strict: boolean;
   json: string | null;
 }
 
@@ -166,7 +163,6 @@ function parseOptions(argv: string[]): Options {
     family: value("family"),
     all: argv.includes("--all"),
     skipped: argv.includes("--skipped"),
-    strict: argv.includes("--strict"),
     json: value("json"),
   };
 }
@@ -183,7 +179,6 @@ async function measure(target: Target, families: Family[], options: Options): Pr
   const row = (family: string, fields: Pick<Row, "ms" | "at" | "hung" | "threw">): Row => ({
     target: target.name,
     family,
-    owner: ownerOf(target, family),
     budget: budgetOf(target, options),
     ...fields,
   });
@@ -272,6 +267,11 @@ function describe(row: Row): string {
 
 async function main(): Promise<number> {
   const options = parseOptions(process.argv.slice(2));
+  if (options.skipped) {
+    console.log(`not run (${SKIPPED.length} groups):`);
+    for (const [name, reason] of SKIPPED) console.log(`  ${name}: ${reason}`);
+    return 0;
+  }
   const targets = TARGETS.filter((target) => !options.only || target.name.includes(options.only));
   const queue = [...targets];
   const rows: Row[] = [];
@@ -300,8 +300,6 @@ async function main(): Promise<number> {
   await Promise.all(Array.from({ length: options.workers }, lane));
 
   const breaches = rows.filter((row) => row.ms > row.budget);
-  const reported = breaches.filter((row) => row.owner && !options.strict);
-  const failing = breaches.filter((row) => !row.owner || options.strict);
 
   // One line per function: its slowest input family.
   console.log(
@@ -312,10 +310,8 @@ async function main(): Promise<number> {
     if (own.length === 0) continue;
     const worst = own.reduce((a, b) => (b.ms > a.ms ? b : a), own[0]!);
     const over = own.filter((row) => row.ms > row.budget).length;
-    const owned = own.filter((row) => row.ms > row.budget && row.owner).length;
-    const owner = owned ? `  (${owned} off limits: ${target.owner?.plan})` : "";
     console.log(
-      `${pad(target.name, 74)}${pad(worst.family, 24)}${pad(describe(worst), 30)}${pad(String(worst.budget), 9)}${pad(String(own.length), 7)}${over}${owner}`
+      `${pad(target.name, 74)}${pad(worst.family, 24)}${pad(describe(worst), 30)}${pad(String(worst.budget), 9)}${pad(String(own.length), 7)}${over}`
     );
   }
 
@@ -325,9 +321,8 @@ async function main(): Promise<number> {
       `\n${options.all ? "every pair" : "breaches"}:\n${pad("function", 74)}${pad("input family", 24)}ms`
     );
     for (const row of shown.sort((a, b) => a.target.localeCompare(b.target) || b.ms - a.ms)) {
-      const owner = row.owner ? `  [off limits: ${row.owner}]` : "";
       const flag = row.ms > row.budget ? "BREACH " : "";
-      console.log(`${pad(row.target, 74)}${pad(row.family, 24)}${flag}${describe(row)}${owner}`);
+      console.log(`${pad(row.target, 74)}${pad(row.family, 24)}${flag}${describe(row)}`);
     }
   }
 
@@ -338,24 +333,13 @@ async function main(): Promise<number> {
     "slowest pairs: " +
       slowest.map((row) => `${row.target} / ${row.family} ${describe(row)}`).join("; ")
   );
-  if (options.skipped) {
-    console.log(`\nnot run (${SKIPPED.length} groups):`);
-    for (const [name, reason] of SKIPPED) console.log(`  ${name}: ${reason}`);
-  } else {
-    console.log(
-      `not run: ${SKIPPED.length} groups, with their reasons, in wikios-regex-fuzz-targets.ts (--skipped lists them)`
-    );
-  }
-  if (reported.length > 0) {
-    console.log(
-      `${reported.length} breaches in files another plan owns (reported, not failing): ` +
-        [...new Set(reported.map((row) => row.target))].join(", ")
-    );
-  }
-  console.log(failing.length === 0 ? "OK: no breach." : `FAIL: ${failing.length} breaches.`);
+  console.log(
+    `not run: ${SKIPPED.length} groups, with their reasons, in wikios-regex-fuzz-targets.ts (--skipped lists them)`
+  );
+  console.log(breaches.length === 0 ? "OK: no breach." : `FAIL: ${breaches.length} breaches.`);
 
   if (options.json) writeFileSync(options.json, JSON.stringify({ options, rows }, null, 1));
-  return failing.length === 0 ? 0 : 1;
+  return breaches.length === 0 ? 0 : 1;
 }
 
 // Nothing in a measured module may reach a real database, whatever the .env files say.

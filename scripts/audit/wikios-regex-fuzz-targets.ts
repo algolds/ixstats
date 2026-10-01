@@ -21,12 +21,6 @@ type Result = string | number | boolean | object | null | undefined | void;
 
 export type TargetKind = "wikitext" | "html" | "xml";
 
-/** Who owns the file a slow function is slow in, and which inputs it is slow on (all when `families` is absent). */
-export interface Owner {
-  plan: string;
-  families?: readonly string[];
-}
-
 export interface Target {
   /** `folder/file#export`, as listed in this file; `@…` names the way the function is driven. */
   name: string;
@@ -34,12 +28,6 @@ export interface Target {
   kind: TargetKind;
   /** Imports the module and returns the call that takes the hostile text. */
   load: () => Promise<(input: string) => Result | Promise<Result>>;
-  /**
-   * Set for a function whose slowness is in a file another branch is changing right now (`plan`): a breach is
-   * reported, never fixed here, and never fails a run. `families` narrows that to the inputs the other file's
-   * scans are slow on; a breach on any other family is this branch's to fix and fails as usual.
-   */
-  owner?: Owner;
   /**
    * What the function is allowed that the rest are not, and why. `maxChars`: the most text it accepts (it
    * answers a longer one with a plain copy or a refusal of its own, so the run feeds it that much and no more).
@@ -49,16 +37,10 @@ export interface Target {
   limits?: { maxChars?: number; slowFactor?: number; why: string };
 }
 
-const wikitext = (
-  name: string,
-  load: Target["load"],
-  owner?: Owner,
-  limits?: Target["limits"]
-): Target => ({
+const wikitext = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
   name,
   kind: "wikitext",
   load,
-  ...(owner ? { owner } : {}),
   ...(limits ? { limits } : {}),
 });
 const html = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
@@ -68,22 +50,6 @@ const html = (name: string, load: Target["load"], limits?: Target["limits"]): Ta
   ...(limits ? { limits } : {}),
 });
 const xml = (name: string, load: Target["load"]): Target => ({ name, kind: "xml", load });
-
-/**
- * protected-regions.ts and section-locator.ts are plan 410's. Through `skipProtectedAt` the block and inline
- * parsers and everything built on them are slow on a text of `<nowiki ` or `<ref name="` that never closes (the
- * tag expression `[^>]*` reads to the end of the text from each opener) and on a soup of well-formed refs
- * (the per-tag-name close-tag cache is replaced by every small text a caller passes between two large ones).
- * With the expression bounded at 300 characters and the cache kept, none of them breaches on these three
- * (measured on a copy of this tree with protected-regions.ts patched, never committed).
- */
-const PLAN_410 = "plan 410";
-const VIA_410: Owner = {
-  plan: PLAN_410,
-  families: ["<nowiki␠", '<ref␠name="', "soup:wellformed#6"],
-};
-/** Everything the function answers goes through one of plan 410's files. */
-const IN_410: Owner = { plan: PLAN_410 };
 
 /**
  * What a function that does more work per character than most is allowed (`why` says what). It is linear (a
@@ -97,12 +63,6 @@ const linear = (slowFactor: number, why: string): Target["limits"] => ({
 });
 const bound = (slowFactor: number, answer: string): Target["limits"] =>
   linear(slowFactor, `its answer is ${answer}, and building that is the work`);
-
-/** The plan that owns this breach, when `family` is one of the inputs it is slow on. */
-export function ownerOf(target: Target, family: string): string | undefined {
-  const { owner } = target;
-  return owner && (!owner.families || owner.families.includes(family)) ? owner.plan : undefined;
-}
 
 /**
  * Every place `opener` starts (overlapping ones too: `[[[` has two), outside `<!-- -->`: the openers a caller
@@ -124,21 +84,16 @@ function* openersOutsideComments(text: string, opener: string): Generator<number
 
 export const TARGETS: readonly Target[] = [
   // ---- wikitext/ -------------------------------------------------------------------------------
-  wikitext(
-    "wikitext/block-lines#logicalLineEnd",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/block-lines");
-      return (s) => m.logicalLineEnd(s, 0);
-    },
-    VIA_410
-  ),
+  wikitext("wikitext/block-lines#logicalLineEnd", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/block-lines");
+    return (s) => m.logicalLineEnd(s, 0);
+  }),
   wikitext(
     "wikitext/block-lines#splitLogicalLines",
     async () => {
       const m = await import("~/lib/wiki-os/wikitext/block-lines");
       return (s) => m.splitLogicalLines(s);
     },
-    VIA_410,
     linear(
       2,
       "it indexes the braces of the whole text, and a text of nothing but `<` and `{{` asks the tag and template scans about every few characters"
@@ -186,7 +141,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/link-parser");
       return (s) => m.parseMediaLink(`[[File:${s}]]`);
     },
-    undefined,
     bound(2, "a parameter per `|`")
   ),
   wikitext(
@@ -195,7 +149,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/link-parser");
       return (s) => m.parseInlineLinksAndFormatting(s);
     },
-    VIA_410,
     bound(4, "a node per few characters")
   ),
   wikitext(
@@ -204,7 +157,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/list-parser");
       return (s) => m.parseWikiList(s.split("\n"));
     },
-    VIA_410,
     bound(4, "an item per line")
   ),
   wikitext("wikitext/match-index#matchBraces", async () => {
@@ -233,7 +185,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/parameter-parser");
       return (s) => m.parseParameterList(m.splitBalancedPipes(s));
     },
-    undefined,
     bound(6, "a parameter per `|`")
   ),
   wikitext(
@@ -242,37 +193,25 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/parser");
       return (s) => m.parse(s);
     },
-    VIA_410,
     bound(4, "a node per construct")
   ),
-  wikitext(
-    "wikitext/protected-regions#matchOpenTag",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/protected-regions");
-      return (s) => m.matchOpenTag(s, 0);
-    },
-    IN_410
-  ),
-  wikitext(
-    "wikitext/protected-regions#skipProtectedAt@every-opener",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/protected-regions");
-      return (s) => {
-        for (let at = s.indexOf("<"); at !== -1; at = s.indexOf("<", at + 1)) {
-          m.skipProtectedAt(s, at, true);
-        }
-      };
-    },
-    IN_410
-  ),
-  wikitext(
-    "wikitext/protected-regions#isCommentOnly",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/protected-regions");
-      return (s) => m.isCommentOnly(s);
-    },
-    IN_410
-  ),
+  wikitext("wikitext/protected-regions#matchOpenTag", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/protected-regions");
+    return (s) => m.matchOpenTag(s, 0, new m.ProtectedScanner(s));
+  }),
+  wikitext("wikitext/protected-regions#skipProtectedAt@every-opener", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/protected-regions");
+    return (s) => {
+      const scanner = new m.ProtectedScanner(s); // one per text, as every caller makes it
+      for (let at = s.indexOf("<"); at !== -1; at = s.indexOf("<", at + 1)) {
+        m.skipProtectedAt(s, at, true, scanner);
+      }
+    };
+  }),
+  wikitext("wikitext/protected-regions#isCommentOnly", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/protected-regions");
+    return (s) => m.isCommentOnly(s);
+  }),
   wikitext("wikitext/quote-marks#joinMarkedSegments", async () => {
     const m = await import("~/lib/wiki-os/wikitext/quote-marks");
     return (s) =>
@@ -289,22 +228,26 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/wikitext/resolver");
     return (s) => m.classifyTemplate(s);
   }),
-  wikitext(
-    "wikitext/section-locator#findSectionLine",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/section-locator");
-      return (s) => m.findSectionLine(s, "History");
-    },
-    IN_410
-  ),
-  wikitext(
-    "wikitext/section-locator#findSectionLine@hostile-section",
-    async () => {
-      const m = await import("~/lib/wiki-os/wikitext/section-locator");
-      return (s) => m.findSectionLine("== History ==\n", s);
-    },
-    IN_410
-  ),
+  wikitext("wikitext/section-locator#findSectionLine", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/section-locator");
+    return (s) => m.findSectionLine(s, "History");
+  }),
+  wikitext("wikitext/section-locator#findSectionLine@hostile-section", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/section-locator");
+    return (s) => m.findSectionLine("== History ==\n", s);
+  }),
+  wikitext("wikitext/section-locator#sectionHeadings", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/section-locator");
+    return (s) => m.sectionHeadings(s);
+  }),
+  wikitext("wikitext/section-locator#locateSection", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/section-locator");
+    return (s) => m.locateSection(s, 1);
+  }),
+  wikitext("wikitext/section-locator#replaceSection", async () => {
+    const m = await import("~/lib/wiki-os/wikitext/section-locator");
+    return (s) => m.replaceSection(s, 1, "x");
+  }),
   wikitext(
     "wikitext/serializer#astToWikitext@parse",
     async () => {
@@ -312,7 +255,6 @@ export const TARGETS: readonly Target[] = [
       const { parse } = await import("~/lib/wiki-os/wikitext/parser");
       return (s) => m.astToWikitext(parse(s).ast);
     },
-    VIA_410,
     bound(4, "a node per construct, parsed and written back")
   ),
   wikitext(
@@ -322,7 +264,6 @@ export const TARGETS: readonly Target[] = [
       const { parseInlineLinksAndFormatting } = await import("~/lib/wiki-os/wikitext/link-parser");
       return (s) => m.serializeInlineNodes(parseInlineLinksAndFormatting(s));
     },
-    VIA_410,
     bound(4, "a node per few characters, parsed and written back")
   ),
   wikitext(
@@ -335,7 +276,6 @@ export const TARGETS: readonly Target[] = [
         return parsed ? m.serializeTemplateToWikitext(parsed) : null;
       };
     },
-    VIA_410,
     bound(
       16,
       "a record keyed by position per `|` (two million keys, each looked at three times), parsed and written back"
@@ -355,7 +295,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/table-parser");
       return (s) => m.parseWikitable(`{|\n${s}\n|}`);
     },
-    VIA_410,
     bound(3, "a cell per few characters")
   ),
   wikitext(
@@ -364,7 +303,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/template-edit");
       return (s) => m.readTemplateParams(`{{x|${s}}}`);
     },
-    undefined,
     bound(5, "a parameter record per `|`")
   ),
   wikitext(
@@ -373,7 +311,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/template-edit");
       return (s) => m.escapeParamValue(s);
     },
-    VIA_410,
     linear(2, "it indexes the braces and the brackets of the whole text before it reads any of it")
   ),
   wikitext(
@@ -385,7 +322,6 @@ export const TARGETS: readonly Target[] = [
         return m.rewriteTemplateParams(`{{x|a=${third}|b=${third}}}`, { a: third, c: third });
       };
     },
-    VIA_410,
     bound(5, "a parameter record per `|`, read and written back")
   ),
   wikitext(
@@ -394,7 +330,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/template-parser");
       return (s) => m.scanTemplateAt(`{{${s}`, 0);
     },
-    VIA_410,
     bound(3, "a parameter record per `|`")
   ),
   wikitext(
@@ -403,7 +338,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/wikitext/template-parser");
       return (s) => m.scanTemplates(s);
     },
-    undefined,
     bound(4, "a template record per `{{`")
   ),
 
@@ -505,6 +439,18 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/image-url");
     return (s) => m.heroImage(s, 4000, 3000);
   }),
+  wikitext("transformers/image-url#extractLeadImagePath", async () => {
+    const m = await import("~/lib/wiki-os/transformers/image-url");
+    return (s) => m.extractLeadImagePath(s);
+  }),
+  wikitext("transformers/image-url#resolveStoredImageUrl", async () => {
+    const m = await import("~/lib/wiki-os/transformers/image-url");
+    return (s) => [
+      m.resolveStoredImageUrl(s),
+      m.resolveStoredImageUrl(`/images/${s}`),
+      m.getImagePath(s),
+    ];
+  }),
   wikitext("transformers/image-url#extractLeadImageFromWikitext", async () => {
     const m = await import("~/lib/wiki-os/transformers/image-url");
     return (s) => m.extractLeadImageFromWikitext(s);
@@ -525,18 +471,28 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/infobox-parser");
     return (s) => m.cleanWikiValue(s);
   }),
-  wikitext("transformers/infobox-parser#parseInfobox", async () => {
-    const m = await import("~/lib/wiki-os/transformers/infobox-parser");
-    return (s) => [m.parseInfobox(s), m.parseInfobox(`{{Infobox country\n| a = ${s}\n}}`)];
-  }),
-  wikitext("transformers/infobox-parser#renderInfoboxHtml", async () => {
-    const m = await import("~/lib/wiki-os/transformers/infobox-parser");
-    return (s) => {
-      const half = s.slice(0, s.length / 2); // two values: together they are the text's length
-      const parsed = m.parseInfobox(`{{Infobox country\n| name = ${half}\n| capital = ${half}\n}}`);
-      return parsed ? m.renderInfoboxHtml(parsed) : null;
-    };
-  }),
+  wikitext(
+    "transformers/infobox-parser#parseInfobox",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/infobox-parser");
+      return (s) => [m.parseInfobox(s), m.parseInfobox(`{{Infobox country\n| a = ${s}\n}}`)];
+    },
+    bound(2, "a field record per `|`")
+  ),
+  wikitext(
+    "transformers/infobox-parser#renderInfoboxHtml",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/infobox-parser");
+      return (s) => {
+        const half = s.slice(0, s.length / 2); // two values: together they are the text's length
+        const parsed = m.parseInfobox(
+          `{{Infobox country\n| name = ${half}\n| capital = ${half}\n}}`
+        );
+        return parsed ? m.renderInfoboxHtml(parsed) : null;
+      };
+    },
+    bound(2, "a field record per `|`")
+  ),
   wikitext("transformers/infobox-parser#parseInfoboxToHtml", async () => {
     const m = await import("~/lib/wiki-os/transformers/infobox-parser");
     return (s) => m.parseInfoboxToHtml(s);
@@ -580,10 +536,14 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/url-compat");
     return (s) => m.titleToWikiOSPath(s);
   }),
-  wikitext("transformers/url-compat#titleToWikiOSRoute", async () => {
-    const m = await import("~/lib/wiki-os/transformers/url-compat");
-    return (s) => m.titleToWikiOSRoute(s);
-  }),
+  wikitext(
+    "transformers/url-compat#titleToWikiOSRoute",
+    async () => {
+      const m = await import("~/lib/wiki-os/transformers/url-compat");
+      return (s) => m.titleToWikiOSRoute(s);
+    },
+    linear(2, "encodeURIComponent writes nine characters for each of these, and that is the work")
+  ),
   html("transformers/url-compat#transformWikiLinks", async () => {
     const m = await import("~/lib/wiki-os/transformers/url-compat");
     return (s) => m.transformWikiLinks(s);
@@ -594,7 +554,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/transformers/wiki-ast-converter");
       return (s) => m.wikitextToAst(s);
     },
-    VIA_410,
     bound(10, "several records per construct (nodes, then editor nodes)")
   ),
   wikitext(
@@ -603,7 +562,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/transformers/wiki-ast-converter");
       return (s) => m.astToWikitext(m.wikitextToAst(s));
     },
-    VIA_410,
     bound(8, "several records per construct, converted and written back")
   ),
   wikitext(
@@ -612,7 +570,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/transformers/wiki-ast-converter");
       return (s) => m.astToHtml(m.wikitextToAst(s));
     },
-    VIA_410,
     bound(8, "several records per construct, converted to HTML")
   ),
   wikitext(
@@ -621,7 +578,6 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/transformers/wiki-ast-converter");
       return (s) => m.plateNodesToAst(m.astToPlateNodes(m.wikitextToAst(s)));
     },
-    VIA_410,
     bound(10, "several records per construct, converted to editor nodes and back")
   ),
   wikitext("transformers/wikitext-diff#diffWikitext", async () => {
@@ -654,11 +610,10 @@ export const TARGETS: readonly Target[] = [
       const m = await import("~/lib/wiki-os/transformers/wikitext-parser");
       return (s) => m.parseWikitextToHtml(s, "ixwiki");
     },
-    undefined,
     {
-      // 200,000 characters is the most it compiles (above that it copies the text, the target above): the
+      // 300,000 characters is the most it compiles (above that it copies the text, the target above): the
       // compile is tested at the size it is given.
-      maxChars: 200_000,
+      maxChars: 300_000,
       why: "COMPILE_CEILING",
     }
   ),
@@ -692,7 +647,6 @@ export const TARGETS: readonly Target[] = [
         m.parseTemplateWikitext(`[[${s}]]`, "T", "square"),
       ];
     },
-    undefined,
     bound(10, "a parameter record per `|`")
   ),
 
@@ -848,13 +802,81 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/templates/template-registry");
     return (s) => m.categorizeTemplate("x", s);
   }),
-  wikitext("templates/preview-service#canonicalPreviewInput", async () => {
-    const m = await import("~/lib/wiki-os/templates/preview-service");
+  wikitext("templates/preview-service.server#canonicalPreviewInput", async () => {
+    const m = await import("~/lib/wiki-os/templates/preview-service.server");
     return (s) => m.canonicalPreviewInput(s, { a: s });
   }),
-  wikitext("templates/preview-service#isKnownInfoboxFamily", async () => {
-    const m = await import("~/lib/wiki-os/templates/preview-service");
-    return (s) => m.isKnownInfoboxFamily(s);
+  wikitext("templates/template-data-reader#extractTemplateDataJson", async () => {
+    const m = await import("~/lib/wiki-os/templates/template-data-reader");
+    return (s) => [m.extractTemplateDataJson(s), m.extractTemplateDataJson(`<templatedata>${s}`)];
+  }),
+  wikitext("templates/template-data-reader#parseTemplateData", async () => {
+    const m = await import("~/lib/wiki-os/templates/template-data-reader");
+    return (s) => m.parseTemplateData("x", s);
+  }),
+
+  // ---- api-compat/ (the api.php surface reads page text and request strings) -----------------------
+  wikitext("api-compat/scan#linkTargets", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/scan");
+    return (s) => m.linkTargets(s, 5001);
+  }),
+  wikitext("api-compat/scan#categoryLinks", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/scan");
+    return (s) => m.categoryLinks(s, 1001);
+  }),
+  wikitext("api-compat/scan#externalUrls", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/scan");
+    return (s) => m.externalUrls(s, 500);
+  }),
+  wikitext("api-compat/scan#visibleText", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/scan");
+    return (s) => m.visibleText(s);
+  }),
+  wikitext("api-compat/params#splitMultiValue", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/params");
+    return (s) => m.splitMultiValue(s);
+  }),
+  wikitext("api-compat/modules/list-common#canonicalTitle", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/modules/list-common");
+    return (s) => [m.canonicalTitle(s), m.baseOf(s), m.titleIn(0, s)];
+  }),
+  wikitext("api-compat/modules/query-prop#displayTitleHtml", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/modules/query-prop");
+    return (s) => m.displayTitleHtml(s);
+  }),
+  wikitext("api-compat/modules/query-prop#pagePropsOf", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/modules/query-prop");
+    return (s) => [
+      m.pagePropsOf(s),
+      m.pagePropsOf(`{{DISPLAYTITLE:${s}`),
+      m.pagePropsOf(`{{DEFAULTSORT:${s}`),
+    ];
+  }),
+  wikitext("api-compat/modules/write-common#cleanComment", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/modules/write-common");
+    return (s) => m.cleanComment(s);
+  }),
+  wikitext("api-compat/diff-table#diffTableHtml", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/diff-table");
+    const { diffWikitext } = await import("~/lib/wiki-os/transformers/wikitext-diff");
+    return (s) => m.diffTableHtml(diffWikitext(s, `${s}\nx`), 2 * 1024 * 1024);
+  }),
+  wikitext("api-compat/auth#readCookie", async () => {
+    const m = await import("~/lib/wiki-os/api-compat/auth");
+    return (s) => [
+      m.readCookie(s, "a"),
+      m.readCookie(`a=${s}`, "a"),
+      m.splitBotLogin(s),
+      m.readSessionCookie(s),
+    ];
+  }),
+  wikitext("core/anonymous-author#isAnonymousAuthor", async () => {
+    const m = await import("~/lib/wiki-os/core/anonymous-author");
+    return (s) => m.isAnonymousAuthor(s);
+  }),
+  wikitext("namespace-policy#checkEditPolicy", async () => {
+    const m = await import("~/lib/wiki-os/namespace-policy");
+    return (s) => m.checkEditPolicy(s, { rights: new Set(), linkedWikiUsername: null });
   }),
 
   // ---- the helpers outside those folders that read page text (excerpt, lead image, category …) ---
@@ -896,7 +918,6 @@ export const TARGETS: readonly Target[] = [
       return (s) =>
         m.parseInfoboxWithTemplates(`{{Infobox country\n| name = ${s}\n| capital = x\n}}`);
     },
-    undefined,
     {
       // It answers null for a text of more than 500,000 characters: it is run on the most it reads.
       maxChars: 499_000,
@@ -923,10 +944,6 @@ export const TARGETS: readonly Target[] = [
 
 /** Exported functions that take page text and are not run, each with the reason. */
 export const SKIPPED: ReadonlyArray<readonly [name: string, reason: string]> = [
-  [
-    "adapters/ixstates/content-extractor#extractWikiContent",
-    "no caller anywhere (it is exported by a barrel nothing imports); its expressions for headings, categories, links and tables are quadratic on hostile text: reported, not fixed",
-  ],
   [
     "services/render-service#buildViewBundle",
     "imports the database client (module side effects); its parts (transformArticleHtml, slimArticleHtml, markTemplateChips) are targets",

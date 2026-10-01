@@ -7,16 +7,11 @@
  * seconds, so the budget has room for a loaded machine: the best of two runs counts, and a function that
  * is over the budget on a tenth of the text is failed at once instead of being run on all of it (a linear
  * function takes a tenth of its time there, a quadratic one a hundredth).
- *
- * A target's `owner` (another plan's file is what makes it slow) names the families that are not run here, a
- * quadratic function takes seconds on each; `bun scripts/audit/wikios-regex-fuzz.ts` runs and reports them. Every
- * other family of the target is held to the budget.
  */
 import {
   TARGETS,
   familiesFor,
   inputFor,
-  ownerOf,
   type Target,
 } from "../../../../scripts/audit/wikios-regex-fuzz-targets";
 
@@ -42,7 +37,7 @@ async function best(call: Call, input: string, budget: number): Promise<number> 
   return first > budget ? Math.min(first, await time(call, input)) : first;
 }
 
-/** The families `target` is slow on, as `[family, message]`: the ones another plan owns are not run (they take seconds each, and the fuzz script reports them). */
+/** The families `target` is slow on, as messages. */
 async function slowFamilies(target: Target): Promise<string[]> {
   const call = await target.load();
   await time(call, "<p>{{a}} [[b]] 'c'</p>"); // what a function sets up on its first call (a DOM, a table) is not what is measured
@@ -50,7 +45,6 @@ async function slowFamilies(target: Target): Promise<string[]> {
   const size = Math.min(SIZE, target.limits?.maxChars ?? SIZE);
   const budget = BUDGET_MS * (target.limits?.slowFactor ?? 1);
   for (const family of familiesFor(target.kind)) {
-    if (ownerOf(target, family.name)) continue;
     const probe = await best(call, inputFor(target.kind, family, size / 10), budget);
     if (probe > budget) {
       slow.push(`${family.name}: ${probe.toFixed(0)} ms on ${size / 10_000} KB`);
