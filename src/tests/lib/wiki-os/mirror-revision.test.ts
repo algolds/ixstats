@@ -191,7 +191,7 @@ describe("importing a revision", () => {
     expect(xml.match(/<page>/g)).toHaveLength(1);
   });
 
-  it("looks the author up by the verified wiki account of the revision's user, else uses the name it carries", async () => {
+  it("looks the author up by the verified wiki account of the revision's user, else imports the label under the import prefix", async () => {
     await runRevisionJob(job());
     expect(mockLinkFindMany).toHaveBeenCalledWith({
       where: { userId: { in: ["user-1"] }, source: "ixwiki", verifiedAt: { not: null } },
@@ -200,14 +200,59 @@ describe("importing a revision", () => {
 
     linksAre({});
     await runRevisionJob(job());
-    expect(requestsTo("import")[1]?.file?.content).toContain("<username>Some Country</username>");
+    expect(requestsTo("import")[1]?.file?.content).toContain(
+      "<username>wikios&gt;Some Country</username>"
+    );
 
     revisionsAre(revisionRow({ author: null, authorId: null }));
     await runRevisionJob(job());
     expect(requestsTo("import")[2]?.file?.content).toContain(
-      "<username>Community Contributor</username>"
+      "<username>wikios&gt;Community Contributor</username>"
     );
     expect(mockLinkFindMany).toHaveBeenCalledTimes(2); // none for a revision with no user
+  });
+
+  describe("attribution: only a verified wiki account is imported as a bare name", () => {
+    const authors = async (...rows: Array<ReturnType<typeof revisionRow>>) => {
+      revisionsAre(...rows);
+      await runBatch(rows.map((row, at) => job({ id: `job-${at}`, revisionId: row.id })));
+      const xml = requestsTo("import").at(-1)?.file?.content ?? "";
+      return [...xml.matchAll(/<username>([^<]+)<\/username>/g)].map((match) => match[1]);
+    };
+
+    it("never credits a label that is the name of a real MediaWiki user (no verified link)", async () => {
+      // user-1 verified "Alice"; a save labelled "WikiOSAdmin" with no author id, and one labelled "Alice" by
+      // somebody else, are not those accounts
+      linksAre({ "user-1": "Alice" });
+
+      expect(
+        await authors(
+          revisionRow({ id: "rev-1", author: "WikiOSAdmin", authorId: null }),
+          revisionRow({ id: "rev-2", author: "Alice", authorId: "user-2" })
+        )
+      ).toEqual(["wikios&gt;WikiOSAdmin", "wikios&gt;Alice"]);
+    });
+
+    it("never credits a label that looks like an IP address as an anonymous edit", async () => {
+      expect(
+        await authors(
+          revisionRow({ id: "rev-1", author: "127.0.0.1", authorId: null }),
+          revisionRow({ id: "rev-2", author: "2001:db8::1", authorId: null })
+        )
+      ).toEqual(["wikios&gt;127.0.0.1", "wikios&gt;2001:db8::1"]);
+    });
+
+    it("keeps the verified account bare, whatever the label says", async () => {
+      expect(
+        await authors(revisionRow({ id: "rev-1", author: "Some Country", authorId: "user-1" }))
+      ).toEqual(["Alice"]);
+    });
+
+    it("imports a blank label under the default name, prefixed", async () => {
+      expect(await authors(revisionRow({ id: "rev-1", author: "   ", authorId: null }))).toEqual([
+        "wikios&gt;Community Contributor",
+      ]);
+    });
   });
 
   it("marks a minor edit minor", async () => {
@@ -626,7 +671,7 @@ describe("a batch of revisions of one title", () => {
     ]);
     expect([...xml.matchAll(/<username>([^<]+)<\/username>/g)].map((m) => m[1])).toEqual([
       "Alice",
-      "Nobody Known",
+      "wikios&gt;Nobody Known",
     ]);
     expect([...xml.matchAll(/<comment>([^<]+)<\/comment>/g)].map((m) => m[1])).toEqual([
       "edit 1",

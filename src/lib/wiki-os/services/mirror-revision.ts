@@ -2,8 +2,8 @@
  * mirror-revision.ts — `revision` mirror jobs: WikiOS revisions become MediaWiki revisions, a batch at a time.
  *
  * Revisions go out as a one-page XML export through `action=import` with `assignknownusers=1`, so MediaWiki
- * credits each to the account that made it (the verified link of the author, else the author's name; an unknown
- * name becomes `wikios>Name`) at the time it was made. The worker takes every revision job of a title that waits
+ * credits each to the account that made it (the verified link of the author; any other author goes out as
+ * `wikios>Label`, never as a bare name that could be a MediaWiki account) at the time it was made. The worker takes every revision job of a title that waits
  * next in line (see `pickBatch`, at most 50 revisions and about 6 MB of XML) and imports them in ONE request, oldest
  * first, so a backlog costs MediaWiki one null revision, not one per edit (below).
  *
@@ -172,6 +172,20 @@ async function verifiedUsernames(
   return new Map(links.map((link) => [link.userId, link.username]));
 }
 
+/**
+ * The name a revision is imported under. Only a VERIFIED wiki account goes out as itself, which MediaWiki credits to
+ * the local account of that name (`assignknownusers`). Every other author is a free-text label (a country, `User_x`,
+ * an old `wikiUsername`, anything) that must never be taken for a MediaWiki user or an IP address, so it goes out with
+ * the import prefix, a form MediaWiki keeps as it is and never maps to an account.
+ */
+function contributorName(
+  revision: MirroredRevision,
+  verifiedUsernames: ReadonlyMap<string, string>
+): string {
+  const verified = revision.authorId ? verifiedUsernames.get(revision.authorId) : undefined;
+  return verified ?? `${INTERWIKI_PREFIX}>${revision.author?.trim() || UNKNOWN_AUTHOR}`;
+}
+
 function requireMirrorBot(): string {
   const bot = mirrorBotName();
   if (!bot) throw new Error("WIKIOS_MEDIAWIKI_BOT_USER is not set: there is no mirror account");
@@ -220,11 +234,7 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
           parentId: null,
           timestamp: toXmlTimestamp(restore ? new Date() : revision.createdAt),
           contributor: {
-            username:
-              bot ??
-              (revision.authorId ? usernames.get(revision.authorId) : undefined) ??
-              revision.author ??
-              UNKNOWN_AUTHOR,
+            username: bot ?? contributorName(revision, usernames),
             id: null,
           },
           minor: restore ? false : revision.minor,
