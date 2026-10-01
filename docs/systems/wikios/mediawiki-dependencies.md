@@ -37,6 +37,8 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | Call site | What it sends | Notes |
 | --- | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `renderArticleViaMediaWiki` | `action=parse&text=<Postgres wikitext>&title=` plus `prop=text\|links\|templates\|images\|categories\|properties\|displaytitle` | The render service's engine call (`services/render-service.ts`), once per revision, off the reader's path. Also the template preview's engine call (below). **Read path only for a page that was never rendered or is stale (plan 404).** Internal URL (`WIKIOS_MEDIAWIKI_INTERNAL_URL`) when configured. |
+| `src/lib/wiki-os/services/render-service.ts` (`renderArticle`, `renderStaleBatch`) | the call above, for one article | Once per revision: after a save or an inbound edit, from the render queue and the `wiki-render-stale` job; or on a reader's first view of a page that was never rendered. At most two renders at once. |
+| `src/lib/wiki-os/services/revision-view-service.ts` `getRevisionView` | the call above, for an **old revision's** Postgres wikitext | **On a read path:** `?oldid=` / a history diff view renders that revision on demand (one render per revision at a time, a limiter, the view remembered in the process; a revision of a deleted page is "missing" to a reader who may not see it). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
 | `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
@@ -112,6 +114,35 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | `src/lib/flags/flag-resolver.server.ts` | iiwiki flag `imageinfo`. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
 
+### Files that only mention an ixwiki.com address (no request to MediaWiki)
+
+`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the literals `ixwiki.com`, `index.php` and `rest.php`.
+None of these files calls IxWiki's MediaWiki:
+
+- **Links and display URLs** to public IxWiki pages and files, built into an `href` or text: `src/app/(wiki-os)/util/repository/page.tsx`,
+  `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
+  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
+  `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
+  `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
+  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`,
+  `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
+  `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
+- **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/thinkpages/AccountCreationModal.tsx`,
+  `src/lib/sports/transition.ts`.
+- **URL rewriting and referrer comments**: `src/app/(wiki-os)/wiki/layout.tsx`, `src/lib/wiki-os/transformers/fix-editor-images.ts`,
+  `src/lib/wiki-os/transformers/resolve-highres-image.ts`.
+- **`User-Agent` strings** sent to other services: `src/lib/demo-seed/sports/sports-helpers.ts`, `src/lib/discord/ixtwitter-sync.ts`,
+  `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
+- **Other hosts under ixwiki.com that are not MediaWiki.** The forum (`forum.ixwiki.com`, XenForo):
+  `src/app/api/forum/attachment/[id]/route.ts`, `src/app/api/forum/user-cards/route.ts`, `src/components/settings/ForumAccountVerify.tsx`,
+  `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/server/modules/forum/lib/bbcode-transformer.ts`,
+  `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors). Accounts (`accounts.ixwiki.com`, Clerk):
+  `src/components/navigation/UserProfileMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
+  (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
+  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`ixwiki.com/projects/ixstates`):
+  `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
+  `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
+
 ## 3. Scripts (operator-run, outside `src/`)
 
 Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-media.ts`, `scripts/wikios-fetch-export.ts` (with
@@ -140,10 +171,12 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 1. A page that was never rendered, or whose render is stale, is rendered once by the engine (plan 404); the reader gets the
    previous view or the local compile meanwhile.
-2. A request for a page Postgres has no row for imports it once from MediaWiki (plan 412, budgeted).
-3. Image bytes (the media proxy): not wiki content.
-4. Editing: the editor preview and the template preview (both rendered on the server).
-5. A sister wiki's page.
+2. An old revision (`?oldid=`, a history view) is rendered on demand by the engine (`revision-view-service.ts`), once per
+   revision while it is remembered.
+3. A request for a page Postgres has no row for imports it once from MediaWiki (plan 412, budgeted).
+4. Image bytes (the media proxy): not wiki content.
+5. Editing: the editor preview and the template preview (both rendered on the server).
+6. A sister wiki's page.
 
 ## 6. Open items found by the audit (not changed by plan 418)
 

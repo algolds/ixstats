@@ -2,8 +2,8 @@
 /**
  * Plan 418: `docs/systems/wikios/mediawiki-dependencies.md` is the owner-facing list of what still talks to
  * MediaWiki and why. It is only worth reading if it is complete: every source file that names a MediaWiki
- * endpoint (an `api.php` URL, the API-URL helper, the IxWiki base URL, the MediaWiki environment variables)
- * must be mentioned in it. A new call site means a new row.
+ * endpoint (an `api.php`, `index.php` or `rest.php` URL, an `ixwiki.com` address, the API-URL helper, the IxWiki base URL,
+ * the MediaWiki environment variables) or calls the render engine must be mentioned in it. A new call site means a new row.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -16,7 +16,7 @@ const DOC = fs.readFileSync(
 
 /** What marks a file as naming a MediaWiki endpoint. */
 const ENDPOINT =
-  /getMediaWikiApiUrl|\bapi\.php\b|DEFAULT_MEDIAWIKI_URL|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI|IXWIKI_LOCAL_PATH/;
+  /getMediaWikiApiUrl|\bapi\.php\b|\bindex\.php\b|\brest\.php\b|ixwiki\.com|DEFAULT_MEDIAWIKI_URL|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI|IXWIKI_LOCAL_PATH|renderArticleViaMediaWiki|wikitextToHtml/;
 const SOURCE_FILE = /\.(?:ts|tsx)$/;
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
