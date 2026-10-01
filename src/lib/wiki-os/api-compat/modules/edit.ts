@@ -2,15 +2,16 @@
  * edit.ts — `action=edit` (plan 410).
  *
  * An edit goes through the same services as the editor's `saveWikitext`: `assertCanEdit` (block,
- * namespace, protection, rights), `detectEditConflict` for `baserevid`/`basetimestamp`, then
- * `saveWikitext` (PostgreSQL, the MediaWiki mirror, the cache purge). This module only turns the
- * request's text parameters (`text`, `appendtext`, `prependtext`, `section`) into the page's new
- * wikitext, and the saved revision into MediaWiki's answer.
+ * namespace, protection, rights), `detectEditConflict` for `baserevid`/`basetimestamp` (the early answer), then
+ * `saveWikitext` (PostgreSQL, the MediaWiki mirror, the cache purge), which repeats the base check atomically.
+ * This module only turns the request's text parameters (`text`, `appendtext`, `prependtext`, `section`) into the
+ * page's new wikitext, and the saved revision into MediaWiki's answer.
  *
  * Every parameter is read first (`readEditRequest`), then checked, then acted on.
  */
 
 import { createHash } from "node:crypto";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import { ApiError, missingOneOf, mixedParams } from "../errors";
 import { mwTimestamp, type JsonObject } from "../format";
 import type { ApiParams } from "../params";
@@ -170,13 +171,13 @@ function editedText(
 }
 
 /**
- * Whether the page has moved on from the revision the request was based on. The page is "the
- * revision `baserevid` names" and/or "the revision that was current at `basetimestamp`"; each is
- * mapped to the revision reference `detectEditConflict` compares against the page's head.
+ * The revision references the request's base names: the revision `baserevid` names and/or the revision that was
+ * current at `basetimestamp` (each mapped to the reference `detectEditConflict` compares against the page's head),
+ * NO_SUCH_REVISION for a base that names no revision of this page. Empty when the request gave no base.
  */
-async function baseConflicts(rc: ApiContext, request: EditRequest, title: string, articleId: string): Promise<boolean> {
+async function baseRefs(rc: ApiContext, request: EditRequest, title: string, articleId: string): Promise<string[]> {
   const { baseRevId, baseTime } = request;
-  const { store, services } = rc.deps;
+  const { store } = rc.deps;
   const refs: string[] = [];
 
   if (baseRevId !== undefined) {
@@ -194,11 +195,22 @@ async function baseConflicts(rc: ApiContext, request: EditRequest, title: string
     });
     refs.push(rev && mwTimestamp(rev.timestamp) === mwTimestamp(baseTime) ? rev.ref : NO_SUCH_REVISION);
   }
+  return refs;
+}
+
+/**
+ * Whether the page has moved on from the revisions the request was based on (every base must be the page's head).
+ * This is the early answer; the save repeats the check for one of them atomically (`expectedHeadRef`), which is what
+ * stops two edits made at the same time on the same base.
+ */
+async function baseConflicts(rc: ApiContext, refs: readonly string[], title: string): Promise<boolean> {
   for (const ref of refs) {
-    if (ref === NO_SUCH_REVISION || (await services.detectEditConflict(title, ref))) return true;
+    if (ref === NO_SUCH_REVISION || (await rc.deps.services.detectEditConflict(title, ref))) return true;
   }
   return false;
 }
+
+const editConflict = () => new ApiError("editconflict", "Edit conflict detected.");
 
 /** The refusals that need no permission check: the model, createonly and nocreate. */
 function checkEditPreconditions(request: EditRequest, row: PageRow | null, model: string): void {
@@ -238,19 +250,25 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
   if (wikitext.length > MAX_EDIT_CHARS) {
     throw new ApiError("toobig", `The page would be longer than ${MAX_EDIT_CHARS} characters.`);
   }
-  if (row && (request.baseRevId !== undefined || request.baseTime) && (await baseConflicts(rc, request, title, row.articleId))) {
-    throw new ApiError("editconflict", "Edit conflict detected.");
-  }
+  const bases = row ? await baseRefs(rc, request, title, row.articleId) : [];
+  if (await baseConflicts(rc, bases, title)) throw editConflict();
   if (row && wikitext === normalized(base)) {
     return { edit: { result: "Success", nochange: true, title, pageid: row.pageId, contentmodel: model } };
   }
 
-  const { revisionRowId } = await rc.deps.services.saveWikitext(rc.session.ctx, {
-    title,
-    wikitext,
-    summary: cleanComment(summaryOf(edited, request.summary)),
-    minor: request.minor,
-  });
+  // Every base named the head a moment ago; the save checks that it still does, atomically (no base: no check).
+  let revisionRowId: string;
+  try {
+    ({ revisionRowId } = await rc.deps.services.saveWikitext(rc.session.ctx, {
+      title,
+      wikitext,
+      summary: cleanComment(summaryOf(edited, request.summary)),
+      minor: request.minor,
+      expectedHeadRef: bases[0],
+    }));
+  } catch (error) {
+    throw error instanceof EditConflictError ? editConflict() : error;
+  }
   const saved = await rc.deps.store.revisionByRowId(revisionRowId);
   return {
     edit: {

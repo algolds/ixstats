@@ -150,6 +150,8 @@ describe.each([1, 2] as const)("a Pywikibot session, formatversion=%i", (version
       wikitext: "Sandbox after the bot edit",
       summary: "Bot: testing",
       minor: false,
+      // Pywikibot sends the base revision it loaded: the save re-checks it atomically
+      expectedHeadRef: "501",
     });
 
     // 7. Reloading shows the bot's revision as the newest.

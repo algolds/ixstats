@@ -7,6 +7,7 @@ jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 
 type Body = Record<string, any>;
@@ -217,6 +218,44 @@ describe("edit conflicts", () => {
     expect((await edit({ title: "Existing", text: "late", basetimestamp: "2025-01-01T00:00:00Z" })).error.code).toBe("editconflict");
     expect((await edit({ title: "Existing", text: "bad", basetimestamp: "yesterday" })).error.code).toBe("badtimestamp");
     expect(saves()).toHaveLength(1);
+  });
+
+  it("hands the base to the save, which re-checks it atomically; no base, no check", async () => {
+    const { edit, saves } = await setup();
+    await edit({ title: "Existing", text: "based", baserevid: "102" });
+    await edit({ title: "Existing", text: "unbased" });
+    await edit({ title: "Brand new", text: "new page", baserevid: "5" });
+
+    expect(saves().map((call) => (call.args[1] as Body).expectedHeadRef)).toEqual(["102", undefined, undefined]);
+  });
+
+  it("answers editconflict when the save finds the page moved on after the early check passed", async () => {
+    // two edits on the same base race: both pass the early check, the second one's save is refused by the transaction
+    const { edit, saves } = await setup({
+      services: {
+        saveWikitext: async () => {
+          throw new EditConflictError({ currentWikitext: "Somebody else's text", currentRevisionRef: "103" });
+        },
+      },
+    });
+
+    const body = await edit({ title: "Existing", text: "late", baserevid: "102" });
+
+    expect(body.error).toEqual({ code: "editconflict", info: "Edit conflict detected.", "*": expect.any(String) });
+    expect(body.edit).toBeUndefined();
+    expect(saves()).toHaveLength(0); // (the override is not the recording one)
+  });
+
+  it("lets any other failure of the save through as it is", async () => {
+    const { edit } = await setup({
+      services: {
+        saveWikitext: async () => {
+          throw new TRPCError({ code: "FORBIDDEN", message: "permissiondenied: nope" });
+        },
+      },
+    });
+
+    expect((await edit({ title: "Existing", text: "x", baserevid: "102" })).error.code).toBe("permissiondenied");
   });
 
   it("ignores a base for a page that does not exist yet, and checks no conflict without one", async () => {

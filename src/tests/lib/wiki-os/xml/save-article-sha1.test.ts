@@ -25,6 +25,8 @@ jest.mock("~/server/db", () => {
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
     wikiMirrorJob: { create: jest.fn().mockResolvedValue({}) },
+    $queryRaw: jest.fn().mockResolvedValue([{ id: "a1" }]),
+    $executeRaw: jest.fn().mockResolvedValue(0),
   };
   return { db: { $transaction: (cb: (t: typeof tx) => unknown) => cb(tx) } };
 });

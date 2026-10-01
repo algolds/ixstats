@@ -7,6 +7,7 @@ import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/rend
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -17,6 +18,9 @@ const mockFindMany = jest.fn();
 const mockFindFirst = jest.fn();
 const mockRevisionFindMany = jest.fn();
 const mockJobCreate = jest.fn();
+const mockQueryRaw = jest.fn();
+const mockTxArticleFindUnique = jest.fn();
+const mockExecuteRaw = jest.fn();
 
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -29,12 +33,15 @@ jest.mock("~/server/db", () => {
     wikiArticle: {
       upsert: (...a: unknown[]) => mockUpsert(...a),
       count: (...a: unknown[]) => mockCount(...a),
+      findUnique: (...a: unknown[]) => mockTxArticleFindUnique(...a),
     },
     wikiRevision: {
       findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   };
   return {
     db: {
@@ -109,6 +116,9 @@ beforeEach(() => {
   mockRevisionFindFirst.mockResolvedValue(null);
   mockRevisionCreate.mockResolvedValue({ id: "r1" });
   mockJobCreate.mockResolvedValue({});
+  mockQueryRaw.mockResolvedValue([{ id: "a1" }]); // the page's row, locked
+  mockTxArticleFindUnique.mockResolvedValue(null);
+  mockExecuteRaw.mockResolvedValue(0);
   mockFindUnique.mockResolvedValue(null);
   mockFindMany.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
@@ -365,10 +375,133 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
     await save("four");
 
     expect(mockRevisionFindFirst.mock.calls[0]?.[0]).toMatchObject({
-      where: { articleId: "a1", parked: false },
-      orderBy: { createdAt: "desc" },
+      where: { article: { source: "ixwiki", title: "Foo" }, parked: false },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ byteSize: 4, byteDelta: 1 });
+  });
+});
+
+describe("ArticleRepository.saveArticle: the page is locked, and the edit-conflict check is part of the save (F1)", () => {
+  const HEAD = { id: "rev-head", mwRevId: null, byteSize: 10 };
+  const save = (extra: { expectedHeadRef?: string | null } = {}, wikitext = "new text") => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext, ...extra });
+  };
+  const nothingWritten = () => {
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  };
+
+  it("locks the article row (FOR UPDATE, by source and title) before it reads the head, and reads the head before it writes", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+
+    await save();
+
+    const sql = (mockQueryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join("?");
+    expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR UPDATE/);
+    expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixwiki", "Foo"]);
+    expect(mockExecuteRaw).not.toHaveBeenCalled(); // the row exists: no advisory lock
+    const order = (fn: jest.Mock) => fn.mock.invocationCallOrder[0]!;
+    expect(order(mockQueryRaw)).toBeLessThan(order(mockRevisionFindFirst));
+    expect(order(mockRevisionFindFirst)).toBeLessThan(order(mockUpsert));
+    expect(order(mockUpsert)).toBeLessThan(order(mockRevisionCreate));
+  });
+
+  it("queues the creators of a page that has no row yet on an advisory lock (taken with $executeRaw: it returns void), keyed by source and title", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+
+    await save({ expectedHeadRef: null });
+
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+    const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
+    expect((strings as TemplateStringsArray).join("?")).toMatch(
+      /SELECT pg_advisory_xact_lock\(\?::int, hashtext\(\?\)\)/
+    );
+    expect(values).toEqual([41102, "ixwiki:Foo"]);
+    // and only then looks for a head
+    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      mockRevisionFindFirst.mock.invocationCallOrder[0]!
+    );
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws an edit conflict, writes nothing and tells nobody when the base is not the head", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ id: "rev-head", mwRevId: 4321, byteSize: 10 });
+    mockTxArticleFindUnique.mockResolvedValue({ wikitext: "Somebody else's text" });
+
+    const failure = await save({ expectedHeadRef: "rev-older" }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(EditConflictError);
+    expect((failure as EditConflictError).conflict).toEqual({
+      currentWikitext: "Somebody else's text",
+      currentRevisionRef: "4321",
+    });
+    expect(mockTxArticleFindUnique.mock.calls[0]?.[0]).toMatchObject({
+      where: { source_title: { source: "ixwiki", title: "Foo" } },
+    });
+    nothingWritten();
+  });
+
+  it("saves when the base names the head by its row id or, once stamped, by its MediaWiki rev_id", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ id: "rev-head", mwRevId: 4321, byteSize: 10 });
+
+    await save({ expectedHeadRef: "rev-head" });
+    await save({ expectedHeadRef: "4321" });
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes a null base as 'the editor believes the page is new': fine for a page with no live revision, a conflict for one that has", async () => {
+    await save({ expectedHeadRef: null });
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+
+    jest.clearAllMocks();
+    mockQueryRaw.mockResolvedValue([{ id: "a1" }]);
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+    mockTxArticleFindUnique.mockResolvedValue({ wikitext: "A page made meanwhile" });
+    const failure = await save({ expectedHeadRef: null }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(EditConflictError);
+    expect((failure as EditConflictError).conflict).toEqual({
+      currentWikitext: "A page made meanwhile",
+      currentRevisionRef: "rev-head",
+    });
+    nothingWritten();
+  });
+
+  it("conflicts when the editor had a base but the page has no live revision any more", async () => {
+    mockRevisionFindFirst.mockResolvedValue(null);
+    mockTxArticleFindUnique.mockResolvedValue(null);
+
+    const failure = await save({ expectedHeadRef: "rev-gone" }).catch((error: unknown) => error);
+
+    expect((failure as EditConflictError).conflict).toEqual({ currentWikitext: "", currentRevisionRef: null });
+    nothingWritten();
+  });
+
+  it("makes no check without an expected head (a revert, a rollback, an upload's page), but still locks the page", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+
+    await save();
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes the check against the latest LIVE revision: a parked one is not the head", async () => {
+    await save({ expectedHeadRef: "rev-head" }).catch(() => undefined);
+
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({
+      article: { source: "ixwiki", title: "Foo" },
+      parked: false,
+    });
   });
 });
 

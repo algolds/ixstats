@@ -183,7 +183,11 @@ export interface FakeWikiDb {
    * is understood: it waits for the transaction that holds the key, and holds it until its own ends.
    */
   $executeRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<number>;
-  /** Returns no rows. The real client cannot read the `void` the advisory lock returns: asking it to is an error here too. */
+  /**
+   * Returns no rows, but for `SELECT "id" FROM wiki_articles ... FOR UPDATE` (a save's row lock): it waits for the
+   * transaction that holds the row, holds it until its own ends, and answers the row's id (none: no row, no lock). The real
+   * client cannot read the `void` the advisory lock returns: asking it to is an error here too.
+   */
   $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
 }
 
@@ -206,8 +210,8 @@ const transactions = new AsyncLocalStorage<{ releases: Array<() => void> }>();
 /** For each key, the end of the queue of transactions waiting for it. */
 const lockQueues = new Map<string, Promise<void>>();
 
-async function acquireAdvisoryLock(key: string): Promise<void> {
-  advisoryLocks.push(key);
+async function acquireAdvisoryLock(key: string, record = true): Promise<void> {
+  if (record) advisoryLocks.push(key);
   const transaction = transactions.getStore();
   if (!transaction) return;
   const before = lockQueues.get(key) ?? Promise.resolve();
@@ -273,10 +277,19 @@ export function createFakeWikiDb() {
         for (const release of transaction.releases) release();
       }
     },
-    $queryRaw: async (strings) => {
-      if (strings.join("?").includes("pg_advisory_xact_lock")) {
+    $queryRaw: async (strings, ...values) => {
+      const sql = strings.join("?").replace(/\s+/g, " ");
+      if (sql.includes("pg_advisory_xact_lock")) {
         // what Prisma does with a `SELECT` of a `void` column: the lock must be taken with $executeRaw
         throw new Error("Failed to deserialize column of type 'void'");
+      }
+      if (/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR UPDATE/.test(sql)) {
+        // `ArticleRepository.saveArticle`'s row lock: held until the transaction ends; no row, no lock (and no row back)
+        const [source, title] = values;
+        const row = tables.wikiArticle.rows.find((a) => a.source === source && a.title === title);
+        if (!row) return [];
+        await acquireAdvisoryLock(`row:${row.id}`, false);
+        return [{ id: row.id }];
       }
       return [];
     },

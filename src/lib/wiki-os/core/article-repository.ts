@@ -22,6 +22,7 @@ import {
   type WikiArticleEntity,
   type WikiRevisionSummary,
 } from "./domain-types";
+import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
 import {
@@ -36,6 +37,12 @@ import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateDependents } from "../services/render-service";
 import { notifyWatchers } from "../services/watchlist-notify";
+
+/**
+ * The first int of the per-title save locks, in the two-int form `pg_advisory_xact_lock(namespace, key)` (a key space of
+ * its own: the single-int locks are `withJobLock`'s, staged-uploads.ts uses 41101, cards 7331). Arbitrary.
+ */
+const ARTICLE_SAVE_LOCK_NAMESPACE = 41102;
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
@@ -626,6 +633,49 @@ export interface FindArticleOptions {
   includeArchived?: boolean;
 }
 
+type SaveTransaction = Prisma.TransactionClient;
+
+/**
+ * Serialize the saves of one page: take the article row's lock (`SELECT ... FOR UPDATE`, held until the transaction
+ * ends), so a second save of the page waits here until the first has committed and then reads the head it left. The
+ * lock is the row's own, so a writer that updates the row (a page move, the inbound sync, an import) queues behind a
+ * save too. A page with no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the
+ * one that gets it second reads the page the first created.
+ */
+async function lockPageForSave(tx: SaveTransaction, source: string, title: string): Promise<void> {
+  const locked = await tx.$queryRaw<Array<{ id: string }>>`
+    SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR UPDATE`;
+  if (locked.length > 0) return;
+  // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ARTICLE_SAVE_LOCK_NAMESPACE}::int, hashtext(${`${source}:${title}`}))`;
+}
+
+/** The page's latest live revision (a parked one is not the page), as a save under the page's lock reads it. */
+function loadHeadForSave(tx: SaveTransaction, source: string, title: string) {
+  return tx.wikiRevision.findFirst({
+    where: { article: { source, title }, parked: false },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, mwRevId: true, byteSize: true },
+  });
+}
+
+/** The conflict a save that is not based on the page's head hands back: the page as it is, and its head's reference. */
+async function conflictOf(
+  tx: SaveTransaction,
+  source: string,
+  title: string,
+  head: { id: string; mwRevId: number | null } | null
+): Promise<EditConflictError> {
+  const current = await tx.wikiArticle.findUnique({
+    where: { source_title: { source, title } },
+    select: { wikitext: true },
+  });
+  return new EditConflictError({
+    currentWikitext: current?.wikitext ?? "",
+    currentRevisionRef: head ? toRevisionRef(head) : null,
+  });
+}
+
 export class ArticleRepository {
   static async getArticleBySlug(
     slug: string,
@@ -687,7 +737,9 @@ export class ArticleRepository {
   }
 
   /**
-   * Save an article and create an append-only revision ledger entry (<10ms)
+   * Save an article and create an append-only revision ledger entry (<10ms). The saves of one page run one at a time
+   * (the page is locked first, see `lockPageForSave`), and with `input.expectedHeadRef` the save throws `EditConflictError` unless that is
+   * still the page's latest live revision: the check and the write are one atomic step.
    */
   static async saveArticle(
     input: SaveArticleInput,
@@ -711,6 +763,14 @@ export class ArticleRepository {
 
     // Save article and create revision in a single atomic transaction
     const result = await db.$transaction(async (tx) => {
+      // 0. Queue behind any other save of this page, then read the head it left: the edit-conflict check, the byte
+      // delta and the new revision's parent all come from this one read.
+      await lockPageForSave(tx, source, title);
+      const previous = await loadHeadForSave(tx, source, title);
+      if (input.expectedHeadRef !== undefined && !headMatchesBase(previous, input.expectedHeadRef)) {
+        throw await conflictOf(tx, source, title, previous);
+      }
+
       // Resolve DB user id if Clerk ID or username was provided
       let resolvedDbUserId: string | null = null;
       if (authorId) {
@@ -782,11 +842,6 @@ export class ArticleRepository {
 
       // 2. Create append-only revision, sized against the previous one
       const byteSize = Buffer.byteLength(wikitext, "utf8");
-      const previous = await tx.wikiRevision.findFirst({
-        where: { articleId: article.id, parked: false },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, mwRevId: true, byteSize: true },
-      });
       const revision = await tx.wikiRevision.create({
         data: {
           articleId: article.id,
