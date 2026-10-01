@@ -5,7 +5,7 @@
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import {
@@ -39,6 +39,7 @@ import {
   visibleTitles,
 } from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
+import { downloadMedia } from "~/lib/wiki-os/services/media-download";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -450,8 +451,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
   /**
    * Get forum thread preview by threadId.
+   *
+   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require
+   * sign-in. Three things keep it from becoming a window onto the private forum (plan 416 item 6):
+   * it is rate-limited like the other public reads; a thread whose `discussion_state` is not exactly
+   * "visible" (moderated, deleted, or missing from the answer) yields nothing; and XenForo itself
+   * decides which forums this key may see. OPERATOR CHECK: the XenForo API key must be a
+   * non-super-user key scoped to a guest-like user, or a super-user key used without `XF-Api-User`
+   * (as here), so XenForo enforces forum visibility. The response carries no per-forum "public" flag
+   * to check from this side.
    */
-  getForumThreadPreview: publicProcedure
+  getForumThreadPreview: rateLimitedPublicProcedure
     .input(z.object({ threadId: z.number().int().positive() }))
     .query(async ({ input }) => {
       const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
@@ -476,13 +486,14 @@ export const wikiosPageContentRouter = createTRPCRouter({
             post_date: number;
             reply_count: number;
             view_count: number;
+            discussion_state?: string;
             Forum?: { title: string };
             first_post?: { message: string };
           };
         };
 
         const t = data.thread;
-        if (!t) return null;
+        if (t?.discussion_state !== "visible") return null;
 
         const rawMsg = t.first_post?.message ?? "";
         const excerpt = rawMsg
@@ -524,9 +535,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Download a media file from the wiki as base64.
+   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB). Public, so
+   * rate-limited: every call fetches and buffers a file.
    */
-  downloadFile: publicProcedure
+  downloadFile: rateLimitedPublicProcedure
     .input(z.object({ filename: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
       const cleanFilename = input.filename.replace(/^File:/i, "");
@@ -535,11 +547,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
       if (!url) return null;
 
       try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const arrayBuffer = await res.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        return { content: base64, mime: asset?.mimeType || "image/png" };
+        // Allowlisted hosts only, at most 10 MB: this endpoint is public (plan 416).
+        const bytes = await downloadMedia(url);
+        if (!bytes) return null;
+        return { content: bytes.toString("base64"), mime: asset?.mimeType || "image/png" };
       } catch (err) {
         console.error("[WikiOS] Failed to download media file:", err);
         return null;

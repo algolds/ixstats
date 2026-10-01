@@ -576,9 +576,10 @@ export function ArticleRenderer({
 
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
+  // Lorewards and article awards belong to IxWiki pages: another wiki's page asks for none.
   const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
     { title },
-    { staleTime: 300000 }
+    { staleTime: 300000, enabled: source === "ixwiki" }
   );
   const awardsData = awardsQuery.data;
 
@@ -774,7 +775,9 @@ export function ArticleRenderer({
             authorInfo={authors}
             categories={categories}
             awardsData={awardsData}
-            marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
+            marginThreadsCount={
+              (marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)
+            }
             marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
             onOpenMargin={(tab) => {
               setMarginTab(tab || "threads");

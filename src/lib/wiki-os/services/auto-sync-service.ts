@@ -10,11 +10,12 @@
 import { db } from "~/server/db";
 import { cleanExcerpt, calculateRawTextBytes } from "../transformers/wikitext-parser";
 import { extractLeadImageFromWikitext } from "../transformers/image-url";
-import { toArticleSlug } from "../core/domain-types";
+import { toArticleSlug, toRevisionRef } from "../core/domain-types";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
 import { DEFAULT_USER_AGENT } from "../config";
 import { enqueueRender } from "./render-service";
+import { notifyWatchers } from "./watchlist-notify";
 
 const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
 const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
@@ -278,12 +279,12 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
     const prevRev = await db.wikiRevision.findFirst({
       where: { articleId: article.id },
       orderBy: { createdAt: "desc" },
-      select: { byteSize: true },
+      select: { id: true, mwRevId: true, byteSize: true },
     });
 
     const byteDelta = prevRev ? rawByteSize - (prevRev.byteSize || 0) : rawByteSize;
 
-    await db.wikiRevision.createMany({
+    const recorded = await db.wikiRevision.createMany({
       data: [
         {
           articleId: article.id,
@@ -301,6 +302,21 @@ async function syncPageOrThrow(title: string): Promise<boolean> {
       ],
       skipDuplicates: true,
     });
+
+    // watchlist: a MediaWiki edit that changed the text is a new head: tell the page's watchers (once
+    // each until they visit). Plan 406 rewrites this function; keep this call where the head changes.
+    if (wikitextChanged && recorded.count > 0) {
+      void notifyWatchers({
+        kind: "edited",
+        articleId: article.id,
+        title: articleTitle,
+        editor: author,
+        editorWikiUsername: author,
+        summary: sanitize(rev?.comment || ""),
+        previousRef: prevRev ? toRevisionRef(prevRev) : null,
+        currentRef: String(revId),
+      });
+    }
   }
 
   // Parse category tags and sync memberships

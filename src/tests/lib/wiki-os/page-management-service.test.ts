@@ -13,6 +13,7 @@ import {
 } from "~/lib/wiki-os/core/page-management-service";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
+import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -26,6 +27,9 @@ const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
 
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/watchlist-notify", () => ({
+  notifyWatchers: jest.fn().mockResolvedValue(0),
+}));
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
@@ -674,5 +678,113 @@ describe("PageManagementService forgets what the caches hold about a page it cha
       PageManagementService.movePage("old_name", "new_name", "x", actor)
     ).rejects.toThrow();
     expect(evictWikiTitleCaches).not.toHaveBeenCalled();
+  });
+});
+
+describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
+  it("notifies the watchers of a moved page, under its new title, leaving the mover out", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "moved",
+      articleId: "orig",
+      title: "New name",
+      fromTitle: "Old name",
+      editor: "Tester",
+      editorUserId: "u1",
+      summary: "tidy",
+    });
+  });
+
+  it("notifies the watchers of the talk page that moved with it", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(jest.mocked(notifyWatchers).mock.calls.map(([change]) => change.articleId).sort()).toEqual([
+      "orig",
+      "talk-orig",
+    ]);
+  });
+
+  it("notifies the watchers of a deleted page, leaving the deleter out", async () => {
+    await PageManagementService.archiveArticle("Old name", "spam", actor);
+
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "deleted",
+      articleId: "orig",
+      title: "Old name",
+      editor: "Tester",
+      editorUserId: "u1",
+      summary: "spam",
+    });
+  });
+
+  it("notifies nobody when the move or the delete was refused", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+
+    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toThrow();
+    await expect(PageManagementService.archiveArticle("Old name", "x", actor)).rejects.toThrow();
+
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+
+  it("notifies the watchers of a restored page, leaving the restorer out", async () => {
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+
+    await PageManagementService.restoreArticle("Old name", actor, "ixwiki", "Wrongly deleted");
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "restored",
+      articleId: "orig",
+      title: "Old name",
+      editor: "Tester",
+      editorUserId: "u1",
+      summary: "Wrongly deleted",
+    });
+  });
+
+  it("notifies nobody when the restore was refused", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
+
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["move", () => PageManagementService.movePage("old_name", "new_name", "tidy", actor)],
+    ["delete", () => PageManagementService.archiveArticle("Old name", "spam", actor)],
+    [
+      "restore",
+      () => {
+        pages({ old_name: { ...original, status: "ARCHIVED" } });
+        return PageManagementService.restoreArticle("Old name", actor);
+      },
+    ],
+  ])("a %s does not wait for the watchers to be told", async (_operation, run) => {
+    jest.mocked(notifyWatchers).mockReturnValueOnce(new Promise<number>(() => undefined));
+
+    await expect(run()).resolves.toMatchObject({ success: true });
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+  });
+
+  it("a watcher notification that fails costs the operation nothing", async () => {
+    jest.mocked(notifyWatchers).mockRejectedValueOnce(new Error("notifications down"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(
+      PageManagementService.archiveArticle("Old name", "spam", actor)
+    ).resolves.toMatchObject({ success: true });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(warn).toHaveBeenCalledWith(
+      "[PageManagement] Could not notify watchers:",
+      expect.any(Error)
+    );
+    warn.mockRestore();
   });
 });
