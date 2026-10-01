@@ -41,6 +41,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | `src/lib/wiki-os/services/revision-view-service.ts` `getRevisionView` | the call above, for an **old revision's** Postgres wikitext | **On a read path:** `?oldid=` / a history diff view renders that revision on demand (one render per revision at a time, a limiter, the view remembered in the process; a revision of a deleted page is "missing" to a reader who may not see it). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
+| `src/lib/wiki-os/api-compat/deps.ts` (`renderWikitext`) | `renderArticleViaMediaWiki(<text or old revision's wikitext>)` | WikiOS's own `/w/api.php` (plan 410): `action=parse&text=` from a bot session, or `parse&oldid=` (20/min per IP). Never the in-process compiler: a failed render answers `renderunavailable`. |
 | `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
 
 ### sync (inbound)
@@ -84,6 +85,32 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | Call site | What it does |
 | --- | --- |
 | `src/app/api/mediawiki/[wiki]/api.php/route.ts`, `src/app/api/mediawiki/_config.ts` | Read-only proxy of a wiki's `api.php` for outside callers. **IxWiki's `allowedActions` is `[]`: the route answers 410 and asks no wiki** (WikiOS serves `/w/api.php` itself, plan 410, and the proxy could return a page WikiOS has deleted; no WikiOS code called it). It still forwards `query`/`opensearch`/`parse` for the sister wikis (below). |
+
+### WikiOS's own `/w/api.php` (served, never called)
+
+These files implement or link to the MediaWiki-compatible API that WikiOS **serves** (plan 410). They name `api.php` /
+`index.php` because they produce MediaWiki's wire format, and send no request to any MediaWiki (the one render call is
+`api-compat/deps.ts`, listed under render above):
+`src/app/w/api.php/route.ts`, `src/app/(wiki-os)/util/botpasswords/page.tsx`, `src/server/api/routers/wikios/bot-passwords.ts`,
+`src/server/api/routers/wikios/index.ts`, `src/lib/wiki-os/services/edit-service.ts`,
+`src/lib/wiki-os/api-compat/actions.ts`,
+`src/lib/wiki-os/api-compat/auth-store.ts`,
+`src/lib/wiki-os/api-compat/auth.ts`,
+`src/lib/wiki-os/api-compat/bot-passwords.ts`,
+`src/lib/wiki-os/api-compat/dispatch.ts`,
+`src/lib/wiki-os/api-compat/error-map.ts`,
+`src/lib/wiki-os/api-compat/errors.ts`,
+`src/lib/wiki-os/api-compat/format.ts`,
+`src/lib/wiki-os/api-compat/main-params.ts`,
+`src/lib/wiki-os/api-compat/modules/page-ops.ts`,
+`src/lib/wiki-os/api-compat/modules/query-meta.ts`,
+`src/lib/wiki-os/api-compat/modules/query-prop.ts`,
+`src/lib/wiki-os/api-compat/params.ts`,
+`src/lib/wiki-os/api-compat/registry.ts`,
+`src/lib/wiki-os/api-compat/store-lists.ts`,
+`src/lib/wiki-os/api-compat/store-types.ts`,
+`src/lib/wiki-os/api-compat/store.ts`,
+`src/lib/wiki-os/api-compat/types.ts`.
 
 ### url-only (no request)
 
