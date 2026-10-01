@@ -5,6 +5,8 @@
  */
 import {
   alertDeadJobs,
+  ATTEMPT_BACKOFF_MS,
+  ATTEMPT_KEY,
   DEAD_ALERT_INTERVAL_MS,
   DEAD_ALERT_KEY,
 } from "~/lib/wiki-os/services/mirror-alerts";
@@ -72,30 +74,70 @@ describe("alertDeadJobs", () => {
     });
   });
 
-  it("does not remember the warning when Discord did not deliver it, so the next cycle tries again", async () => {
-    mockCount.mockResolvedValue(1);
-    mockFindMany.mockResolvedValue([job("Foo")]);
-    warn.mockResolvedValue(false); // down, refused, or not reachable
+  describe("when Discord does not deliver the warning", () => {
+    /** SystemConfig as a keyed store, so the stamps of one call are what the next call reads. */
+    const config = new Map<string, string>();
+    const minutes = (n: number) => new Date(NOW.getTime() + n * 60_000);
 
-    await alertDeadJobs(NOW);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(mockConfigUpsert).not.toHaveBeenCalled();
+    beforeEach(() => {
+      config.clear();
+      mockConfigFind.mockImplementation(async ({ where }: { where: { key: string } }) =>
+        config.has(where.key) ? { value: config.get(where.key) } : null
+      );
+      mockConfigUpsert.mockImplementation(async ({ where, update }: { where: { key: string }; update: { value: string } }) => {
+        config.set(where.key, update.value);
+      });
+      mockCount.mockResolvedValue(1);
+      mockFindMany.mockResolvedValue([job("Foo")]);
+      warn.mockResolvedValue(false); // down, refused, or not reachable
+    });
 
-    // the next cycle, a minute later: no stamp, so it is not held back, and this time it arrives
-    warn.mockResolvedValue(true);
-    await alertDeadJobs(new Date(NOW.getTime() + 60_000));
-    expect(warn).toHaveBeenCalledTimes(2);
-    expect(mockConfigUpsert).toHaveBeenCalledTimes(1);
-  });
+    it("does not stamp the warning as sent: the 30-minute throttle is for warnings that arrived", async () => {
+      await alertDeadJobs(NOW);
 
-  it("does not remember the warning of several jobs either when it was not delivered", async () => {
-    mockCount.mockResolvedValue(3);
-    mockFindMany.mockResolvedValue(["A", "B", "C"].map((title) => job(title)));
-    warn.mockResolvedValue(false);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(config.has(DEAD_ALERT_KEY)).toBe(false);
+      // the attempt is stamped on its own
+      expect(config.get(ATTEMPT_KEY)).toBe(NOW.toISOString());
+    });
 
-    await alertDeadJobs(NOW);
+    it("backs off 5 minutes after a failed attempt, so a dead webhook is not tried in every cycle", async () => {
+      expect(ATTEMPT_BACKOFF_MS).toBe(5 * 60_000);
+      await alertDeadJobs(NOW);
 
-    expect(mockConfigUpsert).not.toHaveBeenCalled();
+      await alertDeadJobs(minutes(1));
+      await alertDeadJobs(minutes(4));
+      expect(warn).toHaveBeenCalledTimes(1); // held back, without even looking for jobs again
+      expect(mockCount).toHaveBeenCalledTimes(1);
+
+      await alertDeadJobs(minutes(5));
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(config.get(ATTEMPT_KEY)).toBe(minutes(5).toISOString()); // and the back-off starts again
+    });
+
+    it("tells the jobs as soon as an attempt after the back-off arrives, and then holds to the 30 minutes", async () => {
+      await alertDeadJobs(NOW);
+      warn.mockResolvedValue(true); // Discord is back
+
+      await alertDeadJobs(minutes(6));
+
+      expect(warn).toHaveBeenCalledTimes(2);
+      expect(config.get(DEAD_ALERT_KEY)).toBe(minutes(6).toISOString());
+      await alertDeadJobs(minutes(20));
+      expect(warn).toHaveBeenCalledTimes(2); // 30 minutes after the delivery, not after the first attempt
+      await alertDeadJobs(minutes(36));
+      expect(warn).toHaveBeenCalledTimes(3);
+    });
+
+    it("stamps a failed attempt of several jobs the same way", async () => {
+      mockCount.mockResolvedValue(3);
+      mockFindMany.mockResolvedValue(["A", "B", "C"].map((title) => job(title)));
+
+      await alertDeadJobs(NOW);
+
+      expect(config.has(DEAD_ALERT_KEY)).toBe(false);
+      expect(config.get(ATTEMPT_KEY)).toBe(NOW.toISOString());
+    });
   });
 
   it("looks up nothing and sends nothing when no Discord webhook is configured", async () => {
