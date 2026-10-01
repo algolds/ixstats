@@ -769,7 +769,8 @@ export const TARGETS: readonly Target[] = [
       return (s) => m.markTemplateChips(`{{MyCountry:a}}${s}`); // a chip in it, or the DOM is never built
     },
     {
-      maxChars: 500_000,
+      // the 15 characters the driver adds keep it within DOM_SIZE_CEILING (500,000): a run over it is left alone, at once
+      maxChars: 499_900,
       slowFactor: 12,
       why: "jsdom builds a DOM at a few microseconds an element, so a page this long of one-character elements (`<br>`) takes a second: the DOM is the work",
     }
@@ -1183,6 +1184,12 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<li>a</li>␤", "<li>a</li>\n"],
   ["<div>a</div>␤", "<div>a</div>\n"],
   ["<blockquote>a</blockquote>␤", "<blockquote>a</blockquote>\n"],
+  // chips that become markers, one node replaced each
+  [
+    '<a href="/wiki/Template:CountryData:C:population">x</a>␠',
+    '<a href="/wiki/Template:CountryData:C:population">x</a> ',
+  ],
+  ["<p>{{CountryData:C:population}}</p>", "<p>{{CountryData:C:population}}</p>"],
 ];
 
 /** The XML units, for the dump reader. */

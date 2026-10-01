@@ -1,3 +1,6 @@
+// The chip markers as the integration branch has them (515ca3c72), before the regex-DoS sweep (plan F15), verbatim apart from its
+// import paths: regex-dos-html.test.ts holds the capped rewrite against it. Not used by any code.
+
 /**
  * chip-markers.ts — template chips as inert markers in a stored view bundle.
  *
@@ -6,15 +9,14 @@
  * `<span data-wikios-chip="KEY"></span>` instead, written with the DOM at render time (before the
  * sanitizer runs), and a reader's request substitutes exactly those markers.
  *
- * Why not string surgery on the stored HTML (what the template resolver once did): the sanitizer's
+ * Why not string surgery on the stored HTML (what `applyResolvedTemplates` does): the sanitizer's
  * output serializes `<` and `>` unescaped inside attribute values, so a regex that looks for
  * `<a ...>...</a>` can be fooled by an attribute that contains `</a>` and end up publishing the rest
  * of that attribute as live markup. A marker can only ever match where a real element is, because
  * the key alphabet below holds no character the serializer escapes or that could end the marker.
  */
 
-import { leavesAlone } from "../transformers/inert-dom";
-import { extractTemplateKeys, rawChipsIn, type TemplateKey } from "./template-resolver";
+import { extractTemplateKeys, type TemplateKey } from "~/lib/wiki-os/templates/template-resolver";
 
 export const CHIP_ATTRIBUTE = "data-wikios-chip";
 
@@ -32,6 +34,7 @@ const MAX_KEY_LENGTH = 200;
 
 const CHIP_SIGNS =
   /Template(?::|%3a)(?:MyCountry|CountryData|BusinessData)|\{\{(?:MyCountry|CountryData|BusinessData):/i;
+const RAW_CHIP = /\{\{((?:MyCountry|CountryData|BusinessData):[^|}]+)\}\}/g;
 
 export function isMarkableKey(key: string): boolean {
   return key.length <= MAX_KEY_LENGTH && MARKABLE_KEY.test(key);
@@ -81,37 +84,21 @@ function markerElement(document: Document, key: string): HTMLElement {
   return marker;
 }
 
-/**
- * ponytail: MAX_MARKERS, 1,000: the most chips of one page (chip links and raw `{{MyCountry:…}}` together) that
- * become markers. jsdom's `replaceWith` is linear in the parent's children, so 8,000 chip links in one flat
- * parent took 4.9 s; a real page holds a few dozen. A chip past the cap stays what it was, an anchor or raw
- * text, which the reader's client resolves on its own (as a key a marker cannot carry always did).
- */
-const MAX_MARKERS = 1_000;
-
-/**
- * The text of `node` with each markable raw chip replaced by a marker (at most `limit`), or null when there is none.
- * `count` is how many markers it made.
- */
-function markRawChips(
-  document: Document,
-  text: string,
-  limit: number
-): { fragment: DocumentFragment; count: number } | null {
+/** The text of `node` with each markable raw chip replaced by a marker, or null when there is none. */
+function markRawChips(document: Document, text: string): DocumentFragment | null {
   const fragment = document.createDocumentFragment();
   let last = 0;
-  let count = 0;
-  for (const chip of rawChipsIn(text)) {
-    if (count >= limit) break;
-    const key = extractTemplateKeys(chip.text)[0]?.key;
+  let marked = false;
+  for (const match of text.matchAll(RAW_CHIP)) {
+    const key = extractTemplateKeys(match[0])[0]?.key;
     if (!key || !isMarkableKey(key)) continue;
-    fragment.append(text.slice(last, chip.index), markerElement(document, key));
-    last = chip.index + chip.text.length;
-    count++;
+    fragment.append(text.slice(last, match.index), markerElement(document, key));
+    last = match.index + match[0].length;
+    marked = true;
   }
-  if (count === 0) return null;
+  if (!marked) return null;
   fragment.append(text.slice(last));
-  return { fragment, count };
+  return fragment;
 }
 
 function textNodesOf(document: Document, root: HTMLElement): Text[] {
@@ -144,26 +131,19 @@ function sharedDocument(): Document {
  * nodes, serialize. HTML with no chip in it comes back byte for byte. Server-side only (jsdom).
  */
 export function markTemplateChips(html: string): string {
-  if (!CHIP_SIGNS.test(html) || leavesAlone(html)) return html;
+  if (!CHIP_SIGNS.test(html)) return html;
 
   const document = sharedDocument();
   const holder = document.createElement("div");
   holder.innerHTML = html;
 
-  let markers = 0;
   for (const anchor of Array.from(holder.querySelectorAll("a[href]"))) {
-    if (markers >= MAX_MARKERS) break;
     const key = chipKeyOfHref(anchor.getAttribute("href") ?? "");
-    if (!key) continue;
-    anchor.replaceWith(markerElement(document, key));
-    markers++;
+    if (key) anchor.replaceWith(markerElement(document, key));
   }
   for (const node of textNodesOf(document, holder)) {
-    if (markers >= MAX_MARKERS) break;
-    const marked = markRawChips(document, node.data, MAX_MARKERS - markers);
-    if (!marked) continue;
-    node.replaceWith(marked.fragment);
-    markers += marked.count;
+    const fragment = markRawChips(document, node.data);
+    if (fragment) node.replaceWith(fragment);
   }
   return holder.innerHTML;
 }

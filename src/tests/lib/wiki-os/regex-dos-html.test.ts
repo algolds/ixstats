@@ -9,6 +9,7 @@ import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext
 import { featuredArticleDetails } from "~/lib/wiki-os/main-page/featured-article";
 import { leadParagraph } from "~/lib/wiki-os/main-page/lead-paragraph";
 import { markTemplateChips } from "~/lib/wiki-os/templates/chip-markers";
+import { markTemplateChips as legacyMarkTemplateChips } from "./legacy/chip-markers";
 import { extractTemplateKeys, rawChipsIn } from "~/lib/wiki-os/templates/template-resolver";
 import {
   stripConflictingStyles,
@@ -575,5 +576,61 @@ describe("slimArticleHtml empties the blanks between blocks instead of removing 
     }
     // the removing version takes 1.7 s on the first of these alone
     expect(performance.now() - started).toBeLessThan(3_000);
+  });
+});
+
+// ---- chip-markers: a page's markers are capped -----------------------------------------------------------------
+
+describe("markTemplateChips makes at most 1,000 markers", () => {
+  const chipLink = (i: number) => `<a href="/wiki/Template:CountryData:C${i}:population">x</a> `;
+  const markersIn = (html: string) => (html.match(/data-wikios-chip/g) ?? []).length;
+  const TOKENS = [
+    '<a href="/wiki/Template:CountryData:Aurelia:population">x</a>',
+    '<a href="/wiki/Template:MyCountry:gdp">y</a>',
+    '<a href="/wiki/Template:BusinessData:Acme:revenue">z</a>',
+    '<a href="/wiki/Template:CountryData:Bosnia & Herzegovina:population">w</a>',
+    '<a href="/wiki/Foo">f</a>',
+    "{{MyCountry:gdp}}",
+    "{{CountryData:Aurelia:population}}",
+    "{{CountryData:a&b:x}}",
+    "{{MyCountry:",
+    "<p>",
+    "</p>",
+    "<div>",
+    "</div>",
+    "<script>{{MyCountry:gdp}}</script>",
+    " ",
+    "text",
+  ];
+
+  it("marks what it marked, on pages with fewer", () => {
+    const pages = [...randomTexts(TOKENS, 3_000, 61, 14)].filter((page) =>
+      /MyCountry|CountryData|BusinessData/.test(page)
+    );
+    expect(disagreements(pages, markTemplateChips, legacyMarkTemplateChips)).toEqual([]);
+  });
+
+  it("leaves the chips past the cap as they were, and takes time linear in them", () => {
+    const html = Array.from({ length: 8_000 }, (_, i) => chipLink(i)).join("");
+    const started = performance.now();
+    const marked = markTemplateChips(html);
+    expect(performance.now() - started).toBeLessThan(2_000); // the uncapped version takes 5 s
+    expect(markersIn(marked)).toBe(1_000);
+    expect(marked.startsWith('<span data-wikios-chip="CountryData:C0:population"></span> ')).toBe(
+      true
+    );
+    expect(marked.endsWith(chipLink(7_999))).toBe(true);
+    expect(marked.match(/<a /g)).toHaveLength(7_000);
+  });
+
+  it("counts raw chips and links together", () => {
+    const html = `${Array.from({ length: 600 }, (_, i) => chipLink(i)).join("")}${Array.from(
+      { length: 900 },
+      (_, i) => `<p>{{CountryData:R${i}:population}}</p>`
+    ).join("")}`;
+    const marked = markTemplateChips(html);
+    expect(markersIn(marked)).toBe(1_000);
+    expect(marked).toContain("<p>{{CountryData:R500:population}}</p>");
+    expect(marked).toContain('<p><span data-wikios-chip="CountryData:R399:population"></span></p>');
   });
 });
