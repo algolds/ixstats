@@ -390,6 +390,14 @@ function scopeRules(rules: readonly RawRule[], strings: readonly string[], depth
 }
 
 /**
+ * Every identifier of `css` (escapes resolved), which is every class name it names, however it names it (`.x`,
+ * `:is(.x)`, `[class~=x]`, `.x\\2d y`): a superset of the classes it styles, read in one pass.
+ */
+export function cssIdentifiers(css: string): Set<string> {
+  return new Set(unescapeCss(css).match(/[\w\-\u0080-\uffff]+/g) ?? []);
+}
+
+/**
  * The CSS of a TemplateStyles block as it may appear in an article: scoped under the article root and
  * stripped of everything that could load, run or reach outside it. An empty string when nothing is left.
  */

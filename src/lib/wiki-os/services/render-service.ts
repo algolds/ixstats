@@ -35,7 +35,7 @@ import { LinkGraphService } from "../core/link-graph-service";
 import { canonicalizeTitle } from "../core/title";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
-import { slimArticleHtml } from "../transformers/slim-html";
+import { slimArticleHtml, templateStyleIdentifiers } from "../transformers/slim-html";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 
 /** Bump when the bundle's shape or the transform changes. */
@@ -94,12 +94,17 @@ const SUPERSEDED: RenderResult = { ok: false, superseded: true };
 export function buildViewBundle(rawHtml: string): ViewBundle {
   const transformed = transformArticleHtml(stripConflictingStyles(rawHtml), "", "ixwiki");
   // sanitized first, then slimmed: the slimming only removes (titles that repeat their link, classes
-  // nothing uses, empty attributes, layout whitespace), so it cannot let anything through
-  const clean = (html: string) => slimArticleHtml(sanitizeWikiArticleHtml(markTemplateChips(html)));
+  // nothing uses, empty attributes, layout whitespace), so it cannot let anything through. A class a kept
+  // TemplateStyles block styles is not "nothing uses": the sheet of one part styles the others too.
+  const sanitize = (html: string) => sanitizeWikiArticleHtml(markTemplateChips(html));
+  const body = sanitize(transformed.contentHtml);
+  const infobox = transformed.infoboxHtml ? sanitize(transformed.infoboxHtml) : null;
+  const notices = transformed.noticesHtml ? sanitize(transformed.noticesHtml) : null;
+  const styled = templateStyleIdentifiers(body, infobox ?? "", notices ?? "");
   return {
-    bodyHtml: clean(transformed.contentHtml),
-    infoboxHtml: transformed.infoboxHtml ? clean(transformed.infoboxHtml) : null,
-    noticesHtml: transformed.noticesHtml ? clean(transformed.noticesHtml) : null,
+    bodyHtml: slimArticleHtml(body, styled),
+    infoboxHtml: infobox === null ? null : slimArticleHtml(infobox, styled),
+    noticesHtml: notices === null ? null : slimArticleHtml(notices, styled),
     toc: transformed.toc,
     rendererVersion: RENDERER_VERSION,
   };
