@@ -14,7 +14,7 @@ import type { SelectedCountry } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { CountryInfoContent, CountryPeekContent } from "./CountryInfoContent";
 
 // Lazy import modals and geo profile to avoid bloating the initial map bundle
@@ -78,25 +78,23 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
       className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
       style={{ animation: "slideInRight 0.25s ease-out" }}
     >
-      <FacetContainer material="regular" className="flex h-full flex-col rounded-none">
+      <FacetMaterial material="regular" className="flex h-full flex-col rounded-none">
         {/* Header */}
-        <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2.5 overflow-hidden">
+        <div className="border-separator flex shrink-0 items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-2 overflow-hidden">
             {state.flagUrl ? (
               <img
                 src={state.flagUrl}
                 alt=""
-                className="border-border h-6 w-9 rounded-sm border object-cover"
+                className="border-separator rounded-control-sm h-6 w-9 border object-cover"
               />
             ) : (
               <div
-                className="border-border h-6 w-9 rounded-sm border"
+                className="border-separator rounded-control-sm h-6 w-9 border"
                 style={{ backgroundColor: country.fillColor }}
               />
             )}
-            <h3 className="text-foreground truncate text-base font-semibold">
-              {state.displayName}
-            </h3>
+            <h3 className="text-label text-title-3 truncate">{state.displayName}</h3>
           </div>
           <Button
             type="button"
@@ -105,7 +103,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
             onClick={onClose}
             aria-label="Close country panel"
             title="Close (Esc)"
-            className="text-muted-foreground h-8 w-8 shrink-0 rounded-full"
+            className="text-label-secondary h-8 w-8 shrink-0 rounded-full"
           >
             <X aria-hidden />
           </Button>
@@ -117,7 +115,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({
           onGeographyFilter={onGeographyFilter}
           onEditMap={onEditMap}
         />
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 

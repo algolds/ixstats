@@ -139,19 +139,19 @@ export function MapWelcomeModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="facet-modal gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-lg">
+      <DialogContent className="rounded-card gap-0 overflow-hidden p-0 sm:max-w-lg">
         {/* Header */}
         <DialogHeader className="flex-row items-center justify-between gap-3 px-6 pt-6 pr-12 pb-4 text-left">
           <div className="flex items-center gap-3">
-            <Globe className="h-6 w-6 shrink-0 text-blue-500" aria-hidden />
+            <Globe className="text-blue h-6 w-6 shrink-0" aria-hidden />
             <div>
               <DialogTitle>Welcome to IxMaps</DialogTitle>
-              <DialogDescription className="text-xs">
+              <DialogDescription className="text-footnote">
                 Explore an interactive & collaborative worldbuilding map
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="secondary" className="font-mono">
+          <Badge variant="secondary" className="tabular-nums">
             v{IXWORLD_VERSION}
           </Badge>
         </DialogHeader>
@@ -166,17 +166,17 @@ export function MapWelcomeModal({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-2 gap-2.5"
+                className="grid grid-cols-2 gap-2"
               >
                 {TIPS.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <FacetCard key={tip.title} surface="solid" className="rounded-xl p-3">
-                      <div className="mb-1.5 flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-blue-500" aria-hidden />
-                        <h3 className="text-foreground text-sm font-semibold">{tip.title}</h3>
+                    <FacetCard variant="inset" key={tip.title} className="p-3">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Icon className="text-blue h-4 w-4" aria-hidden />
+                        <h3 className="text-label text-headline">{tip.title}</h3>
                       </div>
-                      <p className="text-muted-foreground text-xs leading-relaxed">
+                      <p className="text-label-secondary text-footnote leading-relaxed">
                         {tip.description}
                       </p>
                     </FacetCard>
@@ -193,22 +193,22 @@ export function MapWelcomeModal({
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <h3 className="text-foreground mb-3 flex items-center gap-1.5 text-sm font-semibold">
-                  <Keyboard className="text-muted-foreground h-4 w-4" aria-hidden />
+                <h3 className="text-label text-headline mb-3 flex items-center gap-2">
+                  <Keyboard className="text-label-secondary h-4 w-4" aria-hidden />
                   Keyboard shortcuts
                 </h3>
                 <div>
                   {SHORTCUTS.map((s) => (
                     <div
                       key={s.action}
-                      className="border-border flex items-center justify-between border-b px-1 py-2 last:border-b-0"
+                      className="border-separator flex items-center justify-between border-b px-1 py-2 last:border-b-0"
                     >
-                      <span className="text-muted-foreground text-xs">{s.action}</span>
+                      <span className="text-label-secondary text-footnote">{s.action}</span>
                       <div className="flex items-center gap-1">
                         {s.keys.map((k) => (
                           <kbd
                             key={k}
-                            className="bg-muted text-foreground border-border inline-flex h-5 min-w-[22px] items-center justify-center rounded border px-1.5 font-mono text-xs"
+                            className="bg-fill-3 text-label border-separator text-footnote rounded-control-sm inline-flex h-5 min-w-[22px] items-center justify-center border px-2 tabular-nums"
                           >
                             {k}
                           </kbd>
@@ -218,12 +218,12 @@ export function MapWelcomeModal({
                   ))}
                 </div>
 
-                <FacetCard surface="solid" className="mt-4 rounded-xl p-3">
+                <FacetCard variant="inset" className="mt-4 p-3">
                   <div className="mb-1 flex items-center gap-2">
-                    <Compass className="h-4 w-4 text-blue-500" aria-hidden />
-                    <h4 className="text-foreground text-sm font-semibold">Tip</h4>
+                    <Compass className="text-blue h-4 w-4" aria-hidden />
+                    <h4 className="text-label text-headline">Tip</h4>
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     Everything on this map connects to a living wiki. Hover any country or place
                     name for an instant preview, or click through to read the full article.
                   </p>
@@ -235,22 +235,22 @@ export function MapWelcomeModal({
 
         {/* World notes */}
         <div className="px-6 pb-2">
-          <div className="text-muted-foreground space-y-1.5 text-xs leading-relaxed">
+          <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
             <div>
               IxWorld runs on{" "}
               <Tooltip
                 content={
-                  <div className="space-y-1.5 text-xs">
+                  <div className="text-footnote space-y-2">
                     <p className="font-semibold">Current IxTime</p>
-                    <p className="font-mono text-blue-500">{currentIxTime}</p>
-                    <p className="text-muted-foreground">
+                    <p className="text-blue tabular-nums">{currentIxTime}</p>
+                    <p className="text-label-secondary">
                       The in-world clock runs at 2x real time. One real day = two in-game days. All
                       economic cycles, elections, and events follow this clock.
                     </p>
                   </div>
                 }
               >
-                <strong className="text-muted-foreground cursor-help underline decoration-dotted">
+                <strong className="text-label-secondary cursor-help underline decoration-dotted">
                   IxTime
                 </strong>
               </Tooltip>{" "}
@@ -260,42 +260,42 @@ export function MapWelcomeModal({
               The world uses a{" "}
               <Tooltip
                 content={
-                  <div className="space-y-1.5 text-xs">
+                  <div className="text-footnote space-y-2">
                     <p className="font-semibold">Trewartha Climate System</p>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                    <div className="text-footnote grid grid-cols-2 gap-x-3 gap-y-0.5">
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-700" />
+                        <span className="bg-red mr-1 inline-block h-2 w-2 rounded-full" />
                         Tropical Wet (Ar)
                       </span>
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-500" />
+                        <span className="bg-yellow mr-1 inline-block h-2 w-2 rounded-full" />
                         Steppe (Bs)
                       </span>
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="bg-green/70 mr-1 inline-block h-2 w-2 rounded-full" />
                         Temperate Oceanic (Do)
                       </span>
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-cyan-500" />
+                        <span className="bg-cyan mr-1 inline-block h-2 w-2 rounded-full" />
                         Continental (Dc)
                       </span>
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-stone-400" />
+                        <span className="bg-fill mr-1 inline-block h-2 w-2 rounded-full" />
                         Highland (H)
                       </span>
                       <span>
-                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />
+                        <span className="bg-blue mr-1 inline-block h-2 w-2 rounded-full" />
                         Boreal (E)
                       </span>
                     </div>
-                    <p className="text-muted-foreground">
+                    <p className="text-label-secondary">
                       12 climate zones and 9 elevation bands. Climate affects agriculture, GDP
                       modifiers, crisis risk, and NPC behavior.
                     </p>
                   </div>
                 }
               >
-                <strong className="text-muted-foreground cursor-help underline decoration-dotted">
+                <strong className="text-label-secondary cursor-help underline decoration-dotted">
                   Trewartha climate system
                 </strong>
               </Tooltip>{" "}
@@ -305,9 +305,9 @@ export function MapWelcomeModal({
               All lore originates from{" "}
               <Tooltip
                 content={
-                  <div className="space-y-1.5 text-xs">
+                  <div className="text-footnote space-y-2">
                     <p className="font-semibold">IxWiki</p>
-                    <p className="text-muted-foreground">
+                    <p className="text-label-secondary">
                       The collaborative wiki is the canonical source of truth. Country articles,
                       infoboxes, and coordinates feed directly into the map and stats engine. Edits
                       on the wiki are reflected here automatically.
@@ -319,7 +319,7 @@ export function MapWelcomeModal({
                   href={DEFAULT_MEDIAWIKI_URL}
                   target="_blank"
                   rel="noopener"
-                  className="text-muted-foreground hover:text-foreground cursor-help underline decoration-dotted"
+                  className="text-label-secondary hover:text-label cursor-help underline decoration-dotted"
                 >
                   IxWiki
                 </a>
@@ -330,8 +330,8 @@ export function MapWelcomeModal({
         </div>
 
         {/* Footer */}
-        <div className="border-border flex items-center justify-between border-t px-6 py-4">
-          <div className="flex items-center gap-1.5">
+        <div className="border-separator flex items-center justify-between border-t px-6 py-4">
+          <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }).map((_, i) => (
               <button
                 key={i}
@@ -340,9 +340,7 @@ export function MapWelcomeModal({
                 aria-current={i === currentPage ? "step" : undefined}
                 onClick={() => setCurrentPage(i)}
                 className={`h-1.5 rounded-full transition-[background-color,opacity] ${
-                  i === currentPage
-                    ? "w-5 bg-blue-500"
-                    : "bg-muted-foreground/20 hover:bg-muted-foreground/40 w-1.5"
+                  i === currentPage ? "bg-blue w-5" : "bg-fill-2 hover:bg-fill w-1.5"
                 }`}
               />
             ))}
@@ -376,7 +374,7 @@ export function MapWelcomeModal({
                 <Button
                   size="sm"
                   onClick={handleClose}
-                  className="bg-blue-600 text-white hover:bg-blue-600/90"
+                  className="bg-blue text-on-blue hover:bg-blue/90"
                 >
                   Start exploring
                   <Navigation aria-hidden />

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { EditPencil as Edit, Trash as Trash2, MediaImage as Image } from "iconoir-react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -26,10 +26,10 @@ function AssetThumbnail({
 }) {
   if (!asset.imageUrl) {
     return (
-      <div className="bg-muted border-border mr-4 flex h-28 w-28 shrink-0 items-center justify-center rounded-lg border border-dashed">
+      <div className="bg-fill-3 border-separator rounded-control mr-4 flex h-28 w-28 shrink-0 items-center justify-center border border-dashed">
         <div className="flex flex-col items-center gap-1 text-center">
-          <Image aria-hidden="true" className="text-muted-foreground h-8 w-8" />
-          <span className="text-muted-foreground text-xs">No image</span>
+          <Image aria-hidden="true" className="text-label-secondary h-8 w-8" />
+          <span className="text-label-secondary text-footnote">No image</span>
         </div>
       </div>
     );
@@ -44,7 +44,7 @@ function AssetThumbnail({
         e.stopPropagation();
         onViewImage({ url: imageUrl, name: asset.name });
       }}
-      className="border-border hover:border-foreground/30 focus-visible:ring-ring mr-4 h-28 w-28 shrink-0 cursor-pointer overflow-hidden rounded-lg border transition-[border-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
+      className="border-separator hover:border-separator-opaque focus-visible:ring-tint rounded-control mr-4 h-28 w-28 shrink-0 cursor-pointer overflow-hidden border transition-[border-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
     >
       <img
         src={imageUrl}
@@ -65,7 +65,7 @@ function AssetDetails({ asset }: { asset: Asset }) {
   return (
     <div className="min-w-0 flex-1">
       <div className="mb-1 flex flex-wrap items-center gap-2">
-        <h5 className="text-foreground text-sm font-medium">{asset.name}</h5>
+        <h5 className="text-label text-body font-medium">{asset.name}</h5>
         <Badge variant="outline">{asset.category}</Badge>
         {status && (
           <Badge variant="outline" className={status.color}>
@@ -74,9 +74,9 @@ function AssetDetails({ asset }: { asset: Asset }) {
         )}
       </div>
 
-      <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
+      <div className="text-footnote mt-2 grid grid-cols-3 gap-3">
         <div>
-          <span className="text-muted-foreground">Quantity:</span>
+          <span className="text-label-secondary">Quantity:</span>
           <span className="ml-1 font-medium tabular-nums">
             <NumberFlowDisplay value={asset.operational} /> /{" "}
             <NumberFlowDisplay value={asset.quantity} />
@@ -84,7 +84,7 @@ function AssetDetails({ asset }: { asset: Asset }) {
         </div>
         {asset.acquisitionCost > 0 && (
           <div>
-            <span className="text-muted-foreground">Unit Cost:</span>
+            <span className="text-label-secondary">Unit Cost:</span>
             <span className="ml-1 font-medium tabular-nums">
               $
               <NumberFlowDisplay value={asset.acquisitionCost} format="compact" />
@@ -93,7 +93,7 @@ function AssetDetails({ asset }: { asset: Asset }) {
         )}
         {asset.maintenanceCost > 0 && (
           <div>
-            <span className="text-muted-foreground">Maintenance:</span>
+            <span className="text-label-secondary">Maintenance:</span>
             <span className="ml-1 font-medium tabular-nums">
               $
               <NumberFlowDisplay value={asset.maintenanceCost} format="compact" />
@@ -104,12 +104,12 @@ function AssetDetails({ asset }: { asset: Asset }) {
       </div>
 
       {asset.capability && (
-        <p className="text-muted-foreground mt-2 line-clamp-1 text-xs">{asset.capability}</p>
+        <p className="text-label-secondary text-footnote mt-2 line-clamp-1">{asset.capability}</p>
       )}
 
       <div className="mt-2">
-        <div className="mb-1 flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Modernization</span>
+        <div className="text-footnote mb-1 flex items-center justify-between">
+          <span className="text-label-secondary">Modernization</span>
           <span className="font-medium tabular-nums">{asset.modernizationLevel}%</span>
         </div>
         <Progress value={asset.modernizationLevel} className="h-1" />
@@ -125,7 +125,7 @@ export const AssetCard = React.memo(function AssetCard({
   onDelete,
 }: AssetCardProps) {
   return (
-    <FacetContainer depth={3} surface="solid" enableRefraction={false} className="rounded-lg">
+    <FacetCard>
       <div
         className={cn("flex items-start justify-between p-3", asset.imageUrl && "cursor-pointer")}
         onClick={(e) => {
@@ -156,7 +156,7 @@ export const AssetCard = React.memo(function AssetCard({
           <Button
             size="icon"
             variant="ghost"
-            className="text-muted-foreground hover:text-destructive h-8 w-8"
+            className="text-label-secondary hover:text-destructive h-8 w-8"
             aria-label={`Delete ${asset.name}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -167,6 +167,6 @@ export const AssetCard = React.memo(function AssetCard({
           </Button>
         </div>
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 });

@@ -5,6 +5,7 @@ import { motion, type Easing } from "motion/react";
 import { Crown, Globe } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
+import { Badge } from "~/components/ui/badge";
 
 interface MyCountryLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
@@ -21,35 +22,35 @@ const sizeConfig = {
     container: "h-8",
     globe: "h-6 w-6",
     crown: "h-4 w-4",
-    text: "text-lg",
+    text: "text-title-3",
     spacing: "gap-2",
   },
   md: {
     container: "h-10",
     globe: "h-8 w-8",
     crown: "h-5 w-5",
-    text: "text-xl",
+    text: "text-title-2",
     spacing: "gap-3",
   },
   lg: {
     container: "h-12",
     globe: "h-10 w-10",
     crown: "h-6 w-6",
-    text: "text-2xl",
+    text: "text-title-1",
     spacing: "gap-3",
   },
   xl: {
     container: "h-16",
     globe: "h-12 w-12",
     crown: "h-8 w-8",
-    text: "text-3xl",
+    text: "text-large-title",
     spacing: "gap-4",
   },
   xxl: {
     container: "h-20",
     globe: "h-24 w-24",
     crown: "h-20 w-20",
-    text: "text-4xl",
+    text: "text-display",
     spacing: "gap-6",
   },
 };
@@ -118,21 +119,12 @@ export function MyCountryLogo({
         className={cn(
           "relative rounded-full",
           "bg-gradient-to-br from-amber-200 to-amber-400",
-          "shadow-lg shadow-amber-500/30",
+          "shadow-card",
           "border border-amber-300/50",
           config.globe
         )}
       >
         <Globe className={cn("absolute inset-0 m-auto text-amber-900/80", config.globe)} />
-
-        {/* Subtle glow overlay */}
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full",
-            "bg-gradient-to-tr from-transparent via-white/20 to-transparent",
-            "opacity-50"
-          )}
-        />
       </div>
 
       {/* Crown overlay */}
@@ -140,9 +132,9 @@ export function MyCountryLogo({
         <div
           className={cn(
             "rounded-full border border-amber-300 bg-amber-400",
-            "shadow-lg shadow-amber-500/40",
+            "shadow-card",
             "flex items-center justify-center",
-            size === "sm" ? "p-1" : size === "md" ? "p-1.5" : size === "lg" ? "p-2" : "p-2.5"
+            size === "sm" || size === "md" ? "p-1" : size === "lg" ? "p-2" : "p-3"
           )}
         >
           <Crown className={cn("text-amber-900", config.crown)} />
@@ -156,7 +148,7 @@ export function MyCountryLogo({
     <motion.div variants={animated ? textVariants : {}} className="flex flex-col leading-none">
       <span
         className={cn(
-          "bg-gradient-to-r from-amber-600 to-amber-400 bg-clip-text font-bold text-transparent",
+          "bg-gradient-to-r from-amber-600 to-amber-400 bg-clip-text text-transparent",
           config.text
         )}
         style={{ filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))" }}
@@ -164,12 +156,12 @@ export function MyCountryLogo({
         MyCountry
       </span>
       {(showSubtitle || showVersion) && (
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           {showSubtitle && (
             <span
               className={cn(
-                "text-xs font-medium tracking-wider text-amber-600/80 dark:text-amber-400/90",
-                size === "xl" ? "text-sm" : "text-xs"
+                "text-yellow-ink uppercase",
+                size === "xl" ? "text-subhead" : "text-caption"
               )}
               style={{ filter: "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))" }}
             >
@@ -177,9 +169,9 @@ export function MyCountryLogo({
             </span>
           )}
           {showVersion && (
-            <span className="rounded border border-amber-500/20 bg-amber-500/10 px-1 py-0.5 text-xs leading-none font-bold text-amber-400">
+            <Badge variant="yellow" className="px-1 tabular-nums">
               v{BUILDER_VERSION}
-            </span>
+            </Badge>
           )}
         </span>
       )}
@@ -230,10 +222,10 @@ export function MyCountryLogomark({ className }: { className?: string }) {
     <div
       className={cn("relative flex h-3.5 w-3.5 shrink-0 items-center justify-center", className)}
     >
-      <div className="relative flex h-full w-full items-center justify-center rounded-full border border-amber-300/50 bg-gradient-to-br from-amber-200 to-amber-400 shadow-2xs">
+      <div className="shadow-card relative flex h-full w-full items-center justify-center rounded-full border border-amber-300/50 bg-gradient-to-br from-amber-200 to-amber-400">
         <Globe className="h-2.5 w-2.5 text-amber-900/80" />
       </div>
-      <div className="absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full border border-amber-300 bg-amber-400 p-[0.5px] shadow-2xs">
+      <div className="shadow-card absolute -top-0.5 -right-0.5 flex items-center justify-center rounded-full border border-amber-300 bg-amber-400 p-px">
         <Crown className="h-1.5 w-1.5 text-amber-900" />
       </div>
     </div>

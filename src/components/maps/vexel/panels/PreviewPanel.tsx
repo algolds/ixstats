@@ -6,7 +6,7 @@ import { useVexelEditor } from "../VexelEditorProvider";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import { api } from "~/trpc/react";
 
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 
 function ChargeSvgLoader({
   chargeId,
@@ -47,12 +47,9 @@ export default function PreviewPanel() {
   );
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border h-[450px] overflow-hidden rounded-xl border"
-    >
+    <FacetCard className="h-[450px] overflow-hidden">
       <div className="flex h-full flex-col p-4">
-        <h2 className="border-border text-foreground mb-4 border-b pb-2 text-sm font-semibold">
+        <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">
           Live Render
         </h2>
 
@@ -62,7 +59,11 @@ export default function PreviewPanel() {
         ))}
 
         {/* Canvas */}
-        <div className="border-border bg-card/40 relative flex flex-1 items-center justify-center overflow-hidden rounded-lg border p-6">
+        <FacetCard
+          variant="inset"
+          padding="none"
+          className="relative flex flex-1 items-center justify-center overflow-hidden p-6"
+        >
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {/* External Ornaments placeholders (e.g. Helm) */}
             {composition.externals?.helm && (
@@ -86,14 +87,14 @@ export default function PreviewPanel() {
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <Eyebrow className="animate-in fade-in zoom-in-95 block rounded-md border border-amber-600/30 bg-amber-500/90 px-4 py-1.5 whitespace-nowrap shadow-md duration-200">
+                <Eyebrow className="animate-in fade-in zoom-in-95 rounded-control-sm bg-surface-elevated text-label shadow-floating block px-4 py-2 whitespace-nowrap duration-200">
                   {composition.externals.motto.text}
                 </Eyebrow>
               </div>
             )}
           </div>
-        </div>
+        </FacetCard>
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

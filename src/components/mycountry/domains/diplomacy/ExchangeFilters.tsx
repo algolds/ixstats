@@ -32,7 +32,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-full sm:w-56" aria-label="Filter by exchange type">
-            <Palette className="text-muted-foreground" />
+            <Palette className="text-label-secondary" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -47,7 +47,7 @@ export const ExchangeFilters = React.memo<ExchangeFiltersProps>(
 
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-full sm:w-44" aria-label="Filter by status">
-            <Clock className="text-muted-foreground" />
+            <Clock className="text-label-secondary" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

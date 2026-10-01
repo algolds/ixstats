@@ -25,11 +25,11 @@ const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
 };
 
 const BROKER_COLORS: Record<string, string> = {
-  technocrats: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-  party: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
-  generals: "text-red-500 bg-red-500/10 border-red-500/20",
-  magnates: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  clergy: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+  technocrats: "text-blue-ink bg-blue/10 border-blue/20",
+  party: "text-indigo-ink bg-indigo/10 border-indigo/20",
+  generals: "text-red-ink bg-red/10 border-red/20",
+  magnates: "text-yellow-ink bg-yellow/10 border-yellow/20",
+  clergy: "text-green-ink bg-green/10 border-green/20",
 };
 
 export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
@@ -40,7 +40,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="text-muted-foreground flex h-40 items-center justify-center text-xs">
+      <div className="text-label-secondary text-footnote flex h-40 items-center justify-center">
         Loading power brokers...
       </div>
     );
@@ -51,17 +51,17 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
   return (
     <div className="flex w-full flex-col gap-4">
       <div>
-        <h3 className="text-xs font-bold tracking-wider uppercase opacity-70">Power Brokers</h3>
-        <p className="text-muted-foreground text-xs">
+        <h3 className="text-eyebrow opacity-70">Power Brokers</h3>
+        <p className="text-label-secondary text-footnote">
           Internal interest groups unlocked by your country structure and budget allocation
         </p>
       </div>
 
       {activeBrokers.length === 0 ? (
-        <div className="text-muted-foreground flex flex-col items-center justify-center rounded-lg border border-dashed border-black/10 py-8 text-center text-xs dark:border-white/10">
+        <div className="text-label-secondary rounded-control border-separator text-footnote flex flex-col items-center justify-center border border-dashed py-8 text-center">
           <AlertCircle className="mb-2 h-6 w-6 opacity-30" />
           No Power Brokers are currently active.
-          <span className="mt-1 text-xs opacity-75">
+          <span className="text-footnote mt-1 opacity-75">
             Select government components in the editor to summon interest groups.
           </span>
         </div>
@@ -70,7 +70,7 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
           {activeBrokers.map((broker) => {
             const Icon = BROKER_ICONS[broker.id] || Compass;
             const colorClass =
-              BROKER_COLORS[broker.id] || "text-slate-500 bg-slate-500/10 border-slate-500/20";
+              BROKER_COLORS[broker.id] || "text-label-secondary bg-fill-4 border-separator";
             const percent =
               broker.requiredSpend > 0
                 ? Math.min(100, (broker.currentSpend / broker.requiredSpend) * 100)
@@ -79,60 +79,60 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
             return (
               <FacetCard
                 key={broker.id}
-                className={`flex flex-col justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-black/25 dark:hover:border-white/25 ${
-                  broker.satisfied
-                    ? "border-emerald-500/25 bg-emerald-500/[0.02]"
-                    : "border-black/5 dark:border-white/5"
+                className={`hover:border-separator flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                  broker.satisfied ? "border-green/25 bg-green/5" : "border-separator"
                 }`}
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={`rounded border p-1 ${colorClass}`}>
+                      <div className={`rounded-control-sm border p-1 ${colorClass}`}>
                         <Icon className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-bold">{broker.name}</span>
+                      <span className="text-caption font-semibold">{broker.name}</span>
                     </div>
                     <span
-                      className={`rounded px-1.5 py-0.5 text-xs font-bold uppercase ${
+                      className={`text-eyebrow rounded-control-sm px-2 py-0.5 ${
                         broker.satisfied
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+                          ? "bg-green/10 text-green-ink"
+                          : "bg-yellow/10 text-yellow-ink"
                       }`}
                     >
                       {broker.satisfied ? "Satisfied" : "Neglected"}
                     </span>
                   </div>
 
-                  <p className="text-muted-foreground text-xs leading-relaxed">
+                  <p className="text-label-secondary text-footnote leading-relaxed">
                     {broker.description}
                   </p>
                 </div>
 
-                <div className="mt-4 space-y-2.5">
+                <div className="mt-4 space-y-2">
                   {/* Budget allocation satisfaction bar */}
                   <div className="space-y-1">
-                    <div className="text-muted-foreground flex justify-between text-xs font-medium">
+                    <div className="text-label-secondary text-caption flex justify-between">
                       <span>Favored Budget Allocation</span>
                       <span>
                         {broker.currentSpend}% / {broker.requiredSpend}%
                       </span>
                     </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/5">
+                    <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
                       <div
                         className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
-                          broker.satisfied ? "bg-emerald-500" : "bg-amber-500"
+                          broker.satisfied ? "bg-green" : "bg-yellow"
                         }`}
                         style={{ width: `${percent}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="border-t border-black/5 pt-2 dark:border-white/5">
-                    <p className="text-muted-foreground text-xs font-semibold">ACTIVE EFFECT:</p>
+                  <div className="border-separator border-t pt-2">
+                    <p className="text-label-secondary text-caption font-semibold">
+                      ACTIVE EFFECT:
+                    </p>
                     <p
-                      className={`mt-0.5 text-xs font-medium ${
-                        broker.satisfied ? "text-foreground" : "text-muted-foreground"
+                      className={`text-caption mt-0.5 ${
+                        broker.satisfied ? "text-label" : "text-label-secondary"
                       }`}
                     >
                       {broker.satisfied

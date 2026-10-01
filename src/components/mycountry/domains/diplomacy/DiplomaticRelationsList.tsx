@@ -60,10 +60,10 @@ const isDiplomaticGoal = (value: string): value is DiplomaticGoal =>
 
 /** Relationship status is semantic (success → destructive), so it keeps its status colour. */
 const STATUS_THEMES: Record<string, { text: string; progress: string }> = {
-  allied: { text: "text-emerald-500", progress: "bg-emerald-500" },
-  friendly: { text: "text-foreground", progress: "bg-primary" },
-  neutral: { text: "text-muted-foreground", progress: "bg-muted-foreground" },
-  tense: { text: "text-amber-500", progress: "bg-amber-500" },
+  allied: { text: "text-green", progress: "bg-green" },
+  friendly: { text: "text-label", progress: "bg-tint" },
+  neutral: { text: "text-label-secondary", progress: "bg-label-tertiary" },
+  tense: { text: "text-yellow", progress: "bg-yellow" },
   hostile: { text: "text-destructive", progress: "bg-destructive" },
 };
 
@@ -166,8 +166,8 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
         role="status"
         aria-label="Loading diplomatic relations"
       >
-        <Skeleton className="h-56 rounded-2xl" />
-        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="rounded-card h-56" />
+        <Skeleton className="rounded-card h-56" />
       </div>
     );
   }
@@ -177,8 +177,8 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
       <div className="flex min-h-[200px] items-center justify-center p-4">
         <div className="text-destructive flex flex-col items-center gap-2 text-center">
           <AlertCircle className="h-8 w-8" />
-          <p className="text-sm font-semibold">Failed to load relations</p>
-          <p className="text-muted-foreground text-xs">{error.message}</p>
+          <p className="text-headline">Failed to load relations</p>
+          <p className="text-label-secondary text-footnote">{error.message}</p>
         </div>
       </div>
     );
@@ -186,13 +186,10 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   if (allRelations.length === 0) {
     return (
-      <FacetCard
-        depth={1}
-        className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl p-6 text-center"
-      >
-        <Globe className="text-muted-foreground mb-3 h-6 w-6" />
-        <h4 className="text-foreground text-sm font-semibold">No diplomatic relations</h4>
-        <p className="text-muted-foreground mt-1 max-w-sm text-xs">
+      <FacetCard className="rounded-card flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
+        <Globe className="text-label-secondary mb-3 h-6 w-6" />
+        <h4 className="text-label text-headline">No diplomatic relations</h4>
+        <p className="text-label-secondary text-footnote mt-1 max-w-sm">
           You haven't established diplomatic relationships with other nations yet. Create an embassy
           to start building ties.
         </p>
@@ -219,14 +216,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
         return (
           <FacetCard
             key={rel.id}
-            depth={2}
             data-focus-id={rel.targetCountryId ?? rel.id}
-            className="flex flex-col justify-between rounded-2xl p-4"
+            className="rounded-card flex flex-col justify-between p-4"
           >
             {/* Header info */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="border-border shrink-0 overflow-hidden rounded border">
+                <div className="border-separator rounded-control-sm shrink-0 overflow-hidden border">
                   <UnifiedCountryFlag
                     countryName={targetName}
                     flagUrl={rel.targetCountryFlag || rel.flagUrl}
@@ -234,10 +230,10 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-foreground truncate text-sm font-semibold">
+                  <h4 className="text-label text-headline truncate">
                     {targetName.replace(/_/g, " ")}
                   </h4>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     Established: {formatDate(rel.establishedAt)}
                   </p>
                   {sharedBloc && (
@@ -259,7 +255,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Strength indicator */}
             <div className="mt-4 space-y-1">
-              <div className="flex items-center justify-between text-xs">
+              <div className="text-footnote flex items-center justify-between">
                 <Eyebrow className="flex items-center gap-1">
                   <Handshake className="h-3 w-3" />
                   Relation strength
@@ -276,7 +272,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
             </div>
 
             {/* Stance Selection & Partner Stance */}
-            <div className="border-border mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+            <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
               <div className="flex min-w-0 flex-col gap-1">
                 <Eyebrow>Your stance</Eyebrow>
                 {isOwner ? (
@@ -287,7 +283,11 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                     }}
                     disabled={setGoalMutation.isPending}
                   >
-                    <SelectTrigger size="sm" className="w-full text-xs" aria-label="Your stance">
+                    <SelectTrigger
+                      size="sm"
+                      className="text-footnote w-full"
+                      aria-label="Your stance"
+                    >
                       <SelectValue placeholder="Choose stance…" />
                     </SelectTrigger>
                     <SelectContent>
@@ -299,7 +299,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                     </SelectContent>
                   </Select>
                 ) : (
-                  <span className="text-foreground font-semibold">{rel.goalSelf || "Not set"}</span>
+                  <span className="text-label font-semibold">{rel.goalSelf || "Not set"}</span>
                 )}
               </div>
               <div className="flex flex-col gap-1">
@@ -312,13 +312,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Synergy & Conflict Badges */}
             {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+              <p className="text-caption text-green mt-2 flex items-center gap-2">
                 <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                 Goals aligned: reaching Allied status significantly faster.
               </p>
             )}
             {rel.goalSelf && rel.goalTarget && rel.goalSelf !== rel.goalTarget && (
-              <p className="text-destructive mt-2 flex items-center gap-1.5 text-xs font-medium">
+              <p className="text-destructive text-caption mt-2 flex items-center gap-2">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 Stance conflict: relations degradation expected.
               </p>
@@ -326,19 +326,19 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
             {/* Recent Activity / Pain Points */}
             {rel.recentActivity && (
-              <p className="text-muted-foreground mt-2 text-xs italic">
+              <p className="text-label-secondary text-footnote mt-2 italic">
                 Status: {rel.recentActivity}
               </p>
             )}
 
             {/* Details Grid */}
-            <div className="border-border mt-4 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+            <div className="border-separator text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
               <div className="flex flex-col gap-0.5">
                 <Eyebrow className="flex items-center gap-1">
                   <Landmark className="h-3 w-3 shrink-0" />
                   Bilateral trade
                 </Eyebrow>
-                <span className="text-foreground font-semibold tabular-nums">
+                <span className="text-label font-semibold tabular-nums">
                   {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
                 </span>
               </div>
@@ -347,7 +347,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                   <Calendar className="h-3 w-3 shrink-0" />
                   Last contact
                 </Eyebrow>
-                <span className="text-foreground font-semibold">{formatDate(rel.lastContact)}</span>
+                <span className="text-label font-semibold">{formatDate(rel.lastContact)}</span>
               </div>
             </div>
           </FacetCard>

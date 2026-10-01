@@ -4,6 +4,9 @@ import { FacetCard } from "~/components/ui/facet-container";
 import React, { memo } from "react";
 import { SystemRestart as Loader2, NetworkLeft, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
+import { Checkbox } from "~/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Button } from "~/components/ui/button";
 
 const GENERATABLE_ROUTE_TYPES = [
   // Rail
@@ -64,70 +67,68 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
 
   return (
     <div className="space-y-4">
-      <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
-        <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-          <NetworkLeft className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
+      <FacetCard className="space-y-2 p-3">
+        <div className="text-label text-caption flex items-center gap-2 font-semibold">
+          <NetworkLeft className="text-label-secondary h-3.5 w-3.5" aria-hidden />
           <span>Procedural Network Generation</span>
         </div>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote leading-relaxed">
           Generate realistic national transit corridors connecting cities, ports, and industrial
           nodes using topographic friction routing and cost-distance pathfinding.
         </p>
       </FacetCard>
 
       <div className="space-y-2">
-        <label className="text-muted-foreground text-xs font-medium">
-          Network Types to Generate
-        </label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <span id="route-generator-types" className="text-label-secondary text-caption">
+          Network types to generate
+        </span>
+        <ToggleGroup
+          type="multiple"
+          variant="outline"
+          size="sm"
+          aria-labelledby="route-generator-types"
+          className="grid grid-cols-2 gap-2"
+          value={selectedTypes}
+          onValueChange={(next) => {
+            const current: string[] = selectedTypes;
+            const toggled =
+              next.find((t) => !current.includes(t)) ?? current.find((t) => !next.includes(t));
+            if (toggled) toggleType(toggled as GeneratableRouteType);
+          }}
+        >
           {GENERATABLE_ROUTE_TYPES.map((type) => {
-            const isSelected = selectedTypes.includes(type);
-            const style = ROUTE_STYLES[type] ?? { label: type, color: "var(--color-slate-400)" };
-
+            const style = ROUTE_STYLES[type] ?? { label: type, color: "var(--color-gray)" };
             return (
-              <button
-                key={type}
-                type="button"
-                onClick={() => toggleType(type)}
-                className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition active:scale-[0.98] ${
-                  isSelected
-                    ? "border-primary/50 bg-primary/10 text-foreground"
-                    : "border-border/40 bg-background/50 text-muted-foreground hover:bg-muted/30"
-                }`}
-              >
+              <ToggleGroupItem key={type} value={type} className="justify-start">
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full"
                   style={{ backgroundColor: style.color }}
                 />
                 <span className="truncate">{style.label}</span>
-              </button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
       </div>
 
-      <label className="border-border/40 hover:bg-muted/30 flex cursor-pointer items-center gap-2 rounded border p-2 text-xs">
-        <input
-          type="checkbox"
-          checked={clearExisting}
-          onChange={(e) => setClearExisting(e.target.checked)}
-          className="border-border rounded"
-        />
-        <span className="text-foreground">Clear existing generated routes before generation</span>
+      <label className="border-separator hover:bg-fill-4 text-footnote rounded-control-sm flex cursor-pointer items-center gap-2 border p-2">
+        <Checkbox checked={clearExisting} onCheckedChange={(c) => setClearExisting(c === true)} />
+        <span className="text-label">Clear existing generated routes before generation</span>
       </label>
 
       {generateNotice && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 p-2 text-xs text-emerald-500">
+        <div className="rounded-control-sm bg-green/15 text-footnote text-green-ink flex items-center gap-2 p-2">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
           <span>{generateNotice}</span>
         </div>
       )}
 
-      <button
+      <Button
         type="button"
         disabled={isGenerating || selectedTypes.length === 0 || !countryId}
         onClick={onGenerate}
-        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-semibold shadow transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+        className="w-full"
       >
         {isGenerating ? (
           <>
@@ -140,7 +141,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
             <span>Generate Routes ({selectedTypes.length} types)</span>
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 });

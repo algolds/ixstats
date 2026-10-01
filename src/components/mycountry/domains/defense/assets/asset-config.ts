@@ -30,19 +30,19 @@ export interface Asset {
 
 /** Asset types share one quiet icon colour; type is carried by the icon and label, not hue. */
 export const ASSET_TYPE_CONFIG = {
-  aircraft: { icon: Plane, color: "text-muted-foreground", label: "Aircraft" },
-  ship: { icon: Ship, color: "text-muted-foreground", label: "Naval Vessel" },
-  vehicle: { icon: Truck, color: "text-muted-foreground", label: "Vehicle" },
-  installation: { icon: Target, color: "text-muted-foreground", label: "Installation" },
-  weapon_system: { icon: Radio, color: "text-muted-foreground", label: "Weapon System" },
+  aircraft: { icon: Plane, color: "text-label-secondary", label: "Aircraft" },
+  ship: { icon: Ship, color: "text-label-secondary", label: "Naval Vessel" },
+  vehicle: { icon: Truck, color: "text-label-secondary", label: "Vehicle" },
+  installation: { icon: Target, color: "text-label-secondary", label: "Installation" },
+  weapon_system: { icon: Radio, color: "text-label-secondary", label: "Weapon System" },
 } as const satisfies Record<AssetTypeKey, unknown>;
 
 /** `color` is the outline-badge status colour (semantic: ready / degraded / idle). */
 export const STATUS_CONFIG = {
-  operational: { label: "Operational", color: "border-emerald-500/30 text-emerald-600" },
-  maintenance: { label: "Maintenance", color: "border-amber-500/30 text-amber-600" },
-  reserve: { label: "Reserve", color: "text-muted-foreground" },
-  retired: { label: "Retired", color: "text-muted-foreground" },
+  operational: { label: "Operational", color: "border-green/30 text-green" },
+  maintenance: { label: "Maintenance", color: "border-yellow/30 text-yellow" },
+  reserve: { label: "Reserve", color: "text-label-secondary" },
+  retired: { label: "Retired", color: "text-label-secondary" },
 } as const;
 
 /** Matches the `status` enum of `security.createMilitaryAsset`. */

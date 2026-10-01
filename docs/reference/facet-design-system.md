@@ -42,11 +42,13 @@ Every token is also a Tailwind utility.
 | `background` · `background-grouped` | `bg-background` · `bg-grouped` | Plain pages · pages made of grouped sections (default body) |
 | `surface` · `surface-secondary` · `surface-elevated` | `bg-surface…` | Cards and list groups · inset areas inside a card · dialogs, sheets, menus, tooltips |
 | `fill` · `fill-2` · `fill-3` · `fill-4` | `bg-fill…` | Control backgrounds (strong → faint), tracks, hover washes |
+| `control-thumb` | `bg-control-thumb` | The selected segment of a `SegmentedControl` / `FacetTabs` (white in light, a stronger fill in dark) |
+| `scrim` | `bg-scrim` | The modal scrim under dialogs, sheets and alert dialogs (black 25% light / 40% dark) |
 | `separator` · `separator-opaque` | `border-separator…` | Hairlines · separators over glass |
 | `tint` · `tint-hover` · `on-tint` · `tint-fill` | `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill` | Primary actions, links, selection, focus |
 | System colours `red orange yellow green mint teal cyan blue indigo purple pink brown gray` (+ `on-*`) | `text-red`, `bg-green`… | Status and data |
 | Tinted-fill inks `<colour>-ink` | `text-red-ink`… on `bg-red/15` | Text on a 15% fill of its colour (colour `Badge`s, pressed `ActionPill`s): the hue pulled 20% toward `label`, ≥ 4.5:1 on every background |
-| Status aliases `destructive warning caution success info` | `text-destructive`… | Semantic status |
+| Status aliases `destructive warning caution success info` (+ `-ink`) | `text-destructive`…; `text-success-ink`… on `bg-success/15` | Semantic status; the `-ink` aliases are the system colour's ink, for text on a 15% fill (status `Badge`s and `Alert`s) |
 | `chart-1 … chart-8` | `fill-chart-1`… | Categorical data series (order: blue, orange, green, purple, pink, teal, yellow, red) |
 
 Legacy shadcn names are aliases: `foreground`→label, `muted-foreground`→label-secondary, `card`→surface,
@@ -139,7 +141,7 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 
 | Component | Use |
 |---|---|
-| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a `<section>`, `<li>` or button that must keep its element. |
+| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `as="section|article|aside|header|footer|li|nav|figure"` renders that element (ref typed `HTMLElement`). `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a button or third-party element that must keep its own element. |
 | `MotionFacetCard` | `FacetCard` as a motion component (`initial`, `animate`, `exit`, `layout`…) for animated cards; replaces spreading `FACET_CARD_SURFACE` onto a `motion.div`. |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. Selection: `selectionStyle="fill"` (default, `fill-3` — pickers with a check, `aria-pressed`) or `"tint"` (`tint-fill` + tinted leading icon — the current row of a master–detail list, `aria-current="true"` on button rows, `"page"` on links); `aria-current` overrides. |
 | `Table` (+ `TableHeader/Body/Footer/Row/Head/Cell/Caption`) | Data tables: opaque `surface`, `rounded-card`, `separator` hairlines — inside a `Card`/`FacetCard` it drops its own surface. Headers `text-footnote` `label-secondary`; cells `text-callout` with `tabular-nums`; rows `fill-4` hover, `tint-fill` when `data-state="selected"`/`aria-selected`. Wide tables scroll with a `mask-image` edge fade (no gradient overlay). `<TableHeader sticky>` pins the header; give the scroller a height with `<Table containerClassName="max-h-…">`. |
@@ -148,7 +150,10 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 | `FacetMaterial` | Glass: `material="thin|regular|thick"`. Old `satin|paper|rubber|metal` still work (deprecated). |
 | `FacetContainer` | **Deprecated.** Content depths render as `FacetCard`; `material=…` renders glass. New code uses `FacetCard` or `FacetMaterial`. |
 | `Skeleton` | Loading placeholders shaped like the final layout (no blur; stops under reduced motion). Never inside `<p>`. |
-| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`) as the colour's `-ink` on a 15% fill — use these for categories, rarities and tags instead of `bg-x/15 text-x` classes. |
+| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`). Status and colour variants are the colour's `-ink` on a 15% fill (≥ 4.5:1 on every background role, light/dark, Increase Contrast — `token-contrast.test.ts`) — use these for statuses, categories, rarities and tags instead of `bg-x/15 text-x` classes. |
+| `Alert` (+ `AlertTitle`, `AlertDescription`) | Inline message block (not an overlay). `default` (surface + hairline) or a status: `destructive`, `warning`, `caution`, `success`, `info` — the status `-ink` title/icon and a `label` description on a 15% fill (AA, contrast-guarded). `role="alert"` for default/destructive/warning/caution, `role="status"` for info/success; pass `role` to override (e.g. `note`). |
+| `Card` (+ `CardHeader/Title/Description/Action/Content/Footer`) | **Deprecated** — duplicates `FacetCard`. Renders the same opaque surface (`FACET_CARD_SURFACE`) with the shadcn 24px layout; existing call sites keep working. New code uses `FacetCard`. |
+| `FacetDataTable` (+ `FacetTableToolbar`, `FacetTablePagination`, `FacetMobileCard`) | Searchable/sortable/paginated data with a card layout on phones. Toolbar: `SearchField` + bordered export button; sortable headers are buttons with `aria-sort`; loading is `Skeleton`s shaped like the table (`aria-busy`), empty is `EmptyState` in a `FacetCard`; mobile rows are pressable `FacetCard`s with an eyebrow/value `<dl>`; pagination is a named `nav` with `aria-current="page"`. |
 | `Progress`, `HealthRing` | Meters; `tone` for status colours. |
 | `Eyebrow` | Uppercase data label (`text-eyebrow`). |
 | `TextureOverlay` | Decorative only; sanctioned textures are `dots`, `grid`, `paperGrain` (`SANCTIONED_TEXTURES`). |
@@ -176,10 +181,10 @@ shortcut, never the only way to an action. Keyboard model:
 | Component | Notes |
 |---|---|
 | `Button` | Styles `filled` (tint), `tinted`, `gray`, `plain`, `bordered`, `destructive`, `link`; old `default`→filled, `secondary`→gray, `outline`→bordered, `ghost`→neutral plain. Sizes `sm` 28 · `md` 36 · `lg` 44 · `icon`/`icon-sm`/`icon-lg`; 44px hit area on touch; tint focus outline. One `filled` button per view. |
-| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. Above five options (or with `scrollable`) the track scrolls horizontally at natural segment widths and keeps the selection in view. |
+| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. Above five options (or with `scrollable`) the track scrolls horizontally at natural segment widths and keeps the selection in view. Options take a trailing `badge` (a count in a tabular pill, `aria-hidden`) and `badgeLabel` for screen readers ("12 unread", joined to the segment's name). The thumb is `bg-control-thumb`. |
 | `ToggleGroup` | Multi- or single-select filter chips. `disallowEmpty` (alias `required`) keeps the last pressed item pressed, so a single-select group never clears. |
 | `ActionPill` | Pill-shaped social action (like, repost, save, comment, share): neutral until `pressed`, then a tinted fill in its `tone` (`tint` or a system colour); `icon`, label, `count` (tabular); `aria-pressed` only when `pressed` is set. Forwards its ref, so it can be a `PopoverTrigger asChild`. |
-| `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. |
+| `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. `FacetTabs` is a `fill-3` track with a `control-thumb` indicator; `tone` colours the active icon with roles (`neutral` label, `accent` tint, `mycountry` yellow, `forum` orange, `sdi` red); a tab's `themeColor` (any CSS colour, data) tints the indicator with `color-mix`, blending between tabs while dragging. |
 | `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. A boolean that applies immediately is a `Switch`; a choice submitted with a form is a `Checkbox`. `Slider`'s `aria-label`/`aria-labelledby` name the thumb (the `role="slider"` element). |
 | `RadioCardGroup` / `RadioCard` | A single choice whose options need a title, description or icon (delivery modes, event types). `radiogroup` of `radio`s, one roving tab stop, arrows/Home/End move the selection; the checked card takes `tint-fill`, a tint border and ring and a filled radio dot. `value` (`null` = controlled, nothing checked), `onValueChange`, `columns` 1–4; cards take `value`, `icon`, `title`, `description`, `indicator`. Short peer options → `SegmentedControl`; long lists → `FacetRow`. |
 | `Input`, `Textarea`, `Select`, `SearchField`, `MenuButton` | Shared field style (`fieldStyles`): fill background, `rounded-control`, red `aria-invalid`, 16px text on phones. `MenuButton` opens a `DropdownMenu`. |
@@ -194,6 +199,7 @@ Ordinary controls make no sound.
 | Progress through a multi-step flow (wizard) | `StepIndicator` — `steps` (`id`, `label`, optional `icon`), zero-based `current`, optional `onStepClick` (completed steps become buttons; `navigable="all"` allows jumping ahead). A named `<nav>` with an ordered list; the current step is `aria-current="step"`, completed steps are checked. Not the numeric `Stepper`. |
 | Confirm a destructive or irreversible decision | `AlertDialog` (`AlertDialogAction variant="destructive"`) |
 | Small contextual edit or info | `Popover` (`PopoverAnchor` positions it against another element when the trigger's own click must not toggle it) |
+| Floating UI anchored to something that is not a React element — a text selection, a link found by event delegation, a rect | `VirtualAnchorPopover` (`anchor`: `Element \| Range \| DOMRect \| {getBoundingClientRect}`, `surface="material\|elevated\|none"`, `role`, side/align/offsets; non-modal, never takes focus unless `autoFocus`, dismisses on Escape/outside press via `onOpenChange`, follows scroll) or `VirtualAnchorHoverCard` (hover-card look, no role; the caller owns hover timing). Lower level: `PopoverVirtualAnchor` inside a `Popover`. No hand-positioned `createPortal`. |
 | Short focused form | `Dialog` |
 | Keyboard-invoked palette | `CommandDialog` (instant presentation) |
 | Transient feedback | `useNotify()` → toast / Halo |
@@ -246,7 +252,9 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages, Vault + trading cards, Sports): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry + its executive panels and atomic selector, maps + the map editor, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages, Vault + trading cards, Sports): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-phase4-leftovers.test.ts` | For Builder, countries + country profile, the public pages, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo and the settings sidebar: no retired `x.5` spacing steps; builder on-image text only via `app/builder/lib/image-scrim.ts`; Halo uses the named springs and no per-control `data-cuelume-*` ticks; no hard-coded Diplomatic Standing; the settings tier chip is a `Badge` |
+| `facet-mycountry-maps.test.ts` | For MyCountry, maps (core, editor, pipeline, Vexel), the executive panels and the atomic selector/picker: no retired `x.5` spacing steps, no `FacetContainer`, no native `<select>`/checkbox/range fields (the `Select`, `Checkbox`, `Switch` and `Slider` primitives), no per-control `data-cuelume-*` ticks, no `.dynamic-island-shell` and no `prose-invert` (rich text binds the typography colours to roles via `maps/shared/facet-prose.ts`) |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
@@ -282,7 +290,7 @@ to do the same for page-level differences (e.g. adopting `PageHeader` only under
 | `TabBar` | `pathname`, `searchParams`, `apps`. Floating `material-regular` bar above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
 | `PageHeader` | `title`, `subtitle?`, `back?: { href, label? }`, `actions?`. `text-large-title` `<h1>` that collapses into a sticky `material-thin` toolbar title when it scrolls under the toolbar (opacity only; instant under Reduce Motion). Reference adoption: `/help` (flag on only). |
 | `ShellGate` | `variant="facet" \| "legacy"`: render children only under that shell (CSS-gated until hydrated). |
-| `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`, `/countries`. |
+| `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`, `/countries`. A page that keeps its own title spreads `shellPageTitleProps` (`data-shell-page-title`) on it: under the new shell that element is hidden wherever the page's `ShellPageHeader` shows (below 1024px, or every width with `phoneOnly={false}`), in CSS before first paint — no ad-hoc `facet-nav:max-lg:hidden`. Used by `/countries` and the `/thinkpages` hub. |
 | `ShellHalo` | Halo floating top-centre over the content area, clear of the sidebar, `z-nav`. Hidden on /maps (MapDynamicIsland). |
 
 ### 12.3 Section map (`src/lib/navigation/app-sections.ts`)
@@ -354,6 +362,18 @@ animating that would relayout the page every frame; a transform-based version ne
 `<main>`'s padding during the transition.
 
 ## Changelog
+
+- **3.0 + Phase 4 primitives (2026-10-01)** — Status `Badge`s use the `-ink` tokens (new `--color-<status>-ink`
+  aliases), so every Badge variant is AA on every background role; `Alert` gains `warning`, `caution`, `success` and
+  `info` (tinted, AA) with polite/assertive roles; new `control-thumb` and `scrim` roles (segmented thumb, dialog
+  scrim — no `dark:` pairs); `ShellPageHeader` exports `shellPageTitleProps` to hide a page's own title where the
+  shell header shows; `SegmentedControl` option `badge`/`badgeLabel`; `FacetCard as`; `VirtualAnchorPopover`,
+  `VirtualAnchorHoverCard` and `PopoverVirtualAnchor` (the WikiOS selection toolbar, link hover card and cite
+  tooltips moved onto them); `FacetTabs` on roles and `color-mix` (no hex blending); the `FacetDataTable` family on
+  Facet 3 (`SearchField`, `EmptyState`, `Skeleton`, `FacetCard` rows, `aria-sort`, pagination `nav`); `Card`
+  deprecated in favour of `FacetCard`. `src/components/ui` is in the converted guard set (no glass, `dark:`, hex,
+  palette or retired x.5 spacing; ToastBanner, StatusIndicator, swipe actions, Select, chart tooltips, loader,
+  help popovers and the colour picker moved to roles).
 
 - **3.0 + Phase 4 selection primitives (2026-10-01)** — `RadioCardGroup`/`RadioCard` (radio cards with
   roving focus) and `StepIndicator` (wizard progress); `FacetRow` `selectionStyle="tint"` and `aria-current`;

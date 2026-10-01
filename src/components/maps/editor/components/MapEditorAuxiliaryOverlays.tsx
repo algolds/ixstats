@@ -1,6 +1,6 @@
 "use client";
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Button } from "~/components/ui/button";
 import React, { useMemo, useCallback, useState } from "react";
 import { List } from "iconoir-react";
@@ -189,7 +189,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
       {/* Batch Actions Bar */}
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
-          <FacetContainer material="regular" className="overflow-hidden rounded-xl">
+          <FacetMaterial material="regular" className="rounded-row overflow-hidden">
             <BatchActionsBar
               selectedCount={editor.selectedIds.size}
               subdivisionCount={subdivisionCount}
@@ -198,7 +198,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
               onBulkEdit={handleBulkEdit}
               isMutating={editor.isMutating}
             />
-          </FacetContainer>
+          </FacetMaterial>
         </div>
       )}
 

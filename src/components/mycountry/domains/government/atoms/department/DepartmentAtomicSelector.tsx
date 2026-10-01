@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Toggle } from "~/components/ui/toggle";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Xmark as X, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { ComponentType } from "@prisma/client";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
@@ -55,23 +55,18 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
   if (!onGovernmentComponentsChange) return null;
 
   return (
-    <FacetContainer
-      depth={3}
-      surface="solid"
-      enableRefraction={false}
-      className="space-y-3 rounded-lg p-4"
-    >
+    <FacetCard variant="inset" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-foreground text-sm font-semibold">
-          Contextual policy components ({data.category})
-        </h4>
-        <span className="text-muted-foreground text-xs">{governmentComponents.length} Active</span>
+        <h4 className="text-label text-headline">Contextual policy components ({data.category})</h4>
+        <span className="text-label-secondary text-footnote">
+          {governmentComponents.length} Active
+        </span>
       </div>
 
       {conflicts.length > 0 && (
         <div
           role="alert"
-          className="border-destructive/30 text-destructive flex items-center gap-2 rounded-lg border p-2.5 text-xs"
+          className="border-destructive/30 text-destructive rounded-control text-footnote flex items-center gap-2 border p-2"
         >
           <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
           <span>{conflicts[0]}</span>
@@ -90,7 +85,7 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
               pressed={isSelected}
               onPressedChange={() => toggleComponent(type)}
               disabled={isReadOnly}
-              className="h-auto min-h-8 rounded-full px-3 py-1 text-xs"
+              className="text-footnote h-auto min-h-8 rounded-full px-3 py-1"
             >
               {ac.name}
               {isSelected ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
@@ -98,11 +93,11 @@ export const DepartmentAtomicSelector = React.memo(function DepartmentAtomicSele
           );
         })}
         {relevantAtomics.length === 0 && (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             No specific policy components for this category. General government components apply.
           </p>
         )}
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 });

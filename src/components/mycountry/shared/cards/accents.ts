@@ -3,7 +3,7 @@
  *
  * Static, theme-compliant Tailwind class strings keyed by accent name. Accent
  * tints are COLOR overlays (not white/black), so they read correctly in both
- * light and dark themes over a `bg-card` base. Classes are full literals so
+ * light and dark themes over a `bg-surface` base. Classes are full literals so
  * Tailwind's JIT can see them (no dynamic `border-${x}` interpolation).
  */
 
@@ -14,7 +14,7 @@ export type MyCountryAccent = "amber" | "cyan" | "blue" | "red" | "indigo" | "em
 export interface AccentTokens {
   /** Subtle accent-tinted border (works light + dark). */
   border: string;
-  /** Accent gradient overlay (rendered as an absolute layer over bg-card). */
+  /** Accent gradient overlay (rendered as an absolute layer over bg-surface). */
   tint: string;
   /** Accent text color. */
   text: string;
@@ -22,39 +22,39 @@ export interface AccentTokens {
 
 export const ACCENT_CLASSES: Record<MyCountryAccent, AccentTokens> = {
   amber: {
-    border: "border-amber-500/20",
-    tint: "from-amber-500/[0.06] via-transparent to-amber-500/[0.02]",
-    text: "text-amber-500",
+    border: "border-yellow/20",
+    tint: "from-yellow/6 via-transparent to-yellow/5",
+    text: "text-yellow",
   },
   cyan: {
-    border: "border-cyan-500/20",
-    tint: "from-cyan-500/[0.06] via-transparent to-cyan-500/[0.02]",
-    text: "text-cyan-500",
+    border: "border-cyan/20",
+    tint: "from-cyan/6 via-transparent to-cyan/5",
+    text: "text-cyan",
   },
   blue: {
-    border: "border-blue-500/20",
-    tint: "from-blue-500/[0.06] via-transparent to-blue-500/[0.02]",
-    text: "text-blue-500",
+    border: "border-blue/20",
+    tint: "from-blue/6 via-transparent to-blue/5",
+    text: "text-blue",
   },
   red: {
-    border: "border-red-500/20",
-    tint: "from-red-500/[0.06] via-transparent to-red-500/[0.02]",
-    text: "text-red-500",
+    border: "border-red/20",
+    tint: "from-red/6 via-transparent to-red/5",
+    text: "text-red",
   },
   indigo: {
-    border: "border-indigo-500/20",
-    tint: "from-indigo-500/[0.06] via-transparent to-indigo-500/[0.02]",
-    text: "text-indigo-500",
+    border: "border-indigo/20",
+    tint: "from-indigo/6 via-transparent to-indigo/5",
+    text: "text-indigo",
   },
   emerald: {
-    border: "border-emerald-500/20",
-    tint: "from-emerald-500/[0.06] via-transparent to-emerald-500/[0.02]",
-    text: "text-emerald-500",
+    border: "border-green/20",
+    tint: "from-green/6 via-transparent to-green/5",
+    text: "text-green",
   },
   neutral: {
-    border: "border-border",
+    border: "border-separator",
     tint: "from-transparent via-transparent to-transparent",
-    text: "text-foreground",
+    text: "text-label",
   },
 };
 

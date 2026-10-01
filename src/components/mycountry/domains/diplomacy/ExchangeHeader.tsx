@@ -37,29 +37,29 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
           <h3
-            className="text-foreground flex flex-wrap items-center gap-2 text-base font-semibold"
+            className="text-label text-title-3 flex flex-wrap items-center gap-2"
             aria-busy={isLoading || undefined}
           >
-            <Globe className="text-muted-foreground h-4 w-4 shrink-0" />
+            <Globe className="text-label-secondary h-4 w-4 shrink-0" />
             <span>Cultural Exchange Program</span>
-            <span className="text-muted-foreground text-xs font-normal tabular-nums">
+            <span className="text-label-secondary text-footnote font-normal tabular-nums">
               {isLoading ? "Loading…" : `${filteredExchangesCount} exchanges`}
             </span>
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <p className="text-muted-foreground min-w-0 flex-1 text-xs">
+            <p className="text-label-secondary text-footnote min-w-0 flex-1">
               Cross-cultural collaboration and diplomatic engagement for {primaryCountry.name}
             </p>
             {achievements.length > 0 && (
               <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {achievements.slice(0, 3).map((badge) => (
                   <Badge key={badge.id} variant="outline" title={badge.description}>
-                    <Trophy className="text-amber-500" />
+                    <Trophy className="text-yellow" />
                     {badge.name}
                   </Badge>
                 ))}
                 {achievements.length > 3 && (
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     +{achievements.length - 3} more
                   </span>
                 )}
@@ -91,7 +91,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
           <Button
             size="sm"
             onClick={onCreateExchange}
-            className="bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+            className="bg-yellow text-on-yellow hover:bg-yellow/90"
           >
             <Plus className="h-3.5 w-3.5" />
             Create Exchange

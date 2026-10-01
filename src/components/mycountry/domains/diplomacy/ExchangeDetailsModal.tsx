@@ -21,19 +21,18 @@ import {
 } from "iconoir-react";
 
 import React from "react";
-import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 
 interface CulturalExchange {
   id: string;
@@ -143,9 +142,9 @@ function DetailSection({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className="rounded-xl p-4">
-      <h6 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-        <Icon className="text-muted-foreground h-4 w-4" />
+    <FacetCard className="p-4">
+      <h6 className="text-label text-headline mb-3 flex items-center gap-2">
+        <Icon className="text-label-secondary h-4 w-4" />
         {title}
       </h6>
       {children}
@@ -186,32 +185,32 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
     );
 
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Globe className="text-muted-foreground h-5 w-5" />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Globe className="text-label-secondary h-5 w-5" />
               Exchange Details
-            </DialogTitle>
-            <DialogDescription>Comprehensive view of cultural exchange program</DialogDescription>
-          </DialogHeader>
+            </SheetTitle>
+            <SheetDescription>Comprehensive view of cultural exchange program</SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-6">
             <div className="space-y-4">
               <div>
-                <h5 className="text-foreground mb-2 text-lg font-semibold">{exchange.title}</h5>
-                <div className="mb-3 flex items-center gap-2 text-sm">
+                <h5 className="text-label text-title-3 mb-2">{exchange.title}</h5>
+                <div className="text-body mb-3 flex items-center gap-2">
                   {React.createElement(typeConfig.icon, {
-                    className: "text-muted-foreground h-4 w-4",
+                    className: "text-label-secondary h-4 w-4",
                   })}
-                  <span className="text-muted-foreground">{typeConfig.label}</span>
+                  <span className="text-label-secondary">{typeConfig.label}</span>
                 </div>
-                <p className="text-muted-foreground text-sm">{exchange.description}</p>
+                <p className="text-label-secondary text-body">{exchange.description}</p>
               </div>
 
               {exchange.narrative && (
                 <DetailSection icon={EditPencil} title="Exchange Narrative">
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className="text-label-secondary text-body leading-relaxed">
                     {exchange.narrative}
                   </p>
                 </DetailSection>
@@ -222,8 +221,8 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   <ul className="space-y-2">
                     {objectives.map((objective, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                        <span className="text-muted-foreground text-sm">{objective}</span>
+                        <CheckCircle className="text-green mt-0.5 h-4 w-4 shrink-0" />
+                        <span className="text-label-secondary text-body">{objective}</span>
                       </li>
                     ))}
                   </ul>
@@ -231,7 +230,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               )}
 
               <DetailSection icon={Brain} title="Diplomatic Outlook">
-                <p className="text-muted-foreground text-sm italic">
+                <p className="text-label-secondary text-body italic">
                   This {typeConfig.label.toLowerCase()} between {exchange.hostCountry.name} and
                   participating nations shows potential for cultural bridge-building and long-term
                   diplomatic cooperation.
@@ -244,10 +243,8 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   { label: "Impact", value: `${exchange.metrics.culturalImpact}%` },
                   { label: "Engagement", value: String(exchange.metrics.socialEngagement) },
                 ].map((m) => (
-                  <div key={m.label} className="bg-muted/50 rounded-xl p-3 text-center">
-                    <dd className="text-foreground text-lg font-semibold tabular-nums">
-                      {m.value}
-                    </dd>
+                  <div key={m.label} className="bg-fill-3 rounded-row p-3 text-center">
+                    <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                     <dt>
                       <Eyebrow>{m.label}</Eyebrow>
                     </dt>
@@ -257,36 +254,34 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
 
               <DetailSection icon={Settings} title="Program Details">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Duration</span>
-                    <span className="text-foreground flex items-center gap-1">
+                  <div className="text-body flex items-center justify-between">
+                    <span className="text-label-secondary">Duration</span>
+                    <span className="text-label flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
                       {new Date(exchange.startDate).toLocaleDateString()} –{" "}
                       {new Date(exchange.endDate).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Visibility</span>
-                    <span className="text-foreground flex items-center gap-1">
+                  <div className="text-body flex items-center justify-between">
+                    <span className="text-label-secondary">Visibility</span>
+                    <span className="text-label flex items-center gap-1">
                       {exchange.isPublic !== false ? (
                         <>
-                          <Eye className="text-muted-foreground h-3.5 w-3.5" />
+                          <Eye className="text-label-secondary h-3.5 w-3.5" />
                           Public
                         </>
                       ) : (
                         <>
-                          <EyeClosed className="text-muted-foreground h-3.5 w-3.5" />
+                          <EyeClosed className="text-label-secondary h-3.5 w-3.5" />
                           Private
                         </>
                       )}
                     </span>
                   </div>
                   {exchange.maxParticipants && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Max Participants</span>
-                      <span className="text-foreground tabular-nums">
-                        {exchange.maxParticipants}
-                      </span>
+                    <div className="text-body flex items-center justify-between">
+                      <span className="text-label-secondary">Max Participants</span>
+                      <span className="text-label tabular-nums">{exchange.maxParticipants}</span>
                     </div>
                   )}
                 </div>
@@ -294,50 +289,41 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
 
               {exchange.participatingCountries.length > 0 && (
                 <div className="space-y-3">
-                  <h6 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-                    <MicrophoneSpeaking className="text-muted-foreground h-4 w-4" />
+                  <h6 className="text-label text-headline flex items-center gap-2">
+                    <MicrophoneSpeaking className="text-label-secondary h-4 w-4" />
                     NPC Responses ({npcResponses?.length || exchange.participatingCountries.length})
                   </h6>
                   <div className="max-h-64 space-y-2 overflow-y-auto">
                     {npcResponses && npcResponses.length > 0
                       ? npcResponses.map((response) => (
-                          <FacetCard
-                            key={response.countryId}
-                            surface="solid"
-                            className="rounded-xl p-3"
-                          >
+                          <FacetCard variant="inset" key={response.countryId} className="p-3">
                             <div className="mb-2 flex items-center gap-2">
                               {response.flagUrl && (
                                 <img
                                   src={response.flagUrl}
                                   alt={`${response.countryName} flag`}
-                                  className="border-border h-3 w-5 rounded-sm border object-cover"
+                                  className="border-separator h-3 w-5 rounded-xs border object-cover"
                                 />
                               )}
-                              <span className="text-foreground text-sm font-medium">
+                              <span className="text-label text-body font-medium">
                                 {response.countryName}
                               </span>
                               <Badge
-                                variant="outline"
-                                className={cn(
-                                  "ml-auto capitalize",
-                                  response.willParticipate ? "text-emerald-500" : "text-destructive"
-                                )}
+                                variant={response.willParticipate ? "success" : "destructive"}
+                                className="ml-auto capitalize"
                               >
                                 {response.role}
                               </Badge>
                             </div>
                             <div className="space-y-2">
-                              <p className="text-muted-foreground text-xs">
-                                <span className="text-foreground">
-                                  {response.personality.archetype}
-                                </span>{" "}
+                              <p className="text-label-secondary text-footnote">
+                                <span className="text-label">{response.personality.archetype}</span>{" "}
                                 · {response.responseTimeline} response
                               </p>
 
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Enthusiasm</span>
-                                <span className="text-foreground font-medium tabular-nums">
+                              <div className="text-footnote flex items-center justify-between">
+                                <span className="text-label-secondary">Enthusiasm</span>
+                                <span className="text-label font-medium tabular-nums">
                                   {Math.round(response.enthusiasmLevel)}%
                                 </span>
                               </div>
@@ -346,29 +332,29 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                                 className="h-1.5"
                                 indicatorClassName={
                                   response.enthusiasmLevel > 70
-                                    ? "bg-emerald-500"
+                                    ? "bg-green"
                                     : response.enthusiasmLevel > 50
-                                      ? "bg-amber-500"
+                                      ? "bg-yellow"
                                       : "bg-destructive"
                                 }
                               />
 
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Resource Commitment</span>
-                                <span className="text-foreground font-medium tabular-nums">
+                              <div className="text-footnote flex items-center justify-between">
+                                <span className="text-label-secondary">Resource Commitment</span>
+                                <span className="text-label font-medium tabular-nums">
                                   {Math.round(response.resourceCommitment)}%
                                 </span>
                               </div>
                               <Progress value={response.resourceCommitment} className="h-1.5" />
 
-                              <p className="text-muted-foreground mt-2 text-xs italic">
+                              <p className="text-label-secondary text-footnote mt-2 italic">
                                 &ldquo;{response.responseMessage}&rdquo;
                               </p>
 
                               {response.conditions && response.conditions.length > 0 && (
-                                <div className="border-border mt-2 border-t pt-2">
+                                <div className="border-separator mt-2 border-t pt-2">
                                   <Eyebrow>Conditions</Eyebrow>
-                                  <ul className="text-muted-foreground mt-1 list-disc space-y-0.5 pl-4 text-xs">
+                                  <ul className="text-label-secondary text-footnote mt-1 list-disc space-y-0.5 pl-4">
                                     {response.conditions.map((condition, idx) => (
                                       <li key={idx}>{condition}</li>
                                     ))}
@@ -377,9 +363,9 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                               )}
 
                               {!response.willParticipate && response.alternativeProposal && (
-                                <div className="border-border mt-2 border-t pt-2">
+                                <div className="border-separator mt-2 border-t pt-2">
                                   <Eyebrow>Alternative proposal</Eyebrow>
-                                  <p className="text-muted-foreground mt-1 text-xs">
+                                  <p className="text-label-secondary text-footnote mt-1">
                                     {response.alternativeProposal.reasoning}
                                   </p>
                                 </div>
@@ -388,23 +374,23 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                           </FacetCard>
                         ))
                       : exchange.participatingCountries.map((country) => (
-                          <FacetCard key={country.id} surface="solid" className="rounded-xl p-3">
+                          <FacetCard variant="inset" key={country.id} className="p-3">
                             <div className="mb-2 flex items-center gap-2">
                               {country.flagUrl && (
                                 <img
                                   src={country.flagUrl}
                                   alt={`${country.name} flag`}
-                                  className="border-border h-3 w-5 rounded-sm border object-cover"
+                                  className="border-separator h-3 w-5 rounded-xs border object-cover"
                                 />
                               )}
-                              <span className="text-foreground text-sm font-medium">
+                              <span className="text-label text-body font-medium">
                                 {country.name}
                               </span>
                               <Badge variant="outline" className="ml-auto capitalize">
                                 {country.role}
                               </Badge>
                             </div>
-                            <p className="text-muted-foreground text-xs italic">
+                            <p className="text-label-secondary text-footnote italic">
                               Analyzing response…
                             </p>
                           </FacetCard>
@@ -415,7 +401,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
 
               {exchange.status === "active" && (
                 <DetailSection icon={Flash} title="Generate Scenario">
-                  <p className="text-muted-foreground mb-3 text-xs">
+                  <p className="text-label-secondary text-footnote mb-3">
                     Create a dynamic cultural exchange scenario with narrative choices and predicted
                     outcomes
                   </p>
@@ -433,8 +419,8 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
 
               {exchange.culturalArtifacts.length > 0 && (
                 <div className="space-y-3">
-                  <h6 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-                    <Camera className="text-muted-foreground h-4 w-4" />
+                  <h6 className="text-label text-headline flex items-center gap-2">
+                    <Camera className="text-label-secondary h-4 w-4" />
                     Cultural Artifacts ({exchange.culturalArtifacts.length})
                   </h6>
                   <div className="grid grid-cols-2 gap-2">
@@ -444,7 +430,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                         type="button"
                         onClick={() => onViewArtifact?.(artifact.id)}
                         aria-label={`View ${artifact.title}`}
-                        className="border-border bg-muted/50 hover:border-ring focus-visible:ring-ring flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-xl border transition-colors outline-none focus-visible:ring-2"
+                        className="border-separator bg-fill-3 hover:border-ring focus-visible:ring-tint rounded-row flex aspect-square cursor-pointer items-center justify-center overflow-hidden border transition-colors outline-none focus-visible:ring-2"
                       >
                         {artifact.thumbnailUrl ? (
                           <img
@@ -453,7 +439,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <Camera className="text-muted-foreground h-6 w-6" />
+                          <Camera className="text-label-secondary h-6 w-6" />
                         )}
                       </button>
                     ))}
@@ -463,11 +449,11 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
             </div>
 
             {(exchange.status === "active" || exchange.status === "completed") && (
-              <div className="border-border flex flex-col gap-2 border-t pt-4 sm:flex-row">
+              <div className="border-separator flex flex-col gap-2 border-t pt-4 sm:flex-row">
                 {exchange.status === "active" && (
                   <>
                     <Button
-                      className="flex-1 bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+                      className="bg-yellow text-on-yellow hover:bg-yellow/90 flex-1"
                       onClick={() => onJoin(exchange.id, "participant")}
                     >
                       <User className="h-4 w-4" />
@@ -502,7 +488,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               </div>
             )}
 
-            <div className="border-border flex flex-col gap-2 border-t pt-4 sm:flex-row">
+            <div className="border-separator flex flex-col gap-2 border-t pt-4 sm:flex-row">
               {exchange.hostCountry.id === primaryCountry.id ? (
                 <>
                   <Button variant="outline" className="flex-1" onClick={onEdit}>
@@ -527,8 +513,8 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
               )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 );

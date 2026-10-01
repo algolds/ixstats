@@ -310,20 +310,15 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <FacetCard
-          depth={2}
-          interactive="none"
-          className="relative overflow-hidden rounded-3xl p-4 sm:p-6"
-        >
+        <FacetCard className="rounded-card relative overflow-hidden p-4 sm:p-6">
           {/* Ambient watermark: the priority's own glyph, fine stroke, bottom-right (c5c6b382). */}
           <WatermarkGlyph icon={Icon} />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            data-cuelume-press="whisper"
             onClick={() => handleDismiss(opportunity.id)}
-            className="text-muted-foreground absolute top-2 right-2 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
+            className="text-label-secondary absolute top-2 right-2 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
             aria-label="Dismiss this priority for now"
             title="Dismiss for this session"
           >
@@ -331,26 +326,23 @@ function ExecutiveOpportunityHeroComponent({
           </Button>
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl min-w-0 space-y-1.5 pr-10">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                <Eyebrow className={cn("flex items-center gap-1.5", STATUS_TEXT[opportunity.tone])}>
+            <div className="max-w-2xl min-w-0 space-y-2 pr-10">
+              <p className="text-footnote flex flex-wrap items-center gap-x-2 gap-y-1">
+                <Eyebrow className={cn("flex items-center gap-2", STATUS_TEXT[opportunity.tone])}>
                   <Icon aria-hidden="true" className="size-3.5 shrink-0" />
                   {opportunity.subtitle}
                 </Eyebrow>
                 {opportunity.metricLabel && opportunity.metricValue && (
-                  <span className="text-muted-foreground tabular-nums">
+                  <span className="text-label-secondary tabular-nums">
                     · {opportunity.metricLabel}{" "}
-                    <span className="text-foreground font-medium">{opportunity.metricValue}</span>
+                    <span className="text-label font-medium">{opportunity.metricValue}</span>
                   </span>
                 )}
               </p>
-              <h2
-                id="priority-title"
-                className="text-foreground text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
-              >
+              <h2 id="priority-title" className="text-label text-title-2 sm:text-title-1">
                 {opportunity.title}
               </h2>
-              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
+              <p className="text-label-secondary text-body line-clamp-3 leading-relaxed">
                 {opportunity.description}
               </p>
             </div>
@@ -368,7 +360,6 @@ function ExecutiveOpportunityHeroComponent({
               ) : (
                 <Button
                   type="button"
-                  data-cuelume-press="bloom"
                   onClick={() => onDeclare?.(opportunity.directiveGoal)}
                   className="h-11 sm:h-9"
                 >

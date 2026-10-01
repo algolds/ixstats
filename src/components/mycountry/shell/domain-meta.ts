@@ -24,7 +24,7 @@ export const DOMAIN_META: Record<
     title: "Diplomacy",
     sheetTitle: "Foreign Relations",
     icon: Globe2,
-    accent: "text-cyan-500",
+    accent: "text-cyan",
     blurb:
       "Forge alliances, establish embassies, negotiate trade pacts, and project diplomatic influence.",
     section: "diplomacy",
@@ -35,7 +35,7 @@ export const DOMAIN_META: Record<
     title: "Defense",
     sheetTitle: "National Security",
     icon: Shield,
-    accent: "text-red-500",
+    accent: "text-red",
     blurb:
       "Deploy military forces, monitor regional threat vectors, fortify defenses, and maintain strategic warfare readiness.",
     section: "defense",
@@ -46,7 +46,7 @@ export const DOMAIN_META: Record<
     title: "Politics",
     sheetTitle: "Governance Configuration",
     icon: Landmark,
-    accent: "text-indigo-500",
+    accent: "text-indigo",
     blurb:
       "Enact legislative policies, manage political faction dynamics, shape governance structures, and secure electoral dominance.",
     section: "politics",
@@ -57,7 +57,7 @@ export const DOMAIN_META: Record<
     title: "Economy & Budget",
     sheetTitle: "Economy & Budget",
     icon: TrendingUp,
-    accent: "text-emerald-500",
+    accent: "text-green",
     blurb:
       "Manage national budget allocation, optimize trade revenue, control inflation, and build a booming powerhouse economy.",
     section: "economy",

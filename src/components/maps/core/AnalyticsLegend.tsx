@@ -10,7 +10,7 @@
  */
 
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 import type { OverlayLegend } from "~/lib/maps/overlay-types";
 import type { OverlayVisibility } from "./IxWorldMap";
@@ -30,22 +30,22 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
   const isLoading = !!overlayData && active.renderProps && overlayData[active.id] == null;
 
   return (
-    <FacetContainer
+    <FacetMaterial
       material="regular"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
       role="status"
       aria-live="polite"
-      className="animate-in fade-in slide-in-from-bottom-2 pointer-events-auto max-w-[16rem] rounded-xl px-3 py-2.5 duration-200"
+      className="animate-in fade-in slide-in-from-bottom-2 rounded-row pointer-events-auto max-w-[16rem] px-3 py-2 duration-200"
     >
       <div className="flex items-center justify-between gap-3">
         <Eyebrow>{legend.title}</Eyebrow>
-        {isLoading && <span className="text-muted-foreground text-xs">Loading…</span>}
+        {isLoading && <span className="text-label-secondary text-footnote">Loading…</span>}
       </div>
 
       {legend.type === "gradient" && (
-        <div className="mt-1.5">
+        <div className="mt-2">
           {/* Gradient bar */}
           <div
             className="h-2.5 w-full rounded-full"
@@ -58,7 +58,7 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
             {legend.stops
               .filter((s) => s.label)
               .map((s, i) => (
-                <span key={i} className="text-muted-foreground text-xs">
+                <span key={i} className="text-label-secondary text-footnote">
                   {s.label}
                 </span>
               ))}
@@ -68,13 +68,15 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
               overlay and nothing recolored" without users having to read the
               data model. */}
           {"note" in legend && legend.note && (
-            <p className="text-muted-foreground mt-1 text-xs leading-snug italic">{legend.note}</p>
+            <p className="text-label-secondary text-footnote mt-1 leading-snug italic">
+              {legend.note}
+            </p>
           )}
         </div>
       )}
 
       {legend.type === "line-legend" && (
-        <div className="mt-1.5 space-y-1">
+        <div className="mt-2 space-y-1">
           {legend.lines.map((line, i) => (
             <div key={i} className="flex items-center gap-2">
               <div
@@ -87,11 +89,11 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
                   height: line.style === "dashed" ? 0 : undefined,
                 }}
               />
-              <span className="text-foreground text-xs">{line.label}</span>
+              <span className="text-label text-footnote">{line.label}</span>
             </div>
           ))}
         </div>
       )}
-    </FacetContainer>
+    </FacetMaterial>
   );
 }

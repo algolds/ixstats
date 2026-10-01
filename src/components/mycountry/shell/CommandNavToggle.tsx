@@ -10,7 +10,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { useTheme } from "~/context/theme-context";
@@ -44,14 +44,9 @@ export function CommandNavToggle({
     rawPath === "/mycountry" || rawPath === "/mycountry/v2" || rawPath === "/mycountry/";
 
   return (
-    <FacetContainer
-      depth={1}
-      interactive="none"
-      enableRefraction={false}
-      className="flex w-fit flex-wrap items-center gap-1.5 rounded-xl p-1"
-    >
+    <FacetCard className="flex w-fit flex-wrap items-center gap-2 p-1">
       {/* Official MyCountry Brand Logo Pill */}
-      <div className="border-border flex shrink-0 items-center gap-2 border-r px-2 py-0.5">
+      <div className="border-separator flex shrink-0 items-center gap-2 border-r px-2 py-0.5">
         <MyCountryLogo size="sm" variant="full" animated={true} />
       </div>
       {/* Primary operating modes */}
@@ -73,20 +68,20 @@ export function CommandNavToggle({
               }
             }}
             className={cn(
-              "gap-1.5 font-semibold",
-              compactMode ? "h-7 px-3" : "h-8 px-3.5",
-              active ? "bg-accent text-foreground" : "text-muted-foreground"
+              "gap-2 font-semibold",
+              compactMode ? "h-7 px-3" : "h-8 px-4",
+              active ? "bg-fill-3 text-label" : "text-label-secondary"
             )}
           >
             <Icon
               aria-hidden="true"
-              className={cn("size-3.5", active && id === "executive" && "text-(--facet-mycountry)")}
+              className={cn("size-3.5", active && id === "executive" && "text-tint")}
             />
             {label}
           </Button>
         );
       })}
-    </FacetContainer>
+    </FacetCard>
   );
 }
 
@@ -132,12 +127,7 @@ export function CommandRightPillNav({
   ];
 
   return (
-    <FacetContainer
-      depth={1}
-      interactive="none"
-      enableRefraction={false}
-      className="flex w-fit shrink-0 items-center gap-1.5 rounded-xl p-1"
-    >
+    <FacetCard className="flex w-fit shrink-0 items-center gap-2 p-1">
       {navItems.map(({ id, href, label, icon: Icon }, idx) => {
         const active =
           rawPath.startsWith(href) ||
@@ -146,7 +136,9 @@ export function CommandRightPillNav({
               rawPath.startsWith("/mycountry/map-editor")));
         return (
           <React.Fragment key={href}>
-            {idx > 0 && <div aria-hidden="true" className="bg-border mx-0.5 h-4 w-px shrink-0" />}
+            {idx > 0 && (
+              <div aria-hidden="true" className="bg-separator mx-0.5 h-4 w-px shrink-0" />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -160,9 +152,9 @@ export function CommandRightPillNav({
                 }
               }}
               className={cn(
-                "gap-1.5 font-semibold",
-                compactMode ? "h-7 px-3" : "h-8 px-3.5",
-                active ? "bg-accent text-foreground" : "text-muted-foreground"
+                "gap-2 font-semibold",
+                compactMode ? "h-7 px-3" : "h-8 px-4",
+                active ? "bg-fill-3 text-label" : "text-label-secondary"
               )}
             >
               <Icon aria-hidden="true" className="size-3.5" />
@@ -171,7 +163,7 @@ export function CommandRightPillNav({
           </React.Fragment>
         );
       })}
-    </FacetContainer>
+    </FacetCard>
   );
 }
 

@@ -40,16 +40,16 @@ export type Tone = "positive" | "caution" | "negative" | "info" | "neutral";
 export const TONE_CLASSES: Record<Tone, { dot: string; text: string; badge: string; bar: string }> =
   {
     positive: {
-      dot: "bg-emerald-500",
-      text: "text-emerald-600",
-      badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
-      bar: "bg-emerald-500",
+      dot: "bg-green",
+      text: "text-green",
+      badge: "border-green/30 bg-green/10 text-green-ink",
+      bar: "bg-green",
     },
     caution: {
-      dot: "bg-amber-500",
-      text: "text-amber-600",
-      badge: "border-amber-500/30 bg-amber-500/10 text-amber-600",
-      bar: "bg-amber-500",
+      dot: "bg-yellow",
+      text: "text-yellow",
+      badge: "border-yellow/30 bg-yellow/10 text-yellow-ink",
+      bar: "bg-yellow",
     },
     negative: {
       dot: "bg-destructive",
@@ -58,16 +58,16 @@ export const TONE_CLASSES: Record<Tone, { dot: string; text: string; badge: stri
       bar: "bg-destructive",
     },
     info: {
-      dot: "bg-sky-500",
-      text: "text-sky-600",
-      badge: "border-sky-500/30 bg-sky-500/10 text-sky-600",
-      bar: "bg-sky-500",
+      dot: "bg-blue",
+      text: "text-blue",
+      badge: "border-blue/30 bg-blue/10 text-blue-ink",
+      bar: "bg-blue",
     },
     neutral: {
-      dot: "bg-muted-foreground/60",
-      text: "text-muted-foreground",
-      badge: "text-muted-foreground",
-      bar: "bg-muted-foreground/60",
+      dot: "bg-label-tertiary",
+      text: "text-label-secondary",
+      badge: "text-label-secondary",
+      bar: "bg-label-tertiary",
     },
   };
 

@@ -44,14 +44,14 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
 
   return (
     <Dialog open onOpenChange={(open) => !open && !props.isLoading && props.onCancel()}>
-      <DialogContent className="facet-modal rounded-2xl p-5 sm:max-w-md">
+      <DialogContent className="rounded-card p-5 sm:max-w-md">
         {/* Header */}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {props.type === "split" ? (
-              <Scissors className="text-muted-foreground h-5 w-5" aria-hidden />
+              <Scissors className="text-label-secondary h-5 w-5" aria-hidden />
             ) : (
-              <Merge className="text-muted-foreground h-5 w-5" aria-hidden />
+              <Merge className="text-label-secondary h-5 w-5" aria-hidden />
             )}
             {props.type === "split" ? "Split country" : "Merge countries"}
           </DialogTitle>
@@ -60,12 +60,12 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
         <form onSubmit={handleSubmit}>
           {props.type === "split" ? (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm">
-                Splitting <span className="text-foreground font-medium">{props.featureName}</span>{" "}
-                into two new countries.
+              <p className="text-label-secondary text-body">
+                Splitting <span className="text-label font-medium">{props.featureName}</span> into
+                two new countries.
               </p>
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   First country name
                 </label>
                 <Input
@@ -76,7 +76,7 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
                 />
               </div>
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Second country name
                 </label>
                 <Input
@@ -88,13 +88,13 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Merging{" "}
-                <span className="text-foreground font-medium">{props.featureNames.join(", ")}</span>{" "}
-                into a single country.
+                <span className="text-label font-medium">{props.featureNames.join(", ")}</span> into
+                a single country.
               </p>
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   New country name
                 </label>
                 <Input
@@ -108,7 +108,7 @@ export const SplitMergeDialog = React.memo(function SplitMergeDialog(props: Spli
           )}
 
           {/* Actions */}
-          <p className="mt-3 flex items-start gap-2 text-xs text-amber-500">
+          <p className="text-footnote text-yellow mt-3 flex items-start gap-2">
             <WarningTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             {props.type === "split"
               ? "This permanently replaces the original country with two new ones. It cannot be undone."

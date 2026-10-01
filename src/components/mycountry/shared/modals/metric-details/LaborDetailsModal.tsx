@@ -114,7 +114,7 @@ export function LaborDetailsModal({
   const chartConfig = {
     laborForce: { label: "Labor Force", color: "var(--color-blue-500)" },
     employmentRate: { label: "Employment Rate %", color: "var(--chart-3)" },
-    unemploymentRate: { label: "Unemployment Rate %", color: "var(--destructive)" },
+    unemploymentRate: { label: "Unemployment Rate %", color: "var(--color-destructive)" },
     participationRate: { label: "Participation Rate %", color: "var(--chart-1)" },
   };
 
@@ -176,23 +176,20 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-6"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-                <Briefcase className="text-muted-foreground h-5 w-5" />
+              <h3 className="text-label text-title-3 flex items-center gap-2">
+                <Briefcase className="text-label-secondary h-5 w-5" />
                 Labor Force Composition
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Workforce composition and national employment statistics.
               </p>
             </FacetCardHeader>
             <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-foreground text-lg font-semibold">
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-label text-title-3">
                     {(
                       ((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1)) *
                       100
@@ -200,42 +197,46 @@ export function LaborDetailsModal({
                     %
                   </div>
                   <Eyebrow className="mt-1 block">Of Population</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-lg font-semibold text-emerald-500">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-title-3 text-green">
                     {(
                       ((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
                   <Eyebrow className="mt-1 block">Employed</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-destructive text-lg font-bold">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-destructive text-title-3">
                     {(
                       ((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0)) /
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
                   <Eyebrow className="mt-1 block">Unemployed</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-lg font-semibold text-emerald-500">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-title-3 text-green">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
                   <Eyebrow className="mt-1 block">Avg. Income</Eyebrow>
-                </div>
+                </FacetCard>
               </div>
 
-              <div className="text-muted-foreground bg-muted/50 mt-6 flex items-start gap-3 rounded-xl p-4 text-xs">
-                <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+              <FacetCard
+                variant="inset"
+                padding="none"
+                className="text-label-secondary text-footnote mt-6 flex items-start gap-3 p-4"
+              >
+                <Info className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
                   Workforce dynamics play a critical role in determining overall production
                   efficiency and industrial stability. High employment rates support higher consumer
                   demand and stability, while the average income influences domestic market
                   velocity.
                 </p>
-              </div>
+              </FacetCard>
             </FacetCardContent>
           </FacetCard>
         </MetricModalLayout.MainArea>
@@ -295,10 +296,10 @@ export function LaborDetailsModal({
 
     if (processedData.length === 0) {
       return (
-        <FacetCard surface="solid" className="rounded-xl">
+        <FacetCard>
           <FacetCardContent className="py-12 text-center">
-            <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
-            <p className="text-muted-foreground">No historical data available</p>
+            <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
+            <p className="text-label-secondary">No historical data available</p>
           </FacetCardContent>
         </FacetCard>
       );
@@ -310,10 +311,10 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <FacetCard surface="solid" className="rounded-xl p-6">
+          <FacetCard className="p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base font-semibold">Labor Force Trends</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-label text-title-3">Labor Force Trends</h3>
+              <p className="text-label-secondary text-body">
                 Historical employment and participation metrics
               </p>
             </FacetCardHeader>
@@ -331,9 +332,9 @@ export function LaborDetailsModal({
                         <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="date" stroke="var(--muted-foreground)" tickLine={false} />
-                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                    <XAxis dataKey="date" stroke="var(--color-label-secondary)" tickLine={false} />
+                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     {chartType === "area" ? (
                       <>
@@ -366,7 +367,7 @@ export function LaborDetailsModal({
                         />
                         <Bar
                           dataKey="unemploymentRate"
-                          fill="var(--destructive)"
+                          fill="var(--color-destructive)"
                           name="Unemployment Rate"
                           radius={[4, 4, 0, 0]}
                         />
@@ -384,7 +385,7 @@ export function LaborDetailsModal({
                         <Line
                           type="monotone"
                           dataKey="unemploymentRate"
-                          stroke="var(--destructive)"
+                          stroke="var(--color-destructive)"
                           strokeWidth={2}
                           dot={false}
                           name="Unemployment Rate"
@@ -408,31 +409,29 @@ export function LaborDetailsModal({
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Max Employment Rate</Eyebrow>
-              <span className="text-xl font-semibold text-emerald-500">
+              <span className="text-title-2 text-green">
                 {laborStats?.maxEmployment ? `${laborStats.maxEmployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Min Unemployment Rate</Eyebrow>
-              <span className="text-destructive text-xl font-bold">
+              <span className="text-destructive text-title-2">
                 {laborStats?.minUnemployment ? `${laborStats.minUnemployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Avg Participation</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
+              <span className="text-label text-title-2">
                 {laborStats?.avgParticipation
                   ? `${laborStats.avgParticipation.toFixed(1)}%`
                   : "N/A"}
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Data Points Analyzed</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
-                {laborStats?.dataPoints || 0}
-              </span>
+              <span className="text-label text-title-2">{laborStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -479,13 +478,13 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <FacetCard surface="solid" className="flex-1 rounded-xl p-6">
+          <FacetCard className="flex-1 p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-                <Globe className="text-muted-foreground h-5 w-5" />
+              <h3 className="text-label text-title-3 flex items-center gap-2">
+                <Globe className="text-label-secondary h-5 w-5" />
                 Benchmark Analysis
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Comparison of national labor indicators against global benchmark rates.
               </p>
             </FacetCardHeader>
@@ -493,14 +492,14 @@ export function LaborDetailsModal({
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tickLine={false} />
-                    <YAxis stroke="var(--muted-foreground)" tickLine={false} unit="%" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                    <XAxis dataKey="name" stroke="var(--color-label-secondary)" tickLine={false} />
+                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} unit="%" />
                     <Tooltip
                       contentStyle={{
-                        background: "var(--popover)",
-                        color: "var(--popover-foreground)",
-                        borderColor: "var(--border)",
+                        background: "var(--color-surface-elevated)",
+                        color: "var(--color-label)",
+                        borderColor: "var(--color-separator)",
                         borderRadius: "8px",
                       }}
                     />
@@ -511,7 +510,7 @@ export function LaborDetailsModal({
                     />
                     <Bar
                       dataKey="Global Avg"
-                      fill="var(--muted-foreground)"
+                      fill="var(--color-label-secondary)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
@@ -523,34 +522,34 @@ export function LaborDetailsModal({
 
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Global Comparison</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
+              <span className="text-label text-title-2">
                 {employmentRate >= globalAvgEmployment ? "Above Average" : "Below Average"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Employment: {employmentRate.toFixed(1)}% vs {globalAvgEmployment}% Avg
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Workforce Activity</Eyebrow>
-              <span className="text-xl font-semibold text-emerald-500">
+              <span className="text-title-2 text-green">
                 {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Active Participation Rate: {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Job Market Health</Eyebrow>
-              <span className="text-xl font-semibold text-emerald-500">
+              <span className="text-title-2 text-green">
                 {(labor?.unemploymentRate || 0) < 5
                   ? "Healthy"
                   : (labor?.unemploymentRate || 0) < 10
                     ? "Moderate"
                     : "Struggling"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Unemployment Rate: {(labor?.unemploymentRate || 0).toFixed(1)}%
               </span>
             </div>
@@ -588,13 +587,10 @@ export function LaborDetailsModal({
     return (
       <MetricModalLayout variant="labor">
         <MetricModalLayout.MainArea>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-6"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base font-semibold">Employment by Sector</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-label text-title-3">Employment by Sector</h3>
+              <p className="text-label-secondary text-body">
                 Workforce distribution across key industrial sectors
               </p>
             </FacetCardHeader>
@@ -603,21 +599,21 @@ export function LaborDetailsModal({
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sectorData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                      <XAxis type="number" stroke="var(--muted-foreground)" tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                      <XAxis type="number" stroke="var(--color-label-secondary)" tickLine={false} />
                       <YAxis
                         dataKey="name"
                         type="category"
-                        stroke="var(--muted-foreground)"
+                        stroke="var(--color-label-secondary)"
                         tickLine={false}
                         width={100}
                         tick={{ fontSize: 9 }}
                       />
                       <Tooltip
                         contentStyle={{
-                          background: "var(--popover)",
-                          color: "var(--popover-foreground)",
-                          borderColor: "var(--border)",
+                          background: "var(--color-surface-elevated)",
+                          color: "var(--color-label)",
+                          borderColor: "var(--color-separator)",
                           borderRadius: "8px",
                         }}
                       />
@@ -632,8 +628,8 @@ export function LaborDetailsModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <Briefcase className="text-muted-foreground mb-2 h-8 w-8 opacity-40" />
-                  <p className="text-muted-foreground text-sm">No sector data available</p>
+                  <Briefcase className="text-label-secondary mb-2 h-8 w-8 opacity-40" />
+                  <p className="text-label-secondary text-body">No sector data available</p>
                 </div>
               )}
             </FacetCardContent>
@@ -641,40 +637,35 @@ export function LaborDetailsModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-4"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-4">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base text-sm font-semibold">
-                Productivity Metrics
-              </h3>
-              <p className="text-muted-foreground text-xs">Workforce efficiency and output</p>
+              <h3 className="text-label text-title-3 text-headline">Productivity Metrics</h3>
+              <p className="text-label-secondary text-footnote">Workforce efficiency and output</p>
             </FacetCardHeader>
             <FacetCardContent className="space-y-4 p-0">
-              <div className="bg-muted/50 rounded-xl p-3">
+              <FacetCard variant="inset" padding="none" className="p-3">
                 <Eyebrow>GDP per Worker</Eyebrow>
-                <div className="text-foreground mt-1 text-lg font-semibold">
+                <div className="text-label text-title-3 mt-1">
                   $
                   {(
                     (countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)
                   ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
-              </div>
+              </FacetCard>
 
-              <div className="bg-muted/50 rounded-xl p-3">
+              <FacetCard variant="inset" padding="none" className="p-3">
                 <Eyebrow>Productivity Index</Eyebrow>
-                <div className="mt-1 text-lg font-semibold text-emerald-500">
+                <div className="text-title-3 text-green mt-1">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "1.00"}
                 </div>
-              </div>
+              </FacetCard>
 
-              <div className="bg-muted/50 rounded-xl p-3">
+              <FacetCard variant="inset" padding="none" className="p-3">
                 <Eyebrow>Avg. Education</Eyebrow>
-                <div className="text-foreground mt-1 text-lg font-semibold">
+                <div className="text-label text-title-3 mt-1">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "12.0"} Years
                 </div>
-              </div>
+              </FacetCard>
             </FacetCardContent>
           </FacetCard>
         </MetricModalLayout.Sidebar>
@@ -691,7 +682,7 @@ export function LaborDetailsModal({
       title="Labor Force Analysis"
       description="Detailed workforce and employment metrics"
       icon={Users}
-      iconColor="text-muted-foreground"
+      iconColor="text-label-secondary"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

@@ -35,7 +35,7 @@ export function CutoutPanel({
       textureOpacity={textureOpacity}
       trackPointerHover={trackPointerHover}
       className={cn(
-        "bg-card text-card-foreground border-border/70 relative overflow-hidden rounded-2xl border",
+        "bg-surface text-label border-separator rounded-card relative overflow-hidden border",
         className
       )}
     >

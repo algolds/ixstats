@@ -109,10 +109,10 @@ export function GovernmentStructureForm({
   }
 
   return (
-    <FacetCard depth={1} className="w-full">
+    <FacetCard className="w-full">
       <FacetCardHeader className="pb-4">
-        <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
-          <Building2 aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+        <h3 className="text-label text-title-3 flex items-center gap-2">
+          <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
           Government Structure
         </h3>
       </FacetCardHeader>

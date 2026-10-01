@@ -24,24 +24,22 @@ function EditorShell() {
   const [isCommonsOpen, setIsCommonsOpen] = React.useState(false);
 
   return (
-    <div className="bg-card text-foreground relative flex h-screen flex-col overflow-hidden font-sans">
+    <div className="bg-surface text-label relative flex h-screen flex-col overflow-hidden font-sans">
       {/* Top Navbar */}
-      <header className="border-border bg-muted/40 flex h-14 shrink-0 items-center justify-between border-b px-6">
+      <header className="border-separator bg-fill-3 flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold tracking-wider text-amber-500">Vexel</span>
-          <Badge variant="outline" className="border-amber-500/30 text-amber-500">
-            Heraldry lab
-          </Badge>
+          <span className="text-title-2 text-tint">Vexel</span>
+          <Badge variant="tinted">Heraldry lab</Badge>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             {isDirty ? (
-              <span className="flex items-center gap-1.5 text-amber-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+              <span className="text-tint flex items-center gap-2">
+                <span className="bg-tint h-1.5 w-1.5 rounded-full" aria-hidden />
                 Unsaved changes
               </span>
             ) : (
-              <span className="text-muted-foreground">All saved</span>
+              <span className="text-label-secondary">All saved</span>
             )}
           </span>
         </div>
@@ -52,12 +50,12 @@ function EditorShell() {
         {/* Main Grid */}
         <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
           {/* Left Sidebar: Layers */}
-          <aside className="border-border bg-muted/40 overflow-y-auto border-r p-4">
+          <aside className="border-separator bg-fill-3 overflow-y-auto border-r p-4">
             <LayerPanel />
           </aside>
 
           {/* Center Canvas: Preview / Audit */}
-          <main className="bg-muted/40 flex flex-col space-y-0 overflow-y-auto p-6">
+          <main className="bg-fill-3 flex flex-col space-y-0 overflow-y-auto p-6">
             <SaveControls />
             <div className="mt-4 space-y-6">
               <PreviewPanel />
@@ -67,7 +65,7 @@ function EditorShell() {
           </main>
 
           {/* Right Sidebar: Properties & Charge Library */}
-          <aside className="border-border bg-muted/40 flex flex-col gap-6 overflow-y-auto border-l p-4">
+          <aside className="border-separator bg-fill-3 flex flex-col gap-6 overflow-y-auto border-l p-4">
             <PropertiesPanel />
             <ChargeLibraryPanel onOpenCommons={() => setIsCommonsOpen(true)} />
           </aside>
@@ -78,7 +76,7 @@ function EditorShell() {
       </div>
 
       {/* Bottom Status Bar */}
-      <footer className="border-border bg-muted/40 text-muted-foreground flex h-8 shrink-0 items-center justify-between border-t px-6 text-xs">
+      <footer className="border-separator bg-fill-3 text-label-secondary text-footnote flex h-8 shrink-0 items-center justify-between border-t px-6">
         <div>{achievementId ? `Editing: ${achievementId}` : "New Design Draft"}</div>
         <div>IxStates Vexel Engine v1.0.0</div>
       </footer>
@@ -105,10 +103,10 @@ function EditorInner({ id }: { id?: string }) {
 
   if (id && isLoading) {
     return (
-      <div className="bg-card flex h-screen items-center justify-center text-amber-500">
+      <div className="bg-surface text-tint flex h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-          <span className="text-sm font-medium tracking-wide">Loading Achievement...</span>
+          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-body font-medium">Loading Achievement...</span>
         </div>
       </div>
     );

@@ -9,7 +9,7 @@ import { useRef, useMemo, useCallback, useState, useEffect, useDeferredValue } f
 import { Xmark, WarningTriangle } from "iconoir-react";
 import dynamic from "next/dynamic";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useIsAdmin, useIsStaff } from "~/hooks/usePermissions";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
@@ -364,12 +364,12 @@ export function MapContainer({
     return (
       <div
         role="alert"
-        className={`bg-background absolute inset-0 flex items-center justify-center p-6 ${className}`}
+        className={`bg-surface absolute inset-0 flex items-center justify-center p-6 ${className}`}
       >
         <div className="max-w-sm space-y-3 text-center">
           <WarningTriangle className="text-destructive mx-auto h-6 w-6" aria-hidden />
-          <p className="text-foreground text-lg font-medium">Couldn&apos;t load the map</p>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-label text-title-3">Couldn&apos;t load the map</p>
+          <p className="text-label-secondary text-body">
             {error.message || "The map data didn't arrive. Check your connection and try again."}
           </p>
           <Button type="button" onClick={() => void utils.geoCore.getMapBundle.invalidate()}>
@@ -463,19 +463,19 @@ export function MapContainer({
         <AnalyticsLegend overlayVisibility={overlayVisibility} overlayData={overlayData} />
 
         {showBetaNotice && (
-          <FacetContainer
+          <FacetMaterial
             material="regular"
             role="note"
-            className="pointer-events-auto w-full max-w-sm rounded-2xl p-3"
+            className="rounded-card pointer-events-auto w-full max-w-sm p-3"
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-2.5">
-              <WarningTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+            <div className="flex items-start gap-2">
+              <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <div className="min-w-0 flex-1 space-y-1">
-                <h4 className="text-foreground text-sm font-semibold">Maps private beta</h4>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <h4 className="text-label text-headline">Maps private beta</h4>
+                <p className="text-label-secondary text-footnote leading-relaxed">
                   Explore the world map, terrain and other nations freely. Adding your own borders
                   or claiming territory isn&apos;t open to external players yet.
                 </p>
@@ -485,13 +485,13 @@ export function MapContainer({
                 variant="ghost"
                 size="icon"
                 onClick={dismissBeta}
-                className="text-muted-foreground -m-1.5 h-8 w-8 shrink-0 rounded-full"
+                className="text-label-secondary -m-2 h-8 w-8 shrink-0 rounded-full"
                 aria-label="Dismiss private beta notice"
               >
                 <Xmark aria-hidden />
               </Button>
             </div>
-          </FacetContainer>
+          </FacetMaterial>
         )}
       </div>
 
@@ -631,15 +631,15 @@ export function MapContainer({
       {(webglError || (mapLoadTimeout && !mapEngineReady)) && (
         <div
           role="alert"
-          className="bg-map-ocean absolute inset-0 z-[var(--z-depth-overlay)] flex items-center justify-center p-6 text-center"
+          className="bg-map-ocean z-chrome absolute inset-0 flex items-center justify-center p-6 text-center"
         >
-          <FacetContainer material="thick" className="max-w-md space-y-6 rounded-2xl p-8">
+          <FacetMaterial material="thick" className="rounded-card max-w-md space-y-6 p-8">
             <WarningTriangle className="text-destructive mx-auto h-8 w-8" aria-hidden />
             <div className="space-y-2">
-              <h3 className="text-foreground text-xl font-semibold">
+              <h3 className="text-label text-title-2">
                 {webglError ? "WebGL Error Detected" : "Map Loading Timeout"}
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 {webglError
                   ? "WebGL is either disabled, crashed, or not supported by your browser. Please check your hardware acceleration settings."
                   : "The map engine is taking longer than expected to load. This might be due to slow network speeds or database recovery mode."}
@@ -661,12 +661,12 @@ export function MapContainer({
                 type="button"
                 size="lg"
                 onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 text-white hover:bg-blue-600/90 sm:flex-1"
+                className="bg-blue text-on-blue hover:bg-blue/90 w-full sm:flex-1"
               >
                 Reload page
               </Button>
             </div>
-          </FacetContainer>
+          </FacetMaterial>
         </div>
       )}
     </div>

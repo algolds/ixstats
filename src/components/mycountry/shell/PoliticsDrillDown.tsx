@@ -19,7 +19,7 @@ const CabinetPanel = dynamic(
     import("~/components/executive/politics/CabinetPanel").then((m) => ({
       default: m.CabinetPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const PartyManager = dynamic(
@@ -27,7 +27,7 @@ const PartyManager = dynamic(
     import("~/components/executive/politics/PartyManager").then((m) => ({
       default: m.PartyManager,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const LegislaturePanel = dynamic(
@@ -35,7 +35,7 @@ const LegislaturePanel = dynamic(
     import("~/components/executive/politics/LegislaturePanel").then((m) => ({
       default: m.LegislaturePanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const BillsPanel = dynamic(
@@ -43,7 +43,7 @@ const BillsPanel = dynamic(
     import("~/components/executive/politics/BillsPanel").then((m) => ({
       default: m.BillsPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const ElectionStatusCard = dynamic(
@@ -51,7 +51,7 @@ const ElectionStatusCard = dynamic(
     import("~/components/executive/politics/ElectionStatusCard").then((m) => ({
       default: m.ElectionStatusCard,
     })),
-  { loading: () => <Skeleton className="h-20 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-20" /> }
 );
 
 const PowerBrokersPanel = dynamic(
@@ -59,7 +59,7 @@ const PowerBrokersPanel = dynamic(
     import("~/components/executive/politics/PowerBrokersPanel").then((m) => ({
       default: m.PowerBrokersPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 export interface PoliticsDrillDownProps {
@@ -90,12 +90,12 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
   return (
     <div className="space-y-4">
       {/* Player fiat notice */}
-      <FacetCard surface="solid" className="flex items-start justify-between gap-3 rounded-2xl p-3">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <Crown aria-hidden="true" className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+      <FacetCard className="rounded-card flex items-start justify-between gap-3 p-3">
+        <div className="flex min-w-0 items-start gap-2">
+          <Crown aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
           <div className="min-w-0">
-            <p className="text-foreground text-sm font-semibold">Executive fiat mode</p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-label text-headline">Executive fiat mode</p>
+            <p className="text-label-secondary text-footnote leading-relaxed">
               Political structure, parties, cabinet posts, and legislative rules are player
               configurable. Legislative seats are won at elections.
             </p>

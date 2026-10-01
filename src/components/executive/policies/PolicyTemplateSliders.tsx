@@ -3,6 +3,7 @@
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ControlSlider as Sliders } from "iconoir-react";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface PolicyTemplateSlidersProps {
   currentTemplate: any;
@@ -18,34 +19,34 @@ export function PolicyTemplateSliders({
   if (!currentTemplate?.sliders?.length) return null;
 
   return (
-    <div className="space-y-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
-      <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-indigo-400 uppercase">
-        <Sliders className="h-3.5 w-3.5" />
-        Policy Strategy Configurations
+    <div className="rounded-row bg-surface-secondary space-y-4 p-4">
+      <h4 className="text-subhead text-label flex items-center gap-2">
+        <Sliders className="text-label-secondary h-3.5 w-3.5" aria-hidden />
+        Policy strategy configurations
       </h4>
 
       {currentTemplate.sliders.map((slider: any) => (
         <div key={slider.key} className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-medium">{slider.label}</Label>
-          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-            {slider.options.map((opt: any) => {
-              const isSelected = sliderSettings[slider.key] === opt.value;
-              return (
-                <button
-                  key={opt.label}
-                  type="button"
-                  onClick={() => onSliderChange(slider.key, opt.value)}
-                  className={`flex flex-col items-center justify-center rounded-md border p-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    isSelected
-                      ? "border-indigo-500 bg-indigo-600 font-medium text-white shadow-sm shadow-indigo-600/20"
-                      : "bg-muted/40 border-border/40 hover:bg-muted/80 text-muted-foreground text-xs"
-                  }`}
-                >
-                  <span className="text-center text-xs sm:text-xs">{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <Label className="text-label-secondary text-caption">{slider.label}</Label>
+          <ToggleGroup
+            type="single"
+            disallowEmpty
+            variant="outline"
+            size="sm"
+            aria-label={slider.label}
+            className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+            value={String(sliderSettings[slider.key])}
+            onValueChange={(v) => {
+              const opt = slider.options.find((o: any) => String(o.value) === v);
+              if (opt) onSliderChange(slider.key, opt.value);
+            }}
+          >
+            {slider.options.map((opt: any) => (
+              <ToggleGroupItem key={opt.label} value={String(opt.value)} className="h-auto py-2">
+                {opt.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       ))}
     </div>

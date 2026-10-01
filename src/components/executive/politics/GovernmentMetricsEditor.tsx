@@ -61,9 +61,9 @@ const METRICS: MetricConfig[] = [
 
 function barColor(value: number, inverted: boolean): string {
   const effective = inverted ? 100 - value : value;
-  if (effective >= 70) return "bg-green-500";
-  if (effective >= 40) return "bg-amber-500";
-  return "bg-red-500";
+  if (effective >= 70) return "bg-green";
+  if (effective >= 40) return "bg-yellow";
+  return "bg-red";
 }
 
 export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorProps) {
@@ -87,10 +87,10 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   };
 
   return (
-    <Card className="facet-hierarchy-child">
+    <Card className="">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <BarChart2 className="text-indigo h-4 w-4" />
           Political Metrics
         </CardTitle>
         <CardDescription>
@@ -99,11 +99,11 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-muted-foreground flex items-center justify-center py-6 text-sm">
+          <div className="text-label-secondary text-body flex items-center justify-center py-6">
             Loading metrics…
           </div>
         ) : !govStructure ? (
-          <p className="text-muted-foreground py-4 text-center text-sm">
+          <p className="text-label-secondary text-body py-4 text-center">
             No government structure configured yet.
           </p>
         ) : (
@@ -111,22 +111,22 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
             {METRICS.map((metric) => {
               const value = getValue(metric.key);
               return (
-                <div key={metric.key} className="space-y-1.5">
+                <div key={metric.key} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">{metric.label}</span>
-                    <span className="text-xs font-semibold tabular-nums">
+                    <span className="text-caption">{metric.label}</span>
+                    <span className="text-caption font-semibold tabular-nums">
                       {metric.isYears ? `${value} yr` : `${value}`}
                     </span>
                   </div>
                   {!metric.isYears && (
-                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                    <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
                       <div
                         className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${barColor(value, !!metric.invertedScale)}`}
                         style={{ width: `${value}%` }}
                       />
                     </div>
                   )}
-                  <p className="text-muted-foreground text-xs leading-tight">
+                  <p className="text-label-secondary text-footnote leading-tight">
                     {metric.description}
                   </p>
                 </div>

@@ -6,7 +6,7 @@ import type { IxWorldMapRef } from "./IxWorldMap";
 import { useMeasureToolState } from "./hooks/useMeasureToolState";
 import { formatDistance } from "./utils/measure-helpers";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 
 export interface MeasureToolRef {
   toggle: () => void;
@@ -39,7 +39,7 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
           variant={active ? "default" : "outline"}
           onClick={handleToggle}
           aria-pressed={active}
-          className={`min-h-11 sm:min-h-0 ${active ? "bg-blue-500 text-white hover:bg-blue-500/90" : ""}`}
+          className={`min-h-11 sm:min-h-0 ${active ? "bg-blue text-on-blue hover:bg-blue/90" : ""}`}
           title="Measure distance (M)"
         >
           <Trash2 aria-hidden />
@@ -50,26 +50,26 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
       {/* Distance readout (fixed to map, below toolbar) */}
       {active && points.length >= 2 && (
         <div className="fixed top-36 left-6 z-30 sm:absolute sm:top-14 sm:left-3">
-          <FacetContainer
+          <FacetMaterial
             material="regular"
             role="status"
-            className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm"
+            className="rounded-row text-body flex items-center gap-2 px-3 py-2"
           >
-            <span className="text-foreground font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {formatDistance(totalDistance)}
             </span>
-            <span className="text-muted-foreground">({points.length} pts)</span>
+            <span className="text-label-secondary">({points.length} pts)</span>
             <Button
               variant="ghost"
               size="icon"
               onClick={clearPoints}
-              className="text-muted-foreground hover:text-destructive h-7 w-7"
+              className="text-label-secondary hover:text-destructive h-7 w-7"
               title="Clear measurement (Esc)"
               aria-label="Clear measurement"
             >
               <Trash2 aria-hidden />
             </Button>
-          </FacetContainer>
+          </FacetMaterial>
         </div>
       )}
     </>

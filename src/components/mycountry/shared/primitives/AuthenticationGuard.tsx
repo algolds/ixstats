@@ -34,13 +34,13 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
   if (!isClerkConfigured) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="facet-hierarchy-parent mx-auto max-w-2xl">
+        <Card className="mx-auto max-w-2xl">
           <CardHeader className="text-center">
-            <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <CardTitle className="text-2xl font-bold">Authentication Not Configured</CardTitle>
+            <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
+            <CardTitle className="text-title-1">Authentication Not Configured</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-6">
+            <p className="text-label-secondary mb-6">
               User authentication is not set up for this application. Please contact an
               administrator to configure authentication or browse countries without signing in.
             </p>
@@ -69,7 +69,7 @@ export function AuthenticationGuard({ children, redirectPath }: AuthenticationGu
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-4" role="status" aria-label="Checking your session">
           <Skeleton className="h-12 w-72" />
-          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="rounded-card h-64" />
         </div>
       </div>
     );

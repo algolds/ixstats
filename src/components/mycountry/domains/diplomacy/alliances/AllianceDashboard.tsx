@@ -100,20 +100,20 @@ export function AllianceDashboard({
     : [];
 
   return (
-    <FacetCard depth={2} className="space-y-4 rounded-2xl p-4">
+    <FacetCard className="rounded-card space-y-4 p-4">
       {/* Alliance header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold text-white"
+            className="rounded-control text-headline flex h-10 w-10 shrink-0 items-center justify-center text-white"
             // The alliance's own chosen colour (user data), so it is applied inline.
             style={{ backgroundColor: alliance.color }}
           >
             {alliance.shortName ?? alliance.name.slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <h3 className="text-foreground truncate text-base font-semibold">{alliance.name}</h3>
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <h3 className="text-label text-title-3 truncate">{alliance.name}</h3>
+            <div className="text-label-secondary text-footnote flex items-center gap-2">
               <Badge variant="outline">{alliance.type}</Badge>
               <Badge variant="outline">{alliance.visibility}</Badge>
               <span>{alliance.memberCount} members</span>
@@ -176,7 +176,7 @@ export function AllianceDashboard({
       </div>
 
       {alliance.description && (
-        <p className="text-muted-foreground text-sm">{alliance.description}</p>
+        <p className="text-label-secondary text-body">{alliance.description}</p>
       )}
 
       {/* Stats */}
@@ -186,8 +186,8 @@ export function AllianceDashboard({
           { label: "Combined GDP", value: formatCurrency(alliance.calculatedTotalGdp) },
           { label: "Total pop.", value: formatNumber(alliance.calculatedTotalPopulation) },
         ].map((stat) => (
-          <div key={stat.label} className="bg-muted/50 rounded-xl p-2">
-            <dd className="text-foreground text-lg font-semibold tabular-nums">{stat.value}</dd>
+          <div key={stat.label} className="bg-fill-3 rounded-row p-2">
+            <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
             <dt>
               <Eyebrow>{stat.label}</Eyebrow>
             </dt>
@@ -197,18 +197,18 @@ export function AllianceDashboard({
 
       {/* Members list */}
       <div>
-        <h4 className="text-foreground mb-2 flex items-center gap-1.5 text-sm font-semibold">
-          <Users className="text-muted-foreground h-4 w-4" />
+        <h4 className="text-label text-headline mb-2 flex items-center gap-2">
+          <Users className="text-label-secondary h-4 w-4" />
           Members
         </h4>
         <div className="space-y-1">
           {alliance.members.map((m) => {
             const roleBadge = ROLE_BADGES[m.role] ?? ROLE_BADGES.member!;
             return (
-              <div key={m.id} className="flex items-center justify-between py-1 text-sm">
+              <div key={m.id} className="text-body flex items-center justify-between py-1">
                 <div className="flex items-center gap-2">
-                  {m.role === "founder" && <Crown className="h-3 w-3 text-amber-500" />}
-                  {m.role === "observer" && <Eye className="text-muted-foreground h-3 w-3" />}
+                  {m.role === "founder" && <Crown className="text-yellow h-3 w-3" />}
+                  {m.role === "observer" && <Eye className="text-label-secondary h-3 w-3" />}
                   <span className={m.countryId === countryId ? "font-medium" : ""}>
                     {m.country.name}
                   </span>
@@ -224,7 +224,7 @@ export function AllianceDashboard({
       <CollectiveActionsPanel allianceId={allianceId} countryId={countryId} myRole={myRole} />
 
       {/* Quick stats */}
-      <div className="text-muted-foreground flex items-center gap-4 text-xs">
+      <div className="text-label-secondary text-footnote flex items-center gap-4">
         <span className="flex items-center gap-1">
           <Vote className="h-3 w-3" />
           {alliance.pendingActions} pending proposals

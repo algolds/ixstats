@@ -55,11 +55,7 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
         label="Trade balance"
         icon={Ship}
         valueClassName={
-          tradeBalance == null
-            ? undefined
-            : tradeBalance >= 0
-              ? "text-emerald-600"
-              : "text-destructive"
+          tradeBalance == null ? undefined : tradeBalance >= 0 ? "text-green" : "text-destructive"
         }
         value={
           <>
@@ -108,20 +104,13 @@ function ImpactTile({
   note: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className="space-y-1 rounded-2xl p-4">
+    <FacetCard className="rounded-card space-y-1 p-4">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow>{label}</Eyebrow>
-        <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+        <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
       </div>
-      <p
-        className={cn(
-          "font-mono text-xl font-semibold tracking-tight tabular-nums",
-          valueClassName ?? "text-foreground"
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-muted-foreground text-xs">{note}</p>
+      <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>
+      <p className="text-label-secondary text-footnote">{note}</p>
     </FacetCard>
   );
 }

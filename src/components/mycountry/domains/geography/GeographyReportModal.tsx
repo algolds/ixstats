@@ -2,13 +2,13 @@
 
 import React, { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 import {
   Compass,
   CloudSunny as CloudSun,
@@ -23,6 +23,14 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.
 type GeoProfileData = RouterOutputs["geoCore"]["getCountryGeoProfile"];
@@ -56,26 +64,26 @@ export function GeographyReportModal({
   const [activeTab, setActiveTab] = useState<ReportTab>("overview");
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         {trigger ?? (
           <Button type="button" variant="outline" size="sm" className="h-11 sm:h-8">
             <Compass aria-hidden="true" />
             Full geographic report
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="overflow-hidden sm:max-w-2xl">
-        <DialogHeader className="border-border/60 border-b pb-3">
-          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <Compass aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+      </SheetTrigger>
+      <SheetContent size="wide" className="flex flex-col overflow-hidden">
+        <SheetHeader className="border-separator border-b pb-3">
+          <SheetTitle className="text-label text-title-3 flex items-center gap-2">
+            <Compass aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Geographic Profile Analysis &mdash; {countryName}
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-xs">
+          </SheetTitle>
+          <SheetDescription className="text-label-secondary text-footnote">
             Comprehensive geographical breakdown including terrain elevation, macroclimate models,
             hydrography bounds, and regional borders.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <FacetTabs
           tabs={REPORT_TABS}
@@ -87,67 +95,67 @@ export function GeographyReportModal({
         />
 
         {/* Tab Body Container */}
-        <div className="mt-4 max-h-[480px] min-h-[320px] space-y-4 overflow-y-auto px-1">
+        <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
           {activeTab === "overview" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                <FacetCard variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Spatial Metrics</Eyebrow>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-muted-foreground text-xs">Total Area</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">Total Area</span>
+                      <div className="text-label font-semibold">
                         {geoProfile.area.areaKm2.toLocaleString()} km²
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Border Perimeter</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">Border Perimeter</span>
+                      <div className="text-label font-semibold">
                         {geoProfile.area.perimeterKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">North-South Span</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">North-South Span</span>
+                      <div className="text-label font-semibold">
                         {geoProfile.area.nsSpanKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">East-West Span</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">East-West Span</span>
+                      <div className="text-label font-semibold">
                         {geoProfile.area.ewSpanKm.toLocaleString()} km
                       </div>
                     </div>
                   </div>
                 </FacetCard>
 
-                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                <FacetCard variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Biogeographic Overview</Eyebrow>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-muted-foreground text-xs">Dominant Climate</span>
+                      <span className="text-label-secondary text-footnote">Dominant Climate</span>
                       <div
-                        className="text-foreground truncate font-semibold"
+                        className="text-label truncate font-semibold"
                         title={geoProfile.climate.dominant ?? undefined}
                       >
                         {geoProfile.climate.dominant}
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Mean Elevation</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">Mean Elevation</span>
+                      <div className="text-label font-semibold">
                         {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Arable Land</span>
-                      <div className="text-foreground font-semibold">
+                      <span className="text-label-secondary text-footnote">Arable Land</span>
+                      <div className="text-label font-semibold">
                         {geoProfile.derived.arableLandPercent.toFixed(1)}%
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs">Terrain Class</span>
-                      <div className="text-foreground truncate font-semibold">
+                      <span className="text-label-secondary text-footnote">Terrain Class</span>
+                      <div className="text-label truncate font-semibold">
                         {geoProfile.elevation.terrainRoughness}
                       </div>
                     </div>
@@ -155,12 +163,12 @@ export function GeographyReportModal({
                 </FacetCard>
               </div>
 
-              <FacetCard surface="solid" className="space-y-2 rounded-xl p-3">
-                <div className="flex items-center gap-1.5">
-                  <Globe2 aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <FacetCard variant="inset" className="space-y-2 p-3">
+                <div className="flex items-center gap-2">
+                  <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   <Eyebrow>Geographic classification</Eyebrow>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
+                <div className="text-footnote flex flex-wrap gap-2">
                   {geoProfile.derived.isLandlocked && (
                     <Badge variant="outline">Landlocked State</Badge>
                   )}
@@ -185,91 +193,83 @@ export function GeographyReportModal({
           {activeTab === "climate-elevation" && (
             <div className="space-y-4">
               {/* Climate Zones Table */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <CloudSun aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CloudSun aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   <Eyebrow>Climate Zone Distribution</Eyebrow>
                 </div>
-                <div className="border-border overflow-hidden rounded-lg border">
-                  <table className="w-full border-collapse text-left text-xs">
-                    <thead>
-                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
-                        <th className="px-3 py-2">Climate Category</th>
-                        <th className="px-3 py-2 text-right">Coverage %</th>
-                        <th className="px-3 py-2 text-right">Area (km²)</th>
-                        <th className="px-3 py-2 text-right">Agri Weight</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-border/60 divide-y">
-                      {geoProfile.climate.zones.map((zone) => (
-                        <tr key={zone.type} className="hover:bg-muted/30">
-                          <td className="text-foreground px-3 py-1.5 font-medium">{zone.type}</td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {zone.percentArea.toFixed(1)}%
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {Math.round(zone.areaSqKm).toLocaleString()}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            x{zone.agricultureFactor.toFixed(1)}
-                          </td>
-                        </tr>
-                      ))}
-                      {geoProfile.climate.zones.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="text-muted-foreground px-3 py-4 text-center italic"
-                          >
-                            No climate zones mapped.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Climate Category</TableHead>
+                      <TableHead className="text-right">Coverage %</TableHead>
+                      <TableHead className="text-right">Area (km²)</TableHead>
+                      <TableHead className="text-right">Agri Weight</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {geoProfile.climate.zones.map((zone) => (
+                      <TableRow key={zone.type}>
+                        <TableCell className="text-label font-medium">{zone.type}</TableCell>
+                        <TableCell className="text-right">{zone.percentArea.toFixed(1)}%</TableCell>
+                        <TableCell className="text-right">
+                          {Math.round(zone.areaSqKm).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          x{zone.agricultureFactor.toFixed(1)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {geoProfile.climate.zones.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-label-secondary py-4 text-center italic"
+                        >
+                          No climate zones mapped.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Elevation Zones Table */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <TrendingUp aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   <Eyebrow>Altitude Profile Breakdown</Eyebrow>
                 </div>
-                <div className="border-border overflow-hidden rounded-lg border">
-                  <table className="w-full border-collapse text-left text-xs">
-                    <thead>
-                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
-                        <th className="px-3 py-2">Elevation Tier</th>
-                        <th className="px-3 py-2 text-right">Coverage %</th>
-                        <th className="px-3 py-2 text-right">Area (km²)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-border/60 divide-y">
-                      {geoProfile.elevation.zones.map((zone) => (
-                        <tr key={zone.zone} className="hover:bg-muted/30">
-                          <td className="text-foreground px-3 py-1.5 font-medium">{zone.name}</td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {zone.percentArea.toFixed(1)}%
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {Math.round(zone.areaSqKm).toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                      {geoProfile.elevation.zones.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan={3}
-                            className="text-muted-foreground px-3 py-4 text-center italic"
-                          >
-                            No elevation profile mapped.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Elevation Tier</TableHead>
+                      <TableHead className="text-right">Coverage %</TableHead>
+                      <TableHead className="text-right">Area (km²)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {geoProfile.elevation.zones.map((zone) => (
+                      <TableRow key={zone.zone}>
+                        <TableCell className="text-label font-medium">{zone.name}</TableCell>
+                        <TableCell className="text-right">{zone.percentArea.toFixed(1)}%</TableCell>
+                        <TableCell className="text-right">
+                          {Math.round(zone.areaSqKm).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {geoProfile.elevation.zones.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={3}
+                          className="text-label-secondary py-4 text-center italic"
+                        >
+                          No elevation profile mapped.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -278,36 +278,34 @@ export function GeographyReportModal({
             <div className="space-y-4">
               {/* Hydrography Summary Card */}
               <div className="grid grid-cols-2 gap-4">
-                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                <FacetCard variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">River Networks</Eyebrow>
-                  <div className="space-y-1.5 text-xs">
+                  <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Unique Rivers</span>
-                      <span className="text-foreground font-semibold">
+                      <span className="text-label-secondary">Unique Rivers</span>
+                      <span className="text-label font-semibold">
                         {geoProfile.hydro.riverCount}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Clipped Length</span>
-                      <span className="text-foreground font-semibold">
+                      <span className="text-label-secondary">Clipped Length</span>
+                      <span className="text-label font-semibold">
                         {geoProfile.hydro.totalRiverLengthKm.toLocaleString()} km
                       </span>
                     </div>
                   </div>
                 </FacetCard>
 
-                <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+                <FacetCard variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Lakes & Reservoirs</Eyebrow>
-                  <div className="space-y-1.5 text-xs">
+                  <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Unique Lakes</span>
-                      <span className="text-foreground font-semibold">
-                        {geoProfile.hydro.lakeCount}
-                      </span>
+                      <span className="text-label-secondary">Unique Lakes</span>
+                      <span className="text-label font-semibold">{geoProfile.hydro.lakeCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Clipped Area</span>
-                      <span className="text-foreground font-semibold">
+                      <span className="text-label-secondary">Clipped Area</span>
+                      <span className="text-label font-semibold">
                         {geoProfile.hydro.totalLakeAreaSqKm.toLocaleString()} km²
                       </span>
                     </div>
@@ -316,42 +314,40 @@ export function GeographyReportModal({
               </div>
 
               {/* Neighbors border table */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <Globe2 aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   <Eyebrow>International Border Adjacency</Eyebrow>
                 </div>
-                <div className="border-border overflow-hidden rounded-lg border">
-                  <table className="w-full border-collapse text-left text-xs">
-                    <thead>
-                      <tr className="bg-muted/60 border-border text-muted-foreground border-b font-medium">
-                        <th className="px-3 py-2">Bordering Country</th>
-                        <th className="px-3 py-2 text-right">Shared Frontier (km)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-border/60 divide-y">
-                      {geoProfile.neighbors.map((n) => (
-                        <tr key={n.id} className="hover:bg-muted/30">
-                          <td className="text-foreground px-3 py-1.5 font-medium">{n.name}</td>
-                          <td className="px-3 py-1.5 text-right font-mono">
-                            {n.sharedBorderKm.toFixed(1)} km
-                          </td>
-                        </tr>
-                      ))}
-                      {geoProfile.neighbors.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan={2}
-                            className="text-muted-foreground px-3 py-4 text-center italic"
-                          >
-                            This country is land-locked with no direct international land borders or
-                            is an island.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bordering Country</TableHead>
+                      <TableHead className="text-right">Shared Frontier (km)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {geoProfile.neighbors.map((n) => (
+                      <TableRow key={n.id}>
+                        <TableCell className="text-label font-medium">{n.name}</TableCell>
+                        <TableCell className="text-right">
+                          {n.sharedBorderKm.toFixed(1)} km
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {geoProfile.neighbors.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={2}
+                          className="text-label-secondary py-4 text-center italic"
+                        >
+                          This country is land-locked with no direct international land borders or
+                          is an island.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -409,8 +405,8 @@ export function GeographyReportModal({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -434,15 +430,15 @@ function SuperlativeCard({
   fallbackMsg,
 }: SuperlativeCardProps) {
   return (
-    <FacetCard surface="solid" className="space-y-1 rounded-xl p-3">
+    <FacetCard variant="inset" padding="sm" className="space-y-1">
       <div className="flex items-center justify-between">
         <Eyebrow>{title}</Eyebrow>
       </div>
       {item ? (
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-foreground text-sm font-bold">{item.name}</div>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-label text-headline">{item.name}</div>
+            <div className="text-label-secondary text-footnote">
               {subdivision && `Region: ${subdivision}`}
               {subdivision && description && " · "}
               {description}
@@ -450,11 +446,11 @@ function SuperlativeCard({
           </div>
           <div className="text-right">
             <Eyebrow className="block">{metricLabel}</Eyebrow>
-            <span className="text-foreground font-mono text-sm font-bold">{metricVal}</span>
+            <span className="text-label text-headline tabular-nums">{metricVal}</span>
           </div>
         </div>
       ) : (
-        <div className="text-muted-foreground py-1 text-xs italic">{fallbackMsg}</div>
+        <div className="text-label-secondary text-footnote py-1 italic">{fallbackMsg}</div>
       )}
     </FacetCard>
   );

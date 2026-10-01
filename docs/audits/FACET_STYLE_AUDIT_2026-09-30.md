@@ -75,19 +75,19 @@ type scale (`text-display-hero` … `micro-badge`) with **0 uses**.
 
 | Area | Score /10 | Notes |
 |---|---|---|
-| mycountry | 9 | 216 Facet surfaces (92%), 251 Eyebrow, 2 `dark:`, 1 blur, 81% `<Button>` |
+| mycountry | 9 | 216 Facet surfaces (92%), 251 Eyebrow, 2 `dark:`, 1 blur, 81% `<Button>` — *re-checked against Facet 3 2026-10-01 (spec §14): `FacetContainer` → `FacetCard`/inset, ~7.7k legacy type/radius/palette/alias hits → roles (incl. the never-converted executive panels and atomic selector), native fields → `Select`/`Checkbox`/`Switch`/`Slider`, choice pills/tabs → `SegmentedControl`/`ToggleGroup`/`RadioCardGroup`, detail dialogs → `Sheet`, metric tiles → `Stat`, `x.5` steps closed* |
 | help/legal | 9 | tiny, clean |
-| maps | 8.5 | 96% Facet; weak: 111 raw buttons, 135 raw inputs/selects |
-| ui primitives | 5.5 | 128 `dark:`, 20 magic z-indexes |
-| builder | 5 | half Facet, 137 `dark:` — *converted in Phase 4 (spec §14)* |
-| countries/explore | 4.5 | 80% semantic colour, 17% Facet — *countries index, explore and the public pages (landing, feed, changelog, setup, realms, leaderboards, stashes) converted in Phase 4 (spec §14)* |
-| sports | 4 | 70% bold-or-heavier type, 93 raw cards — *converted in Phase 4 (spec §14)* |
-| admin | 3.5 | 274 raw cards, 331 blurs, 237 hand labels — *converted in Phase 4 (spec §14); selection, form-control and Table leftovers closed 2026-10-01* |
-| forum | 3.5 | own `--forum-*` tokens + legacy glass — *converted in Phase 4 (spec §14)* |
-| messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` — *messages and vault + trading cards converted in Phase 4 (spec §14)* |
-| halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` — *labs/onoma and WikiOS (+ media player, wiki stylesheets) converted in Phase 4 (spec §14)* |
-| thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals — *passport + its settings panel converted in Phase 4 (spec §14)* |
-| dashboard, achievements | 1–1.5 | no Facet surfaces at all — *converted in Phase 4 (spec §14)* |
+| maps | 8.5 | 96% Facet; weak: 111 raw buttons, 135 raw inputs/selects — *re-checked against Facet 3 2026-10-01 (spec §14): panels/toolbars → `FacetMaterial`, `MapDynamicIsland` off `.dynamic-island-shell` (CSS deleted), native selects/ranges/checkboxes → primitives, editor tabs/pills → `SegmentedControl`/`ToggleGroup`/`StepIndicator`, ~95 raw buttons → `Button`, `Table` for import review, phone editor panel → bottom `Sheet`, `x.5` steps closed* |
+| ui primitives | 5.5 | 128 `dark:`, 20 magic z-indexes — *converted in Phase 4 (2026-10-01): no `dark:`, glass, hex, palette or x.5 spacing left; `components/ui` in the guard set* |
+| builder | 5 | half Facet, 137 `dark:` — *converted in Phase 4 (spec §14); picker buttons → `ToggleGroup`/`MenuButton`/combobox/`Select`, image scrims centralised, `x.5` steps closed 2026-10-01* |
+| countries/explore | 4.5 | 80% semantic colour, 17% Facet — *countries index, explore and the public pages (landing, feed, changelog, setup, realms, leaderboards, stashes) converted in Phase 4 (spec §14); profile activity feed + Factbook sidebar converted, real Diplomatic Standing, realm-labelled census ranks, `x.5` steps closed 2026-10-01* |
+| sports | 4 | 70% bold-or-heavier type, 93 raw cards — *converted in Phase 4 (spec §14); role-styled buttons, sort headers and `x.5` steps closed 2026-10-01* |
+| admin | 3.5 | 274 raw cards, 331 blurs, 237 hand labels — *converted in Phase 4 (spec §14); selection, form-control and Table leftovers closed 2026-10-01; rail rows, native selects/tables, log filters, lab templates and `x.5` steps closed in a second pass* |
+| forum | 3.5 | own `--forum-*` tokens + legacy glass — *converted in Phase 4 (spec §14); post actions → `ActionPill`, pagination → `Button`, `x.5` steps closed 2026-10-01* |
+| messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` — *messages and vault + trading cards converted in Phase 4 (spec §14); messages' picker rows → `FacetRow`, icon buttons → `Button`, `x.5` steps closed 2026-10-01; vault/cards role-styled buttons, native selects and `x.5` steps closed 2026-10-01* |
+| halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` — *labs/onoma and WikiOS (+ media player, wiki stylesheets) converted in Phase 4 (spec §14); Onoma's raw toggles/chips, native selects and `x.5` steps closed 2026-10-01; WikiOS option/list buttons, native selects and `x.5` steps closed 2026-10-01* |
+| thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals — *passport + its settings panel converted in Phase 4 (spec §14); Lorewards → wide `Sheet`, settings sidebar tier → `Badge`, ThinkPages post actions → `ActionPill`, native selects → `SegmentedControl`/`Select`, Halo springs/sound ticks and `x.5` steps closed 2026-10-01* |
+| dashboard, achievements | 1–1.5 | no Facet surfaces at all — *converted in Phase 4 (spec §14); `x.5` steps closed 2026-10-01* |
 
 **De-facto house style (what the code actually converged on):** `text-xs` is 64% of all text sizes; `Button size="sm"`
 58% of buttons; `rounded-xl`/`rounded-lg` dominate; `gap-2`/`space-y-4`; amber (2,697) and emerald (1,874) are the most

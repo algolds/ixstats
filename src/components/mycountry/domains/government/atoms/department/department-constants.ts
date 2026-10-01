@@ -134,26 +134,26 @@ export const getPriorityDetails = (level: number) => {
     return {
       label: "Low (Reactive)",
       desc: "Vulnerability to crises increased by +15%. Emergent sector issues resolve slowly.",
-      color: "border-amber-500/30 text-amber-600",
+      color: "border-yellow/30 text-yellow",
     };
   }
   if (level <= 6) {
     return {
       label: "Standard (Active)",
       desc: "Balanced operational stance. Baseline event occurrence. Regular response times.",
-      color: "text-muted-foreground",
+      color: "text-label-secondary",
     };
   }
   if (level <= 8) {
     return {
       label: "High (Strategic)",
       desc: "Vulnerability to crises reduced by -20%. Fast resolution of events.",
-      color: "text-foreground",
+      color: "text-label",
     };
   }
   return {
     label: "Critical (Executive)",
     desc: "Vulnerability to crises reduced by -50%. Instant crisis resolution.",
-    color: "border-emerald-500/30 text-emerald-600",
+    color: "border-green/30 text-green",
   };
 };

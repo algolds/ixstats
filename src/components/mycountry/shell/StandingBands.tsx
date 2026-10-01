@@ -10,14 +10,9 @@ import {
   ScaleFrameEnlarge as Scale,
   Flash as Zap,
 } from "iconoir-react";
-import {
-  FacetCard,
-  FacetCardContent,
-  FacetCardHeader,
-  FacetContainer,
-} from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Stat } from "~/components/ui/stat";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import {
@@ -26,7 +21,6 @@ import {
   type VitalityRing,
 } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
@@ -192,20 +186,14 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       ? Math.min(100, Math.max(0, (civCapData.used / civCapData.capacity) * 100))
       : null;
 
-  // Buttons carry the Cuelume bloom cue themselves (data-cuelume-press).
   const handleOpenBreakdown = () => setIsBreakdownOpen(true);
 
-  const handleTogglePop = () => {
-    soundEffects.toggle();
-    setShowExactPop((prev) => !prev);
-  };
+  const handleTogglePop = () => setShowExactPop((prev) => !prev);
 
   return (
     <>
       <FacetCard
-        depth={2}
-        interactive="none"
-        className="relative overflow-hidden rounded-3xl"
+        className="rounded-card relative overflow-hidden"
         aria-labelledby="national-standing-title"
         role="region"
       >
@@ -213,13 +201,10 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
         <FlagWatermark src={flagUrl} />
         <FacetCardHeader className="relative flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
           <div className="min-w-0">
-            <h2
-              id="national-standing-title"
-              className="text-foreground text-base font-semibold tracking-tight"
-            >
+            <h2 id="national-standing-title" className="text-label text-title-3">
               National standing
             </h2>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <p className="text-label-secondary text-footnote mt-0.5">
               Your nation&apos;s vitals right now
             </p>
           </div>
@@ -228,16 +213,15 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
             variant="secondary"
             size="sm"
             onClick={handleOpenBreakdown}
-            data-cuelume-press="bloom"
-            className="h-9 gap-1.5 sm:h-8"
+            className="h-9 gap-2 sm:h-8"
             title="Open the vitality breakdown"
           >
-            <Activity aria-hidden="true" className="text-muted-foreground" />
+            <Activity aria-hidden="true" className="text-label-secondary" />
             <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
             {knownRings.length > 0 && (
-              <span className="text-muted-foreground tabular-nums">{compositeScore}</span>
+              <span className="text-label-secondary tabular-nums">{compositeScore}</span>
             )}
-            <NavArrowRight aria-hidden="true" className="text-muted-foreground size-3.5" />
+            <NavArrowRight aria-hidden="true" className="text-label-secondary size-3.5" />
           </Button>
         </FacetCardHeader>
 
@@ -245,23 +229,20 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
           {/* Vitals: opaque depth-3 tiles (no stacked blur) with tabular figures */}
           {country && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-              <FacetContainer depth={3} surface="solid" className="rounded-xl p-0">
-                <button
-                  type="button"
-                  onClick={handleTogglePop}
-                  aria-pressed={showExactPop}
-                  className="hover:bg-accent focus-visible:ring-ring flex h-full w-full cursor-pointer flex-col items-start gap-1 rounded-xl p-3 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-2 active:scale-[0.98]"
-                  title={showExactPop ? "Show compact population" : "Show exact population"}
-                >
-                  <Eyebrow className="flex items-center gap-1.5">
-                    <Users aria-hidden="true" className="size-3.5" />
-                    Population
-                  </Eyebrow>
-                  <span className="text-foreground text-xl font-semibold tracking-tight tabular-nums">
-                    {formattedPop}
-                  </span>
-                </button>
-              </FacetContainer>
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                onClick={handleTogglePop}
+                aria-pressed={showExactPop}
+                title={showExactPop ? "Show compact population" : "Show exact population"}
+                className="text-left"
+              >
+                <Stat
+                  label="Population"
+                  value={formattedPop}
+                  icon={<Users className="size-3.5" />}
+                />
+              </FacetCard>
 
               <VitalTile icon={DollarSign} label="GDP" value={`$${formatCompact(totalGdp)}`} />
               <VitalTile
@@ -275,28 +256,24 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 value={stabilityPct === null ? "—" : `${stabilityPct}%`}
               />
 
-              <FacetContainer
-                depth={3}
-                surface="solid"
-                className="col-span-2 flex flex-col gap-1 rounded-xl p-3 sm:col-span-1"
+              <FacetCard
+                variant="inset"
+                className="col-span-2 flex flex-col gap-1 p-3 sm:col-span-1"
                 title={civCapBand.title}
                 data-testid="civcap-band"
               >
-                <Eyebrow className="flex items-center gap-1.5">
-                  <Zap aria-hidden="true" className="size-3.5" />
-                  CivCap
-                </Eyebrow>
-                <p
-                  className={cn(
-                    "text-xl font-semibold tracking-tight tabular-nums",
-                    civCapData?.overCapacity ? "text-destructive" : "text-foreground"
-                  )}
-                >
-                  {civCapBand.value}
-                </p>
+                <Stat
+                  label="CivCap"
+                  icon={<Zap className="size-3.5" />}
+                  value={
+                    <span className={civCapData?.overCapacity ? "text-destructive" : undefined}>
+                      {civCapBand.value}
+                    </span>
+                  }
+                />
                 {civCapPct !== null && (
                   <div
-                    className="bg-muted h-1 overflow-hidden rounded-full"
+                    className="bg-fill-3 h-1 overflow-hidden rounded-full"
                     role="meter"
                     aria-label="Civil service capacity used"
                     aria-valuemin={0}
@@ -306,13 +283,13 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                     <div
                       className={cn(
                         "h-full rounded-full",
-                        civCapData?.overCapacity ? "bg-destructive" : "bg-(--facet-mycountry)"
+                        civCapData?.overCapacity ? "bg-destructive" : "bg-tint"
                       )}
                       style={{ width: `${civCapPct}%` }}
                     />
                   </div>
                 )}
-              </FacetContainer>
+              </FacetCard>
             </div>
           )}
 
@@ -326,28 +303,27 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                   key={ring.id}
                   type="button"
                   onClick={handleOpenBreakdown}
-                  data-cuelume-press="bloom"
                   aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
-                  className="group/ring hover:bg-accent focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-xl p-2 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-1 active:scale-[0.98]"
+                  className="group/ring hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-3 p-2 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-1 active:scale-[0.98]"
                 >
                   <HealthRing
                     value={known ? ring.value : 0}
                     size={40}
-                    color={known ? ring.color : "var(--muted-foreground)"}
+                    color={known ? ring.color : "var(--color-label-secondary)"}
                     label={ring.label}
                   />
                   <div className="min-w-0 flex-1">
-                    <span className="text-muted-foreground group-hover/ring:text-foreground block truncate text-xs transition-colors">
+                    <span className="text-label-secondary group-hover/ring:text-label text-footnote block truncate transition-colors">
                       {ring.label}
                     </span>
                     {known ? (
-                      <span className="text-foreground text-sm font-semibold tabular-nums">
+                      <span className="text-label text-headline tabular-nums">
                         {ring.value}
-                        <span className="text-muted-foreground text-xs font-normal">/100</span>
+                        <span className="text-label-secondary text-footnote font-normal">/100</span>
                       </span>
                     ) : (
                       <span
-                        className="text-muted-foreground text-sm font-semibold tabular-nums"
+                        className="text-label-secondary text-headline tabular-nums"
                         title="No data yet"
                       >
                         —
@@ -371,7 +347,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   );
 }
 
-/** One static vital: an Eyebrow caption with glyph over a large tabular figure, on an opaque depth-3 tile. */
+/** One static vital: a `Stat` with its glyph on an inset tile. */
 function VitalTile({
   icon: Icon,
   label,
@@ -382,15 +358,13 @@ function VitalTile({
   value: string;
 }) {
   return (
-    <FacetContainer depth={3} surface="solid" className="flex flex-col gap-1 rounded-xl p-3">
-      <Eyebrow className="flex items-center gap-1.5">
-        <Icon aria-hidden="true" className="size-3.5" />
-        {label}
-      </Eyebrow>
-      <p className="text-foreground truncate text-xl font-semibold tracking-tight tabular-nums">
-        {value}
-      </p>
-    </FacetContainer>
+    <FacetCard variant="inset" padding="sm">
+      <Stat
+        label={label}
+        value={<span className="block truncate">{value}</span>}
+        icon={<Icon className="size-3.5" />}
+      />
+    </FacetCard>
   );
 }
 

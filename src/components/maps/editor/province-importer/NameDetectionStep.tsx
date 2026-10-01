@@ -4,8 +4,19 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
-import { Check } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Badge } from "~/components/ui/badge";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Switch } from "~/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 
 interface NameDetectionStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -17,81 +28,75 @@ export const NameDetectionStep = memo(function NameDetectionStep({
   return (
     <div className="space-y-3">
       <div>
-        <h3 className="text-foreground text-sm font-medium">
+        <h3 className="text-label text-body font-medium">
           Detected Provinces ({importer.rawProvinces.length})
         </h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Review auto-detected province names. Edit names, or exclude provinces you don&apos;t want
           to import.
         </p>
       </div>
 
-      <div className="border-border max-h-[400px] overflow-y-auto rounded-lg border">
-        <table className="w-full text-xs">
-          <thead className="bg-card sticky top-0">
-            <tr className="border-border border-b">
-              <th className="text-muted-foreground px-2 py-1.5 text-left font-medium">Include</th>
-              <th className="text-muted-foreground px-2 py-1.5 text-left font-medium">Color</th>
-              <th className="text-muted-foreground px-2 py-1.5 text-left font-medium">Name</th>
-              <th className="text-muted-foreground px-2 py-1.5 text-right font-medium">
-                Confidence
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {importer.rawProvinces.map((province) => (
-              <tr
-                key={province.sourceId}
-                className={`border-border/50 border-b ${!province.included ? "opacity-40" : ""}`}
-              >
-                <td className="px-2 py-1.5">
-                  <button
-                    onClick={() => importer.toggleProvinceIncluded(province.sourceId)}
-                    className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
-                      province.included
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {province.included && <Check className="h-3 w-3" />}
-                  </button>
-                </td>
-                <td className="px-2 py-1.5">
-                  {province.color && (
-                    <div
-                      className="border-border h-4 w-4 rounded border"
-                      style={{ backgroundColor: province.color }}
-                    />
-                  )}
-                </td>
-                <td className="px-2 py-1.5">
-                  <input
-                    type="text"
-                    value={province.name}
-                    onChange={(e) => importer.updateProvinceName(province.sourceId, e.target.value)}
-                    className="text-foreground focus:border-primary focus:bg-accent w-full rounded border border-transparent bg-transparent px-1 py-0.5 transition-colors outline-none"
+      <Table containerClassName="max-h-[400px]" className="text-footnote">
+        <TableHeader sticky>
+          <TableRow>
+            <TableHead>Include</TableHead>
+            <TableHead>Color</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="text-right">Confidence</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {importer.rawProvinces.map((province) => (
+            <TableRow
+              key={province.sourceId}
+              className={!province.included ? "opacity-40" : undefined}
+            >
+              <TableCell>
+                <Checkbox
+                  aria-label={`Include ${province.name || province.sourceId}`}
+                  checked={province.included}
+                  onCheckedChange={() => importer.toggleProvinceIncluded(province.sourceId)}
+                />
+              </TableCell>
+              <TableCell>
+                {province.color && (
+                  <div
+                    aria-hidden
+                    className="border-separator size-4 rounded-xs border"
+                    style={{ backgroundColor: province.color }}
                   />
-                </td>
-                <td className="px-2 py-1.5 text-right">
-                  <span
-                    className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${
-                      province.confidence >= 0.8
-                        ? "text-emerald-500"
-                        : province.confidence >= 0.5
-                          ? "text-amber-500"
-                          : "text-destructive"
-                    }`}
-                  >
-                    {Math.round(province.confidence * 100)}%
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                )}
+              </TableCell>
+              <TableCell>
+                <input
+                  type="text"
+                  aria-label="Province name"
+                  value={province.name}
+                  onChange={(e) => importer.updateProvinceName(province.sourceId, e.target.value)}
+                  className="text-label focus:border-tint focus:bg-fill-3 rounded-control-sm w-full border border-transparent bg-transparent px-1 py-0.5 transition-colors outline-none"
+                />
+              </TableCell>
+              <TableCell className="text-right">
+                <Badge
+                  variant={
+                    province.confidence >= 0.8
+                      ? "success"
+                      : province.confidence >= 0.5
+                        ? "caution"
+                        : "destructive"
+                  }
+                  className="tabular-nums"
+                >
+                  {Math.round(province.confidence * 100)}%
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
-      <div className="text-muted-foreground flex items-center justify-between text-xs">
+      <div className="text-label-secondary text-footnote flex items-center justify-between">
         <span>
           {importer.includedCount} of {importer.rawProvinces.length} provinces selected
         </span>
@@ -122,98 +127,84 @@ export const NameDetectionStep = memo(function NameDetectionStep({
       </div>
 
       {importer.hasCities && (
-        <FacetCard surface="solid" className="mt-3 space-y-3 rounded-lg p-3">
+        <FacetCard className="mt-3 space-y-3 p-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-foreground text-xs font-semibold">Import Cities</span>
-              <p className="text-muted-foreground text-xs">
+              <span className="text-label text-caption font-semibold">Import Cities</span>
+              <p className="text-label-secondary text-footnote">
                 Import city point markers detected in this SVG.
               </p>
             </div>
-            <button
-              onClick={() => importer.setImportCities(!importer.importCities)}
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
-                importer.importCities
-                  ? "bg-primary/15 text-primary"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {importer.importCities ? "Enabled" : "Disabled"}
-            </button>
+            <Switch
+              aria-label="Import cities"
+              checked={importer.importCities}
+              onCheckedChange={(checked) => importer.setImportCities(checked)}
+            />
           </div>
 
           {importer.importCities && (
             <div className="space-y-2">
-              <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="text-footnote grid grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <Eyebrow className="block">Cities Layer</Eyebrow>
-                  <select
+                  <OptionSelect
+                    aria-label="Cities layer"
+                    size="sm"
                     value={importer.citiesLayerId}
-                    onChange={(e) =>
-                      importer.setLayer(
-                        e.target.value,
-                        importer.capitalLayerId,
-                        importer.cityNameLayerId
-                      )
+                    onValueChange={(v) =>
+                      importer.setLayer(v, importer.capitalLayerId, importer.cityNameLayerId)
                     }
-                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
-                  >
-                    <option value="">-- Auto-detect --</option>
-                    {importer.cityLayers.map((layer) => (
-                      <option key={layer.id} value={layer.id}>
-                        {layer.name} ({layer.markerCount} points)
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "-- Auto-detect --" },
+                      ...importer.cityLayers.map((layer) => ({
+                        value: layer.id,
+                        label: `${layer.name} (${layer.markerCount} points)`,
+                      })),
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Eyebrow className="block">Capitals Layer (Optional)</Eyebrow>
-                  <select
+                  <OptionSelect
+                    aria-label="Capitals layer"
+                    size="sm"
                     value={importer.capitalLayerId}
-                    onChange={(e) =>
-                      importer.setLayer(
-                        importer.citiesLayerId,
-                        e.target.value,
-                        importer.cityNameLayerId
-                      )
+                    onValueChange={(v) =>
+                      importer.setLayer(importer.citiesLayerId, v, importer.cityNameLayerId)
                     }
-                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
-                  >
-                    <option value="">-- None --</option>
-                    {importer.cityLayers.map((layer) => (
-                      <option key={layer.id} value={layer.id}>
-                        {layer.name} ({layer.markerCount} points)
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "-- None --" },
+                      ...importer.cityLayers.map((layer) => ({
+                        value: layer.id,
+                        label: `${layer.name} (${layer.markerCount} points)`,
+                      })),
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Eyebrow className="block">City Names (Optional)</Eyebrow>
-                  <select
+                  <OptionSelect
+                    aria-label="City name layer"
+                    size="sm"
                     value={importer.cityNameLayerId}
-                    onChange={(e) =>
-                      importer.setLayer(
-                        importer.citiesLayerId,
-                        importer.capitalLayerId,
-                        e.target.value
-                      )
+                    onValueChange={(v) =>
+                      importer.setLayer(importer.citiesLayerId, importer.capitalLayerId, v)
                     }
-                    className="border-border bg-background text-foreground focus:border-primary w-full rounded border px-2 py-1 outline-none"
-                  >
-                    <option value="">-- None (Auto) --</option>
-                    {importer.cityLayers.map((layer) => (
-                      <option key={layer.id} value={layer.id}>
-                        {layer.name} ({layer.textCount} label{layer.textCount !== 1 ? "s" : ""})
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "-- None (Auto) --" },
+                      ...importer.cityLayers.map((layer) => ({
+                        value: layer.id,
+                        label: `${layer.name} (${layer.textCount} label${layer.textCount !== 1 ? "s" : ""})`,
+                      })),
+                    ]}
+                  />
                 </div>
               </div>
 
               {importer.snappedCitiesCount > 0 && (
-                <div className="border-border rounded-lg border px-2.5 py-1.5 text-xs leading-relaxed text-amber-500">
+                <div className="border-separator rounded-control text-footnote text-yellow border px-3 py-2 leading-relaxed">
                   <strong>Notice:</strong> {importer.snappedCitiesCount} city dot
                   {importer.snappedCitiesCount !== 1 ? "s" : ""} detected slightly outside country
                   boundaries and will be automatically snapped to the border.

@@ -8,9 +8,9 @@ export type StatusTone = "critical" | "warning" | "accent" | "neutral";
 /** Text colour for a status label or glyph. */
 export const STATUS_TEXT: Record<StatusTone, string> = {
   critical: "text-destructive",
-  warning: "text-orange-600",
-  accent: "text-(--facet-mycountry)",
-  neutral: "text-muted-foreground",
+  warning: "text-orange",
+  accent: "text-tint",
+  neutral: "text-label-secondary",
 };
 
 /**
@@ -18,4 +18,4 @@ export const STATUS_TEXT: Record<StatusTone, string> = {
  * a className on `<Button>`, never as a bespoke button.
  */
 export const MYCOUNTRY_PRIMARY_ACTION =
-  "bg-amber-500 font-semibold text-amber-950 shadow-sm hover:bg-amber-400";
+  "bg-yellow font-semibold text-on-yellow shadow-card hover:bg-yellow/70";

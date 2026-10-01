@@ -30,6 +30,30 @@ export const ECONOMY_THEME: AtomicComponentTheme = {
 
 // ==================== THEME UTILITIES ====================
 
+/** Theme palette names (legacy Tailwind hues) → Facet system colours (spec §2.1). */
+const SYSTEM_COLOR: Record<string, string> = {
+  amber: "yellow",
+  yellow: "yellow",
+  emerald: "green",
+  green: "green",
+  lime: "green",
+  indigo: "indigo",
+  cyan: "cyan",
+  sky: "blue",
+  blue: "blue",
+  purple: "purple",
+  violet: "purple",
+  teal: "teal",
+  red: "red",
+  rose: "red",
+  orange: "orange",
+  pink: "pink",
+};
+
+/**
+ * Colour fragments for an atomic theme, as Facet system colours (used as `text-${primary}`,
+ * `bg-${selectedBg}`…). One set of values serves both themes, so the `*Dark` keys are empty.
+ */
 export function getThemeColorClasses(
   theme: AtomicComponentTheme,
   category?: string
@@ -48,59 +72,27 @@ export function getThemeColorClasses(
   conflictBg: string;
   conflictBgDark: string;
 } {
-  if (theme.type === "unified" && theme.primary) {
-    const color = theme.primary;
-    return {
-      primary: `${color}-600`,
-      primaryLight: `${color}-500`,
-      primaryDark: `${color}-700`,
-      selectedBg: `${color}-50`,
-      selectedBorder: `${color}-500`,
-      selectedBgDark: `${color}-950/30`,
-      selectedBorderDark: `${color}-400`,
-      synergyBorder: "green-300",
-      synergyBg: "green-50",
-      synergyBgDark: "green-950/20",
-      conflictBorder: "red-300",
-      conflictBg: "red-50",
-      conflictBgDark: "red-950/20",
-    };
-  }
-
-  if (theme.type === "category-based" && theme.categoryColors && category) {
-    const color = theme.categoryColors[category] || "blue";
-    return {
-      primary: `${color}-600`,
-      primaryLight: `${color}-500`,
-      primaryDark: `${color}-700`,
-      selectedBg: `${color}-50`,
-      selectedBorder: `${color}-500`,
-      selectedBgDark: `${color}-950/30`,
-      selectedBorderDark: `${color}-400`,
-      synergyBorder: "green-300",
-      synergyBg: "green-50",
-      synergyBgDark: "green-950/20",
-      conflictBorder: "red-300",
-      conflictBg: "red-50",
-      conflictBgDark: "red-950/20",
-    };
-  }
-
-  // Default fallback
+  const hue =
+    theme.type === "unified" && theme.primary
+      ? theme.primary
+      : theme.type === "category-based" && theme.categoryColors && category
+        ? (theme.categoryColors[category] ?? "blue")
+        : "blue";
+  const color = SYSTEM_COLOR[hue] ?? "blue";
   return {
-    primary: "blue-600",
-    primaryLight: "blue-500",
-    primaryDark: "blue-700",
-    selectedBg: "blue-50",
-    selectedBorder: "blue-500",
-    selectedBgDark: "blue-950/30",
-    selectedBorderDark: "blue-400",
-    synergyBorder: "green-300",
-    synergyBg: "green-50",
-    synergyBgDark: "green-950/20",
-    conflictBorder: "red-300",
-    conflictBg: "red-50",
-    conflictBgDark: "red-950/20",
+    primary: color,
+    primaryLight: color,
+    primaryDark: color,
+    selectedBg: `${color}/10`,
+    selectedBorder: color,
+    selectedBgDark: "",
+    selectedBorderDark: color,
+    synergyBorder: "green/30",
+    synergyBg: "green/10",
+    synergyBgDark: "",
+    conflictBorder: "red/30",
+    conflictBg: "red/10",
+    conflictBgDark: "",
   };
 }
 
@@ -109,41 +101,41 @@ export function getThemeColorClasses(
 export function getComplexityColor(complexity: "Low" | "Medium" | "High"): string {
   switch (complexity) {
     case "Low":
-      return "text-green-600 dark:text-green-400";
+      return "text-green";
     case "Medium":
-      return "text-yellow-600 dark:text-yellow-400";
+      return "text-yellow";
     case "High":
-      return "text-red-600 dark:text-red-400";
+      return "text-red";
     default:
-      return "text-gray-600 dark:text-gray-400";
+      return "text-label-secondary";
   }
 }
 
 export function getComplexityBgColor(complexity: "Low" | "Medium" | "High"): string {
   switch (complexity) {
     case "Low":
-      return "bg-green-100 dark:bg-green-900/20";
+      return "bg-green/10";
     case "Medium":
-      return "bg-yellow-100 dark:bg-yellow-900/20";
+      return "bg-yellow/10";
     case "High":
-      return "bg-red-100 dark:bg-red-900/20";
+      return "bg-red/10";
     default:
-      return "bg-gray-100 dark:bg-gray-900/20";
+      return "bg-surface-secondary";
   }
 }
 
 // ==================== EFFECTIVENESS COLORS ====================
 
 export function getEffectivenessColor(effectiveness: number): string {
-  if (effectiveness >= 85) return "text-green-600 dark:text-green-400";
-  if (effectiveness >= 70) return "text-blue-600 dark:text-blue-400";
-  if (effectiveness >= 55) return "text-yellow-600 dark:text-yellow-400";
-  return "text-red-600 dark:text-red-400";
+  if (effectiveness >= 85) return "text-green";
+  if (effectiveness >= 70) return "text-blue";
+  if (effectiveness >= 55) return "text-yellow";
+  return "text-red";
 }
 
 export function getEffectivenessBgColor(effectiveness: number): string {
-  if (effectiveness >= 85) return "bg-green-100 dark:bg-green-900/20";
-  if (effectiveness >= 70) return "bg-blue-100 dark:bg-blue-900/20";
-  if (effectiveness >= 55) return "bg-yellow-100 dark:bg-yellow-900/20";
-  return "bg-red-100 dark:bg-red-900/20";
+  if (effectiveness >= 85) return "bg-green/10";
+  if (effectiveness >= 70) return "bg-blue/10";
+  if (effectiveness >= 55) return "bg-yellow/10";
+  return "bg-red/10";
 }

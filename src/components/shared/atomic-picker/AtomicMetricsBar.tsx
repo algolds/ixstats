@@ -102,7 +102,6 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
         return (
           <FacetCard
             key={item.label}
-            surface="solid"
             onClick={onClick}
             onKeyDown={
               onClick
@@ -115,26 +114,25 @@ export const AtomicMetricsBar = React.memo(function AtomicMetricsBar({
                 : undefined
             }
             aria-label={onClick ? `${item.label}: view details` : undefined}
-            data-cuelume-press={onClick ? "press" : undefined}
-            data-cuelume-hover={onClick ? "tick" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-xl p-3 select-none",
-              onClick && "hover:border-foreground/20 focus-visible:ring-ring focus-visible:ring-1 focus-visible:outline-none"
+              "rounded-row flex items-center gap-2 p-3 select-none",
+              onClick &&
+                "hover:border-separator-opaque focus-visible:ring-tint focus-visible:ring-1 focus-visible:outline-none"
             )}
           >
             <Icon
               aria-hidden="true"
               className={cn(
                 "h-4 w-4 shrink-0",
-                isDestructive ? "text-destructive" : "text-muted-foreground"
+                isDestructive ? "text-destructive" : "text-label-secondary"
               )}
             />
             <div className="min-w-0 flex-1">
               <Eyebrow className="block truncate">{item.label}</Eyebrow>
               <div
                 className={cn(
-                  "truncate text-sm leading-tight font-semibold tabular-nums",
-                  isDestructive ? "text-destructive" : "text-foreground"
+                  "text-headline truncate leading-tight tabular-nums",
+                  isDestructive ? "text-destructive" : "text-label"
                 )}
               >
                 {item.value}

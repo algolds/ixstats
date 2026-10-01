@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -30,6 +24,7 @@ import {
   Dollar as DollarSign,
   NavArrowDown as ChevronDown,
 } from "iconoir-react";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface EmbassyCreatorSheetProps {
   countryId: string;
@@ -150,30 +145,30 @@ export function EmbassyCreatorSheet({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="text-muted-foreground h-5 w-5 shrink-0" />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-center gap-2">
+            <Building2 className="text-label-secondary h-5 w-5 shrink-0" />
             Establish New Embassy
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
+          </SheetTitle>
+          <p className="text-label-secondary text-body">
             Establish diplomatic presence in another nation.
           </p>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           {/* Host Country */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Host Country</Label>
+            <Label className="text-caption mb-2 block">Host Country</Label>
             <CountrySelector
               onSelect={handleCountrySelect}
               excludeCountryId={countryId}
               selectedCountryId={hostCountryId}
             />
             {hostCountryId && (
-              <p className="text-muted-foreground mt-2 text-sm">
-                Selected: <span className="text-foreground font-semibold">{hostCountryName}</span>
+              <p className="text-label-secondary text-body mt-2">
+                Selected: <span className="text-label font-semibold">{hostCountryName}</span>
               </p>
             )}
           </div>
@@ -182,11 +177,11 @@ export function EmbassyCreatorSheet({
 
           {/* Embassy Details */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">
+            <Label className="text-caption mb-2 block">
               Embassy Name <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
-              <Building2 className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Building2 className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={embassyName}
                 onChange={(e) => setEmbassyName(e.target.value)}
@@ -197,9 +192,9 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Location (Optional)</Label>
+            <Label className="text-caption mb-2 block">Location (Optional)</Label>
             <div className="relative">
-              <MapPin className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <MapPin className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -210,9 +205,9 @@ export function EmbassyCreatorSheet({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Ambassador (Optional)</Label>
+            <Label className="text-caption mb-2 block">Ambassador (Optional)</Label>
             <div className="relative">
-              <User className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <User className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={ambassadorName}
                 onChange={(e) => setAmbassadorName(e.target.value)}
@@ -227,33 +222,35 @@ export function EmbassyCreatorSheet({
             <>
               <Separator />
               <div>
-                <Eyebrow className="mb-2 flex items-center gap-1.5">
+                <Eyebrow className="mb-2 flex items-center gap-2">
                   <DollarSign className="h-3.5 w-3.5" />
                   Establishment cost
                 </Eyebrow>
                 {costLoading ? (
-                  <Skeleton className="h-16 rounded-lg" aria-label="Calculating cost" />
+                  <Skeleton className="rounded-control h-16" aria-label="Calculating cost" />
                 ) : costData ? (
-                  <div className="border-border bg-card rounded-lg border p-3">
+                  <FacetCard variant="inset" padding="none" className="p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Total</span>
-                      <span className="text-foreground text-lg font-semibold tabular-nums">
+                      <span className="text-body font-medium">Total</span>
+                      <span className="text-label text-title-3 tabular-nums">
                         ${costData.totalCost.toLocaleString()}
                       </span>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setShowCostBreakdown(!showCostBreakdown)}
                       aria-expanded={showCostBreakdown}
-                      className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1 text-xs"
+                      className="text-label-secondary hover:text-label mt-1 -ml-2"
                     >
                       <ChevronDown
                         className={`h-3 w-3 transition-transform ${showCostBreakdown ? "rotate-180" : ""}`}
                       />
                       {showCostBreakdown ? "Hide" : "Show"} breakdown
-                    </button>
+                    </Button>
                     {showCostBreakdown && (
-                      <div className="border-border text-muted-foreground mt-2 space-y-1 border-t pt-2 text-xs">
+                      <div className="border-separator text-label-secondary text-footnote mt-2 space-y-1 border-t pt-2">
                         <div className="flex justify-between">
                           <span>Base cost</span>
                           <span>${costData.baseCost.toLocaleString()}</span>
@@ -269,8 +266,8 @@ export function EmbassyCreatorSheet({
                       </div>
                     )}
                     {costData.requirements && (
-                      <div className="border-border text-muted-foreground mt-2 border-t pt-2 text-xs">
-                        <p className="text-foreground mb-1 font-medium">Requirements:</p>
+                      <div className="border-separator text-label-secondary text-footnote mt-2 border-t pt-2">
+                        <p className="text-label mb-1 font-medium">Requirements:</p>
                         <ul className="list-inside list-disc space-y-0.5">
                           <li>Min. relationship: {costData.requirements.minimumRelationship}</li>
                           {costData.requirements.requiredDocuments.map(
@@ -281,20 +278,24 @@ export function EmbassyCreatorSheet({
                         </ul>
                       </div>
                     )}
-                  </div>
+                  </FacetCard>
                 ) : null}
               </div>
             </>
           )}
 
           {/* Info notice */}
-          <div className="text-muted-foreground bg-muted/50 rounded-lg p-2.5 text-xs">
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="text-label-secondary text-footnote p-2"
+          >
             Both countries will be notified of the embassy establishment. The host country can view
             your embassy details.
-          </div>
+          </FacetCard>
         </div>
 
-        <DialogFooter className="border-border border-t px-6 py-4">
+        <SheetFooter className="border-separator border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -307,15 +308,15 @@ export function EmbassyCreatorSheet({
           </Button>
           <Button
             size="sm"
-            className="gap-1.5"
+            className="gap-2"
             onClick={handleSubmit}
             disabled={!hostCountryId || !embassyName.trim() || establishEmbassy.isPending}
           >
             <Building2 className="h-3 w-3" />
             {establishEmbassy.isPending ? "Establishing..." : "Establish Embassy"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

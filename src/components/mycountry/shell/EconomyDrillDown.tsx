@@ -33,7 +33,7 @@ const BudgetManagementDashboard = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-64 rounded-2xl" />,
+    loading: () => <Skeleton className="rounded-card h-64" />,
   }
 );
 
@@ -44,7 +44,7 @@ const FiscalPolicyConsole = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-64 rounded-2xl" />,
+    loading: () => <Skeleton className="rounded-card h-64" />,
   }
 );
 
@@ -55,7 +55,7 @@ const TradeCommerceConsole = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-64 rounded-2xl" />,
+    loading: () => <Skeleton className="rounded-card h-64" />,
   }
 );
 
@@ -68,7 +68,7 @@ const InfrastructureMaintenanceCard = dynamic(
     ),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-64 rounded-2xl" />,
+    loading: () => <Skeleton className="rounded-card h-64" />,
   }
 );
 
@@ -88,11 +88,11 @@ function EconomySection({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className="rounded-2xl">
+    <FacetCard className="rounded-card">
       <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+          <h3 className="text-label text-headline">{title}</h3>
         </div>
         {accessory}
       </FacetCardHeader>
@@ -114,12 +114,10 @@ function StatTile({
   className?: string;
 }) {
   return (
-    <FacetCard surface="solid" className={cn("rounded-xl p-2.5", className)}>
+    <FacetCard className={cn("rounded-row p-2", className)}>
       <Eyebrow className="block">{label}</Eyebrow>
-      <p className="text-foreground mt-0.5 font-mono text-base font-semibold tabular-nums">
-        {value}
-      </p>
-      {note && <p className="text-muted-foreground mt-0.5 text-xs">{note}</p>}
+      <p className="text-label text-title-3 mt-0.5 tabular-nums">{value}</p>
+      {note && <p className="text-label-secondary text-footnote mt-0.5">{note}</p>}
     </FacetCard>
   );
 }
@@ -244,12 +242,10 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {metrics.map(({ label, value, sub }) => (
-              <FacetCard key={label} surface="solid" className="rounded-2xl p-3.5">
+              <FacetCard key={label} className="rounded-card p-4">
                 <Eyebrow className="block">{label}</Eyebrow>
-                <p className="text-foreground mt-1 font-mono text-lg font-semibold tracking-tight tabular-nums">
-                  {value}
-                </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">{sub}</p>
+                <p className="text-label text-title-3 mt-1 tabular-nums">{value}</p>
+                <p className="text-label-secondary text-footnote mt-0.5">{sub}</p>
               </FacetCard>
             ))}
           </div>
@@ -259,34 +255,30 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Sector output and complexity"
             icon={PieChart}
             accessory={
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary" className="tabular-nums">
                 Complexity {complexity != null ? complexity.toFixed(1) : "—"}
               </Badge>
             }
           >
             {sectors.length === 0 ? (
-              <p className="text-muted-foreground py-2 text-center text-xs">
+              <p className="text-label-secondary text-footnote py-2 text-center">
                 No sector breakdown recorded. Add one in the Country Editor (Economics step).
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+              <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {sectors.map((sector, idx) => (
-                  <FacetCard
-                    key={`${sector.name}-${idx}`}
-                    surface="solid"
-                    className="space-y-1.5 rounded-xl p-2.5"
-                  >
-                    <div className="flex justify-between gap-2 text-xs">
-                      <span className="text-muted-foreground truncate font-medium capitalize">
+                  <FacetCard key={`${sector.name}-${idx}`} className="space-y-2 p-2">
+                    <div className="text-footnote flex justify-between gap-2">
+                      <span className="text-label-secondary truncate font-medium capitalize">
                         {sector.name}
                       </span>
-                      <span className="text-foreground font-mono font-semibold tabular-nums">
+                      <span className="text-label font-semibold tabular-nums">
                         {sector.share.toFixed(1)}%
                       </span>
                     </div>
-                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                    <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
                       <div
-                        className="bg-primary/70 h-full rounded-full"
+                        className="bg-tint/70 h-full rounded-full"
                         style={{ width: `${Math.min(sector.share, 100)}%` }}
                       />
                     </div>
@@ -301,7 +293,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Labor market and employment"
             icon={Briefcase}
             accessory={
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary" className="tabular-nums">
                 Female participation {pct(femaleParticipation)}
               </Badge>
             }
@@ -331,7 +323,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Income and wealth equality"
             icon={Scale}
             accessory={
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary" className="tabular-nums">
                 Gini {giniLabel(gini)}
               </Badge>
             }

@@ -1171,10 +1171,10 @@ const EditorMap = memo(
         />
 
         {!isLoaded && (
-          <div className="bg-muted absolute inset-0 flex items-center justify-center">
+          <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
-              <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-emerald-500" />
-              <p className="text-muted-foreground text-sm">Loading map editor...</p>
+              <div className="border-separator border-t-green h-8 w-8 animate-spin rounded-full border-4" />
+              <p className="text-label-secondary text-body">Loading map editor...</p>
             </div>
           </div>
         )}

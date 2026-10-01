@@ -7,7 +7,7 @@
  * hovering re-renders only this tooltip, not the editor.
  */
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React, { useMemo } from "react";
 import { countGeometryVertices } from "~/components/maps/editor/utils/editor-overlay-helpers";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
@@ -57,19 +57,19 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
         maxWidth: 220,
       }}
     >
-      <FacetContainer material="regular" className="rounded-lg px-3 py-2">
-        <div className="text-foreground text-xs font-semibold">{feature.name}</div>
-        <div className="text-muted-foreground mt-1 space-y-0.5 text-xs">
+      <FacetMaterial material="regular" className="rounded-control px-3 py-2">
+        <div className="text-label text-caption font-semibold">{feature.name}</div>
+        <div className="text-label-secondary text-footnote mt-1 space-y-0.5">
           <div className="flex justify-between gap-3">
             <span>Type</span>
-            <span className="text-foreground font-medium capitalize">
+            <span className="text-label font-medium capitalize">
               {String(feature.properties.type ?? feature.properties.subdivisionType ?? "region")}
             </span>
           </div>
           {feature.properties.areaSqKm != null && (
             <div className="flex justify-between gap-3">
               <span>Area</span>
-              <span className="text-foreground font-medium tabular-nums">
+              <span className="text-label font-medium tabular-nums">
                 {Math.round(Number(feature.properties.areaSqKm)).toLocaleString()} km²
               </span>
             </div>
@@ -77,7 +77,7 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
           {feature.properties.population != null && (
             <div className="flex justify-between gap-3">
               <span>Population</span>
-              <span className="text-foreground font-medium tabular-nums">
+              <span className="text-label font-medium tabular-nums">
                 {Number(feature.properties.population).toLocaleString()}
               </span>
             </div>
@@ -85,11 +85,11 @@ export const RegionHoverTooltip = React.memo(function RegionHoverTooltip({
           {vertexCount !== null && (
             <div className="flex justify-between gap-3">
               <span>Vertices</span>
-              <span className="text-foreground font-medium tabular-nums">{vertexCount}</span>
+              <span className="text-label font-medium tabular-nums">{vertexCount}</span>
             </div>
           )}
         </div>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 });

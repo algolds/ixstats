@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -118,23 +112,23 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="text-muted-foreground h-5 w-5 shrink-0" />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-center gap-2">
+            <Users className="text-label-secondary h-5 w-5 shrink-0" />
             Create New Alliance
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">
+          </SheetTitle>
+          <p className="text-label-secondary text-body">
             Found a new alliance and invite other nations to join.
           </p>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
           {/* Name fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Alliance Name</Label>
+              <Label className="text-caption mb-2 block">Alliance Name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -142,7 +136,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               />
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Short Name</Label>
+              <Label className="text-caption mb-2 block">Short Name</Label>
               <Input
                 value={shortName}
                 onChange={(e) => setShortName(e.target.value)}
@@ -156,7 +150,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           {/* Type */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Alliance Type</Label>
+            <Label className="text-caption mb-2 block">Alliance Type</Label>
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
               <SelectTrigger>
                 <SelectValue />
@@ -167,7 +161,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
                     <div className="flex items-center gap-2">
                       <t.icon className="h-4 w-4" />
                       <span>{t.label}</span>
-                      <span className="text-muted-foreground text-xs">— {t.description}</span>
+                      <span className="text-label-secondary text-footnote">— {t.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -177,7 +171,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
           {/* Description */}
           <div>
-            <Label className="mb-1.5 block text-xs font-medium">Description</Label>
+            <Label className="text-caption mb-2 block">Description</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -191,11 +185,11 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           {/* Settings row */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Color</Label>
+              <Label className="text-caption mb-2 block">Color</Label>
               <ColorPickerInput value={color} onChange={(val: string) => setColor(val)} />
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Visibility</Label>
+              <Label className="text-caption mb-2 block">Visibility</Label>
               <Select
                 value={visibility}
                 onValueChange={(v) => setVisibility(v as typeof visibility)}
@@ -211,7 +205,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
               </Select>
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium">Join Policy</Label>
+              <Label className="text-caption mb-2 block">Join Policy</Label>
               <Select
                 value={joinPolicy}
                 onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}
@@ -229,7 +223,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           </div>
         </div>
 
-        <DialogFooter className="border-border border-t px-6 py-4">
+        <SheetFooter className="border-separator border-t px-6 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -242,15 +236,15 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
           </Button>
           <Button
             size="sm"
-            className="gap-1.5"
+            className="gap-2"
             onClick={handleSubmit}
             disabled={!name.trim() || createAlliance.isPending}
           >
             <Users className="h-3 w-3" />
             {createAlliance.isPending ? "Founding..." : "Found Alliance"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

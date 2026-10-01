@@ -64,7 +64,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <EditPencil className="text-muted-foreground h-5 w-5" />
+              <EditPencil className="text-label-secondary h-5 w-5" />
               Edit Cultural Exchange
             </DialogTitle>
             <DialogDescription>
@@ -74,7 +74,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
 
           <div className="space-y-6">
             <Alert>
-              <WarningTriangle className="text-amber-500" />
+              <WarningTriangle className="text-yellow" />
               <AlertTitle>Limited editing</AlertTitle>
               <AlertDescription>
                 You can only modify the title and description. Other program details cannot be
@@ -93,7 +93,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
                   placeholder="Enter exchange title"
                   maxLength={100}
                 />
-                <p className="text-muted-foreground text-xs tabular-nums">
+                <p className="text-label-secondary text-footnote tabular-nums">
                   {formData.title.length}/100 characters
                 </p>
               </div>
@@ -108,7 +108,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
                   placeholder="Enter exchange description"
                   maxLength={500}
                 />
-                <p className="text-muted-foreground text-xs tabular-nums">
+                <p className="text-label-secondary text-footnote tabular-nums">
                   {formData.description.length}/500 characters
                 </p>
               </div>

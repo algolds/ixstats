@@ -44,12 +44,12 @@ import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDet
 
 const PoliticsDrillDown = dynamic(
   () => import("./PoliticsDrillDown").then((m) => ({ default: m.PoliticsDrillDown })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" />, ssr: false }
+  { loading: () => <Skeleton className="rounded-card h-64" />, ssr: false }
 );
 
 const EconomyDrillDown = dynamic(
   () => import("./EconomyDrillDown").then((m) => ({ default: m.EconomyDrillDown })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" />, ssr: false }
+  { loading: () => <Skeleton className="rounded-card h-64" />, ssr: false }
 );
 
 const EmbassiesAndRelationsPanel = dynamic(
@@ -57,7 +57,7 @@ const EmbassiesAndRelationsPanel = dynamic(
     import("~/components/mycountry/domains/diplomacy/EmbassiesAndRelationsPanel").then((m) => ({
       default: m.EmbassiesAndRelationsPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const DefenseCommandPanel = dynamic(
@@ -65,7 +65,7 @@ const DefenseCommandPanel = dynamic(
     import("~/components/mycountry/domains/defense/DefenseCommandPanel").then((m) => ({
       default: m.DefenseCommandPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-2xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 /** A v2 drill-down surface. Phase 3 connects deep domain panels directly inside right-side sheets. */
@@ -82,7 +82,7 @@ export type V2Drill = DrillSheetKind;
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
-  measured: "text-emerald-600",
+  measured: "text-green",
   moderate: STATUS_TEXT.warning,
   extreme: STATUS_TEXT.critical,
 };
@@ -90,12 +90,12 @@ const TIER_TONE: Record<string, string> = {
 /** Directive status → semantic dot. */
 function statusDot(status: string | null | undefined): string {
   return status === "completed"
-    ? "bg-emerald-500"
+    ? "bg-green"
     : status === "abandoned"
       ? "bg-destructive"
       : status === "active"
-        ? "bg-amber-500"
-        : "bg-muted-foreground";
+        ? "bg-yellow"
+        : "bg-label-tertiary";
 }
 
 const CATEGORY_BROKER_MAP: Record<
@@ -130,11 +130,11 @@ function SheetSection({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className={cn("rounded-2xl", className)}>
+    <FacetCard className={cn("rounded-card", className)}>
       <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+          <h3 className="text-label text-headline">{title}</h3>
         </div>
         {accessory}
       </FacetCardHeader>
@@ -156,16 +156,16 @@ function IntentBranchingTree({
 
   return (
     <SheetSection title="Decision tree" icon={GitBranch}>
-      <ul className="divide-border/60 divide-y">
+      <ul className="divide-separator divide-y">
         {data.allIntents.slice(0, 4).map((it) => {
           const isCurrent = it.id === currentIntentId;
           return (
             <li
               key={it.id}
               aria-current={isCurrent ? "true" : undefined}
-              className="flex items-center justify-between gap-2 py-2 text-xs first:pt-0 last:pb-0"
+              className="text-footnote flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0"
             >
-              <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex min-w-0 items-center gap-2">
                 <span
                   aria-hidden="true"
                   className={cn("h-2 w-2 shrink-0 rounded-full", statusDot(it.status))}
@@ -174,12 +174,12 @@ function IntentBranchingTree({
                   <p
                     className={cn(
                       "truncate",
-                      isCurrent ? "text-foreground font-semibold" : "text-foreground/90 font-medium"
+                      isCurrent ? "text-label font-semibold" : "text-label font-medium"
                     )}
                   >
                     {it.goal}
                   </p>
-                  <p className="text-muted-foreground capitalize">
+                  <p className="text-label-secondary capitalize">
                     {it.category} · {it.tier}
                   </p>
                 </div>
@@ -189,7 +189,7 @@ function IntentBranchingTree({
                   This directive
                 </Badge>
               ) : (
-                <span className="text-muted-foreground shrink-0 capitalize">{it.status}</span>
+                <span className="text-label-secondary shrink-0 capitalize">{it.status}</span>
               )}
             </li>
           );
@@ -245,7 +245,7 @@ function IntentDetail({
 
   if (!intent) {
     return (
-      <div className="text-muted-foreground py-8 text-center text-sm">
+      <div className="text-label-secondary text-body py-8 text-center">
         This directive could not be loaded.
       </div>
     );
@@ -276,12 +276,12 @@ function IntentDetail({
   return (
     <div className="space-y-4 pb-4">
       {/* Directive header */}
-      <FacetCard surface="solid" className="flex flex-col gap-3 rounded-2xl p-5">
+      <FacetCard className="rounded-card flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant="outline"
-              className={cn("capitalize", TIER_TONE[intent.tier] ?? "text-muted-foreground")}
+              className={cn("capitalize", TIER_TONE[intent.tier] ?? "text-label-secondary")}
             >
               {intent.tier} tier
             </Badge>
@@ -301,10 +301,8 @@ function IntentDetail({
         </div>
 
         <div>
-          <h2 className="text-foreground text-xl leading-snug font-semibold tracking-tight">
-            {intent.goal}
-          </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <h2 className="text-label text-title-2">{intent.goal}</h2>
+          <p className="text-label-secondary text-footnote mt-1">
             Enacted on{" "}
             {new Date(intent.createdAt).toLocaleDateString(undefined, {
               month: "short",
@@ -315,7 +313,7 @@ function IntentDetail({
         </div>
 
         {/* Actions: one gold primary, quiet secondaries */}
-        <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
           <Button
             type="button"
             size="sm"
@@ -326,7 +324,7 @@ function IntentDetail({
             Build on this
           </Button>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {intent.summary && (
               <Button
                 type="button"
@@ -336,7 +334,7 @@ function IntentDetail({
                 className="h-11 sm:h-8"
               >
                 {copied ? (
-                  <Check aria-hidden="true" className="text-emerald-600" />
+                  <Check aria-hidden="true" className="text-green" />
                 ) : (
                   <Share2 aria-hidden="true" />
                 )}
@@ -388,7 +386,7 @@ function IntentDetail({
       {/* Executive narrative summary */}
       {intent.summary && (
         <SheetSection title="Narrative summary" icon={BookOpen}>
-          <p className="text-muted-foreground text-xs leading-relaxed">{intent.summary}</p>
+          <p className="text-label-secondary text-footnote leading-relaxed">{intent.summary}</p>
         </SheetSection>
       )}
 
@@ -397,13 +395,13 @@ function IntentDetail({
         title="Resistance progress"
         icon={Shield}
         accessory={
-          <Badge variant="secondary" className="shrink-0 font-mono tabular-nums">
+          <Badge variant="secondary" className="shrink-0 tabular-nums">
             {linked.data?.resolvedCount ?? 0} / {linked.data?.totalCount ?? 0} resolved
           </Badge>
         }
       >
         <div
-          className="bg-muted h-2 overflow-hidden rounded-full"
+          className="bg-fill-3 h-2 overflow-hidden rounded-full"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
@@ -413,24 +411,20 @@ function IntentDetail({
           <div
             className={cn(
               "h-full rounded-full",
-              progress >= 100
-                ? "bg-emerald-500"
-                : progress > 0
-                  ? "bg-amber-500"
-                  : "bg-muted-foreground/40"
+              progress >= 100 ? "bg-green" : progress > 0 ? "bg-yellow" : "bg-fill"
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
 
         {linked.data && linked.data.issues.length > 0 ? (
-          <ul className="divide-border/60 mt-3 divide-y">
+          <ul className="divide-separator mt-3 divide-y">
             {linked.data.issues.map((iss) => {
               const done = ["responded", "auto_resolved", "dismissed"].includes(iss.status);
               return (
                 <li
                   key={iss.id}
-                  className="flex items-center justify-between gap-2 py-2 text-xs last:pb-0"
+                  className="text-footnote flex items-center justify-between gap-2 py-2 last:pb-0"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
@@ -438,22 +432,22 @@ function IntentDetail({
                       className={cn(
                         "h-1.5 w-1.5 shrink-0 rounded-full",
                         done
-                          ? "bg-emerald-500"
+                          ? "bg-green"
                           : iss.status === "viewed"
-                            ? "bg-orange-500"
-                            : "bg-muted-foreground/60"
+                            ? "bg-orange"
+                            : "bg-label-tertiary"
                       )}
                     />
                     <span
                       className={cn(
                         "min-w-0 truncate font-medium",
-                        done ? "text-muted-foreground" : "text-foreground"
+                        done ? "text-label-secondary" : "text-label"
                       )}
                     >
                       {iss.title}
                     </span>
                   </div>
-                  <span className="text-muted-foreground shrink-0 capitalize">
+                  <span className="text-label-secondary shrink-0 capitalize">
                     {iss.status.replace(/_/g, " ")}
                   </span>
                 </li>
@@ -461,7 +455,7 @@ function IntentDetail({
             })}
           </ul>
         ) : (
-          <p className="text-muted-foreground mt-3 text-xs">
+          <p className="text-label-secondary text-footnote mt-3">
             No active resistance. The directive is proceeding without friction.
           </p>
         )}
@@ -471,18 +465,15 @@ function IntentDetail({
       <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
 
       {/* Aligned power broker */}
-      <FacetCard
-        surface="solid"
-        className="flex items-center justify-between gap-3 rounded-2xl p-4"
-      >
+      <FacetCard className="rounded-card flex items-center justify-between gap-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
-          <BrokerIcon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+          <BrokerIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
           <div className="min-w-0">
             <Eyebrow className="block">Aligned power broker</Eyebrow>
-            <p className="text-foreground truncate text-sm font-medium">{brokerInfo.name}</p>
+            <p className="text-label text-body truncate font-medium">{brokerInfo.name}</p>
           </div>
         </div>
-        <Badge variant="outline" className="shrink-0 text-emerald-600">
+        <Badge variant="green" className="shrink-0">
           Cabinet aligned
         </Badge>
       </FacetCard>
@@ -494,23 +485,21 @@ function IntentDetail({
           icon={Sliders}
           accessory={<Badge variant="secondary">{parsedChanges.length}</Badge>}
         >
-          <ol className="divide-border/60 divide-y">
+          <ol className="divide-separator divide-y">
             {parsedChanges.map((change, idx) => (
               <li
                 key={idx}
-                className="flex items-center justify-between gap-3 py-2 text-xs first:pt-0 last:pb-0"
+                className="text-footnote flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
               >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="text-muted-foreground w-5 shrink-0 font-mono tabular-nums">
-                    {idx + 1}.
-                  </span>
-                  <span className="text-foreground font-medium">{change.label}</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-label-secondary w-5 shrink-0 tabular-nums">{idx + 1}.</span>
+                  <span className="text-label font-medium">{change.label}</span>
                 </div>
                 {change.deltaPercent !== undefined && (
                   <span
                     className={cn(
-                      "shrink-0 font-mono font-semibold tabular-nums",
-                      change.deltaPercent > 0 ? "text-emerald-600" : "text-destructive"
+                      "shrink-0 font-semibold tabular-nums",
+                      change.deltaPercent > 0 ? "text-green" : "text-destructive"
                     )}
                   >
                     {change.deltaPercent > 0
@@ -531,9 +520,9 @@ function IntentDetail({
             {parent && (
               <div className="space-y-1">
                 <Eyebrow className="block">Parent initiative</Eyebrow>
-                <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="text-foreground font-medium">{parent.goal}</span>
-                  <span className="text-muted-foreground shrink-0 capitalize">{parent.tier}</span>
+                <div className="text-footnote flex items-center justify-between gap-2">
+                  <span className="text-label font-medium">{parent.goal}</span>
+                  <span className="text-label-secondary shrink-0 capitalize">{parent.tier}</span>
                 </div>
               </div>
             )}
@@ -541,17 +530,20 @@ function IntentDetail({
             {children.length > 0 && (
               <div className="space-y-1">
                 <Eyebrow className="block">Follow-up directives ({children.length})</Eyebrow>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {children.map((kid) => (
-                    <li key={kid.id} className="flex items-center justify-between gap-2 text-xs">
+                    <li
+                      key={kid.id}
+                      className="text-footnote flex items-center justify-between gap-2"
+                    >
                       <div className="flex min-w-0 items-center gap-2">
                         <CornerDownRight
                           aria-hidden="true"
-                          className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+                          className="text-label-secondary h-3.5 w-3.5 shrink-0"
                         />
-                        <span className="text-foreground font-medium">{kid.goal}</span>
+                        <span className="text-label font-medium">{kid.goal}</span>
                       </div>
-                      <span className="text-muted-foreground shrink-0 capitalize">{kid.tier}</span>
+                      <span className="text-label-secondary shrink-0 capitalize">{kid.tier}</span>
                     </li>
                   ))}
                 </ul>
@@ -606,12 +598,12 @@ function DrillSheetsComponent({
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="right"
-        className="border-border bg-background/95 w-full overflow-y-auto backdrop-blur-xl sm:max-w-xl lg:max-w-2xl"
+        className="border-separator bg-surface w-full overflow-y-auto backdrop-blur-xl sm:max-w-xl lg:max-w-2xl"
       >
         <SheetHeader className="mb-4">
           <div className="flex items-center justify-between gap-2">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+            <SheetTitle className="text-body flex items-center gap-2">
+              <Icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
               {title}
             </SheetTitle>
             {drill && drill.kind !== "intent" && drill.kind !== "issue" && (
@@ -627,7 +619,7 @@ function DrillSheetsComponent({
             )}
           </div>
           {drill && drill.kind !== "intent" && (
-            <SheetDescription className="text-muted-foreground text-xs">
+            <SheetDescription className="text-label-secondary text-footnote">
               {meta?.blurb}
             </SheetDescription>
           )}

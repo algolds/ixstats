@@ -160,17 +160,15 @@ function ExecutiveAgendaComponent({
     <>
       <FacetCard
         id="executive-agenda"
-        depth={2}
-        interactive="none"
         role="region"
         aria-labelledby="executive-agenda-title"
-        className="rounded-3xl"
+        className="rounded-card"
       >
         <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
           <div className="min-w-0">
             <h2
               id="executive-agenda-title"
-              className="text-foreground flex items-center gap-2 text-base font-semibold tracking-tight"
+              className="text-label text-title-3 flex items-center gap-2"
             >
               Agenda
               {unread.length > 0 ? (
@@ -180,7 +178,7 @@ function ExecutiveAgendaComponent({
                 </Badge>
               ) : null}
             </h2>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Issues, directives and elections waiting on you
             </p>
           </div>
@@ -189,7 +187,12 @@ function ExecutiveAgendaComponent({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => inbox.setRead(unread.map((v) => v.item), true)}
+              onClick={() =>
+                inbox.setRead(
+                  unread.map((v) => v.item),
+                  true
+                )
+              }
             >
               <DoubleCheck aria-hidden="true" />
               Mark all as read
@@ -224,9 +227,9 @@ function ExecutiveAgendaComponent({
           {isLoading ? (
             <div className="flex flex-col" aria-busy="true" aria-label="Loading agenda">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="flex min-h-16 items-center gap-3 py-2.5">
-                  <Skeleton className="size-4 shrink-0 rounded" />
-                  <div className="flex-1 space-y-1.5">
+                <div key={i} className="flex min-h-16 items-center gap-3 py-2">
+                  <Skeleton className="size-4 shrink-0 rounded-xs" />
+                  <div className="flex-1 space-y-2">
                     <Skeleton className="h-3.5 w-3/5" />
                     <Skeleton className="h-3 w-4/5" />
                   </div>
@@ -259,12 +262,7 @@ function ExecutiveAgendaComponent({
                   : "You're on top of everything. Snoozed items come back on their own, and anything that changes returns here."
               }
               action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  data-cuelume-press="bloom"
-                  onClick={() => onIssueDirective?.()}
-                >
+                <Button type="button" variant="secondary" onClick={() => onIssueDirective?.()}>
                   <Command aria-hidden="true" />
                   Declare Directive
                 </Button>
@@ -345,8 +343,13 @@ function InboxRow({
   const unread = !read && placement === "inbox";
   const Icon = item.icon;
   const time =
-    placement === "snoozed" ? "Snoozed" : placement === "done" ? "Done" : formatInboxTime(item, nowMs);
-  const pressing = placement === "inbox" && (item.urgency === "overdue" || item.urgency === "due-soon");
+    placement === "snoozed"
+      ? "Snoozed"
+      : placement === "done"
+        ? "Done"
+        : formatInboxTime(item, nowMs);
+  const pressing =
+    placement === "inbox" && (item.urgency === "overdue" || item.urgency === "due-soon");
 
   return (
     <FacetRow
@@ -364,7 +367,7 @@ function InboxRow({
         </span>
       }
       title={
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
           {unread ? <span className="sr-only">Unread: </span> : null}
           <span
             className={cn(
@@ -401,7 +404,10 @@ function InboxRow({
             className={cn(
               "text-footnote tabular-nums",
               pressing
-                ? cn("font-medium", item.urgency === "overdue" ? "text-destructive" : STATUS_TEXT.warning)
+                ? cn(
+                    "font-medium",
+                    item.urgency === "overdue" ? "text-destructive" : STATUS_TEXT.warning
+                  )
                 : "text-label-secondary"
             )}
           >

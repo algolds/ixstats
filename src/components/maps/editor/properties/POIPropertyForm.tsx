@@ -6,6 +6,8 @@ import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 import { MapPin } from "iconoir-react";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Button } from "~/components/ui/button";
 
 const POI_CATEGORIES = [
   "landmark",
@@ -44,10 +46,10 @@ const POI_ICONS = [
 ];
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 interface POIPropertyFormProps {
   form: POIFormData;
@@ -84,58 +86,52 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
         className={inputClasses}
         autoFocus
       />
-      <select
+      <OptionSelect
+        aria-label="Category"
         value={form.category}
-        onChange={(e) => onChange({ ...form, category: e.target.value })}
-        className={selectClasses}
-      >
-        {POI_CATEGORIES.map((c) => (
-          <option key={c} value={c}>
-            {c.charAt(0).toUpperCase() + c.slice(1)}
-          </option>
-        ))}
-      </select>
-      <select
+        onValueChange={(v) => onChange({ ...form, category: v })}
+        options={POI_CATEGORIES.map((c) => ({
+          value: c,
+          label: c.charAt(0).toUpperCase() + c.slice(1),
+        }))}
+        size="sm"
+        className="w-full"
+      />
+      <OptionSelect
+        aria-label="Icon"
+        size="sm"
         value={form.icon ?? ""}
-        onChange={(e) => onChange({ ...form, icon: e.target.value || undefined })}
-        className={selectClasses}
-      >
-        <option value="">Icon (auto)</option>
-        {POI_ICONS.map((ic) => (
-          <option key={ic.value} value={ic.value}>
-            {ic.emoji} {ic.label}
-          </option>
-        ))}
-      </select>
+        onValueChange={(v) => onChange({ ...form, icon: v || undefined })}
+        options={[
+          { value: "", label: "Icon (auto)" },
+          ...POI_ICONS.map((ic) => ({ value: ic.value, label: `${ic.emoji} ${ic.label}` })),
+        ]}
+      />
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <FacetCard
-          surface="solid"
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-        >
-          <div className="text-muted-foreground text-left font-medium">
+        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+          <div className="text-label-secondary text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
-              <span className="text-foreground font-semibold tabular-nums">
+              <span className="text-label font-semibold tabular-nums">
                 {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
               </span>
             ) : (
               <span className="italic">Not placed yet</span>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            variant={isPickingLocation ? "tinted" : "plain"}
+            size="sm"
+            aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
-              isPickingLocation
-                ? "font-bold text-amber-500 hover:text-amber-400"
-                : "text-emerald-500 hover:text-emerald-400"
-            }`}
+            className="shrink-0"
           >
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPin className="size-3.5" aria-hidden />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
-          </button>
+          </Button>
         </FacetCard>
       )}
       <textarea
@@ -154,42 +150,36 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
         currentCoords={pendingCoordinates ?? undefined}
         placeholder="Search wiki to link..."
       />
-      <select
+      <OptionSelect
+        aria-label="Subdivision"
         value={form.subdivisionId ?? "auto"}
-        onChange={(e) =>
+        onValueChange={(v) =>
           onChange({
             ...form,
-            subdivisionId:
-              e.target.value === "auto"
-                ? "auto"
-                : e.target.value === "none"
-                  ? "none"
-                  : e.target.value || undefined,
+            subdivisionId: v === "auto" ? "auto" : v === "none" ? "none" : v || undefined,
           })
         }
-        className={selectClasses}
-      >
-        <option value="auto">&mdash; Auto-detect Region (Recommended) &mdash;</option>
-        <option value="none">&mdash; None &mdash;</option>
-        {subdivisions.map((sub) => (
-          <option key={sub.id} value={sub.id}>
-            {sub.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: "auto", label: "&mdash; Auto-detect Region (Recommended) &mdash;" },
+          { value: "none", label: "&mdash; None &mdash;" },
+          ...subdivisions.map((sub) => ({ value: sub.id, label: sub.name })),
+        ]}
+        size="sm"
+        className="w-full"
+      />
 
       {/* Historical Story & Narrative Lore (Optional) */}
-      <details className="border-border/60 bg-muted/10 group rounded-lg border p-2.5">
-        <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-between text-xs font-semibold select-none">
+      <details className="border-separator bg-fill-4 group rounded-control border p-2">
+        <summary className="text-label-secondary hover:text-label text-caption flex cursor-pointer items-center justify-between font-semibold select-none">
           <span>Historical Story & Lore (Optional)</span>
-          <span className="text-muted-foreground text-xs transition-transform group-open:rotate-180">
+          <span className="text-label-secondary text-footnote transition-transform group-open:rotate-180">
             &#9660;
           </span>
         </summary>
-        <div className="border-border/40 mt-2.5 space-y-2 border-t pt-1">
+        <div className="border-separator mt-2 space-y-2 border-t pt-1">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+              <label className="text-label-secondary text-caption mb-1 block text-left">
                 IxTime Year
               </label>
               <input
@@ -206,7 +196,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
               />
             </div>
             <div>
-              <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+              <label className="text-label-secondary text-caption mb-1 block text-left">
                 Era Label
               </label>
               <input
@@ -219,21 +209,24 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
             </div>
           </div>
           <div>
-            <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+            <label className="text-label-secondary text-caption mb-1 block text-left">
               Importance Level
             </label>
-            <select
-              value={form.importance ?? 0}
-              onChange={(e) => onChange({ ...form, importance: parseInt(e.target.value, 10) || 0 })}
-              className={selectClasses}
-            >
-              <option value={0}>Normal (Standard marker)</option>
-              <option value={1}>Major (Prominent marker)</option>
-              <option value={2}>Legendary (Hero glow)</option>
-            </select>
+            <OptionSelect
+              aria-label="Importance level"
+              value={String(form.importance ?? 0)}
+              onValueChange={(v) => onChange({ ...form, importance: parseInt(v, 10) || 0 })}
+              options={[
+                { value: "0", label: "Normal (Standard marker)" },
+                { value: "1", label: "Major (Prominent marker)" },
+                { value: "2", label: "Legendary (Hero glow)" },
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
           <div>
-            <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+            <label className="text-label-secondary text-caption mb-1 block text-left">
               Story Narrative (Markdown)
             </label>
             <textarea

@@ -74,8 +74,8 @@ export function CountryMapEmbed({
   // ── Loading state ──
   if (state.isLoading) {
     return (
-      <div className={`bg-muted flex items-center justify-center ${height} ${className}`}>
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+      <div className={`bg-fill-3 flex items-center justify-center ${height} ${className}`}>
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
       </div>
     );
   }
@@ -84,10 +84,10 @@ export function CountryMapEmbed({
   if (!state.hasGeometry) {
     return (
       <div
-        className={`bg-muted flex flex-col items-center justify-center gap-2 ${height} ${className}`}
+        className={`bg-fill-3 flex flex-col items-center justify-center gap-2 ${height} ${className}`}
       >
-        <MapPin className="text-muted-foreground h-6 w-6" />
-        <span className="text-muted-foreground text-xs">No map data available</span>
+        <MapPin className="text-label-secondary h-6 w-6" />
+        <span className="text-label-secondary text-footnote">No map data available</span>
       </div>
     );
   }
@@ -101,8 +101,8 @@ export function CountryMapEmbed({
       />
       // oxlint-disable-next-line
       {!state.mapReady && (
-        <div className="bg-muted absolute inset-0 flex items-center justify-center">
-          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
+          <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
         </div>
       )}
     </div>

@@ -47,26 +47,26 @@ export const RouteFilterList = memo(function RouteFilterList({
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
+        <Search className="text-label-secondary absolute top-3 left-3 h-3.5 w-3.5" />
         <input
           type="text"
           placeholder="Filter country routes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border py-1.5 pr-3 pl-8 text-xs focus:outline-none"
+          className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border py-2 pr-3 pl-8 focus:outline-none"
         />
       </div>
 
       {isLoading ? (
-        <div className="text-muted-foreground py-6 text-center text-xs">
+        <div className="text-label-secondary text-footnote py-6 text-center">
           Loading transit network...
         </div>
       ) : filteredRoutes.length === 0 ? (
-        <div className="border-border/60 text-muted-foreground rounded-md border border-dashed py-6 text-center text-xs">
+        <div className="border-separator text-label-secondary rounded-control-sm text-footnote border border-dashed py-6 text-center">
           {searchQuery ? "No routes matching filter" : "No transport routes recorded yet"}
         </div>
       ) : (
-        <div className="max-h-72 space-y-1.5 overflow-y-auto">
+        <div className="max-h-72 space-y-2 overflow-y-auto">
           {filteredRoutes.map((route) => {
             const isSelected = selectedRouteId === route.id;
             const style = ROUTE_STYLES[route.type] ?? {
@@ -89,10 +89,10 @@ export const RouteFilterList = memo(function RouteFilterList({
               <div
                 key={route.id}
                 onClick={() => onSelectRouteId?.(isSelected ? null : route.id)}
-                className={`group flex cursor-pointer items-center justify-between rounded-md border p-2 text-xs transition active:scale-[0.98] ${
+                className={`group rounded-control-sm text-footnote flex cursor-pointer items-center justify-between border p-2 transition active:scale-[0.98] ${
                   isSelected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border/40 bg-card/40 hover:bg-muted/30"
+                    ? "border-tint bg-tint-fill text-label"
+                    : "border-separator bg-surface hover:bg-fill-4"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2">
@@ -102,15 +102,13 @@ export const RouteFilterList = memo(function RouteFilterList({
                   />
                   <div className="min-w-0">
                     <div className="truncate font-medium">{route.name}</div>
-                    <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center gap-2">
                       <span>{style.label}</span>
                       {route.lengthKm !== undefined && (
-                        <span className="font-mono tabular-nums">
-                          • {route.lengthKm.toFixed(1)} km
-                        </span>
+                        <span className="tabular-nums">• {route.lengthKm.toFixed(1)} km</span>
                       )}
                       {travelDuration && (
-                        <span className="text-primary font-mono font-medium tabular-nums">
+                        <span className="text-tint font-medium tabular-nums">
                           • {travelDuration}
                         </span>
                       )}
@@ -123,7 +121,7 @@ export const RouteFilterList = memo(function RouteFilterList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground h-6 w-6"
+                      className="text-label-secondary h-6 w-6"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();

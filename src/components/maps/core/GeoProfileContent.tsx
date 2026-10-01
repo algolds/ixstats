@@ -39,6 +39,8 @@ import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Button } from "~/components/ui/button";
+import { Stat } from "~/components/ui/stat";
 
 /** Climate zone colours keyed by "<Name> (<code>)", derived from the canonical Trewartha scheme. */
 const CLIMATE_COLORS: Record<string, string> = Object.fromEntries(
@@ -46,7 +48,7 @@ const CLIMATE_COLORS: Record<string, string> = Object.fromEntries(
 );
 
 /** Swatch fallback for an unknown zone: a theme token, not a literal. */
-const UNKNOWN_SWATCH = "var(--color-muted-foreground)";
+const UNKNOWN_SWATCH = "var(--color-label-secondary)";
 
 function getClimateColor(type: string): string {
   if (CLIMATE_COLORS[type]) return CLIMATE_COLORS[type]!;
@@ -84,12 +86,12 @@ const RISK_LABELS: Record<string, string> = {
 function ModifierBadge({ label, value }: { label: string; value: number }) {
   const isUp = value > 1.005;
   const isDown = value < 0.995;
-  const color = isUp ? "text-emerald-500" : isDown ? "text-destructive" : "text-muted-foreground";
+  const color = isUp ? "text-green" : isDown ? "text-destructive" : "text-label-secondary";
   const Icon = isUp ? TrendingUp : isDown ? TrendingDown : Minus;
 
   return (
-    <Badge variant="outline" className="gap-1.5 py-1">
-      <span className="text-muted-foreground">{label}</span>
+    <Badge variant="outline" className="gap-2 py-1">
+      <span className="text-label-secondary">{label}</span>
       <span className={`font-semibold tabular-nums ${color}`}>x{value.toFixed(2)}</span>
       <Icon className={color} aria-hidden />
     </Badge>
@@ -103,8 +105,8 @@ function RiskBadge({ type, score }: { type: string; score: number }) {
     score >= 0.6
       ? "border-destructive/30 text-destructive"
       : score >= 0.3
-        ? "border-amber-500/30 text-amber-500"
-        : "border-emerald-500/30 text-emerald-500";
+        ? "border-yellow/30 text-yellow"
+        : "border-green/30 text-green";
 
   return (
     <Badge variant="outline" className={color}>
@@ -135,16 +137,16 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
   if (isLoading) {
     return (
       <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="h-24 w-full rounded-lg" />
-        <Skeleton className="h-4 w-2/3 rounded" />
-        <Skeleton className="h-4 w-1/2 rounded" />
+        <Skeleton className="rounded-control h-24 w-full" />
+        <Skeleton className="h-4 w-2/3 rounded-xs" />
+        <Skeleton className="h-4 w-1/2 rounded-xs" />
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="text-muted-foreground py-8 text-center text-xs">
+      <div className="text-label-secondary text-footnote py-8 text-center">
         No geographic data available. The country may not have linked map geometry.
       </div>
     );
@@ -165,17 +167,17 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
     <div className="space-y-4">
       {/* ── Key Stats ── */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
-          <Eyebrow className="flex items-center gap-1.5">
+        <FacetCard className="px-3 py-2">
+          <Eyebrow className="flex items-center gap-2">
             <Wheat className="h-3 w-3" />
             Arable Land
           </Eyebrow>
           <div
-            className={`mt-0.5 text-sm font-semibold ${
+            className={`text-headline mt-0.5 ${
               profile.derived.arableLandPercent > 50
-                ? "text-emerald-500"
+                ? "text-green"
                 : profile.derived.arableLandPercent > 20
-                  ? "text-amber-500"
+                  ? "text-yellow"
                   : "text-destructive"
             }`}
           >
@@ -183,8 +185,8 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           </div>
         </FacetCard>
 
-        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
-          <Eyebrow className="flex items-center gap-1.5">
+        <FacetCard className="px-3 py-2">
+          <Eyebrow className="flex items-center gap-2">
             <Anchor className="h-3 w-3" />
             {profile.derived.isIsland
               ? "Island"
@@ -192,33 +194,31 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                 ? "Coastal"
                 : "Borders"}
           </Eyebrow>
-          <div className="text-foreground mt-0.5 text-sm font-semibold">
+          <div className="text-label text-headline mt-0.5">
             {profile.derived.coastlineKm > 0 ? (
               <span>{profile.derived.coastlineKm.toLocaleString()} km coast</span>
             ) : (
-              <span className="text-amber-500">{profile.neighbors?.length ?? 0} neighbors</span>
+              <span className="text-yellow">{profile.neighbors?.length ?? 0} neighbors</span>
             )}
           </div>
         </FacetCard>
 
-        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
-          <Eyebrow className="flex items-center gap-1.5">
-            <Thermometer className="h-3 w-3" />
-            Mean Temp
-          </Eyebrow>
-          <div className="text-foreground mt-0.5 text-sm font-semibold">
-            {profile.climate.estMeanTempC}°C
-          </div>
+        <FacetCard className="px-3 py-2">
+          <Stat
+            size="sm"
+            label="Mean Temp"
+            value={<>{profile.climate.estMeanTempC}°C</>}
+            icon={<Thermometer className="size-3.5" />}
+          />
         </FacetCard>
 
-        <FacetCard surface="solid" className="rounded-lg px-3 py-2">
-          <Eyebrow className="flex items-center gap-1.5">
-            <Mountain className="h-3 w-3" />
-            Mean Elev
-          </Eyebrow>
-          <div className="text-foreground mt-0.5 text-sm font-semibold">
-            {profile.elevation.meanElev}m
-          </div>
+        <FacetCard className="px-3 py-2">
+          <Stat
+            size="sm"
+            label="Mean Elev"
+            value={<>{profile.elevation.meanElev}m</>}
+            icon={<Mountain className="size-3.5" />}
+          />
         </FacetCard>
       </div>
 
@@ -235,7 +235,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                 <Badge key={n.id} variant="secondary">
                   {n.name}
                   {n.sharedBorderKm > 0 && (
-                    <span className="text-muted-foreground">
+                    <span className="text-label-secondary">
                       {n.sharedBorderKm.toLocaleString()} km
                     </span>
                   )}
@@ -255,14 +255,19 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               <div className="flex items-center justify-between">
                 <Eyebrow>Climate</Eyebrow>
                 {climateZones.length > 1 && (
-                  <span className="text-muted-foreground text-xs">{climateZones.length} zones</span>
+                  <span className="text-label-secondary text-footnote">
+                    {climateZones.length} zones
+                  </span>
                 )}
               </div>
 
               {/* Stacked bar */}
               <button
-                className="hover:ring-border mt-1.5 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1"
+                type="button"
+                className="hover:ring-separator focus-visible:outline-tint mt-2 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1 focus-visible:outline-2 focus-visible:outline-offset-2"
                 onClick={() => setClimateExpanded((v) => !v)}
+                aria-expanded={climateExpanded}
+                aria-label="Show all climate zones"
                 title="Click to expand all zones"
               >
                 {climateZones.map((z, i) => (
@@ -280,45 +285,51 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
               {/* Dominant zone summary */}
               {dominant && !climateExpanded && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setClimateExpanded(true)}
-                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-xs transition-colors"
+                  aria-expanded={false}
+                  className="mt-2 h-auto w-full justify-start px-1 py-1 font-normal"
                 >
                   <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
                     style={{ backgroundColor: getClimateColor(dominant.type) }}
                   />
-                  <span className="text-foreground flex-1 truncate">{dominant.type}</span>
-                  <span className="text-foreground font-medium tabular-nums">
+                  <span className="text-label flex-1 truncate">{dominant.type}</span>
+                  <span className="text-label font-medium tabular-nums">
                     {dominant.percentArea}%
                   </span>
                   {climateZones.length > 1 && (
-                    <ChevronRight className="text-muted-foreground h-3 w-3" />
+                    <ChevronRight className="text-label-secondary h-3 w-3" />
                   )}
-                </button>
+                </Button>
               )}
 
               {/* Expanded legend */}
               {climateExpanded && (
-                <div className="mt-1.5 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   {climateZones.map((z, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs">
+                    <div key={i} className="text-footnote flex items-center gap-2">
                       <span
-                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
                         style={{ backgroundColor: getClimateColor(z.type) }}
                       />
-                      <span className="text-foreground flex-1 truncate">{z.type}</span>
-                      <span className="text-foreground font-medium tabular-nums">
-                        {z.percentArea}%
-                      </span>
+                      <span className="text-label flex-1 truncate">{z.type}</span>
+                      <span className="text-label font-medium tabular-nums">{z.percentArea}%</span>
                     </div>
                   ))}
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setClimateExpanded(false)}
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                    aria-expanded
+                    className="text-label-secondary hover:text-label -ml-2"
                   >
                     <ChevronDown className="h-3 w-3" /> Collapse
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -335,7 +346,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
               <div className="flex items-center justify-between">
                 <Eyebrow>Elevation</Eyebrow>
                 {elevationZones.length > 1 && (
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     {elevationZones.length} zones
                   </span>
                 )}
@@ -343,8 +354,11 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
               {/* Stacked bar */}
               <button
-                className="hover:ring-border mt-1.5 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1"
+                type="button"
+                className="hover:ring-separator focus-visible:outline-tint mt-2 flex h-3 w-full cursor-pointer overflow-hidden rounded-full transition-shadow hover:ring-1 focus-visible:outline-2 focus-visible:outline-offset-2"
                 onClick={() => setElevationExpanded((v) => !v)}
+                aria-expanded={elevationExpanded}
+                aria-label="Show all elevation zones"
                 title="Click to expand all zones"
               >
                 {elevationZones.map((z, i) => (
@@ -362,51 +376,57 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
 
               {/* Dominant zone summary */}
               {dominant && !elevationExpanded && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setElevationExpanded(true)}
-                  className="hover:text-foreground mt-1.5 flex w-full items-center gap-2 text-left text-xs transition-colors"
+                  aria-expanded={false}
+                  className="mt-2 h-auto w-full justify-start px-1 py-1 font-normal"
                 >
                   <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
                     style={{ backgroundColor: getElevationColor(dominant.name) }}
                   />
-                  <span className="text-foreground flex-1 truncate">{dominant.name}</span>
-                  <span className="text-foreground font-medium tabular-nums">
+                  <span className="text-label flex-1 truncate">{dominant.name}</span>
+                  <span className="text-label font-medium tabular-nums">
                     {dominant.percentArea}%
                   </span>
-                  <span className="text-muted-foreground tabular-nums">
+                  <span className="text-label-secondary tabular-nums">
                     {dominant.minElev}–{dominant.maxElev}m
                   </span>
                   {elevationZones.length > 1 && (
-                    <ChevronRight className="text-muted-foreground h-3 w-3" />
+                    <ChevronRight className="text-label-secondary h-3 w-3" />
                   )}
-                </button>
+                </Button>
               )}
 
               {/* Expanded legend */}
               {elevationExpanded && (
-                <div className="mt-1.5 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   {elevationZones.map((z, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs">
+                    <div key={i} className="text-footnote flex items-center gap-2">
                       <span
-                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs"
                         style={{ backgroundColor: getElevationColor(z.name) }}
                       />
-                      <span className="text-foreground flex-1 truncate">{z.name}</span>
-                      <span className="text-foreground font-medium tabular-nums">
-                        {z.percentArea}%
-                      </span>
-                      <span className="text-muted-foreground tabular-nums">
+                      <span className="text-label flex-1 truncate">{z.name}</span>
+                      <span className="text-label font-medium tabular-nums">{z.percentArea}%</span>
+                      <span className="text-label-secondary tabular-nums">
                         {z.minElev}–{z.maxElev}m
                       </span>
                     </div>
                   ))}
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setElevationExpanded(false)}
-                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
+                    aria-expanded
+                    className="text-label-secondary hover:text-label -ml-2"
                   >
                     <ChevronDown className="h-3 w-3" /> Collapse
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -414,8 +434,8 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
         })()}
 
       {/* ── Water ── */}
-      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
-        <span className="text-muted-foreground">
+      <div className="text-footnote flex flex-wrap gap-x-4 gap-y-0.5">
+        <span className="text-label-secondary">
           {profile.hydro.riverCount} rivers · {profile.hydro.lakeCount} lakes ·{" "}
           {profile.climate.estAnnualPrecipMm} mm/yr precip
         </span>
@@ -424,7 +444,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Economic Modifiers ── */}
       <div>
         <Eyebrow>Geographic Modifiers</Eyebrow>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-2">
           <ModifierBadge label="GDP" value={profile.economic.gdpModifier} />
           <ModifierBadge label="Trade" value={profile.economic.tradeModifier} />
           <ModifierBadge label="Infra" value={profile.economic.infraCostModifier} />
@@ -435,25 +455,25 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {resources && resources.length > 0 && (
         <div>
           <Eyebrow>Resources ({resources.length})</Eyebrow>
-          <div className="mt-1.5 space-y-1">
+          <div className="mt-2 space-y-1">
             {resources.map((r) => {
               const Icon = RESOURCE_ICONS[r.resourceType] ?? Gem;
               return (
-                <div key={r.id} className="flex items-center gap-2 text-xs">
-                  <Icon className="text-muted-foreground h-3 w-3 shrink-0" />
-                  <span className="text-foreground flex-1 truncate">{r.name}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">Qty</span>
-                    <div className="bg-muted h-1.5 w-10 rounded-full">
+                <div key={r.id} className="text-footnote flex items-center gap-2">
+                  <Icon className="text-label-secondary h-3 w-3 shrink-0" />
+                  <span className="text-label flex-1 truncate">{r.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-label-secondary">Qty</span>
+                    <div className="bg-fill-3 h-1.5 w-10 rounded-full">
                       <div
-                        className="h-1.5 rounded-full bg-blue-500"
+                        className="bg-blue h-1.5 rounded-full"
                         style={{ width: `${r.quantity * 100}%` }}
                       />
                     </div>
-                    <span className="text-muted-foreground">Ql</span>
-                    <div className="bg-muted h-1.5 w-10 rounded-full">
+                    <span className="text-label-secondary">Ql</span>
+                    <div className="bg-fill-3 h-1.5 w-10 rounded-full">
                       <div
-                        className="h-1.5 rounded-full bg-emerald-500"
+                        className="bg-green h-1.5 rounded-full"
                         style={{ width: `${r.quality * 100}%` }}
                       />
                     </div>
@@ -468,11 +488,11 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       {/* ── Crisis Risk ── */}
       {topRisks.length > 0 && (
         <div>
-          <Eyebrow className="flex items-center gap-1.5">
+          <Eyebrow className="flex items-center gap-2">
             <AlertTriangle className="h-3 w-3" />
             Risk profile
           </Eyebrow>
-          <div className="mt-1.5 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap gap-1">
             {topRisks.map(([type, score]) => (
               <RiskBadge key={type} type={type} score={score} />
             ))}
@@ -481,7 +501,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
       )}
 
       {/* ── Dimensions (compact) ── */}
-      <div className="text-muted-foreground border-border flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2 text-xs">
+      <div className="text-label-secondary border-separator text-footnote flex flex-wrap gap-x-4 gap-y-0.5 border-t pt-2">
         <span>{profile.area.areaKm2.toLocaleString()} km²</span>
         <span>
           {profile.area.nsSpanKm} x {profile.area.ewSpanKm} km

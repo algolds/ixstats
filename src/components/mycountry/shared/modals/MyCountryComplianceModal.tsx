@@ -1,12 +1,12 @@
 import { Fragment } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
 } from "iconoir-react";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import type { ComplianceSectionStatus } from "~/hooks/useMyCountryCompliance";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface MyCountryComplianceModalProps {
   isOpen: boolean;
@@ -36,90 +37,87 @@ export function MyCountryComplianceModal({
   const allComplete = sections.length > 0 && incompleteSections.length === 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(value) => !value && onDismiss?.()}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-3xl">
+    <Sheet open={isOpen} onOpenChange={(value) => !value && onDismiss?.()}>
+      <SheetContent size="wide" className="overflow-hidden p-0">
         <div className="flex h-full min-h-0 flex-col">
-          <DialogHeader className="shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">
-            <DialogTitle className="flex items-center gap-2 text-xl font-semibold sm:text-2xl">
-              <ClipboardList className="text-primary h-5 w-5 sm:h-6 sm:w-6" />
+          <SheetHeader className="shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">
+            <SheetTitle className="text-title-2 sm:text-title-1 flex items-center gap-2">
+              <ClipboardList className="text-tint h-5 w-5 sm:h-6 sm:w-6" />
               Complete Your MyCountry Profile
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm sm:text-base">
+            </SheetTitle>
+            <SheetDescription className="text-label-secondary text-body sm:text-body">
               Ensure your nation is fully onboarded. Completing the sections below unlocks executive
               dashboards, accuracy scoring, and compliance automation.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
-          <ScrollArea className="max-h-[calc(90vh-12rem)] flex-1 px-4 pb-2 sm:max-h-[calc(85vh-12rem)] sm:px-6">
+          <ScrollArea className="min-h-0 flex-1 px-4 pb-2 sm:px-6">
             <div className="space-y-3 pb-4 sm:space-y-4">
               {sections.map((section) => (
                 <Fragment key={section.id}>
-                  <div className="border-border bg-muted/30 rounded-lg border p-3 transition-colors sm:p-4">
+                  <FacetCard
+                    variant="inset"
+                    padding="none"
+                    className="p-3 transition-colors sm:p-4"
+                  >
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {section.isComplete ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500 sm:h-5 sm:w-5" />
+                            <CheckCircle2 className="text-green h-4 w-4 sm:h-5 sm:w-5" />
                           ) : (
-                            <AlertTriangle className="h-4 w-4 text-amber-500 sm:h-5 sm:w-5" />
+                            <AlertTriangle className="text-yellow h-4 w-4 sm:h-5 sm:w-5" />
                           )}
-                          <h3 className="text-foreground text-sm font-semibold sm:text-base">
+                          <h3 className="text-label text-headline sm:text-headline">
                             {section.title}
                           </h3>
                         </div>
-                        <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+                        <p className="text-label-secondary text-footnote sm:text-body mt-1">
                           {section.description}
                         </p>
                       </div>
-                      <Badge
-                        variant={section.isComplete ? "default" : "outline"}
-                        className={
-                          section.isComplete
-                            ? "bg-emerald-500 text-xs hover:bg-emerald-500 sm:text-sm"
-                            : "text-xs sm:text-sm"
-                        }
-                      >
+                      <Badge variant={section.isComplete ? "success" : "outline"}>
                         {section.isComplete ? "Complete" : "Action Needed"}
                       </Badge>
                     </div>
 
                     {!section.isComplete && section.missing.length > 0 && (
-                      <ul className="text-muted-foreground mt-3 list-disc space-y-1 pl-4 text-xs sm:pl-6 sm:text-sm">
+                      <ul className="text-label-secondary text-footnote sm:text-body mt-3 list-disc space-y-1 pl-4 sm:pl-6">
                         {section.missing.map((item) => (
                           <li key={item}>{item}</li>
                         ))}
                       </ul>
                     )}
-                  </div>
+                  </FacetCard>
                 </Fragment>
               ))}
             </div>
           </ScrollArea>
 
-          <DialogFooter className="border-border/60 bg-muted/20 shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4">
+          <SheetFooter className="border-separator bg-fill-4 shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4">
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
               {!allComplete ? (
                 <>
                   <Button
                     variant="outline"
                     onClick={onRemindLater}
-                    className="w-full text-sm sm:w-fit"
+                    className="text-body w-full sm:w-fit"
                   >
                     Remind me later
                   </Button>
-                  <Button onClick={onReview} className="w-full text-sm sm:w-fit">
+                  <Button onClick={onReview} className="text-body w-full sm:w-fit">
                     Open MyCountry Editor
                   </Button>
                 </>
               ) : (
-                <Button onClick={onDismiss} className="w-full text-sm sm:w-fit">
+                <Button onClick={onDismiss} className="text-body w-full sm:w-fit">
                   Close
                 </Button>
               )}
             </div>
-          </DialogFooter>
+          </SheetFooter>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

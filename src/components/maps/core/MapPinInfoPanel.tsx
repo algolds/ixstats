@@ -23,7 +23,7 @@ import type { PinPosition } from "~/hooks/useMapPinInfo";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 
 interface PointInfoServerResult {
   coordinates: { lng: number; lat: number };
@@ -83,21 +83,21 @@ function InfoRow({
   loading?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2.5 py-2">
-      <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+    <div className="flex items-start gap-2 py-2">
+      <Icon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
         <Eyebrow className="block">{label}</Eyebrow>
         {loading ? (
-          <Skeleton className="mt-0.5 h-4 w-24 rounded" />
+          <Skeleton className="mt-0.5 h-4 w-24 rounded-xs" />
         ) : (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {color && (
               <span
-                className="border-border inline-block h-3 w-3 rounded-sm border"
+                className="border-separator inline-block h-3 w-3 rounded-xs border"
                 style={{ backgroundColor: color.slice(0, 7) }}
               />
             )}
-            <span className="text-foreground text-sm font-medium">{value ?? "Unknown"}</span>
+            <span className="text-label text-body font-medium">{value ?? "Unknown"}</span>
           </div>
         )}
       </div>
@@ -149,10 +149,10 @@ export default function MapPinInfoPanel({
   const panelContent = (
     <>
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
+      <div className="border-separator flex items-center justify-between border-b px-4 py-2">
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-500" aria-hidden />
-          <h3 className="text-foreground text-sm font-semibold">Pin info</h3>
+          <MapPin className="text-blue h-4 w-4" aria-hidden />
+          <h3 className="text-label text-headline">Pin info</h3>
         </div>
         <Button
           type="button"
@@ -160,21 +160,21 @@ export default function MapPinInfoPanel({
           size="icon"
           onClick={onClose}
           aria-label="Close pin info"
-          className="text-muted-foreground h-8 w-8 rounded-full"
+          className="text-label-secondary h-8 w-8 rounded-full"
         >
           <X aria-hidden />
         </Button>
       </div>
 
       {/* Coordinates */}
-      <div className="border-border border-b px-4 py-2">
-        <div className="text-muted-foreground font-mono text-xs">
+      <div className="border-separator border-b px-4 py-2">
+        <div className="text-label-secondary text-footnote font-mono">
           {formatCoord(pinPosition.lat, "lat")}, {formatCoord(pinPosition.lng, "lng")}
         </div>
       </div>
 
       {/* Info Rows */}
-      <div className="divide-border divide-y px-4">
+      <div className="divide-separator divide-y px-4">
         <InfoRow
           icon={Mountain}
           label="Elevation"
@@ -207,7 +207,7 @@ export default function MapPinInfoPanel({
 
       {/* Footer */}
       <div className="px-4 py-2 text-center">
-        <span className="text-muted-foreground text-xs">Tap map to update pin</span>
+        <span className="text-label-secondary text-footnote">Tap map to update pin</span>
       </div>
     </>
   );
@@ -221,9 +221,9 @@ export default function MapPinInfoPanel({
         onTouchStart={(e) => e.stopPropagation()}
         className="absolute top-3 right-3 z-20 hidden w-72 sm:block"
       >
-        <FacetContainer material="regular" className="rounded-2xl">
+        <FacetMaterial material="regular" className="rounded-card">
           {panelContent}
-        </FacetContainer>
+        </FacetMaterial>
       </div>
 
       {/* Mobile: bottom sheet */}
@@ -231,12 +231,12 @@ export default function MapPinInfoPanel({
         className="absolute inset-x-0 bottom-0 z-20 sm:hidden"
         style={{ animation: "slideInUp 0.25s ease-out" }}
       >
-        <FacetContainer material="regular" className="max-h-[50vh] rounded-t-2xl rounded-b-none">
+        <FacetMaterial material="regular" className="rounded-t-card max-h-[50vh] rounded-b-none">
           <div className="flex justify-center pt-2 pb-1">
-            <div className="bg-border h-1 w-8 rounded-full" />
+            <div className="bg-separator h-1 w-8 rounded-full" />
           </div>
           {panelContent}
-        </FacetContainer>
+        </FacetMaterial>
       </div>
 
       <style jsx>{`

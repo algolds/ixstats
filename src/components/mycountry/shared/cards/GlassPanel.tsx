@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { type TextureType } from "~/components/ui/texture-overlay";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { type MyCountryAccent } from "./accents";
 
 interface GlassPanelProps {
@@ -20,7 +20,7 @@ interface GlassPanelProps {
 
 /**
  * GlassPanel — theme-compliant frosted surface with the Builder's "glass" feel
- * (backdrop blur + accent tint), built on theme tokens (`bg-card/70`) instead
+ * (backdrop blur + accent tint), built on theme tokens (`bg-surface`) instead
  * of white-based layers so it reads in light + dark.
  */
 export function GlassPanel({
@@ -37,16 +37,14 @@ export function GlassPanel({
   const clickable = interactive || Boolean(onClick);
 
   return (
-    <FacetContainer
-      depth={1}
+    <FacetCard
       interactive={clickable ? "hover" : "none"}
-      enableRefraction={false}
       onClick={onClick}
       texture={texture === "none" ? undefined : texture}
       textureOpacity={textureOpacity}
-      className={cn("text-card-foreground overflow-hidden rounded-xl", className)}
+      className={cn("text-label rounded-row overflow-hidden", className)}
     >
       <div className="relative z-10">{children}</div>
-    </FacetContainer>
+    </FacetCard>
   );
 }

@@ -1,4 +1,4 @@
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
@@ -51,11 +51,11 @@ function estimateRoute(
 function EstimateText({ estimate }: { estimate: RouteEstimate }) {
   return (
     <span
-      className="text-foreground px-2 font-mono text-xs whitespace-nowrap tabular-nums"
+      className="text-label text-footnote px-2 whitespace-nowrap tabular-nums"
       aria-live="polite"
     >
       ≈ {estimate.time}
-      <span className="text-muted-foreground hidden sm:inline"> · {estimate.detail}</span>
+      <span className="text-label-secondary hidden sm:inline"> · {estimate.detail}</span>
     </span>
   );
 }
@@ -85,9 +85,9 @@ export function RouteEditingToolbar({
     if (!estimate) return null;
     return (
       <div className="absolute bottom-12 left-1/2 z-10 -translate-x-1/2">
-        <FacetContainer material="regular" className="rounded-full py-1">
+        <FacetMaterial material="regular" className="rounded-full py-1">
           <EstimateText estimate={estimate} />
-        </FacetContainer>
+        </FacetMaterial>
       </div>
     );
   }
@@ -96,15 +96,15 @@ export function RouteEditingToolbar({
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetContainer material="regular" className="flex items-center gap-1.5 rounded-full p-1.5">
-        <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
+      <FacetMaterial material="regular" className="flex items-center gap-2 rounded-full p-2">
+        <span className="text-label-secondary text-caption hidden px-3 sm:inline">
           Drag route vertices · Midpoints to add · Right-click to remove
         </span>
-        <div className="bg-border hidden h-4 w-px sm:block" />
+        <div className="bg-separator hidden h-4 w-px sm:block" />
         {estimate && (
           <>
             <EstimateText estimate={estimate} />
-            <div className="bg-border h-4 w-px" />
+            <div className="bg-separator h-4 w-px" />
           </>
         )}
         <Button size="sm" onClick={onRouteEditCommit}>
@@ -113,7 +113,7 @@ export function RouteEditingToolbar({
         <Button variant="outline" size="sm" onClick={onRouteEditCancel}>
           Cancel
         </Button>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 }

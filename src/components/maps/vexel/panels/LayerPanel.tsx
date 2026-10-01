@@ -7,7 +7,7 @@ import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { DIVISIONS, ORDINARIES } from "~/lib/heraldry";
 
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export default function LayerPanel() {
   const { composition, selectedLayerPath, selectLayer, addOrdinary, removeOrdinary, removeCharge } =
@@ -20,24 +20,19 @@ export default function LayerPanel() {
   const activeDivision = DIVISIONS.find((d) => d.value === composition.shield.field.division);
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border h-full overflow-hidden rounded-xl border"
-    >
+    <FacetCard className="h-full overflow-hidden">
       <div className="flex h-full flex-col p-4">
-        <h2 className="border-border text-foreground mb-4 border-b pb-2 text-sm font-semibold">
-          Layer Tree
-        </h2>
+        <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">Layer Tree</h2>
 
         <div className="flex-1 space-y-4 overflow-y-auto">
           {/* Shield Root */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div
               onClick={() => handleSelect("shield")}
-              className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              className={`rounded-control text-headline flex cursor-pointer items-center justify-between px-3 py-2 transition-colors ${
                 selectedLayerPath === "shield"
-                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-500"
-                  : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+                  ? "border-tint/30 bg-tint/20 text-tint-ink border"
+                  : "bg-fill-3 text-label-secondary hover:bg-fill-3 border border-transparent"
               }`}
             >
               <span className="flex items-center gap-2">Shield ({composition.shield.shape})</span>
@@ -47,10 +42,10 @@ export default function LayerPanel() {
               {/* Field */}
               <div
                 onClick={() => handleSelect("shield.field")}
-                className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                className={`rounded-control text-footnote flex cursor-pointer items-center justify-between px-3 py-2 transition-colors ${
                   selectedLayerPath === "shield.field"
-                    ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
-                    : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+                    ? "border-tint/20 bg-tint/20 text-tint-ink border"
+                    : "bg-fill-3 text-label-secondary hover:bg-fill-3 border border-transparent"
                 }`}
               >
                 <span>Field ({activeDivision?.label || composition.shield.field.division})</span>
@@ -74,7 +69,7 @@ export default function LayerPanel() {
                 {/* Ordinaries List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.ordinaries ?? []).length === 0 ? (
-                    <div className="text-muted-foreground px-3 py-2 text-xs italic">
+                    <div className="text-label-secondary text-footnote px-3 py-2 italic">
                       No ordinaries.
                     </div>
                   ) : (
@@ -86,10 +81,10 @@ export default function LayerPanel() {
                         <div
                           key={idx}
                           onClick={() => handleSelect(path)}
-                          className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                          className={`rounded-control text-footnote flex cursor-pointer items-center justify-between px-3 py-2 transition-colors ${
                             selectedLayerPath === path
-                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
-                              : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+                              ? "border-tint/20 bg-tint/20 text-tint-ink border"
+                              : "bg-fill-3 text-label-secondary hover:bg-fill-3 border border-transparent"
                           }`}
                         >
                           <span className="truncate">{label}</span>
@@ -121,7 +116,7 @@ export default function LayerPanel() {
                 {/* Charges List */}
                 <div className="mt-1 space-y-1">
                   {(composition.shield.charges ?? []).length === 0 ? (
-                    <div className="text-muted-foreground px-3 py-2 text-xs italic">
+                    <div className="text-label-secondary text-footnote px-3 py-2 italic">
                       No charges. Select from library to add.
                     </div>
                   ) : (
@@ -132,10 +127,10 @@ export default function LayerPanel() {
                         <div
                           key={idx}
                           onClick={() => handleSelect(path)}
-                          className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                          className={`rounded-control text-footnote flex cursor-pointer items-center justify-between px-3 py-2 transition-colors ${
                             selectedLayerPath === path
-                              ? "border border-amber-500/20 bg-amber-500/20 text-amber-500"
-                              : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+                              ? "border-tint/20 bg-tint/20 text-tint-ink border"
+                              : "bg-fill-3 text-label-secondary hover:bg-fill-3 border border-transparent"
                           }`}
                         >
                           <span className="truncate">
@@ -162,13 +157,13 @@ export default function LayerPanel() {
           </div>
 
           {/* Externals Root */}
-          <div className="border-border space-y-1.5 border-t pt-2">
+          <div className="border-separator space-y-2 border-t pt-2">
             <div
               onClick={() => handleSelect("externals")}
-              className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              className={`rounded-control text-headline flex cursor-pointer items-center justify-between px-3 py-2 transition-colors ${
                 selectedLayerPath === "externals"
-                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-500"
-                  : "bg-muted text-muted-foreground hover:bg-accent border border-transparent"
+                  ? "border-tint/30 bg-tint/20 text-tint-ink border"
+                  : "bg-fill-3 text-label-secondary hover:bg-fill-3 border border-transparent"
               }`}
             >
               <span>External ornaments</span>
@@ -176,6 +171,6 @@ export default function LayerPanel() {
           </div>
         </div>
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

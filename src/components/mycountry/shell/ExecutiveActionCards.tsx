@@ -140,22 +140,22 @@ export function DomainTileButton({
       type="button"
       variant="outline"
       onClick={onSelect}
-      className="group h-auto min-h-14 w-full justify-start gap-3 overflow-hidden rounded-xl p-3 text-left whitespace-normal"
+      className="group rounded-row h-auto min-h-14 w-full justify-start gap-3 overflow-hidden p-3 text-left whitespace-normal"
     >
       <Graphic />
-      <Icon aria-hidden="true" className="text-muted-foreground relative size-5 shrink-0" />
+      <Icon aria-hidden="true" className="text-label-secondary relative size-5 shrink-0" />
       <span className="relative flex min-w-0 flex-1 flex-col">
-        <span className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+        <span className="text-label text-headline flex items-center gap-2">
           <span className="truncate">{tile.title}</span>
           {badge}
         </span>
-        <span className="text-muted-foreground truncate text-xs font-normal tabular-nums">
+        <span className="text-label-secondary text-footnote truncate font-normal tabular-nums">
           {peek}
         </span>
       </span>
       <NavArrowRight
         aria-hidden="true"
-        className="text-muted-foreground/60 group-hover:text-muted-foreground relative size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+        className="text-label-tertiary group-hover:text-label-secondary relative size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
       />
     </Button>
   );

@@ -28,7 +28,9 @@ import { formatPopulation } from "~/lib/utils/format-utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
+import { Stat } from "~/components/ui/stat";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -50,10 +52,10 @@ function FeaturePeekContent({ feature }: { feature: SelectedFeature }) {
 
   return (
     <div className="flex items-center gap-3">
-      <MapPin className="h-5 w-5 shrink-0 text-blue-500" aria-hidden />
+      <MapPin className="text-blue h-5 w-5 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-semibold">{feature.name}</h3>
-        <div className="text-muted-foreground flex gap-2 text-xs">
+        <h3 className="text-label text-headline truncate">{feature.name}</h3>
+        <div className="text-label-secondary text-footnote flex gap-2">
           <span className="capitalize">{typeLabel}</span>
           <span>•</span>
           <span>{feature.countryName}</span>
@@ -87,21 +89,21 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
     <>
       {/* Header — only needed for desktop since mobile has Peek header */}
       {!isMobile && (
-        <div className="border-border flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2.5 overflow-hidden">
+        <div className="border-separator flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-2 overflow-hidden">
             {isStoryPin ? (
               <BookMarked className="text-wiki h-4 w-4 shrink-0" aria-hidden />
             ) : isCity ? (
               <MapPin
-                className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-amber-500" : "text-blue-500"}`}
+                className={`h-4 w-4 shrink-0 ${feature.isCapital ? "text-yellow" : "text-blue"}`}
                 aria-hidden
               />
             ) : (
-              <Landmark className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
+              <Landmark className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
             )}
             <div className="min-w-0">
-              <h3 className="text-foreground truncate text-base font-semibold">{feature.name}</h3>
-              <p className="text-muted-foreground text-xs">
+              <h3 className="text-label text-title-3 truncate">{feature.name}</h3>
+              <p className="text-label-secondary text-footnote">
                 {isCity
                   ? (feature.cityType ?? "City").charAt(0).toUpperCase() +
                     (feature.cityType ?? "city").slice(1)
@@ -119,7 +121,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
             onClick={onClose}
             aria-label="Close"
             title="Close (Esc)"
-            className="text-muted-foreground h-8 w-8 shrink-0 rounded-full"
+            className="text-label-secondary h-8 w-8 shrink-0 rounded-full"
           >
             <X aria-hidden />
           </Button>
@@ -133,17 +135,17 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
       >
         {/* Wiki intro loading skeleton */}
         {wikiLoading && feature.wikiPageTitle && (
-          <div className="mb-3 space-y-1.5">
-            <Skeleton className="h-3 w-full rounded" />
-            <Skeleton className="h-3 w-4/5 rounded" />
-            <Skeleton className="h-3 w-3/5 rounded" />
+          <div className="mb-3 space-y-2">
+            <Skeleton className="h-3 w-full rounded-xs" />
+            <Skeleton className="h-3 w-4/5 rounded-xs" />
+            <Skeleton className="h-3 w-3/5 rounded-xs" />
           </div>
         )}
 
         {/* Wiki intro text */}
         {wikiIntro?.extract && (
           <div className="mb-3">
-            <p className="text-foreground/80 line-clamp-5 text-xs leading-relaxed">
+            <p className="text-label-secondary text-footnote line-clamp-5 leading-relaxed">
               {wikiIntro.extract}
             </p>
           </div>
@@ -151,22 +153,21 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* City population */}
         {isCity && feature.population != null && (
-          <FacetCard surface="solid" className="mb-3 rounded-lg px-3 py-2">
-            <Eyebrow className="flex items-center gap-1.5">
-              <Users className="h-3 w-3" />
-              Population
-            </Eyebrow>
-            <div className="text-foreground mt-0.5 text-sm font-semibold">
-              {formatPopulation(feature.population)}
-            </div>
+          <FacetCard className="mb-3 px-3 py-2">
+            <Stat
+              size="sm"
+              label="Population"
+              value={formatPopulation(feature.population)}
+              icon={<Users className="size-3.5" />}
+            />
           </FacetCard>
         )}
 
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <FacetCard surface="solid" className="mb-3 rounded-lg px-3 py-2">
+          <FacetCard className="mb-3 px-3 py-2">
             <Eyebrow className="block">Description</Eyebrow>
-            <p className="text-foreground mt-0.5 text-xs leading-relaxed">{feature.description}</p>
+            <p className="text-label text-footnote mt-0.5 leading-relaxed">{feature.description}</p>
           </FacetCard>
         )}
 
@@ -174,7 +175,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
         {isStoryPin && (
           <div className="mb-3 space-y-2">
             {(feature.ixTimeYear || feature.eraLabel) && (
-              <div className="text-foreground flex items-center gap-2 text-xs font-medium">
+              <div className="text-label text-caption flex items-center gap-2">
                 <Calendar className="text-wiki h-3.5 w-3.5" aria-hidden />
                 <span>
                   {feature.ixTimeYear && `Year ${feature.ixTimeYear}`}
@@ -222,7 +223,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
               </Button>
             ))}
           {feature.countrySlug && (
-            <Button asChild size="sm" className="bg-blue-600 text-white hover:bg-blue-600/90">
+            <Button asChild size="sm" className="bg-blue text-on-blue hover:bg-blue/90">
               <Link href={`/countries/${feature.countrySlug}`}>
                 View {feature.countryName}
                 <ExternalLink aria-hidden />
@@ -245,9 +246,9 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           className="absolute top-0 right-0 z-20 hidden h-full w-96 sm:block"
           style={{ animation: "slideInRight 0.25s ease-out" }}
         >
-          <FacetContainer material="regular" className="h-full rounded-none">
+          <FacetMaterial material="regular" className="h-full rounded-none">
             {panelContent}
-          </FacetContainer>
+          </FacetMaterial>
         </div>
       )}
 

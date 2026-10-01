@@ -53,13 +53,10 @@ function AtomicSelectedListComponent<TType extends string = string>({
 
   if (selectedComponents.length === 0) {
     return (
-      <FacetCard
-        surface="solid"
-        className="flex flex-col items-center justify-center rounded-xl border-dashed px-4 py-10 text-center"
-      >
-        <Package aria-hidden="true" className="text-muted-foreground mb-2.5 h-6 w-6" />
-        <p className="text-foreground text-sm font-semibold">{emptyTitle}</p>
-        <p className="text-muted-foreground mt-0.5 max-w-[220px] text-xs">{emptySubtitle}</p>
+      <FacetCard className="flex flex-col items-center justify-center border-dashed px-4 py-10 text-center">
+        <Package aria-hidden="true" className="text-label-secondary mb-2 h-6 w-6" />
+        <p className="text-label text-headline">{emptyTitle}</p>
+        <p className="text-label-secondary text-footnote mt-0.5 max-w-[220px]">{emptySubtitle}</p>
       </FacetCard>
     );
   }
@@ -71,13 +68,13 @@ function AtomicSelectedListComponent<TType extends string = string>({
         <Eyebrow className="tabular-nums">
           Selected ({selectedComponents.length}/{maxComponents})
         </Eyebrow>
-        <Badge variant="outline" className="text-muted-foreground tabular-nums">
+        <Badge variant="outline" className="text-label-secondary tabular-nums">
           Avg eff. {totals.avgEff}%
         </Badge>
       </div>
 
       {/* List */}
-      <div className="flex max-h-[480px] flex-col gap-1.5 overflow-y-auto pr-1">
+      <div className="flex max-h-[480px] flex-col gap-2 overflow-y-auto pr-1">
         <AnimatePresence initial={false}>
           {selectedComponents.map((component) => {
             const Icon = component.icon;
@@ -91,24 +88,21 @@ function AtomicSelectedListComponent<TType extends string = string>({
                 exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
               >
-                <FacetCard
-                  surface="solid"
-                  className="flex items-center justify-between gap-2 rounded-xl p-2.5"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+                <FacetCard className="flex items-center justify-between gap-2 p-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <h5 className="text-foreground truncate text-xs font-semibold">
+                      <h5 className="text-label text-caption truncate font-semibold">
                         {component.name}
                       </h5>
-                      <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                      <div className="text-label-secondary text-footnote flex items-center gap-2">
                         <span className="truncate">{component.category}</span>
                         <span aria-hidden="true">·</span>
                         <span className="shrink-0 tabular-nums">
                           {currencyFormatter(component.implementationCost)}
                         </span>
                         <span aria-hidden="true">·</span>
-                        <span className="text-foreground shrink-0 font-medium tabular-nums">
+                        <span className="text-label shrink-0 font-medium tabular-nums">
                           {component.effectiveness}% eff.
                         </span>
                       </div>
@@ -119,7 +113,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="text-muted-foreground hover:text-destructive h-7 w-7 shrink-0 max-sm:h-11 max-sm:w-11"
+                      className="text-label-secondary hover:text-destructive h-7 w-7 shrink-0 max-sm:h-11 max-sm:w-11"
                       onClick={() => onDeselect(component.type)}
                       aria-label={`Remove ${component.name}`}
                       title={`Remove ${component.name}`}
@@ -135,16 +129,16 @@ function AtomicSelectedListComponent<TType extends string = string>({
       </div>
 
       {/* Totals */}
-      <FacetCard surface="solid" className="space-y-1 rounded-xl p-2.5 text-xs">
-        <div className="text-muted-foreground flex items-center justify-between">
+      <FacetCard className="text-footnote space-y-1 p-2">
+        <div className="text-label-secondary flex items-center justify-between">
           <span>Total implementation</span>
-          <span className="text-foreground font-semibold tabular-nums">
+          <span className="text-label font-semibold tabular-nums">
             {currencyFormatter(totals.cost)}
           </span>
         </div>
-        <div className="text-muted-foreground flex items-center justify-between">
+        <div className="text-label-secondary flex items-center justify-between">
           <span>Annual maintenance</span>
-          <span className="text-foreground font-semibold tabular-nums">
+          <span className="text-label font-semibold tabular-nums">
             {currencyFormatter(totals.maint)}/yr
           </span>
         </div>

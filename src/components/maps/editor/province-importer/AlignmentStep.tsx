@@ -15,6 +15,8 @@ import {
 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { AlignmentMode } from "~/lib/maps/province-importer/types";
+import { Slider } from "~/components/ui/slider";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface AlignmentStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -37,8 +39,8 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground text-sm font-medium">Align to Country Border</h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <h3 className="text-label text-body font-medium">Align to Country Border</h3>
+        <p className="text-label-secondary text-footnote mt-1">
           {hasAlignment
             ? "Initial alignment applied automatically. Fine-tune below if needed."
             : "Align the imported provinces to your country\u2019s border on the world map."}
@@ -47,38 +49,30 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
 
       {/* Auto-alignment status */}
       {hasAlignment && (
-        <div className="border-border flex items-center gap-2 rounded-lg border px-3 py-2 text-xs text-emerald-500">
+        <div className="bg-green/15 rounded-control text-footnote text-green-ink flex items-center gap-2 px-3 py-2">
           <Check className="h-3.5 w-3.5 shrink-0" />
           Auto-aligned to country border. Use manual adjust for fine-tuning.
         </div>
       )}
 
       {/* Mode selector */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {MODES.map((m) => {
-          const Icon = m.icon;
-          const isActive = importer.alignmentMode === m.key;
-          return (
-            <button
-              key={m.key}
-              onClick={() => importer.setAlignmentMode(m.key)}
-              className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-colors ${
-                isActive
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span className="text-xs font-medium">{m.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        aria-label="Alignment mode"
+        fullWidth
+        size="sm"
+        value={importer.alignmentMode}
+        onValueChange={(v) => importer.setAlignmentMode(v as AlignmentMode)}
+        options={MODES.map((m) => ({
+          value: m.key,
+          label: m.label,
+          icon: <m.icon aria-hidden />,
+        }))}
+      />
 
       {/* Mode-specific controls */}
       {importer.alignmentMode === "reference-points" && (
         <div className="space-y-3">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Click corresponding points on the province map and the country border. Need at least 3
             point pairs for accurate alignment.
           </p>
@@ -88,7 +82,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               {importer.referencePoints.map((pt, i) => (
                 <div
                   key={i}
-                  className="bg-accent flex items-center justify-between rounded px-2 py-1 text-xs"
+                  className="bg-fill-3 text-footnote rounded-control-sm flex items-center justify-between px-2 py-1"
                 >
                   <span>
                     Point {i + 1}: [{pt.source[0]?.toFixed(2)}, {pt.source[1]?.toFixed(2)}] → [
@@ -120,7 +114,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
 
       {importer.alignmentMode === "auto-align" && (
         <div className="space-y-3">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             {hasAlignment
               ? "Re-run auto-alignment to recompute the best fit using ICP shape matching."
               : "Automatically matches the outer boundary of your provinces to the country border using iterative shape matching (ICP algorithm)."}
@@ -148,8 +142,8 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
 
       {/* Snap to Border — available after any alignment */}
       {hasAlignment && (
-        <div className="border-primary/40 bg-primary/5 space-y-2 rounded-lg border border-dashed p-3">
-          <p className="text-muted-foreground text-xs">
+        <div className="border-tint/40 bg-tint-fill rounded-control space-y-2 border border-dashed p-3">
+          <p className="text-label-secondary text-footnote">
             Once alignment looks close, snap province edges to the country border:
           </p>
           <Button
@@ -163,7 +157,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
             <Magnet className="h-3.5 w-3.5" />
             Snap to Country Border
           </Button>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Clips provinces to the border, snaps outer vertices, and aligns shared edges. You can
             re-adjust and snap again.
           </p>
@@ -172,32 +166,33 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
 
       {importer.alignmentMode === "manual" && (
         <div className="space-y-3">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Fine-tune position, rotation, and scale. Changes preview in real-time.
           </p>
 
           {/* Translate X */}
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="space-y-2">
+            <label className="text-label-secondary text-footnote flex items-center gap-2">
               <Move className="h-3 w-3" /> Shift East/West
             </label>
-            <input
-              type="range"
+            <Slider
+              aria-label="Shift east/west"
               min={-5}
               max={5}
               step={0.01}
-              value={importer.manualTransform.translate[0]}
-              onChange={(e) =>
+              value={[importer.manualTransform.translate[0]]}
+              onValueChange={([v]) =>
+                v !== undefined &&
                 importer.setManualTransform({
                   ...importer.manualTransform,
-                  translate: [parseFloat(e.target.value), importer.manualTransform.translate[1]],
+                  translate: [v, importer.manualTransform.translate[1]],
                 })
               }
-              className="w-full"
+              className="w-full py-2"
             />
-            <div className="text-muted-foreground flex justify-between text-xs">
+            <div className="text-label-secondary text-footnote flex justify-between">
               <span>-5°</span>
-              <span className="text-foreground font-mono font-medium">
+              <span className="text-label font-mono font-medium">
                 {importer.manualTransform.translate[0].toFixed(2)}°
               </span>
               <span>+5°</span>
@@ -205,27 +200,28 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
           </div>
 
           {/* Translate Y */}
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="space-y-2">
+            <label className="text-label-secondary text-footnote flex items-center gap-2">
               <Move className="h-3 w-3" /> Shift North/South
             </label>
-            <input
-              type="range"
+            <Slider
+              aria-label="Shift north/south"
               min={-5}
               max={5}
               step={0.01}
-              value={importer.manualTransform.translate[1]}
-              onChange={(e) =>
+              value={[importer.manualTransform.translate[1]]}
+              onValueChange={([v]) =>
+                v !== undefined &&
                 importer.setManualTransform({
                   ...importer.manualTransform,
-                  translate: [importer.manualTransform.translate[0], parseFloat(e.target.value)],
+                  translate: [importer.manualTransform.translate[0], v],
                 })
               }
-              className="w-full"
+              className="w-full py-2"
             />
-            <div className="text-muted-foreground flex justify-between text-xs">
+            <div className="text-label-secondary text-footnote flex justify-between">
               <span>-5°</span>
-              <span className="text-foreground font-mono font-medium">
+              <span className="text-label font-mono font-medium">
                 {importer.manualTransform.translate[1].toFixed(2)}°
               </span>
               <span>+5°</span>
@@ -233,27 +229,28 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
           </div>
 
           {/* Rotation */}
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="space-y-2">
+            <label className="text-label-secondary text-footnote flex items-center gap-2">
               <RotateCw className="h-3 w-3" /> Rotation
             </label>
-            <input
-              type="range"
+            <Slider
+              aria-label="Rotation"
               min={-45}
               max={45}
               step={0.5}
-              value={importer.manualTransform.rotate}
-              onChange={(e) =>
+              value={[importer.manualTransform.rotate]}
+              onValueChange={([v]) =>
+                v !== undefined &&
                 importer.setManualTransform({
                   ...importer.manualTransform,
-                  rotate: parseFloat(e.target.value),
+                  rotate: v,
                 })
               }
-              className="w-full"
+              className="w-full py-2"
             />
-            <div className="text-muted-foreground flex justify-between text-xs">
+            <div className="text-label-secondary text-footnote flex justify-between">
               <span>-45°</span>
-              <span className="text-foreground font-mono font-medium">
+              <span className="text-label font-mono font-medium">
                 {importer.manualTransform.rotate.toFixed(1)}°
               </span>
               <span>+45°</span>
@@ -261,27 +258,28 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
           </div>
 
           {/* Scale */}
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="space-y-2">
+            <label className="text-label-secondary text-footnote flex items-center gap-2">
               <ZoomIn className="h-3 w-3" /> Scale
             </label>
-            <input
-              type="range"
+            <Slider
+              aria-label="Scale"
               min={0.5}
               max={2}
               step={0.01}
-              value={importer.manualTransform.scale}
-              onChange={(e) =>
+              value={[importer.manualTransform.scale]}
+              onValueChange={([v]) =>
+                v !== undefined &&
                 importer.setManualTransform({
                   ...importer.manualTransform,
-                  scale: parseFloat(e.target.value),
+                  scale: v,
                 })
               }
-              className="w-full"
+              className="w-full py-2"
             />
-            <div className="text-muted-foreground flex justify-between text-xs">
+            <div className="text-label-secondary text-footnote flex justify-between">
               <span>0.5x</span>
-              <span className="text-foreground font-mono font-medium">
+              <span className="text-label font-medium tabular-nums">
                 {importer.manualTransform.scale.toFixed(2)}x
               </span>
               <span>2x</span>

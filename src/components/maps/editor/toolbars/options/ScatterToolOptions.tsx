@@ -5,6 +5,8 @@ import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { City } from "iconoir-react";
 import { PopoverContent } from "~/components/ui/popover";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Slider } from "~/components/ui/slider";
 
 const CITY_TYPES = [
   { value: "city", label: "City" },
@@ -30,30 +32,27 @@ export function CityScatterPopover({
       <div className="space-y-1">
         <Eyebrow className="block">Scatter Count</Eyebrow>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
+          <Slider
+            aria-label="Scatter count"
             min={1}
             max={50}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
+            value={[count]}
+            onValueChange={([v]) => v !== undefined && setCount(v)}
+            className="flex-1 py-2"
           />
-          <span className="w-8 text-right text-xs font-semibold">{count}</span>
+          <span className="text-caption w-8 text-right font-semibold">{count}</span>
         </div>
       </div>
       <div className="space-y-1">
         <Eyebrow className="block">City Type</Eyebrow>
-        <select
+        <OptionSelect
+          aria-label="City type"
           value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-xs outline-none focus:ring-1"
-        >
-          {CITY_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+          onValueChange={(v) => setType(v)}
+          options={CITY_TYPES}
+          size="sm"
+          className="w-full"
+        />
       </div>
       <div className="space-y-1">
         <Eyebrow className="block">Name Prefix</Eyebrow>
@@ -61,7 +60,7 @@ export function CityScatterPopover({
           type="text"
           value={prefix}
           onChange={(e) => setPrefix(e.target.value)}
-          className="border-border bg-background text-foreground focus:ring-primary/50 h-6 w-full rounded border px-1.5 text-xs outline-none focus:ring-1"
+          className="border-separator bg-surface text-label focus:ring-tint/50 text-footnote rounded-control-sm h-6 w-full border px-2 outline-none focus:ring-1"
         />
       </div>
       <Button
@@ -90,14 +89,14 @@ export function TransformGeometryPopover({
       <div className="space-y-1">
         <Eyebrow className="block">Simplify Tolerance</Eyebrow>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
+          <Slider
+            aria-label="Simplify tolerance"
             min={0.0001}
             max={0.01}
             step={0.0001}
-            value={simplifyVal}
-            onChange={(e) => setSimplifyVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
+            value={[simplifyVal]}
+            onValueChange={([v]) => v !== undefined && setSimplifyVal(v)}
+            className="flex-1 py-2"
           />
           <Button
             variant="secondary"
@@ -124,15 +123,15 @@ export function TransformGeometryPopover({
       <div className="space-y-1">
         <Eyebrow className="block">Rotate (° degrees)</Eyebrow>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
+          <Slider
+            aria-label="Rotate (° degrees)"
             min={-180}
             max={180}
-            value={rotateVal}
-            onChange={(e) => setRotateVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
+            value={[rotateVal]}
+            onValueChange={([v]) => v !== undefined && setRotateVal(v)}
+            className="flex-1 py-2"
           />
-          <span className="w-8 text-right text-xs font-semibold">{rotateVal}°</span>
+          <span className="text-caption w-8 text-right font-semibold">{rotateVal}°</span>
           <Button
             variant="secondary"
             size="xs"
@@ -146,16 +145,16 @@ export function TransformGeometryPopover({
       <div className="space-y-1">
         <Eyebrow className="block">Scale Factor</Eyebrow>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
+          <Slider
+            aria-label="Scale factor"
             min={0.1}
             max={3.0}
             step={0.1}
-            value={scaleVal}
-            onChange={(e) => setScaleVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
+            value={[scaleVal]}
+            onValueChange={([v]) => v !== undefined && setScaleVal(v)}
+            className="flex-1 py-2"
           />
-          <span className="w-8 text-right text-xs font-semibold">{scaleVal}x</span>
+          <span className="text-caption w-8 text-right font-semibold">{scaleVal}x</span>
           <Button
             variant="secondary"
             size="xs"
@@ -187,39 +186,39 @@ export function CityTransformationsPopover({
       <div className="space-y-1">
         <Eyebrow className="block">Scale Population</Eyebrow>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
+          <Slider
+            aria-label="Scale population"
             min={0.5}
             max={2.0}
             step={0.1}
-            value={scaleVal}
-            onChange={(e) => setScaleVal(Number(e.target.value))}
-            className="accent-primary h-4 flex-1"
+            value={[scaleVal]}
+            onValueChange={([v]) => v !== undefined && setScaleVal(v)}
+            className="flex-1 py-2"
           />
           <Button size="xs" type="button" onClick={() => onScalePopulation(scaleVal)}>
             Apply
           </Button>
         </div>
-        <div className="text-muted-foreground text-xs">Factor: {scaleVal.toFixed(1)}x</div>
+        <div className="text-label-secondary text-footnote">Factor: {scaleVal.toFixed(1)}x</div>
       </div>
 
       {selectedCitiesCount > 1 && (
         <div className="space-y-1">
           <Eyebrow className="block">Rotate Group (Degrees)</Eyebrow>
           <div className="flex items-center gap-2">
-            <input
-              type="range"
+            <Slider
+              aria-label="Rotate group (degrees)"
               min={-180}
               max={180}
-              value={rotateVal}
-              onChange={(e) => setRotateVal(Number(e.target.value))}
-              className="accent-primary h-4 flex-1"
+              value={[rotateVal]}
+              onValueChange={([v]) => v !== undefined && setRotateVal(v)}
+              className="flex-1 py-2"
             />
             <Button size="xs" type="button" onClick={() => onRotateCities(rotateVal)}>
               Apply
             </Button>
           </div>
-          <div className="text-muted-foreground text-xs">Angle: {rotateVal}°</div>
+          <div className="text-label-secondary text-footnote">Angle: {rotateVal}°</div>
         </div>
       )}
     </PopoverContent>

@@ -20,7 +20,7 @@ interface PanelCardProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * PanelCard — the workhorse MyCountry surface.
  *
- * A theme-compliant card (`bg-card` + token border) with an optional accent
+ * A theme-compliant card (`bg-surface` + token border) with an optional accent
  * tint and texture overlay. Use for the bulk of content panels. For glassy
  * hero/feature surfaces use `GlassPanel`; for nav/widget framing use `CutoutPanel`.
  */
@@ -37,8 +37,7 @@ export function PanelCard({
   // `accent`/`tinted` are kept for API compatibility; the accent now belongs on icons/text only.
   return (
     <FacetCard
-      surface="solid"
-      className={cn("text-card-foreground overflow-hidden rounded-xl", className)}
+      className={cn("text-label rounded-row overflow-hidden", className)}
       texture={texture === "none" ? undefined : texture}
       textureOpacity={textureOpacity}
       {...props}

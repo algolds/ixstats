@@ -43,24 +43,24 @@ interface BudgetAllocationFormProps {
 
 /** Budget status → semantic outline-badge colour. */
 const budgetStatusConfig = {
-  Allocated: { color: "text-muted-foreground", icon: Clock, label: "Allocated" },
-  "In Use": { color: "border-emerald-500/30 text-emerald-600", icon: TrendingUp, label: "In Use" },
+  Allocated: { color: "text-label-secondary", icon: Clock, label: "Allocated" },
+  "In Use": { color: "border-green/30 text-green", icon: TrendingUp, label: "In Use" },
   Overspent: {
     color: "border-destructive/30 text-destructive",
     icon: AlertTriangle,
     label: "Overspent",
   },
   Underutilized: {
-    color: "border-amber-500/30 text-amber-600",
+    color: "border-yellow/30 text-yellow",
     icon: TrendingDown,
     label: "Underutilized",
   },
-  Completed: { color: "text-muted-foreground", icon: CheckCircle, label: "Completed" },
+  Completed: { color: "text-label-secondary", icon: CheckCircle, label: "Completed" },
 };
 
 /** Compact inline number field used in the allocation header row. */
 const INLINE_NUMBER =
-  "facet-refraction-none border-input bg-background text-foreground focus-visible:ring-ring w-full rounded-md border py-1 text-xs font-semibold tabular-nums outline-none focus-visible:ring-2 disabled:opacity-50";
+  "border-separator bg-surface text-label focus-visible:ring-tint w-full rounded-control-sm border py-1 text-caption font-semibold tabular-nums outline-none focus-visible:ring-2 disabled:opacity-50";
 
 export function BudgetAllocationForm({
   data,
@@ -127,7 +127,7 @@ export function BudgetAllocationForm({
   const StatusIcon = statusConfig.icon;
 
   const cardElement = (
-    <FacetCard depth={1} className={cn("overflow-hidden", !isCollapsed && "border-foreground/20")}>
+    <FacetCard className={cn("overflow-hidden", !isCollapsed && "border-separator-opaque")}>
       {/* Header row: always visible */}
       <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export function BudgetAllocationForm({
               onClick={onToggleCollapse}
               aria-expanded={!isCollapsed}
               aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${departmentName}`}
-              className="text-muted-foreground h-8 w-8"
+              className="text-label-secondary h-8 w-8"
             >
               {isCollapsed ? (
                 <ChevronRight className="h-4 w-4" />
@@ -148,19 +148,19 @@ export function BudgetAllocationForm({
             </Button>
           )}
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {/* The department's own colour (user data) identifies it across the budget views. */}
             <span
               aria-hidden="true"
-              className="border-border h-3 w-3 shrink-0 rounded-full border"
+              className="border-separator h-3 w-3 shrink-0 rounded-full border"
               style={{ backgroundColor: departmentColor }}
             />
             <div className="flex flex-col">
-              <span className="text-foreground flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+              <span className="text-label text-headline flex flex-wrap items-center gap-2">
                 {departmentName}
                 {parentName && <Badge variant="outline">Sub of {parentName}</Badge>}
               </span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 {utilizationRate > 0 ? `Utilization: ${utilizationRate.toFixed(0)}%` : "Unfunded"}
               </span>
             </div>
@@ -172,7 +172,7 @@ export function BudgetAllocationForm({
           <label className="flex items-center gap-2">
             <Eyebrow>Amount</Eyebrow>
             <span className="relative w-36 sm:w-40">
-              <span className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2 text-xs font-semibold">
+              <span className="text-label-secondary text-caption absolute top-1/2 left-3 -translate-y-1/2 font-semibold">
                 $
               </span>
               <input
@@ -214,9 +214,9 @@ export function BudgetAllocationForm({
                   max="100"
                   step="0.1"
                   aria-labelledby={`share-${data.departmentId}`}
-                  className={cn(INLINE_NUMBER, "pr-4 pl-1.5 text-right")}
+                  className={cn(INLINE_NUMBER, "pr-4 pl-2 text-right")}
                 />
-                <span className="text-muted-foreground absolute top-1/2 right-1 -translate-y-1/2 text-xs font-semibold">
+                <span className="text-label-secondary text-caption absolute top-1/2 right-1 -translate-y-1/2 font-semibold">
                   %
                 </span>
               </div>
@@ -225,13 +225,13 @@ export function BudgetAllocationForm({
         </div>
 
         {/* Status badge + outflow */}
-        <div className="border-border/60 flex items-center justify-between gap-3 border-t pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
+        <div className="border-separator flex items-center justify-between gap-3 border-t pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
           <Badge variant="outline" className={statusConfig.color}>
             <StatusIcon aria-hidden="true" />
             {statusConfig.label}
           </Badge>
           <div className="text-right">
-            <div className="text-foreground font-mono text-xs font-semibold tabular-nums">
+            <div className="text-label text-caption font-semibold tabular-nums">
               {formatCurrency(data.allocatedAmount)}
             </div>
             <Eyebrow>Calculated outflow</Eyebrow>
@@ -241,14 +241,14 @@ export function BudgetAllocationForm({
 
       {/* Expanded section */}
       {!isCollapsed && (
-        <div className="border-border/60 space-y-4 border-t px-4 pt-4 pb-4">
+        <div className="border-separator space-y-4 border-t px-4 pt-4 pb-4">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Inputs */}
             <div className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label
                   htmlFor={`budgetYear-${data.departmentId}`}
-                  className="text-foreground text-xs font-semibold"
+                  className="text-label text-caption font-semibold"
                 >
                   Budget Cycle Year
                 </Label>
@@ -266,10 +266,10 @@ export function BudgetAllocationForm({
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label
                   htmlFor={`notes-${data.departmentId}`}
-                  className="text-foreground text-xs font-semibold"
+                  className="text-label text-caption font-semibold"
                 >
                   Allocation Directives & Guidelines
                 </Label>
@@ -280,7 +280,7 @@ export function BudgetAllocationForm({
                   placeholder="Input additional directives, spending limitations, or policy goals..."
                   disabled={isReadOnly}
                   rows={3}
-                  className="resize-none text-xs"
+                  className="text-footnote resize-none"
                 />
               </div>
 
@@ -302,24 +302,24 @@ export function BudgetAllocationForm({
 
             {/* Utilization & context */}
             <div className="space-y-4">
-              <div className="border-border/60 space-y-3 rounded-lg border p-4">
+              <div className="border-separator rounded-control space-y-3 border p-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-foreground text-sm font-semibold">Budget utilization</h4>
-                  <span className="text-foreground font-mono text-sm font-semibold tabular-nums">
+                  <h4 className="text-label text-headline">Budget utilization</h4>
+                  <span className="text-label text-headline tabular-nums">
                     {utilizationRate.toFixed(1)}%
                   </span>
                 </div>
 
-                <Progress value={utilizationRate} className="bg-muted h-2" />
+                <Progress value={utilizationRate} className="bg-fill-3 h-2" />
 
-                <dl className="border-border/60 grid grid-cols-3 gap-2 border-t pt-2 text-center">
+                <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-2 text-center">
                   {[
                     { label: "Allocated", value: data.allocatedAmount },
                     { label: "Utilized", value: data.allocatedAmount * 0.9 },
                     { label: "Remaining", value: data.allocatedAmount * 0.1 },
                   ].map((item) => (
                     <div key={item.label}>
-                      <dd className="text-foreground font-mono text-xs font-semibold tabular-nums">
+                      <dd className="text-label text-caption font-semibold tabular-nums">
                         {formatNumber(item.value)}
                       </dd>
                       <dt>
@@ -331,19 +331,19 @@ export function BudgetAllocationForm({
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
-                  <Calculator aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+                <h4 className="text-label text-headline flex items-center gap-2">
+                  <Calculator aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   Context analytics
                 </h4>
-                <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-x rounded-lg border">
+                <dl className="border-separator divide-separator rounded-control grid grid-cols-2 divide-x border">
                   <div className="flex flex-col justify-between p-3">
                     <dt>
                       <Eyebrow>Share of budget</Eyebrow>
                     </dt>
-                    <dd className="text-foreground mt-2 font-mono text-base font-semibold tabular-nums">
+                    <dd className="text-label text-title-3 mt-2 tabular-nums">
                       {data.allocatedPercent.toFixed(1)}%
                     </dd>
-                    <dd className="text-muted-foreground mt-1 text-xs leading-normal">
+                    <dd className="text-label-secondary text-footnote mt-1 leading-normal">
                       of {formatNumber(totalBudget)} total outflow
                     </dd>
                   </div>
@@ -351,10 +351,10 @@ export function BudgetAllocationForm({
                     <dt>
                       <Eyebrow>Per capita cost</Eyebrow>
                     </dt>
-                    <dd className="text-foreground mt-2 font-mono text-base font-semibold tabular-nums">
+                    <dd className="text-label text-title-3 mt-2 tabular-nums">
                       {formatNumber(data.allocatedAmount / 100000)}
                     </dd>
-                    <dd className="text-muted-foreground mt-1 text-xs leading-normal">
+                    <dd className="text-label-secondary text-footnote mt-1 leading-normal">
                       estimated per citizen
                     </dd>
                   </div>
@@ -370,10 +370,10 @@ export function BudgetAllocationForm({
   // Sub-departments are indented under their parent with a connector line.
   if (parentName) {
     return (
-      <div className="border-border relative ml-2 border-l pl-6 md:ml-4 md:pl-8">
+      <div className="border-separator relative ml-2 border-l pl-6 md:ml-4 md:pl-8">
         <div
           aria-hidden="true"
-          className="border-border absolute top-10 left-0 h-4 w-4 rounded-bl-lg border-b border-l"
+          className="border-separator rounded-bl-control absolute top-10 left-0 h-4 w-4 border-b border-l"
         />
         {cardElement}
       </div>

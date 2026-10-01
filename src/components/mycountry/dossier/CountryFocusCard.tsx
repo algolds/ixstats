@@ -143,11 +143,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
       >
         <div
           className={cn(
-            "border-border bg-card relative overflow-hidden rounded-2xl border shadow-sm transition-[border-color,box-shadow] duration-200",
+            "border-separator bg-surface rounded-card shadow-card relative overflow-hidden border transition-[border-color,box-shadow] duration-200",
             isExpanded
-              ? "flex h-auto flex-col shadow-lg"
+              ? "shadow-floating flex h-auto flex-col"
               : isHovered
-                ? "border-ring/40 h-60 shadow-md md:h-96"
+                ? "border-ring/40 shadow-card h-60 md:h-96"
                 : "h-60 md:h-96"
           )}
         >
@@ -169,7 +169,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               )}
             />
           ) : (
-            <div className="bg-muted absolute inset-0" />
+            <div className="bg-fill-3 absolute inset-0" />
           )}
 
           {/* Permanent Ambient Contrast Scrim */}
@@ -177,7 +177,9 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
             className={cn(
               "pointer-events-none absolute inset-0 transition-opacity duration-200",
               // Legibility scrim for the white type over the flag photo; opaque card when expanded.
-              isExpanded ? "bg-card" : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
+              isExpanded
+                ? "bg-surface"
+                : "bg-gradient-to-t from-black/95 via-black/50 to-transparent",
               isHovered && !isExpanded ? "opacity-100" : "opacity-90"
             )}
           />
@@ -192,12 +194,12 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
             {/* Basic Info (Always Visible) */}
             <div className="space-y-2">
               <div>
-                <h3 className="text-lg font-semibold tracking-tight text-white sm:text-xl md:text-2xl">
+                <h3 className="text-title-3 sm:text-title-2 md:text-title-1 text-white">
                   {country.name}
                 </h3>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-medium text-white/90 sm:text-sm">
+              <div className="text-caption sm:text-body flex items-center gap-2 text-white/90">
                 <Globe className="h-3.5 w-3.5 shrink-0 opacity-80" />
                 <span>{country.economicTier}</span>
                 <span className="opacity-60">•</span>
@@ -212,9 +214,9 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 15 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="mt-3 space-y-2.5 rounded-xl bg-black/60 p-3.5"
+                    className="rounded-row mt-3 space-y-2 bg-black/60 p-4"
                   >
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
+                    <div className="text-caption flex items-center justify-between text-white/90">
                       <div className="flex items-center gap-2">
                         <UsersIcon className="h-3.5 w-3.5 text-white/70" />
                         <span>Population</span>
@@ -226,7 +228,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
+                    <div className="text-caption flex items-center justify-between text-white/90">
                       <div className="flex items-center gap-2">
                         <Coins className="h-3.5 w-3.5 text-white/70" />
                         <span>GDP per Capita</span>
@@ -238,7 +240,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-medium text-white/90">
+                    <div className="text-caption flex items-center justify-between text-white/90">
                       <div className="flex items-center gap-2">
                         <Globe className="h-3.5 w-3.5 text-white/70" />
                         <span>Total GDP</span>
@@ -252,7 +254,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     </div>
 
                     {country.adjustedGdpGrowth && (
-                      <div className="flex items-center justify-between text-xs font-medium text-white/90">
+                      <div className="text-caption flex items-center justify-between text-white/90">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="h-3.5 w-3.5 text-white/70" />
                           <span>Growth Rate</span>
@@ -262,7 +264,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                           format="percentage"
                           decimalPlaces={1}
                           trend="up"
-                          className="font-semibold text-emerald-400 tabular-nums"
+                          className="text-green font-semibold tabular-nums"
                         />
                       </div>
                     )}
@@ -304,10 +306,10 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                 className="relative flex w-full flex-col"
               >
                 {/* Expanded Header with Flag, Name, and Close Action */}
-                <div className="border-border bg-card relative flex min-h-16 shrink-0 items-center justify-between border-b px-4 py-3 sm:px-5">
+                <div className="border-separator bg-surface relative flex min-h-16 shrink-0 items-center justify-between border-b px-4 py-3 sm:px-5">
                   <div className="flex items-center gap-3">
                     {country.flagUrl && (
-                      <div className="border-border relative h-7 w-10 shrink-0 overflow-hidden rounded-md border sm:h-8 sm:w-11">
+                      <div className="border-separator rounded-control-sm relative h-7 w-10 shrink-0 overflow-hidden border sm:h-8 sm:w-11">
                         <img
                           src={
                             country.flagUrl.startsWith("http://") ||
@@ -323,10 +325,8 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       </div>
                     )}
                     <div>
-                      <h3 className="text-foreground text-base font-semibold sm:text-lg">
-                        {country.name}
-                      </h3>
-                      <p className="text-muted-foreground text-xs font-medium">
+                      <h3 className="text-label text-title-3 sm:text-title-3">{country.name}</h3>
+                      <p className="text-label-secondary text-caption">
                         {country.economicTier} • {country.continent || country.region || "Global"}
                       </p>
                     </div>

@@ -37,28 +37,28 @@ export function getThemeClasses(variant: MetricThemeVariant) {
   switch (variant) {
     case "economy":
       return {
-        cardClass: "bg-muted/50",
-        textHighlight: "text-amber-500",
+        cardClass: "bg-fill-3",
+        textHighlight: "text-yellow",
         ...accent("var(--color-amber-500)"),
       };
     case "social":
     case "demographics":
       return {
-        cardClass: "bg-muted/50",
-        textHighlight: "text-muted-foreground",
+        cardClass: "bg-fill-3",
+        textHighlight: "text-label-secondary",
         ...accent("var(--chart-2)"),
       };
     case "labor":
       return {
-        cardClass: "bg-muted/50",
-        textHighlight: "text-muted-foreground",
+        cardClass: "bg-fill-3",
+        textHighlight: "text-label-secondary",
         ...accent("var(--color-blue-500)"),
       };
     default:
       return {
-        cardClass: "bg-muted/50",
-        textHighlight: "text-muted-foreground",
-        ...accent("var(--primary)"),
+        cardClass: "bg-fill-3",
+        textHighlight: "text-label-secondary",
+        ...accent("var(--color-tint)"),
       };
   }
 }
@@ -117,13 +117,13 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
   const isPositive = trend !== undefined && trend >= 0;
 
   return (
-    <div className={cn("relative overflow-hidden rounded-xl p-4", theme.cardClass, className)}>
+    <div className={cn("rounded-row relative overflow-hidden p-4", theme.cardClass, className)}>
       <div className="flex items-center justify-between">
         <Eyebrow>{label}</Eyebrow>
         <Icon className={cn("h-4 w-4", theme.textHighlight)} />
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-foreground text-2xl font-semibold tracking-tight tabular-nums">
+        <span className="text-label text-title-1 tabular-nums">
           {prefix}
           <NumberFlowDisplay value={value} decimalPlaces={decimalPlaces} className="inline" />
           {suffix}
@@ -131,8 +131,8 @@ MetricModalLayout.StatCard = function MetricModalStatCard({
         {trend !== undefined && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold",
-              isPositive ? "bg-muted text-emerald-500" : "bg-muted text-destructive"
+              "rounded-control-sm text-caption inline-flex items-center gap-0.5 px-2 py-0.5 font-semibold",
+              isPositive ? "bg-fill-3 text-green" : "bg-fill-3 text-destructive"
             )}
           >
             {isPositive ? (

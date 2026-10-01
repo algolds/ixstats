@@ -69,7 +69,7 @@ export function PopulateFromWikiButton({
         disabled={mutate.isPending}
         aria-busy={mutate.isPending}
         title={`Pull population, leader, and other attributes from the linked wiki page (${wikiTitle ?? "entity name"}).`}
-        className="text-muted-foreground gap-1"
+        className="text-label-secondary gap-1"
       >
         {mutate.isPending ? (
           <Loader2 aria-hidden="true" className="size-3 animate-spin" />
@@ -99,10 +99,10 @@ function WikiParseResult({
   return (
     <Alert
       variant={isError || hardMismatches.length > 0 ? "destructive" : "default"}
-      className="mt-1.5 flex flex-col gap-1 px-2 py-1.5 text-xs"
+      className="text-footnote mt-2 flex flex-col gap-1 px-2 py-2"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-1 items-start gap-1.5">
+        <div className="flex flex-1 items-start gap-2">
           {/* Colour marks the outcome only: destructive, warning (soft contradiction) or success. */}
           {hardMismatches.length > 0 || isError ? (
             <AlertTriangle aria-hidden="true" className="mt-0.5 size-3 shrink-0" />
@@ -111,9 +111,7 @@ function WikiParseResult({
               aria-hidden="true"
               className={cn(
                 "mt-0.5 size-3 shrink-0",
-                softMismatches.length > 0 || !result.hasChanges
-                  ? "text-orange-600"
-                  : "text-emerald-600"
+                softMismatches.length > 0 || !result.hasChanges ? "text-orange" : "text-green"
               )}
             />
           )}
@@ -127,7 +125,9 @@ function WikiParseResult({
                 <span className="font-medium">
                   {matches.length} field{matches.length === 1 ? "" : "s"} in sync:
                 </span>{" "}
-                <span className="text-foreground/80">{matches.map((a) => a.label).join(", ")}</span>
+                <span className="text-label-secondary">
+                  {matches.map((a) => a.label).join(", ")}
+                </span>
               </div>
             )}
             {softMismatches.length > 0 && (
@@ -136,7 +136,7 @@ function WikiParseResult({
                   {softMismatches.length} soft contradiction
                   {softMismatches.length === 1 ? "" : "s"} (within tolerance):
                 </span>{" "}
-                <span className="text-foreground/80">
+                <span className="text-label-secondary">
                   {softMismatches.map((a) => a.label).join(", ")}
                 </span>
               </div>
@@ -145,26 +145,26 @@ function WikiParseResult({
               <div className="font-medium">
                 {hardMismatches.length} hard contradiction
                 {hardMismatches.length === 1 ? "" : "s"} (wiki differs from stored value):
-                <ul className="mt-1 space-y-0.5 pl-3 text-xs font-normal">
+                <ul className="text-footnote mt-1 space-y-0.5 pl-3 font-normal">
                   {hardMismatches.map((a) => (
-                    <li key={a.field} className="flex flex-wrap items-baseline gap-1.5">
-                      <span className="text-foreground/80 font-medium">{a.label}:</span>
+                    <li key={a.field} className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-label-secondary font-medium">{a.label}:</span>
                       <span className="line-through opacity-70">{formatVal(a.oldValue)}</span>
                       <span>→</span>
                       <span className="font-semibold">{formatVal(a.newValue)}</span>
-                      <span className="text-muted-foreground/70 text-xs">(from {a.source})</span>
+                      <span className="text-label-secondary text-footnote">(from {a.source})</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
             {result.skipped.length > 0 && !isError && (
-              <div className="text-muted-foreground/80">
+              <div className="text-label-secondary">
                 Skipped: {result.skipped.map((s) => s.field).join(", ")}
               </div>
             )}
             {result.templateName && (
-              <div className="text-muted-foreground/60 font-mono text-xs">
+              <div className="text-label-tertiary text-footnote tabular-nums">
                 via {result.templateName} on {result.wikiTitle}
               </div>
             )}
@@ -175,7 +175,7 @@ function WikiParseResult({
           variant="ghost"
           size="icon"
           onClick={onDismiss}
-          className="text-muted-foreground size-6 shrink-0"
+          className="text-label-secondary size-6 shrink-0"
           aria-label="Dismiss"
         >
           <X aria-hidden="true" className="size-3" />

@@ -133,16 +133,16 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
 
   return (
     <>
-      <Card className="border-indigo-200/60 dark:border-indigo-900/40">
+      <Card className="border-indigo/60">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/40">
-                <Briefcase className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              <div className="rounded-control bg-indigo/10 flex h-9 w-9 items-center justify-center">
+                <Briefcase className="text-indigo h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base">Cabinet</CardTitle>
-                <CardDescription className="text-sm">
+                <CardTitle className="text-body">Cabinet</CardTitle>
+                <CardDescription className="text-body">
                   Appoint officials to lead government departments
                 </CardDescription>
               </div>
@@ -158,13 +158,13 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
         <CardContent className="pt-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+              <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
             </div>
           ) : departments.length === 0 ? (
-            <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center text-sm">
+            <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
               <Users className="mb-2 h-8 w-8 opacity-40" />
               <p>No government departments configured yet.</p>
-              <p className="mt-1 text-xs">
+              <p className="text-footnote mt-1">
                 Create a government structure to start staffing your cabinet.
               </p>
             </div>
@@ -179,32 +179,29 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                     <div
                       key={dept.id}
                       className={cn(
-                        "group rounded-lg border p-3 transition-colors",
+                        "group rounded-control border p-3 transition-colors",
                         isVacant
-                          ? "border-dashed border-neutral-200 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/30"
-                          : "border-indigo-100 bg-indigo-50/30 dark:border-indigo-900/30 dark:bg-indigo-950/20"
+                          ? "border-separator bg-fill-2 border-dashed"
+                          : "border-indigo/20 bg-indigo/30"
                       )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="truncate text-sm font-medium">{dept.name}</span>
+                            <span className="text-body truncate font-medium">{dept.name}</span>
                             {isVacant ? (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-footnote">
                                 Vacant
                               </Badge>
                             ) : (
-                              <Badge
-                                variant="secondary"
-                                className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-                              >
+                              <Badge variant="indigo">
                                 {deptOfficials.length} official
                                 {deptOfficials.length !== 1 ? "s" : ""}
                               </Badge>
                             )}
                           </div>
                           {dept.ministerTitle ? (
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-label-secondary text-footnote mt-0.5">
                               {dept.ministerTitle}
                             </p>
                           ) : null}
@@ -214,7 +211,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 gap-1 border-indigo-200 text-xs text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+                            className="border-indigo/20 text-footnote text-indigo hover:bg-indigo/10 hover:text-indigo h-7 gap-1"
                             onClick={() => openAppointDialog(dept.id)}
                           >
                             <Plus className="h-3.5 w-3.5" />
@@ -224,15 +221,15 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                       </div>
 
                       {!isVacant && (
-                        <ul className="mt-2 space-y-1.5">
+                        <ul className="mt-2 space-y-2">
                           {deptOfficials.map((official) => (
                             <li
                               key={official.id}
-                              className="flex items-center justify-between gap-2 rounded-md bg-white/60 px-2 py-1.5 text-sm dark:bg-black/20"
+                              className="rounded-control-sm bg-surface text-body flex items-center justify-between gap-2 px-2 py-2"
                             >
                               <div className="min-w-0 flex-1">
                                 <p className="truncate font-medium">{official.name}</p>
-                                <p className="text-muted-foreground truncate text-xs">
+                                <p className="text-label-secondary text-footnote truncate">
                                   {official.title}
                                   {official.role ? ` · ${official.role}` : ""}
                                 </p>
@@ -240,7 +237,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="text-muted-foreground hover:text-destructive h-7 w-7 shrink-0"
+                                className="text-label-secondary hover:text-destructive h-7 w-7 shrink-0"
                                 onClick={() =>
                                   remove.mutate({ id: official.id, reason: "Resigned" })
                                 }
@@ -281,7 +278,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
           </DialogHeader>
 
           <form id="appoint-official-form" onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-name">Name</Label>
               <Input
                 id="official-name"
@@ -292,7 +289,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-title">Title</Label>
               <Input
                 id="official-title"
@@ -303,7 +300,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-role">Role</Label>
               <Input
                 id="official-role"
@@ -314,7 +311,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-date">Appointed date</Label>
               <Input
                 id="official-date"
@@ -325,7 +322,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="official-bio">Bio</Label>
               <Textarea
                 id="official-bio"
@@ -350,12 +347,12 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               type="submit"
               form="appoint-official-form"
               disabled={!canSubmit || appoint.isPending}
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
+              className="bg-indigo text-on-indigo hover:bg-indigo"
             >
               {appoint.isPending ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="mr-1.5 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
               )}
               Appoint
             </Button>

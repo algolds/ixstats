@@ -13,7 +13,8 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetTabs } from "~/components/ui/facet";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { Theme } from "~/context/theme-context";
@@ -26,16 +27,16 @@ import {
   setSnapTolerance,
 } from "~/lib/maps/editor-prefs";
 
-const THEME_TABS = [
-  { id: "light", label: "Light", icon: Sun },
-  { id: "dark", label: "Dark", icon: Moon },
-  { id: "system", label: "System", icon: Monitor },
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: <Sun aria-hidden /> },
+  { value: "dark", label: "Dark", icon: <Moon aria-hidden /> },
+  { value: "system", label: "System", icon: <Monitor aria-hidden /> },
 ];
 
-const PROJECTION_TABS = [
-  { id: "globe", label: "Globe" },
-  { id: "mercator", label: "Mercator" },
-  { id: "dynamic", label: "Auto" },
+const PROJECTION_OPTIONS = [
+  { value: "globe", label: "Globe" },
+  { value: "mercator", label: "Mercator" },
+  { value: "dynamic", label: "Auto" },
 ];
 
 interface MapSettingsPopoverProps {
@@ -70,7 +71,7 @@ export function MapSettingsPopover({
   return (
     <Popover>
       <PopoverTrigger
-        className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring shrink-0 cursor-pointer rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="text-label-secondary hover:bg-fill-3 hover:text-label focus-visible:ring-tint shrink-0 cursor-pointer rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
         title="Settings"
         aria-label="Map settings"
       >
@@ -79,41 +80,43 @@ export function MapSettingsPopover({
       <PopoverContent
         side="bottom"
         align="end"
-        className="mt-2 w-60 rounded-2xl p-3"
+        className="rounded-card mt-2 w-60 p-3"
         sideOffset={8}
       >
         {/* Theme */}
         <div className="space-y-2">
-          <Eyebrow className="block">Theme</Eyebrow>
-          <FacetTabs
-            tabs={THEME_TABS}
-            activeTab={theme}
-            onChange={(t) => setTheme(t as Theme)}
+          <Eyebrow id="map-settings-theme" className="block">
+            Theme
+          </Eyebrow>
+          <SegmentedControl
+            aria-labelledby="map-settings-theme"
+            options={THEME_OPTIONS}
+            value={theme}
+            onValueChange={(t) => setTheme(t as Theme)}
             size="sm"
-            tone="neutral"
-            showTexture={false}
-            className="w-full"
+            fullWidth
           />
         </div>
 
         {/* Projection */}
         <div className="mt-3 space-y-2">
-          <Eyebrow className="block">Projection</Eyebrow>
-          <FacetTabs
-            tabs={PROJECTION_TABS}
-            activeTab={projectionMode}
-            onChange={(mode) => onProjectionChange(mode as ProjectionMode)}
+          <Eyebrow id="map-settings-projection" className="block">
+            Projection
+          </Eyebrow>
+          <SegmentedControl
+            aria-labelledby="map-settings-projection"
+            options={PROJECTION_OPTIONS}
+            value={projectionMode}
+            onValueChange={(mode) => onProjectionChange(mode as ProjectionMode)}
             size="sm"
-            tone="neutral"
-            showTexture={false}
-            className="w-full"
+            fullWidth
           />
         </div>
 
         {/* Snap Controls */}
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between">
-            <Eyebrow className="flex items-center gap-1.5">
+            <Eyebrow className="flex items-center gap-2">
               <Magnet className="h-3 w-3" aria-hidden />
               Snap
             </Eyebrow>
@@ -128,20 +131,20 @@ export function MapSettingsPopover({
           </div>
           {snapEnabled && (
             <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min="0.001"
-                max="0.1"
-                step="0.001"
-                value={snapTol}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
+              <Slider
+                aria-label="Snap tolerance"
+                min={0.001}
+                max={0.1}
+                step={0.001}
+                value={[snapTol]}
+                onValueChange={([v]) => {
+                  if (v === undefined) return;
                   setSnapTolerance(v);
                   setSnapTolState(v);
                 }}
-                className="h-1 flex-1 accent-blue-500"
+                className="flex-1 py-2"
               />
-              <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
+              <span className="text-label-secondary text-footnote w-10 text-right tabular-nums">
                 {snapTol.toFixed(3)}°
               </span>
             </div>
@@ -149,12 +152,12 @@ export function MapSettingsPopover({
         </div>
 
         {/* User Settings */}
-        <div className="border-border mt-3 border-t pt-2">
+        <div className="border-separator mt-3 border-t pt-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.push("/settings")}
-            className="text-muted-foreground w-full justify-start"
+            className="text-label-secondary w-full justify-start"
           >
             <User aria-hidden />
             User settings
@@ -164,7 +167,7 @@ export function MapSettingsPopover({
               variant="ghost"
               size="sm"
               onClick={() => router.push("/admin")}
-              className="text-muted-foreground w-full justify-start"
+              className="text-label-secondary w-full justify-start"
             >
               <LayoutDashboard aria-hidden />
               Admin dashboard

@@ -20,7 +20,7 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { STATUS_TEXT } from "../status-tone";
 import type { AgendaItem, ExecutiveAgendaProps } from "./agendaTypes";
 import { formatInboxTime } from "./deriveAgendaItems";
@@ -72,9 +72,9 @@ export function AgendaEventActionDialog({
   return (
     <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && onClose()}>
       {selectedEvent && (
-        <DialogContent className="max-w-md space-y-5 rounded-3xl p-6">
+        <DialogContent className="rounded-card max-w-md space-y-5 p-6">
           <DialogHeader className="space-y-3 text-left">
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <p className="text-footnote flex flex-wrap items-center gap-x-2 gap-y-1">
               <selectedEvent.icon
                 aria-hidden="true"
                 className={cn("size-4 shrink-0", STATUS_TEXT[selectedEvent.tone])}
@@ -83,7 +83,7 @@ export function AgendaEventActionDialog({
                 {selectedEvent.statusLabel}
               </span>
               {timeLabel ? (
-                <span className="text-muted-foreground tabular-nums">· {timeLabel}</span>
+                <span className="text-label-secondary tabular-nums">· {timeLabel}</span>
               ) : null}
               {selectedEvent.flagged ? (
                 <span className="text-destructive flex items-center gap-1 font-medium">
@@ -92,30 +92,27 @@ export function AgendaEventActionDialog({
                 </span>
               ) : null}
             </p>
-            <DialogTitle className="text-foreground text-lg leading-snug font-semibold tracking-tight">
-              {selectedEvent.title}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
+            <DialogTitle className="text-label text-title-3">{selectedEvent.title}</DialogTitle>
+            <DialogDescription className="text-label-secondary text-body leading-relaxed">
               {selectedEvent.description}
             </DialogDescription>
           </DialogHeader>
 
           {/* Suggested directive: an opaque panel inside the dialog (no stacked blur) */}
-          <FacetContainer depth={3} surface="solid" className="space-y-1 rounded-2xl p-4">
-            <Eyebrow className="flex items-center gap-1.5">
+          <FacetCard variant="inset" className="space-y-1 p-4">
+            <Eyebrow className="flex items-center gap-2">
               <Command aria-hidden="true" className="size-3.5" />
               Suggested directive
             </Eyebrow>
-            <p className="text-foreground text-sm leading-snug">
+            <p className="text-label text-body leading-snug">
               &ldquo;{selectedEvent.directiveGoal}&rdquo;
             </p>
-          </FacetContainer>
+          </FacetCard>
 
           <div className={cn("flex flex-col gap-2", isIssue && "flex-col-reverse")}>
             <Button
               type="button"
               variant={isIssue ? "secondary" : "default"}
-              data-cuelume-press="bloom"
               onClick={() => run((item) => onIssueDirective?.(item.directiveGoal))}
               className="h-11 w-full sm:h-10"
             >
@@ -152,7 +149,7 @@ export function AgendaEventActionDialog({
           <div
             role="group"
             aria-label="Inbox actions"
-            className="border-separator flex flex-wrap gap-1.5 border-t pt-4"
+            className="border-separator flex flex-wrap gap-2 border-t pt-4"
           >
             {placement === "inbox" ? (
               <>

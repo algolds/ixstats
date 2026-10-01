@@ -7,6 +7,8 @@ import { FloppyDisk as Save, Page as FileText } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { WikiVisualEditor } from "~/components/wiki-os/editor/WikiVisualEditor";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export type LoreClearance = "PUBLIC" | "ALLIANCE" | "PRIVATE";
 
@@ -44,14 +46,14 @@ export function NativeLoreCanvasModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden p-0">
-        <DialogHeader className="border-border flex flex-row flex-wrap items-center justify-between gap-3 border-b px-6 py-4 pr-12">
+        <DialogHeader className="border-separator flex flex-row flex-wrap items-center justify-between gap-3 border-b px-6 py-4 pr-12">
           <div className="flex items-center gap-3">
-            <FileText className="text-muted-foreground h-5 w-5 shrink-0" />
+            <FileText className="text-label-secondary h-5 w-5 shrink-0" />
             <div>
-              <DialogTitle className="text-base font-semibold">
+              <DialogTitle className="text-title-3">
                 {initialTitle ? "Edit Dossier Lore Document" : "New Dossier Lore Document"}
               </DialogTitle>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Author custom nation lore directly via the WikiOS Canvas Editor
               </p>
             </div>
@@ -59,34 +61,23 @@ export function NativeLoreCanvasModal({
 
           <div className="flex items-center gap-2">
             {/* Clearance Level Selector */}
-            <div
-              className="bg-muted/50 flex items-center gap-1 rounded-lg p-1"
-              role="group"
+            <SegmentedControl
               aria-label="Clearance level"
-            >
-              {(["PUBLIC", "ALLIANCE", "PRIVATE"] as const).map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setClearance(level)}
-                  aria-pressed={clearance === level}
-                  data-cuelume-press="tick"
-                  className={`focus-visible:ring-ring rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors outline-none focus-visible:ring-2 ${
-                    clearance === level
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {level.toLowerCase()}
-                </button>
-              ))}
-            </div>
+              size="sm"
+              value={clearance}
+              onValueChange={(v) => setClearance(v as typeof clearance)}
+              options={[
+                { value: "PUBLIC", label: "Public" },
+                { value: "ALLIANCE", label: "Alliance" },
+                { value: "PRIVATE", label: "Private" },
+              ]}
+            />
 
             <Button
               size="sm"
               onClick={handleSave}
               disabled={!title.trim()}
-              className="gap-1.5 text-xs"
+              className="text-footnote gap-2"
             >
               <Save className="h-3.5 w-3.5" />
               Save Document
@@ -113,7 +104,7 @@ export function NativeLoreCanvasModal({
           {/* WikiOS Visual Canvas Editor */}
           <div>
             <Eyebrow className="mb-1 block">Canvas lore content</Eyebrow>
-            <div className="border-border bg-card min-h-[360px] rounded-xl border p-2">
+            <FacetCard variant="inset" padding="none" className="min-h-[360px] p-2">
               <WikiVisualEditor
                 initialHtml={content}
                 title={title || "Untitled Lore Document"}
@@ -121,7 +112,7 @@ export function NativeLoreCanvasModal({
                 onCancel={onClose}
                 onSwitchToSource={(_dirty, currentHtml) => setContent(currentHtml)}
               />
-            </div>
+            </FacetCard>
           </div>
         </div>
       </DialogContent>

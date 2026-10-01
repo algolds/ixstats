@@ -59,7 +59,7 @@ const TABS: MetricModalTab[] = [
 
 const SPENDING_COLORS = [
   "var(--color-blue-500)", // blue - education
-  "var(--destructive)", // red - healthcare
+  "var(--color-destructive)", // red - healthcare
   "var(--chart-3)", // green - defense
   "var(--color-amber-500)", // amber - social
   "var(--chart-5)", // indigo - infrastructure
@@ -190,35 +190,32 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-6"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-                <Landmark className="text-muted-foreground h-5 w-5" />
+              <h3 className="text-label text-title-3 flex items-center gap-2">
+                <Landmark className="text-label-secondary h-5 w-5" />
                 Budget Summary
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Government fiscal allocation and spending summary.
               </p>
             </FacetCardHeader>
             <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-foreground text-lg font-semibold">
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-label text-title-3">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
                   <Eyebrow className="mt-1 block">Tax Revenue</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-lg font-semibold text-emerald-500">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-title-3 text-green">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
                   <Eyebrow className="mt-1 block">Revenue % GDP</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-foreground text-lg font-semibold">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-label text-title-3">
                     $
                     {(
                       (((fiscal?.totalDebtGDPRatio || 0) / 100) *
@@ -228,23 +225,27 @@ export function GovernmentSpendingModal({
                     B
                   </div>
                   <Eyebrow className="mt-1 block">Public Debt</Eyebrow>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4 text-center">
-                  <div className="text-destructive text-lg font-bold">
+                </FacetCard>
+                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                  <div className="text-destructive text-title-3">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
                   <Eyebrow className="mt-1 block">Debt to GDP</Eyebrow>
-                </div>
+                </FacetCard>
               </div>
 
-              <div className="text-muted-foreground bg-muted/50 mt-6 flex items-start gap-3 rounded-xl p-4 text-xs">
-                <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+              <FacetCard
+                variant="inset"
+                padding="none"
+                className="text-label-secondary text-footnote mt-6 flex items-start gap-3 p-4"
+              >
+                <Info className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
                   Budget dynamics balance societal infrastructure investments with revenue
                   collections. Stable surpluses build cash reserves, while persistent deficits
                   expand public debt limits and require careful interest rate servicing.
                 </p>
-              </div>
+              </FacetCard>
             </FacetCardContent>
           </FacetCard>
         </MetricModalLayout.MainArea>
@@ -307,10 +308,10 @@ export function GovernmentSpendingModal({
 
     if (processedData.length === 0) {
       return (
-        <FacetCard surface="solid" className="rounded-xl">
+        <FacetCard>
           <FacetCardContent className="py-12 text-center">
-            <LineChart className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-50" />
-            <p className="text-muted-foreground">No historical data available</p>
+            <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
+            <p className="text-label-secondary">No historical data available</p>
           </FacetCardContent>
         </FacetCard>
       );
@@ -322,12 +323,10 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard surface="solid" className="rounded-xl p-6">
+          <FacetCard className="p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base font-semibold">
-                Government Spending Trends
-              </h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-label text-title-3">Government Spending Trends</h3>
+              <p className="text-label-secondary text-body">
                 Historical budget and spending metrics
               </p>
             </FacetCardHeader>
@@ -341,9 +340,9 @@ export function GovernmentSpendingModal({
                         <stop offset="95%" stopColor="var(--color-amber-500)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="date" stroke="var(--muted-foreground)" tickLine={false} />
-                    <YAxis stroke="var(--muted-foreground)" tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                    <XAxis dataKey="date" stroke="var(--color-label-secondary)" tickLine={false} />
+                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     {chartType === "area" ? (
                       <Area
@@ -391,23 +390,21 @@ export function GovernmentSpendingModal({
 
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Peak Spending (B)</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
+              <span className="text-label text-title-2">
                 {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Avg Budget Balance</Eyebrow>
-              <span className="text-xl font-semibold text-emerald-500">
+              <span className="text-title-2 text-green">
                 {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Data Points</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
-                {spendStats?.dataPoints || 0}
-              </span>
+              <span className="text-label text-title-2">{spendStats?.dataPoints || 0}</span>
             </div>
           </div>
         </MetricModalLayout.Sidebar>
@@ -456,13 +453,13 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard surface="solid" className="flex-1 rounded-xl p-6">
+          <FacetCard className="flex-1 p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-                <Globe className="text-muted-foreground h-5 w-5" />
+              <h3 className="text-label text-title-3 flex items-center gap-2">
+                <Globe className="text-label-secondary h-5 w-5" />
                 Fiscal Health Benchmarks
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Compare spending ratios against global baselines.
               </p>
             </FacetCardHeader>
@@ -470,14 +467,14 @@ export function GovernmentSpendingModal({
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="name" stroke="var(--muted-foreground)" tickLine={false} />
-                    <YAxis stroke="var(--muted-foreground)" tickLine={false} unit="%" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                    <XAxis dataKey="name" stroke="var(--color-label-secondary)" tickLine={false} />
+                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} unit="%" />
                     <Tooltip
                       contentStyle={{
-                        background: "var(--popover)",
-                        color: "var(--popover-foreground)",
-                        borderColor: "var(--border)",
+                        background: "var(--color-surface-elevated)",
+                        color: "var(--color-label)",
+                        borderColor: "var(--color-separator)",
                         borderRadius: "8px",
                       }}
                     />
@@ -488,7 +485,7 @@ export function GovernmentSpendingModal({
                     />
                     <Bar
                       dataKey="Global Avg"
-                      fill="var(--muted-foreground)"
+                      fill="var(--color-label-secondary)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
@@ -500,35 +497,35 @@ export function GovernmentSpendingModal({
 
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Global Allocation</Eyebrow>
-              <span className="text-foreground text-xl font-semibold">
+              <span className="text-label text-title-2">
                 {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Fiscal Stability</Eyebrow>
-              <span className="text-xl font-semibold text-emerald-500">
+              <span className="text-title-2 text-green">
                 {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Public Debt: {debtToGdp.toFixed(1)}% of GDP
               </span>
             </div>
-            <div className="bg-muted/50 flex flex-1 flex-col justify-center rounded-xl p-4">
+            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
               <Eyebrow className="mb-1 block">Budget Status</Eyebrow>
               <span
                 className={cn(
-                  "text-xl font-bold",
-                  budgetBalance >= 0 ? "text-emerald-500" : "text-destructive"
+                  "text-title-2",
+                  budgetBalance >= 0 ? "text-green" : "text-destructive"
                 )}
               >
                 {budgetBalance >= 0 ? "Surplus" : "Deficit"}
               </span>
-              <span className="text-muted-foreground mt-1 text-xs">
+              <span className="text-label-secondary text-footnote mt-1">
                 Annual Balance: {(budgetBalance / 1e9).toFixed(1)}B
               </span>
             </div>
@@ -563,40 +560,27 @@ export function GovernmentSpendingModal({
               value: cat.percent || cat.gdpPercent || 0,
               color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "var(--color-blue-500)",
             }))
-        : [
-            {
-              name: "Education",
-              value: spending?.education
-                ? (spending.education / (spending?.totalSpending || 1)) * 100
-                : 15,
-              color: SPENDING_COLORS[0] ?? "var(--color-blue-500)",
-            },
-            {
-              name: "Healthcare",
-              value: spending?.healthcare
-                ? (spending.healthcare / (spending?.totalSpending || 1)) * 100
-                : 12,
-              color: SPENDING_COLORS[1] ?? "var(--chart-3)",
-            },
-            {
-              name: "Social Safety",
-              value: spending?.socialSafety
-                ? (spending.socialSafety / (spending?.totalSpending || 1)) * 100
-                : 20,
-              color: SPENDING_COLORS[3] ?? "var(--color-amber-500)",
-            },
-          ];
+        : [];
+
+    // No recorded split (or a visitor: the allocation split is served to the owner only).
+    if (categories.length === 0) {
+      return (
+        <FacetCard>
+          <FacetCardContent className="py-12 text-center">
+            <PieChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
+            <p className="text-label-secondary">No spending breakdown available</p>
+          </FacetCardContent>
+        </FacetCard>
+      );
+    }
 
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-6"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-6">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base font-semibold">Spending by Category</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-label text-title-3">Spending by Category</h3>
+              <p className="text-label-secondary text-body">
                 Budget allocation across government sectors
               </p>
             </FacetCardHeader>
@@ -620,9 +604,9 @@ export function GovernmentSpendingModal({
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        background: "var(--popover)",
-                        color: "var(--popover-foreground)",
-                        borderColor: "var(--border)",
+                        background: "var(--color-surface-elevated)",
+                        color: "var(--color-label)",
+                        borderColor: "var(--color-separator)",
                         borderRadius: "8px",
                       }}
                     />
@@ -635,16 +619,16 @@ export function GovernmentSpendingModal({
                 {categories.map((category) => (
                   <div
                     key={category.name}
-                    className="bg-muted/50 flex items-center justify-between rounded-xl p-2 text-xs"
+                    className="bg-fill-3 rounded-row text-footnote flex items-center justify-between p-2"
                   >
                     <div className="flex items-center gap-2">
                       <div
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: category.color }}
                       />
-                      <span className="text-muted-foreground font-medium">{category.name}</span>
+                      <span className="text-label-secondary font-medium">{category.name}</span>
                     </div>
-                    <span className="text-foreground font-semibold tabular-nums">
+                    <span className="text-label font-semibold tabular-nums">
                       {category.value.toFixed(1)}%
                     </span>
                   </div>
@@ -655,19 +639,18 @@ export function GovernmentSpendingModal({
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard
-            surface="solid"
-            className="flex flex-1 flex-col justify-between rounded-xl p-4"
-          >
+          <FacetCard className="flex flex-1 flex-col justify-between p-4">
             <FacetCardHeader className="mb-4 p-0">
-              <h3 className="text-foreground text-base text-sm font-semibold">Priority Spending</h3>
-              <p className="text-muted-foreground text-xs">Key budget policies and priorities</p>
+              <h3 className="text-label text-title-3 text-headline">Priority Spending</h3>
+              <p className="text-label-secondary text-footnote">
+                Key budget policies and priorities
+              </p>
             </FacetCardHeader>
             <FacetCardContent className="flex-1 p-0">
               <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
                 {/* The government API has no priority-policy field, so this card only has an empty state. */}
                 <div className="py-8 text-center">
-                  <p className="text-muted-foreground text-xs">No priority policies defined</p>
+                  <p className="text-label-secondary text-footnote">No priority policies defined</p>
                 </div>
               </div>
             </FacetCardContent>
@@ -686,7 +669,7 @@ export function GovernmentSpendingModal({
       title="Government Spending Analysis"
       description="Budget allocation and fiscal metrics"
       icon={Building}
-      iconColor="text-amber-500"
+      iconColor="text-yellow"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

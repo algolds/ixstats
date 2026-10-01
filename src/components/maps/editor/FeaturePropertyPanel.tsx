@@ -204,8 +204,8 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Location indicator */}
       {!isEdit && !hasLocation && (
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" aria-hidden />
+        <div className="text-label-secondary text-caption flex items-center gap-2">
+          <MapPin className="text-blue h-3.5 w-3.5 shrink-0" aria-hidden />
           {mode === "add-subdivision" || mode === "add-lake"
             ? "Draw a polygon on the map to define the boundary"
             : mode === "add-river"
@@ -214,19 +214,19 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
         </div>
       )}
       {pendingCoordinates && isPointMode && (
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+        <div className="text-caption text-green flex items-center gap-2">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Location: {pendingCoordinates[1].toFixed(3)}&deg;, {pendingCoordinates[0].toFixed(3)}&deg;
         </div>
       )}
       {pendingGeometry && (mode === "add-subdivision" || mode === "add-lake") && (
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+        <div className="text-caption text-green flex items-center gap-2">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Polygon boundary drawn
         </div>
       )}
       {pendingGeometry && mode === "add-river" && (
-        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+        <div className="text-caption text-green flex items-center gap-2">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
           Line path drawn
         </div>
@@ -234,33 +234,33 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Terrain info at clicked point */}
       {pendingCoordinates && isPointMode && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {isPendingPointInfoLoading && (
-            <span className="bg-muted/40 border-border/30 text-muted-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs">
+            <span className="bg-fill-3 border-separator text-label-secondary rounded-control-sm text-footnote inline-flex items-center gap-1 border px-2 py-0.5">
               <Loader2 className="h-2.5 w-2.5 animate-spin" /> Terrain...
             </span>
           )}
           {pendingPointInfo?.elevation?.zoneName && (
-            <span className="bg-muted/40 border-border/30 text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium">
+            <span className="bg-fill-3 border-separator text-label rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
               {pendingPointInfo.elevation.color && (
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  className="inline-block h-2.5 w-2.5 rounded-xs"
                   style={{ backgroundColor: pendingPointInfo.elevation.color.slice(0, 7) }}
                 />
               )}
               {pendingPointInfo.elevation.zoneName}
               {pendingPointInfo.elevation.elevationLabel && (
-                <span className="text-muted-foreground">
+                <span className="text-label-secondary">
                   {pendingPointInfo.elevation.elevationLabel}
                 </span>
               )}
             </span>
           )}
           {pendingPointInfo?.climate?.climateName && (
-            <span className="bg-muted/40 border-border/30 text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium">
+            <span className="bg-fill-3 border-separator text-label rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
               {pendingPointInfo.climate.color && (
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  className="inline-block h-2.5 w-2.5 rounded-xs"
                   style={{ backgroundColor: pendingPointInfo.climate.color }}
                 />
               )}
@@ -362,7 +362,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       {lastSavedAt && !error && (
         <div
           role="status"
-          className="animate-in fade-in flex items-center gap-1.5 text-xs font-medium text-emerald-500 duration-200"
+          className="animate-in fade-in text-caption text-green flex items-center gap-2 duration-200"
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
           <span>{isEdit ? "Changes saved" : "Saved — click map to place another"}</span>
@@ -371,7 +371,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
 
       {/* Error message */}
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border px-3 py-2 text-xs font-medium">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-control text-caption border px-3 py-2">
           {error.message}
         </div>
       )}
@@ -380,7 +380,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
       <div className="flex gap-2">
         <Button
           size="sm"
-          className="flex-1 justify-center sm:py-1.5 sm:text-sm"
+          className="sm:text-body flex-1 justify-center sm:py-2"
           onClick={onSubmit}
           disabled={!canSubmit}
         >
@@ -391,7 +391,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
           )}
           {isMutating ? "Saving..." : isEdit ? "Update" : "Save"}
         </Button>
-        <Button variant="outline" size="sm" className="sm:py-1.5 sm:text-sm" onClick={onCancel}>
+        <Button variant="outline" size="sm" className="sm:text-body sm:py-2" onClick={onCancel}>
           Cancel
         </Button>
       </div>

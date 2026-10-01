@@ -21,13 +21,13 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from "~/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -169,8 +169,8 @@ function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
       className={cn(
         "flex items-center gap-1",
         urgency === "critical" && "text-destructive",
-        urgency === "warning" && "text-amber-500",
-        urgency === "normal" && "text-muted-foreground"
+        urgency === "warning" && "text-yellow",
+        urgency === "normal" && "text-label-secondary"
       )}
     >
       <Clock className="h-3 w-3" />
@@ -196,11 +196,11 @@ function ImpactPreview({
         const up = item.value > 0;
         const Trend = up ? TrendingUp : TrendingDown;
         return (
-          <div key={item.label} className="bg-muted/50 rounded-lg p-3 text-center">
+          <div key={item.label} className="bg-fill-3 rounded-control p-3 text-center">
             <dd
               className={cn(
                 "mb-1 flex items-center justify-center gap-1 font-semibold tabular-nums",
-                up ? "text-emerald-500" : "text-destructive"
+                up ? "text-green" : "text-destructive"
               )}
             >
               <Trend className="h-4 w-4" />
@@ -312,10 +312,10 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   if (activeLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading diplomatic events">
-        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="rounded-card h-24" />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Skeleton className="h-56 rounded-2xl" />
-          <Skeleton className="h-56 rounded-2xl" />
+          <Skeleton className="rounded-card h-56" />
+          <Skeleton className="rounded-card h-56" />
         </div>
       </div>
     );
@@ -324,7 +324,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <FacetCard depth={1} className="rounded-2xl p-4">
+      <FacetCard className="rounded-card p-4">
         <dl className="grid grid-cols-3 gap-4">
           {[
             { label: "Active events", value: activeScenarios?.length || 0, icon: FileText },
@@ -341,12 +341,12 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
           ].map((stat) => (
             <div key={stat.label} className="space-y-1">
               <dt>
-                <Eyebrow className="flex items-center gap-1.5">
+                <Eyebrow className="flex items-center gap-2">
                   <stat.icon className="h-3.5 w-3.5" />
                   {stat.label}
                 </Eyebrow>
               </dt>
-              <dd className="text-foreground text-2xl font-semibold tabular-nums">{stat.value}</dd>
+              <dd className="text-label text-title-1 tabular-nums">{stat.value}</dd>
             </div>
           ))}
         </dl>
@@ -354,7 +354,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/50 inline-flex flex-wrap gap-1 rounded-full p-1">
+        <TabsList className="bg-fill-3 inline-flex flex-wrap gap-1 rounded-full p-1">
           <TabsTrigger value="active" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Active Events ({activeScenarios?.length || 0})
@@ -376,7 +376,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 };
 
                 return (
-                  <FacetCard key={event.id} depth={2} className="rounded-2xl">
+                  <FacetCard key={event.id} className="rounded-card">
                     <FacetCardHeader className="p-5 pb-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -387,9 +387,9 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                             </Badge>
                             <EventCountdown expiresAt={event.expiresAt} />
                           </div>
-                          <h3 className="text-foreground text-base font-semibold">{event.title}</h3>
+                          <h3 className="text-label text-title-3">{event.title}</h3>
                           {event.country2Name && (
-                            <p className="text-muted-foreground mt-1 text-sm">
+                            <p className="text-label-secondary text-body mt-1">
                               with {event.country2Name}
                             </p>
                           )}
@@ -397,7 +397,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                       </div>
                     </FacetCardHeader>
                     <FacetCardContent className="px-5 pb-5">
-                      <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
+                      <p className="text-label-secondary text-body mb-4 line-clamp-3">
                         {event.narrative}
                       </p>
 
@@ -433,15 +433,12 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               })}
             </div>
           ) : (
-            <FacetCard
-              depth={1}
-              className="flex min-h-[240px] items-center justify-center rounded-2xl p-6"
-            >
+            <FacetCard className="rounded-card flex min-h-[240px] items-center justify-center p-6">
               <div className="space-y-3 text-center">
-                <CheckCircle className="text-muted-foreground mx-auto h-6 w-6" />
+                <CheckCircle className="text-label-secondary mx-auto h-6 w-6" />
                 <div>
-                  <h3 className="text-foreground text-base font-semibold">No active events</h3>
-                  <p className="text-muted-foreground mt-1 text-sm">
+                  <h3 className="text-label text-title-3">No active events</h3>
+                  <p className="text-label-secondary text-body mt-1">
                     You&apos;re all caught up. New diplomatic events will appear here.
                   </p>
                 </div>
@@ -454,7 +451,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
         <TabsContent value="history" className="space-y-4">
           {/* History Filter */}
           <div className="flex items-center gap-3">
-            <Filter className="text-muted-foreground h-4 w-4" />
+            <Filter className="text-label-secondary h-4 w-4" />
             <Select value={historyFilter} onValueChange={setHistoryFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by type" />
@@ -474,8 +471,8 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
           {/* History List */}
           {historyLoading ? (
             <div className="space-y-3" role="status" aria-label="Loading event history">
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="rounded-card h-20" />
+              <Skeleton className="rounded-card h-20" />
             </div>
           ) : filteredHistory.length > 0 ? (
             <div className="space-y-3">
@@ -486,7 +483,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 };
 
                 return (
-                  <FacetCard key={event.id} depth={2} className="rounded-2xl p-4">
+                  <FacetCard key={event.id} className="rounded-card p-4">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="mb-2 flex items-center gap-2">
@@ -498,12 +495,14 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                             {event.status}
                           </Badge>
                         </div>
-                        <h4 className="text-foreground text-sm font-semibold">{event.title}</h4>
+                        <h4 className="text-label text-headline">{event.title}</h4>
                         {event.country2Name && (
-                          <p className="text-muted-foreground text-xs">with {event.country2Name}</p>
+                          <p className="text-label-secondary text-footnote">
+                            with {event.country2Name}
+                          </p>
                         )}
                       </div>
-                      <div className="text-muted-foreground text-right text-xs">
+                      <div className="text-label-secondary text-footnote text-right">
                         {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -512,56 +511,53 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               })}
             </div>
           ) : (
-            <FacetCard
-              depth={1}
-              className="flex min-h-[200px] items-center justify-center rounded-2xl p-6"
-            >
+            <FacetCard className="rounded-card flex min-h-[200px] items-center justify-center p-6">
               <div className="space-y-2 text-center">
-                <History className="text-muted-foreground mx-auto h-6 w-6" />
-                <p className="text-muted-foreground text-sm">No event history found</p>
+                <History className="text-label-secondary mx-auto h-6 w-6" />
+                <p className="text-label-secondary text-body">No event history found</p>
               </div>
             </FacetCard>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Response Dialog */}
-      <Dialog open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {/* Response Sheet */}
+      <Sheet open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
               {selectedEvent && EVENT_TYPE_CONFIG[selectedEvent.type]?.icon}
               {selectedEvent?.title}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {selectedEvent?.country2Name && `Diplomatic event with ${selectedEvent.country2Name}`}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           {selectedEvent && (
             <div className="space-y-6">
               {/* Event Details */}
               <div>
-                <h4 className="text-foreground mb-2 text-sm font-semibold">Situation</h4>
-                <p className="text-muted-foreground text-sm">{selectedEvent.narrative}</p>
+                <h4 className="text-label text-headline mb-2">Situation</h4>
+                <p className="text-label-secondary text-body">{selectedEvent.narrative}</p>
               </div>
 
               {/* Response Options */}
               {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
                 <div>
-                  <h4 className="text-foreground mb-3 text-sm font-semibold">Response Options</h4>
+                  <h4 className="text-label text-headline mb-3">Response Options</h4>
                   <div className="space-y-3">
                     {selectedEvent.responseOptions.map((option, idx) => (
-                      <FacetCard key={idx} surface="solid" className="rounded-xl p-4">
+                      <FacetCard variant="inset" key={idx} className="p-4">
                         <div className="mb-2 flex items-start justify-between">
-                          <h5 className="text-foreground text-sm font-medium">
+                          <h5 className="text-label text-body font-medium">
                             {option.label || `Option ${idx + 1}`}
                           </h5>
                           <Badge variant="outline" className="capitalize">
                             {option.difficulty || "moderate"}
                           </Badge>
                         </div>
-                        <p className="text-muted-foreground mb-3 text-sm">
+                        <p className="text-label-secondary text-body mb-3">
                           {option.description || "No description available"}
                         </p>
                         <ImpactPreview
@@ -579,7 +575,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             </div>
           )}
 
-          <DialogFooter className="flex flex-wrap gap-2">
+          <SheetFooter className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() => setIsResponseDialogOpen(false)}
@@ -611,9 +607,9 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               <CheckCircle className="h-4 w-4" />
               Accept
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

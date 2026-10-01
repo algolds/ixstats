@@ -5,13 +5,13 @@ import { api } from "~/trpc/react";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { useUser } from "~/context/auth-context";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -44,6 +44,7 @@ import {
 import { PolicyTargetMetrics, type TargetMetric } from "./policies/PolicyTargetMetrics";
 import { PolicyTemplateSliders } from "./policies/PolicyTemplateSliders";
 import { PolicyReconBanner } from "./policies/PolicyReconBanner";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface PolicyCreatorSheetProps {
   countryId: string;
@@ -74,25 +75,26 @@ function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-border/50 rounded-lg border">
+    <div className="border-separator rounded-control border">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="hover:bg-muted/50 flex w-full items-center justify-between rounded-lg p-3 text-sm font-medium transition-colors"
+        aria-expanded={isOpen}
+        className="hover:bg-fill-3 rounded-control text-body flex w-full items-center justify-between p-3 font-medium transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Icon className="text-muted-foreground h-4 w-4" />
+          <Icon className="text-label-secondary h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+            <Badge variant="secondary" className="text-footnote px-2 py-0">
               {badge}
             </Badge>
           )}
         </div>
         {isOpen ? (
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
+          <ChevronDown className="text-label-secondary h-4 w-4" />
         ) : (
-          <ChevronRight className="text-muted-foreground h-4 w-4" />
+          <ChevronRight className="text-label-secondary h-4 w-4" />
         )}
       </button>
       {isOpen && <div className="px-3 pb-3">{children}</div>}
@@ -238,22 +240,22 @@ export function PolicyCreatorSheet({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-[650px]">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent size="wide" className="overflow-y-auto p-0">
         <form onSubmit={handleSubmit}>
-          <DialogHeader className="border-border/50 border-b px-6 pt-6 pb-4">
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <FileText className="h-5 w-5 text-indigo-400" />
+          <SheetHeader className="border-separator border-b px-6 pt-6 pb-4">
+            <SheetTitle className="text-title-3 flex items-center gap-2">
+              <FileText className="text-indigo h-5 w-5" />
               Declare New Executive Policy
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-xs">
+            </SheetTitle>
+            <SheetDescription className="text-label-secondary text-footnote">
               Establish a national decretal, allocate budget, and project macro impacts.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-5 px-6 py-4">
             <div>
-              <Label className="text-xs font-semibold">Policy Template / Blueprint</Label>
+              <Label className="text-caption font-semibold">Policy Template / Blueprint</Label>
               <Select value={selectedTemplateKey} onValueChange={setSelectedTemplateKey}>
                 <SelectTrigger className="mt-1 h-9">
                   <SelectValue placeholder="Select template..." />
@@ -279,7 +281,7 @@ export function PolicyCreatorSheet({
               {selectedTemplateKey === "custom" && (
                 <>
                   <div>
-                    <Label htmlFor="policy-title" className="text-xs">
+                    <Label htmlFor="policy-title" className="text-footnote">
                       Title *
                     </Label>
                     <Input
@@ -292,7 +294,7 @@ export function PolicyCreatorSheet({
                   </div>
 
                   <div>
-                    <Label htmlFor="policy-desc" className="text-xs">
+                    <Label htmlFor="policy-desc" className="text-footnote">
                       Description *
                     </Label>
                     <Textarea
@@ -307,23 +309,23 @@ export function PolicyCreatorSheet({
               )}
 
               {selectedTemplateKey !== "custom" && currentTemplate && (
-                <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                  <h4 className="text-sm font-semibold">{currentTemplate.name}</h4>
-                  <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                <FacetCard variant="inset" padding="none" className="p-3">
+                  <h4 className="text-headline">{currentTemplate.name}</h4>
+                  <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                     {currentTemplate.description}
                   </p>
-                </div>
+                </FacetCard>
               )}
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <Label className="text-xs">Type</Label>
+                  <Label className="text-footnote">Type</Label>
                   <Select
                     value={formType}
                     onValueChange={(v) => setFormType(v as any)}
                     disabled={selectedTemplateKey !== "custom"}
                   >
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className="text-footnote h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -337,13 +339,13 @@ export function PolicyCreatorSheet({
                 </div>
 
                 <div>
-                  <Label className="text-xs">Category</Label>
+                  <Label className="text-footnote">Category</Label>
                   <Select
                     value={formCategory}
                     onValueChange={setFormCategory}
                     disabled={selectedTemplateKey !== "custom"}
                   >
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className="text-footnote h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -357,12 +359,12 @@ export function PolicyCreatorSheet({
                 </div>
 
                 <div>
-                  <Label className="text-xs">Priority</Label>
+                  <Label className="text-footnote">Priority</Label>
                   <Select
                     value={formPriority}
                     onValueChange={(v) => setFormPriority(v as typeof formPriority)}
                   >
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className="text-footnote h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -384,54 +386,54 @@ export function PolicyCreatorSheet({
             />
 
             {selectedTemplateKey !== "custom" && calculatedEffects && (
-              <div className="space-y-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <h4 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-emerald-400 uppercase">
+              <div className="rounded-control border-green/20 bg-green/5 space-y-3 border p-4">
+                <h4 className="text-eyebrow text-green flex items-center gap-2">
                   <Sliders className="h-3.5 w-3.5" />
                   Calculated Simulation Projections
                 </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Setup Cost:</span>
+                <div className="text-footnote grid grid-cols-2 gap-2">
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">Setup Cost:</span>
                     <span className="font-semibold">
                       {formatCurrency(calculatedEffects.implementationCost)}
                     </span>
                   </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Annual Maint:</span>
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">Annual Maint:</span>
                     <span className="font-semibold">
                       {formatCurrency(calculatedEffects.maintenanceCost)}
                     </span>
                   </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">GDP growth:</span>
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">GDP growth:</span>
                     <span
-                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
+                      className={`font-semibold ${calculatedEffects.gdpEffect >= 0 ? "text-green" : "text-red"}`}
                     >
                       {calculatedEffects.gdpEffect >= 0 ? "+" : ""}
                       {calculatedEffects.gdpEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Employment:</span>
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">Employment:</span>
                     <span
-                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-emerald-500" : "text-red-500"}`}
+                      className={`font-semibold ${calculatedEffects.employmentEffect >= 0 ? "text-green" : "text-red"}`}
                     >
                       {calculatedEffects.employmentEffect >= 0 ? "+" : ""}
                       {calculatedEffects.employmentEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Inflation:</span>
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">Inflation:</span>
                     <span
-                      className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-emerald-500" : "text-amber-500"}`}
+                      className={`font-semibold ${calculatedEffects.inflationEffect <= 2 ? "text-green" : "text-yellow"}`}
                     >
                       {calculatedEffects.inflationEffect >= 0 ? "+" : ""}
                       {calculatedEffects.inflationEffect.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="border-border/30 flex justify-between border-b pb-1">
-                    <span className="text-muted-foreground">Tax Revenue:</span>
-                    <span className="font-semibold text-indigo-400">
+                  <div className="border-separator flex justify-between border-b pb-1">
+                    <span className="text-label-secondary">Tax Revenue:</span>
+                    <span className="text-indigo font-semibold">
                       {calculatedEffects.taxRevenueEffect >= 0 ? "+" : ""}
                       {calculatedEffects.taxRevenueEffect.toFixed(2)}%
                     </span>
@@ -442,20 +444,18 @@ export function PolicyCreatorSheet({
 
             {selectedTemplateKey === "custom" && (
               <>
-                <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3.5">
-                  <p className="text-xs font-semibold tracking-wider text-indigo-400 uppercase">
-                    Estimated Cost Projections
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
+                  <p className="text-eyebrow text-indigo">Estimated Cost Projections</p>
+                  <div className="text-footnote grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-muted-foreground">Setup Cost (Implementation):</span>
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-label-secondary">Setup Cost (Implementation):</span>
+                      <span className="text-headline text-label">
                         {formatCurrency(parseFloat(formImplCost) || 0)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-muted-foreground">Annual Maintenance:</span>
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-label-secondary">Annual Maintenance:</span>
+                      <span className="text-headline text-label">
                         {formatCurrency(parseFloat(formMaintCost) || 0)}
                       </span>
                     </div>
@@ -467,13 +467,13 @@ export function PolicyCreatorSheet({
                 <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
                   <div className="space-y-3">
                     <div>
-                      <Label className="text-xs">Objectives</Label>
+                      <Label className="text-footnote">Objectives</Label>
                       <Textarea
                         value={formObjectives}
                         onChange={(e) => setFormObjectives(e.target.value)}
                         placeholder="Key objectives and goals..."
                         rows={2}
-                        className="text-sm"
+                        className="text-body"
                       />
                     </div>
                   </div>
@@ -482,7 +482,7 @@ export function PolicyCreatorSheet({
             )}
           </div>
 
-          <DialogFooter className="border-border/50 flex gap-2 border-t px-6 py-4">
+          <SheetFooter className="border-separator flex gap-2 border-t px-6 py-4">
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -500,13 +500,13 @@ export function PolicyCreatorSheet({
               size="sm"
               disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
               onClick={handleCreateAndLaunch}
-              className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              className="bg-indigo text-on-indigo hover:bg-indigo"
             >
               {isPending ? "Launching..." : "Create & Launch"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

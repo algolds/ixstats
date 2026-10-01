@@ -33,9 +33,12 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { Input } from "~/components/ui/input";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getRouteFamily } from "~/lib/economy/transport-costs";
 import {
@@ -124,11 +127,11 @@ const TYPE_META: Record<string, { icon: typeof Train; label: string }> = {
 };
 
 /** Semantic status tint for the outline status badge. */
-const STATUS_COLORS: Record<string, string> = {
-  planned: "text-muted-foreground",
-  under_construction: "border-amber-500/30 text-amber-500",
-  operational: "border-emerald-500/30 text-emerald-500",
-  abandoned: "border-destructive/30 text-destructive",
+const STATUS_BADGE: Record<string, BadgeVariant> = {
+  planned: "neutral",
+  under_construction: "caution",
+  operational: "success",
+  abandoned: "destructive",
 };
 
 export const RouteInfoPanel = memo(function RouteInfoPanel({
@@ -204,11 +207,11 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (isLoading) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetContainer material="regular" className="space-y-3 rounded-2xl p-4" aria-busy="true">
+        <FacetMaterial material="regular" className="rounded-card space-y-3 p-4" aria-busy="true">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-5/6" />
-        </FacetContainer>
+        </FacetMaterial>
       </div>
     );
   }
@@ -216,19 +219,19 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
   if (!route) {
     return (
       <div className="absolute top-16 right-4 z-30 w-72">
-        <FacetContainer material="regular" className="rounded-2xl p-4">
-          <p className="text-muted-foreground text-sm">Route not found</p>
+        <FacetMaterial material="regular" className="rounded-card p-4">
+          <p className="text-label-secondary text-body">Route not found</p>
           <Button variant="link" size="xs" onClick={onClose} className="mt-1 px-0">
             Close
           </Button>
-        </FacetContainer>
+        </FacetMaterial>
       </div>
     );
   }
 
   const typeMeta = TYPE_META[route.routeType] ?? TYPE_META.road!;
   const TypeIcon = typeMeta.icon;
-  const statusClass = STATUS_COLORS[route.status] ?? STATUS_COLORS.operational!;
+  const statusVariant = STATUS_BADGE[route.status] ?? STATUS_BADGE.operational!;
   const props = (route.properties as RouteDisplayProperties | null) ?? {};
   const modalFamily = getRouteFamily(route.routeType);
   const largestSeaEffect = travelTime.sea?.largestEffect ?? null;
@@ -293,8 +296,8 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
     (route.terrainDifficulty ?? 0) > 0.7
       ? "bg-destructive"
       : (route.terrainDifficulty ?? 0) > 0.4
-        ? "bg-amber-500"
-        : "bg-emerald-500";
+        ? "bg-yellow"
+        : "bg-green";
 
   return (
     <div
@@ -303,39 +306,46 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
       onTouchStart={(e) => e.stopPropagation()}
       className="animate-in slide-in-from-right-4 absolute top-16 right-4 z-30 w-72 duration-200"
     >
-      <FacetContainer material="regular" className="max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-2xl">
+      <FacetMaterial
+        material="regular"
+        className="rounded-card max-h-[calc(100dvh-5rem)] overflow-y-auto"
+      >
         {/* Header */}
-        <div className="border-border flex items-start gap-2 border-b px-4 py-3">
-          <TypeIcon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <div className="border-separator flex items-start gap-2 border-b px-4 py-3">
+          <TypeIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <div className="min-w-0 flex-1">
             {editing ? (
-              <input
+              <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="border-border bg-background w-full rounded border px-1.5 py-0.5 text-sm font-semibold focus:outline-none"
+                aria-label="Route name"
+                className="text-headline h-(--control-height-sm) px-2"
                 placeholder="Route name"
                 autoFocus
               />
             ) : (
-              <h3 className="text-foreground truncate text-sm font-semibold">
+              <h3 className="text-label text-headline truncate">
                 {route.name ?? `${typeMeta.label} Route`}
               </h3>
             )}
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs">{typeMeta.label}</span>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-label-secondary text-footnote">{typeMeta.label}</span>
               {editing ? (
-                <select
+                <OptionSelect
+                  aria-label="Route status"
+                  size="sm"
+                  className="w-auto"
                   value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="border-border bg-background rounded border px-1 py-0.5 text-xs focus:outline-none"
-                >
-                  <option value="planned">Planned</option>
-                  <option value="under_construction">Under Construction</option>
-                  <option value="operational">Operational</option>
-                  <option value="abandoned">Abandoned</option>
-                </select>
+                  onValueChange={setEditStatus}
+                  options={[
+                    { value: "planned", label: "Planned" },
+                    { value: "under_construction", label: "Under construction" },
+                    { value: "operational", label: "Operational" },
+                    { value: "abandoned", label: "Abandoned" },
+                  ]}
+                />
               ) : (
-                <Badge variant="outline" className={`capitalize ${statusClass}`}>
+                <Badge variant={statusVariant} className="capitalize">
                   {route.status.replace("_", " ")}
                 </Badge>
               )}
@@ -346,30 +356,30 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
             size="icon"
             onClick={onClose}
             aria-label="Close route details"
-            className="text-muted-foreground -mt-1 -mr-2 h-8 w-8 shrink-0 rounded-full"
+            className="text-label-secondary -mt-1 -mr-2 h-8 w-8 shrink-0 rounded-full"
           >
             <X aria-hidden />
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="space-y-1.5 px-4 py-3 text-xs">
+        <div className="text-footnote space-y-2 px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+            <span className="text-label-secondary flex items-center gap-2">
               <Gauge className="h-3 w-3" /> Length
             </span>
-            <span className="font-mono font-medium tabular-nums">
+            <span className="font-medium tabular-nums">
               {route.lengthKm?.toLocaleString() ?? "—"} km
             </span>
           </div>
 
           {route.terrainDifficulty != null && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Mountain className="h-3 w-3" /> Terrain
               </span>
-              <div className="flex items-center gap-1.5">
-                <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
+              <div className="flex items-center gap-2">
+                <div className="bg-fill-3 h-1.5 w-16 overflow-hidden rounded-full">
                   <div
                     className={`h-full rounded-full ${diffBgClass}`}
                     style={{
@@ -377,7 +387,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
                     }}
                   />
                 </div>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="font-medium tabular-nums">
                   {Math.round(route.terrainDifficulty * 100)}%
                 </span>
               </div>
@@ -385,43 +395,46 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
           )}
 
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground flex items-center gap-1.5">
+            <span className="text-label-secondary flex items-center gap-2">
               <Clock className="h-3 w-3" /> Est. Travel Time
             </span>
-            <span className="text-foreground font-mono font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {travelTime.formattedTime}
             </span>
           </div>
 
           {editing ? (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Gauge className="h-3 w-3" /> Speed
               </span>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={5}
                   max={2000}
+                  aria-label="Speed in km/h"
                   value={editSpeed ?? ""}
                   onChange={(e) =>
                     setEditSpeed(e.target.value ? Number(e.target.value) : undefined)
                   }
-                  className="border-border bg-background w-20 rounded border px-1.5 py-0.5 text-right font-mono text-xs tabular-nums focus:outline-none"
+                  className="text-footnote h-(--control-height-sm) w-20 px-2 text-right tabular-nums"
                   placeholder={String(baseSpeed)}
                 />
-                <span className="text-muted-foreground text-xs">km/h</span>
+                <span className="text-label-secondary text-footnote">km/h</span>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Gauge className="h-3 w-3" /> Speed
               </span>
-              <div className="flex items-center gap-1.5 font-mono tabular-nums">
+              <div className="flex items-center gap-2 tabular-nums">
                 <span className="font-medium">{Math.round(travelTime.effectiveSpeedKmh)} km/h</span>
                 {travelTime.terrainDragFactor < 1 && (
-                  <span className="text-xs text-amber-500/80">({Math.round(baseSpeed)} base)</span>
+                  <span className="text-footnote text-yellow/80">
+                    ({Math.round(baseSpeed)} base)
+                  </span>
                 )}
               </div>
             </div>
@@ -429,23 +442,23 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
 
           {Boolean(route.builtYear) && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Calendar className="h-3 w-3" /> Built
               </span>
-              <span className="font-mono font-medium tabular-nums">{route.builtYear}</span>
+              <span className="font-medium tabular-nums">{route.builtYear}</span>
             </div>
           )}
 
           {Boolean(route.isInternational) && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">International</span>
-              <span className="text-primary font-medium">Yes</span>
+              <span className="text-label-secondary">International</span>
+              <span className="text-tint font-medium">Yes</span>
             </div>
           )}
 
           {route.country && (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Country</span>
+              <span className="text-label-secondary">Country</span>
               <span className="font-medium">{route.country.name}</span>
             </div>
           )}
@@ -453,45 +466,45 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
 
         {/* Transit details (sea routes: currents & prevailing winds) */}
         {travelTime.sea && (
-          <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
-            <Eyebrow className="mb-1.5 block">Transit details</Eyebrow>
+          <div className="border-separator text-footnote space-y-2 border-t px-4 py-3">
+            <Eyebrow className="mb-2 block">Transit details</Eyebrow>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Clock className="h-3 w-3" /> Total time
               </span>
-              <span className="text-foreground font-mono font-semibold tabular-nums">
+              <span className="text-label font-semibold tabular-nums">
                 {travelTime.formattedTime}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+              <span className="text-label-secondary flex items-center gap-2">
                 <Gauge className="h-3 w-3" /> Avg. speed
               </span>
-              <span className="font-mono font-medium tabular-nums">
+              <span className="font-medium tabular-nums">
                 {`${travelTime.sea.averageSpeedKmh.toFixed(1)} km/h (${(travelTime.sea.averageSpeedKmh / KMH_PER_KNOT).toFixed(1)} kn)`}
               </span>
             </div>
             <div className="flex items-start justify-between gap-2">
-              <span className="text-muted-foreground flex shrink-0 items-center gap-1.5">
+              <span className="text-label-secondary flex shrink-0 items-center gap-2">
                 <Wind className="h-3 w-3" /> Largest effect
               </span>
               {largestSeaEffect ? (
                 <span className="min-w-0 text-right">
                   <span className="block truncate font-medium">{largestSeaEffect.name}</span>
                   <span
-                    className={`block font-mono tabular-nums ${
-                      largestSeaEffect.averageChangeKmh >= 0 ? "text-emerald-500" : "text-amber-500"
+                    className={`block tabular-nums ${
+                      largestSeaEffect.averageChangeKmh >= 0 ? "text-green" : "text-yellow"
                     }`}
                   >
                     {formatSignedSpeed(largestSeaEffect.averageChangeKmh)}
                   </span>
-                  <span className="text-muted-foreground block">
+                  <span className="text-label-secondary block">
                     {largestSeaEffect.kind} · over{" "}
                     {Math.round(largestSeaEffect.distanceKm).toLocaleString()} km
                   </span>
                 </span>
               ) : (
-                <span className="text-muted-foreground">None on this path</span>
+                <span className="text-label-secondary">None on this path</span>
               )}
             </div>
           </div>
@@ -499,21 +512,21 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
 
         {/* Cost breakdown */}
         {Boolean(props.costBillion || props.maintenanceCost) && (
-          <div className="border-border space-y-1.5 border-t px-4 py-3 text-xs">
+          <div className="border-separator text-footnote space-y-2 border-t px-4 py-3">
             {Boolean(props.costBillion) && (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground flex items-center gap-1.5">
+                <span className="text-label-secondary flex items-center gap-2">
                   <Coins className="h-3 w-3" /> Build Cost
                 </span>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="font-medium tabular-nums">
                   {Number(props.costBillion).toFixed(2)}B
                 </span>
               </div>
             )}
             {Boolean(props.maintenanceCost) && (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Annual Maint.</span>
-                <span className="font-mono font-medium tabular-nums">
+                <span className="text-label-secondary">Annual Maint.</span>
+                <span className="font-medium tabular-nums">
                   {Number(props.maintenanceCost).toFixed(3)}B/yr
                 </span>
               </div>
@@ -522,32 +535,32 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
         )}
 
         {/* Intermodal Logistics */}
-        <div className="border-border space-y-1.5 border-t px-4 py-2.5 text-xs">
+        <div className="border-separator text-footnote space-y-2 border-t px-4 py-2">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Modal Network</span>
-            <span className="text-foreground font-medium capitalize">{modalFamily} Logistics</span>
+            <span className="text-label-secondary">Modal Network</span>
+            <span className="text-label font-medium capitalize">{modalFamily} Logistics</span>
           </div>
           {intermodalBadge && (
-            <FacetCard surface="solid" className="rounded-lg px-2.5 py-1.5 text-xs">
-              <span className="text-foreground font-semibold">{intermodalBadge.title}</span>
-              <p className="text-muted-foreground mt-0.5 text-xs">{intermodalBadge.detail}</p>
+            <FacetCard variant="inset" className="text-footnote px-3 py-2">
+              <span className="text-label font-semibold">{intermodalBadge.title}</span>
+              <p className="text-label-secondary text-footnote mt-0.5">{intermodalBadge.detail}</p>
             </FacetCard>
           )}
         </div>
 
         {/* Stops */}
         {Boolean(route.stopsResolved && route.stopsResolved.length > 0) && (
-          <div className="border-border border-t px-4 py-3">
-            <Eyebrow className="mb-1.5 block">Stops ({route.stopsResolved.length})</Eyebrow>
+          <div className="border-separator border-t px-4 py-3">
+            <Eyebrow className="mb-2 block">Stops ({route.stopsResolved.length})</Eyebrow>
             <div className="space-y-1">
               {route.stopsResolved.map((stop: ResolvedStop, i: number) => (
-                <div key={i} className="flex items-center gap-1.5 text-xs">
-                  <MapPin className="text-muted-foreground h-3 w-3 shrink-0" />
+                <div key={i} className="text-footnote flex items-center gap-2">
+                  <MapPin className="text-label-secondary h-3 w-3 shrink-0" />
                   <span className="flex-1 truncate">
                     {stop.cityName ?? stop.name ?? `Stop ${i + 1}`}
                   </span>
                   {Boolean(stop.cityPopulation) && (
-                    <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       {Number(stop.cityPopulation).toLocaleString()}
                     </span>
                   )}
@@ -559,7 +572,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
 
         {/* Actions */}
         {Boolean(canEdit && route.countryId) && (
-          <div className="border-border flex items-center justify-between gap-1 border-t px-4 py-2">
+          <div className="border-separator flex items-center justify-between gap-1 border-t px-4 py-2">
             {editing ? (
               <div className="flex w-full items-center gap-1">
                 <Button
@@ -581,7 +594,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
               </div>
             ) : confirmingDelete ? (
               <div className="flex w-full items-center justify-between gap-2">
-                <span className="text-destructive text-xs font-medium">Delete route?</span>
+                <span className="text-destructive text-caption">Delete route?</span>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="destructive"
@@ -610,7 +623,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
                   variant="ghost"
                   size="xs"
                   onClick={handleStartEdit}
-                  className="text-muted-foreground"
+                  className="text-label-secondary"
                 >
                   <Pencil aria-hidden /> Edit
                 </Button>
@@ -619,7 +632,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
                     variant="ghost"
                     size="xs"
                     onClick={() => onEditPath(routeId)}
-                    className="text-muted-foreground"
+                    className="text-label-secondary"
                   >
                     <Route aria-hidden /> Edit path
                   </Button>
@@ -637,7 +650,7 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
             )}
           </div>
         )}
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 });

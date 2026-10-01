@@ -195,7 +195,7 @@ export function BudgetManagementDashboard({
           spent: allocation.spentAmount ?? 0,
           available: allocation.availableAmount ?? 0,
           percent: allocation.allocatedPercent ?? 0,
-          color: department?.color || "var(--color-muted-foreground)",
+          color: department?.color || "var(--color-label-secondary)",
         };
       })
       .sort((a, b) => b.allocated - a.allocated);
@@ -227,10 +227,10 @@ export function BudgetManagementDashboard({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-foreground text-xl font-semibold tracking-tight">
+          <h2 className="text-label text-title-2">
             {governmentStructure?.governmentName ?? "National"} Fiscal Budget
           </h2>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-label-secondary text-footnote mt-0.5">
             {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} •{" "}
             {selectedYear} {governmentStructure?.fiscalYear ?? "FY"}
           </p>
@@ -240,12 +240,12 @@ export function BudgetManagementDashboard({
             value={String(selectedYear)}
             onValueChange={(value) => setSelectedYear(parseInt(value, 10))}
           >
-            <SelectTrigger className="h-9 w-24 font-mono text-xs" aria-label="Budget year">
+            <SelectTrigger className="text-footnote h-9 w-24 tabular-nums" aria-label="Budget year">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Array.from({ length: 5 }, (_, i) => currentBudgetYear() - i).map((year) => (
-                <SelectItem key={year} value={String(year)} className="font-mono">
+                <SelectItem key={year} value={String(year)} className="tabular-nums">
                   {year}
                 </SelectItem>
               ))}
@@ -260,9 +260,9 @@ export function BudgetManagementDashboard({
       {needsNewYearBudget && (
         <div
           role="status"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/40 px-4 py-3"
+          className="rounded-control border-yellow/40 flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
         >
-          <p className="text-foreground text-sm">
+          <p className="text-label text-body">
             A new fiscal year has begun. Your FY{effectiveYear} budget stays in effect until you set
             the FY{currentYear} budget.
           </p>

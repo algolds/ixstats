@@ -5,12 +5,14 @@ import React from "react";
 import type { PeakFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 import { MapPin } from "iconoir-react";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Button } from "~/components/ui/button";
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 interface PeakPropertyFormProps {
   form: PeakFormData;
@@ -50,7 +52,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+          <label className="text-label-secondary text-caption mb-1 block text-left">
             Elevation (m)
           </label>
           <input
@@ -67,7 +69,7 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
           />
         </div>
         <div>
-          <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+          <label className="text-label-secondary text-caption mb-1 block text-left">
             Prominence (m)
           </label>
           <input
@@ -87,32 +89,28 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <FacetCard
-          surface="solid"
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-        >
-          <div className="text-muted-foreground text-left font-medium">
+        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+          <div className="text-label-secondary text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
-              <span className="text-foreground font-semibold tabular-nums">
+              <span className="text-label font-semibold tabular-nums">
                 {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
               </span>
             ) : (
               <span className="italic">Not placed yet</span>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            variant={isPickingLocation ? "tinted" : "plain"}
+            size="sm"
+            aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
-              isPickingLocation
-                ? "font-bold text-amber-500 hover:text-amber-400"
-                : "text-emerald-500 hover:text-emerald-400"
-            }`}
+            className="shrink-0"
           >
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPin className="size-3.5" aria-hidden />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
-          </button>
+          </Button>
         </FacetCard>
       )}
 
@@ -127,32 +125,26 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
       />
 
       <div>
-        <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+        <label className="text-label-secondary text-caption mb-1 block text-left">
           Subdivision / Region
         </label>
-        <select
+        <OptionSelect
+          aria-label="Subdivision / region"
           value={form.subdivisionId ?? "auto"}
-          onChange={(e) =>
+          onValueChange={(v) =>
             onChange({
               ...form,
-              subdivisionId:
-                e.target.value === "auto"
-                  ? "auto"
-                  : e.target.value === "none"
-                    ? "none"
-                    : e.target.value || undefined,
+              subdivisionId: v === "auto" ? "auto" : v === "none" ? "none" : v || undefined,
             })
           }
-          className={selectClasses}
-        >
-          <option value="auto">&mdash; Auto-detect Region (Recommended) &mdash;</option>
-          <option value="none">&mdash; None &mdash;</option>
-          {subdivisions.map((sub) => (
-            <option key={sub.id} value={sub.id}>
-              {sub.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "auto", label: "&mdash; Auto-detect Region (Recommended) &mdash;" },
+            { value: "none", label: "&mdash; None &mdash;" },
+            ...subdivisions.map((sub) => ({ value: sub.id, label: sub.name })),
+          ]}
+          size="sm"
+          className="w-full"
+        />
       </div>
     </div>
   );

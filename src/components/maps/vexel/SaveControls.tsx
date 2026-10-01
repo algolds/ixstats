@@ -7,7 +7,9 @@ import { notifyFromStore } from "~/hooks/useNotify";
 import { useVexelEditor } from "./VexelEditorProvider";
 import { api } from "~/trpc/react";
 import ExportDialog from "./ExportDialog";
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Input } from "~/components/ui/input";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 export default function SaveControls() {
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -124,57 +126,53 @@ export default function SaveControls() {
   };
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border mb-6 shrink-0 overflow-hidden rounded-xl border"
-    >
-      <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-4 p-4 text-xs">
+    <FacetCard className="mb-6 shrink-0 overflow-hidden">
+      <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex flex-1 flex-wrap items-center gap-4">
           {/* Title Input */}
           <div className="flex min-w-[150px] flex-col gap-1">
-            <Eyebrow>Arms Title</Eyebrow>
-            <input
+            <Eyebrow id="vexel-arms-title">Arms title</Eyebrow>
+            <Input
               type="text"
+              aria-labelledby="vexel-arms-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border-border bg-card text-foreground rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
             />
           </div>
 
           {/* Subject Type */}
           <div className="flex flex-col gap-1">
-            <Eyebrow>Subject Type</Eyebrow>
-            <select
+            <Eyebrow id="vexel-subject-type">Subject type</Eyebrow>
+            <OptionSelect
+              aria-labelledby="vexel-subject-type"
+              className="w-40"
               value={subjectType}
-              onChange={(e) => {
-                setSubjectType(e.target.value as any);
+              onValueChange={(v) => {
+                setSubjectType(v as any);
                 setSubjectId(null);
               }}
-              className="border-border bg-card text-muted-foreground rounded-lg border p-2 focus:outline-none"
-            >
-              <option value="CHARACTER">Character</option>
-              <option value="COUNTRY">Country</option>
-              <option value="INSTITUTION">Institution</option>
-              <option value="DYNASTY">Dynasty</option>
-            </select>
+              options={[
+                { value: "CHARACTER", label: "Character" },
+                { value: "COUNTRY", label: "Country" },
+                { value: "INSTITUTION", label: "Institution" },
+                { value: "DYNASTY", label: "Dynasty" },
+              ]}
+            />
           </div>
 
           {/* Subject Association (Conditional) */}
           {subjectType === "COUNTRY" && (
             <div className="animate-in fade-in slide-in-from-left-2 flex min-w-[150px] flex-col gap-1 duration-150">
-              <Eyebrow>Select Country</Eyebrow>
-              <select
+              <Eyebrow id="vexel-subject-country">Select country</Eyebrow>
+              <OptionSelect
+                aria-labelledby="vexel-subject-country"
                 value={subjectId || ""}
-                onChange={(e) => setSubjectId(e.target.value || null)}
-                className="border-border bg-card text-muted-foreground rounded-lg border p-2 focus:outline-none"
-              >
-                <option value="">Choose Country...</option>
-                {countries.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(v) => setSubjectId(v || null)}
+                options={[
+                  { value: "", label: "Choose country..." },
+                  ...countries.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
             </div>
           )}
         </div>
@@ -195,17 +193,15 @@ export default function SaveControls() {
 
           {/* Publish Button */}
           {achievementId && (
-            <button
+            <Button
+              variant={currentAchievement?.isPublished ? "bordered" : "tinted"}
+              size="sm"
               onClick={handlePublishToggle}
               disabled={isPublishing}
-              className={`h-9 rounded-lg px-4 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                currentAchievement?.isPublished
-                  ? "border-destructive/30 text-destructive hover:bg-destructive/10 border"
-                  : "border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20"
-              }`}
+              className={currentAchievement?.isPublished ? "text-destructive" : undefined}
             >
               {currentAchievement?.isPublished ? "Unpublish" : "Publish"}
-            </button>
+            </Button>
           )}
 
           {/* Save Button */}
@@ -226,6 +222,6 @@ export default function SaveControls() {
 
         {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

@@ -5,7 +5,7 @@ import { Archive, KeyCommand, Page, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Toggle } from "~/components/ui/toggle";
@@ -53,14 +53,10 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <FacetCard
-      depth={2}
-      surface="solid"
-      className="flex flex-col items-center rounded-2xl px-6 py-12 text-center"
-    >
-      <Icon className="text-muted-foreground h-6 w-6" aria-hidden />
-      <p className="text-foreground mt-4 text-base font-semibold">{title}</p>
-      <p className="text-muted-foreground mt-1 max-w-sm text-sm">{body}</p>
+    <FacetCard className="rounded-card flex flex-col items-center px-6 py-12 text-center">
+      <Icon className="text-label-secondary h-6 w-6" aria-hidden />
+      <p className="text-label text-title-3 mt-4">{title}</p>
+      <p className="text-label-secondary text-body mt-1 max-w-sm">{body}</p>
       {action && <div className="mt-6">{action}</div>}
     </FacetCard>
   );
@@ -70,7 +66,7 @@ function ListSkeleton() {
   return (
     <div className="space-y-3" aria-busy="true">
       {[0, 1].map((i) => (
-        <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+        <Skeleton key={i} className="rounded-card h-40 w-full" />
       ))}
     </div>
   );
@@ -189,14 +185,12 @@ export function DirectivesWorkspace({
   };
 
   return (
-    <FacetContainer depth={1} className="space-y-6 rounded-3xl p-4 sm:p-6">
+    <FacetCard className="rounded-card space-y-6 p-4 sm:p-6">
       {/* Page header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-foreground text-2xl leading-8 font-semibold tracking-tight">
-            Directives
-          </h2>
-          <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
+          <h2 className="text-label text-title-1 leading-8">Directives</h2>
+          <p className="text-label-secondary text-body mt-1 max-w-2xl">
             Set a national goal, choose how hard to push, and track what it changes. Each directive
             uses a weekly slot and holds CivCap while it executes.
           </p>
@@ -225,7 +219,7 @@ export function DirectivesWorkspace({
           role="tablist"
           aria-label="Directive views"
           onKeyDown={onTabKeyDown}
-          className="bg-muted/60 w-full rounded-full p-1 sm:w-fit"
+          className="bg-fill-3 w-full rounded-full p-1 sm:w-fit"
         >
           {views.map((v) => (
             <TabsTrigger
@@ -234,11 +228,11 @@ export function DirectivesWorkspace({
               role="tab"
               id={tabId(v.id)}
               aria-controls={panelId(v.id)}
-              className="h-11 flex-1 gap-1.5 px-3 sm:h-9 sm:flex-none sm:px-4"
+              className="h-11 flex-1 gap-2 px-3 sm:h-9 sm:flex-none sm:px-4"
             >
               {v.label}
               {v.count != null && v.count > 0 && (
-                <Badge variant="secondary" className="rounded-full px-1.5 tabular-nums">
+                <Badge variant="secondary" className="rounded-full px-2 tabular-nums">
                   {v.count}
                 </Badge>
               )}
@@ -298,7 +292,7 @@ export function DirectivesWorkspace({
               action={
                 !readOnly && (
                   <Button
-                    className="bg-amber-500 text-amber-950 hover:bg-amber-500/90 max-sm:h-11"
+                    className="bg-yellow text-on-yellow hover:bg-yellow/90 max-sm:h-11"
                     onClick={() => setView("new")}
                   >
                     <Plus /> Declare a directive
@@ -370,7 +364,9 @@ export function DirectivesWorkspace({
                 ))}
               </div>
               {filteredHistory.length === 0 ? (
-                <p className="text-muted-foreground px-1 text-sm">No {historyFilter} directives.</p>
+                <p className="text-label-secondary text-body px-1">
+                  No {historyFilter} directives.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {filteredHistory.slice(0, historyLimit).map((intent) => (
@@ -407,6 +403,6 @@ export function DirectivesWorkspace({
           countryId={countryId}
         />
       )}
-    </FacetContainer>
+    </FacetCard>
   );
 }

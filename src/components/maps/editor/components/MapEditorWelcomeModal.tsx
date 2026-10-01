@@ -155,13 +155,13 @@ export function MapEditorWelcomeModal({
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="facet-modal flex flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-lg">
+      <DialogContent className="rounded-card flex flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         {/* Header */}
         <DialogHeader className="flex-row items-center gap-3 px-6 pt-6 pr-12 pb-4 text-left">
-          <Map className="h-6 w-6 shrink-0 text-blue-500" aria-hidden />
+          <Map className="text-blue h-6 w-6 shrink-0" aria-hidden />
           <div>
-            <DialogTitle className="text-sm sm:text-base">Map editor onboarding</DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogTitle className="text-body sm:text-body">Map editor onboarding</DialogTitle>
+            <DialogDescription className="text-footnote">
               Forge the geography, borders, and features of IxWorld
             </DialogDescription>
           </div>
@@ -177,21 +177,17 @@ export function MapEditorWelcomeModal({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.15 }}
-                className="grid grid-cols-2 gap-2.5"
+                className="grid grid-cols-2 gap-2"
               >
                 {TIPS.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <FacetCard
-                      key={tip.title}
-                      surface="solid"
-                      className="flex flex-col gap-1 rounded-lg p-2.5"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="h-4 w-4 text-blue-500" aria-hidden />
-                        <h3 className="text-foreground text-sm font-semibold">{tip.title}</h3>
+                    <FacetCard variant="inset" key={tip.title} className="flex flex-col gap-1 p-2">
+                      <div className="flex items-center gap-2">
+                        <Icon className="text-blue h-4 w-4" aria-hidden />
+                        <h3 className="text-label text-headline">{tip.title}</h3>
                       </div>
-                      <p className="text-muted-foreground text-xs leading-relaxed">
+                      <p className="text-label-secondary text-footnote leading-relaxed">
                         {tip.description}
                       </p>
                     </FacetCard>
@@ -207,20 +203,20 @@ export function MapEditorWelcomeModal({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.15 }}
-                className="space-y-1.5"
+                className="space-y-2"
               >
-                <h3 className="text-foreground mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                  <Keyboard className="text-muted-foreground h-4 w-4" aria-hidden />
+                <h3 className="text-label text-headline mb-2 flex items-center gap-2">
+                  <Keyboard className="text-label-secondary h-4 w-4" aria-hidden />
                   Editor shortcuts
                 </h3>
                 <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                   {SHORTCUTS.map((s) => (
                     <div
                       key={s.action}
-                      className="border-border flex items-center justify-between rounded-lg border px-3 py-1.5"
+                      className="border-separator rounded-control flex items-center justify-between border px-3 py-2"
                     >
-                      <span className="text-muted-foreground text-xs font-medium">{s.action}</span>
-                      <kbd className="bg-muted text-foreground border-border inline-flex h-5 items-center justify-center rounded border px-1.5 font-mono text-xs">
+                      <span className="text-label-secondary text-caption">{s.action}</span>
+                      <kbd className="bg-fill-3 text-label border-separator text-footnote rounded-control-sm inline-flex h-5 items-center justify-center border px-2 tabular-nums">
                         {s.keys[0]}
                       </kbd>
                     </div>
@@ -238,24 +234,26 @@ export function MapEditorWelcomeModal({
                 transition={{ duration: 0.15 }}
                 className="space-y-2"
               >
-                <h3 className="text-foreground mb-1 flex items-center gap-1.5 text-sm font-semibold">
-                  <Zap className="text-muted-foreground h-4 w-4" aria-hidden />
+                <h3 className="text-label text-headline mb-1 flex items-center gap-2">
+                  <Zap className="text-label-secondary h-4 w-4" aria-hidden />
                   Changelog & updates
                 </h3>
                 <div className="max-h-[260px] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                   {CHANGELOG.map((item) => (
                     <FacetCard
+                      variant="inset"
                       key={item.title}
-                      surface="solid"
-                      className="flex flex-col gap-0.5 rounded-lg p-2 text-left"
+                      className="flex flex-col gap-0.5 p-2 text-left"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-foreground text-xs font-semibold">{item.title}</span>
-                        <span className="text-primary font-mono text-xs font-semibold">
+                        <span className="text-label text-caption font-semibold">{item.title}</span>
+                        <span className="text-tint text-caption font-semibold tabular-nums">
                           {item.version}
                         </span>
                       </div>
-                      <p className="text-muted-foreground text-xs leading-relaxed">{item.desc}</p>
+                      <p className="text-label-secondary text-footnote leading-relaxed">
+                        {item.desc}
+                      </p>
                     </FacetCard>
                   ))}
                 </div>
@@ -265,9 +263,9 @@ export function MapEditorWelcomeModal({
         </div>
 
         {/* Footer */}
-        <div className="border-border flex items-center justify-between border-t px-6 py-3.5">
+        <div className="border-separator flex items-center justify-between border-t px-6 py-4">
           {/* Dots indicator */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }).map((_, i) => (
               <button
                 key={i}
@@ -276,9 +274,7 @@ export function MapEditorWelcomeModal({
                 aria-current={i === currentPage ? "step" : undefined}
                 onClick={() => setCurrentPage(i)}
                 className={`h-1.5 rounded-full transition-[background-color,opacity] ${
-                  i === currentPage
-                    ? "w-4 bg-blue-500"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-1.5"
+                  i === currentPage ? "bg-blue w-4" : "bg-fill-2 hover:bg-fill w-1.5"
                 }`}
               />
             ))}

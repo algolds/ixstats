@@ -12,7 +12,7 @@ import {
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Xmark as X } from "iconoir-react";
 import { formatExactCurrency } from "~/lib/utils";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
@@ -47,14 +47,14 @@ export function RevenueItemRow({
   const Icon = revenueCategoryIcons[item.category];
 
   return (
-    <FacetContainer depth={3} surface="solid" enableRefraction={false} className="rounded-lg p-4">
+    <FacetCard variant="inset" className="p-4">
       {!isReadOnly && (
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onRemove(index)}
           aria-label={`Remove ${item.name || "revenue source"}`}
-          className="text-muted-foreground hover:text-destructive absolute top-2 right-2 h-8 w-8"
+          className="text-label-secondary hover:text-destructive absolute top-2 right-2 h-8 w-8"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -64,13 +64,13 @@ export function RevenueItemRow({
         {/* Column 1: Basic Info */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+            <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <Input
               value={item.name}
               onChange={(e) => onUpdate(index, "name", e.target.value)}
               placeholder="Revenue source name"
               disabled={isReadOnly}
-              className="h-8 font-bold"
+              className="h-8 font-semibold"
             />
           </div>
 
@@ -88,7 +88,7 @@ export function RevenueItemRow({
                 return (
                   <SelectItem key={category} value={category}>
                     <div className="flex items-center">
-                      <CategoryIcon className="text-muted-foreground mr-2 h-3.5 w-3.5" />
+                      <CategoryIcon className="text-label-secondary mr-2 h-3.5 w-3.5" />
                       {category}
                     </div>
                   </SelectItem>
@@ -103,16 +103,16 @@ export function RevenueItemRow({
             placeholder="Specify funding notes or legislative codes..."
             disabled={isReadOnly}
             rows={2}
-            className="min-h-0 resize-none text-xs"
+            className="text-footnote min-h-0 resize-none"
           />
         </div>
 
         {/* Column 2: Financial Details */}
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs font-medium">Annual Yield Amount</Label>
+          <div className="space-y-2">
+            <Label className="text-label-secondary text-caption">Annual Yield Amount</Label>
             <div className="relative">
-              <span className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
+              <span className="text-label-secondary text-footnote absolute top-1/2 left-3 -translate-y-1/2">
                 $
               </span>
               <Input
@@ -125,17 +125,15 @@ export function RevenueItemRow({
                 className="h-8 pl-6"
               />
             </div>
-            <p className="text-muted-foreground mt-1 text-xs font-semibold">
+            <p className="text-label-secondary text-caption mt-1 font-semibold">
               {formatExactCurrency(item.revenueAmount, currency)} (
               {(item.revenuePercent ?? 0).toFixed(1)}% share)
             </p>
           </div>
 
           {item.category.includes("Tax") && (
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground text-xs font-medium">
-                Active Tax Rate (%)
-              </Label>
+            <div className="space-y-2">
+              <Label className="text-label-secondary text-caption">Active Tax Rate (%)</Label>
               <div className="relative">
                 <Input
                   type="number"
@@ -147,7 +145,7 @@ export function RevenueItemRow({
                   step="0.1"
                   className="h-8 pr-6"
                 />
-                <span className="text-muted-foreground absolute top-1/2 right-2.5 -translate-y-1/2 text-xs">
+                <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                   %
                 </span>
               </div>
@@ -157,14 +155,14 @@ export function RevenueItemRow({
 
         {/* Column 3: Administration */}
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs font-medium">Collection Channel</Label>
+          <div className="space-y-2">
+            <Label className="text-label-secondary text-caption">Collection Channel</Label>
             <Select
               value={item.collectionMethod || ""}
               onValueChange={(value) => onUpdate(index, "collectionMethod", value)}
               disabled={isReadOnly}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="text-footnote h-8">
                 <SelectValue placeholder="Select collection method" />
               </SelectTrigger>
               <SelectContent className="max-h-80">
@@ -173,10 +171,10 @@ export function RevenueItemRow({
                   return (
                     <SelectItem key={method.id} value={method.id}>
                       <div className="flex items-center gap-2">
-                        <IconComponent className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <IconComponent className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold">{method.name}</span>
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-caption font-semibold">{method.name}</span>
+                          <span className="text-label-secondary text-footnote">
                             {method.description}
                           </span>
                         </div>
@@ -188,17 +186,15 @@ export function RevenueItemRow({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-xs font-medium">
-              Administrative Authority
-            </Label>
+          <div className="space-y-2">
+            <Label className="text-label-secondary text-caption">Administrative Authority</Label>
             {availableDepartments.length > 0 ? (
               <Select
                 value={item.administeredBy || ""}
                 onValueChange={(value) => onUpdate(index, "administeredBy", value)}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="text-footnote h-8">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,6 +219,6 @@ export function RevenueItemRow({
           </div>
         </div>
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 }

@@ -67,34 +67,34 @@ export function SectionContextWidget({
       {hasStats && (
         <div className={cn("grid gap-2", STATS_GRID[Math.min(stats!.length, 3)] ?? "grid-cols-3")}>
           {stats!.map((s) => (
-            <div key={s.label} className="bg-muted/40 rounded-lg p-2 text-center">
-              <div className={cn("text-sm font-bold", s.accentText && a.text)}>{s.value}</div>
-              <div className="text-muted-foreground text-xs">{s.label}</div>
+            <div key={s.label} className="bg-fill-3 rounded-control p-2 text-center">
+              <div className={cn("text-headline", s.accentText && a.text)}>{s.value}</div>
+              <div className="text-label-secondary text-footnote">{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div className={cn("flex items-center justify-between", hasStats ? "mt-3 mb-2" : "mb-2.5")}>
+      <div className={cn("flex items-center justify-between", hasStats ? "mt-3 mb-2" : "mb-2")}>
         <div className="flex items-center gap-2">
           <HeaderIcon className={cn("h-3.5 w-3.5", a.text)} />
-          <span className="text-xs font-semibold">{title}</span>
+          <span className="text-caption font-semibold">{title}</span>
         </div>
-        <Badge variant="outline" className="px-1.5 py-0 text-xs">
+        <Badge variant="outline" className="text-footnote px-2 py-0">
           {recent.length}
         </Badge>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {recent.length === 0 && (
-          <p className="text-muted-foreground py-3 text-center text-xs">{emptyMessage}</p>
+          <p className="text-label-secondary text-footnote py-3 text-center">{emptyMessage}</p>
         )}
         {recent.map((e) => (
           <div key={e.id} className="flex items-start gap-2 py-1">
             <e.icon className={cn("mt-0.5 h-3 w-3 shrink-0", e.iconColor)} />
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-1 text-xs leading-snug">{e.text}</p>
-              <span className="text-muted-foreground text-xs">{timeAgo(e.time)}</span>
+              <p className="text-footnote line-clamp-1 leading-snug">{e.text}</p>
+              <span className="text-label-secondary text-footnote">{timeAgo(e.time)}</span>
             </div>
           </div>
         ))}

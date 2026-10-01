@@ -102,8 +102,8 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       {/* Tax burden analysis */}
       <RailCard title="Tax burden" icon={BarChart3} contentClassName="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground text-xs">Effective GDP tax burden</span>
-          <span className="text-foreground font-mono text-base font-semibold tabular-nums">
+          <span className="text-label-secondary text-footnote">Effective GDP tax burden</span>
+          <span className="text-label text-title-3 tabular-nums">
             {effectiveTaxBurden != null ? (
               <PercentageFlow value={effectiveTaxBurden} decimalPlaces={1} />
             ) : (
@@ -112,11 +112,11 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
           </span>
         </div>
 
-        <div className="bg-muted relative h-2.5 overflow-hidden rounded-full">
+        <div className="bg-fill-3 relative h-2.5 overflow-hidden rounded-full">
           {/* Optimal zone band (15–35% on a 0–50% scale) */}
           <div
             aria-hidden="true"
-            className="absolute inset-y-0 border-x border-emerald-500/40 bg-emerald-500/10"
+            className="border-green/40 bg-green/10 absolute inset-y-0 border-x"
             style={{ left: "30%", width: "40%" }}
           />
           <div
@@ -126,7 +126,7 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
             }}
           />
         </div>
-        <div className="text-muted-foreground flex justify-between font-mono text-xs">
+        <div className="text-label-secondary text-footnote flex justify-between tabular-nums">
           <span>0%</span>
           <span>Optimal zone 15–35%</span>
           <span>50%+</span>
@@ -136,13 +136,13 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       {/* Revenue composition */}
       <RailCard title="Revenue composition" icon={Activity} contentClassName="space-y-3">
         {revenueComposition.length === 0 ? (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             No revenue projection yet — set your tax rates in National Tax Rate Controls.
           </p>
         ) : (
           <>
             <div
-              className="bg-muted flex h-3 overflow-hidden rounded-full"
+              className="bg-fill-3 flex h-3 overflow-hidden rounded-full"
               role="img"
               aria-label="Share of revenue by tax"
             >
@@ -156,19 +156,22 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
               ))}
             </div>
 
-            <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-2">
               {revenueComposition.map((seg) => {
                 const ch = TAX_CHANNELS.find((c) => c.key === seg.key)!;
                 return (
-                  <li key={seg.key} className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex min-w-0 items-center gap-1.5">
+                  <li
+                    key={seg.key}
+                    className="text-footnote flex items-center justify-between gap-2"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
                       <span
                         aria-hidden="true"
                         className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[seg.accent])}
                       />
-                      <span className="text-muted-foreground truncate">{ch.shortLabel}</span>
+                      <span className="text-label-secondary truncate">{ch.shortLabel}</span>
                     </div>
-                    <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">
+                    <span className="text-label shrink-0 font-medium tabular-nums">
                       {seg.pct != null ? <PercentageFlow value={seg.pct} decimalPlaces={1} /> : "—"}
                     </span>
                   </li>
@@ -182,9 +185,9 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
       {/* Fiscal health */}
       <RailCard title="Fiscal health" icon={ShieldCheck}>
         <div className="grid grid-cols-3 gap-2">
-          <RailRow className="p-2.5">
+          <RailRow className="p-2">
             <Eyebrow className="block">Efficiency</Eyebrow>
-            <p className="text-foreground mt-0.5 font-mono text-base font-semibold tabular-nums">
+            <p className="text-label text-title-3 mt-0.5 tabular-nums">
               {collectionEfficiency != null ? (
                 <PercentageFlow value={collectionEfficiency} decimalPlaces={0} />
               ) : (
@@ -192,13 +195,13 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
               )}
             </p>
           </RailRow>
-          <RailRow className="p-2.5">
+          <RailRow className="p-2">
             <Eyebrow className="block">Budget Δ</Eyebrow>
             <p
               className={cn(
-                "mt-0.5 font-mono text-base font-semibold tabular-nums",
+                "text-title-3 mt-0.5 tabular-nums",
                 budgetImpact == null
-                  ? "text-foreground"
+                  ? "text-label"
                   : budgetImpact >= 0
                     ? STATUS_TEXT.success
                     : STATUS_TEXT.critical
@@ -218,12 +221,12 @@ export function FiscalPolicyInsights({ countryId: _countryId }: { countryId: str
               )}
             </p>
           </RailRow>
-          <RailRow className="p-2.5">
+          <RailRow className="p-2">
             <Eyebrow className="block">Burden</Eyebrow>
             <p
               className={cn(
-                "mt-0.5 text-sm font-semibold",
-                lafferPosition == null ? "text-foreground" : burdenText
+                "text-headline mt-0.5",
+                lafferPosition == null ? "text-label" : burdenText
               )}
             >
               {lafferPosition == null

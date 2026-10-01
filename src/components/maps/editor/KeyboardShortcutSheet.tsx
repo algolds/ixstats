@@ -101,10 +101,10 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
   // Opened from the keyboard (?), so it appears and leaves with no animation (Facet §8).
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="facet-modal max-h-[80vh] gap-0 overflow-y-auto rounded-2xl p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">
+      <DialogContent className="rounded-card max-h-[80vh] gap-0 overflow-y-auto p-0 duration-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:max-w-lg">
         {/* Header */}
-        <DialogHeader className="border-border border-b px-5 py-3 pr-12">
-          <DialogTitle className="text-sm">Keyboard shortcuts</DialogTitle>
+        <DialogHeader className="border-separator border-b px-5 py-3 pr-12">
+          <DialogTitle className="text-body">Keyboard shortcuts</DialogTitle>
         </DialogHeader>
 
         {/* Content */}
@@ -116,15 +116,15 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                 {group.shortcuts.map((shortcut) => (
                   <div
                     key={shortcut.keys}
-                    className="hover:bg-accent/50 flex items-center justify-between rounded-md px-2 py-1.5 text-sm"
+                    className="hover:bg-fill-3 rounded-control-sm text-body flex items-center justify-between px-2 py-2"
                   >
-                    <span className="text-muted-foreground">{shortcut.description}</span>
+                    <span className="text-label-secondary">{shortcut.description}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.split(/( \+ | \/ )/).map((part, i) => {
                         const trimmed = part.trim();
                         if (trimmed === "+" || trimmed === "/") {
                           return (
-                            <span key={i} className="text-muted-foreground text-xs">
+                            <span key={i} className="text-label-secondary text-footnote">
                               {trimmed}
                             </span>
                           );
@@ -132,7 +132,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
                         return (
                           <kbd
                             key={i}
-                            className="border-border bg-muted text-foreground inline-flex min-w-[24px] items-center justify-center rounded border px-1.5 py-0.5 text-xs font-medium shadow-sm"
+                            className="border-separator bg-fill-3 text-label text-caption shadow-card rounded-control-sm inline-flex min-w-[24px] items-center justify-center border px-2 py-0.5"
                           >
                             {trimmed}
                           </kbd>
@@ -147,9 +147,12 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-border text-muted-foreground border-t px-5 py-3 text-center text-xs">
-          Press <kbd className="border-border bg-muted rounded border px-1 text-xs">Esc</kbd> to
-          close
+        <div className="border-separator text-label-secondary text-footnote border-t px-5 py-3 text-center">
+          Press{" "}
+          <kbd className="border-separator bg-fill-3 text-footnote rounded-control-sm border px-1">
+            Esc
+          </kbd>{" "}
+          to close
         </div>
       </DialogContent>
     </Dialog>

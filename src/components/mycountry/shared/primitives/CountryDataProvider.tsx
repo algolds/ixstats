@@ -146,11 +146,11 @@ export function CountryDataProvider({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
+              <Skeleton key={i} className="rounded-card h-24" />
             ))}
           </div>
 
-          <Skeleton className="h-96 rounded-2xl" />
+          <Skeleton className="rounded-card h-96" />
         </div>
       </div>
     );
@@ -174,11 +174,11 @@ export function CountryDataProvider({
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-2xl">
           <CardHeader className="text-center">
-            <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <CardTitle className="text-2xl font-bold">No Country Assigned</CardTitle>
+            <Crown className="text-label-secondary mx-auto mb-4 h-12 w-12" />
+            <CardTitle className="text-title-1">No Country Assigned</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-6">
+            <p className="text-label-secondary mb-6">
               You don't have a country assigned to your account yet. Contact an administrator to
               claim a country or browse available countries to request ownership.
             </p>

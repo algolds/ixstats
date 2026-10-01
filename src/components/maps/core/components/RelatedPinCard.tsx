@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { FacetCard } from "~/components/ui/facet-container";
 import { STORY_PIN_COLORS } from "~/lib/maps/story-pin-icons";
 import { getCategoryIcon } from "~/components/maps/core/utils/story-pin-helpers";
 
@@ -20,22 +21,23 @@ export function RelatedPinCard({ pin, onNavigate }: RelatedPinCardProps) {
   const color = STORY_PIN_COLORS[pin.category];
   const Icon = getCategoryIcon(pin.category);
   return (
-    <button
-      type="button"
+    <FacetCard
+      variant="inset"
+      padding="sm"
       onClick={() => onNavigate?.(pin.id)}
-      className="border-border bg-card hover:bg-accent focus-visible:ring-ring flex w-full items-center gap-2.5 rounded-lg border p-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="flex w-full items-center gap-2 p-2 text-left"
     >
       <Icon
-        className="text-muted-foreground h-4 w-4 shrink-0"
+        className="text-label-secondary h-4 w-4 shrink-0"
         style={color ? { color } : undefined}
         aria-hidden
       />
       <div className="min-w-0">
-        <p className="text-foreground truncate text-xs font-medium">{pin.title}</p>
+        <p className="text-label text-caption truncate">{pin.title}</p>
         {pin.ixTimeYear != null && (
-          <p className="text-muted-foreground text-xs">Year {pin.ixTimeYear}</p>
+          <p className="text-label-secondary text-footnote">Year {pin.ixTimeYear}</p>
         )}
       </div>
-    </button>
+    </FacetCard>
   );
 }

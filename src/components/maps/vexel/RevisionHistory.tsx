@@ -29,12 +29,12 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
   };
 
   if (isLoading) {
-    return <div className="text-muted-foreground py-4 text-xs">Loading version logs...</div>;
+    return <div className="text-label-secondary text-footnote py-4">Loading version logs...</div>;
   }
 
   if (!revisions || revisions.length === 0) {
     return (
-      <div className="text-muted-foreground py-4 text-xs italic">No revisions registered.</div>
+      <div className="text-label-secondary text-footnote py-4 italic">No revisions registered.</div>
     );
   }
 
@@ -49,7 +49,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
           return (
             <div
               key={rev.id}
-              className="border-border bg-card/30 flex items-center justify-between gap-4 rounded-lg border p-2.5 text-xs"
+              className="border-separator bg-surface rounded-control text-footnote flex items-center justify-between gap-4 border p-2"
             >
               <div className="flex items-center gap-3">
                 {/* Micro preview */}
@@ -58,14 +58,14 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                 </div>
 
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block font-semibold">
+                  <span className="text-label-secondary block font-semibold">
                     Version: {revisions.length - idx}
                   </span>
-                  <span className="text-muted-foreground block text-xs">
+                  <span className="text-label-secondary text-footnote block">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>
                   {rev.revisionNote && (
-                    <p className="text-muted-foreground text-xs italic">
+                    <p className="text-label-secondary text-footnote italic">
                       Change: {rev.revisionNote}
                     </p>
                   )}

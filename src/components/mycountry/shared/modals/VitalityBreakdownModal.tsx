@@ -2,12 +2,12 @@
 
 import React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -90,35 +90,35 @@ export function VitalityBreakdownModal({
     rings.length > 0 ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length) : 0;
 
   const getOverallRating = (score: number) => {
-    if (score >= 85) return { label: "Optimal Standing", cls: "text-emerald-500" };
-    if (score >= 70) return { label: "Strong Standing", cls: "text-foreground" };
-    if (score >= 50) return { label: "Moderate Standing", cls: "text-amber-500" };
+    if (score >= 85) return { label: "Optimal Standing", cls: "text-green" };
+    if (score >= 70) return { label: "Strong Standing", cls: "text-label" };
+    if (score >= 50) return { label: "Moderate Standing", cls: "text-yellow" };
     return { label: "Strained Standing", cls: "text-destructive" };
   };
 
   const rating = getOverallRating(avgScore);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader className="border-border border-b pb-4">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader className="border-separator border-b pb-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <Activity className="text-muted-foreground h-5 w-5" />
+            <div className="flex items-center gap-2">
+              <Activity className="text-label-secondary h-5 w-5" />
               <div>
-                <DialogTitle className="text-base font-semibold">
+                <SheetTitle className="text-title-3">
                   National Vitality Breakdown {countryName ? `— ${countryName}` : ""}
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                </SheetTitle>
+                <SheetDescription className="text-label-secondary text-footnote">
                   Real-time diagnostic analysis across the 4 key national vitality pillars.
-                </DialogDescription>
+                </SheetDescription>
               </div>
             </div>
             <Badge variant="outline" className={rating.cls}>
               {rating.label} ({avgScore}/100)
             </Badge>
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
         <div className="space-y-4 py-3">
           {/* Grid of the 4 Vitality Pillars built with Facet cards */}
@@ -133,9 +133,9 @@ export function VitalityBreakdownModal({
               const Icon = meta.icon;
 
               const getPillarStatus = (val: number) => {
-                if (val >= 80) return { text: "Optimal", color: "text-emerald-500" };
-                if (val >= 60) return { text: "Stable", color: "text-muted-foreground" };
-                if (val >= 40) return { text: "Moderate", color: "text-amber-500" };
+                if (val >= 80) return { text: "Optimal", color: "text-green" };
+                if (val >= 60) return { text: "Stable", color: "text-label-secondary" };
+                if (val >= 40) return { text: "Moderate", color: "text-yellow" };
                 return { text: "Attention Needed", color: "text-destructive" };
               };
 
@@ -143,16 +143,16 @@ export function VitalityBreakdownModal({
 
               return (
                 <FacetCard
+                  variant="inset"
                   key={ring.id}
-                  surface="solid"
-                  className="flex flex-col justify-between rounded-xl p-3.5"
+                  className="flex flex-col justify-between p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
+                      <Icon className="text-label-secondary h-4 w-4 shrink-0" />
                       <div>
-                        <h4 className="text-foreground text-sm font-semibold">{meta.title}</h4>
-                        <span className={cn("text-xs font-semibold", pillarStatus.color)}>
+                        <h4 className="text-label text-headline">{meta.title}</h4>
+                        <span className={cn("text-caption font-semibold", pillarStatus.color)}>
                           {pillarStatus.text}
                         </span>
                       </div>
@@ -165,19 +165,19 @@ export function VitalityBreakdownModal({
                     />
                   </div>
 
-                  <p className="text-muted-foreground mt-2.5 text-xs leading-relaxed">
+                  <p className="text-label-secondary text-footnote mt-2 leading-relaxed">
                     {meta.description}
                   </p>
 
-                  <div className="border-border mt-3 border-t pt-2">
+                  <div className="border-separator mt-3 border-t pt-2">
                     <Eyebrow>Core drivers</Eyebrow>
                     <ul className="mt-1 space-y-1">
                       {meta.drivers.map((driver) => (
                         <li
                           key={driver}
-                          className="text-foreground/80 flex items-center gap-1.5 text-xs"
+                          className="text-label-secondary text-footnote flex items-center gap-2"
                         >
-                          <CheckCircle2 className="text-muted-foreground h-3 w-3 shrink-0" />
+                          <CheckCircle2 className="text-label-secondary h-3 w-3 shrink-0" />
                           <span className="truncate">{driver}</span>
                         </li>
                       ))}
@@ -188,7 +188,7 @@ export function VitalityBreakdownModal({
             })}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

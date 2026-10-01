@@ -14,39 +14,39 @@ interface LegislativePoliciesProps {
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   active: {
     label: "Active",
-    className: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-0",
+    className: "bg-green/10 text-green-ink border-0",
   },
   draft: {
     label: "Draft",
-    className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border-0",
+    className: "bg-yellow/10 text-yellow-ink border-0",
   },
   suspended: {
     label: "Suspended",
-    className: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-400 border-0",
+    className: "bg-orange/10 text-orange-ink border-0",
   },
-  expired: { label: "Expired", className: "bg-muted text-muted-foreground border-0" },
+  expired: { label: "Expired", className: "bg-fill-3 text-label-secondary border-0" },
   repealed: {
     label: "Repealed",
-    className: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border-0",
+    className: "bg-red/10 text-red-ink border-0",
   },
 };
 
 const PRIORITY_BADGE: Record<string, { label: string; className: string }> = {
   critical: {
     label: "Critical",
-    className: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border-0",
+    className: "bg-red/10 text-red-ink border-0",
   },
   high: {
     label: "High",
-    className: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-400 border-0",
+    className: "bg-orange/10 text-orange-ink border-0",
   },
   medium: {
     label: "Medium",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 border-0",
+    className: "bg-blue/10 text-blue-ink border-0",
   },
   low: {
     label: "Low",
-    className: "bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-400 border-0",
+    className: "bg-surface-secondary text-label border-0",
   },
 };
 
@@ -62,13 +62,13 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
   const extraCount = (policies?.length ?? 0) - 6;
 
   return (
-    <div className="facet-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ScrollText className="h-4 w-4 text-emerald-600" />
-          <span className="text-sm font-semibold">Laws & Active Policies</span>
+          <ScrollText className="text-green h-4 w-4" />
+          <span className="text-headline">Laws & Active Policies</span>
           {policies && policies.length > 0 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-footnote">
               {policies.length} total
             </Badge>
           )}
@@ -76,7 +76,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1 text-xs"
+          className="text-footnote h-7 gap-1"
           onClick={() => setCreatorOpen(true)}
         >
           <Plus className="h-3 w-3" />
@@ -85,7 +85,7 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
       </div>
 
       {visiblePolicies.length > 0 ? (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {visiblePolicies.map((policy) => {
             const statusMeta = STATUS_BADGE[policy.status] ?? STATUS_BADGE.draft!;
             const priorityMeta =
@@ -93,33 +93,33 @@ export function LegislativePolicies({ countryId }: LegislativePoliciesProps) {
             return (
               <div
                 key={policy.id}
-                className="bg-muted/30 flex items-center gap-2 rounded-md px-2.5 py-1.5"
+                className="bg-fill-4 rounded-control-sm flex items-center gap-2 px-3 py-2"
               >
-                <FileText className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                <span className="min-w-0 flex-1 truncate text-sm">{policy.name}</span>
-                <span className="text-muted-foreground hidden text-xs capitalize sm:inline">
+                <FileText className="text-label-secondary h-3.5 w-3.5 shrink-0" />
+                <span className="text-body min-w-0 flex-1 truncate">{policy.name}</span>
+                <span className="text-label-secondary text-footnote hidden capitalize sm:inline">
                   {policy.category}
                 </span>
-                <Badge className={`px-1.5 py-0 text-xs ${priorityMeta.className}`}>
+                <Badge className={`text-footnote px-2 py-0 ${priorityMeta.className}`}>
                   {priorityMeta.label}
                 </Badge>
-                <Badge className={`px-1.5 py-0 text-xs ${statusMeta.className}`}>
+                <Badge className={`text-footnote px-2 py-0 ${statusMeta.className}`}>
                   {statusMeta.label}
                 </Badge>
               </div>
             );
           })}
           {extraCount > 0 && (
-            <p className="text-muted-foreground pt-1 text-xs">
+            <p className="text-label-secondary text-footnote pt-1">
               + {extraCount} more {extraCount === 1 ? "policy" : "policies"}
             </p>
           )}
         </div>
       ) : (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-6 text-center">
+        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-6 text-center">
           <ScrollText className="h-8 w-8 opacity-30" />
-          <p className="text-sm">No policies enacted</p>
-          <p className="text-xs">Create your first bill using the button above.</p>
+          <p className="text-body">No policies enacted</p>
+          <p className="text-footnote">Create your first bill using the button above.</p>
         </div>
       )}
 

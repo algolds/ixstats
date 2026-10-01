@@ -7,15 +7,15 @@ import { FacetCard } from "~/components/ui/facet-container";
 
 /** Accent colour names → the icon's accent (the only place the accent shows). */
 const ACCENT_ICON: Record<string, string> = {
-  emerald: "text-emerald-500",
-  red: "text-red-500",
-  amber: "text-amber-500",
-  cyan: "text-cyan-500",
-  blue: "text-blue-500",
-  indigo: "text-indigo-500",
-  purple: "text-indigo-500",
-  pink: "text-blue-500",
-  orange: "text-amber-500",
+  emerald: "text-green",
+  red: "text-red",
+  amber: "text-yellow",
+  cyan: "text-cyan",
+  blue: "text-blue",
+  indigo: "text-indigo",
+  purple: "text-indigo",
+  pink: "text-blue",
+  orange: "text-yellow",
 };
 
 interface TabHeroBannerProps {
@@ -44,17 +44,18 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
   accentColor,
   className,
 }: TabHeroBannerProps) {
-  const iconClass = (accentColor && ACCENT_ICON[accentColor]) ?? "text-muted-foreground";
+  const iconClass = (accentColor && ACCENT_ICON[accentColor]) ?? "text-label-secondary";
 
   return (
     <FacetCard
-      depth={1}
-      className={cn("mb-4 flex items-center rounded-2xl px-4 sm:px-6", heightClass, className)}
+      className={cn("rounded-card mb-4 flex items-center px-4 sm:px-6", heightClass, className)}
     >
       {Icon && <Icon className={cn("mr-3 h-5 w-5 shrink-0", iconClass)} />}
       <div className="min-w-0">
-        <h3 className="text-foreground text-sm font-semibold sm:text-base">{title}</h3>
-        {subtitle && <p className="text-muted-foreground mt-0.5 text-xs sm:text-sm">{subtitle}</p>}
+        <h3 className="text-label text-headline sm:text-headline">{title}</h3>
+        {subtitle && (
+          <p className="text-label-secondary text-footnote sm:text-body mt-0.5">{subtitle}</p>
+        )}
       </div>
     </FacetCard>
   );

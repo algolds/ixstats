@@ -7,7 +7,7 @@ import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 interface LakePropertyFormProps {
   form: NamedLakeFormData;
@@ -53,7 +53,7 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
       />
 
       <div>
-        <label className="text-muted-foreground mb-1 block text-left text-xs font-medium">
+        <label className="text-label-secondary text-caption mb-1 block text-left">
           Max Depth (meters, optional)
         </label>
         <input
@@ -71,19 +71,19 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
         />
       </div>
 
-      <FacetCard surface="solid" className="rounded-lg px-3 py-2 text-xs">
-        <div className="text-muted-foreground text-left font-medium">
+      <FacetCard className="text-footnote px-3 py-2">
+        <div className="text-label-secondary text-left font-medium">
           Polygon Geometry:{" "}
           {hasGeom ? (
-            <span className="text-foreground font-semibold">
+            <span className="text-label font-semibold">
               Drawn {areaSqKm !== undefined && `(${areaSqKm.toFixed(2)} km²)`}
             </span>
           ) : (
-            <span className="text-amber-500 italic">Not drawn yet (use Polygon tool)</span>
+            <span className="text-yellow italic">Not drawn yet (use Polygon tool)</span>
           )}
         </div>
         {!hasGeom && (
-          <div className="text-muted-foreground mt-1 text-left text-xs">
+          <div className="text-label-secondary text-footnote mt-1 text-left">
             Use the polygon drawing tool in the map controls to trace the contours of the lake.
           </div>
         )}

@@ -56,12 +56,12 @@ export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssue
   };
 
   return (
-    <div className="facet-hierarchy-child border-border space-y-3 rounded-xl border p-4">
+    <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600" />
-        <span className="text-sm font-semibold">Governance Issues</span>
+        <AlertTriangle className="text-yellow h-4 w-4" />
+        <span className="text-headline">Governance Issues</span>
         {governanceIssues.length > 0 && (
-          <span className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400">
+          <span className="text-caption text-yellow ml-auto">
             {governanceIssues.length} pending
           </span>
         )}
@@ -79,10 +79,10 @@ export function LegislativeIssues({ countryId, onSelectIssue }: LegislativeIssue
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <CheckCircle2 className="h-8 w-8 text-green-500 opacity-50" />
-          <p className="text-sm">No active governance issues</p>
-          <p className="text-xs">Your legislative agenda is clear.</p>
+        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-6 text-center">
+          <CheckCircle2 className="text-green h-8 w-8 opacity-50" />
+          <p className="text-body">No active governance issues</p>
+          <p className="text-footnote">Your legislative agenda is clear.</p>
         </div>
       )}
 

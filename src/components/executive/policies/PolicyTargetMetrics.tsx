@@ -51,34 +51,37 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
   };
 
   return (
-    <div className="border-border/40 space-y-3 border-t pt-3">
-      <Label className="text-xs font-semibold">Target Simulation Metrics</Label>
+    <div className="border-separator space-y-3 border-t pt-3">
+      <Label className="text-caption font-semibold">Target Simulation Metrics</Label>
 
       {metrics.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {metrics.map((m, idx) => {
             const opt = METRIC_OPTIONS.find((o) => o.value === m.metric);
             return (
               <div
                 key={idx}
-                className="bg-muted/40 border-border/40 flex items-center justify-between rounded border px-3 py-1.5 text-xs"
+                className="bg-fill-3 border-separator text-footnote rounded-control-sm flex items-center justify-between border px-3 py-2"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{opt?.label ?? m.metric}</span>
-                  <span className="text-muted-foreground">→</span>
-                  <span className="font-semibold text-indigo-400">
+                  <span className="text-label-secondary">→</span>
+                  <span className="text-indigo font-semibold">
                     {m.value}
                     {opt?.unit ?? ""}
                   </span>
-                  <span className="text-muted-foreground">({m.timeline})</span>
+                  <span className="text-label-secondary">({m.timeline})</span>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => handleRemove(idx)}
-                  className="hover:bg-muted text-muted-foreground hover:text-foreground rounded p-0.5 transition-colors"
+                  aria-label="Remove target metric"
+                  className="text-label-secondary hover:text-label size-5"
                 >
-                  <X className="h-3 w-3" />
-                </button>
+                  <X className="size-3" />
+                </Button>
               </div>
             );
           })}
@@ -88,7 +91,7 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
       <div className="grid grid-cols-12 gap-2">
         <div className="col-span-5">
           <Select value={metricType} onValueChange={setMetricType}>
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="text-footnote h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -106,12 +109,12 @@ export function PolicyTargetMetrics({ metrics, onChange }: PolicyTargetMetricsPr
             value={metricValue}
             onChange={(e) => setMetricValue(e.target.value)}
             placeholder="Target"
-            className="h-8 text-xs"
+            className="text-footnote h-8"
           />
         </div>
         <div className="col-span-3">
           <Select value={metricTimeline} onValueChange={setMetricTimeline}>
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="text-footnote h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

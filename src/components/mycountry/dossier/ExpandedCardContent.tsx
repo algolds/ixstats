@@ -22,6 +22,7 @@ import {
   Calendar,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { type CountryCardData } from "./CountryFocusCard";
@@ -170,14 +171,11 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
       establishEmbassyMutation.isPending ||
       foreignPolicyMutation.isPending;
 
-    const buttonClass = (extra = "") =>
-      cn(
-        "border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring flex min-h-10 w-full items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
-        extra
-      );
+    // Action rows: Facet `Button`s at the large (44px) size, label-aligned.
+    const actionClass = "w-full justify-start";
 
     return (
-      <div className="bg-card text-card-foreground relative min-h-[320px] w-full p-4 sm:p-5">
+      <div className="bg-surface text-label relative min-h-[320px] w-full p-4 sm:p-5">
         <div className="relative z-10 space-y-4">
           {/* Header */}
           <FadeIn direction="up" delay={0.1}>
@@ -191,17 +189,16 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Own Country Action */}
           {isOwnCountry && (
             <FadeIn direction="up" delay={0.15}>
-              <button
+              <Button
                 type="button"
                 onClick={handleGoToMyCountry}
-                data-cuelume-press="tick"
-                className={buttonClass(
-                  "border-transparent bg-amber-500 text-amber-950 hover:bg-amber-500/90"
-                )}
+                variant="filled"
+                size="lg"
+                className={actionClass}
               >
                 <Crown className="h-4 w-4" />
                 Go to MyCountry Dashboard
-              </button>
+              </Button>
             </FadeIn>
           )}
 
@@ -209,60 +206,63 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {!isOwnCountry && (
             <div className="space-y-4">
               {/* Social */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Eyebrow className="block px-1">Social</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleFollowToggle}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      followStatus?.isFollowing
-                        ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                        : ""
-                    )}
+                    variant="bordered"
+                    size="lg"
+                    className={cn(actionClass, followStatus?.isFollowing && "text-destructive")}
                   >
                     {followMutation.isPending || unfollowMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : followStatus?.isFollowing ? (
                       <UserMinus className="text-destructive h-3.5 w-3.5" />
                     ) : (
-                      <UserPlus className="text-muted-foreground h-3.5 w-3.5" />
+                      <UserPlus className="text-label-secondary h-3.5 w-3.5" />
                     )}
                     {followStatus?.isFollowing ? "Unfollow" : "Follow"}
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleSendMessage}
                     disabled={!viewerCountryId}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="bordered"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <MessageSquare className="text-muted-foreground h-3.5 w-3.5" />
+                    <MessageSquare className="text-label-secondary h-3.5 w-3.5" />
                     Message
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Diplomacy */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Eyebrow className="block px-1">Diplomacy</Eyebrow>
                 <div className="flex flex-col gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={handleEstablishEmbassy}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="bordered"
+                    size="lg"
+                    className={actionClass}
                   >
                     {establishEmbassyMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Building2 className="text-muted-foreground h-3.5 w-3.5" />
+                      <Building2 className="text-label-secondary h-3.5 w-3.5" />
                     )}
                     Construct Embassy
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (!viewerCountryId) {
@@ -272,88 +272,93 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       setSchedulerOpen(true);
                     }}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass()}
+                    variant="bordered"
+                    size="lg"
+                    className={actionClass}
                   >
-                    <Calendar className="text-muted-foreground h-3.5 w-3.5" />
+                    <Calendar className="text-label-secondary h-3.5 w-3.5" />
                     Request Meeting
-                  </button>
+                  </Button>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "free_trade")}
                       disabled={!viewerCountryId || isLoading}
-                      data-cuelume-press="tick"
-                      className={buttonClass()}
+                      variant="bordered"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Handshake className="text-muted-foreground h-3.5 w-3.5" />
+                      <Handshake className="text-label-secondary h-3.5 w-3.5" />
                       Free Trade
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
+                      type="button"
                       onClick={(e) => handleForeignPolicy(e, "military_alliance")}
                       disabled={!viewerCountryId || isLoading}
-                      data-cuelume-press="tick"
-                      className={buttonClass()}
+                      variant="bordered"
+                      size="lg"
+                      className={actionClass}
                     >
-                      <Shield className="text-muted-foreground h-3.5 w-3.5" />
+                      <Shield className="text-label-secondary h-3.5 w-3.5" />
                       Alliance
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
 
               {/* Foreign Policy (Sanctions & Embargo) */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Eyebrow className="block px-1">Foreign Policy</Eyebrow>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
-                    )}
+                    variant="bordered"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Scale className="text-muted-foreground h-3.5 w-3.5" />
+                    <Scale className="text-label-secondary h-3.5 w-3.5" />
                     Sanctions
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button
+                    type="button"
                     onClick={(e) => handleForeignPolicy(e, "embargo")}
                     disabled={!viewerCountryId || isLoading}
-                    data-cuelume-press="tick"
-                    className={buttonClass(
-                      "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/40"
-                    )}
+                    variant="bordered"
+                    size="lg"
+                    className={cn(actionClass, "text-destructive")}
                   >
-                    <Swords className="text-muted-foreground h-3.5 w-3.5" />
+                    <Swords className="text-label-secondary h-3.5 w-3.5" />
                     Embargo
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Quick Links */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Eyebrow className="block px-1">Quick Links</Eyebrow>
-                <a
-                  href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
-                  onClick={(e) => e.stopPropagation()}
-                  data-cuelume-press="tick"
-                  className={buttonClass()}
-                >
-                  <Globe className="text-muted-foreground h-3.5 w-3.5" />
-                  View on IxWiki
-                  <ExternalLink className="text-muted-foreground ml-auto h-3 w-3" />
-                </a>
+                <Button asChild variant="bordered" size="lg" className={actionClass}>
+                  <a
+                    href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Globe className="text-label-secondary h-3.5 w-3.5" />
+                    View on IxWiki
+                    <ExternalLink className="text-label-secondary ml-auto h-3 w-3" />
+                  </a>
+                </Button>
               </div>
             </div>
           )}
 
           {/* Login warning */}
           {!viewerCountryId && !isOwnCountry && (
-            <div className="border-border/60 mt-3 border-t pt-3">
-              <p className="text-muted-foreground text-center text-xs font-medium">
+            <div className="border-separator mt-3 border-t pt-3">
+              <p className="text-label-secondary text-caption text-center">
                 Login required to perform actions
               </p>
             </div>

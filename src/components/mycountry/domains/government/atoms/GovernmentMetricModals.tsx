@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetTabs } from "~/components/ui/facet";
@@ -109,13 +109,13 @@ export function GovernmentMetricModals({
   const TitleIcon = TITLES[activeTab].icon;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-xl gap-0 overflow-hidden p-0 sm:max-w-xl">
-        <DialogHeader className="border-border/60 border-b px-6 pt-5 pb-3">
-          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <TitleIcon aria-hidden="true" className="h-5 w-5 text-amber-500" />
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="border-separator border-b px-6 pt-5 pb-3">
+          <SheetTitle className="text-label text-title-3 flex items-center gap-2">
+            <TitleIcon aria-hidden="true" className="text-yellow h-5 w-5" />
             {TITLES[activeTab].label}
-          </DialogTitle>
+          </SheetTitle>
 
           <FacetTabs
             size="sm"
@@ -130,9 +130,9 @@ export function GovernmentMetricModals({
             activeTab={activeTab}
             onChange={(id) => setActiveTab(id as MetricTab)}
           />
-        </DialogHeader>
+        </SheetHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {/* Tab 1: Components */}
           {activeTab === "components" && (
             <SelectedComponentsList
@@ -149,14 +149,14 @@ export function GovernmentMetricModals({
             <div className="space-y-6">
               {/* Active Synergies */}
               <section>
-                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-                  <Zap aria-hidden="true" className="h-4 w-4 text-emerald-600" />
+                <h4 className="text-label text-headline mb-3 flex items-center gap-2">
+                  <Zap aria-hidden="true" className="text-green h-4 w-4" />
                   Active synergies ({synergies.length})
                 </h4>
                 {synergies.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">No active synergies.</p>
+                  <p className="text-label-secondary text-footnote">No active synergies.</p>
                 ) : (
-                  <ul className="divide-border/60 border-border/60 divide-y rounded-lg border">
+                  <ul className="divide-separator border-separator rounded-control divide-y border">
                     {synergies.map(({ comp1, comp2, score }, index) => {
                       const component1 = ATOMIC_COMPONENTS[comp1];
                       const component2 = ATOMIC_COMPONENTS[comp2];
@@ -167,17 +167,14 @@ export function GovernmentMetricModals({
                           className="flex items-center justify-between gap-3 p-3"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="text-foreground text-xs font-semibold">
+                            <p className="text-label text-caption font-semibold">
                               {component1.name} + {component2.name}
                             </p>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-label-secondary text-footnote mt-0.5">
                               Complementary systems boost administrative output.
                             </p>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 border-emerald-500/30 font-mono text-emerald-600"
-                          >
+                          <Badge variant="green" className="shrink-0 tabular-nums">
                             +{score}%
                           </Badge>
                         </li>
@@ -189,14 +186,14 @@ export function GovernmentMetricModals({
 
               {/* Active Conflicts */}
               <section>
-                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
+                <h4 className="text-label text-headline mb-3 flex items-center gap-2">
                   <AlertTriangle aria-hidden="true" className="text-destructive h-4 w-4" />
                   Active conflicts ({conflicts.length})
                 </h4>
                 {conflicts.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">No active conflicts.</p>
+                  <p className="text-label-secondary text-footnote">No active conflicts.</p>
                 ) : (
-                  <ul className="divide-border/60 border-border/60 divide-y rounded-lg border">
+                  <ul className="divide-separator border-separator rounded-control divide-y border">
                     {conflicts.map(({ comp1, comp2 }, index) => {
                       const component1 = ATOMIC_COMPONENTS[comp1];
                       const component2 = ATOMIC_COMPONENTS[comp2];
@@ -207,17 +204,14 @@ export function GovernmentMetricModals({
                           className="flex items-center justify-between gap-3 p-3"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="text-foreground text-xs font-semibold">
+                            <p className="text-label text-caption font-semibold">
                               {component1.name} vs {component2.name}
                             </p>
-                            <p className="text-muted-foreground mt-0.5 text-xs">
+                            <p className="text-label-secondary text-footnote mt-0.5">
                               Incompatible policies drag down performance.
                             </p>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className="border-destructive/30 text-destructive shrink-0 font-mono"
-                          >
+                          <Badge variant="destructive" className="shrink-0 tabular-nums">
                             -15%
                           </Badge>
                         </li>
@@ -229,12 +223,12 @@ export function GovernmentMetricModals({
 
               {/* Enacted Directives */}
               <section>
-                <h4 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-                  <CheckCircle aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+                <h4 className="text-label text-headline mb-3 flex items-center gap-2">
+                  <CheckCircle aria-hidden="true" className="text-label-secondary h-4 w-4" />
                   Enacted directives ({directives.length})
                 </h4>
                 {directives.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     No policy directives active. Select components to unlock state directives.
                   </p>
                 ) : (
@@ -242,12 +236,10 @@ export function GovernmentMetricModals({
                     {directives.map((dir) => (
                       <li
                         key={dir.id}
-                        className="border-border/60 flex items-center justify-between gap-2 rounded-lg border p-2.5"
+                        className="border-separator rounded-control flex items-center justify-between gap-2 border p-2"
                       >
-                        <span className="text-foreground truncate text-xs font-medium">
-                          {dir.name}
-                        </span>
-                        <Badge variant="outline" className="text-muted-foreground shrink-0">
+                        <span className="text-label text-caption truncate">{dir.name}</span>
+                        <Badge variant="outline" className="text-label-secondary shrink-0">
                           {dir.category}
                         </Badge>
                       </li>
@@ -261,12 +253,12 @@ export function GovernmentMetricModals({
           {/* Tab 3: Effectiveness */}
           {activeTab === "effectiveness" && (
             <div className="space-y-6">
-              <dl className="border-border/60 grid grid-cols-2 gap-4 rounded-lg border p-4 text-center">
+              <dl className="border-separator rounded-control grid grid-cols-2 gap-4 border p-4 text-center">
                 <div className="space-y-1">
                   <dt>
                     <Eyebrow>Base score</Eyebrow>
                   </dt>
-                  <dd className="text-foreground font-mono text-xl font-semibold tabular-nums">
+                  <dd className="text-label text-title-2 tabular-nums">
                     {effectiveness.baseEffectiveness.toFixed(1)}%
                   </dd>
                 </div>
@@ -274,7 +266,7 @@ export function GovernmentMetricModals({
                   <dt>
                     <Eyebrow>Synergy bonus</Eyebrow>
                   </dt>
-                  <dd className="font-mono text-xl font-semibold text-emerald-600 tabular-nums">
+                  <dd className="text-title-2 text-green tabular-nums">
                     +{effectiveness.synergyBonus.toFixed(1)}%
                   </dd>
                 </div>
@@ -282,7 +274,7 @@ export function GovernmentMetricModals({
                   <dt>
                     <Eyebrow>Conflict penalty</Eyebrow>
                   </dt>
-                  <dd className="text-destructive font-mono text-xl font-semibold tabular-nums">
+                  <dd className="text-destructive text-title-2 tabular-nums">
                     -{effectiveness.conflictPenalty.toFixed(1)}%
                   </dd>
                 </div>
@@ -290,25 +282,25 @@ export function GovernmentMetricModals({
                   <dt>
                     <Eyebrow>Total score</Eyebrow>
                   </dt>
-                  <dd className="text-foreground font-mono text-xl font-semibold tabular-nums">
+                  <dd className="text-label text-title-2 tabular-nums">
                     {effectiveness.totalEffectiveness.toFixed(1)}%
                   </dd>
                 </div>
               </dl>
 
               <section className="space-y-3">
-                <h4 className="text-foreground text-sm font-semibold">Component contributions</h4>
+                <h4 className="text-label text-headline">Component contributions</h4>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">No components selected.</p>
+                  <p className="text-label-secondary text-footnote">No components selected.</p>
                 ) : (
-                  <ul className="divide-border/60 divide-y">
+                  <ul className="divide-separator divide-y">
                     {selectedComponentObjects.map((comp) => (
                       <li
                         key={comp.type}
-                        className="flex items-center justify-between py-2 text-xs"
+                        className="text-footnote flex items-center justify-between py-2"
                       >
-                        <span className="text-foreground font-medium">{comp.name}</span>
-                        <span className="text-muted-foreground font-mono font-semibold tabular-nums">
+                        <span className="text-label font-medium">{comp.name}</span>
+                        <span className="text-label-secondary font-semibold tabular-nums">
                           {comp.effectiveness}% base
                         </span>
                       </li>
@@ -322,12 +314,12 @@ export function GovernmentMetricModals({
           {/* Tab 4: Costs */}
           {activeTab === "costs" && (
             <div className="space-y-6">
-              <dl className="border-border/60 divide-border/60 grid grid-cols-2 divide-x rounded-lg border text-center">
+              <dl className="border-separator divide-separator rounded-control grid grid-cols-2 divide-x border text-center">
                 <div className="p-4">
                   <dt>
                     <Eyebrow>Total setup cost</Eyebrow>
                   </dt>
-                  <dd className="text-foreground mt-1 font-mono text-xl font-semibold tracking-tight tabular-nums">
+                  <dd className="text-label text-title-2 mt-1 tabular-nums">
                     ${implementationCost.toLocaleString()}
                   </dd>
                 </div>
@@ -335,35 +327,35 @@ export function GovernmentMetricModals({
                   <dt>
                     <Eyebrow>Annual maintenance</Eyebrow>
                   </dt>
-                  <dd className="text-foreground mt-1 font-mono text-xl font-semibold tracking-tight tabular-nums">
+                  <dd className="text-label text-title-2 mt-1 tabular-nums">
                     ${maintenanceCost.toLocaleString()}/yr
                   </dd>
                 </div>
               </dl>
 
               <section className="space-y-3">
-                <h4 className="text-foreground text-sm font-semibold">Per-component breakdown</h4>
+                <h4 className="text-label text-headline">Per-component breakdown</h4>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">No components selected.</p>
+                  <p className="text-label-secondary text-footnote">No components selected.</p>
                 ) : (
-                  <ul className="divide-border/60 divide-y">
+                  <ul className="divide-separator divide-y">
                     {selectedComponentObjects.map((comp) => (
                       <li
                         key={comp.type}
-                        className="flex items-center justify-between gap-3 py-2 text-xs"
+                        className="text-footnote flex items-center justify-between gap-3 py-2"
                       >
                         <div className="flex min-w-0 flex-col">
-                          <span className="text-foreground font-medium">{comp.name}</span>
-                          <span className="text-muted-foreground text-xs capitalize">
+                          <span className="text-label font-medium">{comp.name}</span>
+                          <span className="text-label-secondary text-footnote capitalize">
                             {comp.category}
                           </span>
                         </div>
-                        <div className="shrink-0 text-right font-mono tabular-nums">
-                          <span className="text-foreground font-semibold">
+                        <div className="shrink-0 text-right tabular-nums">
+                          <span className="text-label font-semibold">
                             ${comp.implementationCost.toLocaleString()}
                           </span>
-                          <span className="text-muted-foreground mx-1.5">•</span>
-                          <span className="text-muted-foreground">
+                          <span className="text-label-secondary mx-2">•</span>
+                          <span className="text-label-secondary">
                             ${comp.maintenanceCost.toLocaleString()}/yr
                           </span>
                         </div>
@@ -375,7 +367,7 @@ export function GovernmentMetricModals({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

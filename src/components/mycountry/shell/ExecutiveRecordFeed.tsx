@@ -12,13 +12,13 @@ import {
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
-import { FacetTabs } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
 
@@ -42,7 +42,7 @@ export interface CanonFeedItem {
 }
 
 /** Badge text colour: only a direction of change (or a directive's accent) carries colour. */
-const POSITIVE = "text-emerald-600";
+const POSITIVE = "text-green";
 const NEGATIVE = STATUS_TEXT.critical;
 const NEUTRAL = STATUS_TEXT.neutral;
 
@@ -226,64 +226,41 @@ export function ExecutiveRecordFeed({
 
   if (items.length === 0) {
     return (
-      <FacetContainer
-        depth={3}
-        surface="solid"
-        className="flex flex-col items-center rounded-2xl px-6 py-8 text-center"
-      >
-        <p className="text-foreground text-sm font-semibold">No activity recorded yet</p>
-        <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
+      <FacetCard className="rounded-card flex flex-col items-center px-6 py-8 text-center">
+        <p className="text-label text-headline">No activity recorded yet</p>
+        <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
           Decisions, directive outcomes and issue consequences are logged here as they change your
           nation.
         </p>
-      </FacetContainer>
+      </FacetCard>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div
-        role="group"
+      <SegmentedControl
         aria-label="Filter activity"
-        className="max-w-full scrollbar-none overflow-x-auto"
-      >
-        <FacetTabs
-          size="sm"
-          tone="neutral"
-          className="w-max"
-          activeTab={filterCat}
-          onChange={(id) => {
-            setFilterCat(id as FeedFilter);
-            setExpandedId(null);
-          }}
-          tabs={FEED_FILTERS.map((opt) => ({
-            id: opt.id,
-            className: "shrink-0",
-            label: (
-              <>
-                {opt.label}
-                {opt.id === filterCat ? <span className="sr-only"> (selected)</span> : null}
-              </>
-            ),
-          }))}
-        />
-      </div>
+        size="sm"
+        scrollable
+        value={filterCat}
+        onValueChange={(id) => {
+          setFilterCat(id as FeedFilter);
+          setExpandedId(null);
+        }}
+        options={FEED_FILTERS.map((opt) => ({ value: opt.id, label: opt.label }))}
+      />
 
       <div
         onScroll={handleScroll}
         className="scrollbar-thumb-muted max-h-[520px] scrollbar-thin scrollbar-track-transparent overflow-y-auto"
       >
         {visibleItems.length === 0 ? (
-          <FacetContainer
-            depth={3}
-            surface="solid"
-            className="text-muted-foreground rounded-2xl px-4 py-6 text-center text-xs"
-          >
+          <FacetCard className="text-label-secondary rounded-card text-footnote px-4 py-6 text-center">
             Nothing in this category yet.
-          </FacetContainer>
+          </FacetCard>
         ) : (
-          <FacetContainer depth={3} surface="solid" className="overflow-hidden rounded-2xl">
-            <ul className="divide-border divide-y">
+          <FacetCard className="rounded-card overflow-hidden">
+            <ul className="divide-separator divide-y">
               {visibleItems.map((item) => {
                 const meta =
                   (item.category && CATEGORY_STYLE[item.category]) || CATEGORY_STYLE.ledger!;
@@ -297,13 +274,12 @@ export function ExecutiveRecordFeed({
                     <Button
                       type="button"
                       variant="ghost"
-                      data-cuelume-press="droplet"
                       aria-expanded={isExpanded}
                       aria-controls={panelId}
                       onClick={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
                       className={cn(
                         "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset active:scale-100",
-                        isExpanded && "bg-accent"
+                        isExpanded && "bg-fill-3"
                       )}
                     >
                       <meta.icon
@@ -311,10 +287,10 @@ export function ExecutiveRecordFeed({
                         className={cn("mt-0.5 size-4 shrink-0", STATUS_TEXT[meta.tone])}
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="text-foreground block text-sm leading-snug font-medium">
+                        <span className="text-label text-body block leading-snug font-medium">
                           {item.title}
                         </span>
-                        <span className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
+                        <span className="text-label-secondary text-footnote mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                           <span>{meta.label}</span>
                           <span aria-hidden="true">·</span>
                           <span>{timeAgo(item.timestamp)}</span>
@@ -340,7 +316,7 @@ export function ExecutiveRecordFeed({
                       <ChevronDown
                         aria-hidden="true"
                         className={cn(
-                          "text-muted-foreground/60 group-hover:text-muted-foreground mt-1 shrink-0 transition-transform duration-150",
+                          "text-label-tertiary group-hover:text-label-secondary mt-1 shrink-0 transition-transform duration-150",
                           isExpanded && "rotate-180"
                         )}
                       />
@@ -351,7 +327,7 @@ export function ExecutiveRecordFeed({
                         id={panelId}
                         className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-10 duration-150"
                       >
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <div className="text-footnote flex flex-wrap items-center gap-2">
                           {diagnostic.badge && (
                             <Badge variant="outline" className={diagnostic.badge.cls}>
                               {diagnostic.badge.direction === "up" && (
@@ -363,7 +339,7 @@ export function ExecutiveRecordFeed({
                               <span>{diagnostic.badge.text}</span>
                             </Badge>
                           )}
-                          <span className="text-muted-foreground tabular-nums">
+                          <span className="text-label-secondary tabular-nums">
                             {new Date(item.timestamp).toLocaleString(undefined, {
                               dateStyle: "medium",
                               timeStyle: "short",
@@ -371,7 +347,7 @@ export function ExecutiveRecordFeed({
                           </span>
                         </div>
 
-                        <p className="text-foreground/90 text-sm leading-relaxed">
+                        <p className="text-label text-body leading-relaxed">
                           {diagnostic.narrative}
                         </p>
 
@@ -392,7 +368,7 @@ export function ExecutiveRecordFeed({
                             asChild
                             variant="ghost"
                             size="sm"
-                            className="text-muted-foreground h-11 sm:h-8"
+                            className="text-label-secondary h-11 sm:h-8"
                           >
                             <Link
                               href={createUrl(
@@ -412,7 +388,7 @@ export function ExecutiveRecordFeed({
                 );
               })}
             </ul>
-          </FacetContainer>
+          </FacetCard>
         )}
 
         {visibleCount < filteredItems.length && (
@@ -420,7 +396,7 @@ export function ExecutiveRecordFeed({
             type="button"
             variant="ghost"
             onClick={() => setVisibleCount((prev) => Math.min(filteredItems.length, prev + 10))}
-            className="text-muted-foreground mt-2 h-11 w-full sm:h-9"
+            className="text-label-secondary mt-2 h-11 w-full sm:h-9"
           >
             Show more ({filteredItems.length - visibleCount})
           </Button>

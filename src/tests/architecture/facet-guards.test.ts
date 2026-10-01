@@ -125,6 +125,11 @@ const FACET_CONVERTED = [
   "app/settings/_components/SettingsSidebarNav.tsx",
   // Phase 4 primitives: the shared UI kit itself (status inks, no glass/v2 classes).
   "components/ui/",
+  // Phase 4 re-check: MyCountry routes, executive panels, the atomic selector, maps routes.
+  "app/mycountry/",
+  "components/executive/",
+  "components/shared/atomic/",
+  "app/maps/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
@@ -133,13 +138,9 @@ function convertedHits(pattern: RegExp, allowed: ReadonlySet<string> = new Set()
   return hits(pattern, allowed).filter((hit) => inConverted(hit.slice(0, hit.indexOf(": "))));
 }
 
-// Brand artwork, a monochrome logo image, typography-plugin inversion, and a comment describing
-// legacy class strings.
+// A monochrome logo image (inverted in dark mode).
 const DARK_OVERRIDE_ALLOWED = new Set([
-  `${path.join("components", "mycountry", "shared", "primitives", "mycountry-logo.tsx")}: dark:text-amber-400`,
-  `${path.join("components", "mycountry", "shared", "primitives", "SectionTabBar.tsx")}: dark:text-`,
   `${path.join("components", "maps", "core", "MapLoadingScreen.tsx")}: dark:invert`,
-  `${path.join("components", "maps", "core", "StoryPinModal.tsx")}: dark:prose-invert`,
 ]);
 
 // Image scrims (flag photos, card art) and the MyCountry logo.

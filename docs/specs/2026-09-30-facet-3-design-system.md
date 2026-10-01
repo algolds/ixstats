@@ -78,6 +78,8 @@ The §2 colour values shipped unchanged in Phase 1 (`src/styles/facet/tokens.css
 | `fill` 1–4 | `bg-fill`, `-fill-2`, `-fill-3`, `-fill-4` | label @ 16/12/8/5% | label @ 24/18/12/8% | Control backgrounds, selected rows, tracks |
 | `separator` | `border-separator` | rgba(0,0,0,.10) | rgba(255,255,255,.10) | Hairlines, list separators |
 | `separator-opaque` | `border-separator-opaque` | #e4e4e7 | #2a2d35 | Separators over glass |
+| `control-thumb` | `bg-control-thumb` | #ffffff | label @ 24% | Selected segment / tab indicator over a fill track |
+| `scrim` | `bg-scrim` | black @ 25% | black @ 40% | Modal scrim under dialogs and sheets |
 | `tint` / `on-tint` | `bg-tint`, `text-tint`, `text-on-tint` | per app (§2.2) | per app | Primary actions, links, selection, focus ring |
 
 Existing names map onto roles: `foreground`→`label`, `muted-foreground`→`label-secondary`, `card`/`popover`→`surface`/
@@ -89,8 +91,9 @@ Existing names map onto roles: `foreground`→`label`, `muted-foreground`→`lab
 `blue` #1d4ed8/#60a5fa · `indigo` #4338ca/#818cf8 · `purple` #7e22ce/#c084fc · `pink` #be185d/#f472b6 · `mint`
 #047857/#34d399 · `cyan` #0e7490/#22d3ee · `brown` #8a5a2b/#d6a77a · `gray` #6b7280/#9ca3af. Status roles alias
 them: `destructive`→red, `warning`→orange, `caution`→yellow, `success`→green, `info`→blue. Each colour also has a
-`<colour>-ink` (the colour mixed 80/20 with `label`) for text on a 15% fill of itself — colour `Badge`s and pressed
-`ActionPill`s — which holds ≥ 4.5:1 over every background role.
+`<colour>-ink` (the colour mixed 80/20 with `label`) for text on a 15% fill of itself — colour and status `Badge`s,
+tinted `Alert`s and pressed `ActionPill`s — which holds ≥ 4.5:1 over every background role; the status roles have
+matching `<status>-ink` aliases (`success-ink`→`green-ink`…).
 
 ### 2.2 App tints
 
@@ -213,13 +216,14 @@ Icon-only buttons need an `aria-label` and a tooltip.
 
 | Component | Use | Replaces |
 |---|---|---|
-| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. `variant="inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, 16px). `MotionFacetCard` for animated cards. | `FacetContainer depth={1–3}`, `Card`, `CutoutCard`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` |
+| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. `variant="inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, 16px). `as` renders a `section`/`article`/`li`/`aside`/`header`/`footer`/`nav`/`figure`. `MotionFacetCard` for animated cards. `Card` is a deprecated alias of the same surface. | `FacetContainer depth={1–3}`, `Card`, `CutoutCard`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list: section header (sentence-case `text-subhead`) and footer, rows with leading icon, title, subtitle, trailing value/badge/accessory/chevron, separators inset to the text, optional swipe actions (`SwipeableRow`), selectable/navigable rows. | KPI grids, divided lists, rails' `RailRow`, settings rows |
 | `Stat` | `Eyebrow` label + `text-title-3` tabular value + optional delta; optional 14px icon in the label row. | Hand-rolled metric tiles |
 | `FacetMaterial` | The only glass surface: `thin`/`regular`/`thick`. | `FacetContainer` glass depths, `.facet-hierarchy-*`, `glass-*` |
 | `EmptyState` | Icon, `text-title-3` title, `text-callout` message, one action. | Ad-hoc empty states |
 | `Skeleton` | All loading placeholders, shaped like the final layout. | `animate-pulse` blocks |
-| `Badge` | Status/count chips: `neutral`, `tinted`, one per status role, and one per system colour (ink on a 15% fill). | Hand-rolled chips |
+| `Badge` | Status/count chips: `neutral`, `tinted`, one per status role, and one per system colour — status and colour variants are the colour's `-ink` on a 15% fill (AA on every background role). | Hand-rolled chips |
+| `Alert` | Inline message: `default` or a status (`destructive`, `warning`, `caution`, `success`, `info`) as the status ink on a 15% fill; `alert`/`status` roles by urgency. | Hand-rolled callouts, `bg-x/10` notice boxes |
 | `Progress`, `Gauge`, `HealthRing` | Linear, radial and ring meters; colours from roles. | Hand-rolled bars |
 
 `FacetContainer` stays as a deprecated wrapper during migration: `surface="solid"` → `FacetCard`; glass depths →
@@ -231,7 +235,7 @@ Icon-only buttons need an `aria-label` and a tooltip.
 | Component | Rules |
 |---|---|
 | `Button` | Styles: `filled` (tint, one per view), `tinted` (tint @ fill), `gray` (fill-3), `plain` (text only), `bordered`, `destructive`, `link`. Sizes `sm` 28 · `md` 36 · `lg` 44; 44px minimum hit area on coarse pointers. |
-| `SegmentedControl` | Single choice among 2–5 peer options (view switchers, filters, periods); more options scroll horizontally. |
+| `SegmentedControl` | Single choice among 2–5 peer options (view switchers, filters, periods); more options scroll horizontally. Options may carry a count `badge` (tabular, `badgeLabel` for screen readers). |
 | `ToggleGroup` | Multi-select filters; single-select with `disallowEmpty` when a choice is required. |
 | `ActionPill` | Pressable pill for social actions (like, repost, save): neutral until pressed, then a tinted fill in its tone; `aria-pressed`, optional count. |
 | `Tabs` / `FacetTabs` | Page-level section switching only (with `role=tablist`, roving focus). |
@@ -246,6 +250,7 @@ Icon-only buttons need an `aria-label` and a tooltip.
 | Task, detail view, multi-step flow | `Sheet` — side sheet on ≥768px (`size="wide"` ≈ 48rem for two-column details), bottom sheet with `medium`/`large` detents below |
 | Confirm, destructive or irreversible decision | `AlertDialog` (≤ 2 actions, destructive styled `destructive`) |
 | Small contextual edit or info | `Popover` |
+| Floating UI anchored to a selection, a delegated link or a rect | `VirtualAnchorPopover` / `VirtualAnchorHoverCard` (Radix virtual anchor; non-modal, keeps focus) |
 | Short focused form that blocks the page | `Dialog` |
 | Transient feedback | `useNotify` → toast / Halo |
 | Command palette | `CommandDialog` with 0ms presentation |
@@ -356,7 +361,7 @@ values on hover or tap.
    preset), not DINPro; (b) sheets are opaque `surface-elevated`, not `material-thick`, because callers nest blurred
    content inside them; (c) `FacetCard`/`FacetContainer` still accept `depth`, `theme`, `variant` and
    `enableRefraction` as ignored props because callers pass them; (d) IxMaps and the map editor keep glass on their
-   floating panels via `material="regular"|"thick"`; (e) `appearance.ts` still writes `data-typography` (the picker is
+   floating panels (`FacetMaterial` `regular`/`thick`); (e) `appearance.ts` still writes `data-typography` (the picker is
    gone); (f) hero surfaces may carry identity imagery (MyCountry's `FlagWatermark`: circular corner flag, plus `TintHairline`; no full-width wash).
 3. **Navigation shell** behind a flag: `AppSidebar`, `TabBar`, `PageHeader`, Halo as island; flip the flag once every
    app has a section map. **🟡 Shipped behind `facet-nav` (off) 2026-09-30.** `NEXT_PUBLIC_FACET_NAV=1` or Settings →
@@ -384,7 +389,8 @@ values on hover or tap.
    chrome is converted (Phase 4) but its in-page navigation stays (entity-scoped, like sports); retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the legacy
    shell.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,
-   vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3.
+   vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3
+   (✅ done 2026-10-01, below).
    `facet-guards` gains each app's rules as it converts.
    **Dashboard, achievements, passport — ✅ converted 2026-09-30** (`components/dashboard`, `app/dashboard`,
    `components/achievements`, `app/achievements`, `components/passport`, Settings → IxnayID & Digital Passport panel;
@@ -395,8 +401,11 @@ values on hover or tap.
    `Skeleton`; hero flag washes → the corner `FlagWatermark`; achievement aurora/foil gradients removed (category
    colour on the icon mask only); palette colours, `dark:` pairs and raw text sizes → roles and text styles; motion →
    `springSmooth`/`springSnappy`/`tweenFast`. Left for their own apps: `/leaderboards` and `/id/[username]` page shells,
-   the shared Settings `SettingsGroup`/`SettingsRow` primitives, the Lorewards details still in a `Dialog` (its two-column
-   layout needs more width than a side `Sheet`).
+   the shared Settings `SettingsGroup`/`SettingsRow` primitives. **Leftovers closed 2026-10-01:** the Lorewards details
+   are a wide side `Sheet` (`size="wide"`, detail view per §7.3); `/achievements` imports `FlagWatermark` from
+   `~/components/ui/facet`; the settings sidebar's tier chip is `<Badge variant={tierInfo.badgeVariant}>` (and its
+   role chip a `purple` `Badge`, its search a `SearchField`), so `formatMembershipTier` no longer returns `badgeClass`;
+   `x.5` spacing steps retired.
    **ThinkPages (+ ThinkTanks, blurbs components), Messages, Halo views — ✅ converted 2026-09-30**
    (`components/thinkpages`, `components/thinktanks`, `app/thinkpages`, `app/thinktanks`, `components/messages`,
    `app/messages`, `components/halo`; now in `facet-guards`' converted areas). `/messages` joins the emerald
@@ -411,11 +420,20 @@ values on hover or tap.
    stacking context); inside it the island is `material-regular` (pill) / `material-thick` (expanded) instead of the
    `.dynamic-island-shell` acrylic, internal `z-[10000…]` layers are `z-nav`/`z-raised`/`z-10…40`, the nav tray and
    walkthrough drop their `fixed inset-0` click-catcher (outside-press listener; the tour reuses the dialog scrim) and
-   section accents use system-colour variables instead of hex. **Remaining:** `x.5` spacing steps; Halo's own spring
-   constants (420/38) and per-button `soundEffects` ticks; WikiOS narrator colours derived from article theme hex
-   (data); `.dynamic-island-shell` CSS still used by `MapDynamicIsland` (the WikiOS editor header moved off it in its own pass); the Discord
-   brand button keeps `text-white`. Primitive gap: no `PopoverAnchor` export (the reaction picker anchors via an inert
-   `PopoverTrigger` span because the like button's own click must not toggle it).
+   section accents use system-colour variables instead of hex. **Leftovers closed 2026-10-01:** Halo's own spring
+   (420/38, mass 0.8) → `springSnappy` (the island answers a press directly and `springSnappy` has the same natural
+   frequency, so no new token); per-control `soundEffects` ticks and `data-cuelume-hover`/`-press` attributes removed
+   (present/dismiss and outcome cues stay, §9); Halo header icon buttons → `Button size="icon-sm"` with names; panel tab
+   strips (notifications/messages, wiki workspace/narrator/profile, forum recent/stash, search scope) →
+   `SegmentedControl` (unread counts in its `badge` slot); settings/nav rows → `FacetRow`; narrator voice list →
+   `FacetRow` checks, speed → `SegmentedControl`, chapter ticks are real buttons; action grids → gray `Button`s with
+   system-colour icons and `Badge`s; ThinkPages post actions → `ActionPill`; account-creation/settings selects →
+   `SegmentedControl`, the ThinkTank category select → `Select`; the ThinkTank feed's `confirm()` →
+   `AlertDialog`; composer/stash/new-conversation pickers → `FacetRow`; `x.5` spacing steps retired.
+   **Remaining:** WikiOS narrator play button and TOC accents derived from the article theme (data); picker grids
+   (emoji, GIF, reaction) and inline link-style name/avatar buttons stay role-styled; `.dynamic-island-shell` CSS
+   still used by `MapDynamicIsland` (the WikiOS editor header moved off it in its own pass); the Discord brand button
+   keeps `text-white`.
    **Labs (Onoma, Vexel, map pipeline) and Forum — ✅ converted 2026-09-30** (`app/labs`, `components/onoma`,
    `app/(forum)`, `components/forum`, `styles/forum.css`; now in `facet-guards`' converted areas, and Onoma is no
    longer excluded from the global guards). A new `app/labs/layout.tsx` scopes Labs to the sky `data-app="maps"` tint
@@ -434,10 +452,19 @@ values on hover or tap.
    and stashes → `FacetCard`/`FacetList`/`FacetRow`; sort/type pills → `SegmentedControl`; ⌘K search → an `instant`
    `Dialog` with `SearchField`; delete post → `AlertDialog`; member stats → `Stat`; rail tooltips → `Tooltip`; the
    fixed interactive grid background removed; the pill bar and reply composer are `material-thin` chrome (the rail and
-   pill bar keep `data-app-subnav`, the composer its `--shell-tabbar-height` offset). **Remaining:** `x.5` spacing
-   steps; ~200 Onoma raw `<button>`s that are role-styled toggles/chips rather than `Button` styles; native `<select>`s
-   in Onoma's sections (field-styled by roles, not the `Select` primitive); BBCode post HTML is styled by
-   `forum.css` (roles, not utilities).
+   pill bar keep `data-app-subnav`, the composer its `--shell-tabbar-height` offset). **Leftovers closed
+   2026-10-01:** Onoma's ~170 role-styled raw `<button>`s → view/section switchers `SegmentedControl` (stash,
+   inspector, grammar, acoustic, results view, script direction, glyph scale/state, gender), preset/stroke/ink/
+   domain/palette pickers `ToggleGroup` (a click on the active preset still reloads it), drawer and filter toggles
+   `Toggle`, pronunciation and IPA pills `ActionPill`, master–detail lists (contact channels, proto-roots, script
+   systems) `FacetRow` (`selectionStyle="tint"`), script typology `RadioCardGroup`, icon actions `Button
+   size="icon-sm"` with `aria-label`s, the rest `Button` styles; its 16 native `<select>`s → `Select` (empty
+   options become a `__none__` item, required ones a placeholder); the glyph stroke range → `Slider`; hand-built
+   tables → `Table`. Forum post actions (like, stash, quote, reply, edit, delete) → `ActionPill`, pagination →
+   `Button` (`aria-current`), rail/pill search buttons → `Button` (rail and pills share `buttonVariants`); the
+   `forum-reaction-btn`/`forum-action-btn`/`forum-pagination-btn` CSS deleted. `x.5` spacing steps → the allowed
+   steps across Labs and Forum. **Remaining:** BBCode post HTML is styled by `forum.css` (roles, not utilities);
+   `OnomaBrandLogo`'s `rounded-[20–24%]` app-icon radii stay (brand artwork).
    **Admin — ✅ converted 2026-10-01** (`app/admin`, `components/admin`; default indigo `data-app="admin"` with
    `PortalTintSync`, now in `facet-guards`' converted areas). The console is a grouped page; the rail's section list
    is an inset group with a `SearchField` filter and tint selection (`aria-current`); under `facet-nav` the whole rail
@@ -463,11 +490,16 @@ values on hover or tap.
    `Switch`; all native checkboxes → `Checkbox` (form choices) or `Switch` (applied immediately) and range inputs
    → `Slider` (thumbs named via `aria-labelledby`); icon/link `<button>`s → `Button`; disclosures carry
    `aria-expanded`; `Table` restyled to Facet 3 (§7.1) with sticky headers where admin tables scroll; the unused
-   palette helper in `lib/admin/admin-formatters.ts` deleted. **Remaining:** `x.5` spacing steps; the admin rail's
-   compact nav rows (sidebar-style, `aria-current`, intentionally not 44px `FacetRow`s); image-thumbnail and
-   table sort-header buttons; the log viewer's per-level filter chips (`role="checkbox"`, colour-coded per level);
-   MapLibre fallback paint hex in `SvgPreviewMap` (map data); the lab templates keep their v2 demo classes (their
-   toggles now expose `aria-pressed`); a few hand-built `<table>`s and native `<select>`s.
+   palette helper in `lib/admin/admin-formatters.ts` deleted. **Second leftovers pass 2026-10-01:** the rail's
+   compact nav rows are `ghost` `buttonVariants` rows at the 36px control height (sidebar-style, `aria-current`,
+   tint selection); image thumbnails → `Button` with `aria-label`s; the equipment table's sort headers → `Button`s
+   in `aria-sort` header cells; the log viewer's level filters → `ActionPill`s in a named group, pressed in each
+   level's system colour (a caller's `colorScale` badge still wins); disclosures → `Button` with `aria-expanded`;
+   all 53 native `<select>`s → `Select`; the ~27 hand-built `<table>`s → `Table` (scroll heights moved to
+   `containerClassName` so sticky headers work); `SvgPreviewMap`'s fallback paint reads `--color-gray` /
+   `--color-label-secondary` at draw time; the Facet lab templates render Facet 3 primitives (`Button`, `Badge`,
+   `Switch`, `ToggleGroup`, `SegmentedControl`, `Stat`, `HealthRing`, inset `FacetCard`) inside the lab-only
+   material frames, with the lab accent scoped as the tint; `x.5` spacing steps → the allowed steps.
    **WikiOS — ✅ converted 2026-10-01** (`components/wiki-os`, `app/(wiki-os)`, `components/media`,
    `styles/wiki-os`; ink `data-app="wiki"` with `PortalTintSync` on the route group, now in `facet-guards`' converted
    areas). **Tokens:** every `--wikios-*` chrome token in `wiki-os/tokens.css` is an alias of a Facet role (opaque
@@ -498,11 +530,21 @@ values on hover or tap.
    tilt and sheen removed (the hero keeps the article's own lead image, content); all wiki gradients gone (the image
    scrims are flat); the blue accent, `bg-wiki` and `--wikios-accent` utilities → the tint; ~2.5k palette/`dark:`/
    `text-xs`/`rounded-*` hits → roles, text styles and radius tokens; per-button `soundEffects` ticks dropped
-   (outcomes use `soundCues.success`); loading blocks → `Skeleton`. **Remaining:** `x.5` spacing steps; role-styled
-   list/option `<button>`s in rails, editors and portals; native `<select>`s (field-styled); the selection capsule,
-   global link hover card and cite tooltips still position themselves in a portal because they anchor to arbitrary
-   DOM ranges/links (primitive gap: no virtual-anchor `Popover`/`HoverCard`); the Margin drawer is portalled
-   (non-modal, so not a `Sheet`); `.dynamic-island-shell` CSS now only serves `MapDynamicIsland`.
+   (outcomes use `soundCues.success`); loading blocks → `Skeleton`. **Leftovers closed 2026-10-01:** `x.5`
+   spacing steps → the 4px scale; native `<select>`s → `Select` (image insert size/align, stats fields, revision
+   compare, stash picker, player speed); pickers (country, business, map marker, template catalog, stash manager)
+   → `FacetRow` (`selectionStyle="tint"`, `accessory="check"`); option tiles (editor mode, page type, Margin
+   categories, governance and diagnostic tools) → `RadioCardGroup`; filter pills and view switchers (template
+   categories/variants/views, utilities domains, watchlist range, diff layout, A–Z index, image source) →
+   `ToggleGroup`/`SegmentedControl`; editor toolbars, the lightbox dock, sticky-TOC search, Margin, stash and
+   repository actions → `Button` styles (`aria-pressed` toggles, labelled icon buttons, `link` for inline actions)
+   with ~740 lines of dead button CSS deleted from the wiki sheets; search boxes → `SearchField`. **Remaining:** the
+   Margin drawer is portalled (non-modal, so not a `Sheet`); fisheye rail and TOC drawer rows stay compact nav rows
+   (`aria-current`); stash colour swatches (data colours) and the animated stash trigger; the ⌘K and hero-spotlight
+   result rows keep their keyboard-highlight listbox styling; hero blurb tiles; `.dynamic-island-shell` CSS now only
+   serves `MapDynamicIsland`. The selection
+   capsule, global link hover card and cite tooltips moved onto `VirtualAnchorPopover`/`VirtualAnchorHoverCard`
+   (2026-10-01, Phase 4 primitives).
    **Builder, countries index and public pages — ✅ converted 2026-10-01** (`app/builder` — the whole builder, not
    only the editor —, `app/countries/_components` + `app/countries/page.tsx`, `app/explore`, `app/leaderboards`,
    `app/id`, `app/r`, `app/realms`, `app/feed`, `app/hashtags`, `app/changelog`, `app/stashes`, `app/setup`,
@@ -511,7 +553,7 @@ values on hover or tap.
    `facet-guards`' converted areas). **Tint:** `/builder` and the landing take the MyCountry gold `data-app="mycountry"`
    with `PortalTintSync` (the same builder components already render inside MyCountry at `/mycountry/builder` and
    `/mycountry/editor`; the landing pitches MyCountry), so the builder's amber accent is the tint and status yellows are
-   the `caution` role. **Builder:** `FacetContainer`/`CutoutCard` panels → `FacetCard` with `surface-secondary` insets;
+   the `caution` role — gold for `/builder` is confirmed by the product owner (2026-10-01). **Builder:** `FacetContainer`/`CutoutCard` panels → `FacetCard` with `surface-secondary` insets;
    the archetype details `Dialog` → `Sheet` (detail view); era, complexity, driving side, week start, workforce view,
    government type and Standard/Advanced pills → `SegmentedControl`; search inputs → `SearchField`; hand-rolled chips and
    action links → `Badge` variants and `Button` styles; the save bar and archetype confirmation are `material-regular`
@@ -525,11 +567,23 @@ values on hover or tap.
    filters, `Switch`, `EmptyState`; changelog/stashes/board → `SearchField`, `SegmentedControl`, `EmptyState` (stashes'
    `--wikios-*` utilities → roles); the countries header → `FacetCard` + `SearchField` + a `SegmentedControl` tier
    radiogroup, with `ShellPageHeader` on `/countries`; ~2.4k palette/`dark:`/`text-xs`/`rounded-*`/`tracking-*` hits →
-   roles, text styles and radius tokens. `formatMembershipTier` returns a `badgeVariant` (`caution`/`neutral`);
-   `badgeClass` stays as role classes for the settings sidebar. **Remaining:** `x.5` spacing steps; `text-white` on
-   image scrims (flag cards, emblem hover actions); role-styled option `<button>`s in builder pickers (currency quick
-   select, filter rails, popover lists); tiny `rounded-sm` flag thumbnails; `font-mono` kept for ISO/currency codes and
-   coordinates. Primitive gap: `Alert` has no `caution`/`info` variants (builder alerts tint themselves with roles).
+   roles, text styles and radius tokens. `formatMembershipTier` returns a `badgeVariant` (`caution`/`neutral`).
+   **Leftovers closed 2026-10-01:** builder pickers → primitives (the currency quick select → `ToggleGroup`; the
+   currency picker → a `Popover` + `Command` combobox; the benchmark filter rail → a multi-select pill `ToggleGroup`;
+   the econ-tier, wiki-source and sort menus → `MenuButton` with radio items; the realm picker → `Select`); inline
+   chip/icon/link `<button>`s → `Button`/`Toggle`; on-image text and actions (flag cards, emblem/flag hover actions)
+   use the shared `app/builder/lib/image-scrim.ts` roles — the spec has no on-image role, so `text-white`/`bg-black/*`
+   live only there; `/realms`' feed filter → `Select`; the countries stats popovers → `FacetRow` lists; the country
+   profile's activity feed and Factbook sidebar → `FacetCard`/`SegmentedControl`/`FacetList`/`EmptyState`/`Skeleton`;
+   the Factbook's Diplomatic Standing ring reads the server's diplomatic record (`getActivityRingsData`: relations,
+   embassies, alliances, treaties, hostile actions) and shows "—" when there is none (it was a fixed 60); World Census
+   ranks are labelled as realm ranks ("#3 of 41 in IxWorld") in the Country DNA legend, its caption and
+   `RankingGrid`; `x.5` spacing steps retired (`tests/architecture/facet-phase4-leftovers.test.ts` pins these).
+   **Remaining:** tiny `rounded-sm` flag thumbnails; `font-mono` kept for ISO/currency codes and coordinates; the
+   Factbook's Governmental Efficiency ring is still an economic-tier proxy (the server has the real figure); tile-style
+   buttons (foundation hero cards, editor section cards, preview disclosures, image pickers) stay role-styled.
+   Primitive gaps: `Alert` has no `caution`/`info` variants (builder alerts tint themselves with roles); no on-image
+   colour role.
    **Vault (+ trading cards) and Sports — ✅ converted 2026-10-01** (`app/vault`, `components/vault`,
    `components/cards`, `components/sports`, `app/myleague`, `app/myclub`; copper `data-app="vault"` and teal
    `data-app="sports"` roots with `PortalTintSync`, now in `facet-guards`' converted areas). Glass `bg-card/NN` +
@@ -551,12 +605,66 @@ values on hover or tap.
    `springGentle`/`tweenFast`; `data-cuelume-press` and `soundEffects.press` ticks removed, outcomes use
    `soundCues.success/error`. **Card art** (card faces and backs, holographic layers, pack covers, cosmetic frames,
    reveal flourishes) keeps its own palette and light effects as content; its gradients moved from `bg-gradient-to-*`
-   to the layered `styles/card-art.css` (`card-art-linear-*`). **Remaining:** `x.5` spacing steps; card-art palette
-   classes and image scrims on card faces (content, not chrome); ~95 role-styled `<button>`s
-   (selectable tiles, sort headers, link-like team names) and three native `<select>`s; `Card` (the shadcn-shaped
-   Facet surface) still used by 18 vault/cards/sports files; the pack-opening "moment" components keep their own motion
-   timings (spec §8 flourishes). Primitive gap: `SegmentedControl` options have no per-option badge slot (vault tab
+   to the layered `styles/card-art.css` (`card-art-linear-*`). **Leftovers closed 2026-10-01:** `x.5` spacing
+   steps → the 4px scale; the three native `<select>`s (collection sort, takedown reason, card season) → `Select`;
+   card/partner/auction pickers, lore-import results, top-team and champion lists → `FacetRow` (tint selection,
+   `accessory="check"` for multi-select); season archive and match-prediction tiles → `RadioCardGroup`; the trade
+   wizard's step pills → `StepIndicator`; source, leaderboard, recipe and season pills → `SegmentedControl`/
+   `ToggleGroup`; the squad roster's clickable `<th>`s → header buttons with `aria-sort`; link-like team/player names
+   and quick actions → `Button` (`link`/`ghost`/`tinted`); a collection row that nested its delete button inside the
+   disclosure button now keeps them as siblings. **Remaining:** card-art palette classes and image scrims on card faces
+   (content, not chrome); `Card` (the shadcn-shaped Facet surface) still used by 18 vault/cards/sports files; the
+   vault/sports rail rows (`aria-current` nav rows), colour-preset swatches, card/player-card tile wrappers and the
+   icon picker grid; tactic and sponsor tiles stay `aria-pressed` buttons (selecting one saves immediately, so arrow-key
+   radio selection would fire mutations); the pack-opening "moment" components keep their own motion timings (spec §8
+   flourishes). Primitive gap: `SegmentedControl` options have no per-option badge slot (vault tab
    counts are rendered inside the label).
+   **MyCountry and maps re-check — ✅ done 2026-10-01** (`components/mycountry`, `app/mycountry` incl. the map editor
+   route, `components/maps` (core, editor, pipeline, Vexel, widgets), `app/maps`, `components/executive`,
+   `components/shared/atomic` + `atomic-picker`; `app/mycountry`, `app/maps`, `components/executive` and
+   `components/shared/atomic` joined `facet-guards`' converted areas, and `tests/architecture/facet-mycountry-maps.test.ts`
+   pins the closed items). Both apps were converted in Phases 1–2, before most Phase 4 primitives existed; they now use
+   them. **Surfaces:** all 87 `FacetContainer`s are gone — maps' floating panels, toolbars, HUDs and the context menu are
+   `FacetMaterial` (`regular`/`thick`; glass chrome over the map), MyCountry's are `FacetCard` (the directives
+   workspace, sidebar nav, command bar) or `FacetCard variant="inset"` (StandingBands tiles, composer panels, effect
+   lists, defense/government form sections); ~200 nested `rounded-row`/`bg-fill-3` panels and nested cards inside
+   cards, sheets and materials → insets; Vexel's `satin` panels are opaque `FacetCard`s (page content in `/labs`);
+   ignored `depth`/`surface`/`enableRefraction` props stripped. `MapDynamicIsland` is a `FacetMaterial` (motion
+   layout via `motion.create`) — `material-regular` pill, `material-thick` while searching, an outline flash instead of
+   the red border — with `Button` icon controls, so the `.dynamic-island-shell` acrylic CSS is deleted
+   (`styles/components.css`); the map editor's phone panel (`MobileEditorSheet`) is the bottom `Sheet` with detents.
+   **Controls:** ~50 native `<select>`s → `Select` (through `maps/shared/OptionSelect`, which carries `""` options), every
+   range input → `Slider`, checkboxes → `Checkbox`/`Switch`; tab strips and choice pills (pipeline, telemetry,
+   transport, Commons, dossier view/source/clearance, edit-queue status, import scope, alignment mode, map theme and
+   projection, lasso, validation, budget chart, autosave section, activity filter, `SectionTabBar`) →
+   `SegmentedControl` (asTabs where they switch panels); city-type, speed-preset, policy-strategy, route-type and
+   border-neighbour pickers → `ToggleGroup`; exchange types and meeting intents → `RadioCardGroup`; the province import
+   wizard → `StepIndicator`; participant pick → `FacetRow` (`accessory="check"`); metric toggle tiles, related pins,
+   equipment presets → pressable inset `FacetCard`s; ~140 icon/text/action `<button>`s → `Button` styles (`ghost`
+   `icon-sm` at their old visual size with `aria-label`s, `bordered` action rows, `link`, `plain`/`tinted` toggles);
+   disclosures carry `aria-expanded`; the NameDetection and Geography report tables → `Table` (sticky header). Badge
+   colour overrides → `Badge` system-colour/status variants; icon + value tiles → `Stat icon` (StandingBands, map
+   GeoProfile/feature panels, impact modal). **Presentation:** 25 detail and flow dialogs → `Sheet` (wide for two-column:
+   metric details, vitality breakdown, compliance, wiki sections, scenarios, impact, exchange/embassy/alliance,
+   asset, readiness/budget guides, geography report, autosave history, deployment, cultural-exchange wizard,
+   department editor, policy creator, legislative floor, story pins); short forms stay `Dialog`.
+   **Colour/type:** ~7.7k palette, shadcn-alias, `dark:`, `text-xs/sm/lg`, `rounded-*`, `tracking-*` hits → roles,
+   text styles and radius tokens (`executive` and the atomic selector had never been converted); `--facet-mycountry`
+   → the tint; chart `var(--muted-foreground|border|popover)` → role variables; `font-mono` numbers → `tabular-nums`
+   (kept for coordinates, IDs and tolerances in degrees); amber Vexel accents → the Labs tint; rich text binds the
+   typography plugin's colours to roles (`maps/shared/facet-prose.ts`) instead of `dark:prose-invert`/`prose-invert`;
+   `x.5` spacing steps retired; `facet-*`/`facet-hierarchy-*`/`facet-modal` legacy classes, content blurs and
+   per-control `data-cuelume-*`/`soundEffects` ticks removed; the MyCountry runtime stylesheet no longer hijacks
+   utilities (`grid-cols-1`, `!important` transition durations, `user-select: none`). The `DARK_OVERRIDE_ALLOWED` list is
+   down to `MapLoadingScreen`'s monochrome logo (`dark:invert`). The MyCountry flair (corner `FlagWatermark`,
+   `TintHairline`, `ActionCardGraphics`, the domain glow) and the agenda inbox are unchanged. **Remaining:** ~44 raw
+   `<button>`s that are custom ARIA controls — folder-tab disclosures (`aria-expanded`), the map search combobox's
+   options, draggable editor tabs (`role="tab"`), history steps and TOC rows (`aria-current`), pager dots, tincture
+   swatches (`role="radio"`), image thumbnails, the map context menu's `menuitem`s and the snap sheet's grabber; the
+   map context menu and wiki link preview position themselves in a portal at the cursor (primitive gap: no
+   virtual-anchor `Popover`/`DropdownMenu`); `SnapBottomSheet` stays a non-modal custom sheet (the map stays
+   interactive behind it); `MapLoadingScreen` is a full-screen `fixed` loading layer; image scrims on cover/flag cards
+   and the MyCountry logo's gold artwork keep their gradients.
 
 ## 15. Governance
 

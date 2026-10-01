@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export default function BlazonPanel() {
   const { blazon } = useVexelEditor();
@@ -19,7 +19,7 @@ export default function BlazonPanel() {
   };
 
   return (
-    <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
+    <FacetCard className="overflow-hidden">
       <div className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <Eyebrow className="block">Heraldic Blazon Description</Eyebrow>
@@ -28,12 +28,12 @@ export default function BlazonPanel() {
           </Button>
         </div>
 
-        <div className="border-border bg-card/40 rounded-lg border p-3">
-          <p className="text-muted-foreground font-serif text-sm leading-relaxed italic">
+        <FacetCard variant="inset" padding="none" className="p-3">
+          <p className="text-label-secondary text-body leading-relaxed italic">
             {blazon || "No composition loaded."}
           </p>
-        </div>
+        </FacetCard>
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

@@ -39,11 +39,11 @@ export interface MetricCardProps {
 
 /** Status is semantic, so it keeps a status-coloured edge; no background wash. */
 const statusColors = {
-  success: "border-emerald-500/40",
-  warning: "border-amber-500/40",
+  success: "border-green/40",
+  warning: "border-yellow/40",
   error: "border-destructive/40",
-  info: "border-border",
-  neutral: "border-border",
+  info: "border-separator",
+  neutral: "border-separator",
 };
 
 export function MetricCard({
@@ -66,7 +66,6 @@ export function MetricCard({
   // only the status edge carries colour.
   return (
     <FacetCard
-      surface="solid"
       onClick={onClick}
       onKeyDown={
         onClick
@@ -79,17 +78,19 @@ export function MetricCard({
             }
           : undefined
       }
-      className={cn("rounded-xl", statusColors[status], className)}
+      className={cn("rounded-row", statusColors[status], className)}
     >
       <FacetCardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-4 pb-1">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {Icon && <Icon className="text-muted-foreground h-4 w-4 shrink-0" />}
+          {Icon && <Icon className="text-label-secondary h-4 w-4 shrink-0" />}
           <div className="min-w-0 flex-1">
-            <h3 className="text-muted-foreground flex items-center text-xs leading-none font-medium">
+            <h3 className="text-label-secondary text-caption flex items-center leading-none">
               {title}
               {tooltip && <InlineHelpIcon content={tooltip} />}
             </h3>
-            {description && <p className="text-muted-foreground mt-1 text-xs">{description}</p>}
+            {description && (
+              <p className="text-label-secondary text-footnote mt-1">{description}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -106,12 +107,10 @@ export function MetricCard({
         ) : (
           <>
             <div className="flex items-end justify-between">
-              <div className="text-foreground text-lg font-semibold tracking-tight tabular-nums">
-                {value}
-              </div>
+              <div className="text-label text-title-3 tabular-nums">{value}</div>
               {trend && <TrendIndicatorUI trend={trend.direction} value={trend.value} />}
             </div>
-            {footer && <div className="border-border mt-2 border-t pt-2">{footer}</div>}
+            {footer && <div className="border-separator mt-2 border-t pt-2">{footer}</div>}
           </>
         )}
       </FacetCardContent>
@@ -125,8 +124,8 @@ export function EconomicMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-emerald-500 to-emerald-600",
-        secondary: "from-emerald-500/10 to-emerald-600/10",
+        primary: "from-green to-green",
+        secondary: "from-green/10 to-green/10",
         accent: "rgb(16, 185, 129)",
         bg: "rgba(16, 185, 129, 0.05)",
       }}
@@ -139,8 +138,8 @@ export function PopulationMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-blue-500 to-blue-600",
-        secondary: "from-blue-500/10 to-blue-600/10",
+        primary: "from-blue to-blue",
+        secondary: "from-blue/10 to-blue/10",
         accent: "rgb(59, 130, 246)",
         bg: "rgba(59, 130, 246, 0.05)",
       }}
@@ -153,8 +152,8 @@ export function GovernmentMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-indigo-500 to-indigo-600",
-        secondary: "from-indigo-500/10 to-indigo-600/10",
+        primary: "from-indigo to-indigo",
+        secondary: "from-indigo/10 to-indigo/10",
         accent: "rgb(99, 102, 241)",
         bg: "rgba(99, 102, 241, 0.05)",
       }}
@@ -167,8 +166,8 @@ export function DiplomaticMetricCard(props: Omit<MetricCardProps, "theme">) {
     <MetricCard
       {...props}
       theme={{
-        primary: "from-cyan-500 to-cyan-600",
-        secondary: "from-cyan-500/10 to-cyan-600/10",
+        primary: "from-cyan to-cyan",
+        secondary: "from-cyan/10 to-cyan/10",
         accent: "rgb(6, 182, 212)",
         bg: "rgba(6, 182, 212, 0.05)",
       }}

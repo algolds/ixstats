@@ -8,6 +8,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { ExchangeTypeGrid } from "./ExchangeTypeGrid";
 import type { WizardExchangeType } from "./exchange-wizard-config";
+import { Button } from "~/components/ui/button";
 
 interface WizardStepBasicsProps {
   title: string;
@@ -34,15 +35,15 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground mb-2 text-lg font-bold">Exchange Type & Information</h3>
-        <p className="text-muted-foreground text-sm">
+        <h3 className="text-label text-title-3 mb-2">Exchange Type & Information</h3>
+        <p className="text-label-secondary text-body">
           Define the type and basic details of your cultural exchange.
         </p>
       </div>
 
       {/* Title */}
       <div className="space-y-2">
-        <Label htmlFor="title" className="text-foreground">
+        <Label htmlFor="title" className="text-label">
           Exchange Title *
         </Label>
         <Input
@@ -55,7 +56,7 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
 
       {/* Type Dropdown */}
       <div className="space-y-2">
-        <Label className="text-foreground">Exchange Type *</Label>
+        <Label className="text-label">Exchange Type *</Label>
 
         {/* Primary Types */}
         <ExchangeTypeGrid
@@ -67,10 +68,13 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
 
         {/* More Types (Expandable) */}
         <div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onShowMoreTypesChange(!showMoreTypes)}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 py-1 text-xs transition-colors"
+            aria-expanded={showMoreTypes}
+            className="text-label-secondary hover:text-label -ml-2"
           >
             {showMoreTypes ? (
               <NavArrowUp className="h-4 w-4" />
@@ -78,7 +82,7 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
               <NavArrowDown className="h-4 w-4" />
             )}
             {showMoreTypes ? "Show Less" : "Show More Types"}
-          </button>
+          </Button>
 
           <AnimatePresence>
             {showMoreTypes && (
@@ -103,7 +107,7 @@ export const WizardStepBasics = React.memo(function WizardStepBasics({
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-foreground">
+        <Label htmlFor="description" className="text-label">
           Description *
         </Label>
         <Textarea

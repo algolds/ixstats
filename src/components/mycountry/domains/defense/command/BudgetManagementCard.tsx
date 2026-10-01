@@ -22,13 +22,7 @@ import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { type BudgetData, BUDGET_CATEGORIES } from "~/hooks/useDefenseBudget";
 
@@ -64,44 +58,42 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
   currentYear,
 }: BudgetManagementCardProps) {
   return (
-    <FacetCard depth={1} surface="solid">
+    <FacetCard>
       <FacetCardHeader className="p-5 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <DollarSign aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-              <h3 className="text-foreground text-base font-semibold">
-                Defense budget · FY {currentYear}
-              </h3>
-              <Dialog>
-                <DialogTrigger asChild>
+              <DollarSign aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+              <h3 className="text-label text-title-3">Defense budget · FY {currentYear}</h3>
+              <Sheet>
+                <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
                     aria-label="About the defense budget"
                   >
-                    <HelpCircle className="text-muted-foreground h-4 w-4" />
+                    <HelpCircle className="text-label-secondary h-4 w-4" />
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Info aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+                </SheetTrigger>
+                <SheetContent size="wide" className="overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
                       Defense Budget Guide
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 text-sm">
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="text-body space-y-4">
                     <div>
                       <h4 className="mb-2 font-semibold">Budget Allocation</h4>
-                      <p className="text-muted-foreground">
+                      <p className="text-label-secondary">
                         Your defense budget should total 100% allocated across all categories. The
                         system will warn you if you're over or under budget.
                       </p>
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">Budget Categories Explained</h4>
-                      <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                      <ul className="text-label-secondary list-inside list-disc space-y-1">
                         <li>
                           <strong>Personnel (typically 35-45%):</strong> Salaries, benefits,
                           pensions for military and civilian staff
@@ -126,7 +118,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">GDP Percentage</h4>
-                      <p className="text-muted-foreground">
+                      <p className="text-label-secondary">
                         Typical defense spending ranges from 1-4% of GDP. Higher percentages
                         indicate a strong military focus, while lower percentages suggest
                         prioritizing other sectors.
@@ -134,7 +126,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">Tips</h4>
-                      <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                      <ul className="text-label-secondary list-inside list-disc space-y-1">
                         <li>
                           Balance current needs (personnel, operations) with future capabilities
                           (procurement, R&D)
@@ -148,10 +140,10 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                       </ul>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
+                </SheetContent>
+              </Sheet>
             </div>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-label-secondary text-body mt-1">
               Allocate resources across defense categories
             </p>
           </div>
@@ -175,7 +167,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
       </FacetCardHeader>
       <FacetCardContent className="space-y-6 px-5 pb-5">
         {/* Total Budget */}
-        <div className="border-border/60 rounded-lg border p-4">
+        <div className="border-separator rounded-control border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Eyebrow className="block">Total defense budget</Eyebrow>
@@ -187,7 +179,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   className="mt-1"
                 />
               ) : (
-                <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+                <div className="text-title-1 mt-1 tabular-nums">
                   $
                   <NumberFlowDisplay value={budgetData.totalBudget} format="compact" />
                 </div>
@@ -195,7 +187,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
             </div>
             <div>
               <Eyebrow className="block">% of GDP</Eyebrow>
-              <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+              <div className="text-title-1 mt-1 tabular-nums">
                 <NumberFlowDisplay
                   value={budgetData.gdpPercent}
                   format="percentage"
@@ -209,15 +201,15 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         {/* Budget Allocation Progress */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <Label className="text-sm">Budget Allocation</Label>
+            <Label className="text-body">Budget Allocation</Label>
             <span
               className={cn(
-                "text-sm font-medium",
+                "text-body font-medium",
                 allocationPercent > 100
                   ? "text-destructive"
                   : allocationPercent < 95
-                    ? "text-amber-600"
-                    : "text-emerald-600"
+                    ? "text-yellow"
+                    : "text-green"
               )}
             >
               <NumberFlowDisplay value={allocationPercent} format="percentage" decimalPlaces={1} />{" "}
@@ -226,7 +218,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
           </div>
           <Progress value={Math.min(allocationPercent, 100)} className="h-2" />
           {allocationPercent > 100 && (
-            <p className="text-destructive mt-1 text-xs">Over budget! Reduce allocations.</p>
+            <p className="text-destructive text-footnote mt-1">Over budget! Reduce allocations.</p>
           )}
         </div>
 
@@ -243,11 +235,11 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               <div key={category.key} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
-                    <Label className="text-sm">{category.label}</Label>
+                    <Icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
+                    <Label className="text-body">{category.label}</Label>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground w-12 text-right text-xs">
+                    <span className="text-label-secondary text-footnote w-12 text-right">
                       <NumberFlowDisplay value={percent} format="percentage" decimalPlaces={1} />
                     </span>
                     {editingBudget ? (
@@ -257,10 +249,10 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                         onChange={(e) =>
                           handleCategoryChange(category.key, parseFloat(e.target.value) || 0)
                         }
-                        className="h-8 w-32 text-sm"
+                        className="text-body h-8 w-32"
                       />
                     ) : (
-                      <span className="w-32 text-right text-sm font-medium">
+                      <span className="text-body w-32 text-right font-medium">
                         $<NumberFlowDisplay value={value} format="compact" />
                       </span>
                     )}

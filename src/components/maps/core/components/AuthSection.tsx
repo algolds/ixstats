@@ -17,28 +17,29 @@ interface AuthSectionProps {
 
 export function AuthSection({ user, isLoaded, greeting, countryName, router }: AuthSectionProps) {
   if (!isLoaded) {
-    return <span className="text-muted-foreground text-xs">…</span>;
+    return <span className="text-label-secondary text-footnote">…</span>;
   }
 
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors">
-          <LogIn className="h-3 w-3" />
+        <Button variant="ghost" size="sm" className="text-label-secondary hover:text-label px-2">
+          <LogIn className="size-3.5" aria-hidden />
           <span className="hidden sm:inline">Sign in</span>
-        </button>
+          <span className="sr-only sm:hidden">Sign in</span>
+        </Button>
       </SignInButton>
     );
   }
 
   return (
     <Popover>
-      <PopoverTrigger className="text-foreground/80 hover:bg-accent hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors">
+      <PopoverTrigger className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors">
         {user.imageUrl ? (
           <img
             src={user.imageUrl}
             alt=""
-            className="ring-border h-4 w-4 rounded-full object-cover ring-1"
+            className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
           />
         ) : (
           <User className="h-3 w-3" />
@@ -51,37 +52,37 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
       <PopoverContent
         side="bottom"
         align="center"
-        className="mt-2 w-64 rounded-2xl p-0"
+        className="rounded-card mt-2 w-64 p-0"
         sideOffset={8}
       >
         {/* Header */}
-        <div className="border-border flex items-center gap-3 border-b px-4 py-3">
+        <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
               alt=""
-              className="ring-border h-8 w-8 rounded-full object-cover ring-2"
+              className="ring-separator h-8 w-8 rounded-full object-cover ring-2"
             />
           ) : (
-            <User className="text-muted-foreground h-5 w-5" aria-hidden />
+            <User className="text-label-secondary h-5 w-5" aria-hidden />
           )}
           <div className="min-w-0 flex-1">
-            <div className="text-foreground truncate text-sm font-semibold">
+            <div className="text-label text-headline truncate">
               {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
             </div>
             {countryName && (
-              <div className="text-muted-foreground truncate text-xs">{countryName}</div>
+              <div className="text-label-secondary text-footnote truncate">{countryName}</div>
             )}
           </div>
         </div>
 
         {/* Quick actions */}
-        <div className="space-y-0.5 p-1.5">
+        <div className="space-y-0.5 p-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.push("/dashboard")}
-            className="text-muted-foreground w-full justify-start"
+            className="text-label-secondary w-full justify-start"
           >
             <LayoutDashboard aria-hidden />
             Dashboard
@@ -92,7 +93,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
               variant="ghost"
               size="sm"
               onClick={() => router.push(getNationUrl(countryName))}
-              className="text-muted-foreground w-full justify-start"
+              className="text-label-secondary w-full justify-start"
             >
               <Crown aria-hidden />
               MyCountry

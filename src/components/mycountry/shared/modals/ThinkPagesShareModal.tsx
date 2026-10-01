@@ -113,23 +113,23 @@ export function ThinkPagesShareModal({
               Official Government Account
             </Badge>
           </div>
-          <DialogTitle className="text-foreground text-lg font-semibold tracking-tight">
+          <DialogTitle className="text-label text-title-3">
             Share Directive Summation to ThinkPages
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-xs">
+          <DialogDescription className="text-label-secondary text-footnote">
             Confirm or tweak your executive post before publishing directly to the ThinkPages feed.
           </DialogDescription>
         </DialogHeader>
 
         {publishStatus !== "idle" ? (
           <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-            <h3 className="text-foreground text-base font-semibold">
+            <CheckCircle2 className="text-green h-8 w-8" />
+            <h3 className="text-label text-title-3">
               {publishStatus === "published"
                 ? "Published Live to ThinkPages!"
                 : "Saved as Draft in ThinkPages!"}
             </h3>
-            <p className="text-muted-foreground max-w-md text-xs">
+            <p className="text-label-secondary text-footnote max-w-md">
               {publishStatus === "published"
                 ? "Your official executive summation is now visible in the national news feed."
                 : "Your directive summation has been saved as an editable draft in ThinkPages."}
@@ -146,18 +146,18 @@ export function ThinkPagesShareModal({
           </div>
         ) : (
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="thinkpages-share-draft">Post draft (editable)</Label>
               <Textarea
                 id="thinkpages-share-draft"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={7}
-                className="font-mono text-xs"
+                className="text-footnote tabular-nums"
               />
             </div>
 
-            <DialogFooter className="border-border flex items-center justify-between gap-2 border-t pt-3">
+            <DialogFooter className="border-separator flex items-center justify-between gap-2 border-t pt-3">
               <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>

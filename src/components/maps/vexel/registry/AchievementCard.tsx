@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import type { HeraldryComposition } from "~/lib/heraldry";
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface AchievementCardProps {
   achievement: {
@@ -25,21 +25,18 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
   const getSubjectBadgeColor = (type: string) => {
     switch (type) {
       case "COUNTRY":
-        return "bg-muted text-foreground border-border";
+        return "bg-fill-3 text-label border-separator";
       case "DYNASTY":
-        return "bg-muted text-foreground border-border";
+        return "bg-fill-3 text-label border-separator";
       case "INSTITUTION":
-        return "bg-muted text-foreground border-border";
+        return "bg-fill-3 text-label border-separator";
       default:
-        return "bg-muted text-muted-foreground border-border";
+        return "bg-fill-3 text-label-secondary border-separator";
     }
   };
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="group border-border block overflow-hidden rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 outline-none hover:border-amber-500/25"
-    >
+    <FacetCard interactive="hover" className="group block overflow-hidden">
       <Link href={`/labs/vexel/registry/${achievement.id}`} className="block">
         <div className="flex flex-col items-center gap-4 p-4">
           {/* Thumbnail */}
@@ -48,31 +45,31 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
           </div>
 
           {/* Info */}
-          <div className="flex w-full flex-1 flex-col justify-between space-y-1.5 text-center">
+          <div className="flex w-full flex-1 flex-col justify-between space-y-2 text-center">
             <div>
               <span
-                className={`mb-1 inline-block rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${getSubjectBadgeColor(
+                className={`text-caption mb-1 inline-block rounded-full border px-2 py-0.5 capitalize ${getSubjectBadgeColor(
                   achievement.subjectType
                 )}`}
               >
                 {achievement.subjectType.toLowerCase()}
               </span>
 
-              <h4 className="text-foreground truncate text-xs font-bold transition-colors group-hover:text-amber-500">
+              <h4 className="text-label text-caption group-hover:text-tint truncate font-semibold transition-colors">
                 {achievement.title}
               </h4>
 
-              <p className="text-muted-foreground mt-0.5 truncate text-xs">
+              <p className="text-label-secondary text-footnote mt-0.5 truncate">
                 By: {achievement.ownerId.slice(0, 8)}
               </p>
             </div>
 
-            <p className="border-border text-muted-foreground mt-2 line-clamp-2 border-t px-1 pt-2 font-serif text-xs italic">
+            <p className="border-separator text-label-secondary text-footnote mt-2 line-clamp-2 border-t px-1 pt-2 italic">
               {achievement.generatedBlazon}
             </p>
           </div>
         </div>
       </Link>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

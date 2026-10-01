@@ -63,21 +63,21 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
   const vacant = status.totalSeats - status.seatedSeats;
 
   return (
-    <div className="border-border space-y-3 rounded-xl border p-4">
+    <div className="border-separator rounded-row space-y-3 border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="rounded-lg bg-indigo-500/10 p-2.5">
+          <div className="rounded-control bg-indigo/10 p-2">
             {upcoming?.isDue || needsParties || !status.hasLegislature ? (
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <AlertTriangle className="text-yellow h-5 w-5" />
             ) : upcoming ? (
-              <Calendar className="h-5 w-5 text-indigo-500" />
+              <Calendar className="text-indigo h-5 w-5" />
             ) : (
-              <Vote className="h-5 w-5 text-indigo-500" />
+              <Vote className="text-indigo h-5 w-5" />
             )}
           </div>
           <div className="min-w-0">
-            <h4 className="text-sm font-semibold">{headline}</h4>
-            {detail && <p className="text-muted-foreground mt-0.5 text-xs">{detail}</p>}
+            <h4 className="text-headline">{headline}</h4>
+            {detail && <p className="text-label-secondary text-footnote mt-0.5">{detail}</p>}
           </div>
         </div>
         {canManage && upcoming?.isDue && !needsParties && !status.counting && (
@@ -91,10 +91,10 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
           </Button>
         )}
       </div>
-      {resolveDue.error && <p className="text-xs text-red-500">{resolveDue.error.message}</p>}
+      {resolveDue.error && <p className="text-footnote text-red">{resolveDue.error.message}</p>}
 
       {status.hasLegislature && (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Seats: {status.seatedSeats} of {status.totalSeats} held by parties
           {vacant > 0 ? ` · ${vacant} vacant` : ""}
           {status.seatedSeats === 0 ? " · bills cannot pass until the chamber is seated" : ""}
@@ -102,21 +102,21 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
       )}
 
       {lastElection && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold">
+        <div className="space-y-2">
+          <p className="text-caption font-semibold">
             {lastElection.name} · {IxTime.formatIxTime(lastElection.scheduledIxTime)}
             {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
           </p>
           {lastElection.results.map((r) => (
-            <div key={r.partyId} className="flex items-center justify-between gap-2 text-xs">
-              <span className="flex min-w-0 items-center gap-1.5">
+            <div key={r.partyId} className="text-footnote flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: r.color }}
                 />
                 <span className="truncate">{r.partyName}</span>
               </span>
-              <span className="text-muted-foreground shrink-0 font-mono">
+              <span className="text-label-secondary shrink-0 tabular-nums">
                 {r.votePercentage.toFixed(1)}% · {r.seatsWon} seats
               </span>
             </div>

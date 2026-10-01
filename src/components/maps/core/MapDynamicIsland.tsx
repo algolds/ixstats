@@ -12,8 +12,9 @@
  * - Settings popover → theme + projection only
  * - Click-outside → smooth retraction
  *
- * All with polished Apple-style liquid glass animations on desktop,
- * and simplified high-performance rendering on mobile.
+ * Facet 3 chrome (spec §5, §7.4): the island is a `FacetMaterial` — `material-regular` as a
+ * pill, `material-thick` while searching — and the results list a `material-regular` panel.
+ * Desktop springs its size (layout animation); phones swap content without it.
  */
 
 import { AnimatePresence, motion } from "motion/react";
@@ -29,7 +30,8 @@ import {
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import { cn } from "~/lib/utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useIsMobile } from "~/hooks/useIsMobile";
 
 // Extracted state hook, components, and helper utilities
@@ -37,6 +39,9 @@ import { useDynamicIslandState } from "./hooks/useDynamicIslandState";
 import { AuthSection } from "./components/AuthSection";
 import { MapSettingsPopover } from "./components/MapSettingsPopover";
 import { TYPE_META, SPRING, SPRING_SOFT, FlagIcon } from "./utils/dynamic-island-helpers";
+
+/** The island as a motion component so its size change springs (layout animation). */
+const MotionFacetMaterial = motion.create(FacetMaterial);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,295 +110,209 @@ export function MapDynamicIsland({
 
   const debouncedQueryLength = query.trim().length;
 
-  const mobilePill = (
-    <div
-      className={cn(
-        "bg-popover relative overflow-hidden rounded-full border shadow-xl transition-colors duration-200",
-        isFlashing ? "border-red-500/50" : "border-border"
-      )}
+  // Island controls: plain icon buttons on the material (no nested surfaces).
+  const iconButton = "text-label-secondary hover:text-label rounded-full";
+
+  const unreadButton = user && totalUnread > 0 && (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      onClick={() => router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")}
+      aria-label={
+        messageUnreadCount > 0
+          ? `${messageUnreadCount} unread messages`
+          : `${unreadNotifications} notifications`
+      }
+      title={
+        messageUnreadCount > 0
+          ? `${messageUnreadCount} unread messages`
+          : `${unreadNotifications} notifications`
+      }
+      className={cn(iconButton, isFlashing && "bg-red/20 text-red")}
     >
-      <div className="relative z-10">
-        {searchOpen ? (
-          /* ── Mobile Expanded: Search Input ── */
-          <div className="flex items-center gap-2 px-4 py-2">
-            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              inputMode="search"
-              enterKeyHint="search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedIdx(-1);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Search countries, cities, places…"
-              aria-label="Search the map"
-              role="combobox"
-              aria-expanded={showResults}
-              aria-controls="map-search-results"
-              aria-autocomplete="list"
-              aria-activedescendant={selectedIdx >= 0 ? `map-search-opt-${selectedIdx}` : undefined}
-              className="text-foreground placeholder:text-muted-foreground w-[calc(100vw-120px)] bg-transparent text-sm outline-none"
-            />
-            {searchLoading && debouncedQueryLength >= 2 && (
-              <Loader2 className="text-muted-foreground h-3.5 w-3.5 shrink-0 animate-spin" />
-            )}
-            <button
-              type="button"
-              aria-label="Close search"
-              onClick={closeSearch}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ) : (
-          /* ── Mobile Compact: DI Pill ── */
-          <div className="flex items-center gap-1 px-3 py-2">
-            <AuthSection
-              user={user}
-              isLoaded={isLoaded}
-              greeting={greeting}
-              countryName={countryName}
-              router={router}
-            />
-
-            <button
-              onClick={openSearch}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-              title="Search (⌘K)"
-              aria-label="Search the map"
-              type="button"
-            >
-              <Search className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              onClick={onOpenWelcome}
-              className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-              title="Help & Tour"
-              aria-label="Help and tour"
-              type="button"
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-            </button>
-
-            {user && totalUnread > 0 && (
-              <button
-                onClick={() =>
-                  router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
-                }
-                className={cn(
-                  "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                  isFlashing ? "scale-110 bg-red-500/20" : "text-muted-foreground"
-                )}
-              >
-                {messageUnreadCount > 0 ? (
-                  <MessageCircle className="h-3.5 w-3.5 text-blue-500" />
-                ) : (
-                  <Bell className="h-3.5 w-3.5" />
-                )}
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                  {totalUnread > 99 ? "99+" : totalUnread}
-                </span>
-              </button>
-            )}
-
-            <MapSettingsPopover
-              projectionMode={projectionMode}
-              onProjectionChange={onProjectionChange}
-              theme={theme}
-              effectiveTheme={effectiveTheme}
-              setTheme={setTheme}
-              router={router}
-            />
-          </div>
+      {messageUnreadCount > 0 ? (
+        <MessageCircle className={cn("size-3.5", isFlashing ? "text-red" : "text-blue")} />
+      ) : (
+        <Bell className="size-3.5" />
+      )}
+      <span
+        aria-hidden
+        className={cn(
+          "ring-surface text-caption absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-semibold tabular-nums ring-2",
+          messageUnreadCount > 0 ? "bg-red text-on-red" : "bg-blue text-on-blue"
         )}
-      </div>
-    </div>
+      >
+        {totalUnread > 99 ? "99+" : totalUnread}
+      </span>
+    </Button>
+  );
+
+  const searchInput = (className: string) => (
+    <>
+      <Search className="text-label-secondary size-4 shrink-0" aria-hidden />
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="search"
+        enterKeyHint="search"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setSelectedIdx(-1);
+        }}
+        onKeyDown={handleKeyDown}
+        placeholder="Search countries, cities, places…"
+        aria-label="Search the map"
+        role="combobox"
+        aria-expanded={showResults}
+        aria-controls="map-search-results"
+        aria-autocomplete="list"
+        aria-activedescendant={selectedIdx >= 0 ? `map-search-opt-${selectedIdx}` : undefined}
+        className={cn(
+          "text-label placeholder:text-label-tertiary text-body bg-transparent outline-none",
+          className
+        )}
+      />
+      {searchLoading && debouncedQueryLength >= 2 && (
+        <Loader2 className="text-label-secondary size-3.5 shrink-0 animate-spin" aria-hidden />
+      )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Close search"
+        onClick={closeSearch}
+        className={iconButton}
+      >
+        <X className="size-3.5" />
+      </Button>
+    </>
+  );
+
+  const compactControls = (
+    <>
+      <AuthSection
+        user={user}
+        isLoaded={isLoaded}
+        greeting={greeting}
+        countryName={countryName}
+        router={router}
+      />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={openSearch}
+        title="Search (⌘K)"
+        aria-label="Search the map"
+        className={iconButton}
+      >
+        <Search className="size-3.5" />
+      </Button>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={onOpenWelcome}
+        title="Help & Tour"
+        aria-label="Help and tour"
+        className={iconButton}
+      >
+        <HelpCircle className="size-3.5" />
+      </Button>
+
+      {unreadButton}
+
+      <MapSettingsPopover
+        projectionMode={projectionMode}
+        onProjectionChange={onProjectionChange}
+        theme={theme}
+        effectiveTheme={effectiveTheme}
+        setTheme={setTheme}
+        router={router}
+      />
+    </>
+  );
+
+  /** The island is chrome over the map: `material-regular`, `material-thick` while searching. */
+  const islandClass = cn(
+    "shadow-floating overflow-hidden rounded-full transition-[outline-color] duration-200",
+    "outline-2 outline-transparent outline-solid",
+    isFlashing && "outline-red/70"
+  );
+
+  const mobilePill = (
+    <FacetMaterial
+      material={searchOpen ? "thick" : "regular"}
+      data-expanded={searchOpen ? "true" : undefined}
+      className={islandClass}
+    >
+      {searchOpen ? (
+        <div className="flex items-center gap-2 py-1 pr-1 pl-4">
+          {searchInput("w-[calc(100vw-120px)]")}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 px-2 py-1">{compactControls}</div>
+      )}
+    </FacetMaterial>
   );
 
   const desktopPill = (
-    <div className="relative">
-      {/* Main glass pill — Apple HIG Acrylic Shell */}
-      <motion.div
-        layout
-        transition={SPRING}
-        animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-        data-expanded={searchOpen ? "true" : undefined}
-        className={cn(
-          "dynamic-island-shell relative overflow-hidden rounded-full transition-colors duration-200",
-          isFlashing && "!border-red-500/80"
+    <MotionFacetMaterial
+      material={searchOpen ? "thick" : "regular"}
+      layout
+      transition={SPRING}
+      animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+      data-expanded={searchOpen ? "true" : undefined}
+      className={islandClass}
+      style={{ willChange: "width, height" }}
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        {searchOpen ? (
+          /* ── Expanded: Search Input ── */
+          <motion.div
+            key="search"
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ ...SPRING_SOFT, opacity: { duration: 0.15 } }}
+            className="flex items-center gap-2 py-1 pr-1 pl-4"
+          >
+            {searchInput("w-64 sm:w-80")}
+          </motion.div>
+        ) : (
+          /* ── Compact: island controls ── */
+          <motion.div
+            key="compact"
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ ...SPRING_SOFT, opacity: { duration: 0.15 } }}
+            className="flex items-center gap-1 px-2 py-1"
+          >
+            {compactControls}
+          </motion.div>
         )}
-        style={{
-          willChange: "width, height",
-        }}
-      >
-        {/* Content */}
-        <div className="relative z-10">
-          <AnimatePresence mode="popLayout" initial={false}>
-            {searchOpen ? (
-              /* ── Expanded: Search Input ── */
-              <motion.div
-                key="search"
-                layout
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, filter: "blur(4px)" }}
-                transition={{ ...SPRING_SOFT, opacity: { duration: 0.2 } }}
-                className="flex items-center gap-2 px-4 py-2"
-              >
-                <Search className="text-muted-foreground h-4 w-4 shrink-0" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  inputMode="search"
-                  enterKeyHint="search"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setSelectedIdx(-1);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Search countries, cities, places…"
-                  aria-label="Search the map"
-                  role="combobox"
-                  aria-expanded={showResults}
-                  aria-controls="map-search-results"
-                  aria-autocomplete="list"
-                  aria-activedescendant={
-                    selectedIdx >= 0 ? `map-search-opt-${selectedIdx}` : undefined
-                  }
-                  className="text-foreground placeholder:text-muted-foreground w-64 bg-transparent text-sm outline-none sm:w-80"
-                />
-                {searchLoading && debouncedQueryLength >= 2 && (
-                  <Loader2 className="text-muted-foreground h-3.5 w-3.5 shrink-0 animate-spin" />
-                )}
-                <button
-                  type="button"
-                  aria-label="Close search"
-                  onClick={closeSearch}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </motion.div>
-            ) : (
-              /* ── Compact: DI Pill ── */
-              <motion.div
-                key="compact"
-                layout
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, filter: "blur(4px)" }}
-                transition={{ ...SPRING_SOFT, opacity: { duration: 0.2 } }}
-                className="flex items-center gap-1 px-3 py-2"
-              >
-                {/* Auth greeting / sign-in */}
-                <AuthSection
-                  user={user}
-                  isLoaded={isLoaded}
-                  greeting={greeting}
-                  countryName={countryName}
-                  router={router}
-                />
-
-                {/* Search button */}
-                <button
-                  onClick={openSearch}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-                  title="Search (⌘K)"
-                  aria-label="Search the map"
-                  type="button"
-                >
-                  <Search className="h-3.5 w-3.5" />
-                </button>
-
-                {/* Help & Tour button */}
-                <button
-                  onClick={onOpenWelcome}
-                  className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-full p-1 transition-colors"
-                  title="Help & Tour"
-                  aria-label="Help and tour"
-                  type="button"
-                >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </button>
-
-                {/* Unified Notification/Messages Badge */}
-                {user && totalUnread > 0 && (
-                  <button
-                    onClick={() =>
-                      router.push(messageUnreadCount > 0 ? "/messages" : "/mycountry/intelligence")
-                    }
-                    className={cn(
-                      "relative shrink-0 rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                      isFlashing
-                        ? "scale-125 bg-red-500/20"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                    title={
-                      messageUnreadCount > 0
-                        ? `${messageUnreadCount} unread messages`
-                        : `${unreadNotifications} notifications`
-                    }
-                  >
-                    {messageUnreadCount > 0 ? (
-                      <MessageCircle
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors",
-                          isFlashing ? "text-red-500" : "text-blue-500"
-                        )}
-                      />
-                    ) : (
-                      <Bell
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors",
-                          isFlashing ? "text-red-500" : ""
-                        )}
-                      />
-                    )}
-                    <span
-                      className={cn(
-                        "ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-xs font-bold text-white shadow-sm ring-2 transition-colors duration-200",
-                        messageUnreadCount > 0 ? "bg-red-500" : "bg-blue-500"
-                      )}
-                    >
-                      {totalUnread > 99 ? "99+" : totalUnread}
-                    </span>
-                  </button>
-                )}
-
-                {/* Settings */}
-                <MapSettingsPopover
-                  projectionMode={projectionMode}
-                  onProjectionChange={onProjectionChange}
-                  theme={theme}
-                  effectiveTheme={effectiveTheme}
-                  setTheme={setTheme}
-                  router={router}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-    </div>
+      </AnimatePresence>
+    </MotionFacetMaterial>
   );
 
   const resultsBody = (
     <>
       {searchLoading && !hasResults && (
-        <div className="text-muted-foreground flex items-center justify-center gap-2 px-4 py-6 text-sm">
+        <div className="text-label-secondary text-body flex items-center justify-center gap-2 px-4 py-6">
           <Loader2 className="h-4 w-4 animate-spin" />
           Searching…
         </div>
       )}
 
       {!searchLoading && !hasResults && flatResults.length === 0 && (
-        <div className="text-muted-foreground px-4 py-6 text-center text-sm">
+        <div className="text-label-secondary text-body px-4 py-6 text-center">
           No results for &ldquo;{query.trim()}&rdquo;
         </div>
       )}
@@ -403,7 +322,7 @@ export function MapDynamicIsland({
         const Icon = meta.icon;
         return (
           <div key={type}>
-            <Eyebrow className="flex items-center gap-1.5 px-3 py-1.5">
+            <Eyebrow className="flex items-center gap-2 px-3 py-2">
               <Icon className="h-3 w-3" aria-hidden />
               {meta.label}
             </Eyebrow>
@@ -419,10 +338,10 @@ export function MapDynamicIsland({
                   key={`${result.type}-${result.id}`}
                   onClick={() => handleSelect(result)}
                   className={cn(
-                    "flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors sm:min-h-0",
+                    "text-body flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left transition-colors sm:min-h-0",
                     isHighlighted
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
+                      ? "bg-fill-3 text-label"
+                      : "text-label-secondary hover:bg-fill-4 hover:text-label"
                   )}
                 >
                   {result.type === "country" ? (
@@ -431,7 +350,7 @@ export function MapDynamicIsland({
                     <Icon
                       className={cn(
                         "h-3.5 w-3.5 shrink-0",
-                        isHighlighted ? "text-blue-500" : "text-muted-foreground"
+                        isHighlighted ? "text-tint" : "text-label-secondary"
                       )}
                     />
                   )}
@@ -448,7 +367,7 @@ export function MapDynamicIsland({
   return (
     <div
       ref={containerRef}
-      className="absolute top-3 left-1/2 z-[var(--z-depth-floating)] -translate-x-1/2"
+      className="z-sticky absolute top-3 left-1/2 -translate-x-1/2"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
@@ -459,15 +378,15 @@ export function MapDynamicIsland({
       {/* ── Search Results Dropdown ── */}
       {isMobile ? (
         showResults && (
-          <FacetContainer
+          <FacetMaterial
             material="regular"
             id="map-search-results"
             role="listbox"
             aria-label="Search results"
-            className="mt-2 max-h-[min(20rem,60dvh)] w-[calc(100vw-24px)] overflow-y-auto overscroll-contain rounded-2xl py-1"
+            className="rounded-card mt-2 max-h-[min(20rem,60dvh)] w-[calc(100vw-24px)] overflow-y-auto overscroll-contain py-1"
           >
             {resultsBody}
-          </FacetContainer>
+          </FacetMaterial>
         )
       ) : (
         <AnimatePresence>
@@ -479,15 +398,15 @@ export function MapDynamicIsland({
               transition={SPRING_SOFT}
               className="mt-2"
             >
-              <FacetContainer
+              <FacetMaterial
                 material="regular"
                 id="map-search-results"
                 role="listbox"
                 aria-label="Search results"
-                className="max-h-80 overflow-y-auto overscroll-contain rounded-2xl py-1"
+                className="rounded-card max-h-80 overflow-y-auto overscroll-contain py-1"
               >
                 {resultsBody}
-              </FacetContainer>
+              </FacetMaterial>
             </motion.div>
           )}
         </AnimatePresence>

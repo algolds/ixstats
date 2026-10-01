@@ -22,9 +22,11 @@ import {
   MailIn as Inbox,
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { FeatureListSkeleton, LayerPanelSkeleton } from "~/components/maps/editor/EditorSkeleton";
+import { cn } from "~/lib/utils/cn";
 
 const PANEL_MIN_W = 256;
 const PANEL_MAX_W = 480;
@@ -242,20 +244,20 @@ export function EditorPanel({
 
   if (collapsed && isStacked) {
     return (
-      <FacetContainer
+      <FacetMaterial
         material="regular"
-        className={`flex shrink-0 items-center justify-between px-2 py-1.5 ${
-          placement === "bottom" ? "h-9 w-32 rounded-md" : "h-9 w-full rounded-none"
+        className={`flex shrink-0 items-center justify-between px-2 py-2 ${
+          placement === "bottom" ? "rounded-control-sm h-9 w-32" : "h-9 w-full rounded-none"
         }`}
       >
-        <div className="flex items-center gap-1.5 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden">
           {tabs.map((tabId) => {
             const tabDef = TAB_DEFS[tabId];
             if (!tabDef) return null;
             return (
               <tabDef.Icon
                 key={tabId}
-                className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+                className="text-label-secondary h-3.5 w-3.5 shrink-0"
                 title={tabDef.label}
               />
             );
@@ -265,13 +267,13 @@ export function EditorPanel({
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-muted-foreground h-6 w-6 shrink-0"
+          className="text-label-secondary h-6 w-6 shrink-0"
           title="Expand panel"
           aria-label="Expand panel"
         >
           {placement === "bottom" ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
         </Button>
-      </FacetContainer>
+      </FacetMaterial>
     );
   }
 
@@ -280,7 +282,7 @@ export function EditorPanel({
     return (
       <div className="relative flex h-full">
         {!collapsed && (
-          <FacetContainer
+          <FacetMaterial
             material="regular"
             className="flex flex-col rounded-none"
             style={{
@@ -291,7 +293,7 @@ export function EditorPanel({
             {/* Resize handle */}
             {!panelsLocked && (
               <div
-                className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+                className={`hover:bg-tint/30 active:bg-tint/50 absolute z-20 transition-colors ${
                   placement === "bottom"
                     ? "top-0 left-0 h-1 w-full cursor-row-resize"
                     : placement === "left"
@@ -302,7 +304,7 @@ export function EditorPanel({
               />
             )}
             {importWizardContent}
-          </FacetContainer>
+          </FacetMaterial>
         )}
         <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
       </div>
@@ -320,37 +322,58 @@ export function EditorPanel({
             onTabDrop(tabId);
           }
         }}
-        className="border-border text-muted-foreground hover:border-primary/40 m-2 flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-xs transition-colors"
+        className="border-separator text-label-secondary hover:border-tint/40 rounded-control text-footnote m-2 flex flex-col items-center justify-center border-2 border-dashed p-4 transition-colors"
         style={{
           width: placement === "bottom" ? "100%" : 140,
           height: placement === "bottom" ? 80 : "100%",
         }}
       >
-        <Layout className="text-muted-foreground mb-1 h-4 w-4" aria-hidden />
+        <Layout className="text-label-secondary mb-1 h-4 w-4" aria-hidden />
         <span>Drag tab here</span>
         {onChangePlacement && !panelsLocked && (
           <div className="mt-2 flex gap-1">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onChangePlacement("left")}
-              className={`rounded p-0.5 ${placement === "left" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Left"
+              aria-label="Dock Left"
+              className={cn(
+                "rounded-control-sm size-5",
+                `rounded-control-sm p-0.5 ${placement === "left" ? "text-tint bg-tint-fill" : "hover:text-label"}`
+              )}
             >
               <ChevronLeft className="h-3 w-3" />
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onChangePlacement("bottom")}
-              className={`rounded p-0.5 ${placement === "bottom" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Bottom"
+              aria-label="Dock Bottom"
+              className={cn(
+                "rounded-control-sm size-5",
+                `rounded-control-sm p-0.5 ${placement === "bottom" ? "text-tint bg-tint-fill" : "hover:text-label"}`
+              )}
             >
               <ChevronDown className="h-3 w-3" />
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onChangePlacement("right")}
-              className={`rounded p-0.5 ${placement === "right" ? "text-primary bg-primary/10" : "hover:text-foreground"}`}
               title="Dock Right"
+              aria-label="Dock Right"
+              className={cn(
+                "rounded-control-sm size-5",
+                `rounded-control-sm p-0.5 ${placement === "right" ? "text-tint bg-tint-fill" : "hover:text-label"}`
+              )}
             >
               <ChevronRight className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -364,7 +387,7 @@ export function EditorPanel({
       )}
 
       {!collapsed && (
-        <FacetContainer
+        <FacetMaterial
           material="regular"
           className={`flex flex-col rounded-none ${placement === "bottom" ? "w-full" : "h-full"}`}
           style={{
@@ -375,7 +398,7 @@ export function EditorPanel({
           {/* Resize handle */}
           {!panelsLocked && (
             <div
-              className={`hover:bg-primary/30 active:bg-primary/50 absolute z-20 transition-colors ${
+              className={`hover:bg-tint/30 active:bg-tint/50 absolute z-20 transition-colors ${
                 placement === "bottom"
                   ? "top-0 left-0 h-1 w-full cursor-row-resize"
                   : placement === "left"
@@ -395,9 +418,13 @@ export function EditorPanel({
                 onTabDrop(droppedTabId);
               }
             }}
-            className="border-border flex h-9 w-full shrink-0 items-center justify-between border-b"
+            className="border-separator flex h-9 w-full shrink-0 items-center justify-between border-b"
           >
-            <div className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto">
+            <div
+              role="tablist"
+              aria-label="Editor panels"
+              className="flex h-full min-w-0 flex-1 scrollbar-none overflow-x-auto"
+            >
               {tabs.map((tabId) => {
                 const tabDef = TAB_DEFS[tabId];
                 if (!tabDef) return null;
@@ -405,6 +432,10 @@ export function EditorPanel({
                 return (
                   <button
                     key={tabId}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-label={tabDef.label}
                     draggable={!panelsLocked}
                     onDragStart={
                       panelsLocked
@@ -414,18 +445,18 @@ export function EditorPanel({
                           }
                     }
                     onClick={() => handleTabClick(tabId)}
-                    className={`flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-1.5 px-3 text-xs font-medium transition-colors sm:text-xs ${
+                    className={`text-caption sm:text-footnote flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-2 px-3 transition-colors ${
                       isActive
-                        ? "border-primary text-foreground border-b-2"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        ? "border-tint text-label border-b-2"
+                        : "text-label-secondary hover:text-label hover:bg-fill-3"
                     }`}
                   >
                     <tabDef.Icon className="h-3.5 w-3.5" aria-hidden />
                     <span className="hidden sm:inline">{tabDef.label}</span>
                     {tabId === "features" && featureCount !== undefined && featureCount > 0 && (
-                      <span className="bg-muted text-muted-foreground rounded-full px-1 text-xs tabular-nums">
+                      <Badge variant="neutral" className="px-1 tabular-nums">
                         {featureCount}
-                      </span>
+                      </Badge>
                     )}
                   </button>
                 );
@@ -434,14 +465,14 @@ export function EditorPanel({
 
             {/* Dock selector buttons */}
             {onChangePlacement && !panelsLocked && (
-              <div className="border-border ml-auto flex shrink-0 items-center gap-0.5 border-l px-1.5 py-1">
+              <div className="border-separator ml-auto flex shrink-0 items-center gap-0.5 border-l px-2 py-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => onChangePlacement("left")}
                   aria-pressed={placement === "left"}
                   className={`h-6 w-6 ${
-                    placement === "left" ? "bg-accent text-foreground" : "text-muted-foreground"
+                    placement === "left" ? "bg-fill-3 text-label" : "text-label-secondary"
                   }`}
                   title="Dock left"
                   aria-label="Dock left"
@@ -454,7 +485,7 @@ export function EditorPanel({
                   onClick={() => onChangePlacement("bottom")}
                   aria-pressed={placement === "bottom"}
                   className={`h-6 w-6 ${
-                    placement === "bottom" ? "bg-accent text-foreground" : "text-muted-foreground"
+                    placement === "bottom" ? "bg-fill-3 text-label" : "text-label-secondary"
                   }`}
                   title="Dock bottom"
                   aria-label="Dock bottom"
@@ -467,7 +498,7 @@ export function EditorPanel({
                   onClick={() => onChangePlacement("right")}
                   aria-pressed={placement === "right"}
                   className={`h-6 w-6 ${
-                    placement === "right" ? "bg-accent text-foreground" : "text-muted-foreground"
+                    placement === "right" ? "bg-fill-3 text-label" : "text-label-secondary"
                   }`}
                   title="Dock right"
                   aria-label="Dock right"
@@ -512,7 +543,7 @@ export function EditorPanel({
               {activeTab === "wiki" && (
                 <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
                   {wikiContent ?? (
-                    <div className="text-muted-foreground flex flex-1 items-center justify-center px-3 py-8 text-center text-xs">
+                    <div className="text-label-secondary text-footnote flex flex-1 items-center justify-center px-3 py-8 text-center">
                       Select a country to scan its features for IxWiki pages.
                     </div>
                   )}
@@ -520,7 +551,7 @@ export function EditorPanel({
               )}
             </div>
           </div>
-        </FacetContainer>
+        </FacetMaterial>
       )}
 
       {(placement === "left" || placement === "bottom") && (
@@ -543,18 +574,25 @@ function CollapseToggle({
 }) {
   let positionClass = "";
   if (placement === "bottom") {
-    positionClass = "-top-3 left-1/2 -translate-x-1/2 rounded-t-md border-b-0 w-6 h-3";
+    positionClass = "-top-3 left-1/2 -translate-x-1/2 rounded-t-control-sm border-b-0 w-6 h-3";
   } else if (placement === "left") {
-    positionClass = "-right-3 rounded-r-md border-l-0 w-3 h-6 top-1/2 -translate-y-1/2";
+    positionClass = "-right-3 rounded-r-control-sm border-l-0 w-3 h-6 top-1/2 -translate-y-1/2";
   } else {
-    positionClass = "-left-3 rounded-l-md border-r-0 w-3 h-6 top-1/2 -translate-y-1/2";
+    positionClass = "-left-3 rounded-l-control-sm border-r-0 w-3 h-6 top-1/2 -translate-y-1/2";
   }
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={onToggle}
-      className={`bg-card border-border text-muted-foreground hover:text-foreground absolute z-10 flex items-center justify-center border shadow-sm transition-colors ${positionClass}`}
       title={collapsed ? "Show panel" : "Hide panel"}
+      aria-label={collapsed ? "Show panel" : "Hide panel"}
+      className={cn(
+        "rounded-control-sm size-5",
+        `bg-surface border-separator text-label-secondary hover:text-label shadow-card absolute z-10 flex items-center justify-center border transition-colors ${positionClass}`
+      )}
     >
       {placement === "bottom" ? (
         collapsed ? (
@@ -573,7 +611,7 @@ function CollapseToggle({
       ) : (
         <ChevronRight className="h-3 w-3" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -586,13 +624,13 @@ export function FeatureSearchFilter({
 }) {
   return (
     <div className="relative mb-2">
-      <Search className="text-muted-foreground absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+      <Search className="text-label-secondary absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
       <input
         type="text"
         value={value}
         onChange={(e) => onChangeAction(e.target.value)}
         placeholder="Filter features..."
-        className="border-border bg-background focus:ring-primary w-full rounded-md border py-1 pr-2 pl-7 text-xs outline-none focus:ring-1"
+        className="border-separator bg-surface focus:ring-tint rounded-control-sm text-footnote w-full border py-1 pr-2 pl-7 outline-none focus:ring-1"
       />
     </div>
   );

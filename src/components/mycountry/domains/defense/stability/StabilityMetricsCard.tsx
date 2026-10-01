@@ -47,9 +47,9 @@ interface StabilityMetricsCardProps {
 }
 
 const TREND_GLYPH = {
-  up: { icon: StatUp, className: "text-emerald-600", label: "Improving" },
+  up: { icon: StatUp, className: "text-green", label: "Improving" },
   down: { icon: StatDown, className: "text-destructive", label: "Declining" },
-  flat: { icon: Minus, className: "text-muted-foreground", label: "Steady" },
+  flat: { icon: Minus, className: "text-label-secondary", label: "Steady" },
 } as const;
 
 /** The stability trend as a semantic glyph with an accessible label. */
@@ -66,8 +66,8 @@ function TrendGlyph({ trend }: { trend: string }) {
 
 /** Stability score → semantic status text colour (stable / strained / unstable). */
 function scoreTone(score: number): string {
-  if (score >= 60) return "text-emerald-600";
-  if (score >= 40) return "text-amber-600";
+  if (score >= 60) return "text-green";
+  if (score >= 40) return "text-yellow";
   return "text-destructive";
 }
 
@@ -75,11 +75,11 @@ function scoreTone(score: number): string {
 function PercentMetric({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-0 space-y-2">
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="text-muted-foreground truncate" title={label}>
+      <div className="text-body flex items-center justify-between gap-2">
+        <span className="text-label-secondary truncate" title={label}>
           {label}
         </span>
-        <span className="text-foreground shrink-0 font-medium tabular-nums">
+        <span className="text-label shrink-0 font-medium tabular-nums">
           <NumberFlowDisplay value={value} format="decimal" decimalPlaces={0} />%
         </span>
       </div>
@@ -98,9 +98,9 @@ function MetricSection({
   children: ReactNode;
 }) {
   return (
-    <section className="border-border/60 space-y-3 border-t pt-4">
-      <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-        <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+    <section className="border-separator space-y-3 border-t pt-4">
+      <h4 className="text-label text-headline flex items-center gap-2">
+        <Icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
         {title}
       </h4>
       {children}
@@ -114,11 +114,11 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   const score = metrics?.stabilityScore ?? 75;
 
   return (
-    <FacetCard depth={1} surface="solid">
+    <FacetCard>
       <FacetCardHeader className="p-5 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <Users aria-hidden="true" className="h-4 w-4 text-rose-500" />
+          <h3 className="text-label text-title-3 flex items-center gap-2">
+            <Users aria-hidden="true" className="text-red h-4 w-4" />
             Internal stability
             <StabilityHelpDialog />
           </h3>
@@ -138,12 +138,12 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
             <Eyebrow>Overall stability score</Eyebrow>
             <span
               className={cn(
-                "font-mono text-2xl font-semibold tabular-nums",
-                metrics ? scoreTone(metrics.stabilityScore) : "text-foreground"
+                "text-title-1 tabular-nums",
+                metrics ? scoreTone(metrics.stabilityScore) : "text-label"
               )}
             >
               <NumberFlowDisplay value={score} format="decimal" decimalPlaces={1} />
-              <span className="text-muted-foreground text-sm">/100</span>
+              <span className="text-label-secondary text-body">/100</span>
             </span>
           </div>
           <Progress value={score} className="h-2" />
@@ -152,9 +152,9 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
         <MetricSection title="Crime & law enforcement" icon={Shield}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Overall Crime Rate</span>
-                <span className="text-foreground font-medium tabular-nums">
+              <div className="text-body flex items-center justify-between">
+                <span className="text-label-secondary">Overall Crime Rate</span>
+                <span className="text-label font-medium tabular-nums">
                   <NumberFlowDisplay
                     value={metrics?.crimeRate ?? 5}
                     format="decimal"
@@ -163,13 +163,13 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
                   per 100k
                 </span>
               </div>
-              <div className="text-muted-foreground flex items-center justify-between text-xs">
+              <div className="text-label-secondary text-footnote flex items-center justify-between">
                 <span>Violent Crime</span>
                 <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.violentCrimeRate ?? 2} />
                 </span>
               </div>
-              <div className="text-muted-foreground flex items-center justify-between text-xs">
+              <div className="text-label-secondary text-footnote flex items-center justify-between">
                 <span>Property Crime</span>
                 <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.propertyCrimeRate ?? 10} />
@@ -190,9 +190,9 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
 
         <MetricSection title="Public order" icon={Activity}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="text-muted-foreground">Protest Frequency</span>
-              <span className="text-foreground font-medium tabular-nums">
+            <div className="text-body flex items-center justify-between gap-2">
+              <span className="text-label-secondary">Protest Frequency</span>
+              <span className="text-label font-medium tabular-nums">
                 <NumberFlowDisplay value={metrics?.protestFrequency ?? 5} /> /year
               </span>
             </div>

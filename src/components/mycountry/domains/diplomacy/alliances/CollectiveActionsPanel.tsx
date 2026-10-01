@@ -39,11 +39,11 @@ interface CollectiveActionsPanelProps {
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
-  proposed: { icon: Clock, color: "text-amber-500" },
-  approved: { icon: CheckCircle2, color: "text-foreground" },
-  active: { icon: CheckCircle2, color: "text-emerald-500" },
+  proposed: { icon: Clock, color: "text-yellow" },
+  approved: { icon: CheckCircle2, color: "text-label" },
+  active: { icon: CheckCircle2, color: "text-green" },
   rejected: { icon: XCircle, color: "text-destructive" },
-  expired: { icon: MinusCircle, color: "text-muted-foreground" },
+  expired: { icon: MinusCircle, color: "text-label-secondary" },
 };
 
 export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActionsPanelProps) {
@@ -76,7 +76,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-foreground text-sm font-semibold">Alliance Actions</h4>
+        <h4 className="text-label text-headline">Alliance Actions</h4>
         {canPropose && (
           <Dialog open={proposeOpen} onOpenChange={setProposeOpen}>
             <DialogTrigger asChild>
@@ -146,7 +146,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-muted-foreground py-4 text-center text-xs">
+        <p className="text-label-secondary text-footnote py-4 text-center">
           No proposals yet. Members can propose collective actions for a vote.
         </p>
       ) : (
@@ -157,18 +157,21 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
             const isPending = action.status === "proposed";
 
             return (
-              <div key={action.id} className="border-border bg-card rounded-xl border p-3 text-sm">
+              <div
+                key={action.id}
+                className="border-separator bg-surface rounded-row text-body border p-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <StatusIcon className={`h-3 w-3 ${statusCfg.color}`} />
-                      <span className="text-foreground font-medium">{action.title}</span>
+                      <span className="text-label font-medium">{action.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
                       <Badge variant="outline" className="capitalize">
                         {action.actionType.replace("_", " ")}
                       </Badge>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label-secondary text-footnote">
                         Votes: {action.votesFor} for / {action.votesAgainst} against (need{" "}
                         {action.requiredVotes})
                       </span>
@@ -180,7 +183,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-emerald-500 hover:text-emerald-500"
+                        className="text-green hover:text-green h-8 w-8"
                         aria-label="Vote for"
                         onClick={() => voteMutation.mutate({ actionId: action.id, vote: "for" })}
                         disabled={voteMutation.isPending}
@@ -202,7 +205,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-muted-foreground h-8 w-8"
+                        className="text-label-secondary h-8 w-8"
                         aria-label="Abstain"
                         onClick={() =>
                           voteMutation.mutate({ actionId: action.id, vote: "abstain" })

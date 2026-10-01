@@ -1,6 +1,6 @@
 "use client";
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Button } from "~/components/ui/button";
 import React from "react";
 import { useNotify } from "~/hooks/useNotify";
@@ -20,6 +20,7 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { BorderEditorState, BorderEditorActions } from "~/hooks/useBorderEditor";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Slider } from "~/components/ui/slider";
 
 interface BorderEditorToolOptionsProps {
   countryName?: string;
@@ -44,7 +45,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 }: BorderEditorToolOptionsProps) {
   const notify = useNotify();
   return (
-    <FacetContainer
+    <FacetMaterial
       material="regular"
       role="toolbar"
       aria-label="Border editor options"
@@ -52,9 +53,9 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
     >
       {/* Left Side: Active Tool Options */}
       <div className="flex items-center gap-2">
-        <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
-          <Scissors className="text-muted-foreground h-3.5 w-3.5" />
-          <span className="text-foreground text-xs font-semibold">
+        <div className="border-separator mr-2 flex items-center gap-2 border-r pr-2">
+          <Scissors className="text-label-secondary h-3.5 w-3.5" />
+          <span className="text-label text-caption font-semibold">
             Border Editor ({countryName || "unnamed"})
           </span>
         </div>
@@ -63,47 +64,47 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
             <Eyebrow>Brush Size</Eyebrow>
-            <input
-              type="range"
-              min="1"
-              max="200"
-              step="1"
-              value={brushRadius}
-              onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="accent-primary h-4 w-24"
+            <Slider
+              aria-label="Brush size"
+              min={1}
+              max={200}
+              step={1}
+              value={[brushRadius]}
+              onValueChange={([v]) => v !== undefined && setBrushRadius(v)}
+              className="w-24 py-2"
             />
-            <span className="text-muted-foreground w-12 text-right font-mono text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote w-12 text-right tabular-nums">
               {brushRadius}km
             </span>
           </div>
         )}
 
         {borderState.mode === "split" && borderState.splitLine.length > 0 && (
-          <span className="text-xs font-medium text-amber-500">
+          <span className="text-caption text-yellow">
             Split Line: {borderState.splitLine.length} points
           </span>
         )}
 
         {borderState.mode === "select" && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Click a vertex/edge to start editing.
           </span>
         )}
 
         {borderState.mode === "vertex_edit" && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Drag vertices. Click midpoints to add vertices.
           </span>
         )}
 
         {borderState.mode === "merge" && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Select neighbor subdivisions to merge.
           </span>
         )}
 
         {borderState.mode === "trace" && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Click points on river/coast to trace.
           </span>
         )}
@@ -116,7 +117,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-6 w-6 justify-center"
+            className="text-label-secondary h-6 w-6 justify-center"
             disabled={!(borderState.isDirty && borderState.undoStackState.position >= 0)}
             onClick={borderActions.undo}
             title="Undo (Ctrl+Z)"
@@ -126,7 +127,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-6 w-6 justify-center"
+            className="text-label-secondary h-6 w-6 justify-center"
             disabled={
               !(
                 borderState.isDirty &&
@@ -140,84 +141,96 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           </Button>
         </div>
 
-        <div className="bg-border h-4 w-px" />
+        <div className="bg-separator h-4 w-px" />
 
         {/* Area Stats */}
         {borderState.areaKm2 !== null && (
-          <span className="text-muted-foreground text-xs font-medium select-none">
+          <span className="text-label-secondary text-caption select-none">
             {borderState.areaKm2 > 1000000
               ? `${(borderState.areaKm2 / 1000000).toFixed(2)}M km²`
               : `${Math.round(borderState.areaKm2).toLocaleString()} km²`}
           </span>
         )}
 
-        <div className="bg-border h-4 w-px" />
+        <div className="bg-separator h-4 w-px" />
 
         {/* Advanced operations popover */}
         <Popover>
-          <PopoverTrigger className="bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs font-medium transition-colors active:scale-[0.98]">
+          <PopoverTrigger className="bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label text-caption rounded-control-sm flex h-6 cursor-pointer items-center gap-1 px-2 transition-colors active:scale-[0.98]">
             <Wrench className="h-3 w-3" />
             <span>Advanced</span>
           </PopoverTrigger>
-          <PopoverContent className="w-48 rounded-md p-2" align="end">
+          <PopoverContent className="rounded-control-sm w-48 p-2" align="end">
             <div className="flex flex-col gap-1">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void borderActions.repair();
                   notify.info("Repaired geometry spikes", undefined, {
                     actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
                 title="Repair geometry spikes"
+                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
-                <Wrench className="h-3.5 w-3.5 text-amber-500" />
+                <Wrench className="text-yellow h-3.5 w-3.5" />
                 <span>Repair Spikes</span>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void borderActions.smooth();
                   notify.info("Applied Chaikin smoothing", undefined, {
                     actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
                 title="Soften corners (Chaikin smoothing)"
+                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
-                <Spline className="h-3.5 w-3.5 text-blue-500" />
+                <Spline className="text-blue h-3.5 w-3.5" />
                 <span>Smooth Geometry</span>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void borderActions.naturalize();
                   notify.info("Naturalized coastline", undefined, {
                     actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
                 title="Subdivide and randomize for organic coastlines"
+                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
-                <Waves className="h-3.5 w-3.5 text-cyan-500" />
+                <Waves className="text-cyan h-3.5 w-3.5" />
                 <span>Naturalize Coastline</span>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void borderActions.simplify();
                   notify.info("Simplified border vertices", undefined, {
                     actions: [{ label: "Undo", onClick: () => borderActions.undo() }],
                   });
                 }}
-                className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors active:scale-[0.98]"
                 title="Reduce vertex count (Douglas-Peucker)"
+                className="text-label-secondary hover:text-label h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
               >
-                <Minimize2 className="h-3.5 w-3.5 text-indigo-500" />
+                <Minimize2 className="text-indigo h-3.5 w-3.5" />
                 <span>Simplify (Reduce Vertices)</span>
-              </button>
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
 
-        <div className="bg-border h-4 w-px" />
+        <div className="bg-separator h-4 w-px" />
 
         {/* Save Draft */}
         <Button
@@ -264,7 +277,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <span>Apply</span>
         </Button>
 
-        <div className="bg-border h-4 w-px" />
+        <div className="bg-separator h-4 w-px" />
 
         {/* Close / Exit Border Editor */}
         <Button variant="secondary" size="xs" onClick={onExit} title="Close Border Editor">
@@ -272,6 +285,6 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
           <span>Close</span>
         </Button>
       </div>
-    </FacetContainer>
+    </FacetMaterial>
   );
 });

@@ -28,17 +28,14 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
   const isModified = Math.abs(currentTariff - sector.defaultTariff) > 0.01;
 
   return (
-    <FacetCard surface="solid" className="space-y-3 rounded-2xl p-4">
+    <FacetCard className="rounded-card space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
             aria-hidden="true"
-            className={cn(
-              "h-2 w-2 shrink-0 rounded-full",
-              ACCENT_BG[sector.accent] || "bg-primary"
-            )}
+            className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[sector.accent] || "bg-tint")}
           />
-          <span className="text-foreground truncate text-xs font-medium">{sector.label}</span>
+          <span className="text-label text-caption truncate">{sector.label}</span>
         </div>
 
         <div className="flex shrink-0 items-center gap-0.5">
@@ -50,7 +47,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
               onClick={onReset}
               title="Reset to starting rate"
               aria-label={`Reset ${sector.label} to its starting rate`}
-              className="text-muted-foreground h-11 w-11 sm:h-7 sm:w-7"
+              className="text-label-secondary h-11 w-11 sm:h-7 sm:w-7"
             >
               <RotateCcw aria-hidden="true" />
             </Button>
@@ -65,7 +62,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
             aria-pressed={isLocked}
             className={cn(
               "h-11 w-11 sm:h-7 sm:w-7",
-              isLocked ? "text-(--facet-mycountry)" : "text-muted-foreground"
+              isLocked ? "text-tint" : "text-label-secondary"
             )}
           >
             {isLocked ? <Lock aria-hidden="true" /> : <Unlock aria-hidden="true" />}
@@ -74,8 +71,10 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
       </div>
 
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-muted-foreground text-xs">Share of GDP: {sector.defaultShare}%</span>
-        <div className="text-foreground font-mono text-lg font-semibold tracking-tight tabular-nums">
+        <span className="text-label-secondary text-footnote">
+          Share of GDP: {sector.defaultShare}%
+        </span>
+        <div className="text-label text-title-3 tabular-nums">
           <PercentageFlow value={currentTariff} />
         </div>
       </div>

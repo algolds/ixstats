@@ -272,7 +272,7 @@ export function CardImageUploadModal({
 
             {/* Preset Images Tab */}
             <TabsContent value="presets" className="mt-4 space-y-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Select a curated image for your {preset.label.toLowerCase()} card
               </p>
 
@@ -282,10 +282,10 @@ export function CardImageUploadModal({
                   <div
                     key={idx}
                     className={cn(
-                      "relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                      "rounded-control relative aspect-video cursor-pointer overflow-hidden border-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       selectedImage === imageUrl
-                        ? "border-primary ring-primary/50 ring-2"
-                        : "hover:border-primary/50 border-transparent"
+                        ? "border-tint ring-tint/50 ring-2"
+                        : "hover:border-tint/50 border-transparent"
                     )}
                     onClick={() => setSelectedImage(imageUrl)}
                   >
@@ -295,8 +295,8 @@ export function CardImageUploadModal({
                       className="h-full w-full object-cover"
                     />
                     {selectedImage === imageUrl && (
-                      <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
-                        <Check className="text-primary h-8 w-8 drop-shadow-lg" />
+                      <div className="bg-tint-fill absolute inset-0 flex items-center justify-center">
+                        <Check className="text-tint h-8 w-8 drop-shadow-lg" />
                       </div>
                     )}
                   </div>
@@ -306,20 +306,20 @@ export function CardImageUploadModal({
 
             {/* Image Repository Tab */}
             <TabsContent value="search" className="mt-4 space-y-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 Search from Unsplash, Wiki Commons, IxWiki, or upload your own
               </p>
 
               {/* Selected Image Preview */}
               {selectedImage && !presetImages.includes(selectedImage) && (
-                <div className="border-primary relative aspect-video overflow-hidden rounded-lg border-2">
+                <div className="border-tint rounded-control relative aspect-video overflow-hidden border-2">
                   <img
                     src={selectedImage}
                     alt="Selected image"
                     className="h-full w-full object-cover"
                   />
-                  <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">
-                    <Check className="text-primary h-8 w-8 drop-shadow-lg" />
+                  <div className="bg-tint-fill absolute inset-0 flex items-center justify-center">
+                    <Check className="text-tint h-8 w-8 drop-shadow-lg" />
                   </div>
                 </div>
               )}
@@ -330,9 +330,9 @@ export function CardImageUploadModal({
                 onClick={() => setIsMediaModalOpen(true)}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <ImageIcon className="text-muted-foreground h-8 w-8" />
+                  <ImageIcon className="text-label-secondary h-8 w-8" />
                   <span>Open Image Repository</span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     Unsplash, Wiki Commons, IxWiki, or Upload
                   </span>
                 </div>

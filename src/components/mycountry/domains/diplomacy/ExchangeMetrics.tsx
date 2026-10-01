@@ -23,14 +23,14 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
     { label: "Cultural impact", value: `${metrics.avgCulturalImpact}%` },
   ];
   return (
-    <FacetCard depth={1} className="rounded-2xl p-4">
+    <FacetCard className="rounded-card p-4">
       <dl className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {items.map((item) => (
           <div key={item.label} className="space-y-1">
             <dt>
               <Eyebrow>{item.label}</Eyebrow>
             </dt>
-            <dd className="text-foreground text-2xl font-semibold tabular-nums">{item.value}</dd>
+            <dd className="text-label text-title-1 tabular-nums">{item.value}</dd>
           </div>
         ))}
       </dl>

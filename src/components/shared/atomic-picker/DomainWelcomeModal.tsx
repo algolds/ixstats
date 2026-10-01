@@ -131,8 +131,8 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
         }}
       >
         <DialogHeader className="pr-8">
-          <DialogTitle className="tracking-tight">{title}</DialogTitle>
-          {subtitle && <DialogDescription className="text-xs">{subtitle}</DialogDescription>}
+          <DialogTitle className="">{title}</DialogTitle>
+          {subtitle && <DialogDescription className="text-footnote">{subtitle}</DialogDescription>}
         </DialogHeader>
 
         {/* Current tip */}
@@ -144,16 +144,16 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -slideOffset }}
               transition={{ duration: instant ? 0 : 0.15, ease: "easeOut" }}
-              className="flex flex-col gap-3.5"
+              className="flex flex-col gap-4"
             >
               <div className="flex items-center gap-3">
                 <Icon
                   aria-hidden="true"
-                  className={cn("h-6 w-6 shrink-0", currentTip.color ?? "text-(--facet-mycountry)")}
+                  className={cn("h-6 w-6 shrink-0", currentTip.color ?? "text-tint")}
                 />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-foreground text-sm font-semibold">{currentTip.title}</h3>
+                    <h3 className="text-label text-headline">{currentTip.title}</h3>
                     {currentTip.badge && <Badge variant="outline">{currentTip.badge}</Badge>}
                   </div>
                   <Eyebrow className="tabular-nums">
@@ -162,7 +162,7 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
                 </div>
               </div>
 
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-label-secondary text-body leading-relaxed">
                 {currentTip.description}
               </p>
             </motion.div>
@@ -170,7 +170,7 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
         </div>
 
         {/* Step dots and navigation */}
-        <div className="border-border/60 flex items-center justify-between gap-3 border-t pt-4">
+        <div className="border-separator flex items-center justify-between gap-3 border-t pt-4">
           <div className="flex items-center" role="group" aria-label="Guide steps">
             {tips.map((tip, idx) => (
               <button
@@ -179,15 +179,13 @@ export const DomainWelcomeModal = React.memo(function DomainWelcomeModal({
                 onClick={() => goTo(idx, false)}
                 aria-label={`Step ${idx + 1}: ${tip.title}`}
                 aria-current={idx === currentIndex ? "step" : undefined}
-                className="focus-visible:ring-ring flex h-6 items-center rounded-full px-0.5 focus-visible:ring-1 focus-visible:outline-none max-sm:h-11"
+                className="focus-visible:ring-tint flex h-6 items-center rounded-full px-0.5 focus-visible:ring-1 focus-visible:outline-none max-sm:h-11"
               >
                 <span
                   aria-hidden="true"
                   className={cn(
                     "block h-1.5 rounded-full transition-[background-color] duration-150",
-                    idx === currentIndex
-                      ? "bg-foreground w-5"
-                      : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-1.5"
+                    idx === currentIndex ? "bg-label w-5" : "bg-fill-2 hover:bg-fill w-1.5"
                   )}
                 />
               </button>

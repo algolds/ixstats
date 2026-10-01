@@ -21,8 +21,8 @@ export const ToolbarButton = React.forwardRef<
       size="xs"
       aria-pressed={tone === "active" ? true : undefined}
       className={cn(
-        "h-6 gap-1 px-1.5 [&_svg]:size-3",
-        tone === "default" && "text-muted-foreground",
+        "h-6 gap-1 px-2 [&_svg]:size-3",
+        tone === "default" && "text-label-secondary",
         tone === "danger" && "text-destructive hover:bg-destructive/10 hover:text-destructive",
         className
       )}
@@ -31,15 +31,15 @@ export const ToolbarButton = React.forwardRef<
   );
 });
 
-export const dividerClass = "bg-border h-4 w-px";
+export const dividerClass = "bg-separator h-4 w-px";
 export const selectClass =
-  "h-6 rounded border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary/50";
+  "h-6 rounded-control-sm border border-separator bg-surface px-2 text-footnote text-label outline-none focus:ring-1 focus:ring-tint/50";
 
 export function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
-    <div className="border-border mr-2 flex items-center gap-1.5 border-r pr-2">
-      <Icon className="text-muted-foreground h-3.5 w-3.5" />
-      <span className="text-foreground text-xs font-semibold">{label}</span>
+    <div className="border-separator mr-2 flex items-center gap-2 border-r pr-2">
+      <Icon className="text-label-secondary h-3.5 w-3.5" />
+      <span className="text-label text-caption font-semibold">{label}</span>
     </div>
   );
 }
@@ -138,7 +138,7 @@ export function CoordinateSnappingControls({
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <Eyebrow>Coord</Eyebrow>
       <input
         type="text"
@@ -147,7 +147,7 @@ export function CoordinateSnappingControls({
         onChange={(e) => setLng(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16 text-xs`}
+        className={`${selectClass} text-footnote w-16`}
       />
       <input
         type="text"
@@ -156,7 +156,7 @@ export function CoordinateSnappingControls({
         onChange={(e) => setLat(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16 text-xs`}
+        className={`${selectClass} text-footnote w-16`}
       />
 
       {onTogglePickingLocation && (

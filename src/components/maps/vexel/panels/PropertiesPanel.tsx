@@ -4,7 +4,11 @@ import { Check } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Input } from "~/components/ui/input";
+import { Slider } from "~/components/ui/slider";
+import { Switch } from "~/components/ui/switch";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import {
   TINCTURE_HEX,
   DIVISIONS,
@@ -54,7 +58,11 @@ export default function PropertiesPanel() {
     value: Tincture;
     onChange: (t: Tincture) => void;
   }) => (
-    <div className="border-border bg-card/40 mt-1 grid grid-cols-4 gap-1.5 rounded-lg border p-2">
+    <div
+      role="radiogroup"
+      aria-label="Tincture"
+      className="bg-surface-secondary rounded-control mt-1 grid grid-cols-4 gap-2 p-2"
+    >
       {Object.keys(TINCTURE_HEX).map((t) => {
         const key = t as Tincture;
         const color = TINCTURE_HEX[key];
@@ -64,17 +72,20 @@ export default function PropertiesPanel() {
           <button
             key={key}
             type="button"
+            role="radio"
+            aria-checked={isSelected}
+            aria-label={getTinctureLabel(key)}
             title={getTinctureLabel(key)}
             onClick={() => onChange(key)}
-            className={`relative h-7 w-full rounded border transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+            className={`rounded-control-sm focus-visible:outline-tint relative h-7 w-full border transition-[border-color,box-shadow,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 ${
               isSelected
-                ? "scale-105 border-amber-500 shadow-md"
-                : "border-border opacity-70 hover:opacity-100"
+                ? "border-tint ring-tint ring-2"
+                : "border-separator opacity-70 hover:opacity-100"
             }`}
             style={{ backgroundColor: color }}
           >
             {isSelected && (
-              <span className="bg-muted text-foreground absolute inset-0 flex items-center justify-center rounded text-xs font-bold">
+              <span className="bg-fill-3 text-label rounded-control-sm absolute inset-0 flex items-center justify-center">
                 <Check className="h-3.5 w-3.5" aria-hidden />
               </span>
             )}
@@ -87,49 +98,41 @@ export default function PropertiesPanel() {
   // Render properties based on active selection
   if (!selectedLayerPath) {
     return (
-      <FacetMaterial
-        material="satin"
-        className="border-border h-full overflow-hidden rounded-xl border"
-      >
-        <div className="text-muted-foreground flex h-full items-center justify-center p-6 text-center text-xs italic">
+      <FacetCard className="h-full overflow-hidden">
+        <div className="text-label-secondary text-footnote flex h-full items-center justify-center p-6 text-center italic">
           Select a layer from the tree to edit properties
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 
-  // 1. Root Shield Properties
+  // 1. Root Shield properties
   if (selectedLayerPath === "shield") {
     return (
-      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
-        <div className="flex flex-col gap-4 p-4 text-xs">
-          <Eyebrow className="border-border block border-b pb-2">Shield Properties</Eyebrow>
+      <FacetCard className="overflow-hidden">
+        <div className="text-footnote flex flex-col gap-4 p-4">
+          <Eyebrow className="border-separator block border-b pb-2">Shield properties</Eyebrow>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Shape</label>
-            <select
+            <label className="text-label-secondary font-medium">Shape</label>
+            <OptionSelect
+              aria-label="Shape"
               value={composition.shield.shape}
-              onChange={(e) =>
+              onValueChange={(v) =>
                 updateComposition({
                   ...composition,
-                  shield: { ...composition.shield, shape: e.target.value as ShieldShape },
+                  shield: { ...composition.shield, shape: v as ShieldShape },
                 })
               }
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
-            >
-              {SHIELD_SHAPES.map((shape) => (
-                <option key={shape.value} value={shape.value}>
-                  {shape.label}
-                </option>
-              ))}
-            </select>
+              options={SHIELD_SHAPES}
+            />
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 
-  // 2. Field Properties
+  // 2. Field properties
   if (selectedLayerPath === "shield.field") {
     const field = composition.shield.field;
     const expectedCount = DIVISION_SECTIONS_COUNT[field.division] ?? 1;
@@ -161,43 +164,33 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
-        <div className="flex max-h-[400px] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <Eyebrow className="border-border block border-b pb-2">Field Properties</Eyebrow>
+      <FacetCard className="overflow-hidden">
+        <div className="text-footnote flex max-h-[400px] flex-col gap-4 overflow-y-auto p-4">
+          <Eyebrow className="border-separator block border-b pb-2">Field properties</Eyebrow>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Division</label>
-            <select
+            <label className="text-label-secondary font-medium">Division</label>
+            <OptionSelect
+              aria-label="Division"
               value={field.division}
-              onChange={(e) => handleDivisionChange(e.target.value as Division)}
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
-            >
-              {DIVISIONS.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => handleDivisionChange(v as Division)}
+              options={DIVISIONS}
+            />
           </div>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Line Style</label>
-            <select
+            <label className="text-label-secondary font-medium">Line style</label>
+            <OptionSelect
+              aria-label="Line style"
               value={field.lineStyle}
-              onChange={(e) => updateField({ ...field, lineStyle: e.target.value as LineStyle })}
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
-            >
-              {LINE_STYLES.map((ls) => (
-                <option key={ls.value} value={ls.value}>
-                  {ls.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => updateField({ ...field, lineStyle: v as LineStyle })}
+              options={LINE_STYLES}
+            />
           </div>
 
           {/* Tincture pickers for divisions */}
-          <div className="border-border space-y-3 border-t pt-2">
-            <span className="text-muted-foreground block font-bold">
+          <div className="border-separator space-y-3 border-t pt-2">
+            <span className="text-label-secondary block font-semibold">
               Tinctures ({expectedCount})
             </span>
             {Array.from({ length: expectedCount }).map((_, i) => (
@@ -211,11 +204,11 @@ export default function PropertiesPanel() {
             ))}
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 
-  // 3. Ordinary Properties
+  // 3. Ordinary properties
   if (selectedLayerPath.startsWith("shield.ordinaries")) {
     const idx = parseIndices(selectedLayerPath);
     if (idx === null) return null;
@@ -224,51 +217,41 @@ export default function PropertiesPanel() {
     if (!ord) return null;
 
     return (
-      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
-        <div className="flex flex-col gap-4 p-4 text-xs">
-          <Eyebrow className="border-border block border-b pb-2">
-            Ordinary Properties ({idx + 1})
+      <FacetCard className="overflow-hidden">
+        <div className="text-footnote flex flex-col gap-4 p-4">
+          <Eyebrow className="border-separator block border-b pb-2">
+            Ordinary properties ({idx + 1})
           </Eyebrow>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Type</label>
-            <select
+            <label className="text-label-secondary font-medium">Type</label>
+            <OptionSelect
+              aria-label="Type"
               value={ord.type}
-              onChange={(e) => updateOrdinary(idx, { type: e.target.value as OrdinaryType })}
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
-            >
-              {ORDINARIES.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => updateOrdinary(idx, { type: v as OrdinaryType })}
+              options={ORDINARIES}
+            />
           </div>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Line Style</label>
-            <select
+            <label className="text-label-secondary font-medium">Line style</label>
+            <OptionSelect
+              aria-label="Line style"
               value={ord.lineStyle}
-              onChange={(e) => updateOrdinary(idx, { lineStyle: e.target.value as LineStyle })}
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
-            >
-              {LINE_STYLES.map((ls) => (
-                <option key={ls.value} value={ls.value}>
-                  {ls.label}
-                </option>
-              ))}
-            </select>
+              onValueChange={(v) => updateOrdinary(idx, { lineStyle: v as LineStyle })}
+              options={LINE_STYLES}
+            />
           </div>
 
-          <div className="border-border space-y-1 border-t pt-2">
-            <label className="text-muted-foreground block font-medium">Tincture</label>
+          <div className="border-separator space-y-1 border-t pt-2">
+            <label className="text-label-secondary block font-medium">Tincture</label>
             <TincturePicker
               value={ord.tincture}
               onChange={(tinc) => updateOrdinary(idx, { tincture: tinc })}
             />
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 
@@ -281,80 +264,76 @@ export default function PropertiesPanel() {
     if (!charge) return null;
 
     return (
-      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
-        <div className="flex flex-col gap-4 p-4 text-xs">
-          <Eyebrow className="border-border block truncate border-b pb-2">
-            Charge Properties: {charge.chargeId}
+      <FacetCard className="overflow-hidden">
+        <div className="text-footnote flex flex-col gap-4 p-4">
+          <Eyebrow className="border-separator block truncate border-b pb-2">
+            Charge properties: {charge.chargeId}
           </Eyebrow>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Count ({charge.count})</label>
-            <input
-              type="range"
-              min="1"
-              max="12"
-              value={charge.count}
-              onChange={(e) => updateCharge(idx, { count: parseInt(e.target.value, 10) })}
-              className="bg-card h-2 w-full cursor-pointer rounded-lg accent-amber-500"
+            <label id="vexel-charge-count" className="text-label-secondary font-medium">
+              Count ({charge.count})
+            </label>
+            <Slider
+              aria-labelledby="vexel-charge-count"
+              min={1}
+              max={12}
+              step={1}
+              value={[charge.count]}
+              onValueChange={([v]) => updateCharge(idx, { count: v ?? charge.count })}
+              className="py-2"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">
+            <label id="vexel-charge-size" className="text-label-secondary font-medium">
               Size ({charge.size.toFixed(2)}x)
             </label>
-            <input
-              type="range"
-              min="0.1"
-              max="2.5"
-              step="0.05"
-              value={charge.size}
-              onChange={(e) => updateCharge(idx, { size: parseFloat(e.target.value) })}
-              className="bg-card h-2 w-full cursor-pointer rounded-lg accent-amber-500"
+            <Slider
+              aria-labelledby="vexel-charge-size"
+              min={0.1}
+              max={2.5}
+              step={0.05}
+              value={[charge.size]}
+              onValueChange={([v]) => updateCharge(idx, { size: v ?? charge.size })}
+              className="py-2"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground font-medium">Attitude</label>
-            <select
+            <label className="text-label-secondary font-medium">Attitude</label>
+            <OptionSelect
+              aria-label="Attitude"
               value={charge.attitude || ""}
-              onChange={(e) =>
-                updateCharge(idx, { attitude: (e.target.value || undefined) as Attitude })
-              }
-              className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
-            >
-              <option value="">Default (None)</option>
-              {ATTITUDES.map((att) => (
-                <option key={att.value} value={att.value}>
-                  {att.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="border-border flex items-center justify-between border-t pt-2">
-            <label className="text-muted-foreground font-medium">Mirrored</label>
-            <input
-              type="checkbox"
-              checked={!!charge.mirrored}
-              onChange={(e) => updateCharge(idx, { mirrored: e.target.checked })}
-              className="border-border bg-card h-4 w-4 rounded text-amber-500 focus:ring-amber-500"
+              onValueChange={(v) => updateCharge(idx, { attitude: (v || undefined) as Attitude })}
+              options={[{ value: "", label: "Default (None)" }, ...ATTITUDES]}
             />
           </div>
 
-          <div className="border-border space-y-1 border-t pt-2">
-            <label className="text-muted-foreground block font-medium">Tincture</label>
+          <div className="border-separator flex items-center justify-between border-t pt-2">
+            <label htmlFor="vexel-charge-mirrored" className="text-label-secondary font-medium">
+              Mirrored
+            </label>
+            <Switch
+              id="vexel-charge-mirrored"
+              checked={!!charge.mirrored}
+              onCheckedChange={(checked) => updateCharge(idx, { mirrored: checked })}
+            />
+          </div>
+
+          <div className="border-separator space-y-1 border-t pt-2">
+            <label className="text-label-secondary block font-medium">Tincture</label>
             <TincturePicker
               value={charge.tincture}
               onChange={(tinc) => updateCharge(idx, { tincture: tinc })}
             />
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 
-  // 5. External Ornaments Properties
+  // 5. External Ornament properties
   if (selectedLayerPath === "externals") {
     const ext = composition.externals || {};
 
@@ -382,73 +361,72 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
-        <div className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4 text-xs">
-          <Eyebrow className="border-border block border-b pb-2">Ornaments Properties</Eyebrow>
+      <FacetCard className="overflow-hidden">
+        <div className="text-footnote flex max-h-[80vh] flex-col gap-4 overflow-y-auto p-4">
+          <Eyebrow className="border-separator block border-b pb-2">Ornament properties</Eyebrow>
 
           {/* Helm toggle */}
           <div className="flex items-center justify-between">
-            <label className="text-muted-foreground font-medium">Include Helm</label>
-            <input
-              type="checkbox"
+            <label htmlFor="vexel-include-helm" className="text-label-secondary font-medium">
+              Include helm
+            </label>
+            <Switch
+              id="vexel-include-helm"
               checked={!!ext.helm}
-              onChange={(e) => handleHelmToggle(e.target.checked)}
-              className="border-border bg-card h-4 w-4 rounded text-amber-500 focus:ring-amber-500"
+              onCheckedChange={handleHelmToggle}
             />
           </div>
 
           {ext.helm && (
-            <div className="border-border space-y-1 border-l pl-3">
-              <label className="text-muted-foreground font-medium">Helm Type</label>
-              <select
+            <div className="border-separator space-y-1 border-l pl-3">
+              <label className="text-label-secondary font-medium">Helm type</label>
+              <OptionSelect
+                aria-label="Helm type"
                 value={ext.helm.type}
-                onChange={(e) =>
+                onValueChange={(v) =>
                   updateExternals({
                     ...ext,
-                    helm: { ...ext.helm!, type: e.target.value as HelmType },
+                    helm: { ...ext.helm!, type: v as HelmType },
                   })
                 }
-                className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:outline-none"
-              >
-                {HELM_TYPES.map((h) => (
-                  <option key={h.value} value={h.value}>
-                    {h.label}
-                  </option>
-                ))}
-              </select>
+                options={HELM_TYPES}
+              />
             </div>
           )}
 
           {/* Motto section */}
-          <div className="border-border space-y-2 border-t pt-2">
-            <label className="text-muted-foreground block font-bold">Motto Scroll</label>
+          <div className="border-separator space-y-2 border-t pt-2">
+            <label className="text-label-secondary block font-semibold">Motto scroll</label>
             <div className="space-y-1">
-              <label className="text-muted-foreground">Motto Text</label>
-              <input
+              <label htmlFor="vexel-motto-text" className="text-label-secondary">
+                Motto text
+              </label>
+              <Input
+                id="vexel-motto-text"
                 type="text"
                 placeholder="e.g. In Hoc Signo Vinces"
                 value={ext.motto?.text || ""}
                 onChange={(e) => handleMottoTextChange(e.target.value)}
-                className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus-visible:border-amber-500 focus-visible:outline-none"
               />
             </div>
 
             {ext.motto && (
-              <div className="border-border space-y-1 border-l pl-3">
-                <label className="text-muted-foreground">Position</label>
-                <select
+              <div className="border-separator space-y-1 border-l pl-3">
+                <label className="text-label-secondary">Position</label>
+                <OptionSelect
+                  aria-label="Motto position"
                   value={ext.motto.position}
-                  onChange={(e) => handleMottoPositionChange(e.target.value as "above" | "below")}
-                  className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:outline-none"
-                >
-                  <option value="below">Scroll below shield</option>
-                  <option value="above">Scroll above shield</option>
-                </select>
+                  onValueChange={(v) => handleMottoPositionChange(v as "above" | "below")}
+                  options={[
+                    { value: "below", label: "Scroll below shield" },
+                    { value: "above", label: "Scroll above shield" },
+                  ]}
+                />
               </div>
             )}
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     );
   }
 

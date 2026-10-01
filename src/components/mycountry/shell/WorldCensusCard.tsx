@@ -141,7 +141,7 @@ export function WorldCensusList({
               className="pl-0"
               title={<span className="text-body text-label font-normal">{r.category}</span>}
               trailing={
-                <span className="flex items-center gap-2.5" title={describeRank(r)}>
+                <span className="flex items-center gap-2" title={describeRank(r)}>
                   <span className="text-footnote text-label-secondary tabular-nums">
                     {formatCensusValue(r)}
                   </span>
@@ -192,13 +192,7 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
   );
 
   return (
-    <FacetCard
-      depth={2}
-      interactive="none"
-      role="region"
-      aria-labelledby="world-census-title"
-      className="rounded-3xl"
-    >
+    <FacetCard role="region" aria-labelledby="world-census-title" className="rounded-card">
       <FacetCardHeader className="gap-0.5 px-4 pt-4 pb-0">
         <h2 id="world-census-title" className="text-headline text-label">
           World Census

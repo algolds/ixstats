@@ -100,13 +100,13 @@ export function BudgetConfigurationSection({
   let colorClass = "";
   let statusText = "";
   if (deficitSurplus <= 0) {
-    colorClass = "border-emerald-500/30 text-emerald-600";
+    colorClass = "border-green/30 text-green";
     statusText = `Fully Funded (Surplus: ${Math.abs(deficitSurplus).toFixed(1)}% of GDP)`;
   } else if (deficitSurplus <= 5) {
-    colorClass = "border-amber-500/30 text-amber-600";
+    colorClass = "border-yellow/30 text-yellow";
     statusText = `Mild Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
   } else if (deficitSurplus <= 15) {
-    colorClass = "border-orange-500/30 text-orange-600";
+    colorClass = "border-orange/30 text-orange";
     statusText = `Moderate Deficit (+${deficitSurplus.toFixed(1)}% of GDP)`;
   } else {
     colorClass = "border-destructive/30 text-destructive";
@@ -133,7 +133,7 @@ export function BudgetConfigurationSection({
             size="sm"
             format={(val) => safeFormatCurrency(Number(val), data.budgetCurrency || "USD", false)}
             placeholder="Enter budget limit..."
-            className="text-foreground"
+            className="text-label"
           />
           <div className="flex flex-col gap-1">
             {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
@@ -141,7 +141,7 @@ export function BudgetConfigurationSection({
                 <Badge variant="outline" className={cn("mt-0.5", colorClass)}>
                   {ratio.toFixed(1)}% of GDP ({gdpData.countryName || "Baseline"})
                 </Badge>
-                <span className="text-muted-foreground px-0.5 text-xs leading-relaxed font-medium">
+                <span className="text-label-secondary text-caption px-0.5 leading-relaxed">
                   Tax Revenue: {taxPercent.toFixed(1)}% • {statusText}
                 </span>
               </>
@@ -153,7 +153,7 @@ export function BudgetConfigurationSection({
         <div className="space-y-2">
           <Label
             htmlFor="fiscalStance"
-            className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
+            className="text-label text-headline flex items-center gap-2"
           >
             Fiscal Stance & Strategy
             <FieldHelpTooltip
@@ -192,7 +192,7 @@ export function BudgetConfigurationSection({
           <div className="space-y-2">
             <Label
               htmlFor="auditLevel"
-              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
+              className="text-label text-headline flex items-center gap-2"
             >
               Auditing & Transparency
               <FieldHelpTooltip
@@ -222,7 +222,7 @@ export function BudgetConfigurationSection({
           <div className="space-y-2">
             <Label
               htmlFor="reserveTarget"
-              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
+              className="text-label text-headline flex items-center gap-2"
             >
               Emergency Reserve Target
               <FieldHelpTooltip
@@ -250,10 +250,7 @@ export function BudgetConfigurationSection({
 
           {/* Debt Financing Limit */}
           <div className="space-y-2">
-            <Label
-              htmlFor="debtLimit"
-              className="text-foreground flex items-center gap-1.5 text-sm font-semibold"
-            >
+            <Label htmlFor="debtLimit" className="text-label text-headline flex items-center gap-2">
               Debt Financing Limit
               <FieldHelpTooltip
                 content="The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget."
@@ -284,10 +281,10 @@ export function BudgetConfigurationSection({
 
   if (asGlassCard) {
     return (
-      <FacetCard depth={1}>
-        <FacetCardHeader className="border-border/60 border-b px-6 py-4">
-          <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <Building2 aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+      <FacetCard>
+        <FacetCardHeader className="border-separator border-b px-6 py-4">
+          <h3 className="text-label text-title-3 flex items-center gap-2">
+            <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Budget Configuration
           </h3>
         </FacetCardHeader>
@@ -297,8 +294,8 @@ export function BudgetConfigurationSection({
   }
 
   return (
-    <div className="border-border/60 space-y-4 rounded-lg border p-4">
-      <h4 className="text-foreground mb-3 text-base font-semibold">Budget Configuration</h4>
+    <div className="border-separator rounded-control space-y-4 border p-4">
+      <h4 className="text-label text-title-3 mb-3">Budget Configuration</h4>
       {content}
     </div>
   );

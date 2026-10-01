@@ -234,10 +234,10 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       {/* Embassy and bilateral network */}
       <RailCard title="Embassies and bilateral ties" icon={Building2} contentClassName="space-y-3">
         {/* 1. Embassy network */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Eyebrow>Active embassies</Eyebrow>
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote tabular-nums">
               {activeEmbassies.length} total
             </span>
           </div>
@@ -268,8 +268,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                       className="shrink-0"
                     />
                     <div className="min-w-0">
-                      <p className="text-foreground truncate font-medium">{partnerName}</p>
-                      <p className="text-muted-foreground">
+                      <p className="text-label truncate font-medium">{partnerName}</p>
+                      <p className="text-label-secondary">
                         {emb.guestCountryId === countryId ? "Host embassy" : "Guest embassy"}
                       </p>
                     </div>
@@ -284,10 +284,10 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         </div>
 
         {/* 2. Bilateral relations */}
-        <div className="border-border/60 space-y-1.5 border-t pt-3">
+        <div className="border-separator space-y-2 border-t pt-3">
           <div className="flex items-center justify-between">
             <Eyebrow>Bilateral relationships</Eyebrow>
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote tabular-nums">
               {liveRelations.length} partners
             </span>
           </div>
@@ -304,12 +304,12 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-foreground truncate font-medium">{rel.targetName}</span>
-                    <span className="text-foreground shrink-0 tabular-nums">{rel.strength}%</span>
+                    <span className="text-label truncate font-medium">{rel.targetName}</span>
+                    <span className="text-label shrink-0 tabular-nums">{rel.strength}%</span>
                   </div>
                   <RailBar value={rel.strength} />
                 </div>
-                <span className="text-muted-foreground shrink-0">{rel.stance}</span>
+                <span className="text-label-secondary shrink-0">{rel.stance}</span>
               </RailRow>
             ))
           )}
@@ -328,10 +328,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
           alliances.slice(0, 3).map((ally) => (
             <RailRow key={ally.id} className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-foreground truncate font-medium">
-                  {ally.name ?? "Defense Pact"}
-                </p>
-                <p className="text-muted-foreground">
+                <p className="text-label truncate font-medium">{ally.name ?? "Defense Pact"}</p>
+                <p className="text-label-secondary">
                   {ally.memberCount ?? ally.members?.length ?? 1} nations
                 </p>
               </div>

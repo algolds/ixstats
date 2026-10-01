@@ -7,7 +7,7 @@ import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 interface RiverPropertyFormProps {
   form: NamedRiverFormData;
@@ -58,19 +58,19 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
         autoFocus
       />
 
-      <FacetCard surface="solid" className="rounded-lg px-3 py-2 text-xs">
-        <div className="text-muted-foreground text-left font-medium">
+      <FacetCard className="text-footnote px-3 py-2">
+        <div className="text-label-secondary text-left font-medium">
           Line Geometry:{" "}
           {hasGeom ? (
-            <span className="text-foreground font-semibold">
+            <span className="text-label font-semibold">
               Drawn {lengthKm !== undefined && `(${lengthKm.toFixed(2)} km)`}
             </span>
           ) : (
-            <span className="text-amber-500 italic">Not drawn yet (use Line tool)</span>
+            <span className="text-yellow italic">Not drawn yet (use Line tool)</span>
           )}
         </div>
         {!hasGeom && (
-          <div className="text-muted-foreground mt-1 text-left text-xs">
+          <div className="text-label-secondary text-footnote mt-1 text-left">
             Use the line drawing tool in the map controls to draw the path of the river.
           </div>
         )}

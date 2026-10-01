@@ -1,7 +1,7 @@
 /**
  * MyCountry card vocabulary.
  *
- * - PanelCard   — themed workhorse surface (bg-card + optional accent tint/texture)
+ * - PanelCard   — themed workhorse surface (bg-surface + optional accent tint/texture)
  * - GlassPanel  — frosted glass surface with accent spotlight (theme-compliant)
  * - CutoutPanel — textured "cutout" framing for nav rails & sidebar widgets
  *

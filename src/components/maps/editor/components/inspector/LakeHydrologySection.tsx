@@ -69,9 +69,9 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
 
   const morphologyLabel = useMemo(() => {
     if (sdi == null) return null;
-    if (sdi >= 2.5) return { label: "Fjord / High Dendritic", tone: "text-amber-500" };
-    if (sdi >= 1.6) return { label: "Embayed / Irregular", tone: "text-cyan-500" };
-    return { label: "Sub-circular / Compact", tone: "text-emerald-500" };
+    if (sdi >= 2.5) return { label: "Fjord / High Dendritic", tone: "text-yellow" };
+    if (sdi >= 1.6) return { label: "Embayed / Irregular", tone: "text-cyan" };
+    return { label: "Sub-circular / Compact", tone: "text-green" };
   }, [sdi]);
 
   // Centroid & Surface Elevation
@@ -120,42 +120,42 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
   }, [areaKm2, parsedDepthM]);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {/* Primary Lake Surface Metrics */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard surface="solid" className="min-w-0 rounded-lg p-2">
+        <FacetCard className="min-w-0 p-2">
           <Eyebrow className="block truncate">Surface area</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+            <span className="text-label text-headline truncate tabular-nums">
               {areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
             </span>
             {areaKm2 != null && (
-              <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+              <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
                 km²
               </span>
             )}
           </div>
           {areaSqMi != null && (
-            <span className="text-muted-foreground mt-0.5 block font-mono text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote mt-0.5 block tabular-nums">
               ~{Math.round(areaSqMi).toLocaleString()} sq mi
             </span>
           )}
         </FacetCard>
 
-        <FacetCard surface="solid" className="min-w-0 rounded-lg p-2">
+        <FacetCard className="min-w-0 p-2">
           <Eyebrow className="block truncate">Shoreline perimeter</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+            <span className="text-label text-headline truncate tabular-nums">
               {perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
             </span>
             {perimeterKm != null && (
-              <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+              <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
                 km
               </span>
             )}
           </div>
           {sdi != null && (
-            <span className="text-muted-foreground mt-0.5 block font-mono text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote mt-0.5 block tabular-nums">
               SDI: {sdi.toFixed(2)}
             </span>
           )}
@@ -163,29 +163,29 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
       </div>
 
       {/* Limnology & Bathymetry */}
-      <FacetCard surface="solid" className="space-y-2 rounded-lg p-2.5">
+      <FacetCard className="space-y-2 p-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Droplet className="h-3.5 w-3.5 text-blue-500" />
+          <div className="flex items-center gap-2">
+            <Droplet className="text-blue h-3.5 w-3.5" />
             <Eyebrow>Limnology & Bathymetry</Eyebrow>
           </div>
           {surfaceSample.isLoading && (
-            <div className="border-muted-foreground/20 h-2.5 w-2.5 animate-spin rounded-full border-2 border-t-blue-500" />
+            <div className="border-separator border-t-blue h-2.5 w-2.5 animate-spin rounded-full border-2" />
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="border-border/30 bg-muted/20 min-w-0 space-y-1 rounded p-2">
+        <div className="text-footnote grid grid-cols-2 gap-2">
+          <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
             <Eyebrow className="block">Surface elevation</Eyebrow>
-            <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
+            <p className="text-label text-caption font-semibold tabular-nums">
               {surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground block truncate text-xs">
+            <span className="text-label-secondary text-footnote block truncate">
               {surfaceSample.data?.zoneName || "Inland water"}
             </span>
           </div>
 
-          <div className="border-border/30 bg-muted/20 min-w-0 space-y-1 rounded p-2">
+          <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
             <Eyebrow className="block">Max depth</Eyebrow>
             <div className="flex items-center gap-1">
               <input
@@ -194,21 +194,21 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
                 onChange={(e) => setDepthInput(e.target.value)}
                 onBlur={handleDepthBlur}
                 placeholder="Auto"
-                className="border-border/60 bg-background text-foreground focus:border-primary w-16 rounded px-1.5 py-0.5 font-mono text-xs tabular-nums focus:outline-none"
+                className="border-separator bg-surface text-label focus:border-tint text-footnote rounded-control-sm w-16 px-2 py-0.5 tabular-nums focus:outline-none"
               />
-              <span className="text-muted-foreground text-xs">m</span>
+              <span className="text-label-secondary text-footnote">m</span>
             </div>
-            <span className="text-muted-foreground block text-xs">
+            <span className="text-label-secondary text-footnote block">
               Mean: ~{parsedDepthM ? Math.round(parsedDepthM * 0.4) : "—"} m
             </span>
           </div>
         </div>
 
         {/* Volume & Morphology */}
-        <div className="border-border/30 bg-muted/20 space-y-1.5 rounded p-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Est. water volume</span>
-            <span className="text-foreground font-mono font-medium tabular-nums">
+        <div className="border-separator bg-fill-4 rounded-control-sm space-y-2 p-2">
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label-secondary">Est. water volume</span>
+            <span className="text-label font-medium tabular-nums">
               {volumeKm3 != null
                 ? volumeKm3 >= 1.0
                   ? `${volumeKm3.toFixed(2)} km³`
@@ -218,8 +218,8 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           </div>
 
           {morphologyLabel && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-0.5 text-xs">
-              <span className="text-muted-foreground">Shore morphology</span>
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-0.5">
+              <span className="text-label-secondary">Shore morphology</span>
               <span className={`font-medium ${morphologyLabel.tone}`}>{morphologyLabel.label}</span>
             </div>
           )}

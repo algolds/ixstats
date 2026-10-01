@@ -16,6 +16,7 @@ import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 
 // ── Lazy-loaded sub-components (only mount when expanded) ─────────────────
 
@@ -28,7 +29,7 @@ const LegislatureConfig = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -43,7 +44,7 @@ const GovernmentMetricsEditor = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -58,7 +59,7 @@ const LegislativeIssues = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Loader2 className="text-label-secondary h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -168,29 +169,36 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
     <div className="space-y-4">
       {/* ─── Legislature Setup (default: expanded) ─── */}
       <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
+        <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
+            type="button"
+            aria-expanded={setupExpanded}
+            className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setSetupExpanded(!setupExpanded)}
           >
-            <Landmark className="h-4 w-4 text-indigo-600" />
-            <h3 className="text-sm font-semibold">Legislature Setup</h3>
+            <Landmark className="text-indigo h-4 w-4" />
+            <h3 className="text-headline">Legislature Setup</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
               title="Legislature Setup"
               content="Configure your parliament's name, chamber structure, seat count, electoral system, term length, and election cycle type."
             />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-expanded={setupExpanded}
+              aria-label={setupExpanded ? "Collapse legislature setup" : "Expand legislature setup"}
+              className="size-6"
               onClick={() => setSetupExpanded(!setupExpanded)}
             >
               {setupExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
+                <ChevronDown className="text-label-secondary h-4 w-4" />
               ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
+                <ChevronRight className="text-label-secondary h-4 w-4" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -201,29 +209,38 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       {/* ─── Political Metrics (default: collapsed) ─── */}
       <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
+        <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
+            type="button"
+            aria-expanded={metricsExpanded}
+            className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setMetricsExpanded(!metricsExpanded)}
           >
-            <BarChart2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-sm font-semibold">Political Metrics</h3>
+            <BarChart2 className="text-indigo h-4 w-4" />
+            <h3 className="text-headline">Political Metrics</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
               title="Political Metrics"
               content="Baseline political indices drawn from your government structure — stability, democracy score, polarization, effectiveness, rule of law, and corruption. These are modified by in-game events."
             />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-expanded={metricsExpanded}
+              aria-label={
+                metricsExpanded ? "Collapse political metrics" : "Expand political metrics"
+              }
+              className="size-6"
               onClick={() => setMetricsExpanded(!metricsExpanded)}
             >
               {metricsExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
+                <ChevronDown className="text-label-secondary h-4 w-4" />
               ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
+                <ChevronRight className="text-label-secondary h-4 w-4" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -238,29 +255,38 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
 
       {/* ─── Governance Issues (default: collapsed) ─── */}
       <section className="space-y-3">
-        <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
+        <div className="rounded-control-sm flex w-full items-center justify-between px-1 py-0.5">
           <button
-            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
+            type="button"
+            aria-expanded={issuesExpanded}
+            className="hover:bg-fill-3 rounded-control-sm flex flex-1 items-center gap-2 py-0.5 transition-colors"
             onClick={() => setIssuesExpanded(!issuesExpanded)}
           >
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
-            <h3 className="text-sm font-semibold">Governance Issues</h3>
+            <AlertTriangle className="text-yellow h-4 w-4" />
+            <h3 className="text-headline">Governance Issues</h3>
           </button>
           <div className="flex items-center gap-1">
             <SectionHelpIcon
               title="Governance Issues"
               content="Pending political and governance decisions requiring legislative attention. Filtered from your national issues inbox."
             />
-            <button
-              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-expanded={issuesExpanded}
+              aria-label={
+                issuesExpanded ? "Collapse governance issues" : "Expand governance issues"
+              }
+              className="size-6"
               onClick={() => setIssuesExpanded(!issuesExpanded)}
             >
               {issuesExpanded ? (
-                <ChevronDown className="text-muted-foreground h-4 w-4" />
+                <ChevronDown className="text-label-secondary h-4 w-4" />
               ) : (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
+                <ChevronRight className="text-label-secondary h-4 w-4" />
               )}
-            </button>
+            </Button>
           </div>
         </div>
 

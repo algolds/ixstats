@@ -77,7 +77,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="sec-name">Sector Name *</Label>
             <Input
               id="sec-name"
@@ -88,7 +88,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="sec-short">Short Label</Label>
             <Input
               id="sec-short"
@@ -99,7 +99,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="sec-tariff">Starting Tariff (%)</Label>
               <Input
                 id="sec-tariff"
@@ -112,7 +112,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="sec-share">Share of GDP (%) *</Label>
               <Input
                 id="sec-share"
@@ -128,7 +128,7 @@ export const CustomSectorDialog = React.memo(function CustomSectorDialog({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Accent Color</Label>
             <Select value={accent} onValueChange={(val) => setAccent(val as AccentColor)}>
               <SelectTrigger>

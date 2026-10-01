@@ -39,81 +39,81 @@ export interface StatGaugeProps {
 const colorConfig = {
   emerald: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-emerald-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-green",
   },
   green: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-emerald-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-green",
   },
   blue: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-blue-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-blue",
   },
   indigo: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-indigo-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-indigo",
   },
   purple: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-indigo-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-indigo",
   },
   red: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-red-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-red",
   },
   amber: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-amber-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-yellow",
   },
   cyan: {
     iconBg: "",
-    text: "text-foreground",
-    bg: "bg-muted/50",
-    border: "border-border",
-    progress: "bg-cyan-500",
+    text: "text-label",
+    bg: "bg-fill-3",
+    border: "border-separator",
+    progress: "bg-cyan",
   },
 };
 
 // Size configurations
 const sizeConfig = {
   sm: {
-    value: "text-xl",
-    label: "text-xs",
+    value: "text-title-2",
+    label: "text-footnote",
     icon: "h-4 w-4",
     padding: "p-3",
     progress: "h-1.5",
   },
   md: {
-    value: "text-xl",
-    label: "text-xs",
+    value: "text-title-2",
+    label: "text-footnote",
     icon: "h-4 w-4",
     padding: "p-3",
     progress: "h-1.5",
   },
   lg: {
-    value: "text-3xl",
-    label: "text-base",
+    value: "text-large-title",
+    label: "text-body",
     icon: "h-6 w-6",
     padding: "p-5",
     progress: "h-3",
@@ -147,10 +147,10 @@ export function StatGauge({
   const getStatusColor = () => {
     if (!thresholds) return colors.progress;
 
-    if (thresholds.high && safeValue >= thresholds.high) return "bg-emerald-500";
-    if (thresholds.medium && safeValue >= thresholds.medium) return "bg-amber-500";
-    if (thresholds.low && safeValue >= thresholds.low) return "bg-amber-500";
-    return "bg-red-500";
+    if (thresholds.high && safeValue >= thresholds.high) return "bg-green";
+    if (thresholds.medium && safeValue >= thresholds.medium) return "bg-yellow";
+    if (thresholds.low && safeValue >= thresholds.low) return "bg-yellow";
+    return "bg-red";
   };
 
   // Trend icon
@@ -169,8 +169,8 @@ export function StatGauge({
     return (
       <div
         className={cn(
-          "flex items-center gap-1 text-xs",
-          isPositive ? "text-emerald-500" : "text-red-500"
+          "text-footnote flex items-center gap-1",
+          isPositive ? "text-green" : "text-red"
         )}
       >
         <TIcon className="h-3 w-3" />
@@ -188,7 +188,7 @@ export function StatGauge({
   return (
     <div
       className={cn(
-        "rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
+        "rounded-row border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02]",
         colors.bg,
         colors.border,
         sizes.padding,
@@ -197,17 +197,17 @@ export function StatGauge({
     >
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          {Icon && <Icon className={cn(sizes.icon, "text-muted-foreground")} />}
+          {Icon && <Icon className={cn(sizes.icon, "text-label-secondary")} />}
           <div>
             <div className="flex items-center gap-1">
-              <span className={cn(sizes.label, "text-muted-foreground font-medium")}>{label}</span>
+              <span className={cn(sizes.label, "text-label-secondary font-medium")}>{label}</span>
               {description && (
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="text-muted-foreground h-3 w-3" />
+                    <Info className="text-label-secondary h-3 w-3" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">{description}</p>
+                    <p className="text-footnote">{description}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -217,7 +217,7 @@ export function StatGauge({
         </div>
       </div>
 
-      <div className={cn(sizes.value, "font-bold", colors.text)}>
+      <div className={cn(sizes.value, "font-semibold", colors.text)}>
         {animate ? (
           <motion.span
             initial={{ opacity: 0 }}
@@ -235,7 +235,7 @@ export function StatGauge({
         )}
       </div>
 
-      <div className={cn("bg-muted mt-2 overflow-hidden rounded-full", sizes.progress)}>
+      <div className={cn("bg-fill-3 mt-2 overflow-hidden rounded-full", sizes.progress)}>
         <motion.div
           className={cn("h-full rounded-full", getStatusColor())}
           initial={animate ? { width: 0 } : undefined}
@@ -245,7 +245,7 @@ export function StatGauge({
       </div>
 
       {safeMax !== 100 && (
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           of {safeMax.toLocaleString()}
           {unit !== "%" ? ` ${unit}` : ""}
         </p>
@@ -327,17 +327,17 @@ export function DistributionBar({
   };
 
   const colorClasses: Record<string, string> = {
-    green: "bg-emerald-500",
-    emerald: "bg-emerald-500",
-    blue: "bg-blue-500",
-    indigo: "bg-indigo-500",
-    purple: "bg-indigo-500",
-    violet: "bg-indigo-500",
-    red: "bg-red-500",
-    amber: "bg-amber-500",
-    orange: "bg-amber-500",
-    cyan: "bg-cyan-500",
-    pink: "bg-blue-500",
+    green: "bg-green",
+    emerald: "bg-green",
+    blue: "bg-blue",
+    indigo: "bg-indigo",
+    purple: "bg-indigo",
+    violet: "bg-indigo",
+    red: "bg-red",
+    amber: "bg-yellow",
+    orange: "bg-yellow",
+    cyan: "bg-cyan",
+    pink: "bg-blue",
   };
 
   const safeTotal = total || 1;
@@ -354,7 +354,7 @@ export function DistributionBar({
                 <motion.div
                   className={cn(
                     "flex cursor-help items-center justify-center",
-                    colorClasses[segment.color] || "bg-gray-500"
+                    colorClasses[segment.color] || "bg-fill"
                   )}
                   initial={animate ? { width: 0 } : undefined}
                   animate={{ width: `${percentage}%` }}
@@ -365,13 +365,13 @@ export function DistributionBar({
                   }}
                 >
                   {showValues && percentage >= 10 && (
-                    <span className="text-xs font-medium text-white">{percentage.toFixed(0)}%</span>
+                    <span className="text-caption text-white">{percentage.toFixed(0)}%</span>
                   )}
                 </motion.div>
               </TooltipTrigger>
               <TooltipContent>
                 <p className="font-medium">{segment.label}</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   {percentage.toFixed(1)}% ({safeValue.toLocaleString()})
                 </p>
               </TooltipContent>
@@ -383,11 +383,11 @@ export function DistributionBar({
       {showLabels && (
         <div className="mt-2 flex flex-wrap gap-3">
           {segments.map((segment) => (
-            <div key={segment.label} className="flex items-center gap-1.5">
+            <div key={segment.label} className="flex items-center gap-2">
               <div
-                className={cn("h-3 w-3 rounded-full", colorClasses[segment.color] || "bg-gray-500")}
+                className={cn("h-3 w-3 rounded-full", colorClasses[segment.color] || "bg-fill")}
               />
-              <span className="text-muted-foreground text-xs">{segment.label}</span>
+              <span className="text-label-secondary text-footnote">{segment.label}</span>
             </div>
           ))}
         </div>

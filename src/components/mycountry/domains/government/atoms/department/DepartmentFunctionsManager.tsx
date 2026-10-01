@@ -3,7 +3,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Xmark as X } from "iconoir-react";
 import type { DepartmentInput } from "~/types/government";
 
@@ -32,17 +32,12 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
   };
 
   return (
-    <FacetContainer
-      depth={3}
-      surface="solid"
-      enableRefraction={false}
-      className="space-y-3 rounded-lg p-4"
-    >
+    <FacetCard variant="inset" className="space-y-3 p-4">
       <div className="flex items-center justify-between">
-        <Label htmlFor="dept-new-function" className="text-foreground text-sm font-semibold">
+        <Label htmlFor="dept-new-function" className="text-label text-headline">
           Core operational functions
         </Label>
-        <span className="text-muted-foreground text-xs">{functions.length} Defined</span>
+        <span className="text-label-secondary text-footnote">{functions.length} Defined</span>
       </div>
 
       {!isReadOnly && (
@@ -58,7 +53,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
               }
             }}
             placeholder="Add operational function or mandate..."
-            className="h-8 text-xs font-medium"
+            className="text-caption h-8"
           />
           <Button
             type="button"
@@ -66,7 +61,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
             variant="secondary"
             onClick={addFunction}
             disabled={!newFunction.trim()}
-            className="h-8 shrink-0 gap-1 text-xs"
+            className="text-footnote h-8 shrink-0 gap-1"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
@@ -76,27 +71,33 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
 
       <div className="flex flex-wrap gap-2 pt-1">
         {functions.map((fn, idx) => (
-          <Badge key={idx} variant="secondary" className="gap-1.5 px-2.5 py-1 text-xs font-normal">
+          <Badge
+            key={idx}
+            variant="secondary"
+            className="text-footnote gap-2 px-3 py-1 font-normal"
+          >
             <span>{fn}</span>
             {!isReadOnly && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => removeFunction(idx)}
                 aria-label={`Remove ${fn}`}
-                className="text-muted-foreground hover:text-destructive cursor-pointer transition-colors"
+                className="text-label-secondary hover:text-destructive rounded-control-sm size-5 cursor-pointer"
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             )}
           </Badge>
         ))}
 
         {functions.length === 0 && (
-          <p className="text-muted-foreground py-1 text-xs">
+          <p className="text-label-secondary text-footnote py-1">
             No specific operational functions listed yet.
           </p>
         )}
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 });

@@ -33,8 +33,8 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground mb-2 text-lg font-bold">Configuration & Settings</h3>
-        <p className="text-muted-foreground text-sm">
+        <h3 className="text-label text-title-3 mb-2">Configuration & Settings</h3>
+        <p className="text-label-secondary text-body">
           Set the schedule, capacity, and visibility of your exchange.
         </p>
       </div>
@@ -42,7 +42,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
       {/* Dates */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="startDate" className="text-foreground flex items-center gap-2">
+          <Label htmlFor="startDate" className="text-label flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Start Date (IxTime) *
           </Label>
@@ -53,7 +53,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             min={currentIxTimeDate}
             onChange={(e) => onStartDateChange(e.target.value)}
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Today in IxTime:{" "}
             {new Date(currentIxTimeDate).toLocaleDateString("en-US", {
               year: "numeric",
@@ -64,7 +64,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="endDate" className="text-foreground flex items-center gap-2">
+          <Label htmlFor="endDate" className="text-label flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             End Date (IxTime) *
           </Label>
@@ -75,13 +75,13 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             min={startDate || currentIxTimeDate}
             onChange={(e) => onEndDateChange(e.target.value)}
           />
-          <p className="text-muted-foreground text-xs">Must be after start date</p>
+          <p className="text-label-secondary text-footnote">Must be after start date</p>
         </div>
       </div>
 
       {/* Max Participants */}
       <div className="space-y-2">
-        <Label htmlFor="maxParticipants" className="text-foreground flex items-center gap-2">
+        <Label htmlFor="maxParticipants" className="text-label flex items-center gap-2">
           <Group className="h-4 w-4" />
           Maximum Participants *
         </Label>
@@ -92,13 +92,13 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
           value={maxParticipants}
           onChange={(e) => onMaxParticipantsChange(Math.max(1, parseInt(e.target.value) || 1))}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Number of people who can participate in this exchange.
         </p>
       </div>
 
       {/* Public/Private */}
-      <div className="border-border bg-card rounded-xl border p-4">
+      <div className="border-separator bg-surface rounded-row border p-4">
         <div
           onClick={() => onIsPublicChange(!isPublic)}
           className="flex w-full cursor-pointer items-center justify-between"
@@ -106,11 +106,11 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
           <div className="flex items-center gap-3">
             <Checkbox checked={isPublic} className="pointer-events-none" />
             <div className="text-left">
-              <p className="text-foreground flex items-center gap-2 font-medium">
+              <p className="text-label flex items-center gap-2 font-medium">
                 {isPublic ? <Eye className="h-4 w-4" /> : <EyeClosed className="h-4 w-4" />}
                 Public Exchange
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 {isPublic
                   ? "Visible to all countries and can accept participants"
                   : "Restricted to invited participants only"}

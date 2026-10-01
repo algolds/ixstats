@@ -207,7 +207,7 @@ export const EditorRulers = memo(function EditorRulers({
     <>
       {/* Top Ruler */}
       <svg
-        className="border-border bg-muted/90 pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b select-none"
+        className="border-separator bg-fill-2 pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b select-none"
         style={{ width: rulerWidth }}
         onMouseDown={startDrag("h")}
         aria-label="Longitude ruler — drag down to add a horizontal guide"
@@ -219,14 +219,14 @@ export const EditorRulers = memo(function EditorRulers({
               y1={t.isMajor ? 12 : 18}
               x2={t.x}
               y2={24}
-              className="stroke-muted-foreground/50"
+              className="stroke-label-tertiary"
               strokeWidth={1}
             />
             {t.label && (
               <text
                 x={t.x}
                 y={10}
-                className="fill-muted-foreground font-mono text-xs"
+                className="fill-label-secondary text-footnote tabular-nums"
                 textAnchor="middle"
               >
                 {t.label}
@@ -238,7 +238,7 @@ export const EditorRulers = memo(function EditorRulers({
 
       {/* Left Ruler */}
       <svg
-        className="border-border bg-muted/90 pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r select-none"
+        className="border-separator bg-fill-2 pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r select-none"
         style={{ height: rulerHeight }}
         onMouseDown={startDrag("v")}
         aria-label="Latitude ruler — drag right to add a vertical guide"
@@ -250,14 +250,14 @@ export const EditorRulers = memo(function EditorRulers({
               y1={t.y}
               x2={24}
               y2={t.y}
-              className="stroke-muted-foreground/50"
+              className="stroke-label-tertiary"
               strokeWidth={1}
             />
             {t.label && (
               <text
                 x={10}
                 y={t.y + 3}
-                className="fill-muted-foreground font-mono text-xs"
+                className="fill-label-secondary text-footnote tabular-nums"
                 textAnchor="end"
               >
                 {t.label}
@@ -268,8 +268,8 @@ export const EditorRulers = memo(function EditorRulers({
       </svg>
 
       {/* Corner box */}
-      <div className="border-border bg-muted pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b">
-        <span className="text-muted-foreground font-mono text-xs font-bold">°</span>
+      <div className="border-separator bg-fill-3 pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b">
+        <span className="text-label-secondary text-caption font-mono font-semibold">°</span>
       </div>
 
       {/* Guides */}
@@ -286,7 +286,7 @@ export const EditorRulers = memo(function EditorRulers({
                   y1={RULER}
                   x2={x}
                   y2={rect.height}
-                  className="pointer-events-auto cursor-col-resize stroke-cyan-500/80"
+                  className="stroke-cyan/80 pointer-events-auto cursor-col-resize"
                   strokeWidth={1.5}
                   strokeDasharray="4,4"
                   onDoubleClick={() => removeGuide(guide.id)}
@@ -304,7 +304,7 @@ export const EditorRulers = memo(function EditorRulers({
                 y1={y}
                 x2={rect.width}
                 y2={y}
-                className="pointer-events-auto cursor-row-resize stroke-cyan-500/80"
+                className="stroke-cyan/80 pointer-events-auto cursor-row-resize"
                 strokeWidth={1.5}
                 strokeDasharray="4,4"
                 onDoubleClick={() => removeGuide(guide.id)}
@@ -321,7 +321,7 @@ export const EditorRulers = memo(function EditorRulers({
               y1={RULER}
               x2={activeDragGuide.screenPos}
               y2={rect.height}
-              className="stroke-amber-500/80"
+              className="stroke-yellow/80"
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />
@@ -331,7 +331,7 @@ export const EditorRulers = memo(function EditorRulers({
               y1={activeDragGuide.screenPos}
               x2={rect.width}
               y2={activeDragGuide.screenPos}
-              className="stroke-amber-500/80"
+              className="stroke-yellow/80"
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />

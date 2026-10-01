@@ -8,6 +8,7 @@ import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 const SUBDIVISION_TYPES = [
   "province",
@@ -20,10 +21,10 @@ const SUBDIVISION_TYPES = [
 ];
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 interface SubdivisionPropertyFormProps {
   form: SubdivisionFormData;
@@ -65,17 +66,17 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         className={inputClasses}
         autoFocus
       />
-      <select
+      <OptionSelect
+        aria-label="Subdivision type"
         value={form.type}
-        onChange={(e) => onChange({ ...form, type: e.target.value })}
-        className={selectClasses}
-      >
-        {SUBDIVISION_TYPES.map((t) => (
-          <option key={t} value={t}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </option>
-        ))}
-      </select>
+        onValueChange={(v) => onChange({ ...form, type: v })}
+        options={SUBDIVISION_TYPES.map((t) => ({
+          value: t,
+          label: t.charAt(0).toUpperCase() + t.slice(1),
+        }))}
+        size="sm"
+        className="w-full"
+      />
       <input
         type="text"
         placeholder="Capital city (optional)"
@@ -98,9 +99,9 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         />
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-muted-foreground text-xs font-medium">Area (km²)</label>
+            <label className="text-label-secondary text-caption">Area (km²)</label>
             {derivedFromGeometry && sampleAreaValue !== undefined && (
-              <span className="text-muted-foreground text-xs">from geometry</span>
+              <span className="text-label-secondary text-footnote">from geometry</span>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -134,15 +135,15 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
             </Button>
           </div>
           {sampleAreaValue !== undefined && !derivedFromGeometry && (
-            <div className="text-muted-foreground text-xs">
+            <div className="text-label-secondary text-footnote">
               ≈ {sampleAreaValue.toLocaleString(undefined, { maximumFractionDigits: 1 })} km² from
               geometry
             </div>
           )}
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-muted-foreground text-xs">Color</Label>
+      <div className="space-y-2">
+        <Label className="text-label-secondary text-footnote">Color</Label>
         <ColorPickerInput
           value={form.color ?? "#a78bfa"}
           onChange={(val: string) => onChange({ ...form, color: val })}

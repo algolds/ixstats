@@ -16,16 +16,11 @@ export function MobileOptimizationStyles() {
   React.useEffect(() => {
     // Inject mobile-specific styles
     const styleSheet = document.createElement("style");
+    // Facet 3: only touch ergonomics live here. Layout, motion (FacetMotionConfig honours Reduce
+    // Motion), materials and selection are left to the utilities and primitives — no utility
+    // hijacks or !important overrides.
     styleSheet.textContent = `
-      /* Mobile Optimization Styles */
       .mobile-optimized {
-        /* Touch improvements */
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
         -webkit-tap-highlight-color: transparent;
       }
 
@@ -34,8 +29,7 @@ export function MobileOptimizationStyles() {
         -webkit-tap-highlight-color: rgba(0,0,0,0);
       }
 
-      /* Mobile touch targets: 44px minimum height on touch screens. Padding, layout, radius and
-         focus rings are left to the Facet primitives (Button, FacetTabs, Toggle, FacetCard). */
+      /* Mobile touch targets: 44px minimum height on touch screens. */
       @media (max-width: 768px) and (pointer: coarse) {
         .mobile-optimized button,
         .mobile-optimized [role="button"] {
@@ -44,23 +38,8 @@ export function MobileOptimizationStyles() {
       }
 
       @media (max-width: 768px) {
-        /* Improved scroll performance */
         .mobile-optimized .overflow-y-auto {
-          -webkit-overflow-scrolling: touch;
           overscroll-behavior: contain;
-        }
-
-        /* Reduce motion for battery life */
-        .mobile-optimized * {
-          animation-duration: 0.2s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0.2s !important;
-        }
-
-        /* Better text readability */
-        .mobile-optimized {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
         }
 
         /* Safe area adjustments for notch devices */
@@ -71,43 +50,6 @@ export function MobileOptimizationStyles() {
 
         .mobile-header {
           padding-top: env(safe-area-inset-top);
-        }
-      }
-
-      /* Tablet-specific optimizations */
-      @media (min-width: 768px) and (max-width: 1024px) {
-        .mobile-optimized .grid-cols-1 {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      /* High DPI displays */
-      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-        .mobile-optimized {
-          /* Sharper borders and shadows */
-          -webkit-transform: translateZ(0);
-          transform: translateZ(0);
-        }
-      }
-
-      /* Reduce motion for users who prefer it */
-      @media (prefers-reduced-motion: reduce) {
-        .mobile-optimized *,
-        .mobile-optimized *::before,
-        .mobile-optimized *::after {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-          scroll-behavior: auto !important;
-        }
-      }
-
-      /* Battery optimization */
-      @media (max-width: 768px) {
-        .mobile-optimized .facet-hierarchy-parent {
-          /* Reduce blur effects on mobile */
-          backdrop-filter: blur(8px) !important;
-          -webkit-backdrop-filter: blur(8px) !important;
         }
       }
     `;

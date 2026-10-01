@@ -26,9 +26,9 @@ const GeoProfileContent = dynamic(
     ssr: false,
     loading: () => (
       <div className="space-y-3 py-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="h-24 w-full rounded-lg" />
-        <Skeleton className="h-4 w-2/3 rounded" />
-        <Skeleton className="h-4 w-1/2 rounded" />
+        <Skeleton className="rounded-control h-24 w-full" />
+        <Skeleton className="h-4 w-2/3 rounded-xs" />
+        <Skeleton className="h-4 w-1/2 rounded-xs" />
       </div>
     ),
   }
@@ -52,7 +52,7 @@ export function CountryInfoContent({
   return (
     <>
       {/* Tab bar */}
-      <div className="border-border shrink-0 border-b px-4 py-2">
+      <div className="border-separator shrink-0 border-b px-4 py-2">
         <FacetTabs
           tabs={
             state.hasGeoTab
@@ -93,10 +93,10 @@ export function CountryInfoContent({
           <div className="space-y-3" aria-busy="true" aria-label="Loading country details">
             <div className="grid grid-cols-2 gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-14 rounded-lg" />
+                <Skeleton key={i} className="rounded-control h-14" />
               ))}
             </div>
-            <Skeleton className="h-6 w-32 rounded" />
+            <Skeleton className="rounded-control-sm h-6 w-32" />
           </div>
         ) : state.summary ? (
           <CountryOverviewTab
@@ -113,7 +113,7 @@ export function CountryInfoContent({
             setActiveModal={state.setActiveModal}
           />
         ) : (
-          <p className="text-muted-foreground py-8 text-center text-sm">
+          <p className="text-label-secondary text-body py-8 text-center">
             Details for this country aren&apos;t available right now.
           </p>
         )}
@@ -131,17 +131,17 @@ export function CountryPeekContent({ state }: { state: PanelState }) {
         <img
           src={state.flagUrl}
           alt=""
-          className="border-border h-8 w-12 rounded-sm border object-cover"
+          className="border-separator rounded-control-sm h-8 w-12 border object-cover"
         />
       ) : (
-        <div className="border-border bg-muted h-8 w-12 rounded-sm border" />
+        <div className="border-separator bg-fill-3 rounded-control-sm h-8 w-12 border" />
       )}
 
       {/* Name + stats */}
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-semibold">{state.displayName}</h3>
+        <h3 className="text-label text-headline truncate">{state.displayName}</h3>
         {state.summary && (
-          <div className="text-muted-foreground flex gap-3 text-xs">
+          <div className="text-label-secondary text-footnote flex gap-3">
             <span>
               GDP:{" "}
               {formatCompactCurrency(state.summary.totalGdp ?? (state.summary as any).gdp, "—")}

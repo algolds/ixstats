@@ -13,7 +13,7 @@
 
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 
 interface MapLoadingScreenProps {
   /** True when map data + engine are ready */
@@ -44,11 +44,11 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
                   pointerEvents: "none",
                 }
           }
-          className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xl select-none"
+          className="bg-surface fixed inset-0 z-50 flex items-center justify-center select-none"
         >
           <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6 px-6 text-center">
             {/* Facet emblem */}
-            <FacetContainer
+            <FacetMaterial
               material="regular"
               className="flex h-20 w-20 items-center justify-center rounded-full"
             >
@@ -57,24 +57,22 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
                 alt="IxMaps"
                 className="h-10 w-10 opacity-90 brightness-0 dark:invert"
               />
-            </FacetContainer>
+            </FacetMaterial>
 
             {/* Typography */}
-            <div className="space-y-1.5">
-              <h2 className="text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
-                IxMaps
-              </h2>
-              <p className="text-muted-foreground text-xs font-medium">Initializing the world...</p>
+            <div className="space-y-2">
+              <h2 className="text-label text-title-2 sm:text-title-1">IxMaps</h2>
+              <p className="text-label-secondary text-caption">Initializing the world...</p>
             </div>
 
             {/* Indeterminate Hairline Shimmer Rail */}
             <div
               role="progressbar"
               aria-label="Loading the map"
-              className="bg-muted relative h-1 w-44 overflow-hidden rounded-full"
+              className="bg-fill-3 relative h-1 w-44 overflow-hidden rounded-full"
             >
               <motion.div
-                className="h-full w-1/3 origin-left rounded-full bg-blue-500"
+                className="bg-blue h-full w-1/3 origin-left rounded-full"
                 animate={
                   shouldReduceMotion
                     ? { transform: "scaleX(3)", opacity: 0.7 }

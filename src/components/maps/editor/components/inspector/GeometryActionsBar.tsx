@@ -48,7 +48,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
 
   return (
     <div className="space-y-2 select-none">
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-2">
         {/* Center on Map */}
         {onCenter && (
           <Button
@@ -59,7 +59,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             onClick={onCenter}
             disabled={disabled}
           >
-            <Eye className="text-primary h-3.5 w-3.5" />
+            <Eye className="text-tint h-3.5 w-3.5" />
             <span>Center on map</span>
           </Button>
         )}
@@ -104,7 +104,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             onClick={onSnapCoastline}
             disabled={disabled}
           >
-            <Waves className="h-3.5 w-3.5 text-cyan-500" />
+            <Waves className="text-cyan h-3.5 w-3.5" />
             <span>Snap Coast</span>
           </Button>
         )}
@@ -119,7 +119,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
             onClick={onReverseRoute}
             disabled={disabled}
           >
-            <Reverse className="h-3.5 w-3.5 text-blue-500" />
+            <Reverse className="text-blue h-3.5 w-3.5" />
             <span>Reverse</span>
           </Button>
         )}
@@ -128,7 +128,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
         {onDelete && (
           <div className={confirmDelete ? "col-span-2" : "col-span-1"}>
             {confirmDelete ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="destructive"
                   size="sm"
@@ -171,7 +171,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
 
       {/* Region Pathfinder Operations */}
       {isRegion && onPathfinderOperation && (
-        <FacetCard surface="solid" className="space-y-1.5 rounded-lg p-2">
+        <FacetCard className="space-y-2 p-2">
           <Eyebrow>Combine regions</Eyebrow>
           <div className="grid grid-cols-3 gap-1">
             <Button

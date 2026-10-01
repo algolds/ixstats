@@ -1,6 +1,6 @@
 "use client";
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Button } from "~/components/ui/button";
 import React, { useMemo } from "react";
 import { ModernTv as Mountain, Wind, Compass, Xmark as X } from "iconoir-react";
@@ -67,16 +67,14 @@ export function HypsometricElevationHUD({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 absolute bottom-9 left-1/2 z-40 -translate-x-1/2">
-      <FacetContainer material="regular" className="text-foreground flex flex-col rounded-xl p-3">
+      <FacetMaterial material="regular" className="text-label rounded-row flex flex-col p-3">
         {/* Top Header */}
         <div className="flex items-center justify-between gap-6 pb-2">
           <div className="flex items-center gap-2">
-            <Mountain className="text-muted-foreground h-4 w-4" aria-hidden />
+            <Mountain className="text-label-secondary h-4 w-4" aria-hidden />
             <div>
-              <h4 className="text-xs font-semibold tracking-tight">
-                Hypsometric Elevation Cross-Section
-              </h4>
-              <p className="text-muted-foreground text-xs">
+              <h4 className="text-caption font-semibold">Hypsometric Elevation Cross-Section</h4>
+              <p className="text-label-secondary text-footnote">
                 Terrain Slice & Hydrological Slope Gradient
               </p>
             </div>
@@ -85,12 +83,12 @@ export function HypsometricElevationHUD({
           {/* Live Cursor Altitude Badge */}
           <div className="flex items-center gap-2">
             {liveTerrain?.elevation && (
-              <span className="border-border bg-muted/60 text-muted-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
+              <span className="border-separator bg-fill-3 text-label-secondary rounded-control-sm text-footnote border px-2 py-0.5 tabular-nums">
                 {liveTerrain.elevation}
               </span>
             )}
             {liveTerrain?.climate && (
-              <span className="border-border text-foreground rounded-md border px-2 py-0.5 font-mono text-xs">
+              <span className="border-separator text-label rounded-control-sm text-footnote border px-2 py-0.5 tabular-nums">
                 {liveTerrain.climate}
               </span>
             )}
@@ -98,7 +96,7 @@ export function HypsometricElevationHUD({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground h-6 w-6"
+                className="text-label-secondary h-6 w-6"
                 onClick={onClose}
               >
                 <X className="h-3.5 w-3.5" />
@@ -179,9 +177,9 @@ export function HypsometricElevationHUD({
             </svg>
 
             {/* Elevation Labels */}
-            <div className="text-muted-foreground pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 font-mono text-xs">
+            <div className="text-label-secondary text-footnote pointer-events-none absolute inset-x-0 bottom-0 flex justify-between px-1 tabular-nums">
               <span>0 km (Start)</span>
-              <span className="font-semibold text-emerald-500">
+              <span className="text-green font-semibold">
                 Peak: {profileData.maxElev.toLocaleString()}m
               </span>
               <span>{profileData.dist} km (End)</span>
@@ -190,17 +188,17 @@ export function HypsometricElevationHUD({
         )}
 
         {/* Environmental Slopes Indicator */}
-        <div className="border-border text-muted-foreground mt-2 flex items-center justify-between border-t pt-1.5 text-xs">
+        <div className="border-separator text-label-secondary text-footnote mt-2 flex items-center justify-between border-t pt-2">
           <div className="flex items-center gap-1">
-            <Wind className="h-3 w-3 text-cyan-500" />
+            <Wind className="text-cyan h-3 w-3" />
             <span>Windward (Precipitation Slope)</span>
           </div>
           <div className="flex items-center gap-1">
-            <Compass className="h-3 w-3 text-amber-500" />
+            <Compass className="text-yellow h-3 w-3" />
             <span>Leeward (Rain Shadow Basin)</span>
           </div>
         </div>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 }

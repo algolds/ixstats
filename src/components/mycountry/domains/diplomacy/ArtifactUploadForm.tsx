@@ -72,8 +72,8 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between gap-3 pr-8">
-          <h3 className="text-foreground flex items-center gap-2 text-lg font-semibold">
-            <Camera className="text-muted-foreground h-5 w-5" />
+          <h3 className="text-label text-title-3 flex items-center gap-2">
+            <Camera className="text-label-secondary h-5 w-5" />
             Upload Cultural Artifact
           </h3>
           <Button
@@ -87,9 +87,9 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           </Button>
         </div>
 
-        <div className="bg-muted/50 rounded-xl p-4">
-          <div className="text-muted-foreground mb-1 text-sm">Contributing to:</div>
-          <div className="text-foreground font-medium">{exchangeTitle}</div>
+        <div className="bg-fill-3 rounded-row p-4">
+          <div className="text-label-secondary text-body mb-1">Contributing to:</div>
+          <div className="text-label font-medium">{exchangeTitle}</div>
         </div>
 
         <div className="space-y-2">
@@ -121,7 +121,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
                 className="justify-start"
               >
                 <Icon className="h-4 w-4" />
-                <span className="text-xs">{label}</span>
+                <span className="text-footnote">{label}</span>
               </Button>
             ))}
           </div>
@@ -143,13 +143,13 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           <Label htmlFor="artifact-file">Upload File *</Label>
           <label
             htmlFor="artifact-file"
-            className="border-border bg-muted/40 hover:border-ring hover:bg-muted/60 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors"
+            className="border-separator bg-fill-3 hover:border-ring hover:bg-fill-3 rounded-row flex h-32 w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed transition-colors"
           >
-            <Camera className="text-muted-foreground mb-2 h-6 w-6" />
-            <p className="text-muted-foreground text-sm">
+            <Camera className="text-label-secondary mb-2 h-6 w-6" />
+            <p className="text-label-secondary text-body">
               {formData.file ? formData.file.name : "Click to upload file"}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               PNG, JPG, GIF, WEBP or SVG image, up to 5MB
             </p>
             <input
@@ -163,8 +163,8 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
           </label>
         </div>
 
-        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-muted-foreground text-sm">Share your culture with the world</p>
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-label-secondary text-body">Share your culture with the world</p>
 
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={onCancel}>

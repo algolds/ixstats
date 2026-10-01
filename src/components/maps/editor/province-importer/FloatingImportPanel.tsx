@@ -5,7 +5,7 @@
  * import wizard. No overlay — the map behind stays fully visible and interactive.
  */
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React, { useState, useRef, useCallback, memo, useEffect } from "react";
 import { Menu as GripVertical } from "iconoir-react";
 
@@ -140,17 +140,20 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         height: size.height,
       }}
     >
-      <FacetContainer material="regular" className="flex h-full flex-col overflow-hidden rounded-xl">
+      <FacetMaterial
+        material="regular"
+        className="rounded-row flex h-full flex-col overflow-hidden"
+      >
         {/* Drag handle — top bar area */}
         <div
           onPointerDown={onDragStart}
           onPointerMove={onDragMove}
           onPointerUp={onDragEnd}
-          className={`bg-muted/50 flex h-2.5 shrink-0 cursor-grab items-center justify-center ${
+          className={`bg-fill-3 flex h-2.5 shrink-0 cursor-grab items-center justify-center ${
             dragging ? "cursor-grabbing" : ""
           }`}
         >
-          <GripVertical className="text-muted-foreground/50 h-3 w-3 rotate-90" />
+          <GripVertical className="text-label-tertiary h-3 w-3 rotate-90" />
         </div>
 
         {/* Content */}
@@ -164,13 +167,13 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
           className="absolute right-0 bottom-0 h-4 w-4 cursor-nwse-resize"
         >
           <svg
-            className="text-muted-foreground/40 absolute right-0.5 bottom-0.5 h-2.5 w-2.5"
+            className="text-label-tertiary absolute right-0.5 bottom-0.5 h-2.5 w-2.5"
             viewBox="0 0 10 10"
           >
             <path d="M9 1L1 9M9 5L5 9M9 9L9 9" stroke="currentColor" strokeWidth="1.5" />
           </svg>
         </div>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 });

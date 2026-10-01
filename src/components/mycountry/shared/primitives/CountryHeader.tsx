@@ -18,10 +18,10 @@ export function CountryHeader({ countryName, countryId, countrySlug }: CountryHe
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-4">
-        <Crown className="h-6 w-6 shrink-0 text-amber-500" />
+        <Crown className="text-yellow h-6 w-6 shrink-0" />
         <div>
-          <h1 className="text-foreground text-2xl font-semibold">{countryName}</h1>
-          <p className="text-muted-foreground">National Overview & Vitality Dashboard</p>
+          <h1 className="text-label text-title-1">{countryName}</h1>
+          <p className="text-label-secondary">National Overview & Vitality Dashboard</p>
         </div>
       </div>
 

@@ -56,24 +56,27 @@ function InlineWikiExcerpt({
 
   return (
     <PanelCard accent={accent} className="p-4">
-      <div className="mb-1.5 flex items-center gap-2">
+      <div className="mb-2 flex items-center gap-2">
         <BookOpen className={cn("h-3.5 w-3.5", a.text)} />
-        <span className="text-foreground text-xs font-semibold">{title}</span>
+        <span className="text-label text-caption font-semibold">{title}</span>
         <Eyebrow className="ml-auto">From the wiki</Eyebrow>
       </div>
       {isLoading ? (
-        <div className="space-y-1.5 py-2" role="status" aria-label="Loading lore">
+        <div className="space-y-2 py-2" role="status" aria-label="Loading lore">
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-2/3" />
         </div>
       ) : (
-        <p className="text-foreground/75 text-xs leading-relaxed">{excerpt}</p>
+        <p className="text-label-secondary text-footnote leading-relaxed">{excerpt}</p>
       )}
       {wikiUrl &&
         (wikiUrl.startsWith("/") || wikiUrl.includes("/wiki/") ? (
           <Link
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
-            className={cn("mt-2 inline-flex items-center gap-1 text-xs hover:underline", a.text)}
+            className={cn(
+              "text-footnote mt-2 inline-flex items-center gap-1 hover:underline",
+              a.text
+            )}
           >
             Read more
           </Link>
@@ -82,7 +85,10 @@ function InlineWikiExcerpt({
             href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn("mt-2 inline-flex items-center gap-1 text-xs hover:underline", a.text)}
+            className={cn(
+              "text-footnote mt-2 inline-flex items-center gap-1 hover:underline",
+              a.text
+            )}
           >
             Read more <ExternalLink className="h-2.5 w-2.5" />
           </a>

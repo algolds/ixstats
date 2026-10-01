@@ -6,7 +6,6 @@ import { KeyCommand as Command } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 import { useAbility } from "~/components/providers/AbilityProvider";
 import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
@@ -24,7 +23,7 @@ const EmbassiesAndRelationsPanel = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <Skeleton className="h-96 rounded-3xl" />,
+    loading: () => <Skeleton className="rounded-card h-96" />,
   }
 );
 
@@ -33,7 +32,7 @@ const DefenseCommandPanel = dynamic(
     import("~/components/mycountry/domains/defense/DefenseCommandPanel").then((m) => ({
       default: m.DefenseCommandPanel,
     })),
-  { loading: () => <Skeleton className="h-64 rounded-3xl" /> }
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
 const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
@@ -71,11 +70,7 @@ function DomainSurfaceComponent({
   return (
     <div className="space-y-6">
       {/* Domain header: domain glyph, title, one-line purpose and a domain-scoped directive */}
-      <FacetCard
-        depth={1}
-        interactive="none"
-        className="relative overflow-hidden rounded-3xl p-4 sm:p-5"
-      >
+      <FacetCard className="rounded-card relative overflow-hidden p-4 sm:p-5">
         {/* Ambient glow (app tint, top-right) + the domain's glyph as a fine-stroke watermark
             (bottom-right), restored from c5c6b382. Decorative only. */}
         <div
@@ -87,12 +82,10 @@ function DomainSurfaceComponent({
         <WatermarkGlyph icon={meta.icon} className="-right-3 -bottom-4 size-24 opacity-[0.06]" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-3">
-            <meta.icon aria-hidden="true" className="text-muted-foreground mt-1 h-6 w-6 shrink-0" />
+            <meta.icon aria-hidden="true" className="text-label-secondary mt-1 h-6 w-6 shrink-0" />
             <div className="min-w-0">
-              <h2 className="text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
-                {meta.title}
-              </h2>
-              <p className="text-muted-foreground mt-0.5 max-w-xl text-sm leading-relaxed">
+              <h2 className="text-label text-title-2 sm:text-title-1">{meta.title}</h2>
+              <p className="text-label-secondary text-body mt-0.5 max-w-xl leading-relaxed">
                 {meta.blurb}
               </p>
             </div>
@@ -101,10 +94,7 @@ function DomainSurfaceComponent({
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              soundEffects.bloom();
-              onDeclare?.(meta.prefilledGoal);
-            }}
+            onClick={() => onDeclare?.(meta.prefilledGoal)}
             className="h-11 shrink-0 sm:h-9"
             title={`Start a directive with a suggested ${meta.title.toLowerCase()} goal`}
           >

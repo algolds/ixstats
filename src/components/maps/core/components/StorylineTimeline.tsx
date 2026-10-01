@@ -30,7 +30,7 @@ export function StorylineTimeline({
   const currentIdx = pins.findIndex((p) => p.id === currentPinId);
 
   return (
-    <FacetCard surface="solid" className="rounded-xl p-4">
+    <FacetCard className="p-4">
       <Eyebrow className="mb-3 block">{storylineTitle}</Eyebrow>
       <div className="relative space-y-0">
         {pins.map((pin, i) => {
@@ -60,16 +60,16 @@ export function StorylineTimeline({
                 onClick={() => !isCurrent && onNavigate?.(pin.id)}
                 disabled={isCurrent}
                 className={`min-w-0 text-left transition-colors ${
-                  isCurrent ? "cursor-default" : "hover:text-foreground cursor-pointer"
+                  isCurrent ? "cursor-default" : "hover:text-label cursor-pointer"
                 }`}
               >
                 <p
-                  className={`truncate text-xs leading-tight ${isCurrent ? "text-foreground font-semibold" : "text-muted-foreground"}`}
+                  className={`text-footnote truncate leading-tight ${isCurrent ? "text-label font-semibold" : "text-label-secondary"}`}
                 >
                   {pin.title}
                 </p>
                 {pin.ixTimeYear != null && (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     Year {pin.ixTimeYear}
                     {pin.eraLabel ? ` · ${pin.eraLabel}` : ""}
                   </p>
@@ -80,7 +80,7 @@ export function StorylineTimeline({
         })}
       </div>
       {pins.length > 1 && (
-        <p className="text-muted-foreground mt-2 text-xs">
+        <p className="text-label-secondary text-footnote mt-2">
           Event {currentIdx + 1} of {pins.length}
         </p>
       )}

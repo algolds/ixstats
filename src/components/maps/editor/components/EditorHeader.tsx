@@ -30,13 +30,14 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Switch } from "~/components/ui/switch";
 
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapEditorInstance, EditorFeature } from "../types/editor-state";
 import type { RouteType } from "~/lib/economy/transport-generator";
 import { featuresToGeoJSON } from "~/hooks/map-editor/editor-geo-ops";
+import { Slider } from "~/components/ui/slider";
 
 interface SimplifyAllMutation {
   isPending: boolean;
@@ -206,7 +207,7 @@ export const EditorHeader = React.memo(function EditorHeader({
   ]);
 
   return (
-    <FacetContainer
+    <FacetMaterial
       material="regular"
       className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none px-3"
     >
@@ -214,7 +215,7 @@ export const EditorHeader = React.memo(function EditorHeader({
       <Button
         variant="ghost"
         size="icon"
-        className="text-muted-foreground h-7 w-7"
+        className="text-label-secondary h-7 w-7"
         onClick={handleRequestExit}
         title="Exit Editor (Esc)"
       >
@@ -222,15 +223,15 @@ export const EditorHeader = React.memo(function EditorHeader({
       </Button>
 
       {/* Breadcrumbs */}
-      <div className="text-muted-foreground flex items-center gap-1.5 text-xs select-none">
+      <div className="text-label-secondary text-footnote flex items-center gap-2 select-none">
         {isWorldMode ? (
           <>
-            <Map className="h-3.5 w-3.5 text-blue-500" aria-hidden />
-            <span className="text-foreground font-semibold">World map</span>
+            <Map className="text-blue h-3.5 w-3.5" aria-hidden />
+            <span className="text-label font-semibold">World map</span>
             {activeCountryId && (
               <>
                 <ChevronRight className="h-3 w-3" />
-                <span className="text-foreground font-semibold">{resolvedCountryName}</span>
+                <span className="text-label font-semibold">{resolvedCountryName}</span>
               </>
             )}
             <ChevronRight className="h-3 w-3" />
@@ -240,8 +241,8 @@ export const EditorHeader = React.memo(function EditorHeader({
           </>
         ) : (
           <>
-            <Map className="h-3.5 w-3.5 text-blue-500" aria-hidden />
-            <span className="text-foreground font-semibold">{resolvedCountryName}</span>
+            <Map className="text-blue h-3.5 w-3.5" aria-hidden />
+            <span className="text-label font-semibold">{resolvedCountryName}</span>
             <ChevronRight className="h-3 w-3" />
             <span>Map editor</span>
           </>
@@ -254,7 +255,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-7 w-7"
+            className="text-label-secondary h-7 w-7"
             disabled={!editor.historyCanUndo || editor.isMutating}
             onClick={() => editor.undo()}
             title={
@@ -267,7 +268,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-7 w-7"
+            className="text-label-secondary h-7 w-7"
             disabled={!editor.historyCanRedo || editor.isMutating}
             onClick={() => editor.redo()}
             title={
@@ -284,18 +285,15 @@ export const EditorHeader = React.memo(function EditorHeader({
 
       <div className="ml-auto" />
 
-      <div className="bg-border h-4 w-px" />
+      <div className="bg-separator h-4 w-px" />
 
       {/* Map controls in header — grid, center, settings */}
-      <div className="ml-1 flex items-center gap-1.5">
+      <div className="ml-1 flex items-center gap-2">
         <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
-            className={cn(
-              "h-7 w-7",
-              showGrid ? "bg-accent text-foreground" : "text-muted-foreground"
-            )}
+            className={cn("h-7 w-7", showGrid ? "bg-fill-3 text-label" : "text-label-secondary")}
             onClick={() => setShowGrid((v) => !v)}
             title="Toggle grid (G)"
             aria-pressed={showGrid}
@@ -305,7 +303,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground h-7 w-7"
+            className="text-label-secondary h-7 w-7"
             onClick={() => {
               const geo = editor.countryGeo;
               if (geo?.centroid) {
@@ -321,7 +319,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             size="icon"
             className={cn(
               "h-7 w-7",
-              editor.showGaps ? "bg-accent text-foreground" : "text-muted-foreground"
+              editor.showGaps ? "bg-fill-3 text-label" : "text-label-secondary"
             )}
             onClick={() => editor.setShowGaps?.(!editor.showGaps)}
             title={`Highlight gaps & empty regions: ${editor.showGaps ? "On" : "Off"} (H)`}
@@ -334,10 +332,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           <Button
             variant="ghost"
             size="icon"
-            className={cn(
-              "h-7 w-7",
-              snapEnabled ? "bg-accent text-foreground" : "text-muted-foreground"
-            )}
+            className={cn("h-7 w-7", snapEnabled ? "bg-fill-3 text-label" : "text-label-secondary")}
             onClick={() => setSnapEnabled(!snapEnabled)}
             title={`Snap: ${snapEnabled ? "On" : "Off"} (tolerance in Settings)`}
             aria-pressed={snapEnabled}
@@ -346,7 +341,7 @@ export const EditorHeader = React.memo(function EditorHeader({
           </Button>
         </div>
 
-        <div className="bg-border h-4 w-px" />
+        <div className="bg-separator h-4 w-px" />
 
         {/* Rivers/elevation layer toggles + Settings popover */}
         <div className="flex items-center gap-1">
@@ -358,8 +353,8 @@ export const EditorHeader = React.memo(function EditorHeader({
                 className={cn(
                   "h-7 w-7",
                   editorVisibleLayers.has("rivers")
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground"
+                    ? "bg-fill-3 text-label"
+                    : "text-label-secondary"
                 )}
                 onClick={() => toggleEditorLayer("rivers")}
                 title="Rivers"
@@ -372,8 +367,8 @@ export const EditorHeader = React.memo(function EditorHeader({
                 className={cn(
                   "h-7 w-7",
                   editorVisibleLayers.has("altitudes")
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground"
+                    ? "bg-fill-3 text-label"
+                    : "text-label-secondary"
                 )}
                 onClick={() => toggleEditorLayer("altitudes")}
                 title="Altitude/Elevation"
@@ -387,7 +382,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hidden h-7 w-7 sm:flex"
+              className="text-label-secondary hidden h-7 w-7 sm:flex"
               onClick={onShowShortcuts}
               title="Keyboard shortcuts (?)"
               aria-label="Keyboard shortcuts"
@@ -401,7 +396,7 @@ export const EditorHeader = React.memo(function EditorHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground h-7 w-7"
+              className="text-label-secondary h-7 w-7"
               onClick={onShowHelp}
               title="Map Editor Guide & Onboarding"
             >
@@ -417,7 +412,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                 size="icon"
                 className={cn(
                   "h-7 w-7",
-                  isSettingsOpen ? "bg-accent text-foreground" : "text-muted-foreground"
+                  isSettingsOpen ? "bg-fill-3 text-label" : "text-label-secondary"
                 )}
                 title="Map editor settings"
                 aria-label="Map editor settings"
@@ -425,7 +420,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                 <Settings className="h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 rounded-xl p-3" align="end">
+            <PopoverContent className="rounded-row w-64 p-3" align="end">
               <div className="flex flex-col gap-3">
                 <Eyebrow className="block select-none">Map editor settings</Eyebrow>
 
@@ -434,7 +429,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground w-full justify-start px-2"
+                    className="text-label-secondary w-full justify-start px-2"
                     onClick={() => {
                       setIsSettingsOpen(false);
                       editor.setMode("import-provinces");
@@ -443,7 +438,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                   >
                     <FileUp className="h-3.5 w-3.5 shrink-0" />
                     <span className="font-medium">Import Provinces (SVG/PNG)</span>
-                    <span className="bg-muted text-muted-foreground ml-auto rounded px-1 font-mono text-xs">
+                    <span className="bg-fill-3 text-label-secondary text-footnote rounded-control-sm ml-auto px-1 tabular-nums">
                       I
                     </span>
                   </Button>
@@ -453,7 +448,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground w-full justify-start px-2"
+                        className="text-label-secondary w-full justify-start px-2"
                         onClick={() => {
                           setIsSettingsOpen(false);
                           importInputRef.current?.click();
@@ -467,7 +462,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground w-full justify-start px-2"
+                        className="text-label-secondary w-full justify-start px-2"
                         onClick={() => {
                           setIsSettingsOpen(false);
                           handleExportGeoJSON();
@@ -485,7 +480,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-muted-foreground w-full justify-start px-2"
+                      className="text-label-secondary w-full justify-start px-2"
                       onClick={async () => {
                         setIsSettingsOpen(false);
                         if (!activeCountryId) return;
@@ -515,9 +510,9 @@ export const EditorHeader = React.memo(function EditorHeader({
 
                   {/* Snap (always visible — universal editing feature) */}
                   <>
-                    <div className="border-border my-1 border-t" aria-hidden />
-                    <div className="flex items-center justify-between px-2 py-1.5">
-                      <Eyebrow className="flex items-center gap-1.5">
+                    <div className="border-separator my-1 border-t" aria-hidden />
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <Eyebrow className="flex items-center gap-2">
                         <Magnet className="h-3 w-3" aria-hidden />
                         Snap
                       </Eyebrow>
@@ -528,17 +523,17 @@ export const EditorHeader = React.memo(function EditorHeader({
                       />
                     </div>
                     {snapEnabled && (
-                      <div className="flex items-center gap-2 px-2 pb-1.5">
-                        <input
-                          type="range"
-                          min="0.001"
-                          max="0.1"
-                          step="0.001"
-                          value={snapTolerance}
-                          onChange={(e) => setSnapTolerance(parseFloat(e.target.value))}
-                          className="accent-primary h-1 flex-1"
+                      <div className="flex items-center gap-2 px-2 pb-2">
+                        <Slider
+                          aria-label="Snap tolerance"
+                          min={0.001}
+                          max={0.1}
+                          step={0.001}
+                          value={[snapTolerance]}
+                          onValueChange={([v]) => v !== undefined && setSnapTolerance(v)}
+                          className="flex-1 py-2"
                         />
-                        <span className="text-muted-foreground w-10 text-right font-mono text-xs tabular-nums">
+                        <span className="text-label-secondary text-footnote w-10 text-right font-mono tabular-nums">
                           {snapTolerance.toFixed(3)}°
                         </span>
                       </div>
@@ -547,9 +542,9 @@ export const EditorHeader = React.memo(function EditorHeader({
 
                   {/* Lock Panels */}
                   <>
-                    <div className="border-border my-1 border-t" aria-hidden />
-                    <div className="flex items-center justify-between px-2 py-1.5">
-                      <Eyebrow className="flex items-center gap-1.5">
+                    <div className="border-separator my-1 border-t" aria-hidden />
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <Eyebrow className="flex items-center gap-2">
                         <Settings className="h-3 w-3" aria-hidden />
                         Lock panels
                       </Eyebrow>
@@ -564,12 +559,12 @@ export const EditorHeader = React.memo(function EditorHeader({
                   {/* Admin: transport + recalc — gated, separated visually from the always-on items above */}
                   {isAdmin && activeCountryId && (
                     <>
-                      <div className="border-border my-1 border-t" aria-hidden />
+                      <div className="border-separator my-1 border-t" aria-hidden />
                       <Eyebrow className="block px-2 select-none">Admin</Eyebrow>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground w-full justify-start px-2"
+                        className="text-label-secondary w-full justify-start px-2"
                         onClick={async () => {
                           setIsSettingsOpen(false);
                           try {
@@ -598,7 +593,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground w-full justify-start px-2"
+                        className="text-label-secondary w-full justify-start px-2"
                         onClick={async () => {
                           setIsSettingsOpen(false);
                           try {
@@ -658,6 +653,6 @@ export const EditorHeader = React.memo(function EditorHeader({
           if (file) void handleImportFile(file);
         }}
       />
-    </FacetContainer>
+    </FacetMaterial>
   );
 });

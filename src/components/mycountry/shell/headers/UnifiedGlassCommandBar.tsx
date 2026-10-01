@@ -10,7 +10,7 @@ import {
   User,
   ClockRotateRight as FileClock,
 } from "iconoir-react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetTabs } from "~/components/ui/facet";
@@ -52,7 +52,7 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
   const { canCommit, usedThisWeek, cap, cooldownUntil } = status.data;
   if (!canCommit) {
     return (
-      <p className="text-muted-foreground flex items-center gap-1 text-xs tabular-nums">
+      <p className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
         <FileClock aria-hidden="true" className="h-3.5 w-3.5" />
         <span>
           {cooldownUntil ? (
@@ -68,7 +68,7 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
   }
   const left = Math.max(0, cap - usedThisWeek);
   return (
-    <p className="text-muted-foreground text-xs tabular-nums">
+    <p className="text-label-secondary text-footnote tabular-nums">
       {left} of {cap} directives left this week
     </p>
   );
@@ -113,20 +113,17 @@ export function UnifiedGlassCommandBar({
   const activeTab = isExecutiveMode ? "" : activeSection;
 
   return (
-    <FacetContainer
-      depth={1}
-      interactive="none"
-      enableRefraction={false}
+    <FacetCard
       texture="dots"
       textureOpacity={0.035}
-      className="relative flex w-full flex-col gap-4 overflow-hidden rounded-3xl p-4 sm:gap-5 sm:p-5"
+      className="rounded-card relative flex w-full flex-col gap-4 overflow-hidden p-4 sm:gap-5 sm:p-5"
     >
       <TintHairline />
       <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Large title: flag + country name, with a calm identity footnote */}
-        <div className="flex min-w-0 items-center gap-3.5">
+        <div className="flex min-w-0 items-center gap-4">
           {country?.name ? (
-            <span className="border-border bg-muted flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border sm:h-14 sm:w-20">
+            <span className="border-separator bg-fill-3 rounded-row flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-14 sm:w-20">
               <UnifiedCountryFlag
                 countryName={country.name}
                 flagUrl={flagUrl}
@@ -138,28 +135,28 @@ export function UnifiedGlassCommandBar({
             </span>
           ) : null}
           <div className="min-w-0">
-            <p className="flex min-w-0 items-center gap-1.5">
-              <Eyebrow className="text-(--facet-mycountry)">MyCountry</Eyebrow>
+            <p className="flex min-w-0 items-center gap-2">
+              <Eyebrow className="text-tint">MyCountry</Eyebrow>
               {realmName ? (
-                <span className="text-muted-foreground truncate text-xs">· {realmName}</span>
+                <span className="text-label-secondary text-footnote truncate">· {realmName}</span>
               ) : null}
             </p>
-            <h1 className="text-foreground mt-0.5 truncate text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
+            <h1 className="text-label text-title-1 sm:text-large-title mt-0.5 truncate">
               {country?.name ?? "MyCountry"}
             </h1>
             {subtitle ? (
-              <p className="text-muted-foreground mt-0.5 truncate text-sm">{subtitle}</p>
+              <p className="text-label-secondary text-body mt-0.5 truncate">{subtitle}</p>
             ) : null}
           </div>
         </div>
 
         {/* Toolbar: two quiet tools and the one primary action */}
-        <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
           <div className="flex items-center gap-1">
             <Button
               asChild
               variant="ghost"
-              className="text-muted-foreground h-11 min-w-11 px-2.5 sm:h-9 sm:min-w-9"
+              className="text-label-secondary h-11 min-w-11 px-3 sm:h-9 sm:min-w-9"
             >
               <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
                 <User aria-hidden="true" />
@@ -170,7 +167,7 @@ export function UnifiedGlassCommandBar({
               type="button"
               variant="ghost"
               onClick={() => router.push("/mycountry/editor")}
-              className="text-muted-foreground h-11 min-w-11 px-2.5 sm:h-9 sm:min-w-9"
+              className="text-label-secondary h-11 min-w-11 px-3 sm:h-9 sm:min-w-9"
               aria-label="Edit country"
               title="Edit country and territory"
             >
@@ -180,7 +177,6 @@ export function UnifiedGlassCommandBar({
             <Button
               type="button"
               aria-pressed={isExecutiveMode}
-              data-cuelume-press="bloom"
               onClick={() => {
                 if (onDeclare) onDeclare();
                 else onChangeMode("executive");
@@ -188,7 +184,7 @@ export function UnifiedGlassCommandBar({
               className={cn(
                 MYCOUNTRY_PRIMARY_ACTION,
                 "ml-1 h-11 flex-1 sm:h-9 sm:flex-none",
-                isExecutiveMode && "ring-offset-background ring-2 ring-amber-500/40 ring-offset-2"
+                isExecutiveMode && "ring-offset-surface ring-yellow/40 ring-2 ring-offset-2"
               )}
             >
               <Command aria-hidden="true" />
@@ -251,6 +247,6 @@ export function UnifiedGlassCommandBar({
           />
         </nav>
       )}
-    </FacetContainer>
+    </FacetCard>
   );
 }

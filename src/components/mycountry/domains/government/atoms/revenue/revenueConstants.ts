@@ -43,11 +43,11 @@ export const revenueCategoryIcons: Record<
  * foreground tone. Kept as a map for callers that index it by category.
  */
 export const revenueCategoryColors: Record<RevenueCategory, string> = {
-  "Direct Tax": "var(--color-muted-foreground)",
-  "Indirect Tax": "var(--color-muted-foreground)",
-  "Non-Tax Revenue": "var(--color-muted-foreground)",
-  "Fees and Fines": "var(--color-muted-foreground)",
-  Other: "var(--color-muted-foreground)",
+  "Direct Tax": "var(--color-label-secondary)",
+  "Indirect Tax": "var(--color-label-secondary)",
+  "Non-Tax Revenue": "var(--color-label-secondary)",
+  "Fees and Fines": "var(--color-label-secondary)",
+  Other: "var(--color-label-secondary)",
 };
 
 export const commonRevenueSources: Record<RevenueCategory, string[]> = {

@@ -337,19 +337,22 @@ const IxWorldMap = memo(
         {debugError && (
           <div
             role="alert"
-            className="bg-background absolute inset-0 flex items-center justify-center p-4"
+            className="bg-surface absolute inset-0 flex items-center justify-center p-4"
           >
-            <FacetCard surface="solid" className="max-w-lg rounded-xl p-4">
+            <FacetCard className="max-w-lg p-4">
               <p className="text-destructive font-semibold">The map engine failed to start</p>
-              <pre className="text-foreground mt-2 text-xs whitespace-pre-wrap">{debugError}</pre>
+              <pre className="text-label text-footnote mt-2 whitespace-pre-wrap">{debugError}</pre>
             </FacetCard>
           </div>
         )}
         {!isLoaded && !debugError && (
-          <div className="bg-muted absolute inset-0 flex items-center justify-center" role="status">
+          <div
+            className="bg-fill-3 absolute inset-0 flex items-center justify-center"
+            role="status"
+          >
             <div className="flex flex-col items-center gap-3">
-              <div className="border-muted-foreground/20 h-8 w-8 animate-spin rounded-full border-4 border-t-blue-500" />
-              <p className="text-muted-foreground text-sm">Loading map...</p>
+              <div className="border-separator border-t-blue h-8 w-8 animate-spin rounded-full border-4" />
+              <p className="text-label-secondary text-body">Loading map...</p>
             </div>
           </div>
         )}

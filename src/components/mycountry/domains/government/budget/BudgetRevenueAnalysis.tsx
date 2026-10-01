@@ -40,51 +40,47 @@ export function BudgetRevenueAnalysis({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+      <FacetCard className="space-y-3 p-4">
+        <h4 className="text-label border-separator text-headline border-b pb-3">
           Tax vs non-tax revenue
         </h4>
-        <div className="divide-border/60 divide-y">
+        <div className="divide-separator divide-y">
           {split.map((row) => (
             <div key={row.label} className="flex items-center justify-between py-3">
               <div>
-                <p className="text-foreground text-sm font-medium">{row.label}</p>
-                <p className="text-muted-foreground text-xs">{row.sub}</p>
+                <p className="text-label text-body font-medium">{row.label}</p>
+                <p className="text-label-secondary text-footnote">{row.sub}</p>
               </div>
               <div className="text-right">
-                <p className="text-foreground font-mono text-base font-semibold tabular-nums">
-                  {formatNumber(row.value)}
-                </p>
-                <p className="text-muted-foreground font-mono text-xs tabular-nums">
-                  {row.percent}%
-                </p>
+                <p className="text-label text-title-3 tabular-nums">{formatNumber(row.value)}</p>
+                <p className="text-label-secondary text-footnote tabular-nums">{row.percent}%</p>
               </div>
             </div>
           ))}
         </div>
       </FacetCard>
 
-      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+      <FacetCard className="space-y-3 p-4">
+        <h4 className="text-label border-separator text-headline border-b pb-3">
           Top revenue sources
         </h4>
-        <ol className="divide-border/60 divide-y text-xs">
+        <ol className="divide-separator text-footnote divide-y">
           {revenueSummary.topRevenueSources.map((source, index) => (
             <li key={source.id} className="flex items-center justify-between gap-3 py-2">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="text-muted-foreground w-4 shrink-0 text-right font-mono tabular-nums">
+                <span className="text-label-secondary w-4 shrink-0 text-right tabular-nums">
                   {index + 1}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-xs font-semibold">{source.name}</p>
-                  <p className="text-muted-foreground truncate text-xs">{source.category}</p>
+                  <p className="text-label text-caption truncate font-semibold">{source.name}</p>
+                  <p className="text-label-secondary text-footnote truncate">{source.category}</p>
                 </div>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
+                <p className="text-label text-caption font-semibold tabular-nums">
                   {formatNumber(source.revenueAmount ?? 0)}
                 </p>
-                <p className="text-muted-foreground font-mono text-xs tabular-nums">
+                <p className="text-label-secondary text-footnote tabular-nums">
                   {(source.revenuePercent ?? 0).toFixed(1)}%
                 </p>
               </div>
