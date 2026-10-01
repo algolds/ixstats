@@ -52,7 +52,8 @@ WikiOS is the **primary and default encyclopedia platform** for the IxStates eco
    - Uses the MediaWiki HTTP Action API (`action=parse`) as a headless renderer for templates/Lua, and PostgreSQL (`WikiCache`) for structured infoboxes and country metadata.
 2. **Write Path (<10ms)**:
    - Saves directly to PostgreSQL `ArticleRepository` in a single transaction.
-   - Asynchronously enqueues `MediaWikiExportWorker` (in-process queue) to mirror edits to classic MediaWiki through the Action API using the bot session, without blocking the user. Authorship is kept in `WikiRevision.author`; upstream per-user actor attribution is not implemented.
+   - Inserts a `WikiMirrorJob` (the outbound outbox, `services/mirror-outbox.ts`) in the same transaction: a committed edit always has its job. Moves, deletes, undeletes and protections queue their own jobs (`move | delete | undelete | protect`).
+   - `services/mirror-worker.ts` (cron job `wiki-mirror`, plus an in-process run a couple of seconds after a write) applies the jobs per title in order as the dedicated `WikiOSMirror` bot account: a revision goes out through `action=import` with `assignknownusers=1` (credited to its author, dated as it was made; MediaWiki adds a null revision by the bot after each import), is verified against MediaWiki's current revision and falls back to `action=edit` when the import is not current. A failed job backs off (`min(2^attempts x 30 s, 1 h)`) and goes `dead` after 8 attempts (Discord warning; an administrator requeues or discards it in the WikiOS settings panel). A bot login that fails is a failed job, never an anonymous write. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate.
 3. **Classic MediaWiki Fallback**:
    - `https://ixwiki.com/` remains accessible at all times for users preferring the classic MediaWiki Vector interface.
    - Edits made on classic MediaWiki are pulled into PostgreSQL by `services/auto-sync-service.ts` (`runAutoSyncCycle`), run by the `wiki-recentchanges` cron job and the authenticated `/api/wikios/inbound-sync` webhook.
@@ -71,10 +72,11 @@ src/lib/wiki-os/
 │   │   │   ├── http-reader.ts   # Resilient sister-wiki HTTP adapter (IIWiki/AltHistory)
 │   │   │   └── dispatchers.ts   # Public multi-wiki dispatching engine
 │   │   ├── article-store.ts     # PostgreSQL cache & shadow synchronization
-│   │   └── sync-worker.ts       # Non-blocking MediaWiki background export worker
+│   │   ├── csrf-cache.ts        # The mirror bot's MediaWiki login + CSRF token (no anonymous fallback)
+│   │   └── write-service.ts     # The mirror's Action API calls (typed errors, import upload)
 ├── core/                 # ArticleRepository, link graph, native search, media assets, WikiAST
 ├── editor/               # Draft store & local cache (Plate editor UI lives in src/components/wiki-os/editor/)
-├── services/             # auto-sync-service.ts (recentchanges inbound sync)
+├── services/             # auto-sync-service.ts (recentchanges inbound sync); mirror-*.ts (the outbound outbox and worker)
 ├── transformers/         # Infobox parsers, image URL hash math, WikiAST ↔ wikitext converter
 ├── wikitext/             # Wikitext parser & serializer
 └── templates/            # Custom template resolver, presets & preview cache

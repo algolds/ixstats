@@ -5,8 +5,8 @@
  * and an edit is the fallback when the import is not the current one. MediaWiki is a scripted fake: nothing
  * here touches a real wiki.
  */
-import { Prisma } from "@prisma/client";
 import type { WikiMirrorJob } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { MediaWikiApiError } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 import { runRevisionJob } from "~/lib/wiki-os/services/mirror-revision";
@@ -78,6 +78,19 @@ function currentRevisionIs(revid: number | null, text = TEXT) {
       ? { query: { pages: [{ title: "Foo bar", missing: true }] } }
       : { query: { pages: [{ title: "Foo bar", revisions: [{ revid, sha1: hexSha1(text) }] }] } }
   );
+}
+
+/** `prop=revisions` answers with each head in turn (the last one for every query after): the page as MediaWiki has it. */
+function currentRevisionsAre(heads: Array<{ revid: number; text: string }>) {
+  const queue = [...heads];
+  wiki.on("query", () => {
+    const head = queue.length > 1 ? queue.shift()! : queue[0]!;
+    return {
+      query: {
+        pages: [{ title: "Foo bar", revisions: [{ revid: head.revid, sha1: hexSha1(head.text) }] }],
+      },
+    };
+  });
 }
 
 const importOk = () =>
@@ -264,10 +277,7 @@ describe("importing a revision", () => {
 
   it("does not fail a job whose stamp the inbound sync recorded first (its echo row holds the MediaWiki id)", async () => {
     mockRevisionUpdateMany.mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
-        code: "P2002",
-        clientVersion: "test",
-      })
+      new ConflictError("Unique constraint violation on WikiRevision (source)")
     );
 
     await expect(runRevisionJob(job())).resolves.toBe(777);
@@ -437,7 +447,11 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
 
   beforeEach(() => {
     importOk();
-    currentRevisionIs(777);
+    // before the restore MediaWiki has the conflicting edit; after it, the restored head
+    currentRevisionsAre([
+      { revid: 700, text: "Someone else's text." },
+      { revid: 777, text: TEXT },
+    ]);
   });
 
   it("is dated now and credited to the mirror account, with the restore summary", async () => {
@@ -482,5 +496,37 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
     delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
 
     await expect(runRevisionJob(restore())).rejects.toThrow(/WIKIOS_MEDIAWIKI_BOT_USER/);
+  });
+
+  it("imports nothing when MediaWiki already holds the head's text: the conflicting edit was superseded", async () => {
+    currentRevisionIs(850);
+
+    await expect(runRevisionJob(restore())).resolves.toBe(850);
+
+    expect(requestsTo("import")).toHaveLength(0);
+    expect(requestsTo("edit")).toHaveLength(0);
+    expect(mockRevisionUpdateMany.mock.calls[0]?.[0]).toEqual({
+      where: { id: "rev-1", mwRevId: null },
+      data: { mwRevId: 850 },
+    });
+    expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 850 });
+  });
+
+  it("counts the head's text without its trailing whitespace as the same text: that is how an edit saves it", async () => {
+    currentRevisionIs(851, TEXT.trimEnd());
+
+    await expect(runRevisionJob(restore())).resolves.toBe(851);
+
+    expect(requestsTo("import")).toHaveLength(0);
+  });
+
+  it("looks first, then imports, when MediaWiki holds the other text", async () => {
+    await expect(runRevisionJob(restore())).resolves.toBe(777);
+
+    const [first, second] = wiki.calls().filter((call) => call.params.prop === "revisions");
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(requestsTo("import")).toHaveLength(1);
+    expect(requestsTo("edit")).toHaveLength(0);
   });
 });

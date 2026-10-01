@@ -916,9 +916,7 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
   });
 
   it("writes no job when a delete or an undelete was refused", async () => {
-    await expect(
-      PageManagementService.restoreArticle("Old name", actor)
-    ).rejects.toThrow();
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
 
     expect(mockJobCreate).not.toHaveBeenCalled();
     expect(scheduleMirrorKick).not.toHaveBeenCalled();

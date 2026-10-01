@@ -11,6 +11,15 @@
 --                      | done | dead; a job is retried with backoff and goes `dead` after 8 failures, which an
 --                      administrator requeues or discards from the WikiOS settings panel).
 --
+-- Also, once deployed (not part of this SQL):
+--   * add `wiki-mirror` to CRON_ENABLED_JOBS (src/server/cron/jobs.ts; every minute, the in-process run that follows a
+--     save needs no setting) and set WIKIOS_MEDIAWIKI_BOT_USER / WIKIOS_MEDIAWIKI_BOT_TOKEN: the old default
+--     account is gone, and without the pair every job fails (the admin panel says so);
+--   * the WikiOSMirror account needs, besides edit/bot/import/importupload, the rights `move`, `move-subpages`,
+--     `suppressredirect`, `delete`, `undelete` and `protect` (group `wikios-mirror`) and, on its bot password, the
+--     grants `delete` and `protect` (the move rights come with `createeditmovepage`); otherwise the page-operation
+--     jobs end up dead with `permissiondenied`.
+--
 -- Jobs that were still in the old in-memory export queue when the previous release stopped are lost with it (the
 -- queue was never persisted). To mirror the pages that were edited in WikiOS but never reached MediaWiki, let an
 -- administrator re-save them, or push them with an XML import.

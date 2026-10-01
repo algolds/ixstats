@@ -69,7 +69,7 @@ async function runJob(job: MirrorJob): Promise<MirrorJob> {
       `[WikiMirror] ${job.kind} job for "${job.title}" failed (attempt ${job.attempts}):`,
       error
     );
-    return failJob(job, error);
+    return failJob(job, error instanceof Error ? error.message : String(error));
   }
 }
 

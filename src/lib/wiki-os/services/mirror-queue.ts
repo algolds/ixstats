@@ -98,17 +98,13 @@ export function completeJob(id: string, mwRevId: number | null): Promise<MirrorJ
  * Record a failed attempt of `job` (as claimed, so `attempts` already counts it): pending again after its
  * backoff, or `dead` once the attempts are used up. Resolves to the job as stored.
  */
-export function failJob(job: MirrorJob, error: unknown, now = new Date()): Promise<MirrorJob> {
-  const message = (error instanceof Error ? error.message : String(error)).slice(
-    0,
-    LAST_ERROR_LIMIT
-  );
+export function failJob(job: MirrorJob, message: string, now = new Date()): Promise<MirrorJob> {
   const dead = job.attempts >= MAX_ATTEMPTS;
   return db.wikiMirrorJob.update({
     where: { id: job.id },
     data: {
       state: dead ? "dead" : "pending",
-      lastError: message,
+      lastError: message.slice(0, LAST_ERROR_LIMIT),
       ...(dead ? {} : { nextAttemptAt: new Date(now.getTime() + backoffMs(job.attempts)) }),
     },
   });

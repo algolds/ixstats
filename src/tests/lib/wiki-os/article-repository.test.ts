@@ -479,7 +479,10 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
   it("names the saved page by its canonical title, not the spelling that was typed", async () => {
     await ArticleRepository.saveArticle({ slug: "foo_bar", title: "", wikitext: "text" });
 
-    expect(mockJobCreate.mock.calls[0]?.[0].data).toMatchObject({ kind: "revision", title: "Foo bar" });
+    expect(mockJobCreate.mock.calls[0]?.[0].data).toMatchObject({
+      kind: "revision",
+      title: "Foo bar",
+    });
   });
 
   it("queues a job for a save that changed nothing too: the revision exists, so MediaWiki gets it", async () => {

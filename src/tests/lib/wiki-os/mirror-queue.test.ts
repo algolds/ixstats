@@ -203,7 +203,7 @@ describe("the queue's writes", () => {
   });
 
   it("sends a failed job back to pending after its backoff, keeping the error", async () => {
-    await failJob(job({ attempts: 3 }), new Error("MediaWiki 503"), NOW);
+    await failJob(job({ attempts: 3 }), "MediaWiki 503", NOW);
 
     expect(mockUpdate.mock.calls[0]?.[0].data).toEqual({
       state: "pending",
@@ -214,7 +214,7 @@ describe("the queue's writes", () => {
 
   it("makes a job dead on its 8th failed attempt, with no further attempt scheduled", async () => {
     await failJob(job({ attempts: MAX_ATTEMPTS - 1 }), "x", NOW);
-    await failJob(job({ attempts: MAX_ATTEMPTS }), new Error("bot login failed"), NOW);
+    await failJob(job({ attempts: MAX_ATTEMPTS }), "bot login failed", NOW);
 
     expect(mockUpdate.mock.calls[0]?.[0].data.state).toBe("pending");
     expect(mockUpdate.mock.calls[1]?.[0].data).toEqual({
@@ -224,7 +224,7 @@ describe("the queue's writes", () => {
   });
 
   it("keeps the last error within its VarChar(2000) column", async () => {
-    await failJob(job({ attempts: 1 }), new Error("x".repeat(5_000)), NOW);
+    await failJob(job({ attempts: 1 }), "x".repeat(5_000), NOW);
 
     expect(mockUpdate.mock.calls[0]?.[0].data.lastError).toHaveLength(2_000);
   });

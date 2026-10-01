@@ -24,22 +24,44 @@ import type { MirrorJob } from "./mirror-queue";
 const ackSchema = z.looseObject({});
 
 const pageInfoSchema = z.object({
-  query: z.object({ pages: z.array(z.looseObject({ missing: z.boolean().optional() })) }),
+  query: z.object({
+    pages: z.array(z.looseObject({ title: z.string(), missing: z.boolean().optional() })),
+  }),
 });
 
 /** Codes a move answers with when its work may already be done: the target is taken, or the source is gone. */
 const MOVE_RACE_CODES: ReadonlySet<string> = new Set(["articleexists", "missingtitle"]);
 
-/** Whether `title` is a page in MediaWiki. */
-async function pageExists(title: string): Promise<boolean> {
+/**
+ * The page `title` is in MediaWiki and whether it exists; with `followRedirects`, a redirect stands for the page
+ * it points to (so `title` is the target's, and `exists` says whether the target is there).
+ */
+async function lookUp(
+  title: string,
+  followRedirects: boolean
+): Promise<{ title: string; exists: boolean }> {
   const data = await getMediaWikiAction(
-    { action: "query", prop: "info", titles: title },
+    {
+      action: "query",
+      prop: "info",
+      titles: title,
+      ...(followRedirects ? { redirects: "1" } : {}),
+    },
     pageInfoSchema
   );
-  return data.query.pages[0]?.missing !== true;
+  const page = data.query.pages[0];
+  return { title: page?.title ?? title, exists: page?.missing !== true };
 }
 
-/** Whether a refused move is a move that was already made: the source is gone and the target is there. */
+/** Whether `title` is a page in MediaWiki. */
+async function pageExists(title: string): Promise<boolean> {
+  return (await lookUp(title, false)).exists;
+}
+
+/**
+ * Whether a refused move is a move that was already made: the destination is there, and the source is gone or
+ * is the redirect the move leaves behind.
+ */
 async function moveAlreadyDone(
   error: MediaWikiApiError,
   from: string,
@@ -47,8 +69,8 @@ async function moveAlreadyDone(
 ): Promise<boolean> {
   if (error.code === "selfmove") return true;
   if (!MOVE_RACE_CODES.has(error.code)) return false;
-  const [fromExists, toExists] = await Promise.all([pageExists(from), pageExists(to)]);
-  return !fromExists && toExists;
+  const [source, destination] = await Promise.all([lookUp(from, true), lookUp(to, true)]);
+  return destination.exists && (!source.exists || source.title === destination.title);
 }
 
 async function runMove(job: MirrorJob): Promise<void> {
@@ -60,8 +82,8 @@ async function runMove(job: MirrorJob): Promise<void> {
         from: job.title,
         to,
         reason,
-        // Each move WikiOS made has its own job: the talk page moves only when WikiOS moved it.
-        movetalk: "0",
+        // MediaWiki reads a flag as set when the parameter is present, whatever its value: `movetalk` is left out
+        // because each move WikiOS made has its own job (the talk page moves when WikiOS moved it).
         ...(leaveRedirect ? {} : { noredirect: "1" }),
       },
       ackSchema

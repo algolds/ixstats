@@ -13,8 +13,8 @@
  * operator; there is no fallback for them.
  */
 
-import { Prisma } from "@prisma/client";
 import { z } from "zod";
+import { ConflictError } from "~/lib/app-error";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "../core/title";
 import {
@@ -176,8 +176,8 @@ async function stamp(job: MirrorJob, revision: MirroredRevision, mwRevId: number
     });
   } catch (error) {
     // The inbound sync recorded this very MediaWiki revision as an echo row first: it is already known.
-    const known = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-    if (!known) throw error;
+    // (`db` turns the database's unique-constraint error into a ConflictError, see ~/lib/prisma-error.)
+    if (!(error instanceof ConflictError)) throw error;
   }
   if (job.articleId) {
     await db.wikiArticle.updateMany({
@@ -193,37 +193,35 @@ function summaryOf(revision: MirroredRevision, payload: RevisionPayload): string
   return (own?.trim() || DEFAULT_SUMMARY).slice(0, SUMMARY_LIMIT);
 }
 
-/**
- * Mirror the job's revision. Resolves to the MediaWiki revision id that now holds its text, or null when
- * there is nothing to mirror (the revision went with its page). Throws on any failure, for the retry.
- */
-export async function runRevisionJob(job: MirrorJob): Promise<number | null> {
-  const payload = revisionPayloadSchema.parse(job.payload ?? {});
-  const revision = job.revisionId
-    ? await db.wikiRevision.findUnique({
-        where: { id: job.revisionId },
-        select: {
-          id: true,
-          wikitext: true,
-          author: true,
-          authorId: true,
-          summary: true,
-          minor: true,
-          createdAt: true,
-          mwRevId: true,
-          sha1: true,
-        },
-      })
-    : null;
-  if (!revision) return null;
-  // An echo of this very text is already in MediaWiki's history (the inbound sync stamped the revision).
-  if (!payload.restore && revision.mwRevId !== null) return revision.mwRevId;
+/** The revision a job mirrors; null when it is gone with its page. */
+function loadRevision(revisionId: string | null): Promise<MirroredRevision | null> {
+  if (!revisionId) return Promise.resolve(null);
+  return db.wikiRevision.findUnique({
+    where: { id: revisionId },
+    select: {
+      id: true,
+      wikitext: true,
+      author: true,
+      authorId: true,
+      summary: true,
+      minor: true,
+      createdAt: true,
+      mwRevId: true,
+      sha1: true,
+    },
+  });
+}
 
-  const namespace = canonicalizeTitle(job.title, { source: job.source })?.namespaceId ?? 0;
-  const summary = summaryOf(revision, payload);
+/** Send the revision to MediaWiki as a one-page, one-revision XML import. */
+async function importRevision(
+  job: MirrorJob,
+  revision: MirroredRevision,
+  payload: RevisionPayload,
+  summary: string
+): Promise<void> {
   const xml = await buildImportXml({
     title: job.title,
-    namespace,
+    namespace: canonicalizeTitle(job.title, { source: job.source })?.namespaceId ?? 0,
     text: revision.wikitext,
     contributor: await contributorOf(revision, payload.restore),
     timestamp: payload.restore ? new Date() : revision.createdAt,
@@ -235,10 +233,35 @@ export async function runRevisionJob(job: MirrorJob): Promise<number | null> {
     importResultSchema,
     { field: "xml", filename: "wikios.xml", contentType: "application/xml", content: xml }
   );
+}
 
+/**
+ * Mirror the job's revision. Resolves to the MediaWiki revision id that now holds its text, or null when
+ * there is nothing to mirror (the revision went with its page). Throws on any failure, for the retry.
+ */
+export async function runRevisionJob(job: MirrorJob): Promise<number | null> {
+  const payload = revisionPayloadSchema.parse(job.payload ?? {});
+  const revision = await loadRevision(job.revisionId);
+  if (!revision) return null;
+  // An echo of this very text is already in MediaWiki's history (the inbound sync stamped the revision).
+  if (!payload.restore && revision.mwRevId !== null) return revision.mwRevId;
+
+  const wanted = mwSha1Base36(revision.wikitext);
+  if (payload.restore) {
+    // MediaWiki already holds the head's text (the edit that conflicted was superseded since): nothing to restore.
+    // An edit (the fallback below) saves the text without its trailing whitespace, so that counts as the same text.
+    const holder = await currentRevision(job.title);
+    if (holder?.sha1 === wanted || holder?.sha1 === mwSha1Base36(revision.wikitext.trimEnd())) {
+      await stamp(job, revision, holder.revid);
+      return holder.revid;
+    }
+  }
+
+  const summary = summaryOf(revision, payload);
+  await importRevision(job, revision, payload, summary);
   // The import is the current revision only when nothing newer is in MediaWiki's history.
   const current = await currentRevision(job.title);
-  const holdsText = current !== null && current.sha1 === mwSha1Base36(revision.wikitext);
+  const holdsText = current !== null && current.sha1 === wanted;
   const revid = holdsText ? current.revid : await pushAsEdit(job.title, revision, summary, current);
   await stamp(job, revision, revid);
   return revid;

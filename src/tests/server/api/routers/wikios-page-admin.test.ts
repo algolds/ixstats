@@ -829,10 +829,9 @@ describe("the mirror outbox (plan 407)", () => {
   it("a move queues a job for the page and one for its talk page, each tied to its log row", async () => {
     await as(memberCtx()).movePage({ from: "Old name", to: "New name" });
 
-    expect(jobs().map((job) => `${job.kind}:${job.title}->${(job.payload as { to: string }).to}`)).toEqual([
-      "move:Old name->New name",
-      "move:Talk:Old name->Talk:New name",
-    ]);
+    expect(
+      jobs().map((job) => `${job.kind}:${job.title}->${(job.payload as { to: string }).to}`)
+    ).toEqual(["move:Old name->New name", "move:Talk:Old name->Talk:New name"]);
     const logIds = tables.wikiLog.rows.map((row) => row.id);
     expect(jobs().map((job) => job.logId)).toEqual(logIds);
     expect(jobs().every((job) => job.state === "pending" && job.source === "ixwiki")).toBe(true);
@@ -842,7 +841,9 @@ describe("the mirror outbox (plan 407)", () => {
     await as(sysopCtx()).deletePage({ title: "Old name", reason: "spam" });
     await as(sysopCtx()).undeletePage({ title: "Old name", reason: "oops" });
 
-    expect(jobs().map((job) => ({ kind: job.kind, title: job.title, payload: job.payload }))).toEqual([
+    expect(
+      jobs().map((job) => ({ kind: job.kind, title: job.title, payload: job.payload }))
+    ).toEqual([
       { kind: "delete", title: "Old name", payload: { reason: "spam" } },
       { kind: "undelete", title: "Old name", payload: { reason: "oops" } },
     ]);

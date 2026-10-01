@@ -36,17 +36,25 @@ const moveJob = (over: object = {}) =>
 const callsTo = (action: string): RecordedRequest[] =>
   wiki.calls().filter((request) => request.params.action === action);
 
-/** `action=query&prop=info` answers per title: which pages exist. */
-function pagesExist(existing: string[]) {
-  wiki.on("query", ({ params }) => ({
-    query: {
-      pages: [
-        existing.includes(params.titles ?? "")
-          ? { title: params.titles, pageid: 1 }
-          : { title: params.titles, missing: true },
-      ],
-    },
-  }));
+/**
+ * `action=query&prop=info` answers per title: which pages exist, and which titles are redirects (title -> target;
+ * the call follows them only when it asks for `redirects`).
+ */
+function pagesExist(existing: string[], redirects: Record<string, string> = {}) {
+  wiki.on("query", ({ params }) => {
+    const title = params.titles ?? "";
+    const target = redirects[title];
+    if (target && params.redirects) {
+      return {
+        query: { redirects: [{ from: title, to: target }], pages: [{ title: target, pageid: 2 }] },
+      };
+    }
+    return {
+      query: {
+        pages: [existing.includes(title) ? { title, pageid: 1 } : { title, missing: true }],
+      },
+    };
+  });
 }
 
 const ok = () => ({ ok: true });
@@ -78,9 +86,10 @@ describe("move", () => {
       from: "Old name",
       to: "New name",
       reason: "tidy up",
-      movetalk: "0",
       format: "json",
     });
+    // MediaWiki reads a flag as set when its parameter is present, even as "0": neither is sent
+    expect(call?.params.movetalk).toBeUndefined();
     expect(call?.params.noredirect).toBeUndefined();
     expect(call?.params.token).toBe("csrf-token+\\x");
     expect(call?.order.at(-1)).toBe("token");
@@ -99,6 +108,20 @@ describe("move", () => {
     pagesExist(["New name"]);
 
     await expect(runPageJob(moveJob())).resolves.toBeUndefined();
+  });
+
+  it("is done when the old title is the redirect the move left, and the destination is there", async () => {
+    wiki.on("move", refuse("articleexists"));
+    pagesExist(["Old name", "New name"], { "Old name": "New name" });
+
+    await expect(runPageJob(moveJob())).resolves.toBeUndefined();
+  });
+
+  it("fails when the old title is a redirect to some other page", async () => {
+    wiki.on("move", refuse("articleexists"));
+    pagesExist(["Old name", "New name", "Elsewhere"], { "Old name": "Elsewhere" });
+
+    await expect(runPageJob(moveJob())).rejects.toThrow(/articleexists/);
   });
 
   it("is done when MediaWiki says the title is already its own destination", async () => {
