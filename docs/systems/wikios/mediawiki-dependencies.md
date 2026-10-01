@@ -19,7 +19,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `m
 
 **One config object (plan 415, v1 decision D14).** The wiki's host, its endpoints and its name are read from the environment
 once, in `src/lib/wiki-os/config.ts` (`wikiosConfig`, frozen). `NEXT_PUBLIC_MEDIAWIKI_URL` is the public origin (default
-`https://ixwiki.com`, spelled nowhere else); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
+`https://ixwiki.com`, spelled once, there; plan 407's three files still carry their own, see "The literals that remain"); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
 IxWiki's MediaWiki uses (`mediaWikiApiUrl({ internal: true })`, `getMediaWikiApiUrl("ixwiki")`); a URL a browser follows is built
 from the public origin (`mediaWikiOrigin()`, `publicArticleUrl(title)`, `mediaWikiImageUrl(path)`). A link detector builds its regular
 expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(url)`, `wikiTitleFromArticleUrl(url)`).
@@ -244,7 +244,8 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 ```bash
 grep -rn "getMediaWikiApiUrl\|mediaWikiApiUrl\|api\.php" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
-grep -rlE "DEFAULT_MEDIAWIKI_URL|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI|IXWIKI_LOCAL_PATH" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
+grep -rlE "mediaWikiOrigin|mediaWikiApiUrl|mediaWikiImageUrl|publicArticleUrl|isMediaWikiUrl|mediaWikiHostPattern|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
+grep -rn "ixwiki\.com" src --include=*.ts --include=*.tsx | grep -v "^src/tests"   # the literals that remain: see "The literals that remain"
 bun run test -- src/tests/architecture/mediawiki-dependencies-doc.test.ts --maxWorkers=1
 ```
 

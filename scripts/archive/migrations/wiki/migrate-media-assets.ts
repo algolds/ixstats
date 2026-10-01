@@ -15,7 +15,7 @@ import {
   closeWikiBridge,
 } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { MediaAssetService } from "../../src/lib/wiki-os/core/media-asset-service";
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "../../src/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
 
 const prisma = new PrismaClient();
@@ -45,7 +45,7 @@ async function fetchMediaFromLiveDb(limit: number): Promise<MediaRecord[]> {
   return (rows || []).map((r: mysql.RowDataPacket) => {
     const name = String(r.img_name);
     const { fullPath } = MediaAssetService.getMd5ShardPath(name);
-    const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
+    const base = mediaWikiOrigin();
     return {
       name,
       url: `${base}/images/${fullPath}`,
@@ -62,7 +62,7 @@ async function fetchMediaFromLiveDb(limit: number): Promise<MediaRecord[]> {
 async function streamMediaFromHttpApi(
   limit: number,
   isDryRun: boolean,
-  baseUrl = DEFAULT_MEDIAWIKI_URL
+  baseUrl = mediaWikiOrigin()
 ): Promise<number> {
   const apiUrl = `${baseUrl.replace(/\/$/, "")}/api.php`;
   console.log(`🌐 Connecting to MediaWiki Action API at ${apiUrl}...`);
