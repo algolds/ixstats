@@ -34,7 +34,7 @@ export interface Target {
   /**
    * What the function is allowed that the rest are not, and why. `maxChars`: the most text it accepts (it
    * answers a longer one with a plain copy or a refusal of its own, so the run feeds it that much and no more).
-   * `scale`: a multiple of the size it is run at (an upload is read at up to ten times a page's 2 MB: 2.5 is 5 MB).
+   * `scale`: a multiple of the size it is run at (2.5 for an upload, read at up to ten times a page's 2 MB: 5 MB; 0.5 for a run that builds a DOM).
    * `slowFactor`: a multiple of the budget, for a function that is linear but whose answer is a record per
    * few characters (a text of nothing but `|` has a million parameters, and building them is the work).
    */
@@ -550,6 +550,7 @@ export const TARGETS: readonly Target[] = [
     {
       // A page of more than 500,000 characters is left as it is (the target above); this is the most it tidies.
       maxChars: 500_000,
+      scale: 0.5, // the depth guard parses the page once more than the DOM does, and at 200 KB the gate's heap (garbage of a hundred families) made that parse ten times slower and sometimes ran out of memory: half the size
       slowFactor: 20,
       why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
     }
@@ -789,6 +790,7 @@ export const TARGETS: readonly Target[] = [
     {
       // Not bounded by size in production (an article is sanitized whole, once per render); this is the most the run feeds it.
       maxChars: 200_000,
+      scale: 0.5, // as for slimArticleHtml above: the guard's parse, and the heap of the gate
       slowFactor: 20,
       why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (a second at the run's 200,000, two under contention): the DOM is the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
     }
@@ -814,6 +816,7 @@ export const TARGETS: readonly Target[] = [
     {
       // the 15 characters the driver adds keep it within DOM_SIZE_CEILING (500,000): a run over it is left alone, at once
       maxChars: 499_900,
+      scale: 0.5, // as for slimArticleHtml above
       slowFactor: 20,
       why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
     }
