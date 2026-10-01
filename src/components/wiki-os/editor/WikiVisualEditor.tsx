@@ -99,11 +99,17 @@ export function WikiVisualEditor({
   onSerializedWikitextRef.current = onSerializedWikitext;
   const refreshActiveFormats = fmt.refreshActiveFormats;
 
+  // The canvas reports its value once as it mounts (the document as it was opened) and again after every
+  // change: only a later report that differs from the opened document is an edit.
+  const openedWikitextRef = useRef<string | null>(null);
+
   const handleValueChange = useCallback(
     (nodes: Descendant[], _html: string, plainText: string) => {
-      wtRef.current = serializePlateToWikitext(nodes);
-      onSerializedWikitextRef.current?.(wtRef.current);
-      setIsDirty(true);
+      const serialized = serializePlateToWikitext(nodes);
+      wtRef.current = serialized;
+      onSerializedWikitextRef.current?.(serialized);
+      if (openedWikitextRef.current === null) openedWikitextRef.current = serialized.wikitext;
+      else if (serialized.wikitext !== openedWikitextRef.current) setIsDirty(true);
       setWordCount(plainText.split(/\s+/).filter(Boolean).length);
       refreshActiveFormats();
     },
