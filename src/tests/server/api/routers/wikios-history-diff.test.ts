@@ -44,8 +44,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(getArticleHistoryShadow).mockResolvedValue({
     revisions: [
-      { revid: "r2", user: "bob", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
-      { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
+      { revid: "r2", user: "bob", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
+      { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
     ],
     hasMore: false,
     fromShadow: true,
@@ -76,6 +76,39 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402)", () => {
     await expect(caller().getDiff({ torev: "r2" })).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
       message: "Revision text has not been imported yet.",
+    });
+  });
+});
+
+describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
+  it("asks the store for parked revisions and passes them on flagged", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        { revid: "9001", user: "carol", timestamp: "", comment: "x", size: 1, byteDelta: 0, minor: false, parked: true },
+        { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    const result = await caller().getHistory({ title: "Foo" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki", {
+      includeParked: true,
+    });
+    expect(result.revisions.map((r) => r.parked)).toEqual([true, false]);
+  });
+
+  it("a diff finds a parked revision in the history it reads, and names its predecessor", async () => {
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision("new"))
+      .mockResolvedValueOnce(revision("old"));
+
+    await caller().getDiff({ torev: "r2" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 100, undefined, "ixwiki", {
+      includeParked: true,
     });
   });
 });

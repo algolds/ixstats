@@ -3,7 +3,8 @@
  * Plan 403: ArticleRepository writes and reads one MediaWiki-canonical identity per title.
  */
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
+import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -41,7 +42,10 @@ jest.mock("~/server/db", () => {
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateDependents: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
@@ -316,6 +320,45 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
   });
 });
 
+describe("ArticleRepository.saveArticle after plan 406", () => {
+  const save = (wikitext: string) => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext });
+  };
+
+  it("does not scan the wikitext for links on the save path: the render fills the link graph", async () => {
+    const result = await save("[[Bar]] and [[Baz]]");
+
+    expect(LinkGraphService.syncArticleLinks).not.toHaveBeenCalled();
+    expect(result).not.toHaveProperty("extractedLinksCount");
+  });
+
+  it("marks the pages that transclude the saved page stale, after the transaction, only when its text changed", async () => {
+    await save("new text");
+    expect(invalidateDependents).toHaveBeenCalledTimes(1);
+    expect(invalidateDependents).toHaveBeenCalledWith("Foo", "ixwiki");
+
+    jest.mocked(invalidateDependents).mockClear();
+    mockCount.mockResolvedValue(1);
+    await save("same text");
+    expect(invalidateDependents).not.toHaveBeenCalled();
+  });
+
+  it("sizes the new revision against the page's current revision, never a parked one", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ byteSize: 3 });
+
+    await save("four");
+
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0]).toMatchObject({
+      where: { articleId: "a1", parked: false },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ byteSize: 4, byteDelta: 1 });
+  });
+});
+
 describe("ArticleRepository.findArticleForView (plan 404)", () => {
   const viewRow = (title: string, overrides: Record<string, unknown> = {}) => ({
     id: `id-${title}`,
@@ -345,6 +388,8 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
       "title",
     ]);
     expect(select.revisions).toMatchObject({ take: 1, orderBy: { createdAt: "desc" } });
+    // The last-modified time is the page's current revision's: a parked one is not that.
+    expect(select.revisions.where).toEqual({ parked: false });
     expect(select.categories.take).toBe(50);
     expect(head).toEqual({
       id: "id-Foo bar",
@@ -522,7 +567,7 @@ describe("ArticleRepository.getHistory", () => {
 
     expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
     expect(mockRevisionFindMany.mock.calls[0]?.[0]).toMatchObject({
-      where: { articleId: "id-Foo bar" },
+      where: { articleId: "id-Foo bar", parked: false },
       orderBy: { createdAt: "desc" },
       take: 10,
     });
@@ -534,13 +579,37 @@ describe("ArticleRepository.getHistory", () => {
   it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {
     mockFindMany.mockResolvedValue([articleRow("NATO")]);
     await ArticleRepository.getHistory("nato");
-    expect(mockRevisionFindMany.mock.calls[0]?.[0].where).toEqual({ articleId: "id-NATO" });
+    expect(mockRevisionFindMany.mock.calls[0]?.[0].where).toEqual({
+      articleId: "id-NATO",
+      parked: false,
+    });
 
     mockFindMany.mockResolvedValue([articleRow("NATO"), articleRow("Nato")]);
     mockFindFirst.mockResolvedValue(articleRow("NATO"));
     await ArticleRepository.getHistory("nAto");
     expect(mockFindFirst.mock.calls[0]?.[0].orderBy).toEqual({ updatedAt: "desc" });
+    expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({
+      articleId: "id-NATO",
+      parked: false,
+    });
+  });
+
+  it("leaves parked revisions out by default (the first entry is the page's current revision) and lists them, flagged, on request", async () => {
+    mockFindMany.mockResolvedValue([articleRow("NATO")]);
+    mockRevisionFindMany.mockResolvedValue([
+      { ...revision("id-NATO"), parked: true },
+      { ...revision("id-NATO"), parked: false },
+    ]);
+
+    await ArticleRepository.getHistory("nato");
+    expect(mockRevisionFindMany.mock.calls[0]?.[0].where).toEqual({
+      articleId: "id-NATO",
+      parked: false,
+    });
+
+    const history = await ArticleRepository.getHistory("nato", "ixwiki", 50, { includeParked: true });
     expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ articleId: "id-NATO" });
+    expect(history.map((r) => r.parked)).toEqual([true, false]);
   });
 
   it("is empty, without reading revisions, when the article does not exist", async () => {

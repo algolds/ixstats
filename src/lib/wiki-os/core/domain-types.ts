@@ -206,4 +206,6 @@ export interface WikiRevisionSummary {
   createdAt: Date;
   byteSize: number;
   byteDelta?: number;
+  /** A MediaWiki edit that was not made on top of the page's head: in the history, never the current text. */
+  parked: boolean;
 }

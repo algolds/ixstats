@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
-import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
 import {
@@ -27,7 +27,10 @@ import {
 } from "./fake-wiki-db";
 
 jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDbModule());
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateDependents: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
@@ -392,6 +395,45 @@ describe("the page's head only moves forward", () => {
     });
     expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
     expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
+  });
+
+  it("marks the pages that transclude a page stale when its head changes (plan 406)", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+
+    await importFixture();
+
+    expect(invalidateDependents).toHaveBeenCalledWith("Kingdom of Testia", "ixwiki");
+  });
+
+  it("does not count a parked revision as the head: a dump's head still replaces an older one (plan 406)", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+    // A MediaWiki edit that did not go live, dated after everything the dump holds.
+    seedRevision(seeded.id, {
+      mwRevId: 777,
+      wikitext: "A CONFLICTING EDIT",
+      createdAt: new Date("2030-01-01T00:00:00Z"),
+      parked: true,
+      parkReason: "conflict:5",
+    });
+
+    await importFixture();
+
+    expect(article("Kingdom of Testia").wikitext).toBe(KINGDOM_V2);
+  });
+
+  it("does count a newer revision that is not parked", async () => {
+    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
+    seedRevision(seeded.id, {
+      wikitext: "NEWER LOCAL EDIT",
+      createdAt: new Date("2030-01-01T00:00:00Z"),
+      parked: false,
+    });
+
+    await importFixture();
+
+    expect(article("Kingdom of Testia").wikitext).toBe("NEWER LOCAL EDIT");
   });
 
   it("leaves an existing protection alone and only protects an unprotected page", async () => {

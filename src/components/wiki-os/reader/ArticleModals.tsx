@@ -63,7 +63,13 @@ export function QuickHistoryModal({
                   </span>
                   {rev.minor && <span className="wikios-quick-modal-minor">m</span>}
                 </div>
-                {rev.comment && <div className="wikios-quick-modal-comment">{rev.comment}</div>}
+                {(rev.parked || rev.comment) && (
+                  <div className="wikios-quick-modal-comment">
+                    {rev.parked && "conflict — not live"}
+                    {rev.parked && rev.comment && " · "}
+                    {rev.comment}
+                  </div>
+                )}
               </div>
             );
           })}

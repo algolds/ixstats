@@ -352,3 +352,23 @@ export function enqueueRender(articleId: string, options: { background?: boolean
   failedUntil.delete(articleId);
   void startRender(articleId, options.background ? BACKGROUND : SAVE);
 }
+
+/**
+ * A page's text changed: every article that transcludes it (a template, a Lua module, another page)
+ * no longer matches what MediaWiki would render, so each is marked stale (`htmlSyncedAt = NULL`).
+ * Readers keep seeing the previous bundle until `renderStaleBatch` or a reader's own render replaces
+ * it. Best effort (a failure is logged, the save that called it already happened); resolves to the
+ * number of articles marked.
+ */
+export async function invalidateDependents(title: string, source = "ixwiki"): Promise<number> {
+  try {
+    return await db.$executeRaw`
+      UPDATE wiki_articles SET "htmlSyncedAt" = NULL
+      WHERE source = ${source}
+        AND "htmlSyncedAt" IS NOT NULL
+        AND id IN (SELECT "articleId" FROM wiki_template_links WHERE "templateTitle" = ${title})`;
+  } catch (error) {
+    console.warn(`[WikiOS:render] Marking the dependents of "${title}" stale failed:`, error);
+    return 0;
+  }
+}

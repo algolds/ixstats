@@ -187,7 +187,6 @@ export const wikiosEditingRouter = createTRPCRouter({
         success: true as const,
         title,
         revisionId: saveResult.revisionId,
-        extractedLinksCount: saveResult.extractedLinksCount,
       };
     }),
 

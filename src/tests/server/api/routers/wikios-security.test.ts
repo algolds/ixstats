@@ -36,7 +36,10 @@ jest.mock("~/lib/wiki-os/core", () => ({
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
   MediaAssetService: { registerAsset: jest.fn() },
 }));
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateDependents: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   __esModule: true,
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },

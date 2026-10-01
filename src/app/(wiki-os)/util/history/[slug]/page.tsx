@@ -29,6 +29,7 @@ export default function HistoryPage() {
     minor: r.minor || false,
     byteSize: r.size || 0,
     byteDelta: r.byteDelta,
+    parked: r.parked,
     createdAt: r.timestamp || new Date().toISOString(),
   }));
 

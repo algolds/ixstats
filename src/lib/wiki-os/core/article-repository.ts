@@ -31,7 +31,7 @@ import {
 } from "../xml/revision-plan";
 import { mwSha1Base36 } from "../xml/sha1";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
-import { enqueueRender } from "../services/render-service";
+import { enqueueRender, invalidateDependents } from "../services/render-service";
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
@@ -77,7 +77,13 @@ const VIEW_SELECT = {
   title: true,
   status: true,
   htmlSyncedAt: true,
-  revisions: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
+  // The page's current revision: a parked one (a MediaWiki edit that did not go live) is not its latest.
+  revisions: {
+    where: { parked: false },
+    orderBy: { createdAt: "desc" },
+    take: 1,
+    select: { createdAt: true },
+  },
   categories: {
     orderBy: { category: { name: "asc" } },
     take: MAX_VIEW_CATEGORIES,
@@ -302,6 +308,8 @@ export interface ImportedHead {
   /** Canonical title of the redirect target, or null when the head is not a redirect. */
   redirectTargetSlug: string | null;
   redirectTargetFragment: string | null;
+  /** The lead image the head's wikitext names; left as it is when omitted (a dump import does not derive one). */
+  leadImageUrl?: string | null;
 }
 
 export interface ImportedRestriction {
@@ -351,6 +359,8 @@ const IMPORT_BATCH = 500;
 const ALL_ROWS = 2_147_483_647;
 
 type ImportClient = Prisma.TransactionClient;
+/** A stored revision as the plan sees it, with whether it is a parked one (never part of the page's head). */
+type StoredRevisionRow = ExistingRevisionRow & { parked?: boolean };
 type ExistingArticle = { id: string; mwPageId: number | null; protectionLevel: string };
 
 /**
@@ -387,8 +397,15 @@ async function loadExistingRows(
   client: ImportClient,
   input: ImportPageInput,
   articleId: string | null
-): Promise<{ rows: ExistingRevisionRow[]; hashed: Map<string, string> }> {
-  const select = { id: true, articleId: true, mwRevId: true, sha1: true, createdAt: true } as const;
+): Promise<{ rows: StoredRevisionRow[]; hashed: Map<string, string> }> {
+  const select = {
+    id: true,
+    articleId: true,
+    mwRevId: true,
+    sha1: true,
+    createdAt: true,
+    parked: true,
+  } as const;
   const revIds = input.revisions.flatMap((r) => (r.mwRevId === null ? [] : [r.mwRevId]));
   const rows = articleId
     ? await client.wikiRevision.findMany({ where: { articleId }, select, take: ALL_ROWS })
@@ -439,6 +456,7 @@ function headColumns(input: ImportPageInput, head: ImportedHead) {
     redirectTargetFragment: head.redirectTargetFragment,
     namespace: input.namespace,
     namespacePrefix: input.namespacePrefix,
+    ...(head.leadImageUrl === undefined ? {} : { leadImageUrl: head.leadImageUrl }),
   };
 }
 
@@ -563,9 +581,10 @@ async function importInto(
   const { rows: existing, hashed } = await loadExistingRows(client, input, article?.id ?? null);
   const plan = planRevisionImport(article?.id ?? null, existing, input.revisions);
 
-  // The dump's head replaces the page's head only when it is newer than every revision stored.
+  // The dump's head replaces the page's head only when it is newer than every revision stored
+  // (a parked revision is not the head, so it does not count).
   const previousHeadAt = existing
-    .filter((row) => row.articleId === article?.id)
+    .filter((row) => row.articleId === article?.id && row.parked !== true)
     .reduce<Date | null>(
       (latest, row) => (!latest || row.createdAt > latest ? row.createdAt : latest),
       null
@@ -662,7 +681,6 @@ export class ArticleRepository {
   ): Promise<{
     article: WikiArticleEntity;
     revisionId: RevisionId;
-    extractedLinksCount: number;
   }> {
     const source = input.source || "ixwiki";
     const canon = canonicalizeTitle(input.title || input.slug, { source });
@@ -747,7 +765,7 @@ export class ArticleRepository {
       // 2. Create append-only revision, sized against the previous one
       const byteSize = Buffer.byteLength(wikitext, "utf8");
       const previous = await tx.wikiRevision.findFirst({
-        where: { articleId: article.id },
+        where: { articleId: article.id, parked: false },
         orderBy: { createdAt: "desc" },
         select: { byteSize: true },
       });
@@ -778,23 +796,15 @@ export class ArticleRepository {
       return { article, revision, textUnchanged };
     });
 
-    // 3. Render the new text off the read path (the commit above marked the old view stale)
-    if (!result.textUnchanged) enqueueRender(result.article.id);
-
-    // 4. Update the link graph outside transaction for performance
-    let linksCount = 0;
-    try {
-      linksCount = await LinkGraphService.syncArticleLinks(
-        result.article.id,
-        wikitext,
-        providedHtml ?? "",
-        source
-      );
-    } catch (linkErr) {
-      console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
+    // 3. Render the new text off the read path (the commit above marked the old view stale). The render
+    // also fills the link graph, the template and image links and the categories (render-service.ts);
+    // pages that transclude this one are stale now too.
+    if (!result.textUnchanged) {
+      enqueueRender(result.article.id);
+      void invalidateDependents(title, source);
     }
 
-    // 5. Auto-register any new image references in PostgreSQL wiki_assets
+    // 4. Auto-register any new image references in PostgreSQL wiki_assets
     void MediaAssetService.processContentImages(wikitext || providedHtml || "").catch((err) => {
       console.warn("[ArticleRepository] Media asset processing failed:", err);
     });
@@ -802,7 +812,6 @@ export class ArticleRepository {
     return {
       article: toSavedEntity(result.article, fields, providedHtml, authorId),
       revisionId: toRevisionId(result.revision.id),
-      extractedLinksCount: linksCount,
     };
   }
 
@@ -824,7 +833,8 @@ export class ArticleRepository {
       // The new head is stale until rendered: render it off the read path, as a backlog (an editor's
       // save renders before it).
       enqueueRender(articleId, { background: true });
-      // Link graph outside the transaction, best effort, exactly as saveArticle does it.
+      void invalidateDependents(input.title, input.source);
+      // Link graph outside the transaction, best effort; the render replaces it with MediaWiki's own.
       try {
         await LinkGraphService.syncArticleLinks(articleId, head.wikitext, "", input.source);
       } catch (linkErr) {
@@ -860,17 +870,20 @@ export class ArticleRepository {
   /**
    * Get full chronological revision history for an article. The article is resolved exactly as
    * `findBySlug` resolves it, so the history of one page never merges in a case-variant row's.
+   * Parked revisions (MediaWiki edits that did not go live) are left out, so the first entry is the
+   * page's current revision; a history list asks for them with `includeParked` and gets them flagged.
    */
   static async getHistory(
     slug: string,
     source = "ixwiki",
-    limit = 50
+    limit = 50,
+    { includeParked = false }: { includeParked?: boolean } = {}
   ): Promise<WikiRevisionSummary[]> {
     const article = await this.lookupArticle(slug, source);
     if (!article) return [];
 
     const revisions = await db.wikiRevision.findMany({
-      where: { articleId: article.id },
+      where: { articleId: article.id, ...(includeParked ? {} : { parked: false }) },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: {
@@ -886,6 +899,7 @@ export class ArticleRepository {
         byteSize: true,
         byteDelta: true,
         format: true,
+        parked: true,
       },
     });
 
@@ -901,6 +915,7 @@ export class ArticleRepository {
       createdAt: r.createdAt,
       byteSize: r.byteSize || Buffer.byteLength(r.wikitext || "", "utf8"),
       byteDelta: r.byteDelta ?? 0,
+      parked: r.parked,
     }));
   }
 }
