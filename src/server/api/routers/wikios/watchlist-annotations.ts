@@ -9,6 +9,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { requireNotBlocked } from "~/lib/wiki-os/permissions";
+import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 
 import { db } from "~/server/db";
 
@@ -46,9 +47,16 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           });
         }
         const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
+        const contentType = stashContentTypeForTitle(input.pageTitle);
         const item = await db.stashItem.upsert({
-          where: { stashId_pageTitle: { stashId: defaultStash.id, pageTitle: input.pageTitle } },
-          create: { stashId: defaultStash.id, pageTitle: input.pageTitle, pageSlug },
+          where: {
+            stashId_contentType_pageTitle: {
+              stashId: defaultStash.id,
+              contentType,
+              pageTitle: input.pageTitle,
+            },
+          },
+          create: { stashId: defaultStash.id, pageTitle: input.pageTitle, pageSlug, contentType },
           update: {},
         });
         targetItemId = item.id;
@@ -94,7 +102,11 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const annotations = await db.stashAnnotation.findMany({
         where: {
-          item: { pageTitle: input.pageTitle, stash: { userId: { in: requireWikiUserIds(ctx) } } },
+          item: {
+            pageTitle: input.pageTitle,
+            contentType: stashContentTypeForTitle(input.pageTitle),
+            stash: { userId: { in: requireWikiUserIds(ctx) } },
+          },
         },
         orderBy: { createdAt: "asc" },
       });
@@ -149,7 +161,13 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         });
       }
       await ctx.db.stashItem.upsert({
-        where: { stashId_pageTitle: { stashId: watchlistStash.id, pageTitle: input.pageTitle } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: watchlistStash.id,
+            contentType: "wiki",
+            pageTitle: input.pageTitle,
+          },
+        },
         create: {
           stashId: watchlistStash.id,
           pageTitle: input.pageTitle,
@@ -193,7 +211,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (watchlistStash) {
         await ctx.db.stashItem.deleteMany({
-          where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
+          where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
         });
       }
 
@@ -347,7 +365,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (!watchlistStash) return false;
       const item = await ctx.db.stashItem.findFirst({
-        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
+        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
       });
       return !!item;
     }),

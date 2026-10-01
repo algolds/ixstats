@@ -225,9 +225,10 @@ export default function StashesPage() {
     );
   }, [allThreads, query]);
 
-  const handleUnstash = (pageTitle: string) => {
+  const handleUnstash = (pageTitle: string, contentType?: string) => {
     unstashMutation.mutate({
       pageTitle,
+      contentType,
       stashId: activeStash?.id,
     });
   };

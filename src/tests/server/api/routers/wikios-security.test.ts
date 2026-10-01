@@ -599,7 +599,13 @@ describe("S5: forum stashThread / unstashThread only touch the caller's own stas
     expect(result).toEqual({ success: true, stashId: "mine" });
     expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { stashId_pageTitle: { stashId: "mine", pageTitle: "forum:thread:7" } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: "mine",
+            contentType: "forum_thread",
+            pageTitle: "forum:thread:7",
+          },
+        },
       })
     );
   });

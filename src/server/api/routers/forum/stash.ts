@@ -53,7 +53,13 @@ export const forumStashRouter = createTRPCRouter({
       const pageSlug = `/forum/thread/${input.threadId}`;
 
       await db.stashItem.upsert({
-        where: { stashId_pageTitle: { stashId: targetStashId, pageTitle } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: targetStashId,
+            contentType: "forum_thread",
+            pageTitle,
+          },
+        },
         create: {
           stashId: targetStashId,
           pageTitle,

@@ -356,7 +356,7 @@ model StashItem {
   stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
   annotations StashAnnotation[]
 
-  @@unique([stashId, pageTitle])
+  @@unique([stashId, contentType, pageTitle])
   @@index([stashId])
   @@index([pageTitle])
   @@index([articleId])
