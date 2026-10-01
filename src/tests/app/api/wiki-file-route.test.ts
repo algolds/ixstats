@@ -156,6 +156,14 @@ describe("a staged SVG", () => {
     expect(await body(response)).toEqual(SVG);
   });
 
+  it("is kept by no shared cache (review minor 7), unlike a raster", async () => {
+    await upload("Flag.svg", SVG, "image/svg+xml");
+
+    const response = await get(["Flag.svg"], { "Sec-Fetch-Dest": "image" });
+
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
   it.each([
     ["a navigation", { "Sec-Fetch-Dest": "document" }],
     ["a frame", { "Sec-Fetch-Dest": "iframe" }],

@@ -32,6 +32,8 @@ export const dynamic = "force-dynamic";
 
 /** A staged file may be replaced by a new version in minutes, so it is revalidated rather than cached for a day. */
 const CACHE_CONTROL = "public, max-age=300";
+/** A staged SVG is the one document an upload may be: no shared cache (an edge, a proxy) keeps a copy that may be deleted next. */
+const SVG_CACHE_CONTROL = "private, no-store";
 /** The types an upload can be (core/file-sniff.ts): anything else in a row is not served. */
 const IMAGE_TYPES: ReadonlySet<string> = new Set([
   "image/png",
@@ -97,7 +99,7 @@ export async function GET(
     ? imageResponseHeaders(asset.mimeType, {
         headers: request.headers,
         fileName: asset.filename,
-        cacheControl: CACHE_CONTROL,
+        cacheControl: asset.mimeType === "image/svg+xml" ? SVG_CACHE_CONTROL : CACHE_CONTROL,
       })
     : {
         ...MEDIA_CORS_HEADERS,
