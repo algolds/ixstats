@@ -723,9 +723,10 @@ Motion/Transparency, Increase Contrast and accessibility. When unsure, match v2.
 | `material-acrylic` · `FacetMaterial material="acrylic" glow` | `.dynamic-island-shell`, `DynamicIslandEffects` | white 85% / obsidian 88%, 28px / 190% (32px / 200% on hover, focus-within); `data-expanded` = the v2 expanded sheet (white 94→89% / obsidian 94→96% top-to-bottom, 40px / 210%, brightness 102 / 104%, top lip + inner ring + bottom shade, deepest shadow); inset rim + bottom shade, deep shadow; `AcrylicGlow` (three layers in the tint, or the v2 blue / indigo / cyan with `facet-acrylic-brand`) + `Refraction edges="all"` | Halo island and nav tray, map island, sidebar, tab bar (all `facet-acrylic-brand`) |
 | `material-thin` / `-regular` / `-thick` | — (Facet 3) | unchanged (§5) | Toolbars, popovers, menus, map panels |
 
-Reduce Transparency and Increase Contrast turn `material-hero` into the opaque `surface` (tint border kept) and
-`material-acrylic` into `surface-elevated`. Glass never nests: inside a glass card use opaque roles or
-`FacetCard variant="inset"`.
+Reduce Transparency and Increase Contrast turn `material-hero` into the opaque `surface` (tint border kept; under
+Increase Contrast the border is the full-strength accent) and `material-acrylic` into `surface-elevated` (Increase
+Contrast: `separator-opaque` border). Glass never nests: inside a glass card use opaque roles or
+`FacetCard variant="inset"` — the hero-tier glass primitives enforce it (§16.8).
 
 ### 16.3 Colour
 
@@ -760,7 +761,8 @@ Reduce Transparency and Increase Contrast turn `material-hero` into the opaque `
 ### 16.5 Gradients, glows and watermarks
 
 The sanctioned gradient paints — the only ones feature code uses — are the identity sheet's
-(`styles/facet/identity.css`): `material-hero`, `facet-gold`, `facet-primary`, `facet-glow`, `facet-tint-glow`,
+(`styles/facet/identity.css`): `material-hero`, `material-acrylic` (its expanded sheet), `facet-gold`, `facet-primary`,
+`facet-glow`, `facet-tint-glow`,
 `facet-acrylic-glow`, `facet-refraction-line`, `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-jewel`; card
 art's `card-art-linear-*`; and image scrims (raw gradient utilities on black/white/transparent/role stops). Ad-hoc
 palette stops (`from-amber-500`…) are forbidden outside the card-art and logo-artwork files.
@@ -782,8 +784,10 @@ exists in the identity sheet, and (d) no raw `backdrop-blur-*`/`backdrop-saturat
 `backdropFilter` in converted feature code (blur comes from the materials; the MyCountry drill sheet, the rare-card
 reveal and the progressive-blur primitive are allowlisted). No `dark:`, no hex classes, ≥ 12px text, no
 `transition-all`, no arbitrary z stay. `css-layering`: the identity sheet is layered, and its material/identity
-utilities and classes set no position, z-index, radius, margin or letter-spacing. `token-contrast`: §16.3. Primitive
-behaviour: `src/tests/components/ui/facet-31-identity.test.tsx`.
+utilities and classes set no position, z-index, radius, margin or letter-spacing. `token-contrast`: §16.3 and the
+§16.8 accent / header-strip / watermark pairs. `identity-cascade`: compiles the identity sheet with Tailwind and checks
+the rims out-specify every surface border. `facet-guards` (3.1 HIG): converted code uses only `SANCTIONED_TEXTURES`.
+Primitive behaviour: `src/tests/components/ui/facet-31-identity.test.tsx` and `facet-31-hig.test.tsx`.
 
 ### 16.7 Rollout
 
@@ -791,3 +795,71 @@ The foundation (tokens, `styles/facet/identity.css`, primitives, guards, this se
 guide and the materials-lab showcase) shipped 2026-10-01 and `FACET_VERSION` is 3.1. App agents adopt it next:
 MyCountry shell, dashboard and country profile, passport/vault/achievements and each app's hero card; Halo and the
 navigation shell take `material-acrylic`; WikiOS restores its reader hero modes.
+
+### 16.8 HIG conformance (decided 2026-10-01)
+
+The owner: "fix and ensure all of the brought back design is also adjusted to fit new HIG design." The 3.1 identity
+keeps its v2 look; these rules make every identity primitive behave like an HIG material or control. Where a v2 value
+had to move, it is the smallest change that passes the guard.
+
+**Primitive gaps closed (new props replace the app workarounds — reference §0 lists the migration).**
+
+| API | Does |
+|---|---|
+| `accent?: SystemColor \| "tint" \| "gold"` on `FacetCard`, `MotionFacetCard`, `CutoutCard`, `CutoutCardHeader`, `FacetMaterial` | Sets the scoped `--facet-accent` (inline, `data-accent`). Every identity paint that mixed `--tint` reads `var(--facet-accent, var(--tint))`: the `material-hero` wash, tinted border and shadows, `facet-glow`, `TintGlow`, `AcrylicGlow`, `facet-tint-rim`, the CutoutCard header strip (`bg-facet-accent-fill`) and icon (`text-facet-accent`). `--tint` is untouched, so links, focus rings and controls inside keep the app tint. Gold is `--gold-accent` (amber-700 light — the gold stops are < 3:1 on white — amber-500 dark). Utilities: `text-facet-accent`, `text-facet-accent-ink`, `bg-facet-accent-fill`, `border-facet-accent/30`. Non-primitives: `facetAccentStyle()` (`~/lib/design/identity`). Not `--accent`: that name is shadcn's (`fill-3`) and the achievement backdrop's. |
+| `retint?: boolean` (with `accent`) | Adds `facet-retint`: the subtree's `--tint`, `--tint-hover`, `--tint-fill`, `--on-tint` follow the accent (the v2 per-widget hue on badges, links, `text-tint`). `--tint` is the accent's ink (80% toward `label`): a raw system colour as 12px text on its own fill is 3.9:1, the ink ≥ 4.5:1 (tinted badges on every background role, links, `on-tint`). No-op for `accent="tint"` (a self-reference). |
+| `rim?: "gold" \| "tint"` on `FacetCard`, `CutoutCard` | `facet-gold-rim` / `facet-tint-rim`. The rims put their declarations on `&[class]`, so they beat `border-separator`, `border-<hue>` and the `material-hero` / `material-acrylic` borders whatever order Tailwind emits them in (it sorts by property, not intent — the cause of the lost gold rim). The one sanctioned exception to "a utility always wins": don't pair a rim with another border-colour utility. `variant="inset"` gains a border for the rim. |
+| `CutoutCardHeader as?: "span" \| "div" \| "h2" \| "h3" \| "h4"` | The title element (default `span`): the widget title joins the document outline; the icon and `trailing` stay outside the heading. |
+| `chevron` in `SANCTIONED_TEXTURES`; `TEXTURE_MAX_OPACITY` 0.05 | The v2 Builder / national-identity panel texture. `TextureOverlay` clamps every sanctioned texture to 0.05; converted code may use no other texture (card art excepted). |
+| `material-acrylic` in the sanctioned gradient classes | Its expanded Halo sheet paints the v2 top-to-bottom fill. |
+
+**Accessibility settings.**
+
+- *Reduce Motion*: no press, lift, image zoom, blur-in stagger, watermark scale or action-region slide (colour,
+  shadow and opacity feedback stay, 150ms). Unchanged from 3.1, now covered for every primitive.
+- *Reduce Transparency* (HIG: remove translucency and blur, not colour): `material-hero` → opaque `surface`,
+  `material-acrylic` → `surface-elevated`, no backdrop blur; the blurred / translucent decorative layers are removed —
+  `TintGlow`, the `AcrylicGlow` underlay, the achievement aurora, radiance and foil. The colour identity stays in the
+  opaque rims, tinted borders, the tinted section shadow `facet-glow` (outside the card, never under text) and the
+  header strips. The OS query and the in-app `data-transparency="reduced"` behave the same.
+- *Increase Contrast*: everything Reduce Transparency does (opaque, no washes or glows under text), plus full-strength
+  edges — the `material-hero` border becomes the accent itself (≥ 3:1 on every background), `material-acrylic` takes
+  `separator-opaque`, `facet-gold-rim` becomes `--gold-rim-edge`, `facet-tint-rim` the accent — and the flag watermark
+  stays at rest (no brighten). `prefers-contrast: more` and `data-contrast="more"` behave the same.
+- *Dark / light parity*: every rule above is token-driven and applies in both appearances.
+
+**Contrast** (`token-contrast.test.ts`, ≥ 4.5:1 text, ≥ 3:1 UI; minimums across both appearances and Increase
+Contrast on/off): `label` / `label-secondary` on the glass hero washed and glowing in every accent (all thirteen
+system colours and gold) 11.4 / 4.9; on the header strip (accent at the `tint-fill` strength) over the card surface
+10.7 / 4.6 — every accent and every app tint; the accent icon on its strip 3.9; `text-facet-accent-ink` on it 5.4;
+`accent="gold"` as text 5.0; under `retint` the ink as a tinted badge on every background role ≥ 4.5. Gold button
+text 5.95 and hue badge inks are unchanged (§16.3).
+
+**Flag watermark.** v2 strength over a white (dark) or black (light) flag region took `label-secondary` to 3.0–4.2:1.
+Instead of dimming the watermark, a tone filter caps the flag's extremes — `--flag-watermark-tone`: `contrast(0.7)`
+light (black reads as `#262626`), `brightness(0.6)` dark (white reads as `#999`) — and the v2 opacities (.14 / .18 →
+.25 on hover) stay. Worst case over the glass hero or the card surface: `label` 10.7, `label-secondary` 4.5. The
+watermark belongs on a hero card (glass or `surface`), not on `surface-secondary`.
+
+**Hit targets, focus, keyboard.** Pressable `FacetCard` and `CutoutCard` (`onClick`) are `role="button"`, focusable,
+activate on Enter/Space, keep a 44pt minimum height on coarse pointers (`pointer-coarse:min-h-11`) and draw the 2px
+tint focus outline at a 2px offset — an outline outside the border box, so the card's own `overflow-hidden`, glow
+clip or cutout notch never clips it (don't wrap pressable cards in a clipping container without padding). A pressable
+card holds no other interactive content (no nested buttons in a `role="button"`); use a stretched link with
+`interactive` instead.
+
+**Materials.** Glass is for chrome and the hero tier only and never nests: `FacetCard variant="glass"`,
+`CutoutCard variant="glass"` and `FacetMaterial material="hero" | "acrylic"` provide `GlassSurfaceContext`; a
+hero-tier glass primitive inside one renders the opaque surface (`data-nested-glass`, a development warning). Chrome
+glass (thin/regular/thick) does not provide it — popovers and sheets portal out of their trigger's tree. Labels on
+the materials use the label roles (`text-label` is set by the materials); every material keeps its separator/rim.
+
+**Typography.** The heavy headings scale with `--text-scale` like every text style (Dynamic Type 90–130%); the 800
+cut is declared (`Schibsted Grotesk-800`), and a missing cut falls back to the nearest declared weight (700). No text
+style is below 12px. `font-data` is for figures (stat values and deltas, counts, IDs, numeric cells); labels, eyebrows
+and words stay in the UI face (`Stat` labels, non-numeric `Badge`s and `FacetRow` values do).
+
+**Motion.** `facet-press` and `facet-lift` transition over `--duration-fast` (150ms, `DURATION_FAST`) with
+`ease-out-facet` (v2 lift was 200ms). Spring-driven parts use the named springs (`springGentle` for the stagger and
+the action region). The 700ms watermark brighten and image zoom are the sanctioned v2 ambient timings for decoration
+(under Reduce Motion the zoom and the watermark scale are off; the brighten, an opacity change, stays).

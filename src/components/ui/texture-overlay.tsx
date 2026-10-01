@@ -23,12 +23,26 @@ export type TextureType =
   | "none";
 
 /**
- * The Facet 3 textures (§0 decision 2, §5): decorative only (empty states, heroes, wiki reading
- * surface), opacity ≤ 0.05, never on data. The other `TextureType` values still render until the
- * Phase 4 app migrations remove them; their CSS lives with the lab stylesheet.
+ * The Facet textures (§0 decision 2, §5; 3.1 §16.5): decorative only (empty states, heroes, wiki
+ * reading surface, Builder panels), opacity ≤ `TEXTURE_MAX_OPACITY`, never on data. `chevron` is
+ * the v2 (c5c6b382) Builder / national-identity panel texture, restored by Facet 3.1. The other
+ * `TextureType` values are card art (Vault) or pending removal; the guard
+ * (facet-guards.test.ts) keeps them out of converted feature code.
  */
-export const SANCTIONED_TEXTURES = ["dots", "grid", "paperGrain"] as const satisfies readonly TextureType[];
+export const SANCTIONED_TEXTURES = [
+  "dots",
+  "grid",
+  "paperGrain",
+  "chevron",
+] as const satisfies readonly TextureType[];
 export type SanctionedTexture = (typeof SANCTIONED_TEXTURES)[number];
+
+/** The §16 cap for a sanctioned texture; `TextureOverlay` clamps sanctioned textures to it. */
+export const TEXTURE_MAX_OPACITY = 0.05;
+
+export function isSanctionedTexture(texture: TextureType): texture is SanctionedTexture {
+  return (SANCTIONED_TEXTURES as readonly TextureType[]).includes(texture);
+}
 
 interface TextureOverlayProps {
   texture: TextureType;
@@ -85,7 +99,11 @@ const defaultOpacities: Record<TextureType, number> = {
 export function TextureOverlay({ texture, opacity, className }: TextureOverlayProps) {
   if (texture === "none") return null;
 
-  const finalOpacity = opacity ?? defaultOpacities[texture];
+  const requested = opacity ?? defaultOpacities[texture];
+  // Sanctioned textures are decoration under content: never above the §16 cap (spec §16.8).
+  const finalOpacity = isSanctionedTexture(texture)
+    ? Math.min(requested, TEXTURE_MAX_OPACITY)
+    : requested;
   const pattern = texturePatterns[texture];
 
   return (

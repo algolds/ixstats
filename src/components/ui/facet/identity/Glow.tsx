@@ -8,6 +8,12 @@ import { cn } from "~/lib/utils/cn";
  * Each renders `aria-hidden`, has no pointer events, is not printed, and is placed with utilities
  * (the paint lives in styles/facet/identity.css). Put them as the first children of a
  * `relative overflow-hidden` surface and keep the content `relative` (FacetCard's parts are).
+ *
+ * HIG (spec §16.8): the glow blob and the acrylic underlay are blurred translucent paint, so Reduce
+ * Transparency and Increase Contrast remove them (OS setting or the in-app `data-transparency` /
+ * `data-contrast` switches); the colour identity stays in the opaque rims, borders, the tinted
+ * section shadow (`facet-glow`) and header strips. Both follow the nearest `accent`
+ * (`--facet-accent`) before the app tint.
  */
 
 export type TintGlowPosition =
@@ -35,8 +41,9 @@ export interface TintGlowProps {
   /** `md` is the v2 160px blob. @default "md" */
   size?: keyof typeof GLOW_SIZE;
   /**
-   * Glow colour: any CSS colour, e.g. `var(--color-green)` for a domain, or a data colour. Default
-   * the app tint (`--tint`). Sports surfaces stay flat — no glow.
+   * Glow colour: any CSS colour, e.g. `var(--color-green)` for a domain, or a data colour. Default:
+   * the nearest `accent` (`--facet-accent`), else the app tint. Prefer `accent` on the card (it also
+   * re-tints the rim, wash and tinted shadow). Sports surfaces stay flat — no glow.
    */
   color?: string;
   className?: string;
@@ -139,7 +146,7 @@ export interface AcrylicGlowProps {
 
 /**
  * The coloured underlay of the Halo island and acrylic navigation (v2 DynamicIslandEffects: three
- * blurred glow layers, recoloured by the app tint; the looping shimmer is retired). Render it as
+ * blurred glow layers, recoloured by the accent or app tint; the looping shimmer is retired). Render it as
  * the first child of a `material-acrylic` surface (`FacetMaterial material="acrylic" glow`).
  */
 export function AcrylicGlow({

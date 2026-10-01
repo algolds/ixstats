@@ -39,3 +39,6 @@ export type {
   RefractionEdges,
   AcrylicGlowProps,
 } from "./identity/Glow";
+
+// Facet 3.1 HIG: glass never nests (hero-tier glass primitives render opaque inside one another)
+export { GlassSurfaceContext, useInsideGlass } from "./shared/nesting";

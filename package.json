@@ -239,6 +239,7 @@
   "devDependencies": {
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
+    "@tailwindcss/node": "4.3.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.10.0",

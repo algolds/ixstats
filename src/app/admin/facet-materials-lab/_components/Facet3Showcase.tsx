@@ -3,7 +3,8 @@
 /**
  * Facet 3 showcase — the production system as it ships (docs/reference/facet-design-system.md):
  * the Facet 3.1 identity (glass hero, glow, refraction, monochrome / gold primary, data numerals,
- * heavy headings, CutoutCard, flag watermark, acrylic, achievement aurora), per-app tints, text
+ * heavy headings, CutoutCard, flag watermark, acrylic, achievement aurora — and the 3.1 HIG pass:
+ * accents, rims, header headings, glass nesting), per-app tints, text
  * styles, opaque surfaces vs glass chrome, inset grouped lists, controls and badges. Everything
  * here is a real primitive from `src/components/ui`; nothing is lab-only.
  */
@@ -22,7 +23,7 @@ import {
   Wallet,
   Trophy,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { FacetCard, type FacetAccent } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { FlagWatermark } from "~/components/ui/facet";
 import {
@@ -384,8 +385,14 @@ function Facet31Identity() {
             </div>
           </FacetCard>
 
-          {/* (d) Gold actions: data-app="mycountry" scope */}
-          <FacetCard variant="glass" padding="lg" className="space-y-3" data-app="mycountry">
+          {/* (d) Gold actions: data-app="mycountry" scope, with the v2 gold rim (rim="gold") */}
+          <FacetCard
+            variant="glass"
+            rim="gold"
+            padding="lg"
+            className="space-y-3"
+            data-app="mycountry"
+          >
             <Eyebrow>MyCountry gold</Eyebrow>
             <h3 className="text-title-2 text-label">Declare a directive</h3>
             <p className="text-callout text-label-secondary">
@@ -401,14 +408,26 @@ function Facet31Identity() {
             </div>
           </FacetCard>
 
-          {/* (b) Feature / media CutoutCard */}
-          <CutoutCard variant="card" onClick={() => {}} aria-label="Open the Vault" glow>
-            <CutoutCardHeader icon={<Wallet />} trailing={<Badge>12</Badge>}>
+          {/* (b) Feature / media CutoutCard — accent re-tints the header strip, glow and (retint)
+              the badges; the header title is a real h3. */}
+          <CutoutCard
+            variant="card"
+            onClick={() => {}}
+            aria-label="Open the Vault"
+            glow
+            accent="orange"
+            retint
+          >
+            <CutoutCardHeader
+              as="h3"
+              icon={<Wallet />}
+              trailing={<Badge variant="tinted">12</Badge>}
+            >
               Vault
             </CutoutCardHeader>
             <CutoutCardStagger className="space-y-1 pt-2">
               <CutoutCardStaggerItem>
-                <h3 className="text-title-3 text-label">Pack drop</h3>
+                <p className="text-title-3 text-label">Pack drop</p>
               </CutoutCardStaggerItem>
               <CutoutCardStaggerItem>
                 <p className="text-callout text-label-secondary">
@@ -427,6 +446,25 @@ function Facet31Identity() {
             <span className="text-headline text-label">material-acrylic</span>
             <Badge variant="tinted">3</Badge>
           </FacetMaterial>
+
+          {/* Accents and rims (HIG pass): accent re-tints the glow, wash, tinted border and rim */}
+          <div className="grid gap-3 sm:grid-cols-3 lg:col-span-3">
+            {(["green", "cyan", "gold"] as const satisfies readonly FacetAccent[]).map((accent) => (
+              <FacetCard
+                key={accent}
+                variant="glass"
+                glow
+                accent={accent}
+                rim="tint"
+                padding="md"
+                className="overflow-hidden"
+              >
+                <Eyebrow>accent=&quot;{accent}&quot;</Eyebrow>
+                <p className="text-headline text-label">Glow, wash and rim</p>
+                <p className="text-footnote text-facet-accent-ink">text-facet-accent-ink</p>
+              </FacetCard>
+            ))}
+          </div>
 
           {/* Achievement aurora / radiance / foil / ghost heraldry */}
           <FacetCard

@@ -12,6 +12,11 @@
  *   stay on the opaque card. `glow` adds the v2 domain glow (a tint blob and/or tinted shadow).
  *   Pressable cards (`onClick`) and `interactive` cards lift on hover (`facet-lift`) and press
  *   (`facet-press`); both stop under Reduce Motion.
+ * - Facet 3.1 HIG pass (spec §16.8): `accent` re-tints the card's glow, rim, glass wash and tinted
+ *   border/shadow with a system colour, the tint or gold (scoped `--facet-accent`, not `--tint`;
+ *   `retint` also re-tints the subtree); `rim="gold" | "tint"` paints the v2 rim over the card's
+ *   own border in any cascade order. A glass card inside another glass surface renders opaque
+ *   (glass never nests). Pressable cards keep a 44pt minimum height on touch screens.
  * - `MotionFacetCard` is `FacetCard` as a motion component (`initial`/`animate`/`layout`…), for
  *   animated cards that used to spread `FACET_CARD_SURFACE` onto a `motion.div`.
  * - `FacetContainer` is a deprecated wrapper kept for the migration. It renders a `FacetCard`
@@ -24,8 +29,12 @@
 import React, { forwardRef, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
+import { accentProps, RIM_CLASS, type FacetAccent, type FacetRim } from "~/lib/design/identity";
 import { TextureOverlay, type TextureType } from "./texture-overlay";
 import { Refraction, TintGlow, type TintGlowPosition } from "./facet/identity/Glow";
+import { GlassSurfaceContext, useInsideGlass, warnNestedGlass } from "./facet/shared/nesting";
+
+export type { FacetAccent, FacetRim } from "~/lib/design/identity";
 
 // ─── Legacy types (accepted for compatibility) ──────────────────────────────
 
@@ -148,10 +157,11 @@ const LIFT = "facet-lift";
 
 /**
  * Press feedback + focus ring for clickable surfaces (§8 press compression .99 for cards, §10 focus
- * ring). `facet-press` drops the scale under Reduce Motion.
+ * ring, ≥ 44pt touch target). `facet-press` drops the scale under Reduce Motion. The ring is an
+ * outline outside the border box, so the card's own `overflow-hidden` never clips it.
  */
 const PRESSABLE =
-  "facet-press facet-press-subtle cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
+  "facet-press facet-press-subtle pointer-coarse:min-h-11 cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
 
 interface SurfaceBehaviour {
   interactive?: FacetInteractivity;
@@ -226,7 +236,10 @@ export interface FacetCardProps extends React.HTMLAttributes<HTMLElement> {
   padding?: FacetCardPadding;
   /** Hover feedback; pass `onClick` to make the card pressable. */
   interactive?: FacetInteractivity;
-  /** Decorative texture (sanctioned: `dots`, `grid`, `paperGrain`; others are removed in Phase 4). */
+  /**
+   * Decorative texture (sanctioned: `dots`, `grid`, `paperGrain`, `chevron`; capped at 0.05 —
+   * `SANCTIONED_TEXTURES`, `TEXTURE_MAX_OPACITY`).
+   */
   texture?: TextureType;
   textureOpacity?: number;
   /** @deprecated Ignored — FacetCard is always opaque. */
@@ -252,6 +265,21 @@ export interface FacetCardProps extends React.HTMLAttributes<HTMLElement> {
   refraction?: boolean;
   /** Hover lift (`facet-lift`). Default: on when the card is pressable or `interactive`. */
   lift?: boolean;
+  /**
+   * Facet 3.1 accent: a system colour role (`"green"`, `"cyan"`…), `"tint"` or `"gold"`. Re-tints
+   * this card's identity paint — the glow (blob and tinted shadow), `rim="tint"`, the glass wash,
+   * tinted border and shadow — via the scoped `--facet-accent`, without changing `--tint` for the
+   * content (use `retint` for that). Content can follow it with `text-facet-accent` (icons),
+   * `text-facet-accent-ink` (text) and `bg-facet-accent-fill`.
+   */
+  accent?: FacetAccent;
+  /**
+   * With `accent`: also re-tint the subtree's `--tint` (links, `text-tint`, tinted badges, toggles,
+   * focus rings) — the v2 per-widget hue. @default false
+   */
+  retint?: boolean;
+  /** The v2 rim over the card's border: `"gold"` (MyCountry / Builder) or `"tint"` (the accent). */
+  rim?: FacetRim;
   /** @deprecated Ignored (it never had CSS). */
   enableRefraction?: boolean;
   children?: React.ReactNode;
@@ -275,7 +303,11 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
       glowPosition,
       refraction,
       lift,
+      accent,
+      retint = false,
+      rim,
       className,
+      style,
       children,
       onClick,
       onKeyDown,
@@ -283,8 +315,12 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
     },
     ref
   ) => {
+    const insideGlass = useInsideGlass();
+    const nestedGlass = variant === "glass" && insideGlass;
+    if (nestedGlass) warnNestedGlass("FacetCard");
     const inset = variant === "inset";
-    const glass = variant === "glass";
+    const glass = variant === "glass" && !insideGlass;
+    const accented = accentProps(accent, retint);
     const behaviour = surfaceBehaviour({ interactive, onClick, onKeyDown, glass, lift });
     const glowBlob = glow === true || glow === "blob";
     const glowShadow = glow === true || glow === "shadow";
@@ -292,11 +328,14 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
     // Every `as` element takes the same HTML attributes; type the tag as one so JSX does not
     // intersect nine ref types.
     const Element = as as "div";
-    return (
+    const card = (
       <Element
         ref={ref as React.Ref<HTMLDivElement>}
         data-slot="facet-card"
         data-variant={inset ? "inset" : glass ? "glass" : undefined}
+        data-nested-glass={nestedGlass || undefined}
+        data-accent={accented["data-accent"]}
+        data-rim={rim}
         data-glow={
           glow ? (glowBlob && glowShadow ? "both" : glowBlob ? "blob" : "shadow") : undefined
         }
@@ -317,9 +356,14 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
           (glowBlob || glass) && "isolate",
           glowBlob && "overflow-hidden",
           glowShadow && "facet-glow",
+          // An inset panel has no border of its own; a rim needs one.
+          rim && inset && "border",
+          rim && RIM_CLASS[rim],
+          accented.className,
           behaviour.className,
           className
         )}
+        style={accented.style ? { ...accented.style, ...style } : style}
         onClick={onClick}
         onKeyDown={behaviour.onKeyDown}
         {...props}
@@ -335,6 +379,11 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
         )}
         {children}
       </Element>
+    );
+    return glass ? (
+      <GlassSurfaceContext.Provider value={true}>{card}</GlassSurfaceContext.Provider>
+    ) : (
+      card
     );
   }
 );

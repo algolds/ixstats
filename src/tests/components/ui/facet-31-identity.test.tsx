@@ -446,7 +446,8 @@ describe("CutoutCard", () => {
       </CutoutCard>
     );
     const header = container.querySelector('[data-slot="cutout-card-header"]')!;
-    expect(classOf(header)).toContain("bg-tint-fill");
+    // The accent fill: the app tint's tint-fill unless the card or header sets `accent`.
+    expect(classOf(header)).toContain("bg-facet-accent-fill");
     const corners = header.querySelectorAll('[data-slot="cutout-corner"]');
     expect(corners).toHaveLength(2);
     corners.forEach((corner) => {

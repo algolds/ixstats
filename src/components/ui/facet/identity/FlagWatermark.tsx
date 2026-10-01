@@ -32,7 +32,10 @@ interface FlagWatermarkProps {
  * strength (c5c6b382 DashboardHero: 320px, `-top-12 -right-12`, opacity .14 light / .18 dark,
  * `mix-blend-luminosity` in light, 1px blur, → .25 and `scale-105` over 700ms when the hero is
  * hovered). Tokens (`--flag-watermark-*`) replace the `dark:` pair; a CSS mask fades the disc
- * toward the content instead of v2's gradient overlay. Decorative only: aria-hidden, not printed,
+ * toward the content instead of v2's gradient overlay. HIG (spec §16.8): a tone filter
+ * (`--flag-watermark-tone`: `contrast(.7)` light, `brightness(.6)` dark) caps the flag's extremes so
+ * `label` and `label-secondary` stay ≥ 4.5:1 over any flag on a hero at rest and on hover; Increase
+ * Contrast keeps it at rest (no brighten). Decorative only: aria-hidden, not printed,
  * no pointer events. Render it as the first child of a `relative overflow-hidden` card and keep
  * the card's content `relative`; size it down with `className` (e.g. `size-56 -top-10 -right-10`)
  * on compact cards.

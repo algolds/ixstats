@@ -273,7 +273,35 @@ export const GOLD = {
   toHover: "#eab308",
   on: "#1c1917",
   rimEdgeLight: "#b45309",
+  /**
+   * `accent="gold"` (`--gold-accent`): the gold that glows, rims, washes and header strips use when
+   * a card is accented gold. Light is amber-700 (the gold stops are below 3:1 on white, so an
+   * accent icon or `text-facet-accent` would fail); dark is the v2 amber-500 gold stop.
+   */
+  accent: { light: "#b45309", dark: "#f59e0b" },
+  /** `facet-gold-rim`: the v2 `.facet-mycountry` border and light-catching top edge. */
+  rimBorder: "rgb(202 138 4 / 0.3)",
+  rimHighlight: "rgb(255 215 0 / 0.3)",
 } as const;
+
+/**
+ * Facet 3.1 accents (`accent` on `FacetCard`, `CutoutCard`, `CutoutCardHeader`, `FacetMaterial`):
+ * a system colour role, the app tint or gold. An accent re-tints the card's own identity paint —
+ * glow blob and tinted shadow, rim, glass wash and tinted border, the CutoutCard header strip and
+ * icon — through the scoped `--facet-accent` property; `retint` also re-tints the subtree's
+ * `--tint` (links, tinted badges, `text-tint`).
+ */
+export type FacetAccent = SystemColor | "tint" | "gold";
+
+/**
+ * Accent fill (`bg-facet-accent-fill`: the CutoutCard header strip): the accent at the `tint-fill`
+ * strength over the surface. The contrast guard checks `label`/`label-secondary` on it and the
+ * accent icon against it for every accent.
+ */
+export const ACCENT_FILL = { light: 0.14, dark: 0.18 } as const satisfies Record<
+  Appearance,
+  number
+>;
 
 /**
  * Glass hero tier (`material-hero`, `FacetCard variant="glass"`): surface at `fillFrom` → `fillTo`
@@ -303,10 +331,27 @@ export const GLASS_HERO = {
  */
 export const GLOW = { opacity: 0.15, blur: 64, size: 160, blurPeak: 0.54 } as const;
 
-/** Flag watermark (`FlagWatermark`): v2 DashboardHero opacity, hover brighten and scale. */
+/**
+ * Flag watermark (`FlagWatermark`): v2 DashboardHero opacity, hover brighten and scale. `tone` is
+ * the Facet 3.1 HIG adjustment (spec §16.8): a filter that caps the flag's extremes (light: pulls
+ * black toward grey; dark: dims white) so `label` and `label-secondary` stay ≥ 4.5:1 over the
+ * watermark at rest and on hover for any flag, without lowering the v2 opacities.
+ */
 export const FLAG_WATERMARK = {
-  light: { opacity: 0.14, hover: 0.25, blend: "luminosity" },
-  dark: { opacity: 0.18, hover: 0.25, blend: "normal" },
+  light: {
+    opacity: 0.14,
+    hover: 0.25,
+    blend: "luminosity",
+    tone: "contrast(0.7)",
+    toneContrast: 0.7,
+  },
+  dark: {
+    opacity: 0.18,
+    hover: 0.25,
+    blend: "normal",
+    tone: "brightness(0.6)",
+    toneBrightness: 0.6,
+  },
   hoverScale: 1.05,
   durationMs: 700,
 } as const;

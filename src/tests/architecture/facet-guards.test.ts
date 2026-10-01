@@ -6,6 +6,8 @@
 import fs from "fs";
 import path from "path";
 
+import { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
+
 const srcDir = path.resolve(__dirname, "../..");
 const excludedDirs = [path.join(srcDir, "tests")];
 
@@ -151,6 +153,8 @@ const DARK_OVERRIDE_ALLOWED = new Set([
  */
 const SANCTIONED_GRADIENT_CLASSES = [
   "material-hero",
+  // The expanded Halo sheet (`data-expanded="true"`) paints the v2 top-to-bottom acrylic fill.
+  "material-acrylic",
   "facet-primary",
   "facet-gold",
   "facet-glow",
@@ -197,6 +201,17 @@ const INLINE_BACKDROP_FILES = [
   // The progressive blur primitive is a material itself (stepped backdrop blur).
   "components/ui/magicui/progressive-blur.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
+
+/**
+ * Facet 3.1 (spec §16.8): textures in converted feature code are the sanctioned ones
+ * (`SANCTIONED_TEXTURES`: dots, grid, paperGrain, chevron — clamped to 0.05 by TextureOverlay).
+ * Card art (`components/cards/`) keeps its own textures. Allowlisted: legacy uses pending their app's
+ * next pass.
+ */
+const TEXTURE_ATTR = /\btexture=(?:"(\w+)"|\{"(\w+)"\})/g;
+const UNSANCTIONED_TEXTURE_ALLOWED = new Set([
+  `${path.join("app", "(wiki-os)", "util", "categories", "_components", "DomainCategoriesGrid.tsx")}: halftone`,
+]);
 
 describe("Facet anti-slop guards", () => {
   it("never nests block elements (Skeleton renders a div) inside <p> — a hydration error", () => {
@@ -349,6 +364,22 @@ describe("Facet anti-slop guards", () => {
       expect(
         hits(/\bfont-serif\b/g).filter((hit) => profileDirs.some((dir) => hit.startsWith(dir)))
       ).toEqual([]);
+    });
+
+    it("use only the sanctioned textures (Facet 3.1)", () => {
+      const sanctioned = new Set<string>(SANCTIONED_TEXTURES);
+      const offenders = sources
+        .filter(
+          ({ file }) => inConverted(file) && !file.startsWith(path.join("components", "cards"))
+        )
+        .flatMap(({ file, content }) =>
+          [...content.matchAll(TEXTURE_ATTR)]
+            .map((m) => m[1] ?? m[2]!)
+            .filter((texture) => texture !== "none" && !sanctioned.has(texture))
+            .map((texture) => `${file}: ${texture}`)
+        )
+        .filter((hit) => !UNSANCTIONED_TEXTURE_ALLOWED.has(hit));
+      expect(offenders).toEqual([]);
     });
 
     it("do not bring back the retired MyCountry surface-kit", () => {

@@ -26,10 +26,10 @@ v2 (`c5c6b382`).** App agents: use exactly these props and classes; don't hand-r
 |---|---|---|
 | **(a) Hero glass card** (an app's top hero/header card, MyCountry shell, dashboard/country-profile heroes, passport, vault, achievements) | `<FacetCard variant="glass" padding="lg">` — add `glow` for the domain glow, `onClick` to make it pressable (it lifts and presses). Not a card? `<FacetMaterial material="hero">`, or `FACET_GLASS_SURFACE` + `<Refraction />` on an element that must keep its tag. | Glass never nests: inside, use opaque roles or `FacetCard variant="inset"`. Dense lists, tables and forms stay on the opaque `FacetCard`. `MotionFacetCard` takes the same props. |
 | **(b) Feature / media card** (dashboard widgets, vault, thinktanks, messages) | `<CutoutCard variant="card">` (or `variant="glass"` on a hero) with `<CutoutCardHeader icon={…} trailing={…}>Title</CutoutCardHeader>`, `<CutoutCardMedia className="aspect-video"><CutoutCardImage src={…} alt="" /></CutoutCardMedia>`, `<CutoutCardStagger>` + `<CutoutCardStaggerItem>` for the text, `<CutoutCardAction>` for hover actions. `onClick` + `aria-label` makes the whole card a button. | 28px `rounded-cutout`; image zoom, lift, press and blur-in are off under Reduce Motion. Keep concentric radii for anything dense inside. |
-| **(c) Glow** | `glow` on `FacetCard`/`CutoutCard` (`true` = blob + tinted shadow, `"blob"`, `"shadow"`; `glowPosition`). Standalone: `<TintGlow position="top-right" />` as the first child of a `relative isolate overflow-hidden` surface with `className="-z-10"`, or the `facet-glow` utility for the tinted shadow. Domain colour: `<TintGlow color="var(--color-green)" />`. | App tint by default. Heroes and feature cards only. **Sports surfaces stay flat — no glow.** |
-| **(d) Gold actions** (MyCountry, Builder) | `<Button>` / `<Button variant="filled">` inside `data-app="mycountry"` — the gold gradient, rim and dark label come from the scope. Non-button gold paint: `facet-gold`; a gold card rim: `facet-gold-rim`. | Everywhere else `filled` is the monochrome primary; the tint stays on `tinted`/`plain`/`link`, selection, links, focus and toggles. Don't override the fill with palette colours. One filled primary per view. |
+| **(c) Glow** | `glow` on `FacetCard`/`CutoutCard` (`true` = blob + tinted shadow, `"blob"`, `"shadow"`; `glowPosition`). Standalone: `<TintGlow position="top-right" />` as the first child of a `relative isolate overflow-hidden` surface with `className="-z-10"`, or the `facet-glow` utility for the tinted shadow. **Domain colour: `accent="green"`** on the card (re-tints glow, rim, glass wash and header strip; `retint` also re-tints the subtree's `--tint`). | App tint by default. Heroes and feature cards only. **Sports surfaces stay flat — no glow.** Glow blobs and the acrylic underlay disappear under Reduce Transparency / Increase Contrast (the tinted shadow and rims stay). |
+| **(d) Gold actions** (MyCountry, Builder) | `<Button>` / `<Button variant="filled">` inside `data-app="mycountry"` — the gold gradient, rim and dark label come from the scope. Non-button gold paint: `facet-gold`; a gold card rim: **`rim="gold"`** on `FacetCard`/`CutoutCard` (glass or opaque; `facet-gold-rim` on other elements that have a border). | Everywhere else `filled` is the monochrome primary; the tint stays on `tinted`/`plain`/`link`, selection, links, focus and toggles. Don't override the fill with palette colours. One filled primary per view. |
 | **(e) Numbers** | `<Stat>` (value + delta), `<Badge>{count}</Badge>`, `ActionPill count`, `SegmentedControl` `badge`, `<TableCell>` figures (`numeric` on the column's `TableHead`/`TableCell` right-aligns), `FacetRow trailing={number}` — all switch to the data face automatically. Anything else: `className="font-data tabular-nums"` (`DATA_FONT` in `~/lib/design/identity`). | `font-data` = Azeret Mono, tabular, slashed zero. Stats, figures, counts, ranks, IDs. Words stay in the UI face. |
-| **(f) Flag watermark** | `<FlagWatermark src={flagUrl} />` as the first child of the hero (`relative overflow-hidden`; the hero is a `group`, `FacetCard` or `CutoutCard`), content `relative`. | v2 strength by default: 320px, .14/.18 → .25 + 105% on hover. `interactive={false}` for static; `className="size-56 -top-10 -right-10"` on compact cards. |
+| **(f) Flag watermark** | `<FlagWatermark src={flagUrl} />` as the first child of the hero (`relative overflow-hidden`; the hero is a `group`, `FacetCard` or `CutoutCard`), content `relative`. | v2 strength by default: 320px, .14/.18 → .25 + 105% on hover, with a tone filter that keeps labels ≥ 4.5:1 over any flag (spec §16.8). `interactive={false}` for static; `className="size-56 -top-10 -right-10"` on compact cards. Put it on the hero card, not on `surface-secondary`. |
 
 Also available: **headings** are heavy and tight automatically (`text-display` … `text-title-3`); **press/lift
 physics** are built into the primitives (`facet-press`, `facet-press-sm`, `facet-press-subtle`, `facet-lift` for
@@ -42,6 +42,21 @@ by `--accent`, `--accent-2` and `--heraldry-mask: url(…)` (positioned with uti
 `data-interactive="true"` to aurora/radiance to brighten on card hover). The materials lab (Admin → Facet lab)
 shows every recipe.
 
+### 0.1 HIG pass — new props replace the workarounds (spec §16.8)
+
+Replace these as you touch a screen. The workarounds still render, but an inline `--tint` re-tints the whole subtree
+(focus rings, controls) and the rim classes lose the cascade to the card's own border.
+
+| Workaround | API | Notes |
+|---|---|---|
+| Inline `style={{ "--tint": color }}` on a hero / feature card (`DomainSurface`, `ExecutiveOpportunityHero`, `ArchetypeCard`, lab templates) | `accent="green"` on `FacetCard` / `CutoutCard` / `FacetMaterial` | `SystemColor \| "tint" \| "gold"`. Scoped `--facet-accent`: glow, rim, glass wash, tinted border/shadow and header strip; `--tint` (links, focus, controls) unchanged. Drop `<TintGlow color={…}>` too — `glow` follows the accent. |
+| `widgetAccent(WIDGET_ACCENT.x)` (`components/dashboard/widget-accent.ts`), `accentStyle()` in `VaultSidebarNav`, `hueStyle()` in `ConditionMatrix` | `<CutoutCard accent="orange" retint>` (or `FacetCard`) | `retint` = the old helper's subtree re-tint (`--tint`, `--tint-fill`, tinted badges, `text-tint`). Without `retint` only the card's identity paint and header take the hue. Non-primitive element: `style={facetAccentStyle("orange")}` + `facet-retint` class. |
+| `<span role="heading" aria-level={3}>` inside `CutoutCardHeader` | `<CutoutCardHeader as="h3">` | `"h2" \| "h3" \| "h4"`; icon and `trailing` stay outside the heading. |
+| `GOLD_RIM` (`facet-gold-rim border-tint/30`), `GOLD_GLASS_RIM` (`[--glass-hero-rim:…gold…]`), `border-tint/30` as a rim | `rim="gold"` on `FacetCard` / `CutoutCard` (glass or opaque) | The rim wins the cascade over `border-separator` and the material borders; becomes a ≥ 3:1 edge under Increase Contrast. `rim="tint"` = the same rim in the accent. Don't add another border-colour class next to it. |
+| A domain-coloured `CutoutCardHeader` via a re-tinted `--tint-fill` | `accent` on the card, or `<CutoutCardHeader accent="gold">` for the strip alone | The strip is `bg-facet-accent-fill`, the icon `text-facet-accent`; `label` text on it is ≥ 4.5:1 for every accent. |
+| Coloured text in a hue: `text-tint` under an inline `--tint` | `text-facet-accent-ink` (text) / `text-facet-accent` (icons) | Inks are ≥ 4.5:1 on the accent fill. |
+| `texture="chevron"` (unsanctioned) at 0.04–0.06 | `texture="chevron"` — now sanctioned | Every sanctioned texture is clamped to 0.05 (`TEXTURE_MAX_OPACITY`). |
+| A glass card inside a glass hero | Opaque roles or `FacetCard variant="inset"` | The primitives now render a nested hero-tier glass card opaque (`data-nested-glass`, dev warning). |
 
 ## 1. Rules of the road
 
@@ -53,7 +68,8 @@ shows every recipe.
 3. **Use primitives, not hand-rolled markup.** Every card, row, button, badge, tab, switch, overlay and list on this
    page exists in `src/components/ui`; feature code never imports `@radix-ui/*` or `lucide-react`.
 4. **Utilities always win.** All Facet CSS is layered (`@layer base/components` or `@utility`), so a class on an
-   element is never silently overridden. `!important` exists only for user-preference switches over inline animation
+   element is never silently overridden — except the rims (`rim="gold" | "tint"`), which deliberately beat the
+   card's own border (spec §16.8). `!important` exists only for user-preference switches over inline animation
    styles (`styles/facet/overrides.css`) and for MediaWiki HTML (`styles/wiki-os/mediawiki.css`).
 5. **Evolve, don't redesign.** Keep the existing UI and improve on it; port the v2 (`c5c6b382`) recipe rather than
    inventing a new look, unless the product owner explicitly asks (spec §16.0).
@@ -412,6 +428,18 @@ animating that would relayout the page every frame; a transform-based version ne
 `<main>`'s padding during the transition.
 
 ## Changelog
+
+- **3.1 — HIG pass (2026-10-01)** — Spec §16.8. New APIs: `accent` (`SystemColor | "tint" | "gold"`) on
+  `FacetCard`/`MotionFacetCard`/`CutoutCard`/`CutoutCardHeader`/`FacetMaterial` (scoped `--facet-accent`; utilities
+  `text-facet-accent`, `text-facet-accent-ink`, `bg-facet-accent-fill`; `facetAccentStyle`, `accentColor`,
+  `FACET_ACCENTS` in `~/lib/design/identity`), `retint` (`facet-retint`), `rim="gold" | "tint"` (`facet-gold-rim`
+  fixed to win the cascade, new `facet-tint-rim`), `CutoutCardHeader as="h2" | "h3" | "h4"`, `chevron` sanctioned
+  with `TEXTURE_MAX_OPACITY` (TextureOverlay clamps), `material-acrylic` a sanctioned gradient, `GlassSurfaceContext` /
+  `useInsideGlass` (nested hero-tier glass renders opaque). HIG: glow blobs, acrylic underlay, aurora, radiance and
+  foil off under Reduce Transparency / Increase Contrast; full-strength hero/rim edges and no watermark brighten under
+  Increase Contrast; flag watermark tone filter (AA over any flag at v2 opacity); 44pt touch minimum on pressable
+  cards; press/lift on `--duration-fast`. Guards: `identity-cascade.test.ts`, accent / strip / watermark contrast,
+  sanctioned textures. The materials lab shows accents, rims and the header heading.
 
 - **3.1 — identity restored (2026-10-01)** — Spec §16; foundation for the app agents. Glass hero tier
   (`material-hero`; `FacetCard variant="glass"`, `CutoutCard variant="glass"`, `FacetMaterial material="hero"`) and the

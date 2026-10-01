@@ -6,6 +6,9 @@ import type { CSSProperties } from "react";
  * `--tint` and `--tint-fill` are re-derived on the element, so `CutoutCardHeader` (`bg-tint-fill`,
  * `text-tint`), tinted badges, focus rings and glows below pick the domain colour up. Pass a system
  * colour role (`var(--color-blue)`…) so it follows the theme and Increase Contrast.
+ *
+ * @deprecated Facet 3.1 HIG pass (spec §16.8): use `<CutoutCard accent="orange" retint>` (the
+ * `accent` re-tints the header strip, glow and rim; `retint` also re-tints the subtree's `--tint`).
  */
 export function widgetAccent(color: string): CSSProperties {
   return {

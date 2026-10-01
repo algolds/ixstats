@@ -882,6 +882,8 @@
     --flag-watermark-opacity: 0.14;
     --flag-watermark-opacity-hover: 0.25;
     --flag-watermark-blend: luminosity;
+    /* HIG (spec §16.8): caps the flag's extremes so labels stay ≥ 4.5:1 over any flag. */
+    --flag-watermark-tone: contrast(0.7);
 
     /* Physics: v2 press (`active:scale-[0.98]`, small controls `active:scale-95`) and lift
        (`hover:-translate-y-0.5` + the `.facet-interactive` hover shadow). Reduce Motion drops the
@@ -911,6 +913,16 @@
     --gold-rim-hover:
       inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 0 0 1px var(--gold-rim-edge),
       0 8px 24px rgb(202 138 4 / 0.12);
+    /* `facet-gold-rim` / `rim="gold"`: the v2 `.facet-mycountry` border and top edge. Under
+       Increase Contrast the border becomes `--gold-rim-edge` (≥ 3:1). */
+    --gold-rim-border: rgb(202 138 4 / 0.3);
+    --gold-rim-highlight: rgb(255 215 0 / 0.3);
+    /* `accent="gold"`: amber-700 in light (the gold stops are < 3:1 on white), amber-500 in dark. */
+    --gold-accent: #b45309;
+
+    /* Accent fill (`bg-facet-accent-fill`, the CutoutCard header strip): the accent at the
+       `tint-fill` strength. */
+    --accent-fill-mix: 14%;
 
     /* CutoutCard elevation: the v2 `--facet-shadow-cutout` stack on the label colour. */
     --cutout-shadow:
@@ -970,6 +982,7 @@
 
     --flag-watermark-opacity: 0.18;
     --flag-watermark-blend: normal;
+    --flag-watermark-tone: brightness(0.6);
 
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
 
@@ -978,6 +991,8 @@
     --on-primary-mono: #0b0c0f;
 
     --gold-rim-edge: rgb(252 211 77 / 0.5);
+    --gold-accent: #f59e0b;
+    --accent-fill-mix: 18%;
 
     --heraldry-opacity: 0.095;
   }
@@ -1010,6 +1025,18 @@
   --color-primary-fill: var(--primary-fill);
   --color-primary-fill-hover: var(--primary-fill-hover);
   --color-on-primary: var(--on-primary);
+
+  /* Facet 3.1 accents (`accent` on FacetCard / CutoutCard / FacetMaterial, spec §16.3): the scoped
+     `--facet-accent`, or the app tint where no accent is set. `text-facet-accent` (icons),
+     `text-facet-accent-ink` (text on its fill), `bg-facet-accent-fill` (the header strip),
+     `border-facet-accent/30`… */
+  --color-facet-accent: var(--facet-accent, var(--tint));
+  --color-facet-accent-ink: color-mix(in srgb, var(--facet-accent, var(--tint)) 80%, var(--color-label));
+  --color-facet-accent-fill: color-mix(
+    in srgb,
+    var(--facet-accent, var(--tint)) var(--accent-fill-mix),
+    transparent
+  );
 }
 
 /* §4 Continuous corners where supported (sheet, card, row and control radii).

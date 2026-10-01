@@ -115,6 +115,8 @@ export function hueOf(domain: string | null | undefined): DomainHue | null {
  * (the card's own `border-separator` would otherwise win Tailwind's utility order). On a glass hero
  * the material already draws a tint (gold) border, so only its top rim is recoloured gold.
  */
+/** @deprecated Facet 3.1 HIG pass: `<FacetCard rim="gold">` / `<CutoutCard rim="gold">` (wins the cascade). */
 export const GOLD_RIM = "facet-gold-rim border-tint/30";
+/** @deprecated Facet 3.1 HIG pass: `<FacetCard variant="glass" rim="gold">`. */
 export const GOLD_GLASS_RIM =
   "[--glass-hero-rim:color-mix(in_srgb,var(--gold-from)_35%,transparent)]";

@@ -23,7 +23,13 @@
  *
  * Modernised from v2: roles instead of palette/`dark:`, motion from `~/lib/design/motion`, Reduce
  * Motion safe (no zoom, lift, press or blur — the stagger becomes a fade), keyboard accessible when
- * pressable (`onClick` → `role="button"`, Tab, Enter/Space, focus ring).
+ * pressable (`onClick` → `role="button"`, Tab, Enter/Space, a focus ring outside the clip, a 44pt
+ * minimum height on touch screens).
+ *
+ * Facet 3.1 HIG pass (spec §16.8): `accent` re-tints the card's glow, rim, glass wash and its
+ * `CutoutCardHeader` strip and icon (scoped `--facet-accent`; `retint` also re-tints the subtree's
+ * `--tint`), `rim` paints the v2 gold / accent rim, `CutoutCardHeader as="h3"` makes the title a
+ * real heading, and a glass cutout inside another glass surface renders the opaque card.
  */
 
 import {
@@ -42,9 +48,15 @@ import { useControllableState } from "~/hooks/useControllableState";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import { cn } from "~/lib/utils/cn";
+import { accentProps, RIM_CLASS, type FacetAccent, type FacetRim } from "~/lib/design/identity";
 import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
 import { TintGlow, type TintGlowPosition } from "~/components/ui/facet/identity/Glow";
+import {
+  GlassSurfaceContext,
+  useInsideGlass,
+  warnNestedGlass,
+} from "~/components/ui/facet/shared/nesting";
 
 // ============================================================================
 // Tokens — the card chrome
@@ -154,8 +166,21 @@ export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultVa
    * on hover. A card with `onClick` is a button (focusable, Enter/Space) and also presses.
    */
   interactive?: boolean;
-  /** Facet 3.1 domain glow blob in the app tint behind the content. */
+  /** Facet 3.1 domain glow blob in the app tint (or `accent`) behind the content. */
   glow?: boolean;
+  /**
+   * Facet 3.1 accent: a system colour role, `"tint"` or `"gold"`. Re-tints this card's glow, rim,
+   * glass wash and `CutoutCardHeader` strip/icon through the scoped `--facet-accent` (the v2
+   * per-widget hue) without changing `--tint` for the content; `retint` does that too.
+   */
+  accent?: FacetAccent;
+  /**
+   * With `accent`: also re-tint the subtree's `--tint` (links, `text-tint`, tinted badges, focus
+   * rings) — what the dashboard's `widgetAccent` style did. @default false
+   */
+  retint?: boolean;
+  /** The v2 rim over the card's border: `"gold"` or `"tint"` (the accent). */
+  rim?: FacetRim;
   /** Where the glow blob sits. @default "top-right" */
   glowPosition?: TintGlowPosition;
   /** When set, hover state is controlled by the parent. */
@@ -183,6 +208,10 @@ export function CutoutCard({
   interactive = false,
   glow = false,
   glowPosition,
+  accent,
+  retint = false,
+  rim,
+  style,
   hovered: hoveredProp,
   defaultHovered = false,
   onHoveredChange,
@@ -222,6 +251,12 @@ export function CutoutCard({
 
   const pressable = Boolean(onClick);
   const lifts = lift ?? (pressable || interactive);
+  const insideGlass = useInsideGlass();
+  const nestedGlass = variant === "glass" && insideGlass;
+  if (nestedGlass) warnNestedGlass("CutoutCard");
+  // Glass never nests: a glass cutout inside another glass surface renders the opaque card.
+  const surface: CutoutCardVariant | undefined = nestedGlass ? "card" : variant;
+  const accented = accentProps(accent, retint);
 
   const handleMouseEnter: MouseEventHandler<HTMLDivElement> = (e) => {
     onMouseEnter?.(e);
@@ -255,21 +290,27 @@ export function CutoutCard({
     }
   };
 
-  return (
+  const card = (
     <CutoutCardContext.Provider value={ctx}>
       <motion.div
         animate={{ opacity: 1 }}
         className={cn(
           "relative",
-          variant && VARIANT_CLASS[variant],
+          surface && VARIANT_CLASS[surface],
           glow && "isolate overflow-hidden",
           lifts && "facet-lift",
           pressable &&
-            "facet-press facet-press-subtle focus-visible:outline-tint cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2",
+            "facet-press facet-press-subtle focus-visible:outline-tint cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
+          rim && RIM_CLASS[rim],
+          accented.className,
           className
         )}
+        style={accented.style ? { ...accented.style, ...style } : style}
         data-slot="cutout-card"
-        data-variant={variant}
+        data-variant={surface}
+        data-nested-glass={nestedGlass || undefined}
+        data-accent={accented["data-accent"]}
+        data-rim={rim}
         data-state={ctx.hovered ? "hovered" : "idle"}
         initial={{ opacity: 0 }}
         onMouseEnter={handleMouseEnter}
@@ -289,6 +330,11 @@ export function CutoutCard({
         {children}
       </motion.div>
     </CutoutCardContext.Provider>
+  );
+  return surface === "glass" ? (
+    <GlassSurfaceContext.Provider value={true}>{card}</GlassSurfaceContext.Provider>
+  ) : (
+    card
   );
 }
 
@@ -432,42 +478,68 @@ export function CutoutCorner({
   );
 }
 
+/** Elements the `CutoutCardHeader` title can render as. */
+export type CutoutCardHeaderTitleElement = "span" | "div" | "h2" | "h3" | "h4";
+
 export interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
-  /** Leading glyph, coloured by the app tint (16px). */
+  /** Leading glyph, coloured by the accent (the app tint unless `accent` is set), 16px. */
   icon?: ReactNode;
-  /** Trailing content (a count `Badge`, a link). */
+  /** Trailing content (a count `Badge`, a link). Never inside the heading. */
   trailing?: ReactNode;
   /** Corner notch size in px. @default 20 */
   cornerSize?: number;
+  /**
+   * The title element. Pass the heading level the card sits at (`"h2"`–`"h4"`) so the widget title
+   * is in the document outline (instead of a `role="heading"` span); the leading icon and
+   * `trailing` stay outside the heading. @default "span"
+   */
+  as?: CutoutCardHeaderTitleElement;
+  /**
+   * Accent for this header only (strip fill and icon); by default it follows the card's `accent`
+   * (or the app tint).
+   */
+  accent?: FacetAccent;
 }
 
 /**
- * The v2 cutout tab header: a tinted strip (`tint-fill`) whose bottom corners curve into the card
- * body with `CutoutCorner` notches in the card's surface colour — the CutoutCard signature (v2
- * dashboard widgets, vault sections). Use on `variant="card"` cards; the title is sentence case
- * `text-headline`.
+ * The v2 cutout tab header: a tinted strip (the accent fill — the app tint's `tint-fill` unless the
+ * card or header sets `accent`) whose bottom corners curve into the card body with `CutoutCorner`
+ * notches in the card's surface colour — the CutoutCard signature (v2 dashboard widgets, vault
+ * sections). Use on `variant="card"` cards; the title is sentence case `text-headline` in `label`
+ * (≥ 4.5:1 on every accent fill, token-contrast.test.ts) and `as="h3"` makes it a heading.
  */
 export function CutoutCardHeader({
   icon,
   trailing,
   cornerSize = 20,
+  as: Title = "span",
+  accent,
   className,
+  style,
   children,
   ...props
 }: CutoutCardHeaderProps) {
+  const accented = accentProps(accent);
   return (
     <div
       data-slot="cutout-card-header"
-      className={cn("bg-tint-fill relative px-4 pt-3 pb-5", className)}
+      data-accent={accented["data-accent"]}
+      className={cn("bg-facet-accent-fill relative px-4 pt-3 pb-5", className)}
+      style={accented.style ? { ...accented.style, ...style } : style}
       {...props}
     >
       <div className="text-headline text-label flex items-center gap-2">
         {icon != null && (
-          <span aria-hidden className="text-tint inline-flex shrink-0 [:where(&)_svg]:size-4">
+          <span
+            aria-hidden
+            className="text-facet-accent inline-flex shrink-0 [:where(&)_svg]:size-4"
+          >
             {icon}
           </span>
         )}
-        <span className="min-w-0 flex-1 truncate">{children}</span>
+        <Title data-slot="cutout-card-title" className="min-w-0 flex-1 truncate">
+          {children}
+        </Title>
         {trailing}
       </div>
       <CutoutCorner className="text-surface absolute -bottom-px left-0" size={cornerSize} />

@@ -10,7 +10,20 @@
 
    Rules (css-layering.test.ts):
    - Utilities are `@utility`; classes live in `@layer components`. Nothing unlayered, no
-     `!important`, so a Tailwind utility on the same element always wins.
+     `!important`, so a Tailwind utility on the same element always wins — except the rims
+     (`facet-gold-rim`, `facet-tint-rim`), which state an intent that must beat the surface's own
+     border (`border-separator`, the material borders) whatever order Tailwind emits them in: their
+     declarations sit on `&[class]` (one class + one attribute). Don't pair a rim with another
+     border-colour utility.
+   - Accents: everything that mixes the app tint reads `var(--facet-accent, var(--tint))`, so the
+     `accent` prop (FacetCard, CutoutCard, CutoutCardHeader, FacetMaterial) re-tints the glow, rim,
+     glass wash and header strip of that card only, without touching `--tint` for its subtree
+     (`facet-retint` does that, on request).
+   - HIG (spec §16.8): Reduce Motion drops movement (press, lift, zoom, blur-in, watermark scale);
+     Reduce Transparency and Increase Contrast make the materials opaque and remove every blurred
+     or translucent decorative layer (glow blobs, acrylic underlay, aurora, radiance, foil) while
+     the colour identity stays in rims, borders, tinted shadows and header strips; Increase
+     Contrast also turns borders and rims to full-strength edges (≥ 3:1).
    - Materials and identity classes paint only: no position, z-index, radius, margin or
      letter-spacing. The primitives (`FacetCard`, `FacetMaterial`, `TintGlow`, `Refraction`,
      `FlagWatermark`) place them.
@@ -78,7 +91,8 @@
   transition-property:
     color, background-color, background-image, border-color, outline-color, box-shadow, opacity,
     scale, translate;
-  transition-duration: var(--tw-duration, 200ms);
+  /* Named duration (motion.ts DURATION_FAST, spec §8); v2 used 200ms. */
+  transition-duration: var(--tw-duration, var(--duration-fast));
   transition-timing-function: var(--tw-ease, var(--ease-out-facet));
   @media (hover: hover) and (pointer: fine) {
     &:hover {
@@ -113,8 +127,10 @@
   background-image:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--tint) var(--glass-hero-wash-from), transparent) 0%,
-      color-mix(in srgb, var(--tint) var(--glass-hero-wash-mid), transparent) 50%,
+      color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glass-hero-wash-from), transparent)
+        0%,
+      color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glass-hero-wash-mid), transparent)
+        50%,
       transparent 100%
     ),
     linear-gradient(
@@ -124,15 +140,26 @@
     );
   -webkit-backdrop-filter: blur(var(--glass-hero-blur)) saturate(var(--glass-hero-saturate));
   backdrop-filter: blur(var(--glass-hero-blur)) saturate(var(--glass-hero-saturate));
-  border: 1px solid color-mix(in srgb, var(--tint) var(--glass-hero-border-tint), transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glass-hero-border-tint), transparent);
   --tw-inset-shadow: inset 0 1px 0 0 var(--glass-hero-rim);
   --tw-shadow:
     var(--glass-hero-shadow),
-    0 8px 24px color-mix(in srgb, var(--tint) var(--glass-hero-shadow-tint), transparent);
+    0 8px 24px
+      color-mix(
+        in srgb,
+        var(--facet-accent, var(--tint)) var(--glass-hero-shadow-tint),
+        transparent
+      );
   /* The hover lift (facet-lift) deepens the tinted shadow instead of the generic lift shadow. */
   --facet-lift-shadow:
     var(--glass-hero-shadow-hover),
-    0 12px 32px color-mix(in srgb, var(--tint) var(--glass-hero-shadow-hover-tint), transparent);
+    0 12px 32px
+      color-mix(
+        in srgb,
+        var(--facet-accent, var(--tint)) var(--glass-hero-shadow-hover-tint),
+        transparent
+      );
   box-shadow:
     var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
     var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
@@ -142,7 +169,8 @@
       saturate(var(--glass-hero-saturate));
     backdrop-filter: blur(var(--glass-hero-blur-compact)) saturate(var(--glass-hero-saturate));
   }
-  /* Reduce Transparency and Increase Contrast: the opaque card surface (tint border kept). */
+  /* Reduce Transparency and Increase Contrast: the opaque card surface (tint border kept; under
+     Increase Contrast the border is the full-strength accent, ≥ 3:1 on every background). */
   @media (prefers-reduced-transparency: reduce) {
     background-color: var(--color-surface);
     background-image: none;
@@ -160,12 +188,14 @@
     background-image: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+    border-color: var(--facet-accent, var(--tint));
   }
   &:where([data-contrast="more"] *) {
     background-color: var(--color-surface);
     background-image: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+    border-color: var(--facet-accent, var(--tint));
   }
 }
 
@@ -197,7 +227,8 @@
     border-color: var(--acrylic-border-active);
     --tw-inset-shadow: var(--acrylic-rim-active);
     --tw-shadow: var(--acrylic-shadow-active);
-    -webkit-backdrop-filter: blur(var(--acrylic-blur-active)) saturate(var(--acrylic-saturate-active));
+    -webkit-backdrop-filter: blur(var(--acrylic-blur-active))
+      saturate(var(--acrylic-saturate-active));
     backdrop-filter: blur(var(--acrylic-blur-active)) saturate(var(--acrylic-saturate-active));
   }
   /* v2 `.dynamic-island-shell[data-expanded="true"]`: the frosted sheet the island opens into. */
@@ -250,6 +281,25 @@
       backdrop-filter: none;
     }
   }
+  /* Increase Contrast: the stronger opaque separator instead of the translucent hairline. */
+  @media (prefers-contrast: more) {
+    &,
+    &:hover,
+    &:focus-within,
+    &:active,
+    &[data-expanded="true"] {
+      border-color: var(--color-separator-opaque);
+    }
+  }
+  &:where([data-contrast="more"] *) {
+    &,
+    &:hover,
+    &:focus-within,
+    &:active,
+    &[data-expanded="true"] {
+      border-color: var(--color-separator-opaque);
+    }
+  }
 }
 
 /* `facet-acrylic-brand`: the v2 Halo / navigation glow hues (DynamicIslandEffects' blue, indigo
@@ -293,15 +343,66 @@
   color: var(--on-gold);
 }
 
-/* v2 `.facet-mycountry` gold rim on a card (border + light-catching inset), for gold feature
-   cards in MyCountry / Builder. */
+/* ─── Rims ────────────────────────────────────────────────────────────────
+   `facet-gold-rim` (`rim="gold"`): the v2 `.facet-mycountry` gold rim — border
+   `rgb(202 138 4 / .3)` + a gold light-catching top edge — for gold feature cards in MyCountry /
+   Builder. `facet-tint-rim` (`rim="tint"`): the same rim in the card's accent (the app tint unless
+   `accent` is set). Both recolour the element's own border, so the element needs one (FacetCard,
+   CutoutCard and the glass materials have it). On `&[class]` so they beat `border-separator` and
+   the `material-hero` / `material-acrylic` borders regardless of emit order (header rules).
+   Increase Contrast: the border becomes a ≥ 3:1 edge (`--gold-rim-edge`, the full accent). */
 @utility facet-gold-rim {
-  border-color: rgb(202 138 4 / 0.3);
-  --tw-inset-shadow: inset 0 1px 0 rgb(255 215 0 / 0.3);
-  box-shadow:
-    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
-    var(--facet-glow-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+  &[class] {
+    border-color: var(--gold-rim-border);
+    --tw-inset-shadow: inset 0 1px 0 var(--gold-rim-highlight);
+    box-shadow:
+      var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--facet-glow-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+  }
+  @media (prefers-contrast: more) {
+    &[class] {
+      border-color: var(--gold-rim-edge);
+    }
+  }
+  &[class]:where([data-contrast="more"] *) {
+    border-color: var(--gold-rim-edge);
+  }
+}
+
+@utility facet-tint-rim {
+  &[class] {
+    border-color: color-mix(in srgb, var(--facet-accent, var(--tint)) 30%, transparent);
+    --tw-inset-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--facet-accent, var(--tint)) 30%, transparent);
+    box-shadow:
+      var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+      var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+      var(--facet-glow-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
+  }
+  @media (prefers-contrast: more) {
+    &[class] {
+      border-color: var(--facet-accent, var(--tint));
+    }
+  }
+  &[class]:where([data-contrast="more"] *) {
+    border-color: var(--facet-accent, var(--tint));
+  }
+}
+
+/* ─── Re-tint (`retint` on an accented primitive) ─────────────────────────
+   The v2 widget hue for a whole subtree: `--tint`, `--tint-hover`, `--tint-fill` and `--on-tint`
+   follow the element's `--facet-accent`, so links, `text-tint`, tinted badges, toggles and focus
+   rings below take the accent. `--tint` is the accent's ink (80% toward the label, like the
+   `-ink` badge colours): a raw system colour as 12px text on its own tint fill drops to 3.9:1, the
+   ink holds ≥ 4.5:1 there, on the page and under `on-tint` (token-contrast.test.ts, "retint").
+   The fill and the card's glows keep the vivid accent. Only on an element that sets
+   `--facet-accent` itself (the primitives add it with `accent`; `accent="tint"` never adds it). */
+@utility facet-retint {
+  --tint: color-mix(in srgb, var(--facet-accent) 80%, var(--color-label));
+  --tint-hover: color-mix(in srgb, var(--facet-accent) 65%, var(--color-label));
+  --tint-fill: color-mix(in srgb, var(--facet-accent) var(--accent-fill-mix), transparent);
+  --on-tint: var(--color-on-system);
 }
 
 /* ─── Glow ────────────────────────────────────────────────────────────────
@@ -311,8 +412,10 @@
 
 @utility facet-glow {
   --facet-glow-shadow:
-    0 0 20px color-mix(in srgb, var(--tint) var(--glow-shadow-tint), transparent),
-    0 4px 12px color-mix(in srgb, var(--tint) var(--glow-shadow-tint-near), transparent);
+    0 0 20px
+      color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glow-shadow-tint), transparent),
+    0 4px 12px
+      color-mix(in srgb, var(--facet-accent, var(--tint)) var(--glow-shadow-tint-near), transparent);
   box-shadow:
     var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
     var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
@@ -320,8 +423,18 @@
   @media (hover: hover) {
     &:hover {
       --facet-glow-shadow:
-        0 0 30px color-mix(in srgb, var(--tint) var(--glow-shadow-tint-hover), transparent),
-        0 6px 20px color-mix(in srgb, var(--tint) var(--glow-shadow-tint-near-hover), transparent);
+        0 0 30px
+          color-mix(
+            in srgb,
+            var(--facet-accent, var(--tint)) var(--glow-shadow-tint-hover),
+            transparent
+          ),
+        0 6px 20px
+          color-mix(
+            in srgb,
+            var(--facet-accent, var(--tint)) var(--glow-shadow-tint-near-hover),
+            transparent
+          );
     }
   }
 }
@@ -376,7 +489,7 @@
      v2 domain hero glow: a tint disc at 15% opacity under a 64px blur. */
   .facet-tint-glow {
     pointer-events: none;
-    background-color: var(--glow-color, var(--tint));
+    background-color: var(--glow-color, var(--facet-accent, var(--tint)));
     opacity: var(--glow-opacity);
     filter: blur(var(--glow-blur));
   }
@@ -391,18 +504,18 @@
     pointer-events: none;
     background-image: linear-gradient(
       var(--acrylic-glow-angle, 90deg),
-      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 20%, transparent),
-      color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 20%, transparent),
-      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 20%, transparent)
+      color-mix(in srgb, var(--acrylic-glow-a, var(--facet-accent, var(--tint))) 20%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-b, var(--facet-accent, var(--tint))) 20%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-a, var(--facet-accent, var(--tint))) 20%, transparent)
     );
     filter: blur(24px);
   }
   .facet-acrylic-glow[data-layer="2"] {
     background-image: linear-gradient(
       var(--acrylic-glow-angle, 90deg),
-      color-mix(in srgb, var(--acrylic-glow-c, var(--tint)) 15%, transparent),
-      color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 15%, transparent),
-      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 15%, transparent)
+      color-mix(in srgb, var(--acrylic-glow-c, var(--facet-accent, var(--tint))) 15%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-b, var(--facet-accent, var(--tint))) 15%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-a, var(--facet-accent, var(--tint))) 15%, transparent)
     );
     filter: blur(16px);
   }
@@ -411,17 +524,17 @@
       var(--acrylic-glow-angle, 90deg),
       color-mix(
         in srgb,
-        color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 60%, white) 10%,
+        color-mix(in srgb, var(--acrylic-glow-a, var(--facet-accent, var(--tint))) 60%, white) 10%,
         transparent
       ),
       color-mix(
         in srgb,
-        color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 60%, white) 10%,
+        color-mix(in srgb, var(--acrylic-glow-b, var(--facet-accent, var(--tint))) 60%, white) 10%,
         transparent
       ),
       color-mix(
         in srgb,
-        color-mix(in srgb, var(--acrylic-glow-c, var(--tint)) 60%, white) 10%,
+        color-mix(in srgb, var(--acrylic-glow-c, var(--facet-accent, var(--tint))) 60%, white) 10%,
         transparent
       )
     );
@@ -436,7 +549,8 @@
     pointer-events: none;
     opacity: var(--flag-watermark-opacity);
     mix-blend-mode: var(--flag-watermark-blend);
-    filter: blur(1px);
+    /* The v2 1px blur plus the HIG tone that caps the flag's extremes (tokens.css, §16.8). */
+    filter: blur(1px) var(--flag-watermark-tone);
     transition:
       opacity 700ms var(--ease-out-facet),
       scale 700ms var(--ease-out-facet);
@@ -562,5 +676,36 @@
     .facet-refraction-line {
       transition: none;
     }
+  }
+
+  /* ─── Reduce Transparency and Increase Contrast (HIG, spec §16.8) ─────────
+     The blurred / translucent decorative layers go: the glow blob, the acrylic underlay and the
+     achievement aurora, radiance and foil. Reduce Transparency removes translucency and blur, not
+     colour, so the identity stays in the (opaque) rims, tinted borders, tinted section shadow
+     (`facet-glow`, outside the card, never under text) and header strips. Increase Contrast also
+     keeps the flag watermark at rest (no brighten under text). */
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    .facet-tint-glow,
+    .facet-acrylic-glow,
+    .facet-aurora,
+    .facet-radiance,
+    .facet-foil {
+      display: none;
+    }
+  }
+  :where([data-transparency="reduced"], [data-contrast="more"])
+    :is(.facet-tint-glow, .facet-acrylic-glow, .facet-aurora, .facet-radiance, .facet-foil) {
+    display: none;
+  }
+  @media (prefers-contrast: more) {
+    :is(.group, [data-slot="facet-card"], [data-slot="cutout-card"]):hover
+      .facet-flag-watermark[data-interactive="true"] {
+      opacity: var(--flag-watermark-opacity);
+    }
+  }
+  :where([data-contrast="more"])
+    :is(.group, [data-slot="facet-card"], [data-slot="cutout-card"]):hover
+    .facet-flag-watermark[data-interactive="true"] {
+    opacity: var(--flag-watermark-opacity);
   }
 }
