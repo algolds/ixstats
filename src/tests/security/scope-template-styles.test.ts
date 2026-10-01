@@ -188,6 +188,11 @@ describe("declarations that load or run something", () => {
     "background:element(#id)",
     "background:paint(worklet)",
     "content:src('x')",
+    "content:attr(data-src)",
+    "background:attr(data-src url)",
+    "background:ATTR (data-src)",
+    "background:at\\74r(data-src)",
+    "content:'a' attr(title)",
     "x:javascript:alert(1)",
     "x:vbscript:alert(1)",
   ])("drops %s and keeps the declaration after it", (declaration) => {

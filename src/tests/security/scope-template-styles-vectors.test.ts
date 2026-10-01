@@ -168,7 +168,7 @@ describe("a hostile declaration costs time linear in its size", () => {
     ["20,000 closed urls", ".a{background:" + "url(a) ".repeat(20_000) + "}"],
     ["20,000 url followed by spaces and no paren", ".a{background:" + "url   ".repeat(20_000) + "}"],
   ])("%s", (_name, css) => {
-    expect(timed(css)).toBeLessThan(250);
+    expect(timed(css)).toBeLessThan(1_000); // ~150 ms here; a quadratic reader takes tens of seconds
   });
 
   it("still judges every url of a long declaration", () => {

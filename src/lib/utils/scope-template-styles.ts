@@ -16,7 +16,7 @@
  *    would reach outside it and is dropped;
  *  - `@media` blocks are kept (their rules scoped); every other at-rule (`@import`, `@font-face`,
  *    `@keyframes`, `@supports`, ...) is dropped with its block;
- *  - a declaration is dropped when it uses `expression(`, `behavior`, `-moz-binding`, `javascript:`, an
+ *  - a declaration is dropped when it uses `expression(`, `attr(`, `behavior`, `-moz-binding`, `javascript:`, an
  *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose target,
  *    resolved the way a browser does, is neither relative to the page (`/images/a.png`, `a.png`; not `//host/...`)
  *    nor on the wiki's own origin (the `ownOrigin` argument, `https:` only): no other host is ever contacted by a
@@ -51,7 +51,8 @@ const CONTROL_MARKS = /[\u0000-\u0002]/g;
 
 const PROPERTY_NAME = /^-{0,2}[a-z_][a-z0-9_-]*$/i;
 const BLOCKED_PROPERTY = /^(?:behavior|-ms-behavior|-moz-binding|binding)$/;
-const BLOCKED_VALUE = /expression\s*\(|(?:java|vb|live)script\s*:/;
+/** `attr(` builds a URL from an attribute in newer CSS (and MediaWiki's TemplateStyles refuses it too). */
+const BLOCKED_VALUE = /expression\s*\(|attr\s*\(|(?:java|vb|live)script\s*:/;
 /** Functions that load a URL without `url(`, and the old IE/Mozilla script hooks. */
 const BLOCKED_FUNCTION =
   /(?:^|[^\w-])(?:-webkit-|-moz-)?(?:image-set|image|cross-fade|element|paint|src)\s*\(/;
