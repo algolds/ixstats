@@ -4,6 +4,9 @@ import { sameTitle } from "~/lib/wiki-os/core/title";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 
+/** A wiki WikiOS does not hold: its pages are read from the wiki itself. */
+export type SisterWikiSource = Exclude<WikiSource, "ixwiki">;
+
 // ──────────────────────────────────────────────
 // Bridge DTO Interfaces
 // ──────────────────────────────────────────────
