@@ -209,7 +209,37 @@ export async function propRevisions(pc: PropContext): Promise<void> {
   await latestRevisions(pc, pages, byRevisionId, p, options);
 }
 
-/** Several pages (or `revids`): each page's newest revision, or exactly the revisions asked for, within the size budget. */
+/** One revision to answer: which page it is listed under, and its id. */
+interface WantedRevision {
+  entry: PageEntry;
+  revId: number;
+}
+
+/** The revisions asked for, in the order they are answered: each page's newest, or exactly the `revids`. */
+function wantedRevisions(pages: readonly PageEntry[], byRevisionId: boolean): WantedRevision[] {
+  return pages.flatMap((entry) => {
+    const ids = byRevisionId ? entry.revisionIds : entry.row?.headRevId ? [entry.row.headRevId] : [];
+    return ids.map((revId) => ({ entry, revId }));
+  });
+}
+
+/** Where a resumed request starts in `wanted`: at the revision `rvcontinue` names (`pageid|revid`). */
+function resumeIndex(wanted: readonly WantedRevision[], raw: string | undefined): number {
+  const cursor = optionalCursor(raw, ["n", "n"] as const);
+  if (!cursor) return 0;
+  const [pageId, revId] = cursor;
+  const exact = wanted.findIndex((item) => item.entry.key === pageId && item.revId === revId);
+  if (exact !== -1) return exact;
+  const page = wanted.findIndex((item) => item.entry.key >= pageId);
+  return page === -1 ? wanted.length : page;
+}
+
+/**
+ * Several pages (or `revids`): each page's newest revision, or exactly the revisions asked for, within
+ * the size budget. The budget is taken revision by revision (not page by page, as one page may be
+ * asked for 50 revisions of 2 MB): the first revision of a request is always answered, and once
+ * the budget is spent the rest is left to a continuation naming the revision it stops at.
+ */
 async function latestRevisions(
   pc: PropContext,
   pages: PageEntry[],
@@ -219,25 +249,29 @@ async function latestRevisions(
 ): Promise<void> {
   const { rc, continuation } = pc;
   const withContent = options.props.has("content");
-  const resume = optionalCursor(p.raw("continue"), ["n"] as const)?.[0];
-  const remaining = resume === undefined ? pages : pages.filter((entry) => entry.key >= resume);
-  const step = withContent ? CONTENT_BATCH : Math.max(remaining.length, 1);
+  const wanted = wantedRevisions(pages, byRevisionId);
+  const first = resumeIndex(wanted, p.raw("continue"));
+  // Every page this request answers shows its `revisions`, empty when it has none to show; a page
+  // whose revisions were all answered before the continuation is left out.
+  const done = new Set(wanted.slice(0, first).map((item) => item.entry));
+  for (const item of wanted.slice(first)) done.delete(item.entry);
+  for (const entry of pages) if (!done.has(entry)) fieldsOf(pc, entry).revisions = [];
+  const step = withContent ? CONTENT_BATCH : Math.max(wanted.length - first, 1);
 
-  for (let start = 0; start < remaining.length; start += step) {
-    const batch = remaining.slice(start, start + step);
-    const wanted = batch.flatMap((entry) =>
-      byRevisionId ? entry.revisionIds : entry.row?.headRevId ? [entry.row.headRevId] : []
+  for (let start = first; start < wanted.length; start += step) {
+    const batch = wanted.slice(start, start + step);
+    const found = new Map(
+      (await rc.deps.store.revisionsById(batch.map((item) => item.revId), withContent)).map((rev) => [rev.revId, rev])
     );
-    const revisions = wanted.length > 0 ? await rc.deps.store.revisionsById(wanted, withContent) : [];
-    for (const entry of batch) {
-      const mine = revisions.filter((rev) => rev.pageId === entry.key);
-      const bytes = mine.reduce((sum, rev) => sum + revisionBytes(rev, withContent), 0);
-      if (!rc.budget.tryAdd(bytes)) {
+    for (const { entry, revId } of batch) {
+      const rev = found.get(revId);
+      if (!rev || rev.pageId !== entry.key) continue;
+      if (!rc.budget.tryAdd(revisionBytes(rev, withContent))) {
         p.addWarning(TRUNCATED_WARNING);
-        continuation.addProp(p.fullName("continue"), encodeCursor([entry.key]));
+        continuation.addProp(p.fullName("continue"), encodeCursor([entry.key, revId]));
         return;
       }
-      fieldsOf(pc, entry).revisions = mine.map((rev) => revisionJson(rev, options));
+      (fieldsOf(pc, entry).revisions as JsonObject[]).push(revisionJson(rev, options));
     }
   }
 }

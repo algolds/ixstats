@@ -315,6 +315,34 @@ describe("response size", () => {
     expect(got.size).toBeGreaterThan(withContent.length);
   });
 
+  it("takes the budget revision by revision: revids of 50 big revisions of ONE page come in several responses", async () => {
+    const text = "h".repeat(1_800_000);
+    const ids = Array.from({ length: 50 }, (_, i) => 5000 + i);
+    const deps = await makeDeps({
+      store: fakeWiki({
+        pages: [{ pageId: 1, title: "Multi" }],
+        revisions: ids.map((revId, i) => ({ revId, page: "Multi", timestamp: `2026-02-${String(i + 1).padStart(2, "0")}T00:00:00Z`, user: "Heku", content: text })),
+      }),
+    });
+    const seen: number[] = [];
+    let continueWith = "";
+    let requests = 0;
+    do {
+      const query = `action=query&revids=${ids.join("|")}&prop=revisions&rvprop=ids|content&rvslots=main${continueWith}&formatversion=2`;
+      const output = (await call(deps, query)).body as Body;
+      expect(output.error).toBeUndefined();
+      expect(JSON.stringify(output).length).toBeLessThan(MAX_RESULT_BYTES + 100_000);
+      const revisions = output.query.pages[0].revisions as Body[];
+      expect(revisions.length).toBeGreaterThanOrEqual(1); // the first revision is always answered
+      seen.push(...revisions.map((rev) => rev.revid));
+      continueWith = output.continue ? `&rvcontinue=${encodeURIComponent(output.continue.rvcontinue)}&continue=${encodeURIComponent(output.continue.continue)}` : "";
+      if (output.continue) expect(JSON.stringify(output.warnings)).toContain("limit of 8,388,608 bytes");
+      requests++;
+    } while (continueWith && requests < 60);
+    expect(seen).toEqual(ids);
+    expect(requests).toBeGreaterThan(8);
+  }, 60_000);
+
   it("answers one huge revision rather than refusing it forever", async () => {
     const deps = await makeDeps({ store: fakeWiki({ pages: [{ pageId: 1, title: "Huge" }], revisions: [{ revId: 1, page: "Huge", timestamp: "2026-01-01T00:00:00Z", content: "h".repeat(9 * MB) }] }) });
     const body = (await call(deps, "action=query&titles=Huge&prop=revisions&rvprop=content&rvslots=main&formatversion=2")).body as Body;
