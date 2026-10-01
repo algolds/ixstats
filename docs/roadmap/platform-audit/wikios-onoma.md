@@ -2,6 +2,13 @@
 
 > **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
 > see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+>
+> **Update (WikiOS v1 plan 407).** The outbound export this audit describes is gone: `adapters/mediawiki/sync-worker.ts`
+> (`MediaWikiExportWorker`), `updateRevisionActor`, `getUserSessionAndToken` and the `Heku@WikiOS` default bot (NEW-1, NEW-4 and
+> the rows that cite them below) were replaced by a durable outbox (`wiki_mirror_jobs`) and `services/mirror-worker.ts`: revisions
+> are imported through `action=import` with `assignknownusers=1` (the real author, in order, one job per title at a time) by the
+> dedicated `WikiOSMirror` bot, a failed login fails the job instead of writing anonymously, and `WIKIOS_MEDIAWIKI_BOT_USER` has
+> no default. The text below is left as the audit found it.
 
 Branch `rose-garden` @ `e91e6b0b2` (2026-09-30). Read-only audit: nothing was changed or run against a database.
 Where the code and the docs disagree, the code wins. Row counts in the docs (4,685 articles, 48,200 links,
