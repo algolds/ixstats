@@ -9,7 +9,6 @@ import {
   WikiLinkPreview,
   ForumLinkPreview,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { cn } from "~/lib/utils";
 import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
 
 export interface FeedItemHeaderProps {

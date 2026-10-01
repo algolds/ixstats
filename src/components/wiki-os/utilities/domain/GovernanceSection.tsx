@@ -15,7 +15,6 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
-import { withBasePath } from "~/lib/base-path";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { Button } from "~/components/ui/button";
 

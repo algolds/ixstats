@@ -12,7 +12,7 @@ import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromeP
 import { parseChromePrefs } from "~/lib/wiki-os/chrome-prefs";
 
 /**
- * The brand font of the footer and the editorial masthead (`--wikios-font-brand`), self-hosted from
+ * The brand font of the footer (`--wikios-font-brand`), self-hosted from
  * public/fonts: one variable file, fetched only when a page actually sets text in it (no preload),
  * with a size-adjusted fallback so its arrival moves nothing.
  */
