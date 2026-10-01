@@ -27,6 +27,8 @@ export interface AuthorGroup {
   author: string | null;
   edits: number;
   lastEditedAt: Date;
+  /** The revisions' user was hidden (revision deletion): MediaWiki lists no contributor for them. */
+  userDeleted?: boolean;
 }
 
 export interface EdgeRevision {
@@ -50,6 +52,8 @@ function summarizeContributors(groups: readonly AuthorGroup[]): {
   let anonymousAuthors = 0;
   let anonymousLast: Date | null = null;
   for (const group of groups) {
+    // A hidden user is no contributor, as in MediaWiki's contributor list.
+    if (group.userDeleted) continue;
     const name = group.author ?? UNKNOWN_AUTHOR;
     if (isAnonymousAuthor(name)) {
       anonymousEdits += group.edits;
@@ -135,6 +139,11 @@ async function ownerWikiUsername(userId: string | null): Promise<string | null> 
   return owner?.wikiUsername ?? null;
 }
 
+/** A revision's author as a reader may see it: null when its user was hidden (revision deletion). */
+function visibleAuthor(revision: { author: string | null; userDeleted: boolean }): string | null {
+  return revision.userDeleted ? null : revision.author;
+}
+
 /**
  * The authorship of the page `title` in `source`, or null when the wiki has no such page. The page
  * is resolved as every other reader resolves it (a deleted page included: the caller decides who may
@@ -154,15 +163,15 @@ export async function loadRevisionAuthors(
     db.wikiRevision.findFirst({
       where: live,
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: { author: true, createdAt: true },
+      select: { author: true, createdAt: true, userDeleted: true },
     }),
     db.wikiRevision.findFirst({
       where: live,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      select: { author: true, createdAt: true },
+      select: { author: true, createdAt: true, userDeleted: true },
     }),
     db.wikiRevision.groupBy({
-      by: ["author"],
+      by: ["author", "userDeleted"],
       where: live,
       _count: { _all: true },
       _max: { createdAt: true },
@@ -170,18 +179,20 @@ export async function loadRevisionAuthors(
   ]);
 
   // The article's owner is asked only when the ledger leaves the creator unnamed.
-  const ownerName = oldest?.author ? null : await ownerWikiUsername(article.authorId);
+  const oldestAuthor = oldest && visibleAuthor(oldest);
+  const ownerName = oldestAuthor ? null : await ownerWikiUsername(article.authorId);
   if (!oldest || !newest) {
     return authorInfoWithoutRevisions(ownerName, article.createdAt, article.updatedAt);
   }
 
   return buildAuthorInfo(
-    oldest,
-    newest,
+    { author: oldestAuthor, createdAt: oldest.createdAt },
+    { author: visibleAuthor(newest), createdAt: newest.createdAt },
     groups.map((group) => ({
       author: group.author,
       edits: group._count._all,
       lastEditedAt: group._max.createdAt ?? newest.createdAt,
+      userDeleted: group.userDeleted,
     })),
     ownerName
   );

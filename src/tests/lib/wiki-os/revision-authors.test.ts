@@ -55,16 +55,21 @@ afterEach(() => guard.restore());
 
 /** `findFirst` answers by order: oldest first, newest second (the order the loader asks). */
 function ledger(
-  oldest: { author: string | null; createdAt: Date } | null,
-  newest: { author: string | null; createdAt: Date } | null,
-  groups: Array<{ author: string | null; edits: number; last: Date }>
+  oldest: { author: string | null; createdAt: Date; userDeleted?: boolean } | null,
+  newest: { author: string | null; createdAt: Date; userDeleted?: boolean } | null,
+  groups: Array<{ author: string | null; edits: number; last: Date; userDeleted?: boolean }>
 ) {
   mocked.wikiRevision.findFirst.mockImplementation(
     async ({ orderBy }: { orderBy: Array<{ createdAt: "asc" | "desc" }> }) =>
       orderBy[0]?.createdAt === "asc" ? oldest : newest
   );
   mocked.wikiRevision.groupBy.mockResolvedValue(
-    groups.map((g) => ({ author: g.author, _count: { _all: g.edits }, _max: { createdAt: g.last } }))
+    groups.map((g) => ({
+      author: g.author,
+      userDeleted: g.userDeleted ?? false,
+      _count: { _all: g.edits },
+      _max: { createdAt: g.last },
+    }))
   );
 }
 
@@ -156,6 +161,35 @@ describe("getArticleAuthors for IxWiki", () => {
     // Three distinct IPs and one account: MediaWiki's count of contributors plus anonymous contributors.
     expect(info.totalContributors).toBe(4);
     expect(info.lastEditor).toMatchObject({ username: "203.0.113.9" });
+  });
+
+  it("lists no contributor for revisions whose user was hidden, as MediaWiki's contributor list does", async () => {
+    ledger({ author: "Kir", createdAt: day(2) }, { author: "Bea", createdAt: day(19) }, [
+      { author: "Kir", edits: 2, last: day(5) },
+      { author: "Bea", edits: 3, last: day(19) },
+      { author: "(deleted)", edits: 9, last: day(12), userDeleted: true },
+    ]);
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.contributors?.map((c) => c.username)).toEqual(["Bea", "Kir"]);
+    expect(info.totalContributors).toBe(2);
+    // The query groups by the hidden flag, so a hidden revision never merges into an account's count.
+    expect(mocked.wikiRevision.groupBy.mock.calls[0]?.[0].by).toEqual(["author", "userDeleted"]);
+  });
+
+  it("does not credit a hidden user as the creator or the last editor", async () => {
+    ledger(
+      { author: "(deleted)", createdAt: day(1), userDeleted: true },
+      { author: "(deleted)", createdAt: day(9), userDeleted: true },
+      [{ author: "(deleted)", edits: 2, last: day(9), userDeleted: true }]
+    );
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.creator).toMatchObject({ username: "MediaWiki Contributor" });
+    expect(info.lastEditor).toMatchObject({ username: "MediaWiki Contributor" });
+    expect(info.totalContributors).toBe(0);
   });
 
   it("credits an unnamed first revision to the article's owner", async () => {

@@ -311,6 +311,34 @@ describe("previews of many pages", () => {
   });
 });
 
+describe("credits skip a user whose revisions were hidden", () => {
+  it("never name a hidden user as creator or as top contributor", async () => {
+    mocked.wikiArticle.findMany.mockResolvedValue([{ id: "a1", title: "Caphiria" }]);
+    early = [
+      { articleId: "a1", author: "(deleted)", createdAt: day(1), userDeleted: true },
+      { articleId: "a1", author: "Kir", createdAt: day(2), userDeleted: false },
+    ];
+    mocked.wikiRevision.groupBy.mockResolvedValue([
+      { articleId: "a1", author: "(deleted)", userDeleted: true, _count: { _all: 40 } },
+      { articleId: "a1", author: "Kir", userDeleted: false, _count: { _all: 3 } },
+      { articleId: "a1", author: "Bea", userDeleted: false, _count: { _all: 5 } },
+    ]);
+
+    const authors = await wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["Caphiria"], "ixwiki");
+
+    expect(authors.get("Caphiria")).toMatchObject({
+      creator: "Kir",
+      primaryContributor: "Bea",
+      contributorCount: 2,
+    });
+    expect(mocked.wikiRevision.groupBy.mock.calls[0]?.[0].by).toEqual([
+      "articleId",
+      "author",
+      "userDeleted",
+    ]);
+  });
+});
+
 describe("lists for IxWiki", () => {
   it("lists a category's pages and files from its members, never asking a wiki", async () => {
     titles = [{ title: "Caphiria" }, { title: "File:Map.png" }];

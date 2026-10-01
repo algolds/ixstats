@@ -93,6 +93,7 @@ interface EarlyRow {
   articleId: string;
   author: string | null;
   createdAt: Date;
+  userDeleted: boolean;
 }
 
 /** For each article: its earliest live revisions and its named contributors, most edits first. */
@@ -103,8 +104,8 @@ async function loadAuthorFacts(articleIds: readonly string[]): Promise<Map<strin
 
   const [early, groups] = await Promise.all([
     db.$queryRaw<EarlyRow[]>`
-      SELECT "articleId", "author", "createdAt" FROM (
-        SELECT r."articleId", r."author", r."createdAt",
+      SELECT "articleId", "author", "createdAt", "userDeleted" FROM (
+        SELECT r."articleId", r."author", r."createdAt", r."userDeleted",
                row_number() OVER (
                  PARTITION BY r."articleId" ORDER BY r."createdAt" ASC, r."id" ASC
                ) AS "rank"
@@ -114,16 +115,23 @@ async function loadAuthorFacts(articleIds: readonly string[]): Promise<Map<strin
       WHERE "rank" <= ${EARLY_REVISIONS}
       ORDER BY "articleId", "rank"`,
     db.wikiRevision.groupBy({
-      by: ["articleId", "author"],
+      by: ["articleId", "author", "userDeleted"],
       where: { articleId: { in: [...articleIds] }, parked: false },
       _count: { _all: true },
     }),
   ]);
 
-  for (const row of early) facts.get(row.articleId)?.earliest.push(row);
+  for (const row of early) {
+    // A hidden user is no one's creator: MediaWiki's revision list carries no user for the revision.
+    facts.get(row.articleId)?.earliest.push({
+      author: row.userDeleted ? null : row.author,
+      createdAt: row.createdAt,
+    });
+  }
   for (const group of groups) {
-    // Anonymous (IP) editors are not credited by name, as MediaWiki's contributor list leaves them out.
-    if (group.author && !isAnonymousAuthor(group.author)) {
+    // Neither are anonymous (IP) editors or hidden users credited by name: MediaWiki's contributor list leaves
+    // them out.
+    if (group.author && !group.userDeleted && !isAnonymousAuthor(group.author)) {
       facts.get(group.articleId)?.contributors.push({ name: group.author, edits: group._count._all });
     }
   }
