@@ -2,7 +2,7 @@
 // Plan 415 review: vectors for the TemplateStyles scoper, judged by an independent CSS tokenizer. The oracle is
 // lightningcss (a spec CSS tokenizer and parser, like the browsers'), run over what the scoper emits: every rule
 // it finds must be confined to the article's root, and no at-rule but @media may be left. lightningcss is
-// tailwind's own dependency (it is in node_modules, not in package.json); postcss walks its output.
+// a devDependency pinned to the version tailwind already resolves; postcss walks its output.
 import { transform } from "lightningcss";
 import postcss from "postcss";
 import { ARTICLE_STYLE_SCOPE, scopeTemplateStyles } from "~/lib/utils/scope-template-styles";

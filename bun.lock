@@ -116,6 +116,7 @@
         "@types/ws": "^8.18.1",
         "jest": "^30.4.2",
         "jest-environment-jsdom": "^30.4.1",
+        "lightningcss": "1.32.0",
         "mysql2": "^3.24.2",
         "node-fetch-native": "^1.6.7",
         "oxlint": "^1.80.0",

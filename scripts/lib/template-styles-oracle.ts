@@ -39,14 +39,15 @@ function selectorViolation(selector: Selector): string | null {
   return null;
 }
 
-/** Why a browser may fetch `target` from a host the wiki does not own, or null when it may not. */
+/**
+ * Why a browser may fetch `target` from a host the wiki does not own, or null when it may not: judged by where the
+ * URL parser (WHATWG, as in a browser) says it points. Only the page's own origin (what a relative URL means) and
+ * the wiki's, over https, are fine; `//host`, `\\host`, `https:/host` and the rest come out on another origin.
+ */
 function urlViolation(target: string): string | null {
   try {
     const resolved = new URL(target, RELATIVE_BASE);
-    const absolute = /^\s*[a-z][a-z0-9+.-]*:/i.test(target);
-    const fine = absolute
-      ? resolved.protocol === "https:" && resolved.origin === OWN_ORIGIN
-      : resolved.origin === RELATIVE_ORIGIN && !/^[\s/\\]{2}/.test(target.replace(/[\t\n\r]/g, ""));
+    const fine = resolved.protocol === "https:" && (resolved.origin === RELATIVE_ORIGIN || resolved.origin === OWN_ORIGIN);
     return fine ? null : `url ${JSON.stringify(target)} -> ${resolved.href}`;
   } catch {
     return null; // not a URL a browser can fetch
@@ -85,11 +86,34 @@ export function violations(css: string): string[] {
   } catch (error) {
     return [`oracle could not parse the output: ${String(error)}`];
   }
-  parseCss(normalized).walkDecls((declaration) => {
-    const value = declaration.value.toLowerCase();
-    if (SCRIPT_VALUE.test(value)) found.push(`decl ${declaration.prop}:${declaration.value}`);
-    if (URL_FUNCTION.test(value)) found.push(`fn ${value}`);
-    if (/attr\(/.test(value)) found.push(`attr() in ${declaration.prop}:${declaration.value}`);
-  });
+  for (const [property, value] of declarationsOf(normalized)) {
+    const lowered = value.toLowerCase();
+    if (SCRIPT_VALUE.test(lowered)) found.push(`decl ${property}:${value}`);
+    if (URL_FUNCTION.test(lowered)) found.push(`fn ${lowered}`);
+    if (/attr\(/.test(lowered)) found.push(`attr() in ${property}:${value}`);
+  }
   return found;
+}
+
+/**
+ * The [property, value] pairs of lightningcss's printout of `css`. postcss reads it unless the printout holds a
+ * declaration only a tolerant parser accepts (`https: //x`, from junk the scoper kept as a custom property); then
+ * every line that ends in `;` is read as one declaration, so nothing is skipped.
+ */
+function declarationsOf(css: string): Array<[string, string]> {
+  try {
+    const pairs: Array<[string, string]> = [];
+    parseCss(css).walkDecls((declaration) => {
+      pairs.push([declaration.prop, declaration.value]);
+    });
+    return pairs;
+  } catch {
+    return css
+      .split("\n")
+      .filter((line) => line.endsWith(";"))
+      .map((line): [string, string] => {
+        const colon = line.indexOf(":");
+        return [line.slice(0, colon).trim(), line.slice(colon + 1, -1).trim()];
+      });
+  }
 }
