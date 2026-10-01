@@ -211,15 +211,39 @@ async function baseConflicts(rc: ApiContext, refs: readonly string[], title: str
 }
 
 const editConflict = () => new ApiError("editconflict", "Edit conflict detected.");
+const articleExists = () =>
+  new ApiError("articleexists", "The article you tried to create has been created already.");
+
+/**
+ * The head the save must still find (`expectedHeadRef`): the revision the new text was made from.
+ *   - The page did not exist: null (nobody may have created it since).
+ *   - The request named a base (`baserevid`/`basetimestamp`): that base.
+ *   - No base, but the new text is built from the stored page (`appendtext`, `prependtext`, `section`): the head the
+ *     page row was read at, which is before the text was read, so an edit that lands in between reads as a conflict
+ *     (the safe direction), never as a lost update.
+ *   - No base and a whole new text: undefined, no check (the last write wins, as in MediaWiki).
+ */
+async function expectedHeadOf(
+  rc: ApiContext,
+  request: EditRequest,
+  texts: { text?: string },
+  row: PageRow | null,
+  bases: readonly string[]
+): Promise<string | null | undefined> {
+  if (!row) return null;
+  if (bases.length > 0) return bases[0];
+  if (request.section === undefined && texts.text !== undefined) return undefined;
+  if (row.headRevId === null) return null;
+  const [head] = await rc.deps.store.revisionsById([row.headRevId], false);
+  return head?.ref ?? NO_SUCH_REVISION;
+}
 
 /** The refusals that need no permission check: the model, createonly and nocreate. */
 function checkEditPreconditions(request: EditRequest, row: PageRow | null, model: string): void {
   if (request.contentModel !== undefined && request.contentModel !== model) {
     throw new ApiError("cantchangecontentmodel", "You don't have permission to change the content model of a page.");
   }
-  if (row && request.createOnly) {
-    throw new ApiError("articleexists", "The article you tried to create has been created already.");
-  }
+  if (row && request.createOnly) throw articleExists();
   if (!row && request.noCreate) {
     throw new ApiError("missingtitle", "The page you specified doesn't exist.");
   }
@@ -256,7 +280,7 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
     return { edit: { result: "Success", nochange: true, title, pageid: row.pageId, contentmodel: model } };
   }
 
-  // Every base named the head a moment ago; the save checks that it still does, atomically (no base: no check).
+  // The save checks, atomically, that the page is still at the revision the text was made from (see expectedHeadOf).
   let revisionRowId: string;
   try {
     ({ revisionRowId } = await rc.deps.services.saveWikitext(rc.session.ctx, {
@@ -264,10 +288,12 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
       wikitext,
       summary: cleanComment(summaryOf(edited, request.summary)),
       minor: request.minor,
-      expectedHeadRef: bases[0],
+      expectedHeadRef: await expectedHeadOf(rc, request, texts, row, bases),
     }));
   } catch (error) {
-    throw error instanceof EditConflictError ? editConflict() : error;
+    if (!(error instanceof EditConflictError)) throw error;
+    // a page that did not exist and was created meanwhile: for `createonly` that is what it refuses
+    throw !row && request.createOnly ? articleExists() : editConflict();
   }
   const saved = await rc.deps.store.revisionByRowId(revisionRowId);
   return {

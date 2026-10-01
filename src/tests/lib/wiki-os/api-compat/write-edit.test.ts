@@ -185,6 +185,8 @@ describe("sections", () => {
       wikitext: `${SECTIONED}\n\n== Three ==\n\nthree body`,
       summary: "/* Three */ new section",
       minor: false,
+      // built from the stored page: the save must still find the head it was read at (rev 201)
+      expectedHeadRef: "201",
     });
     // the summary is the heading when no sectiontitle is given
     await edit({ title: "Sections", section: "new", summary: "Four", text: "four body" });
@@ -220,13 +222,26 @@ describe("edit conflicts", () => {
     expect(saves()).toHaveLength(1);
   });
 
-  it("hands the base to the save, which re-checks it atomically; no base, no check", async () => {
-    const { edit, saves } = await setup();
-    await edit({ title: "Existing", text: "based", baserevid: "102" });
-    await edit({ title: "Existing", text: "unbased" });
-    await edit({ title: "Brand new", text: "new page", baserevid: "5" });
+  it("hands the save the head the new text was made from: the request's base, else, for a text built from the stored page, the head it was read at", async () => {
+    // (each on a fresh wiki: a save moves the head)
+    const refs = async (params: Record<string, string>) => {
+      const { edit, saves } = await setup();
+      await edit(params);
+      return (saves().at(-1)!.args[1] as Body).expectedHeadRef;
+    };
 
-    expect(saves().map((call) => (call.args[1] as Body).expectedHeadRef)).toEqual(["102", undefined, undefined]);
+    // an explicit base wins
+    expect(await refs({ title: "Existing", text: "based", baserevid: "102" })).toBe("102");
+    // no base and a whole new text: the last write wins, as in MediaWiki
+    expect(await refs({ title: "Existing", text: "unbased" })).toBeUndefined();
+    // no base, but built from the stored text: the head the page row was read at
+    expect(await refs({ title: "Sections", appendtext: "\nmore" })).toBe("201");
+    expect(await refs({ title: "Sections", prependtext: "Intro\n" })).toBe("201");
+    expect(await refs({ title: "Sections", section: "1", text: "== One ==\nx" })).toBe("201");
+    expect(await refs({ title: "Sections", section: "new", text: "body", sectiontitle: "T" })).toBe("201");
+    // a page that did not exist: nobody may have created it since, whatever else was sent
+    expect(await refs({ title: "Brand new", text: "new page", baserevid: "5" })).toBeNull();
+    expect(await refs({ title: "Brand newer", text: "new page" })).toBeNull();
   });
 
   it("answers editconflict when the save finds the page moved on after the early check passed", async () => {
@@ -244,6 +259,21 @@ describe("edit conflicts", () => {
     expect(body.error).toEqual({ code: "editconflict", info: "Edit conflict detected.", "*": expect.any(String) });
     expect(body.edit).toBeUndefined();
     expect(saves()).toHaveLength(0); // (the override is not the recording one)
+  });
+
+  it("answers articleexists, not editconflict, when createonly meets a page created meanwhile", async () => {
+    const created = {
+      services: {
+        saveWikitext: async () => {
+          throw new EditConflictError({ currentWikitext: "Somebody made it", currentRevisionRef: "9" });
+        },
+      },
+    };
+    const { edit } = await setup(created);
+
+    expect((await edit({ title: "Brand new", text: "x", createonly: "" })).error.code).toBe("articleexists");
+    // without createonly the same race is an ordinary edit conflict
+    expect((await edit({ title: "Brand new", text: "x" })).error.code).toBe("editconflict");
   });
 
   it("lets any other failure of the save through as it is", async () => {

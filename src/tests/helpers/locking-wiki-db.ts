@@ -115,7 +115,7 @@ export function createLockingWikiDb({ locks = true }: { locks?: boolean } = {}) 
         },
         async create({ data }: { data: Where }) {
           await tick();
-          const row: Row = { id: newId("rev-"), mwRevId: null, parked: false, createdAt: new Date(Date.UTC(2026, 0, 1) + counter * 1000), ...data };
+          const row: Row = { id: newId("rev-"), mwRevId: null, parked: false, createdAt: new Date(Date.UTC(2030, 0, 1) + counter * 1000), ...data };
           own.revisions.push(row);
           return { ...row };
         },
