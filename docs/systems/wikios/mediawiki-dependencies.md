@@ -50,7 +50,6 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
 | `src/lib/wiki-os/api-compat/deps.ts` (`renderWikitext`) | `renderArticleViaMediaWiki(<text or old revision's wikitext>)` | WikiOS's own `/w/api.php` (plan 410): `action=parse&text=` from a bot session, or `parse&oldid=` (20/min per IP). Never the in-process compiler: a failed render answers `renderunavailable`. |
-| `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
 
 ### sync (inbound)
 
@@ -142,6 +141,7 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/http-reader.ts` | wikitext, search, category members, page images and page authors of iiwiki and AltHistory; Commons category members and file URLs. |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/batch-reader.ts` | batched wikitext of iiwiki and AltHistory (through `http-reader.ts`). |
+| `src/lib/wiki-os/services/sister-render-service.ts` (`renderSisterArticle`, called by `src/server/api/routers/wikios/page-content.ts` `getArticleHtml`) | `action=parse&text=<that wiki's wikitext>&title=` posted to **that wiki's own** `api.php` (`getMediaWikiApiUrl(source)`, through `http-reader.ts` `fetchExternalWiki`, user agent `IxStats-Builder`), so its templates resolve against its own pages (plan 415, BUG-09; they used to be rendered by IxWiki's engine). The answer is transformed, sanitized and cached per `(source, title, revision)` for ten minutes (200 pages). A failed render is a `BAD_GATEWAY`. |
 | `src/server/api/routers/wikios/categories.ts`, `src/server/api/routers/wikios/search.ts` | the `wiki: "iiwiki" \| "althistory"` branch of `searchCategories`, `getCategories`, `getCategoryTotalCounts`, `getSubcategories`, `autocompleteCategories`, `searchFiles`. |
 | `src/lib/cards/lore-card-generator.ts` | every generator read for iiwiki (article data, previews, authors, category members, category search and info, main-namespace pages, random pages, file URLs). |
 | `src/server/api/routers/lore-cards/wiki.ts` | iiwiki's opensearch fallback and recent changes. |

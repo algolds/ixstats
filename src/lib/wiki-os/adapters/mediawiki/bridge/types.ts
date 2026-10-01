@@ -23,6 +23,8 @@ export interface WikiArticle {
   pageId: number;
   wikitext: string;
   length: number;
+  /** The revision the text is of, when the wiki said (a sister wiki's page: what its rendered view is cached under). */
+  revId?: number;
 }
 
 export interface WikiIntro {

@@ -27,12 +27,26 @@ describe("transformArticleHtml links for another wiki's page (ruling E-l)", () =
     expect(html).toContain('href="/wiki/Portal:Eurth?source=iiwiki"');
   });
 
-  it("sends red links (missing only on IxWiki) to the reader for that wiki, not to a create form", () => {
-    expect(html).toContain('href="/wiki/Aurelian_Empire?source=iiwiki"');
+  it("sends red links (missing on that wiki, which rendered the page) to its reader, still red, not to a create form", () => {
+    expect(html).toContain(
+      'href="/wiki/Aurelian_Empire?source=iiwiki" class="new" title="Aurelian Empire (page does not exist)"'
+    );
     expect(html).not.toContain("index.php");
     expect(html).not.toContain("redlink");
-    expect(html).not.toContain('class="new');
-    expect(html).not.toContain("page does not exist");
+  });
+
+  it("reads a red link of the /wiki/Title?action=edit&redlink=1 form (Fandom's) the same way", () => {
+    const fandom = transformArticleHtml(
+      '<div class="mw-parser-output"><p><a href="/wiki/Gallambria?action=edit&amp;redlink=1" class="new" title="Gallambria (page does not exist)">G</a> ' +
+        '<a href="/wiki/Gallambria?action=history#Top">h</a> <a href="/wiki/Special:Search?search=x">s</a></p></div>',
+      "",
+      "althistory"
+    ).contentHtml;
+
+    expect(fandom).toContain('href="/wiki/Gallambria?source=althistory" class="new"');
+    expect(fandom).toContain('href="/wiki/Gallambria?source=althistory#Top"');
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Special:Search?search=x" rel="noreferrer"');
+    expect(fandom).not.toContain("redlink");
   });
 
   it("opens files, special, user and category pages on that wiki", () => {

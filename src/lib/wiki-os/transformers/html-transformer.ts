@@ -67,8 +67,8 @@ const SITE_NAMESPACE_REGEX =
   /^(?:File|Image|Media|Special|User|Category|Template|Module|Help|MediaWiki|Talk|[A-Za-z]+_talk)(?::|%3A)/iu;
 const QUERY_TITLE_REGEX = /(?:^|&(?:amp;)?)title=([^&]*)/u;
 const QUERY_UPLOAD_FILE_REGEX = /(?:^|&(?:amp;)?)wpDestFile=([^&]*)/u;
-const MISSING_PAGE_TOOLTIP_REGEX = / \(page does not exist\)"/gu;
-const PAGE_NAME_REGEX = /^[^#]*/u;
+/** `Name?query#fragment` of a `/wiki/` link: the page name, then the wiki's own query (`?action=edit&redlink=1`), then the fragment. */
+const WIKI_PATH_REGEX = /^([^?#]*)(?:\?[^#]*)?(#.*)?$/u;
 
 const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
 /** A tag whose width or height is 1-24px is an icon (a notice's, a link marker's), never the lead image. */
@@ -329,24 +329,25 @@ function redLinkPage(query: string): string | undefined {
 }
 
 /**
- * Another wiki's page is parsed by ixwiki, so its links resolve against ixwiki (ruling E-l). Articles stay in the
- * WikiOS reader for that wiki (`?source=`, before any #fragment); files, special, user and similar pages open on
- * that wiki; red links only mean "not on IxWiki", so they are ordinary links to that wiki's page.
+ * Another wiki's page is parsed by that wiki itself, so its links are its own (plan 415): an article stays in
+ * the WikiOS reader for that wiki (`?source=`, before any #fragment, whatever query the wiki put on the
+ * link); files, special, user and similar pages open on that wiki; a red link is a page missing there, so it
+ * keeps its red styling and leads to the reader for that wiki, which says so, not to a create form.
  */
 function transformSourceWikiLinks(html: string, basePath: string, wikiSource: WikiSource): string {
   const origin = getWikiBaseUrl(wikiSource).replace(/\/+$/u, "");
-  const href = (page: string) =>
-    SITE_NAMESPACE_REGEX.test(page)
-      ? `href="${origin}/wiki/${page}" rel="noreferrer"`
-      : `href="${basePath}/wiki/${page.replace(PAGE_NAME_REGEX, (name) => `${name}?source=${wikiSource}`)}"`;
+  const href = (path: string) => {
+    const [, name = "", fragment = ""] = WIKI_PATH_REGEX.exec(path) ?? [];
+    return SITE_NAMESPACE_REGEX.test(name)
+      ? `href="${origin}/wiki/${path}" rel="noreferrer"`
+      : `href="${basePath}/wiki/${name}?source=${wikiSource}${fragment}"`;
+  };
   return html
     .replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => href(path))
     .replace(INDEX_PHP_HREF_REGEX, (_match, query: string) => {
       const page = redLinkPage(query);
       return page ? href(page) : `href="${origin}/index.php?${query}" rel="noreferrer"`;
-    })
-    .replace(CLASS_NEW_REGEX, 'class="wikios-source-link"')
-    .replace(MISSING_PAGE_TOOLTIP_REGEX, '"');
+    });
 }
 
 export function transformImages(
