@@ -1,0 +1,745 @@
+/** @jest-environment node */
+/**
+ * Plan 407: the mirror worker over an in-memory outbox. Jobs run oldest first and per title in order, the revision
+ * jobs of a title that wait next in line go as one batch, a failure backs off, the 8th failed attempt makes a job
+ * dead (a Discord warning, and its title is blocked), a busy lock means no work, and SKIP_MEDIAWIKI_SYNC stops the
+ * worker with the jobs left in the outbox.
+ */
+import type { WikiMirrorJob } from "@prisma/client";
+import {
+  DEFAULT_DEADLINE_MS,
+  LOCK_TIMEOUT_MS,
+  MAX_CYCLE_MS,
+  runMirrorCycle,
+  runMirrorCycleLocked,
+} from "~/lib/wiki-os/services/mirror-worker";
+import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
+import { ATTEMPT_TIMEOUT_MS, INTERRUPTED_AFTER_MS } from "~/lib/wiki-os/services/mirror-queue";
+import { CRON_JOBS } from "~/server/cron/jobs";
+import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
+import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
+import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
+import { discordWebhook } from "~/lib/discord/webhook";
+import { withJobLock } from "~/lib/system/job-lock";
+
+type Row = WikiMirrorJob;
+let rows: Row[] = [];
+/** Ids of jobs another runner claims just before this worker's claim. */
+const racedClaims = new Set<string>();
+/** Ids of jobs whose outcome cannot be stored (the database fails when the job is marked done). */
+const storeFails = new Set<string>();
+let counter = 0;
+
+const matches = (row: Row, where: Record<string, unknown>): boolean =>
+  Object.entries(where).every(([key, condition]) => {
+    const value = (row as unknown as Record<string, unknown>)[key];
+    if (condition !== null && typeof condition === "object" && !(condition instanceof Date)) {
+      const cond = condition as {
+        not?: unknown;
+        lt?: Date;
+        gt?: Date;
+        in?: unknown[];
+        notIn?: unknown[];
+      };
+      if ("not" in cond) return value !== cond.not;
+      if ("gt" in cond) return (value as Date) > (cond.gt as Date);
+      if ("in" in cond) return (cond.in as unknown[]).includes(value);
+      if ("notIn" in cond) return !(cond.notIn as unknown[]).includes(value);
+      if ("lt" in cond) return (value as Date) < (cond.lt as Date);
+    }
+    return value === condition;
+  });
+
+const apply = (row: Row, data: Record<string, unknown>) => {
+  for (const [key, value] of Object.entries(data)) {
+    const change = value as { increment?: number; decrement?: number } | null;
+    const delta =
+      change?.increment ?? (change?.decrement === undefined ? undefined : -change.decrement);
+    (row as unknown as Record<string, unknown>)[key] =
+      delta === undefined ? value : (row as unknown as Record<string, number>)[key]! + delta;
+  }
+  row.updatedAt = new Date();
+};
+
+/** `SystemConfig` rows by key (the time of the last dead-job warning is kept there). */
+const config = new Map<string, string>();
+
+jest.mock("~/server/db", () => ({
+  db: {
+    systemConfig: {
+      findUnique: async ({ where }: { where: { key: string } }) =>
+        config.has(where.key) ? { value: config.get(where.key) } : null,
+      upsert: async ({ where, create }: { where: { key: string }; create: { value: string } }) =>
+        void config.set(where.key, create.value),
+    },
+    wikiMirrorJob: {
+      count: async ({ where }: { where: Record<string, unknown> }) =>
+        rows.filter((row) => matches(row, where)).length,
+      findMany: async ({
+        where,
+        take,
+        orderBy,
+      }: {
+        where: Record<string, unknown>;
+        take: number;
+        orderBy?: { updatedAt?: "desc" };
+      }) =>
+        rows
+          .filter((row) => matches(row, where))
+          .sort((a, b) =>
+            orderBy?.updatedAt === "desc"
+              ? b.updatedAt.getTime() - a.updatedAt.getTime()
+              : a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)
+          )
+          .slice(0, take)
+          .map((row) => ({ ...row })),
+      findUnique: async ({ where }: { where: { id: string } }) => {
+        const row = rows.find((candidate) => candidate.id === where.id);
+        return row ? { ...row } : null;
+      },
+      update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+        if (data.state === "done" && storeFails.has(where.id)) throw new Error("db down");
+        const row = rows.find((candidate) => candidate.id === where.id)!;
+        apply(row, data);
+        return { ...row };
+      },
+      updateMany: async ({
+        where,
+        data,
+      }: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        // another runner takes the job a moment before this claim (see `racedClaims`)
+        if (data.state === "running" && racedClaims.has(String(where.id))) {
+          const taken = rows.find((row) => row.id === where.id);
+          if (taken) taken.state = "running";
+        }
+        const found = rows.filter((row) => matches(row, where));
+        for (const row of found) apply(row, data);
+        return { count: found.length };
+      },
+      deleteMany: async ({ where }: { where: Record<string, unknown> }) => {
+        const before = rows.length;
+        rows = rows.filter((row) => !matches(row, where));
+        return { count: before - rows.length };
+      },
+    },
+  },
+}));
+jest.mock("~/lib/wiki-os/services/mirror-revision", () => ({
+  planRevisionBatch: jest.fn(),
+  executeRevisionBatch: jest.fn(),
+}));
+jest.mock("~/lib/wiki-os/services/mirror-page-ops", () => ({ runPageJob: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  invalidateTemplateDependents: jest.fn().mockResolvedValue(0),
+}));
+jest.mock("~/lib/discord/webhook", () => ({
+  discordWebhook: { sendWarning: jest.fn().mockResolvedValue(undefined) },
+}));
+jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
+
+const planBatch = jest.mocked(planRevisionBatch);
+const sendBatch = jest.mocked(executeRevisionBatch);
+/** What sending one revision does (MediaWiki's revision id, or a rejection): the batch sends its jobs in order. */
+const revisionJob = jest.fn<Promise<number | null>, [WikiMirrorJob]>();
+const pageJob = jest.mocked(runPageJob);
+const warn = jest.mocked(discordWebhook.sendWarning);
+
+/** A job in the outbox, `ageMs` old (older jobs are written first). */
+function addJob(over: Partial<Row> = {}, ageMs = 60_000 - counter * 1_000): Row {
+  counter += 1;
+  const row: Row = {
+    id: `job${String(counter).padStart(3, "0")}`,
+    source: "ixwiki",
+    kind: "revision",
+    title: "Foo",
+    articleId: "a1",
+    revisionId: `r${counter}`,
+    logId: null,
+    payload: null,
+    state: "pending",
+    attempts: 0,
+    nextAttemptAt: new Date(Date.now() - 5_000),
+    lastError: null,
+    mwRevId: null,
+    createdAt: new Date(Date.now() - ageMs),
+    updatedAt: new Date(),
+    ...over,
+  };
+  rows.push(row);
+  return row;
+}
+
+const byId = (id: string) => rows.find((row) => row.id === id)!;
+/** Make a backed-off job due again (the test does not wait out the backoff). */
+const makeDue = (id: string) => void (byId(id).nextAttemptAt = new Date(Date.now() - 1));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  rows = [];
+  counter = 0;
+  racedClaims.clear();
+  storeFails.clear();
+  config.clear();
+  delete process.env.SKIP_MEDIAWIKI_SYNC;
+  revisionJob.mockReset().mockResolvedValue(555);
+  // The planner takes every job it is given (a size cap is the real one's business, tested with it).
+  planBatch.mockImplementation(async (jobs) => ({
+    title: jobs[0].title,
+    restore: false,
+    members: jobs.map((job) => ({ job, send: false as const, mwRevId: null })),
+    xml: null,
+    importSummary: "summary",
+  }));
+  sendBatch.mockImplementation(async (plan) => {
+    const outcomes = [];
+    for (const { job } of plan.members) outcomes.push({ job, mwRevId: await revisionJob(job) });
+    return outcomes;
+  });
+  pageJob.mockResolvedValue(undefined);
+  jest.spyOn(console, "warn").mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe("runMirrorCycle", () => {
+  it("runs the due jobs oldest first and marks them done, with the MediaWiki revision they made", async () => {
+    const first = addJob({ title: "A" });
+    const second = addJob({ title: "B" });
+    const order: string[] = [];
+    revisionJob.mockImplementation(async (job) => {
+      order.push(job.id);
+      return job.id === first.id ? 501 : 502;
+    });
+
+    const result = await runMirrorCycle();
+
+    expect(result).toEqual({ skipped: false, done: 2, failed: 0, dead: 0 });
+    expect(order).toEqual([first.id, second.id]);
+    expect(byId(first.id)).toMatchObject({
+      state: "done",
+      mwRevId: 501,
+      attempts: 1,
+      lastError: null,
+    });
+    expect(byId(second.id)).toMatchObject({ state: "done", mwRevId: 502 });
+  });
+
+  it("runs the page operations through their own handler, and re-renders the users of a template after its revision", async () => {
+    addJob({
+      kind: "move",
+      title: "Old",
+      payload: { to: "New", reason: "", leaveRedirect: true },
+      revisionId: null,
+    });
+    addJob({ title: "Template:Box" });
+
+    await runMirrorCycle();
+
+    expect(pageJob).toHaveBeenCalledTimes(1);
+    expect(revisionJob).toHaveBeenCalledTimes(1);
+    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
+  });
+
+  it("does not re-render anything for a revision job that failed", async () => {
+    addJob({ title: "Template:Box" });
+    revisionJob.mockRejectedValue(new Error("MediaWiki 503"));
+
+    await runMirrorCycle();
+
+    expect(invalidateTemplateDependents).not.toHaveBeenCalled();
+  });
+
+  it("keeps the order of one title after a failure: a job behind a backing-off one waits, other titles go on", async () => {
+    const failing = addJob({
+      title: "A",
+      state: "pending",
+      attempts: 1,
+      nextAttemptAt: new Date(Date.now() + 60_000),
+    });
+    const waiting = addJob({ title: "A" });
+    const other = addJob({ title: "B" });
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ done: 1, failed: 0 });
+    expect(byId(failing.id)).toMatchObject({ state: "pending", attempts: 1 });
+    expect(byId(waiting.id)).toMatchObject({ state: "pending", attempts: 0 });
+    expect(byId(other.id).state).toBe("done");
+  });
+
+  it("fails the jobs of a batch together, and other titles go on", async () => {
+    const first = addJob({ title: "A" });
+    const second = addJob({ title: "A" });
+    const other = addJob({ title: "B" });
+    revisionJob.mockImplementation(async (job) => {
+      if (job.title === "A") throw new Error("MediaWiki 503");
+      return 600;
+    });
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ done: 1, failed: 2, dead: 0 });
+    for (const job of [first, second]) {
+      expect(byId(job.id)).toMatchObject({
+        state: "pending",
+        attempts: 1,
+        lastError: "MediaWiki 503",
+      });
+    }
+    expect(byId(other.id).state).toBe("done");
+  });
+
+  it("retries a failed job after its backoff, and not before", async () => {
+    const failing = addJob();
+    revisionJob.mockRejectedValueOnce(new Error("MediaWiki 503"));
+
+    await runMirrorCycle();
+    expect(byId(failing.id)).toMatchObject({
+      state: "pending",
+      attempts: 1,
+      lastError: "MediaWiki 503",
+    });
+    const wait = byId(failing.id).nextAttemptAt.getTime() - Date.now();
+    expect(wait).toBeGreaterThan(55_000);
+    expect(wait).toBeLessThanOrEqual(60_000);
+
+    await runMirrorCycle(); // not due yet
+    expect(revisionJob).toHaveBeenCalledTimes(1);
+
+    makeDue(failing.id);
+    await runMirrorCycle();
+    expect(byId(failing.id)).toMatchObject({ state: "done", attempts: 2, lastError: null });
+  });
+
+  it("makes a job dead on its 8th failed attempt, once: a Discord warning, then it blocks its title", async () => {
+    const failing = addJob({ title: "Foo" });
+    const behindMove = addJob({
+      kind: "move",
+      title: "Foo",
+      payload: { to: "Bar", reason: "", leaveRedirect: true },
+      revisionId: null,
+    });
+    revisionJob.mockRejectedValue(new Error("MediaWiki bot login failed: Failed"));
+
+    for (let attempt = 1; attempt < 8; attempt++) {
+      await runMirrorCycle();
+      expect(byId(failing.id)).toMatchObject({ state: "pending", attempts: attempt });
+      expect(warn).not.toHaveBeenCalled();
+      makeDue(failing.id);
+    }
+    const last = await runMirrorCycle();
+
+    expect(byId(failing.id)).toMatchObject({
+      state: "dead",
+      attempts: 8,
+      lastError: "MediaWiki bot login failed: Failed",
+    });
+    expect(last).toMatchObject({ failed: 1, dead: 1 });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      "WikiOS mirror job dead",
+      "revision Foo: MediaWiki bot login failed: Failed"
+    );
+    // the dead job blocks its title: the job behind it never runs, and nothing is attempted again
+    await runMirrorCycle();
+    await runMirrorCycle();
+    expect(byId(behindMove.id)).toMatchObject({ state: "pending", attempts: 0 });
+    expect(revisionJob).toHaveBeenCalledTimes(8);
+    expect(pageJob).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("warns once about all the jobs that went dead in a run: the first few named, the rest counted", async () => {
+    for (let i = 0; i < 7; i++) addJob({ title: `Page ${i}`, attempts: 7 });
+    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
+
+    const result = await runMirrorCycle();
+
+    expect(result.dead).toBe(7);
+    expect(warn).toHaveBeenCalledTimes(1);
+    const [title, message] = warn.mock.calls[0]!;
+    expect(title).toBe("WikiOS mirror jobs dead");
+    expect(message).toContain("7 mirror jobs went dead since the last warning");
+    expect(message.match(/revision Page \d: MediaWiki down/g)).toHaveLength(5);
+    expect(message).toContain("...and 2 more");
+  });
+
+  it("holds the next warning back for 30 minutes, and then names the jobs that died meanwhile, only those", async () => {
+    const first = addJob({ title: "First", attempts: 7 });
+    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    addJob({ title: "Second", attempts: 7 });
+    await runMirrorCycle();
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1); // held back
+
+    // 31 minutes later: the first warning, and the death of the first job, are that far back
+    config.set("wikiMirror.deadAlertAt", new Date(Date.now() - 31 * 60_000).toISOString());
+    byId(first.id).updatedAt = new Date(Date.now() - 32 * 60_000);
+    await runMirrorCycle();
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith(
+      "WikiOS mirror job dead",
+      "revision Second: MediaWiki down"
+    );
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(2); // nothing new
+  });
+
+  it("does nothing while SKIP_MEDIAWIKI_SYNC is true: the jobs stay in the outbox", async () => {
+    const waiting = addJob();
+    process.env.SKIP_MEDIAWIKI_SYNC = "true";
+
+    const result = await runMirrorCycle();
+
+    expect(result).toEqual({ skipped: true, done: 0, failed: 0, dead: 0 });
+    expect(revisionJob).not.toHaveBeenCalled();
+    expect(byId(waiting.id)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("stops after maxJobs attempts, leaving the rest for the next run", async () => {
+    for (let i = 0; i < 5; i++) addJob({ title: `Page ${i}` });
+
+    const result = await runMirrorCycle({ maxJobs: 3 });
+
+    expect(result.done).toBe(3);
+    expect(rows.filter((row) => row.state === "pending")).toHaveLength(2);
+  });
+
+  it("starts no job once its time is up", async () => {
+    addJob();
+
+    const result = await runMirrorCycle({ deadlineMs: 0 });
+
+    expect(result.done).toBe(0);
+    expect(revisionJob).not.toHaveBeenCalled();
+  });
+
+  it("takes up a job a dead run left running, and leaves one that is still being worked on", async () => {
+    const abandoned = addJob({
+      title: "A",
+      state: "running",
+      attempts: 1,
+      updatedAt: new Date(Date.now() - 11 * 60_000),
+    });
+    // updatedAt is rewritten by the in-memory update: pin it back
+    abandoned.updatedAt = new Date(Date.now() - 11 * 60_000);
+    const live = addJob({ title: "B", state: "running", attempts: 1 });
+
+    const result = await runMirrorCycle();
+
+    expect(result.done).toBe(1);
+    expect(byId(abandoned.id)).toMatchObject({ state: "done", attempts: 2 });
+    expect(byId(live.id)).toMatchObject({ state: "running", attempts: 1 });
+  });
+
+  it("does not let a discarded job hold its title, and keeps it out of the cycle", async () => {
+    const discarded = addJob({
+      title: "Foo",
+      state: "discarded",
+      attempts: 8,
+      lastError: "gave up",
+    });
+    const behind = addJob({ title: "Foo" });
+
+    const result = await runMirrorCycle();
+
+    expect(result.done).toBe(1);
+    expect(byId(behind.id).state).toBe("done");
+    expect(byId(discarded.id)).toMatchObject({
+      state: "discarded",
+      attempts: 8,
+      lastError: "gave up",
+    });
+  });
+
+  it("forgets the jobs that finished long ago, discarded ones too", async () => {
+    const month = 31 * 24 * 60 * 60_000;
+    addJob({ state: "done" }).updatedAt = new Date(Date.now() - month);
+    addJob({ state: "discarded" }).updatedAt = new Date(Date.now() - month);
+    const dead = addJob({ state: "dead", title: "Other" });
+    dead.updatedAt = new Date(Date.now() - month);
+    const recent = addJob({ state: "done" });
+
+    await runMirrorCycle();
+
+    // only finished jobs go; a dead one stays, however old
+    expect(rows.map((row) => row.id)).toEqual([dead.id, recent.id]);
+  });
+});
+
+describe("batches of revision jobs", () => {
+  it("imports the revision jobs of one title that wait next in line as one batch", async () => {
+    const first = addJob({ title: "Foo" });
+    const second = addJob({ title: "Foo" });
+    const third = addJob({ title: "Foo" });
+    const elsewhere = addJob({ title: "Bar" });
+    revisionJob.mockImplementation(async (job) => 700 + Number(job.id.slice(-3)));
+
+    const result = await runMirrorCycle();
+
+    expect(result).toEqual({ skipped: false, done: 4, failed: 0, dead: 0 });
+    expect(planBatch).toHaveBeenCalledTimes(2);
+    expect(planBatch.mock.calls[0]?.[0].map((job) => job.id)).toEqual([
+      first.id,
+      second.id,
+      third.id,
+    ]);
+    expect(planBatch.mock.calls[1]?.[0].map((job) => job.id)).toEqual([elsewhere.id]);
+    expect(sendBatch).toHaveBeenCalledTimes(2);
+    for (const job of [first, second, third]) {
+      expect(byId(job.id)).toMatchObject({
+        state: "done",
+        attempts: 1,
+        mwRevId: 700 + Number(job.id.slice(-3)),
+      });
+    }
+  });
+
+  it("stops a batch at the first job of the title that is not a plain revision", async () => {
+    const before = addJob({ title: "Foo" });
+    const moving = addJob({
+      kind: "move",
+      title: "Foo",
+      payload: { to: "Bar", reason: "", leaveRedirect: true },
+      revisionId: null,
+    });
+    const after = addJob({ title: "Bar" });
+
+    await runMirrorCycle();
+
+    expect(planBatch.mock.calls.map(([jobs]) => jobs.map((job) => job.id))).toEqual([
+      [before.id],
+      [after.id],
+    ]);
+    expect(pageJob).toHaveBeenCalledTimes(1);
+    expect(pageJob.mock.calls[0]?.[0].id).toBe(moving.id);
+    expect(rows.every((row) => row.state === "done")).toBe(true);
+  });
+
+  it("settles the jobs the plan took and gives the rest back untried, for the next batch", async () => {
+    const jobs = [addJob({ title: "Foo" }), addJob({ title: "Foo" }), addJob({ title: "Foo" })];
+    planBatch.mockImplementationOnce(async (given) => ({
+      title: "Foo",
+      restore: false,
+      members: given.slice(0, 2).map((job) => ({ job, send: false as const, mwRevId: null })),
+      xml: null,
+      importSummary: "summary",
+    }));
+
+    const result = await runMirrorCycle();
+
+    // the first batch took two, the second took the third
+    expect(result.done).toBe(3);
+    expect(planBatch.mock.calls.map(([given]) => given.length)).toEqual([3, 1]);
+    expect(sendBatch.mock.calls[0]?.[0].members.map((member) => member.job.id)).toEqual([
+      jobs[0]!.id,
+      jobs[1]!.id,
+    ]);
+    // an attempt that was given back is not counted
+    expect(byId(jobs[2]!.id)).toMatchObject({ state: "done", attempts: 1 });
+  });
+
+  it("keeps the note a batch leaves on a job, in its payload", async () => {
+    const job = addJob({ title: "Foo" });
+    sendBatch.mockImplementationOnce(async (plan) =>
+      plan.members.map((member) => ({ job: member.job, mwRevId: 9, note: "pushed as an edit" }))
+    );
+
+    await runMirrorCycle();
+
+    expect(byId(job.id)).toMatchObject({
+      state: "done",
+      mwRevId: 9,
+      payload: { restore: false, note: "pushed as an edit" },
+    });
+  });
+
+  it("does not batch a restore, which goes alone, nor take a revision job behind it", async () => {
+    const restore = addJob({ title: "Foo", payload: { restore: true, summary: "Restoring" } });
+    const behind = addJob({ title: "Foo" });
+
+    await runMirrorCycle();
+
+    expect(planBatch.mock.calls.map(([given]) => given.map((job) => job.id))).toEqual([
+      [restore.id],
+      [behind.id],
+    ]);
+  });
+
+  it("makes every job of a failed batch dead on the same attempt, with one warning for them all", async () => {
+    addJob({ title: "Foo", attempts: 7 });
+    addJob({ title: "Foo", attempts: 7 });
+    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ failed: 2, dead: 2 });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[1]).toContain("2 mirror jobs went dead");
+  });
+
+  it("leaves alone a job another runner claimed first, and never runs a later job of the batch before it", async () => {
+    const first = addJob({ title: "Foo" });
+    const second = addJob({ title: "Foo" });
+    const third = addJob({ title: "Foo" });
+    racedClaims.add(second.id);
+
+    const result = await runMirrorCycle();
+
+    // the first was claimed; the second was taken by the other runner, so the batch stops there
+    expect(planBatch.mock.calls[0]?.[0].map((job) => job.id)).toEqual([first.id]);
+    expect(result.done).toBe(1);
+    expect(byId(second.id)).toMatchObject({ state: "running", attempts: 0 });
+    expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("ends the cycle when not even the first job could be claimed", async () => {
+    const taken = addJob({ title: "Foo" });
+    addJob({ title: "Bar" });
+    racedClaims.add(taken.id);
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ done: 0, failed: 0 });
+    expect(planBatch).not.toHaveBeenCalled();
+    expect(byId(taken.id)).toMatchObject({ state: "running", attempts: 0 });
+  });
+
+  it("fails only the jobs not settled yet when an outcome cannot be stored, never one already done", async () => {
+    const first = addJob({ title: "Foo" });
+    const second = addJob({ title: "Foo" });
+    const third = addJob({ title: "Foo" });
+    storeFails.add(second.id);
+
+    const result = await runMirrorCycle();
+
+    expect(byId(first.id)).toMatchObject({ state: "done", attempts: 1, lastError: null });
+    // the second could not be marked done, and the third was never reached: both are failed, for the retry
+    expect(byId(second.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
+    expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
+    expect(result).toMatchObject({ done: 1, failed: 2 });
+  });
+
+  it("still re-renders the users of a template after a batch that was partly stored", async () => {
+    const first = addJob({ title: "Template:Box" });
+    const second = addJob({ title: "Template:Box" });
+    storeFails.add(second.id);
+
+    await runMirrorCycle();
+
+    expect(byId(first.id).state).toBe("done");
+    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not re-render anything when not even one outcome was stored", async () => {
+    const only = addJob({ title: "Template:Box" });
+    storeFails.add(only.id);
+
+    await runMirrorCycle();
+
+    expect(invalidateTemplateDependents).not.toHaveBeenCalled();
+  });
+
+  it("counts a batch against maxJobs by its jobs", async () => {
+    for (let i = 0; i < 5; i++) addJob({ title: "Foo" });
+
+    const result = await runMirrorCycle({ maxJobs: 3 });
+
+    expect(result.done).toBe(3);
+    expect(planBatch.mock.calls[0]?.[0]).toHaveLength(3);
+    expect(rows.filter((row) => row.state === "pending")).toHaveLength(2);
+  });
+
+  it("re-renders the users of a template once after its batch", async () => {
+    addJob({ title: "Template:Box" });
+    addJob({ title: "Template:Box" });
+
+    await runMirrorCycle();
+
+    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
+  });
+});
+
+describe("the bounds that keep a lock transaction from expiring mid-attempt", () => {
+  it("bounds an attempt well under the lock, and a cycle by its deadline plus one attempt", () => {
+    expect(ATTEMPT_TIMEOUT_MS).toBe(6 * 60_000);
+    expect(MAX_CYCLE_MS).toBe(DEFAULT_DEADLINE_MS + ATTEMPT_TIMEOUT_MS);
+    expect(LOCK_TIMEOUT_MS).toBe(10 * 60_000);
+    expect(LOCK_TIMEOUT_MS).toBeGreaterThan(MAX_CYCLE_MS);
+  });
+
+  it("runs everything a revision attempt asks of MediaWiki, and a page operation, inside one attempt scope", async () => {
+    const timeout = jest.spyOn(AbortSignal, "timeout");
+    const seen: boolean[] = [];
+    sendBatch.mockImplementation(async (plan) => {
+      seen.push(requestSignal(30_000).aborted);
+      return plan.members.map(({ job }) => ({ job, mwRevId: 1 }));
+    });
+    pageJob.mockImplementation(async () => void seen.push(requestSignal(30_000).aborted));
+    addJob({ title: "Foo" });
+    addJob({ kind: "delete", title: "Bar", payload: { reason: "" }, revisionId: null });
+
+    await runMirrorCycle();
+
+    const attemptScopes = timeout.mock.calls.filter(([ms]) => ms === ATTEMPT_TIMEOUT_MS);
+    expect(attemptScopes).toHaveLength(2); // one per attempt, not per call
+    expect(seen).toEqual([false, false]);
+    timeout.mockRestore();
+  });
+
+  it("gives the cron job the same lock allowance as the in-process run, longer than a cycle can take", () => {
+    const row = CRON_JOBS.find((job) => job.name === "wiki-mirror");
+
+    expect(row?.timeoutMs).toBe(LOCK_TIMEOUT_MS);
+    expect(row?.timeoutMs).toBeGreaterThan(MAX_CYCLE_MS);
+  });
+
+  it("reclaims a `running` job only after an attempt can no longer be running", () => {
+    expect(INTERRUPTED_AFTER_MS).toBeGreaterThan(ATTEMPT_TIMEOUT_MS);
+    expect(INTERRUPTED_AFTER_MS).toBe(10 * 60_000);
+  });
+});
+
+describe("runMirrorCycleLocked", () => {
+  it("does no work when another runner holds the mirror lock", async () => {
+    addJob();
+    jest.mocked(withJobLock).mockResolvedValue({ ran: false });
+
+    await expect(runMirrorCycleLocked()).resolves.toBeNull();
+
+    expect(revisionJob).not.toHaveBeenCalled();
+    expect(withJobLock).toHaveBeenCalledWith(
+      expect.anything(),
+      "wiki-mirror",
+      expect.any(Function),
+      { timeoutMs: 600_000 }
+    );
+  });
+
+  it("runs one cycle inside the lock and returns its result", async () => {
+    const job = addJob();
+    jest.mocked(withJobLock).mockImplementation(async (_db, _name, fn) => ({
+      ran: true,
+      result: await fn(),
+    }));
+
+    await expect(runMirrorCycleLocked()).resolves.toEqual({
+      skipped: false,
+      done: 1,
+      failed: 0,
+      dead: 0,
+    });
+    expect(byId(job.id).state).toBe("done");
+  });
+});

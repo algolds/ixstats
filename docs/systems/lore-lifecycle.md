@@ -113,7 +113,7 @@ stateDiagram-v2
      - Switch between the Plate visual editor and the **CodeMirror 6** wikitext source editor.
      - Insert templates from the slash menu or modular dialogs (`InfoboxCountryModal`, `CountryStatsModal`, `BusinessStatsModal`, `MapCoordsModal`).
   2. **1-Click Publishing**:
-     - Saves to PostgreSQL first (`ArticleRepository.saveArticle` → `WikiArticle` & `WikiRevision`, link graph, media registry), then mirrors the edit to classic MediaWiki in the background (`MediaWikiExportWorker`).
+     - Saves to PostgreSQL first (`ArticleRepository.saveArticle` → `WikiArticle` & `WikiRevision`, link graph, media registry), then mirrors the edit to classic MediaWiki in the background (a `WikiMirrorJob` outbox row written in the same transaction, applied by `services/mirror-worker.ts`).
      - Purges the Cloudflare edge cache for the page; wiki activity appears in the dashboard feed (`WikiFeedCard`).
 
 ---

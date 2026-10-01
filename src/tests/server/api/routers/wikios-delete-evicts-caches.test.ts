@@ -16,6 +16,12 @@ jest.mock("~/server/db", () => ({
   },
   isDatabaseReadOnly: true,
 }));
+// The kick would run the mirror worker in a timer, after the test; the jobs themselves are real.
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
   isSystemOwner: () => false,
