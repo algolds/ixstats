@@ -6,6 +6,7 @@
  */
 
 import { db } from "~/server/db";
+import { resolveStoredImageUrl } from "../transformers/image-url";
 import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
 
@@ -106,7 +107,7 @@ export class NativeSearchService {
         title: a.title,
         snippet: buildSnippet(a.summary, a.wikitext),
         readingTime: a.readingTime || 1,
-        leadImageUrl: a.leadImageUrl ?? null,
+        leadImageUrl: resolveStoredImageUrl(a.leadImageUrl),
         matchType: isExact ? "title_exact" : isPrefix ? "title_fuzzy" : "content",
         similarityScore: isExact ? 1.0 : isPrefix ? 0.8 : 0.5,
       };
@@ -178,7 +179,7 @@ export class NativeSearchService {
             title: r.title,
             snippet: buildSnippet(r.summary, r.preview),
             readingTime: r.readingTime || 1,
-            leadImageUrl: r.leadImageUrl || null,
+            leadImageUrl: resolveStoredImageUrl(r.leadImageUrl),
             matchType: r.rank > 0.3 ? "title_exact" : "content",
             similarityScore: Math.min(1.0, Math.max(0.1, Number(r.rank || 0.5))),
           }));
@@ -230,7 +231,7 @@ export class NativeSearchService {
       title: a.title,
       snippet: buildSnippet(a.summary, a.wikitext ? matchWindow(a.wikitext, trimmed) : null),
       readingTime: a.readingTime || 1,
-      leadImageUrl: a.leadImageUrl ?? null,
+      leadImageUrl: resolveStoredImageUrl(a.leadImageUrl),
       matchType: a.title.toLowerCase().includes(trimmed.toLowerCase()) ? "title_fuzzy" : "content",
       similarityScore: 0.7,
     }));

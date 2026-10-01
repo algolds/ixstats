@@ -18,8 +18,9 @@ import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import {
-  extractLeadImageFromWikitext,
+  extractLeadImagePath,
   normalizeWikiImageUrl,
+  resolveStoredImageUrl,
 } from "~/lib/wiki-os/transformers/image-url";
 
 export const wikiosCategoriesRouter = createTRPCRouter({
@@ -120,15 +121,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
           });
 
           for (const art of articles) {
-            let img: string | null = null;
-            if (art.leadImageUrl) {
-              img = normalizeWikiImageUrl(art.leadImageUrl) || art.leadImageUrl;
-            } else if (art.wikitext) {
-              const lead = extractLeadImageFromWikitext(art.wikitext);
-              if (lead) {
-                img = normalizeWikiImageUrl(lead) || lead;
-              }
-            }
+            const img = resolveStoredImageUrl(
+              art.leadImageUrl || extractLeadImagePath(art.wikitext)
+            );
 
             if (img) {
               imageMap.set(art.title, img);

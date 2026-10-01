@@ -19,7 +19,7 @@ import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { CategoryService, type MemberKind } from "~/lib/wiki-os/core/category-service";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { isAnonymousAuthor } from "~/lib/wiki-os/core/anonymous-author";
-import { extractLeadImageFileName, getMd5ShardPath } from "~/lib/wiki-os/transformers/image-url";
+import { extractLeadImageFileName, getImagePath } from "~/lib/wiki-os/transformers/image-url";
 import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import {
@@ -62,7 +62,7 @@ export async function ixwikiImageUrls(fileNames: readonly string[]): Promise<Map
   for (const name of fileNames) {
     const key = name.replace(/ /g, "_");
     const asset = assets.get(key) ?? assets.get(key.toLowerCase());
-    urls.set(name, asset?.url ?? `${base}/images/${getMd5ShardPath(name).fullPath}`);
+    urls.set(name, asset?.url ?? `${base}${getImagePath(name)}`);
   }
   return urls;
 }

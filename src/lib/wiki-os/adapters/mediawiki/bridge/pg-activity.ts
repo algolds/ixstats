@@ -10,6 +10,7 @@ import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { loadWikiUserInfo, type WikiUserInfo } from "~/lib/wiki-os/core/wiki-user-info";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { WikiRecentChange } from "./types";
 
@@ -55,7 +56,7 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
           oldLen: Math.max(0, rawSize - delta),
           newLen: rawSize,
           blurb: blurb || null,
-          thumbnail: r.article.leadImageUrl || null,
+          thumbnail: resolveStoredImageUrl(r.article.leadImageUrl),
           parked: r.parked,
         };
       });
