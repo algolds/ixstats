@@ -4,6 +4,7 @@
 
 import { withBasePath } from "~/lib/base-path";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import {
   getWikiBaseUrl,
   mediaWikiHostPattern,
@@ -89,8 +90,10 @@ const IMG_SRC_COMMON_REGEX = new RegExp(
   "gu"
 );
 /** An `http:` or protocol-relative spelling of the wiki's own host, which becomes its configured origin. */
-const LEGACY_ORIGIN_REGEX = new RegExp(`(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`, "gu");
-const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_REGEX.source}`, "gu");
+const LEGACY_ORIGIN_SOURCE = `(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`;
+const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_SOURCE}`, "gu");
+const LEGACY_ORIGIN_START_REGEX = new RegExp(`^${LEGACY_ORIGIN_SOURCE}`, "u");
+const SISTER_FILE_URL_REGEX = /^https?:\/\/(?:www\.)?iiwiki\.com\/images\//u;
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
 
@@ -379,6 +382,27 @@ function transformSourceWikiLinks(html: string, basePath: string, wikiSource: Wi
     });
 }
 
+/**
+ * One `srcset` candidate URL of an IxWiki page, absolute like its `src` (`transformImages`): a root-relative
+ * `/images/`, `/thumb/` or `/data/` path gets the origin, an `http:` or protocol-relative spelling of the
+ * wiki's own host becomes the origin, and anything else (a URL that is already absolute, another host's) is
+ * left exactly as it is: it is never prefixed a second time.
+ */
+function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
+  if (LEGACY_ORIGIN_START_REGEX.test(url)) return url.replace(LEGACY_ORIGIN_START_REGEX, `${origin}/`);
+  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${origin}${url}`;
+  if (url.startsWith("/thumb/")) return `${origin}/images${url}`;
+  return url;
+}
+
+/** One `srcset` candidate URL of another wiki's page: its files go through that wiki's media proxy; the rest is untouched. */
+function proxiedSourceSrcsetUrl(url: string, proxyBase: string): string {
+  if (SISTER_FILE_URL_REGEX.test(url)) return url.replace(SISTER_FILE_URL_REGEX, `${proxyBase}/images/`);
+  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${proxyBase}${url}`;
+  if (url.startsWith("/thumb/")) return `${proxyBase}/images${url}`;
+  return url;
+}
+
 export function transformImages(
   html: string,
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki",
@@ -404,14 +428,11 @@ export function transformImages(
       .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${origin}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
-      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
-        const transformed = srcset
-          .replace(LEGACY_ORIGIN_REGEX, `${origin}/`)
-          .replace(/\/images\//gu, `${origin}/images/`)
-          .replace(/\/thumb\//gu, `${origin}/images/thumb/`)
-          .replace(/\/data\//gu, `${origin}/data/`);
-        return `srcset="${transformed}"`;
-      });
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) =>
+          `srcset="${mapSrcsetUrls(srcset, (url) => absoluteIxWikiSrcsetUrl(url, origin))}"`
+      );
   } else {
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
@@ -428,14 +449,11 @@ export function transformImages(
         /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//gu,
         `src="${proxyBase}/wiki/Special:FilePath/`
       )
-      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
-        const transformed = srcset
-          .replace(/\/images\//gu, `${proxyBase}/images/`)
-          .replace(/\/thumb\//gu, `${proxyBase}/images/thumb/`)
-          .replace(/\/data\//gu, `${proxyBase}/data/`)
-          .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `${proxyBase}/images/`);
-        return `srcset="${transformed}"`;
-      });
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) =>
+          `srcset="${mapSrcsetUrls(srcset, (url) => proxiedSourceSrcsetUrl(url, proxyBase))}"`
+      );
   }
 
   // 2. Transform url() references in inline CSS
