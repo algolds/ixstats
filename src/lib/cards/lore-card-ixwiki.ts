@@ -286,7 +286,7 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
 
   const rows = await db.$queryRaw<HeadRow[]>`
     SELECT a."id" AS "id", a."title" AS "title", octet_length(a."wikitext") AS "length",
-           left(a."wikitext", ${PREVIEW_HEAD_CHARS}) AS "head"
+           left(a."wikitext", ${PREVIEW_HEAD_CHARS}::int) AS "head"
     FROM wiki_articles a
     WHERE a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
       AND a."title" IN (${Prisma.join(asked)})`;
@@ -354,7 +354,7 @@ export async function ixwikiRandomTitles(
   const pool = withImage ? Math.min(count * IMAGE_POOL_FACTOR, MAX_IMAGE_POOL) : count;
   const rows = await db.$queryRaw<Array<{ title: string; head: string }>>`
     SELECT a."title" AS "title",
-           ${withImage ? Prisma.sql`left(a."wikitext", ${PREVIEW_HEAD_CHARS})` : Prisma.sql`''`} AS "head"
+           ${withImage ? Prisma.sql`left(a."wikitext", ${PREVIEW_HEAD_CHARS}::int)` : Prisma.sql`''`} AS "head"
     FROM wiki_articles a
     WHERE a."source" = 'ixwiki' AND a."status" = 'PUBLISHED' AND a."namespace" = 0
       AND a."redirectTargetSlug" IS NULL
