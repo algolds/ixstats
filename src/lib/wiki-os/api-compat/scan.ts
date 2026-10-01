@@ -7,6 +7,7 @@
  * of spaces, a million `[[` that never close) costs time proportional to its length.
  */
 
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
 import { matchBrackets, UNINDEXED } from "~/lib/wiki-os/wikitext/match-index";
 
 /** A link target or category name is a page title: at most 255 bytes, so a longer run is not one. */
@@ -47,11 +48,14 @@ function* links(text: string): Generator<{ open: number; close: number }> {
  */
 export function linkTargets(wikitext: string, max: number): string[] {
   const found = new Set<string>();
+  // The first `|`, `#` or line break after each opener, from one search: a window of 300 characters read from each
+  // of a million nested `[[` is 300 million steps.
+  const nextStop = forwardFinder(wikitext, /[|#\n]/g);
   for (const { open, close } of links(wikitext)) {
     if (found.size >= max) break;
     const limit = Math.min(close, open + 2 + MAX_TITLE_CHARS);
-    let end = open + 2;
-    while (end < limit && !"|#\n".includes(wikitext[end]!)) end++;
+    const stop = nextStop(open + 2);
+    const end = stop === -1 || stop > limit ? limit : stop;
     if (end === limit && limit < close) continue; // longer than a title
     if (wikitext[end] === "\n") continue;
     const target = wikitext.slice(open + 2, end).trim();

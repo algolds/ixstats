@@ -27,6 +27,7 @@ import {
 } from "~/lib/wiki-os/wikitext/protected-regions";
 import * as legacyProtected from "./legacy/protected-regions";
 import { findSectionLine, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
+import { linkTargets } from "~/lib/wiki-os/api-compat/scan";
 import {
   scanTemplateAt,
   scanTemplates,
@@ -1192,5 +1193,66 @@ describe("section-locator: findSectionLine answers what the expressions answered
       findSectionLine(text, "History");
     }
     expect(performance.now() - started).toBeLessThan(2_000);
+  });
+});
+
+// ---- api-compat/scan: linkTargets finds the first stop of a target once ---------------------------------------
+
+describe("api-compat/scan: linkTargets answers what it answered", () => {
+  /** `linkTargets` as the integration branch had it: a window of up to 300 characters read from each opener. */
+  function legacyLinkTargets(wikitext: string, max: number): string[] {
+    const closes = matchBrackets(wikitext);
+    const found = new Set<string>();
+    for (let open = wikitext.indexOf("[["); open !== -1; open = wikitext.indexOf("[[", open + 2)) {
+      const close = closes[open];
+      if (close === undefined || close <= 0 || close === UNINDEXED) continue;
+      if (found.size >= max) break;
+      const limit = Math.min(close, open + 2 + 300);
+      let end = open + 2;
+      while (end < limit && !"|#\n".includes(wikitext[end]!)) end++;
+      if (end === limit && limit < close) continue;
+      if (wikitext[end] === "\n") continue;
+      const target = wikitext.slice(open + 2, end).trim();
+      if (target) found.add(target);
+    }
+    return [...found];
+  }
+  const TOKENS = [
+    "[[",
+    "]]",
+    "[[a]]",
+    "[[b|c]]",
+    "[[d#e]]",
+    "[[f\ng]]",
+    "|",
+    "#",
+    "\n",
+    " ",
+    "x".repeat(150),
+    "x".repeat(320),
+    "{{",
+    "}}",
+  ];
+  it("on random texts, long targets among them, and the real pages", () => {
+    const texts = [...randomTexts(TOKENS, 30_000, 71, 10), ...fixtures];
+    expect(
+      disagreements(
+        texts,
+        (text) => linkTargets(text, 5001),
+        (text) => legacyLinkTargets(text, 5001)
+      )
+    ).toEqual([]);
+    expect(
+      disagreements(
+        texts,
+        (text) => linkTargets(text, 3),
+        (text) => legacyLinkTargets(text, 3)
+      )
+    ).toEqual([]);
+  });
+  it("takes time linear in the nested links of a text", () => {
+    const started = performance.now();
+    linkTargets("[[".repeat(100_000) + "]]".repeat(100_000), 5001);
+    expect(performance.now() - started).toBeLessThan(500);
   });
 });
