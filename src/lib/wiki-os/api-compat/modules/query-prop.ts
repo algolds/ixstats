@@ -100,7 +100,7 @@ function pageInfo(
     info.canonicalurl = url;
   }
   if (props.has("readable")) info.readable = true;
-  if (props.has("displaytitle")) info.displaytitle = escapeHtml(entry.title);
+  if (props.has("displaytitle")) info.displaytitle = row?.displayTitle ?? escapeHtml(entry.title);
   return info;
 }
 
@@ -210,6 +210,46 @@ export async function propLinks(pc: PropContext): Promise<void> {
   );
 }
 
+/** `prop=templates`: what the pages transclude (templates, and Lua modules through #invoke), from each page's last render. */
+export async function propTemplates(pc: PropContext): Promise<void> {
+  const { rc } = pc;
+  const p = rc.params.scope("tl", "templates");
+  const namespaces = p.has("namespace") ? p.list("namespace").map(Number).filter(Number.isInteger) : undefined;
+  const titles = p.has("templates") ? p.list("templates").flatMap((raw) => canonicalizeTitle(raw)?.title ?? []) : undefined;
+  await perPage(
+    pc,
+    {
+      module: "templates",
+      prefix: "tl",
+      field: "templates",
+      fetch: (query) => rc.deps.store.templatesOf(query),
+      pageIdOf: (row) => row.pageId,
+      toJson: (row) => ({ ns: row.namespace, title: row.title }),
+    },
+    titles,
+    namespaces
+  );
+}
+
+/** `prop=images`: the files the pages use, from each page's last render. */
+export async function propImages(pc: PropContext): Promise<void> {
+  const { rc } = pc;
+  const p = rc.params.scope("im", "images");
+  const titles = p.has("images") ? p.list("images").flatMap((raw) => canonicalizeTitle(raw)?.title ?? []) : undefined;
+  await perPage(
+    pc,
+    {
+      module: "images",
+      prefix: "im",
+      field: "images",
+      fetch: (query) => rc.deps.store.imagesOf(query),
+      pageIdOf: (row) => row.pageId,
+      toJson: (row) => ({ ns: row.namespace, title: row.title }),
+    },
+    titles
+  );
+}
+
 // ---------------------------------------------------------------------------
 // pageprops
 // ---------------------------------------------------------------------------
@@ -237,16 +277,23 @@ export function pagePropsOf(wikitext: string): JsonObject {
 /** How much of each page's text `prop=pageprops` reads: the switches and DISPLAYTITLE are at the top of a page. */
 const PAGEPROPS_TEXT_CHARS = 100_000;
 
+/**
+ * `prop=pageprops`: the properties MediaWiki reported for the page's last render (stored with it),
+ * else, for a page that was never rendered, those its own wikitext sets (one query for the first
+ * characters of just those pages).
+ */
 export async function propPageprops(pc: PropContext): Promise<void> {
   const p = pc.rc.params.scope("pp", "pageprops");
   const wanted = p.has("prop") ? new Set(p.list("prop")) : null;
   const pages = existingEntries(pc.pageSet);
+  const unrendered = pages.filter((entry) => entry.row!.pageProps === null);
   const texts = await pc.rc.deps.store.wikitextByArticle(
-    pages.map((entry) => entry.row!.articleId),
+    unrendered.map((entry) => entry.row!.articleId),
     PAGEPROPS_TEXT_CHARS
   );
   for (const entry of pages) {
-    const all = pagePropsOf(texts.get(entry.row!.articleId) ?? "");
+    const { row } = entry;
+    const all: JsonObject = row!.pageProps ?? pagePropsOf(texts.get(row!.articleId) ?? "");
     const props = Object.fromEntries(Object.entries(all).filter(([name]) => !wanted || wanted.has(name)));
     if (Object.keys(props).length > 0) fieldsOf(pc, entry).pageprops = props;
   }

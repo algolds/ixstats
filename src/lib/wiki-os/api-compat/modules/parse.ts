@@ -7,15 +7,16 @@
  * and at most 200,000 characters, because it is the one request an anonymous caller could use to
  * make WikiOS (and MediaWiki behind it) work on text of their choosing. `oldid=` renders that
  * revision's stored text. The other props (links, categories, sections, displaytitle, wikitext,
- * revid, properties) are read from the wikitext by linear scanners (`scan.ts`) or from the stored page.
+ * revid, properties) are read from the wikitext by linear scanners (`scan.ts`) or from the stored
+ * page: a page's templates, images, categories (hidden ones flagged) and properties are what its last
+ * render reported; the text or old revision of a request is rendered to learn what it transcludes.
  */
 
-import { ApiError, badValues, invalidTitle, missingOneOf, unavailable } from "../errors";
+import { ApiError, badValues, invalidTitle, missingOneOf } from "../errors";
 import { wrapText, type JsonObject, type JsonValue } from "../format";
 import type { ApiParams } from "../params";
 import { categoryLinks, externalUrls, linkTargets, visibleText } from "../scan";
-import type { ApiContext } from "../types";
-import { DEFERRED_REASON } from "./deferred";
+import type { ApiContext, RenderedText } from "../types";
 import { pagePropsOf } from "./query-prop";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
@@ -37,8 +38,8 @@ const PARSE_PROPS = [
   "parsewarnings",
 ] as const;
 type ParseProp = (typeof PARSE_PROPS)[number];
-/** What MediaWiki returns by default, minus what needs plan 406's tables (templates, images). */
-const DEFAULT_PROPS: readonly ParseProp[] = ["text", "categories", "links", "sections", "revid", "displaytitle", "langlinks", "externallinks", "properties", "parsewarnings", "iwlinks"];
+/** What MediaWiki returns by default. */
+const DEFAULT_PROPS: readonly ParseProp[] = ["text", "categories", "links", "sections", "revid", "displaytitle", "langlinks", "externallinks", "properties", "parsewarnings", "iwlinks", "templates", "images"];
 
 /** Characters of `text=` a request may send. */
 export const MAX_PARSE_TEXT_CHARS = 200_000;
@@ -47,6 +48,8 @@ const MAX_LINKS = 5_000;
 const MAX_CATEGORIES = 1_000;
 const MAX_SECTIONS = 5_000;
 const MAX_EXTERNAL_LINKS = 500;
+const MAX_TEMPLATES = 5_000;
+const MAX_IMAGES = 5_000;
 /** A section heading longer than this is cut for `line` and `anchor`. */
 const MAX_HEADING_CHARS = 1_000;
 /** Callers without a bot-password session may have this many renders through MediaWiki per minute. */
@@ -67,6 +70,9 @@ interface Source {
   articleId: string | null;
   /** How the rendering is made when there is no fresh stored one: by the render service, or from the text. */
   render: "page" | "text";
+  /** What the page's last render reported (page properties, `{{DISPLAYTITLE}}` as HTML); null for text and old revisions. */
+  pageProps: Record<string, string> | null;
+  displayTitle: string | null;
 }
 
 async function pageSource(rc: ApiContext, p: ApiParams): Promise<Source | null> {
@@ -100,6 +106,8 @@ async function pageSource(rc: ApiContext, p: ApiParams): Promise<Source | null> 
     storedHtml: stored?.fresh && stored.html ? stored.html : null,
     articleId: row.articleId,
     render: "page",
+    pageProps: row.pageProps,
+    displayTitle: row.displayTitle,
   };
 }
 
@@ -121,6 +129,8 @@ async function revisionSource(rc: ApiContext, p: ApiParams): Promise<Source | nu
     storedHtml: stored?.fresh && stored.html ? stored.html : null,
     articleId: null,
     render: "text",
+    pageProps: null,
+    displayTitle: null,
   };
 }
 
@@ -139,7 +149,7 @@ function textSource(rc: ApiContext, p: ApiParams): Source | null {
   if (model !== "wikitext") throw badValues(p.fullName("contentmodel"), [model]);
   const canon = canonicalizeTitle(raw);
   if (!canon) throw invalidTitle(raw);
-  return { title: canon.title, pageId: 0, revId: 0, wikitext: text, storedHtml: null, articleId: null, render: "text" };
+  return { title: canon.title, pageId: 0, revId: 0, wikitext: text, storedHtml: null, articleId: null, render: "text", pageProps: null, displayTitle: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -150,20 +160,28 @@ interface CategoryEntry {
   /** The category's name with underscores, as `action=parse` shows it. */
   name: string;
   sortKey: string;
+  hidden: boolean;
 }
 
 async function categoryEntries(rc: ApiContext, source: Source, p: ApiParams): Promise<CategoryEntry[]> {
   if (source.articleId && source.render === "page") {
     const { rows } = await rc.deps.store.categoriesOf({ articleIds: [source.articleId], dir: "ascending", limit: MAX_CATEGORIES });
-    return rows.map((row) => ({ name: row.title.slice("Category:".length).replace(/ /g, "_"), sortKey: row.sortKey ?? "" }));
+    return rows.map((row) => ({
+      name: row.title.slice("Category:".length).replace(/ /g, "_"),
+      sortKey: row.sortKey ?? "",
+      hidden: row.hidden,
+    }));
   }
-  const entries = new Map<string, CategoryEntry>();
+  const entries = new Map<string, { name: string; base: string; sortKey: string }>();
   for (const link of categoryLinks(source.wikitext, MAX_CATEGORIES + 1)) {
     const canon = canonicalizeTitle(`Category:${link.name}`);
-    if (canon && !entries.has(canon.title)) entries.set(canon.title, { name: canon.base.replace(/ /g, "_"), sortKey: link.sortKey });
+    if (canon && !entries.has(canon.title)) entries.set(canon.title, { name: canon.base.replace(/ /g, "_"), base: canon.base, sortKey: link.sortKey });
   }
   if (entries.size > MAX_CATEGORIES) p.addWarning(`Only the first ${MAX_CATEGORIES} categories are listed.`);
-  return [...entries.values()].slice(0, MAX_CATEGORIES);
+  const listed = [...entries.values()].slice(0, MAX_CATEGORIES);
+  // The text names its categories; whether each is hidden is what WikiOS knows of the category page.
+  const hidden = await rc.deps.store.hiddenCategoryNames(listed.map((entry) => entry.base));
+  return listed.map((entry) => ({ name: entry.name, sortKey: entry.sortKey, hidden: hidden.has(entry.base) }));
 }
 
 /** The article links of the text: canonical titles, not File:, Category: or Special: pages (those are not links between articles). */
@@ -214,6 +232,32 @@ function sectionEntries(source: Source, p: ApiParams): JsonObject[] {
 const renderUnavailable = () =>
   new ApiError("renderunavailable", "The renderer is not available just now; try again shortly.");
 
+const textRenders = new WeakMap<Source, Promise<RenderedText>>();
+
+/** MediaWiki's render of the source's own text (once per request): for text and old revisions, and to learn what they use. */
+function renderedText(rc: ApiContext, source: Source): Promise<RenderedText> {
+  let pending = textRenders.get(source);
+  if (!pending) {
+    pending = renderTextNow(rc, source);
+    textRenders.set(source, pending);
+  }
+  return pending;
+}
+
+async function renderTextNow(rc: ApiContext, source: Source): Promise<RenderedText> {
+  if (rc.session.kind !== "bot") {
+    const limit = await rc.deps.rateLimit(rc.clientKey, "wiki_api_render", {
+      maxRequests: ANONYMOUS_RENDERS_PER_MINUTE,
+      windowMs: 60_000,
+    });
+    if (!limit.success) throw new ApiError("ratelimited", "You've exceeded your rate limit. Please wait some time and try again.");
+  }
+  if (source.wikitext.trim() === "") return { html: "", templates: [], images: [] };
+  const rendered = await rc.deps.services.renderWikitext(source.wikitext, source.title);
+  if (rendered === null) throw renderUnavailable();
+  return rendered;
+}
+
 /** The stored rendering, else one made now: by the render service for a page, by MediaWiki for text and old revisions. */
 async function html(rc: ApiContext, source: Source): Promise<string> {
   if (source.storedHtml) return source.storedHtml;
@@ -224,17 +268,39 @@ async function html(rc: ApiContext, source: Source): Promise<string> {
     if (stored?.html) return stored.html;
     throw renderUnavailable();
   }
-  if (rc.session.kind !== "bot") {
-    const limit = await rc.deps.rateLimit(rc.clientKey, "wiki_api_render", {
-      maxRequests: ANONYMOUS_RENDERS_PER_MINUTE,
-      windowMs: 60_000,
-    });
-    if (!limit.success) throw new ApiError("ratelimited", "You've exceeded your rate limit. Please wait some time and try again.");
+  return (await renderedText(rc, source)).html;
+}
+
+/** The templates (`Template:Foo`) the source transcludes: a page's from its last render, text and old revisions from a render of them. */
+async function templateTitles(rc: ApiContext, source: Source, p: ApiParams): Promise<string[]> {
+  if (source.articleId && source.render === "page") {
+    const { rows, next } = await rc.deps.store.templatesOf({ articleIds: [source.articleId], dir: "ascending", limit: MAX_TEMPLATES });
+    if (next) p.addWarning(`Only the first ${MAX_TEMPLATES} templates are listed.`);
+    return rows.map((row) => row.title);
   }
-  if (source.wikitext.trim() === "") return "";
-  const rendered = await services.renderWikitext(source.wikitext, source.title);
-  if (rendered === null) throw renderUnavailable();
-  return rendered;
+  const rendered = await renderedText(rc, source);
+  const titles = new Set((rendered.templates ?? []).flatMap((raw) => canonicalizeTitle(raw)?.title ?? []));
+  if (titles.size > MAX_TEMPLATES) p.addWarning(`Only the first ${MAX_TEMPLATES} templates are listed.`);
+  return [...titles].slice(0, MAX_TEMPLATES);
+}
+
+/** The file names (underscores, no `File:`) the source uses. */
+async function imageNames(rc: ApiContext, source: Source, p: ApiParams): Promise<string[]> {
+  const underscored = (name: string) => name.replace(/ /g, "_");
+  if (source.articleId && source.render === "page") {
+    const { rows, next } = await rc.deps.store.imagesOf({ articleIds: [source.articleId], dir: "ascending", limit: MAX_IMAGES });
+    if (next) p.addWarning(`Only the first ${MAX_IMAGES} images are listed.`);
+    return rows.map((row) => underscored(row.title.slice("File:".length)));
+  }
+  const names = new Set(((await renderedText(rc, source)).images ?? []).map(underscored));
+  if (names.size > MAX_IMAGES) p.addWarning(`Only the first ${MAX_IMAGES} images are listed.`);
+  return [...names].slice(0, MAX_IMAGES);
+}
+
+/** `{{DISPLAYTITLE}}` as HTML: what the last render reported, else (never rendered) the wikitext's own, else the title. */
+function displayTitleOf(source: Source): string {
+  if (source.pageProps !== null) return source.displayTitle ?? escapeHtml(source.title);
+  return String(pagePropsOf(source.wikitext).displaytitle ?? escapeHtml(source.title));
 }
 
 async function propValue(rc: ApiContext, p: ApiParams, source: Source, prop: ParseProp): Promise<JsonValue> {
@@ -247,9 +313,11 @@ async function propValue(rc: ApiContext, p: ApiParams, source: Source, prop: Par
     case "revid":
       return source.revId;
     case "displaytitle":
-      return String(pagePropsOf(source.wikitext).displaytitle ?? escapeHtml(source.title));
+      return displayTitleOf(source);
     case "categories":
-      return (await categoryEntries(rc, source, p)).map((c) => (v1 ? { sortkey: c.sortKey, "*": c.name } : { sortkey: c.sortKey, category: c.name, hidden: false }));
+      return (await categoryEntries(rc, source, p)).map((c) =>
+        v1 ? { sortkey: c.sortKey, "*": c.name, ...(c.hidden ? { hidden: true } : {}) } : { sortkey: c.sortKey, category: c.name, hidden: c.hidden }
+      );
     case "links": {
       const titles = articleLinks(source, p);
       const existing = new Set((await rc.deps.store.pagesByTitle(titles)).map((row) => row.title));
@@ -264,16 +332,24 @@ async function propValue(rc: ApiContext, p: ApiParams, source: Source, prop: Par
     case "externallinks":
       return externalUrls(source.wikitext, MAX_EXTERNAL_LINKS);
     case "properties": {
-      const props = pagePropsOf(source.wikitext);
+      const props: JsonObject = source.pageProps ?? pagePropsOf(source.wikitext);
       return Object.entries(props).map(([name, value]) => (v1 ? { name, "*": String(value) } : { name, value: String(value) }));
     }
     case "langlinks":
     case "iwlinks":
     case "parsewarnings":
       return [];
-    case "templates":
+    case "templates": {
+      const titles = await templateTitles(rc, source, p);
+      const existing = new Set((await rc.deps.store.pagesByTitle(titles)).map((row) => row.title));
+      return titles.map((title) => {
+        const ns = canonicalizeTitle(title)?.namespaceId ?? 0;
+        const exists = existing.has(title);
+        return v1 ? { ns, ...(exists ? { exists: true } : {}), "*": title } : { ns, exists, title };
+      });
+    }
     case "images":
-      throw unavailable("prop", prop, DEFERRED_REASON);
+      return imageNames(rc, source, p);
   }
 }
 

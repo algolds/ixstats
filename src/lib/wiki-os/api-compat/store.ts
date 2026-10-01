@@ -20,6 +20,8 @@ import {
   findLogs,
   listBacklinks,
   listBlocks,
+  listEmbeddedIn,
+  listImageUsage,
   listCategories,
   listCategoryMembers,
   listPages,
@@ -61,10 +63,10 @@ async function statistics(): Promise<SiteStatistics> {
   const [pages, articles, edits, images, users, active, admins] = await Promise.all([
     db.wikiArticle.count({ where: LIVE_PAGE }),
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 0, redirectTargetSlug: null } }),
-    db.wikiRevision.count({ where: { source: SOURCE } }),
+    db.wikiRevision.count({ where: { source: SOURCE, parked: false } }),
     db.wikiArticle.count({ where: { ...LIVE_PAGE, namespace: 6 } }),
     db.wikiAccountLink.count({ where: { source: SOURCE, verifiedAt: { not: null } } }),
-    db.wikiRevision.groupBy({ by: ["author"], where: { source: SOURCE, createdAt: { gte: since } } }),
+    db.wikiRevision.groupBy({ by: ["author"], where: { source: SOURCE, parked: false, createdAt: { gte: since } } }),
     db.wikiUserGroup.count({ where: { group: "sysop" } }),
   ]);
   return { pages, articles, edits, images, users, activeUsers: active.length, admins };
@@ -75,6 +77,7 @@ async function userStats(internalUserId: string | null, wikiName: string) {
     db.wikiRevision.count({
       where: {
         source: SOURCE,
+        parked: false,
         OR: [...(internalUserId ? [{ authorId: internalUserId }] : []), { author: wikiName }],
       },
     }),
@@ -98,6 +101,8 @@ const PAGE_SELECT = {
   redirectTargetFragment: true,
   updatedAt: true,
   wordCount: true,
+  pageProps: true,
+  displayTitle: true,
 } as const;
 
 interface HeadRow {
@@ -113,7 +118,7 @@ async function headRevisions(articleIds: readonly string[]): Promise<Map<string,
   const rows = await db.$queryRaw<HeadRow[]>(Prisma.sql`
     SELECT DISTINCT ON ("articleId") "articleId", "revId", "createdAt", "byteSize"
     FROM "wiki_revisions"
-    WHERE "articleId" IN (${Prisma.join(articleIds)})
+    WHERE "articleId" IN (${Prisma.join(articleIds)}) AND "parked" = false
     ORDER BY "articleId", "createdAt" DESC, "revId" DESC`);
   return new Map(rows.map((row) => [row.articleId, row]));
 }
@@ -138,8 +143,16 @@ async function toPageRows(articles: readonly PageArticle[]): Promise<PageRow[]> 
       headRevId: head?.revId ?? null,
       headTimestamp: head?.createdAt ?? null,
       length: head?.byteSize ?? 0,
+      pageProps: toPageProps(article.pageProps),
+      displayTitle: article.displayTitle,
     };
   });
+}
+
+/** The page properties MediaWiki reported, as text values; null when none were stored (an unrendered page). */
+function toPageProps(stored: Prisma.JsonValue | null): Record<string, string> | null {
+  if (stored === null || typeof stored !== "object" || Array.isArray(stored)) return null;
+  return Object.fromEntries(Object.entries(stored).map(([name, value]) => [name, String(value ?? "")]));
 }
 
 async function pagesByTitle(titles: readonly string[]): Promise<PageRow[]> {
@@ -192,7 +205,7 @@ async function parentIds(revIds: readonly number[]): Promise<Map<number, number>
   const rows = await db.$queryRaw<Array<{ revId: number; parentId: number | null }>>(Prisma.sql`
     SELECT r."revId" AS "revId",
       (SELECT p."revId" FROM "wiki_revisions" p
-        WHERE p."articleId" = r."articleId"
+        WHERE p."articleId" = r."articleId" AND p."parked" = false
           AND (p."createdAt" < r."createdAt" OR (p."createdAt" = r."createdAt" AND p."revId" < r."revId"))
         ORDER BY p."createdAt" DESC, p."revId" DESC
         LIMIT 1) AS "parentId"
@@ -275,7 +288,7 @@ async function revisionsById(
 ): Promise<RevisionRow[]> {
   if (revIds.length === 0) return [];
   const records = await db.wikiRevision.findMany({
-    where: { source: SOURCE, revId: { in: [...revIds] }, article: { status: { not: "ARCHIVED" } } },
+    where: { source: SOURCE, parked: false, revId: { in: [...revIds] }, article: { status: { not: "ARCHIVED" } } },
     select: { ...REVISION_SELECT, ...(withContent ? { wikitext: true } : {}) },
   });
   const rows = await toRevisionRows(records);
@@ -284,12 +297,12 @@ async function revisionsById(
 }
 
 async function revisionByRowId(rowId: string): Promise<RevisionRow | null> {
-  const record = await db.wikiRevision.findUnique({ where: { id: rowId }, select: REVISION_SELECT });
+  const record = await db.wikiRevision.findFirst({ where: { id: rowId, parked: false }, select: REVISION_SELECT });
   return record ? ((await toRevisionRows([record]))[0] ?? null) : null;
 }
 
 async function revisionCountOf(title: string): Promise<number> {
-  return db.wikiRevision.count({ where: { source: SOURCE, article: { title } } });
+  return db.wikiRevision.count({ where: { source: SOURCE, parked: false, article: { title } } });
 }
 
 async function pageHtml(articleId: string): Promise<{ html: string | null; fresh: boolean } | null> {
@@ -328,6 +341,8 @@ function revisionWhere(query: RevisionQuery): Prisma.WikiRevisionWhereInput {
   }
   return {
     source: SOURCE,
+    // A parked revision (a MediaWiki edit that never went live in WikiOS) is not part of the page's history here.
+    parked: false,
     ...(query.articleId ? { articleId: query.articleId } : {}),
     ...(query.users ? { author: { in: [...query.users] } } : {}),
     ...(query.minor === undefined ? {} : { minor: query.minor }),
@@ -454,8 +469,7 @@ function categoryCursorWhere(query: PerPageQuery): Prisma.WikiCategoryMemberWher
 async function categoriesOf(
   query: PerPageQuery & { hidden?: boolean }
 ): Promise<PerPageResult<CategoryRow>> {
-  // WikiOS does not record hidden categories yet (plan 406): none is hidden.
-  if (query.articleIds.length === 0 || query.hidden === true) return { rows: [], next: null };
+  if (query.articleIds.length === 0) return { rows: [], next: null };
   const direction = query.dir === "ascending" ? "asc" : "desc";
   const names = query.titles?.flatMap((title) => {
     const canon = canonicalizeTitle(title);
@@ -464,7 +478,9 @@ async function categoriesOf(
   const fetched = await db.wikiCategoryMember.findMany({
     where: {
       articleId: { in: [...query.articleIds] },
-      ...(names ? { category: { name: { in: names } } } : {}),
+      ...(names || query.hidden !== undefined
+        ? { category: { ...(names ? { name: { in: names } } : {}), ...(query.hidden === undefined ? {} : { hidden: query.hidden }) } }
+        : {}),
       ...categoryCursorWhere(query),
     },
     orderBy: [{ article: { pageId: direction } }, { category: { name: direction } }],
@@ -472,7 +488,7 @@ async function categoriesOf(
     select: {
       sortKey: true,
       createdAt: true,
-      category: { select: { name: true } },
+      category: { select: { name: true, hidden: true } },
       article: { select: { pageId: true } },
     },
   });
@@ -483,7 +499,7 @@ async function categoriesOf(
       title: `Category:${member.category.name}`,
       sortKey: member.sortKey,
       timestamp: member.createdAt,
-      hidden: false,
+      hidden: member.category.hidden,
     };
   });
   const next = fetched[query.limit];
@@ -494,6 +510,87 @@ async function categoriesOf(
         ? { pageId: next.article.pageId, key: next.category.name }
         : null,
   };
+}
+
+/** The first row to return (`cursor`) and after it, for a listing across pages ordered by (page id, `key`). */
+function perPageCursorWhere<K extends string>(
+  query: PerPageQuery,
+  key: K
+): { OR: Array<Record<string, unknown>> } | Record<string, never> {
+  const { cursor, dir } = query;
+  if (!cursor) return {};
+  const [strict, loose] = dir === "ascending" ? (["gt", "gte"] as const) : (["lt", "lte"] as const);
+  return {
+    OR: [
+      { article: { pageId: { [strict]: cursor.pageId } } },
+      { article: { pageId: cursor.pageId }, [key]: { [loose]: cursor.key } },
+    ],
+  };
+}
+
+async function templatesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>> {
+  if (query.articleIds.length === 0) return { rows: [], next: null };
+  const direction = query.dir === "ascending" ? "asc" : "desc";
+  const titles = query.titles?.flatMap((title) => canonicalizeTitle(title)?.title ?? []);
+  const fetched = await db.wikiTemplateLink.findMany({
+    where: {
+      articleId: { in: [...query.articleIds] },
+      ...(titles ? { templateTitle: { in: titles } } : {}),
+      ...perPageCursorWhere(query, "templateTitle"),
+    },
+    orderBy: [{ article: { pageId: direction } }, { templateTitle: direction }],
+    take: query.limit + 1,
+    select: { templateTitle: true, article: { select: { pageId: true } } },
+  });
+  const rows = fetched.slice(0, query.limit).flatMap((link) => {
+    if (link.article.pageId === null) throw missingIds("wiki_articles.pageId");
+    const namespace = canonicalizeTitle(link.templateTitle)?.namespaceId ?? 0;
+    if (query.namespaces && !query.namespaces.includes(namespace)) return [];
+    return [{ pageId: link.article.pageId, title: link.templateTitle, namespace }];
+  });
+  const next = fetched[query.limit];
+  return {
+    rows,
+    next: next && next.article.pageId !== null ? { pageId: next.article.pageId, key: next.templateTitle } : null,
+  };
+}
+
+async function imagesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>> {
+  if (query.articleIds.length === 0) return { rows: [], next: null };
+  if (query.namespaces && !query.namespaces.includes(6)) return { rows: [], next: null };
+  const direction = query.dir === "ascending" ? "asc" : "desc";
+  const names = query.titles?.flatMap((title) => {
+    const canon = canonicalizeTitle(title);
+    return canon?.namespaceId === 6 ? [canon.base] : [];
+  });
+  const fetched = await db.wikiImageLink.findMany({
+    where: {
+      articleId: { in: [...query.articleIds] },
+      ...(names ? { fileName: { in: names } } : {}),
+      ...perPageCursorWhere(query, "fileName"),
+    },
+    orderBy: [{ article: { pageId: direction } }, { fileName: direction }],
+    take: query.limit + 1,
+    select: { fileName: true, article: { select: { pageId: true } } },
+  });
+  const rows = fetched.slice(0, query.limit).map((link) => {
+    if (link.article.pageId === null) throw missingIds("wiki_articles.pageId");
+    return { pageId: link.article.pageId, title: `File:${link.fileName}`, namespace: 6 };
+  });
+  const next = fetched[query.limit];
+  return {
+    rows,
+    next: next && next.article.pageId !== null ? { pageId: next.article.pageId, key: next.fileName } : null,
+  };
+}
+
+async function hiddenCategoryNames(names: readonly string[]): Promise<Set<string>> {
+  if (names.length === 0) return new Set();
+  const rows = await db.wikiCategory.findMany({
+    where: { name: { in: [...names] }, hidden: true },
+    select: { name: true },
+  });
+  return new Set(rows.map((row) => row.name));
 }
 
 async function wikitextByArticle(
@@ -529,10 +626,15 @@ export const prismaApiStore: ApiStore = {
   restrictionsByTitle,
   linksFrom,
   categoriesOf,
+  templatesOf,
+  imagesOf,
+  hiddenCategoryNames,
   wikitextByArticle,
   listPages,
   listCategoryMembers,
   listBacklinks,
+  listEmbeddedIn,
+  listImageUsage,
   randomPages,
   listCategories,
   findLogs,

@@ -457,16 +457,6 @@ describe("list=allcategories, allusers, blocks, protectedtitles, random", () => 
   });
 });
 
-describe("modules that wait for plan 406", () => {
-  it("answer badvalue naming the plan", async () => {
-    for (const list of ["embeddedin&eititle=Template:Foo", "imageusage&iutitle=File:Cat.png"]) {
-      const body = await run(`list=${list}`);
-      expect(body.error.code).toBe("badvalue");
-      expect(body.error.info).toContain("plan 406");
-    }
-  });
-});
-
 describe("several modules in one request", () => {
   it("answers each list and merges their continuations", async () => {
     const body = await run("list=allpages|logevents&aplimit=1&lelimit=1");

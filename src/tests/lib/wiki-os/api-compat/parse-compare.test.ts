@@ -191,19 +191,14 @@ describe("action=parse", () => {
     expect(v1.body.parse.properties).toEqual([{ name: "displaytitle", "*": "alpha" }]);
   });
 
-  it("returns the default props without templates and images", async () => {
+  it("returns MediaWiki's default props, templates and images included", async () => {
     const { body } = await run("action=parse&page=Alpha");
     expect(Object.keys(body.parse).sort()).toEqual(
-      ["categories", "displaytitle", "externallinks", "iwlinks", "langlinks", "links", "pageid", "parsewarnings", "properties", "revid", "sections", "text", "title"].sort()
+      ["categories", "displaytitle", "externallinks", "images", "iwlinks", "langlinks", "links", "pageid", "parsewarnings", "properties", "revid", "sections", "templates", "text", "title"].sort()
     );
   });
 
-  it("answers badvalue for templates and images (plan 406) and unknown props", async () => {
-    for (const prop of ["templates", "images"]) {
-      const { body } = await run(`action=parse&page=Alpha&prop=${prop}`);
-      expect(body.error.code).toBe("badvalue");
-      expect(body.error.info).toContain("plan 406");
-    }
+  it("answers badvalue for an unknown prop", async () => {
     expect((await run("action=parse&page=Alpha&prop=nonsense")).body.error.code).toBe("badvalue");
   });
 });

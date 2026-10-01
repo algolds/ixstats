@@ -363,7 +363,7 @@ describe("prop=categories and prop=links", () => {
   });
 });
 
-describe("prop=pageprops, deferred and unknown props", () => {
+describe("prop=pageprops and unknown props", () => {
   it("reads DISPLAYTITLE, DEFAULTSORT and behaviour switches from the page's wikitext", async () => {
     const body = await query("titles=Alpha|Beta&prop=pageprops&formatversion=2");
     expect(body.query.pages[0].pageprops).toEqual({ displaytitle: "alpha", defaultsort: "Alpha, The", noindex: "" });
@@ -372,12 +372,7 @@ describe("prop=pageprops, deferred and unknown props", () => {
     expect(filtered.query.pages[0].pageprops).toEqual({ defaultsort: "Alpha, The" });
   });
 
-  it("answers badvalue for the modules that need plan 406's tables, and for unknown props", async () => {
-    for (const prop of ["templates", "images"]) {
-      const body = await query(`titles=Alpha&prop=${prop}`);
-      expect(body.error.code).toBe("badvalue");
-      expect(body.error.info).toContain("plan 406");
-    }
+  it("answers badvalue for an unknown prop", async () => {
     expect((await query("titles=Alpha&prop=extracts")).error.code).toBe("badvalue");
   });
 });
@@ -409,8 +404,4 @@ describe("generator=links", () => {
     expect(stuck.continue.plcontinue).toBeDefined();
   });
 
-  it("answers badvalue for generators that need plan 406's tables", async () => {
-    expect((await query("generator=embeddedin&geititle=Template:Foo")).error.code).toBe("badvalue");
-    expect((await query("generator=templates&titles=Alpha")).error.code).toBe("badvalue");
-  });
 });

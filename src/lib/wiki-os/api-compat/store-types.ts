@@ -41,6 +41,10 @@ export interface PageRow {
   headTimestamp: Date | null;
   /** Size of the newest revision's text in bytes. */
   length: number;
+  /** The page properties MediaWiki reported for the last render (`defaultsort`, `displaytitle`, ...); null before a render. */
+  pageProps: Record<string, string> | null;
+  /** `{{DISPLAYTITLE}}` as sanitized HTML from the last render; null when the page sets none. */
+  displayTitle: string | null;
 }
 
 /** A revision, with the page it belongs to. */
@@ -206,6 +210,8 @@ export interface RandomPagesQuery {
 export interface CategorySummaryRow {
   name: string;
   members: number;
+  /** `__HIDDENCAT__`, as MediaWiki reported it. */
+  hidden: boolean;
 }
 
 export interface CategoryListQuery {
@@ -320,6 +326,12 @@ export interface ApiStore {
   linksFrom(query: PerPageQuery): Promise<PerPageResult<LinkRow>>;
   /** Categories of pages, ordered by (page id, category name). */
   categoriesOf(query: PerPageQuery & { hidden?: boolean }): Promise<PerPageResult<CategoryRow>>;
+  /** Templates (and Lua modules) pages transclude, from the last render, ordered by (page id, template title). */
+  templatesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>>;
+  /** Files pages use, from the last render, ordered by (page id, file name); the title is `File:Name`. */
+  imagesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>>;
+  /** Which of these category names (without the prefix) are hidden. */
+  hiddenCategoryNames(names: readonly string[]): Promise<Set<string>>;
   /** A revision by its WikiOS row id (right after a save, which answers with the row id). */
   revisionByRowId(rowId: string): Promise<RevisionRow | null>;
   /** How many revisions a page has, deleted pages included (`action=undelete` reports it). */
@@ -335,6 +347,10 @@ export interface ApiStore {
   listCategoryMembers(query: CategoryMemberQuery): Promise<CategoryMemberRow[]>;
   /** Up to `limit + 1` pages that link to a title, in page id order. */
   listBacklinks(query: BacklinkQuery): Promise<PageListRow[]>;
+  /** Up to `limit + 1` pages that transclude the template (or module) `query.target`, in page id order. */
+  listEmbeddedIn(query: BacklinkQuery): Promise<PageListRow[]>;
+  /** Up to `limit + 1` pages that use the file `query.target` (`File:Name`), in page id order. */
+  listImageUsage(query: BacklinkQuery): Promise<PageListRow[]>;
   randomPages(query: RandomPagesQuery): Promise<PageListRow[]>;
   /** Up to `limit + 1` categories, in name order. */
   listCategories(query: CategoryListQuery): Promise<CategorySummaryRow[]>;

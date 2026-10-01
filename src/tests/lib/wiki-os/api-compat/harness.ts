@@ -188,6 +188,9 @@ export interface FakePage {
   wikitext?: string;
   touched?: string;
   deleted?: boolean;
+  /** What the page's last render reported; omitted = never rendered. */
+  pageProps?: Record<string, string>;
+  displayTitle?: string;
 }
 
 export interface FakeRevision {
@@ -230,6 +233,12 @@ export interface FakeWikiData {
   links?: Record<string, string[]>;
   /** page title -> category names */
   categories?: Record<string, string[]>;
+  /** Category names that are hidden (__HIDDENCAT__). */
+  hiddenCategories?: string[];
+  /** page title -> canonical titles of the templates it transcludes (from its last render) */
+  templates?: Record<string, string[]>;
+  /** page title -> file names (spaces, no `File:`) it uses (from its last render) */
+  images?: Record<string, string[]>;
   restrictions?: Record<string, Array<{ action: string; level: string; expiresAt?: string | null }>>;
 }
 
@@ -266,6 +275,8 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       headRevId: head?.revId ?? null,
       headTimestamp: head ? new Date(head.timestamp) : null,
       length: head ? byteLength(head.content ?? "") : 0,
+      pageProps: page.pageProps ?? null,
+      displayTitle: page.displayTitle ?? null,
     };
   };
 
@@ -295,6 +306,49 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       isHead: history.at(-1)?.revId === rev.revId,
     };
   };
+
+  /** A listing across pages of what each page lists in `source` (templates, images), ordered by (page id, key) like the store. */
+  const perPageFake = (
+    query: Parameters<ApiStore["templatesOf"]>[0],
+    source: Record<string, string[]> | undefined,
+    toRow: (key: string) => { title: string; namespace: number },
+    keep?: (key: string) => boolean
+  ) => {
+    const rows = query.articleIds
+      .map((id) => titleOfArticle(id))
+      .flatMap((title) => {
+        const page = state.pages.find((p) => p.title === title);
+        return page ? (source?.[title] ?? []).map((key) => ({ pageId: page.pageId, key })) : [];
+      })
+      .filter((row) => !query.titles || query.titles.length === 0 || query.titles.includes(toRow(row.key).title))
+      .filter((row) => !keep || keep(row.key))
+      .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)))
+      .filter((row) => {
+        const c = query.cursor;
+        if (!c) return true;
+        const order = a2(row.pageId, row.key, c.pageId, c.key);
+        return query.dir === "ascending" ? order >= 0 : order <= 0;
+      });
+    const next = rows[query.limit];
+    return {
+      rows: rows
+        .slice(0, query.limit)
+        .map((row) => ({ pageId: row.pageId, ...toRow(row.key) }))
+        .filter((row) => !query.namespaces || query.namespaces.includes(row.namespace)),
+      next: next ? { pageId: next.pageId, key: next.key } : null,
+    };
+  };
+
+  /** Pages (in page id order) whose title passes `uses`, with the query's namespace, redirect and cursor filters. */
+  const relatedFake = (q: Parameters<ApiStore["listBacklinks"]>[0], uses: (title: string) => boolean) =>
+    state.pages
+      .filter((p) => uses(p.title))
+      .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
+      .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+      .filter((p) => q.cursor === undefined || p.pageId >= q.cursor)
+      .sort((a, b) => a.pageId - b.pageId)
+      .slice(0, q.limit + 1)
+      .map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
 
   const base: Partial<ApiStore> = {
     pagesByTitle: async (titles) => state.pages.filter((p) => titles.includes(p.title)).map(pageRow),
@@ -366,7 +420,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       };
     },
     categoriesOf: async (query) => {
-      if (query.hidden === true) return { rows: [], next: null };
+      const isHidden = (name: string) => (data.hiddenCategories ?? []).includes(name);
       const rows = query.articleIds
         .map((id) => titleOfArticle(id))
         .flatMap((source) => {
@@ -374,6 +428,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
           return page ? (data.categories?.[source] ?? []).map((name) => ({ pageId: page.pageId, name })) : [];
         })
         .filter((row) => !query.titles || query.titles.includes(`Category:${row.name}`))
+        .filter((row) => query.hidden === undefined || isHidden(row.name) === query.hidden)
         .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)))
         .filter((row) => {
           const c = query.cursor;
@@ -388,11 +443,15 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
           title: `Category:${row.name}`,
           sortKey: null,
           timestamp: new Date("2026-01-01T00:00:00Z"),
-          hidden: false,
+          hidden: isHidden(row.name),
         })),
         next: next ? { pageId: next.pageId, key: next.name } : null,
       };
     },
+    hiddenCategoryNames: async (names) => new Set(names.filter((name) => (data.hiddenCategories ?? []).includes(name))),
+    templatesOf: async (query) => perPageFake(query, data.templates, (title) => ({ title, namespace: title.includes(":") ? Number(title.startsWith("Module:") ? 828 : 10) : 0 })),
+    imagesOf: async (query) =>
+      perPageFake(query, data.images, (name) => ({ title: `File:${name}`, namespace: 6 }), (query.titles ?? []).length > 0 ? (name) => query.titles!.includes(`File:${name}`) : undefined),
     listPages: async (q) => {
       const asc = q.dir === "ascending";
       const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
@@ -435,6 +494,8 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .sort((a, b) => a.pageId - b.pageId);
       return rows.slice(0, q.limit + 1).map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
     },
+    listEmbeddedIn: async (q) => relatedFake(q, (title) => (data.templates?.[title] ?? []).includes(q.target)),
+    listImageUsage: async (q) => relatedFake(q, (title) => (data.images?.[title] ?? []).some((name) => `File:${name}` === q.target)),
     randomPages: async (q) =>
       state.pages
         .filter((p) => q.namespaces.includes(p.namespace ?? 0))
@@ -452,7 +513,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .filter(([n]) => !upper || n <= upper)
         .sort(([a], [b]) => (asc ? 1 : -1) * (a < b ? -1 : a > b ? 1 : 0))
         .slice(0, q.limit + 1)
-        .map(([name, members]) => ({ name, members }));
+        .map(([name, members]) => ({ name, members, hidden: (data.hiddenCategories ?? []).includes(name) }));
     },
     findLogs: async (q) => {
       const newer = q.dir === "newer";
@@ -565,7 +626,12 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
     };
   let nextRevId = 9000;
   const services: ApiServices = {
-    renderWikitext: record("renderWikitext", async (wikitext: string, title: string) => `<p>rendered(${title}): ${wikitext}</p>`),
+    renderWikitext: record("renderWikitext", async (wikitext: string, title: string) => ({
+      html: `<p>rendered(${title}): ${wikitext}</p>`,
+      // what a real render reports, read off the text the simple way: {{Name}} and [[File:Name]]
+      templates: [...wikitext.matchAll(/\{\{\s*([^{}|#:]+?)\s*[|}]/g)].map((match) => `Template:${match[1]}`),
+      images: [...wikitext.matchAll(/\[\[File:([^\]|]+)/g)].map((match) => match[1]!.replace(/ /g, "_")),
+    })),
     ensureRendered: record("ensureRendered", async (articleId: string) => {
       // The render service stores the rendering: the page then has a fresh HTML.
       const title = articleId.slice("art:".length);

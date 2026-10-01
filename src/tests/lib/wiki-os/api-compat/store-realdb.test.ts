@@ -77,9 +77,16 @@ describeRealDb("the api.php store against a real PostgreSQL (scratch copy of the
       data: { articleId: long.id, wikitext: long.wikitext, author: "Heku", byteSize: long.wikitext.length, sha1: null },
     });
     await db.wikiRevision.create({ data: { articleId: long.id, wikitext: "second", author: "Tester", byteSize: 6 } });
+    await db.wikiRevision.create({ data: { articleId: long.id, wikitext: "parked edit from MediaWiki", author: "MwEditor", byteSize: 26, parked: true, createdAt: new Date(Date.now() + 60_000) } });
     const category = await db.wikiCategory.create({ data: { name: "Cats", slug: "cats" } });
     await db.wikiCategoryMember.create({ data: { categoryId: category.id, articleId: long.id } });
     await db.wikiCategoryMember.create({ data: { categoryId: category.id, articleId: gone.id } });
+    const maintenance = await db.wikiCategory.create({ data: { name: "Maintenance", slug: "maintenance", hidden: true } });
+    await db.wikiCategoryMember.create({ data: { categoryId: maintenance.id, articleId: long.id } });
+    // plan 406's render-derived data, and a parked revision (a MediaWiki edit that never went live)
+    await db.wikiArticle.update({ where: { id: long.id }, data: { pageProps: { defaultsort: "Alpha, The", pagelength: 12 }, displayTitle: "<i>alpha</i>" } });
+    await db.wikiTemplateLink.createMany({ data: [{ articleId: long.id, templateTitle: "Template:Infobox" }, { articleId: long.id, templateTitle: "Module:Util" }, { articleId: blank.id, templateTitle: "Template:Infobox" }] });
+    await db.wikiImageLink.createMany({ data: [{ articleId: long.id, fileName: "Cat photo.png" }] });
 
     // prop=pageprops: left("wikitext", n) takes an int, and Prisma binds a number as bigint.
     const cut = await store.wikitextByArticle([long.id, blank.id], 100);
@@ -105,7 +112,35 @@ describeRealDb("the api.php store against a real PostgreSQL (scratch copy of the
     const members = await store.listCategoryMembers({ category: "Category:Cats", types: ["page", "subcat", "file"], sort: "sortkey", dir: "ascending", limit: 5 });
     expect(members.map((member) => member.title)).toEqual(["Alpha"]);
     expect(await store.listCategoryMembers({ category: "Category:Cats", types: ["page"], sort: "sortkey", dir: "ascending", limit: 5, cursor: { sortValue: "ALPHA", pageId: pages[0]!.pageId } })).toHaveLength(1);
-    expect(await store.listCategories({ dir: "ascending", limit: 5 })).toEqual([{ name: "Cats", members: 1 }]);
+    expect(await store.listCategories({ dir: "ascending", limit: 5 })).toEqual([
+      { name: "Cats", members: 1, hidden: false },
+      { name: "Maintenance", members: 1, hidden: true },
+    ]);
     expect(await store.listPages({ namespace: 0, filterRedirects: "all", dir: "ascending", limit: 5 })).toHaveLength(2);
+
+    // hidden categories, page properties and the display title MediaWiki reported
+    expect((await store.categoriesOf({ articleIds: [long.id], dir: "ascending", limit: 5, hidden: true })).rows.map((row) => row.title)).toEqual(["Category:Maintenance"]);
+    expect((await store.categoriesOf({ articleIds: [long.id], dir: "ascending", limit: 5 })).rows.map((row) => [row.title, row.hidden])).toEqual([["Category:Cats", false], ["Category:Maintenance", true]]);
+    expect(await store.hiddenCategoryNames(["Cats", "Maintenance"])).toEqual(new Set(["Maintenance"]));
+    const alpha = pages.find((page) => page.title === "Alpha")!;
+    expect(alpha).toMatchObject({ pageProps: { defaultsort: "Alpha, The", pagelength: "12" }, displayTitle: "<i>alpha</i>" });
+    expect(pages.find((page) => page.title === "Blank")).toMatchObject({ pageProps: null, displayTitle: null });
+
+    // templates, images, embeddedin, imageusage (row comparisons with cursors, namespaces from titles)
+    const templates = await store.templatesOf({ articleIds: [long.id, blank.id], dir: "ascending", limit: 5 });
+    expect(templates.rows.map((row) => [row.title, row.namespace])).toEqual([["Module:Util", 828], ["Template:Infobox", 10], ["Template:Infobox", 10]]);
+    const afterFirst = await store.templatesOf({ articleIds: [long.id, blank.id], dir: "ascending", limit: 5, cursor: { pageId: alpha.pageId, key: "Template:Infobox" } });
+    expect(afterFirst.rows.map((row) => row.pageId)).toEqual([alpha.pageId, pages.find((page) => page.title === "Blank")!.pageId]);
+    expect((await store.templatesOf({ articleIds: [long.id], dir: "descending", limit: 1 })).next).toEqual({ pageId: alpha.pageId, key: "Module:Util" });
+    expect((await store.imagesOf({ articleIds: [long.id], dir: "ascending", limit: 5, titles: ["File:Cat_photo.png"] })).rows).toEqual([{ pageId: alpha.pageId, title: "File:Cat photo.png", namespace: 6 }]);
+    expect((await store.listEmbeddedIn({ target: "Template:Infobox", filterRedirects: "all", limit: 5 })).map((row) => row.title)).toEqual(["Alpha", "Blank"]);
+    expect((await store.listImageUsage({ target: "File:Cat_photo.png", filterRedirects: "all", limit: 5 })).map((row) => row.title)).toEqual(["Alpha"]);
+
+    // a parked revision is not in the page's history, nor its head, nor its count
+    expect(alpha.headRevId).toBe(rev.revId + 1);
+    expect(await store.revisionCountOf("Alpha")).toBe(2);
+    const history = await store.findRevisions({ articleId: long.id, dir: "older", limit: 5, withContent: false });
+    expect(history.map((row) => row.revId)).toEqual([rev.revId + 1, rev.revId]);
+    expect(await store.userStats(null, "MwEditor")).toMatchObject({ editCount: 0 });
   }, 60_000);
 });

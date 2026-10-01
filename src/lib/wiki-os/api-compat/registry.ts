@@ -44,6 +44,8 @@ function samplePropContext(rc: ApiContext) {
     headRevId: 1,
     headTimestamp: new Date(0),
     length: 0,
+    pageProps: null,
+    displayTitle: null,
   };
   const entry: PageEntry = { key: 1, title: row.title, ns: 0, state: "exists", row, revisionIds: [] };
   const pageSet: PageSet = { entries: [entry], normalized: [], redirects: [], badRevIds: [], revisions: new Map() };

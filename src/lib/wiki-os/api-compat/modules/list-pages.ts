@@ -1,12 +1,12 @@
 /**
- * list-pages.ts — `list=allpages|categorymembers|backlinks|random|search|allcategories` (plan 410).
+ * list-pages.ts — `list=allpages|categorymembers|backlinks|embeddedin|imageusage|random|search|allcategories` (plan 410).
  *
  * These list pages (or categories), so most also run as generators. Continuation values are the
  * position of the first row of the next page.
  */
 
 import { encodeCursor, optionalCursor, takePage } from "../continuation";
-import { ApiError, badContinue, badValue, missingOneOf } from "../errors";
+import { ApiError, badContinue, badValue, missingOneOf, mixedParams } from "../errors";
 import type { JsonObject } from "../format";
 import { mwTimestamp } from "../format";
 import type { ApiParams } from "../params";
@@ -20,6 +20,7 @@ import {
   pageItem,
   titleIn,
 } from "./list-common";
+import type { BacklinkQuery, PageListRow } from "../store-types";
 import type { ListModule, ListResult } from "./query-list";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
@@ -151,29 +152,66 @@ export const categoryMembers: ListModule = {
 // backlinks
 // ---------------------------------------------------------------------------
 
-async function runBacklinks(rc: ApiContext, p: ApiParams): Promise<ListResult> {
-  const rawTarget = p.string("title");
-  const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
-  const cursor = optionalCursor(p.raw("continue"), ["n"] as const);
-  const namespaces = namespacesParam(p);
-  const filterRedirects = p.oneOf("filterredir", REDIRECT_FILTERS, "all");
-  if (rawTarget === undefined) throw missingOneOf([p.fullName("title"), p.fullName("pageid")]);
-  const rows = await rc.deps.store.listBacklinks({
-    target: canonicalTitle(rawTarget),
-    namespaces,
-    filterRedirects,
-    limit,
-    cursor: cursor?.[0],
-  });
-  const { page, more } = takePage(rows, limit);
-  const next = more ? rows[limit] : undefined;
-  return {
-    items: page.map((row) => ({ ...pageItem(row), ...(row.isRedirect ? { redirect: true } : {}) })),
-    next: next ? encodeCursor([next.pageId]) : null,
+/** What the "pages that ... a title" lists (backlinks, embeddedin, imageusage) read from the store. */
+type RelatedPagesFetch = (rc: ApiContext, query: BacklinkQuery) => Promise<PageListRow[]>;
+
+/**
+ * `list=backlinks|embeddedin|imageusage`: the pages that link to, transclude or use `<prefix>title`
+ * (or `<prefix>pageid`), in page id order, with the namespace and redirect filters.
+ */
+function relatedPagesModule(
+  prefix: string,
+  resultKey: string,
+  fetch: RelatedPagesFetch,
+  checkTarget: (canonicalTitle: string, p: ApiParams) => void = () => undefined
+): ListModule {
+  const run = async (rc: ApiContext, p: ApiParams): Promise<ListResult> => {
+    const rawTarget = p.string("title");
+    const pageId = p.optionalInteger("pageid", 1);
+    const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
+    const cursor = optionalCursor(p.raw("continue"), ["n"] as const);
+    const namespaces = namespacesParam(p);
+    const filterRedirects = p.oneOf("filterredir", REDIRECT_FILTERS, "all");
+    if (rawTarget === undefined && pageId === undefined) {
+      throw missingOneOf([p.fullName("title"), p.fullName("pageid")]);
+    }
+    if (rawTarget !== undefined && pageId !== undefined) throw mixedParams([p.fullName("title"), p.fullName("pageid")]);
+    const target = rawTarget !== undefined ? canonicalTitle(rawTarget) : await titleOfPageId(rc, pageId!);
+    checkTarget(target, p);
+    const rows = await fetch(rc, { target, namespaces, filterRedirects, limit, cursor: cursor?.[0] });
+    const { page, more } = takePage(rows, limit);
+    const next = more ? rows[limit] : undefined;
+    return {
+      items: page.map((row) => ({ ...pageItem(row), ...(row.isRedirect ? { redirect: true } : {}) })),
+      next: next ? encodeCursor([next.pageId]) : null,
+    };
   };
+  return { prefix, resultKey, generator: true, run };
 }
 
-export const backlinks: ListModule = { prefix: "bl", resultKey: "backlinks", generator: true, run: runBacklinks };
+/** The canonical title of the page with this id (`nosuchpageid` when there is none). */
+async function titleOfPageId(rc: ApiContext, pageId: number): Promise<string> {
+  const [row] = await rc.deps.store.pagesById([pageId]);
+  if (!row) throw new ApiError("nosuchpageid", `There is no page with ID ${pageId}.`);
+  return row.title;
+}
+
+export const backlinks = relatedPagesModule("bl", "backlinks", (rc, query) => rc.deps.store.listBacklinks(query));
+
+/** Pages that transclude a template or module (`Template:Foo`, `Module:Bar`, or a main-namespace page), from each page's last render. */
+export const embeddedIn = relatedPagesModule("ei", "embeddedin", (rc, query) => rc.deps.store.listEmbeddedIn(query));
+
+/** Pages that use a file, from each page's last render. */
+export const imageUsage = relatedPagesModule(
+  "iu",
+  "imageusage",
+  (rc, query) => rc.deps.store.listImageUsage(query),
+  (title, p) => {
+    if (canonicalizeTitle(title)?.namespaceId !== 6) {
+      throw new ApiError("bad_image_title", `The title for ${p.fullName("title")} must be a file (in the File: namespace).`);
+    }
+  }
+);
 
 // ---------------------------------------------------------------------------
 // random
@@ -285,7 +323,7 @@ async function runAllCategories(rc: ApiContext, p: ApiParams): Promise<ListResul
     items: page.map((row) => ({
       ...(rc.version === 1 ? { "*": row.name } : { category: row.name }),
       ...(props.has("size") ? { size: row.members, pages: row.members, files: 0, subcats: 0 } : {}),
-      ...(props.has("hidden") ? { hidden: false } : {}),
+      ...(props.has("hidden") ? { hidden: row.hidden } : {}),
     })),
     next: next ? underscored(next.name) : null,
   };

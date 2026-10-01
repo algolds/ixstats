@@ -18,6 +18,8 @@ jest.mock("~/server/db", () => {
       wikiArticle: model(),
       wikiRevision: model(),
       wikiLink: model(),
+      wikiTemplateLink: model(),
+      wikiImageLink: model(),
       wikiCategory: model(),
       wikiCategoryMember: model(),
       wikiLog: model(),
@@ -58,6 +60,8 @@ const article = (overrides = {}) => ({
   redirectTargetFragment: null,
   updatedAt: new Date("2026-02-01T00:00:00Z"),
   wordCount: 12,
+  pageProps: null,
+  displayTitle: null,
   ...overrides,
 });
 
@@ -74,9 +78,20 @@ describe("pages", () => {
       title: { in: ["Alpha", "Gamma"] },
     });
     expect(rows).toEqual([
-      { articleId: "a1", pageId: 7, title: "Alpha", namespace: 0, isRedirect: false, redirectTitle: null, redirectFragment: null, touched: new Date("2026-02-01T00:00:00Z"), wordCount: 12, headRevId: 103, headTimestamp: new Date("2026-03-01T00:00:00Z"), length: 55 },
+      { articleId: "a1", pageId: 7, title: "Alpha", namespace: 0, isRedirect: false, redirectTitle: null, redirectFragment: null, touched: new Date("2026-02-01T00:00:00Z"), wordCount: 12, headRevId: 103, headTimestamp: new Date("2026-03-01T00:00:00Z"), length: 55, pageProps: null, displayTitle: null },
       expect.objectContaining({ pageId: 8, isRedirect: true, redirectTitle: "Alpha", redirectFragment: "Top", headRevId: null, headTimestamp: null, length: 0 }),
     ]);
+  });
+
+  it("carries what the last render reported: page properties as text, and the display title", async () => {
+    mdb.wikiArticle!.findMany!.mockResolvedValue([
+      article({ pageProps: { defaultsort: "Alpha, The", disambiguation: "", pagelength: 12 }, displayTitle: "<i>alpha</i>" }),
+      article({ id: "a2", pageId: 8, title: "Beta", pageProps: ["not", "an", "object"] }),
+    ]);
+    mdb.$queryRaw.mockResolvedValue([]);
+    const [rendered, odd] = await store.pagesByTitle(["Alpha", "Beta"]);
+    expect(rendered).toMatchObject({ pageProps: { defaultsort: "Alpha, The", disambiguation: "", pagelength: "12" }, displayTitle: "<i>alpha</i>" });
+    expect(odd!.pageProps).toBeNull();
   });
 
   it("asks nothing for no titles, and by page id otherwise", async () => {
@@ -159,6 +174,32 @@ describe("revisions", () => {
     expect(args.select.wikitext).toBeUndefined();
   });
 
+  it("never reads a parked revision: not in listings, by id, by row id, in counts, nor in the head and parent lookups", async () => {
+    mdb.wikiRevision!.findMany!.mockResolvedValue([revisionRecord()]);
+    mdb.wikiRevision!.findFirst!.mockResolvedValue(revisionRecord());
+    mdb.wikiRevision!.count!.mockResolvedValue(1);
+    mdb.wikiRevision!.groupBy!.mockResolvedValue([]);
+    mdb.$queryRaw.mockResolvedValue([]);
+    mdb.wikiAccountLink!.findMany!.mockResolvedValue([]);
+    await store.findRevisions({ dir: "older", limit: 5, withContent: false });
+    await store.revisionsById([1], false);
+    await store.revisionByRowId("row");
+    await store.revisionCountOf("Alpha");
+    for (const mock of [mdb.wikiRevision!.findMany!, mdb.wikiRevision!.findFirst!, mdb.wikiRevision!.count!]) {
+      for (const [args] of mock.mock.calls) expect(args.where).toMatchObject({ parked: false });
+    }
+    // headRevisions and parentIds are raw SQL: the head is the newest revision that is not parked, and so is a parent
+    const sqls = mdb.$queryRaw.mock.calls.map(([query]) => (query as { sql: string }).sql);
+    expect(sqls.length).toBeGreaterThanOrEqual(2);
+    expect(sqls.filter((sql) => sql.includes("wiki_revisions") && sql.includes("DISTINCT ON")).every((sql) => sql.includes('"parked" = false'))).toBe(true);
+    expect(sqls.filter((sql) => sql.includes("SELECT p.")).every((sql) => sql.includes('p."parked" = false'))).toBe(true);
+    // site statistics and user counts
+    await store.statistics();
+    await store.userStats("u1", "Heku");
+    for (const [args] of mdb.wikiRevision!.count!.mock.calls.slice(1)) expect(args.where).toMatchObject({ parked: false });
+    expect(mdb.wikiRevision!.groupBy!.mock.calls[0]![0].where).toMatchObject({ parked: false });
+  });
+
   it("maps rows: parent, head flag, reference, size delta, hidden flags and the author's user id", async () => {
     mdb.wikiRevision!.findMany!.mockResolvedValue([
       revisionRecord(),
@@ -200,6 +241,7 @@ describe("revisions", () => {
     expect(rows.map((r) => r.revId)).toEqual([1, 2]);
     expect(mdb.wikiRevision!.findMany!.mock.calls[0]![0].where).toEqual({
       source: "ixwiki",
+      parked: false,
       revId: { in: [1, 2] },
       article: { status: { not: "ARCHIVED" } },
     });
@@ -207,15 +249,16 @@ describe("revisions", () => {
   });
 
   it("reads a revision by its row id and counts a page's revisions", async () => {
-    mdb.wikiRevision!.findUnique!.mockResolvedValue(revisionRecord());
+    mdb.wikiRevision!.findFirst!.mockResolvedValue(revisionRecord());
     mdb.$queryRaw.mockResolvedValue([]);
     mdb.wikiAccountLink!.findMany!.mockResolvedValue([]);
     expect((await store.revisionByRowId("rev-row-1"))?.revId).toBe(1_000_000_001);
-    mdb.wikiRevision!.findUnique!.mockResolvedValue(null);
+    expect(mdb.wikiRevision!.findFirst!.mock.calls[0]![0].where).toEqual({ id: "rev-row-1", parked: false });
+    mdb.wikiRevision!.findFirst!.mockResolvedValue(null);
     expect(await store.revisionByRowId("none")).toBeNull();
     mdb.wikiRevision!.count!.mockResolvedValue(4);
     expect(await store.revisionCountOf("Alpha")).toBe(4);
-    expect(mdb.wikiRevision!.count!.mock.calls[0]![0]).toEqual({ where: { source: "ixwiki", article: { title: "Alpha" } } });
+    expect(mdb.wikiRevision!.count!.mock.calls[0]![0]).toEqual({ where: { source: "ixwiki", parked: false, article: { title: "Alpha" } } });
   });
 });
 
@@ -263,18 +306,30 @@ describe("links and categories", () => {
     expect(rows.map((r) => r.title)).toEqual(["Template:Foo"]);
   });
 
-  it("lists categories as Category:Name with no hidden ones, and reads none for hidden=true", async () => {
+  it("lists categories as Category:Name with MediaWiki's hidden flag, and filters on it for show=hidden", async () => {
     mdb.wikiCategoryMember!.findMany!.mockResolvedValue([
-      { sortKey: "zz", createdAt: new Date("2026-01-01T00:00:00Z"), category: { name: "Cats" }, article: { pageId: 7 } },
-      { sortKey: null, createdAt: new Date("2026-01-02T00:00:00Z"), category: { name: "Dogs" }, article: { pageId: 7 } },
+      { sortKey: "zz", createdAt: new Date("2026-01-01T00:00:00Z"), category: { name: "Cats", hidden: false }, article: { pageId: 7 } },
+      { sortKey: null, createdAt: new Date("2026-01-02T00:00:00Z"), category: { name: "Dogs", hidden: true }, article: { pageId: 7 } },
     ]);
     const result = await store.categoriesOf({ articleIds: ["a1"], dir: "ascending", limit: 1, titles: ["Category:Cats"] });
     expect(result.rows).toEqual([{ pageId: 7, title: "Category:Cats", sortKey: "zz", timestamp: new Date("2026-01-01T00:00:00Z"), hidden: false }]);
     expect(result.next).toEqual({ pageId: 7, key: "Dogs" });
     expect(mdb.wikiCategoryMember!.findMany!.mock.calls[0]![0].where.category).toEqual({ name: { in: ["Cats"] } });
+    const all = await store.categoriesOf({ articleIds: ["a1"], dir: "ascending", limit: 5 });
+    expect(all.rows.map((row) => [row.title, row.hidden])).toEqual([["Category:Cats", false], ["Category:Dogs", true]]);
     mdb.wikiCategoryMember!.findMany!.mockClear();
-    expect(await store.categoriesOf({ articleIds: ["a1"], dir: "ascending", limit: 5, hidden: true })).toEqual({ rows: [], next: null });
-    expect(mdb.wikiCategoryMember!.findMany!).not.toHaveBeenCalled();
+    mdb.wikiCategoryMember!.findMany!.mockResolvedValue([]);
+    await store.categoriesOf({ articleIds: ["a1"], dir: "ascending", limit: 5, hidden: true });
+    await store.categoriesOf({ articleIds: ["a1"], dir: "ascending", limit: 5, hidden: false, titles: ["Category:Cats"] });
+    expect(mdb.wikiCategoryMember!.findMany!.mock.calls[0]![0].where.category).toEqual({ hidden: true });
+    expect(mdb.wikiCategoryMember!.findMany!.mock.calls[1]![0].where.category).toEqual({ name: { in: ["Cats"] }, hidden: false });
+  });
+
+  it("reads which of some category names are hidden", async () => {
+    mdb.wikiCategory!.findMany!.mockResolvedValue([{ name: "Maintenance" }]);
+    expect(await store.hiddenCategoryNames(["Cats", "Maintenance"])).toEqual(new Set(["Maintenance"]));
+    expect(mdb.wikiCategory!.findMany!.mock.calls[0]![0].where).toEqual({ name: { in: ["Cats", "Maintenance"] }, hidden: true });
+    expect(await store.hiddenCategoryNames([])).toEqual(new Set());
   });
 });
 
@@ -317,8 +372,8 @@ describe("listings", () => {
   });
 
   it("allcategories: one row per name, counting members that are not deleted pages", async () => {
-    mdb.$queryRaw.mockResolvedValue([{ name: "Cats", members: BigInt(3) }]);
-    expect(await store.listCategories({ dir: "ascending", limit: 5, prefix: "C" })).toEqual([{ name: "Cats", members: 3 }]);
+    mdb.$queryRaw.mockResolvedValue([{ name: "Cats", members: BigInt(3), hidden: false }, { name: "Maint", members: BigInt(1), hidden: true }]);
+    expect(await store.listCategories({ dir: "ascending", limit: 5, prefix: "C" })).toEqual([{ name: "Cats", members: 3, hidden: false }, { name: "Maint", members: 1, hidden: true }]);
     const sql = mdb.$queryRaw.mock.calls[0]![0] as { sql: string; values: unknown[] };
     expect(sql.sql).toContain('GROUP BY c."name"');
     expect(sql.sql).toContain(`a."status" <> 'ARCHIVED'`);
@@ -372,7 +427,65 @@ describe("statistics and user stats", () => {
     expect(await store.statistics()).toEqual({ pages: 10, articles: 10, edits: 50, images: 10, users: 3, activeUsers: 2, admins: 1 });
     mdb.user!.findUnique!.mockResolvedValue({ createdAt: new Date("2020-01-02T00:00:00Z") });
     expect(await store.userStats("u1", "Heku")).toEqual({ editCount: 50, registration: new Date("2020-01-02T00:00:00Z") });
-    expect(mdb.wikiRevision!.count!.mock.calls.at(-1)![0].where).toEqual({ source: "ixwiki", OR: [{ authorId: "u1" }, { author: "Heku" }] });
+    expect(mdb.wikiRevision!.count!.mock.calls.at(-1)![0].where).toEqual({ source: "ixwiki", parked: false, OR: [{ authorId: "u1" }, { author: "Heku" }] });
     expect(await store.userStats(null, "Anon")).toEqual({ editCount: 50, registration: null });
+  });
+});
+
+describe("render-derived tables: templates, images, embeddedin, imageusage", () => {
+  it("templatesOf: the page's transclusions ordered by (page id, title), filtered by title and namespace, with a cursor", async () => {
+    mdb.wikiTemplateLink!.findMany!.mockResolvedValue([
+      { templateTitle: "Module:Foo", article: { pageId: 7 } },
+      { templateTitle: "Template:Bar", article: { pageId: 7 } },
+      { templateTitle: "Template:Baz", article: { pageId: 7 } },
+    ]);
+    const result = await store.templatesOf({ articleIds: ["a1"], dir: "ascending", limit: 2, namespaces: [10], titles: ["template:bar", "Template:Baz"], cursor: { pageId: 7, key: "Module:Foo" } });
+    const args = mdb.wikiTemplateLink!.findMany!.mock.calls[0]![0];
+    expect(args.where).toMatchObject({ articleId: { in: ["a1"] }, templateTitle: { in: ["Template:Bar", "Template:Baz"] } });
+    expect(args.where.OR).toEqual([{ article: { pageId: { gt: 7 } } }, { article: { pageId: 7 }, templateTitle: { gte: "Module:Foo" } }]);
+    expect(args.orderBy).toEqual([{ article: { pageId: "asc" } }, { templateTitle: "asc" }]);
+    expect(args.take).toBe(3);
+    // Module:Foo is namespace 828, not 10
+    expect(result.rows).toEqual([{ pageId: 7, title: "Template:Bar", namespace: 10 }]);
+    expect(result.next).toEqual({ pageId: 7, key: "Template:Baz" });
+    expect(await store.templatesOf({ articleIds: [], dir: "ascending", limit: 5 })).toEqual({ rows: [], next: null });
+  });
+
+  it("imagesOf: File: titles from file names, filtered by File: titles, descending with a cursor", async () => {
+    mdb.wikiImageLink!.findMany!.mockResolvedValue([{ fileName: "Cat photo.png", article: { pageId: 7 } }]);
+    const result = await store.imagesOf({ articleIds: ["a1"], dir: "descending", limit: 5, titles: ["File:Cat_photo.png", "Template:Nope"], cursor: { pageId: 8, key: "Z.png" } });
+    const args = mdb.wikiImageLink!.findMany!.mock.calls[0]![0];
+    expect(args.where).toMatchObject({ articleId: { in: ["a1"] }, fileName: { in: ["Cat photo.png"] } });
+    expect(args.where.OR).toEqual([{ article: { pageId: { lt: 8 } } }, { article: { pageId: 8 }, fileName: { lte: "Z.png" } }]);
+    expect(args.orderBy).toEqual([{ article: { pageId: "desc" } }, { fileName: "desc" }]);
+    expect(result).toEqual({ rows: [{ pageId: 7, title: "File:Cat photo.png", namespace: 6 }], next: null });
+    // only File: is a namespace of images
+    mdb.wikiImageLink!.findMany!.mockClear();
+    expect(await store.imagesOf({ articleIds: ["a1"], dir: "ascending", limit: 5, namespaces: [0] })).toEqual({ rows: [], next: null });
+    expect(mdb.wikiImageLink!.findMany!).not.toHaveBeenCalled();
+  });
+
+  it("listEmbeddedIn and listImageUsage: live pages related to the canonical target, in page id order", async () => {
+    mdb.wikiArticle!.findMany!.mockResolvedValue([{ pageId: 1, title: "Alpha", namespace: 0, redirectTargetSlug: null }]);
+    await store.listEmbeddedIn({ target: "template:foo", namespaces: [0], filterRedirects: "nonredirects", limit: 5, cursor: 3 });
+    let args = mdb.wikiArticle!.findMany!.mock.calls[0]![0];
+    expect(args.where).toMatchObject({
+      source: "ixwiki",
+      status: { not: "ARCHIVED" },
+      templateLinks: { some: { templateTitle: "Template:Foo" } },
+      namespace: { in: [0] },
+      pageId: { gte: 3 },
+      redirectTargetSlug: null,
+    });
+    expect(args.orderBy).toEqual({ pageId: "asc" });
+    expect(args.take).toBe(6);
+    await store.listImageUsage({ target: "File:Cat photo.png", filterRedirects: "all", limit: 1 });
+    args = mdb.wikiArticle!.findMany!.mock.calls[1]![0];
+    expect(args.where).toMatchObject({ imageLinks: { some: { fileName: "Cat photo.png" } } });
+    // not a file title, not a title at all: nothing to ask
+    mdb.wikiArticle!.findMany!.mockClear();
+    expect(await store.listImageUsage({ target: "Template:Foo", filterRedirects: "all", limit: 1 })).toEqual([]);
+    expect(await store.listEmbeddedIn({ target: "Bad[title", filterRedirects: "all", limit: 1 })).toEqual([]);
+    expect(mdb.wikiArticle!.findMany!).not.toHaveBeenCalled();
   });
 });

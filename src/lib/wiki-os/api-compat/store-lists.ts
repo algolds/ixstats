@@ -92,13 +92,12 @@ export async function listPages(query: ListPagesQuery): Promise<PageListRow[]> {
   return rows.map(toListRow);
 }
 
-export async function listBacklinks(query: BacklinkQuery): Promise<PageListRow[]> {
-  const target = canonicalizeTitle(query.target);
-  if (!target) return [];
+/** Pages in page id order that match `relation`, from `query.cursor`, with the query's namespace and redirect filters. */
+async function listRelatedPages(relation: Prisma.WikiArticleWhereInput, query: BacklinkQuery): Promise<PageListRow[]> {
   const rows = await db.wikiArticle.findMany({
     where: {
       ...LIVE_PAGE,
-      outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } },
+      ...relation,
       ...(query.namespaces ? { namespace: { in: [...query.namespaces] } } : {}),
       ...(query.cursor === undefined ? {} : { pageId: { gte: query.cursor } }),
       ...redirectWhere(query.filterRedirects),
@@ -108,6 +107,26 @@ export async function listBacklinks(query: BacklinkQuery): Promise<PageListRow[]
     select: LIST_SELECT,
   });
   return rows.map(toListRow);
+}
+
+export async function listBacklinks(query: BacklinkQuery): Promise<PageListRow[]> {
+  const target = canonicalizeTitle(query.target);
+  if (!target) return [];
+  return listRelatedPages({ outgoingLinks: { some: { targetSlug: target.slug, isExternal: false } } }, query);
+}
+
+/** Pages that transclude a template (or a Lua module through #invoke), from the last render of each. */
+export async function listEmbeddedIn(query: BacklinkQuery): Promise<PageListRow[]> {
+  const target = canonicalizeTitle(query.target);
+  if (!target) return [];
+  return listRelatedPages({ templateLinks: { some: { templateTitle: target.title } } }, query);
+}
+
+/** Pages that use a file, from the last render of each. */
+export async function listImageUsage(query: BacklinkQuery): Promise<PageListRow[]> {
+  const target = canonicalizeTitle(query.target);
+  if (!target || target.namespaceId !== FILE_NAMESPACE) return [];
+  return listRelatedPages({ imageLinks: { some: { fileName: target.base } } }, query);
 }
 
 export async function randomPages(query: RandomPagesQuery): Promise<PageListRow[]> {
@@ -214,8 +233,8 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
   // One row per category name (two categories may differ only in their slug), counting the members
   // that are not deleted pages; a name is never split across two pages of the listing.
-  const rows = await db.$queryRaw<Array<{ name: string; members: bigint }>>(Prisma.sql`
-    SELECT c."name" AS "name", COUNT(m."id") AS "members"
+  const rows = await db.$queryRaw<Array<{ name: string; members: bigint; hidden: boolean }>>(Prisma.sql`
+    SELECT c."name" AS "name", COUNT(m."id") AS "members", bool_or(c."hidden") AS "hidden"
     FROM "wiki_categories" c
     JOIN "wiki_category_members" m ON m."categoryId" = c."id"
     JOIN "wiki_articles" a ON a."id" = m."articleId"
@@ -226,7 +245,7 @@ export async function listCategories(query: CategoryListQuery): Promise<Category
     GROUP BY c."name"
     ORDER BY c."name" ${Prisma.raw(ascending ? "ASC" : "DESC")}
     LIMIT ${query.limit + 1}`);
-  return rows.map((row) => ({ name: row.name, members: Number(row.members) }));
+  return rows.map((row) => ({ name: row.name, members: Number(row.members), hidden: row.hidden }));
 }
 
 // ---------------------------------------------------------------------------
@@ -351,7 +370,7 @@ export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
     query.withEditCount && links.length > 0
       ? db.wikiRevision.groupBy({
           by: ["author"],
-          where: { source: SOURCE, author: { in: names } },
+          where: { source: SOURCE, parked: false, author: { in: names } },
           _count: { _all: true },
         })
       : [],

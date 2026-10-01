@@ -7,18 +7,16 @@
  */
 
 import { Continuation } from "../continuation";
-import { unavailable } from "../errors";
 import type { JsonObject, JsonValue } from "../format";
 import { buildPageSet, pageStub, type PageSelectors, type PageSet } from "../pages";
 import { HIGH_VALUE_LIMIT, NORMAL_VALUE_LIMIT } from "../params";
 import type { ApiContext } from "../types";
-import { DEFERRED_REASON } from "./deferred";
 import { generatorFor, generatorNames, type GeneratorResult } from "./generator";
 import { LIST_MODULES } from "./query-list";
 import { metaSiteinfo, metaTokens, metaUserinfo } from "./query-meta";
 import type { PropContext, PropModule } from "./prop-common";
 import { propRevisions } from "./prop-revisions";
-import { propCategories, propInfo, propLinks, propPageprops } from "./query-prop";
+import { propCategories, propImages, propInfo, propLinks, propPageprops, propTemplates } from "./query-prop";
 
 type MetaModule = (rc: ApiContext) => JsonObject | Promise<JsonObject>;
 
@@ -28,20 +26,14 @@ export const META_MODULES: Readonly<Record<string, MetaModule>> = {
   tokens: metaTokens,
 };
 
-const deferredProp =
-  (name: string): PropModule =>
-  async () => {
-    throw unavailable("prop", name, DEFERRED_REASON);
-  };
-
 export const PROP_MODULES: Readonly<Record<string, PropModule>> = {
   info: propInfo,
   revisions: propRevisions,
   categories: propCategories,
   links: propLinks,
   pageprops: propPageprops,
-  templates: deferredProp("templates"),
-  images: deferredProp("images"),
+  templates: propTemplates,
+  images: propImages,
 };
 
 function pageSelectors(rc: ApiContext): PageSelectors {

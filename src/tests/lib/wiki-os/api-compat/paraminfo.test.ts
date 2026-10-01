@@ -71,12 +71,10 @@ describe("action=paraminfo", () => {
   it("derives each parameter from the module's own reads: every registered module introspects, fast", async () => {
     const registry = buildRegistry(ACTIONS);
     expect(registry.length).toBeGreaterThan(30);
-    // The four modules that wait for plan 406's tables refuse before they read anything.
-    const deferred = new Set(["query+embeddedin", "query+imageusage", "query+templates", "query+images"]);
     const start = performance.now();
     for (const module of registry) {
       const read = await module.describe();
-      if (!deferred.has(module.path)) expect(read.parameters.length).toBeGreaterThan(0);
+      expect(read.parameters.length).toBeGreaterThan(0);
       for (const parameterDefinition of read.parameters) expect(parameterDefinition.name).toMatch(/^[a-z][a-z0-9]*$/);
     }
     expect(performance.now() - start).toBeLessThan(1000);

@@ -121,18 +121,26 @@ export type SearchFn = (
   offset: number
 ) => Promise<{ hits: SearchHit[]; total: number }>;
 
+/** A render of some text: the HTML, and the titles it transcludes (`Template:Foo`) and the file names it uses. */
+export interface RenderedText {
+  html: string;
+  templates: string[] | null;
+  images: string[] | null;
+}
+
 /**
  * The existing WikiOS services api.php writes through. Permission checks, saves, moves, deletions and
  * protections are never re-implemented here: each is the function the tRPC routers call.
  */
 export interface ApiServices {
   /**
-   * MediaWiki's render of wikitext, without storing anything (`action=parse&text=`); null when the
-   * private renderer is unreachable or answers nothing. There is no fallback to the in-process
-   * compiler: api.php answers `renderunavailable` instead, because that compiler is not linear
-   * on the text a caller chooses.
+   * MediaWiki's render of wikitext, without storing anything (`action=parse&text=`): its HTML and
+   * what it reported the text transcludes and uses (null when the answer did not carry them). Null
+   * when the private renderer is unreachable or answers nothing. There is no fallback to the
+   * in-process compiler: api.php answers `renderunavailable` instead, because that compiler is not
+   * linear on the text a caller chooses.
    */
-  renderWikitext(wikitext: string, title: string): Promise<string | null>;
+  renderWikitext(wikitext: string, title: string): Promise<RenderedText | null>;
   /** `action=purge`: mark the page's rendering stale, forget its caches and queue a render. */
   purgePage(article: { id: string; title: string }): Promise<void>;
   /** Make sure the page's stored rendering is fresh: the render service's single-flight, capped render (waits a few seconds at most). */
