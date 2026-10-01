@@ -6,7 +6,8 @@
  *     waiting out a backoff), and a `dead` job blocks its title until an administrator requeues or discards
  *     it. A move is about two titles, the one it moves from and the one it moves to, and holds both;
  *   - a failed job is tried again after `min(2^attempts x 30 s, 1 h)`, and goes `dead` after 8 attempts.
- * `pickRunnable` and `backoffMs` are pure; the rest reads and writes `wiki_mirror_jobs`. The caller holds the
+ *   - the plain revision jobs of a title that wait next in line are tried together, as one batch (`pickBatch`).
+ * `pickRunnable`, `pickBatch` and `backoffMs` are pure; the rest reads and writes `wiki_mirror_jobs`. The caller holds the
  * mirror lock (mirror-worker.ts): one runner at a time.
  */
 
