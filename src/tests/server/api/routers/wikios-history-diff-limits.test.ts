@@ -54,6 +54,9 @@ const entry = (revid: string) => ({
   minor: false,
   sha1: null,
   parked: false,
+  textDeleted: false,
+  commentDeleted: false,
+  userDeleted: false,
 });
 
 beforeEach(() => {

@@ -955,6 +955,9 @@ export class ArticleRepository {
         byteDelta: true,
         sha1: true,
         parked: true,
+        textDeleted: true,
+        commentDeleted: true,
+        userDeleted: true,
       },
     });
 
@@ -970,6 +973,9 @@ export class ArticleRepository {
       byteDelta: r.byteDelta ?? 0,
       sha1: r.sha1 ?? null,
       parked: r.parked,
+      textDeleted: r.textDeleted,
+      commentDeleted: r.commentDeleted,
+      userDeleted: r.userDeleted,
     }));
   }
 }

@@ -218,6 +218,10 @@ export interface WikiRevisionSummary {
   sha1: string | null;
   /** A MediaWiki edit that was not made on top of the page's head: in the history, never the current text. */
   parked: boolean;
+  /** MediaWiki revision deletion: what a public reader of the history must not be shown. */
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
 }
 
 /**

@@ -37,6 +37,10 @@ export interface HistoryRevision {
   sha1: string | null;
   /** A MediaWiki edit that did not go live (conflict): in the history, never the page's current text. */
   parked: boolean;
+  /** MediaWiki revision deletion: `sha1`, `user` and `comment` are real here; a public reader is not shown them. */
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
 }
 
 /**
@@ -122,6 +126,9 @@ export async function getPageHistoryShadow(
         minor: r.minor,
         sha1: r.sha1,
         parked: r.parked,
+        textDeleted: r.textDeleted,
+        commentDeleted: r.commentDeleted,
+        userDeleted: r.userDeleted,
       })),
       hasMore: pgRevs.length > limit,
       fromShadow: true,
@@ -142,6 +149,9 @@ export async function getPageHistoryShadow(
       minor: r.rev_minor_edit === 1,
       sha1: null,
       parked: r.parked,
+      textDeleted: false,
+      commentDeleted: false,
+      userDeleted: false,
     })),
     hasMore: false,
     fromShadow: false,

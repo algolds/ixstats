@@ -140,7 +140,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                             revertMutation.mutate({
                               title: revContent.title,
                               revid: data.from.revid,
-                              summary: `Reverted revision ${data.to.revid} by ${data.to.user}`,
+                              summary: `Reverted revision ${data.to.revid}${data.to.user ? ` by ${data.to.user}` : ""}`,
                             });
                           }
                         }}
@@ -192,8 +192,8 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                 removed={data.removed}
                 layout={layout}
                 language="markdown"
-                oldTitle={`Revision r${data.from.revid} (${data.from.user})`}
-                newTitle={`Revision r${data.to.revid} (${data.to.user})`}
+                oldTitle={`Revision r${data.from.revid} (${data.from.user ?? "hidden user"})`}
+                newTitle={`Revision r${data.to.revid} (${data.to.user ?? "hidden user"})`}
               />
             </div>
           </div>

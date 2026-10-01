@@ -20,6 +20,7 @@ import { assertTitleVisible, canSeeTitle } from "~/lib/wiki-os/permissions";
 import {
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
+  type HistoryRevision,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
 /** The diff of two texts; a text over the 2 MB limit is a 413 with the reason, not a hung request. */
@@ -36,6 +37,24 @@ function diffOrRefuse(oldText: string, newText: string): WikitextDiff {
 
 /** A revision reference as a client sends it: refused at the door when no revision could have it (not a 500 from the database). */
 const revisionRef = z.string().refine(isRevisionRef, "Not a revision reference");
+
+/**
+ * A history entry as a public reader may see it: what MediaWiki revision deletion hid (the text,
+ * hence its hash; the user; the edit summary) is null, never the real value.
+ */
+function publicRevision({
+  textDeleted,
+  userDeleted,
+  commentDeleted,
+  ...revision
+}: HistoryRevision) {
+  return {
+    ...revision,
+    user: userDeleted ? null : revision.user,
+    comment: commentDeleted ? null : revision.comment,
+    sha1: textDeleted ? null : revision.sha1,
+  };
+}
 
 /** Most revisions one history request returns (the page the UI asks for is far smaller). */
 const MAX_HISTORY_PAGE = 500;
@@ -64,7 +83,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         "ixwiki",
         { includeParked: true }
       );
-      return { revisions, hasMore };
+      return { revisions: revisions.map(publicRevision), hasMore };
     }),
 
   /**
@@ -123,19 +142,21 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       }
 
       const diff = diffOrRefuse(fromData?.wikitext ?? "", toData.wikitext);
+      const from = fromRev && publicRevision(fromRev);
+      const to = toRev && publicRevision(toRev);
       return {
         ...diff,
         from: {
           revid: resolvedFromRevId,
-          user: fromRev?.user ?? (resolvedFromRevId ? "Previous Revision" : "Initial Document"),
+          user: from ? from.user : resolvedFromRevId ? "Previous Revision" : "Initial Document",
           timestamp: fromData?.timestamp ?? "",
-          comment: fromRev?.comment ?? "",
+          comment: from ? from.comment : "",
         },
         to: {
           revid: input.torev,
-          user: toRev?.user ?? "",
+          user: to ? to.user : "",
           timestamp: toData.timestamp,
-          comment: toRev?.comment ?? "",
+          comment: to ? to.comment : "",
         },
       };
     }),

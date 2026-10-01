@@ -629,6 +629,9 @@ describe("ArticleRepository.getHistory", () => {
     byteDelta: 4,
     sha1: null,
     parked: false,
+    textDeleted: false,
+    commentDeleted: false,
+    userDeleted: false,
   });
 
   it("reads the revisions of the one canonical article, never a case variant's", async () => {
@@ -672,6 +675,26 @@ describe("ArticleRepository.getHistory", () => {
       byteDelta: true,
       sha1: true,
       parked: true,
+      textDeleted: true,
+      commentDeleted: true,
+      userDeleted: true,
+    });
+  });
+
+  it("carries MediaWiki's revision-deletion flags to the caller, which decides who sees what", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([
+      { ...revision("Foo"), sha1: "abc", textDeleted: true, userDeleted: true },
+    ]);
+
+    const [row] = await ArticleRepository.getHistory("Foo");
+
+    expect(row).toMatchObject({
+      author: "alice",
+      sha1: "abc",
+      textDeleted: true,
+      commentDeleted: false,
+      userDeleted: true,
     });
   });
 

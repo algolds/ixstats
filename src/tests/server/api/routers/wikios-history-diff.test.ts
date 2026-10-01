@@ -57,6 +57,9 @@ const entry = (revid: string, user: string, comment = "") => ({
   minor: false,
   sha1: null,
   parked: false,
+  textDeleted: false,
+  commentDeleted: false,
+  userDeleted: false,
 });
 
 beforeEach(() => {
@@ -81,7 +84,55 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 413)", () => {
     expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 1, { before: "r3" }, "ixwiki", {
       includeParked: true,
     });
-    expect(result).toEqual({ revisions: [entry("r2", "bob")], hasMore: true });
+    // the deletion flags are for the server: they do not leave it
+    const { textDeleted, commentDeleted, userDeleted, ...visible } = entry("r2", "bob");
+    expect([textDeleted, commentDeleted, userDeleted]).toEqual([false, false, false]);
+    expect(result).toEqual({ revisions: [visible], hasMore: true });
+  });
+
+  it("hides what MediaWiki revision deletion hid: the hash, the user, the summary", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        { ...entry("r4", "mallory", "secret"), sha1: "abc", textDeleted: true },
+        { ...entry("r3", "mallory", "secret"), sha1: "def", userDeleted: true },
+        { ...entry("r2", "mallory", "secret"), sha1: "ghi", commentDeleted: true },
+        { ...entry("r1", "amy", "fine"), sha1: "jkl" },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    const { revisions } = await caller().getHistory({ title: "Foo" });
+
+    expect(revisions.map(({ revid, user, comment, sha1 }) => [revid, user, comment, sha1])).toEqual(
+      [
+        ["r4", "mallory", "secret", null],
+        ["r3", null, "secret", "def"],
+        ["r2", "mallory", null, "ghi"],
+        ["r1", "amy", "fine", "jkl"],
+      ]
+    );
+    expect(JSON.stringify(revisions)).not.toMatch(/Deleted/);
+  });
+
+  it("hides them in a diff's two ends too", async () => {
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision("one\ntwo"))
+      .mockResolvedValueOnce(revision("one"));
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        { ...entry("r2", "mallory", "secret"), userDeleted: true },
+        { ...entry("r1", "evil", "secret"), commentDeleted: true },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    const result = await caller().getDiff({ torev: "r2" });
+
+    expect(result.to).toMatchObject({ revid: "r2", user: null, comment: "secret" });
+    expect(result.from).toMatchObject({ revid: "r1", user: "evil", comment: null });
   });
 
   it("starts at the newest revision without a cursor, 50 at a time", async () => {
