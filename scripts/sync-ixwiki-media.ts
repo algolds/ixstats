@@ -5,14 +5,10 @@
  * Enables instant deterministic O(1) detection of Local Uploads vs Wikimedia Commons.
  */
 
+import "./lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
 import { MediaAssetService } from "../src/lib/wiki-os/core/media-asset-service";
 import { DEFAULT_USER_AGENT, mediaWikiApiUrl, mediaWikiOrigin } from "../src/lib/wiki-os/config";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
 
 const prisma = new PrismaClient({
   datasources: {

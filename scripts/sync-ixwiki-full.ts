@@ -9,15 +9,11 @@
  *   bun run scripts/sync-ixwiki-full.ts --limit=100
  */
 
+import "./lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
-import dotenv from "dotenv";
 import { extractLeadImagePath } from "../src/lib/wiki-os/transformers/image-url";
 import { cleanExcerpt } from "../src/lib/wiki-os/transformers/wikitext-parser";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
 
 const prisma = new PrismaClient({
   datasources: {

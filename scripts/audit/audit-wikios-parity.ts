@@ -9,14 +9,10 @@
  *   bun run audit:wikios-parity
  */
 
+import "../lib/load-env"; // first: the config below reads process.env when it loads
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
-import dotenv from "dotenv";
 import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "../../src/lib/wiki-os/config";
-
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
 
 const prisma = new PrismaClient({
   datasources: {
