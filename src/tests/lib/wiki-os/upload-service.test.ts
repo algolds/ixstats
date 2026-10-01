@@ -38,9 +38,9 @@ import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { authorizeAction, requireRight } from "~/lib/wiki-os/permissions";
 import { scheduleMirrorKick, uploadPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
+import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import {
   descriptionWikitext,
-  UploadError,
   uploadFile,
   type UploadRequest,
 } from "~/lib/wiki-os/services/upload-service";
@@ -422,14 +422,12 @@ describe("refusals", () => {
 
   it("needs the reupload right to replace a file", async () => {
     await uploadFile(request());
-    jest
-      .mocked(requireRight)
-      .mockRejectedValueOnce(
-        new TRPCError({
-          code: "FORBIDDEN",
-          message: 'permissiondenied: You do not have the "reupload" right.',
-        })
-      );
+    jest.mocked(requireRight).mockRejectedValueOnce(
+      new TRPCError({
+        code: "FORBIDDEN",
+        message: 'permissiondenied: You do not have the "reupload" right.',
+      })
+    );
 
     await expect(
       uploadFile(request({ bytes: png(5, 5, 9), ignoreWarnings: true }))

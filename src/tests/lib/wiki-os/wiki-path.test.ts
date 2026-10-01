@@ -196,6 +196,12 @@ describe("resolveWikiPath: Special pages", () => {
     expect(special(["Special:Categories"])).toEqual({ type: "redirect", href: "/util/categories" });
     expect(special(["Special:Export"])).toEqual({ type: "redirect", href: "/util/export" });
     expect(special(["Special:Import"])).toEqual({ type: "redirect", href: "/util/import" });
+    // plan 411: Special:Upload is WikiOS's own upload page, and keeps MediaWiki's destination-file parameter
+    expect(special(["Special:Upload"])).toEqual({ type: "redirect", href: "/util/upload" });
+    expect(special(["Special:Upload"], { wpDestFile: "Flag_of_Eurth.png" })).toEqual({
+      type: "redirect",
+      href: "/util/upload?wpDestFile=Flag_of_Eurth.png",
+    });
   });
 
   it("keeps the arguments of a tool redirect", () => {

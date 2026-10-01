@@ -31,18 +31,8 @@ import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { authorizeAction, requireRight, requireUploadTitle } from "../permissions";
 import { commitWikitextSave, deletedPage } from "./edit-service";
 import { enqueueUploadJob, scheduleMirrorKick } from "./mirror-outbox";
+import { UploadError } from "./upload-error";
 import { stageBytes } from "./upload-staging";
-
-/** A refusal of the upload itself (not of the uploader's rights): MediaWiki's code and the sentence that explains it. */
-export class UploadError extends Error {
-  constructor(
-    readonly code: string,
-    message: string
-  ) {
-    super(message);
-    this.name = "UploadError";
-  }
-}
 
 export interface UploadRequest {
   ctx: WikiAuthContext;

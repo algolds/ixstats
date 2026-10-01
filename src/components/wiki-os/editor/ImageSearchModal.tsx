@@ -5,7 +5,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
 import { ImageSearchGrid, type ImageResult } from "~/components/wiki-os/editor/ImageSearchGrid";
-import { api } from "~/trpc/react";
+import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
+import {
+  describeWarnings,
+  postUpload,
+  UPLOAD_FIELD_LIMITS,
+  uploadSizeProblem,
+} from "~/lib/wiki-os/upload-api";
 import { cn } from "~/lib/utils";
 
 interface ImageSearchModalProps {
@@ -17,7 +23,7 @@ interface ImageSearchModalProps {
 type ModalTab = "search" | "upload";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"];
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = MAX_UPLOAD_BYTES / 1_000_000;
 
 export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
   const [tab, setTab] = useState<ModalTab>("search");
@@ -30,10 +36,13 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadFilename, setUploadFilename] = useState("");
   const [uploadDescription, setUploadDescription] = useState("");
+  const [uploadLicense, setUploadLicense] = useState("");
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  /** MediaWiki's warnings for this upload, as sentences: the uploader may go on anyway. */
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const uploadMutation = api.wikios.uploadFile.useMutation();
 
   // Reset state when modal opens
   useEffect(() => {
@@ -47,7 +56,10 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
       setUploadFile(null);
       setUploadFilename("");
       setUploadDescription("");
+      setUploadLicense("");
       setUploadPreview(null);
+      setUploadError(null);
+      setUploadWarnings([]);
     }
   }, [isOpen]);
 
@@ -73,13 +85,16 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
       alert("Unsupported file type. Allowed: JPG, PNG, GIF, SVG, WebP");
       return;
     }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      alert(`File too large. Maximum size is ${MAX_SIZE_MB}MB.`);
+    const tooLarge = uploadSizeProblem(file);
+    if (tooLarge) {
+      alert(tooLarge);
       return;
     }
 
     setUploadFile(file);
     setUploadFilename(file.name);
+    setUploadError(null);
+    setUploadWarnings([]);
 
     // Generate preview
     const reader = new FileReader();
@@ -87,36 +102,37 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
     reader.readAsDataURL(file);
   }, []);
 
-  const handleUpload = useCallback(async () => {
-    if (!uploadFile || !uploadFilename.trim()) return;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(",")[1]!;
+  /** Upload the file; a warning stops it until the uploader says to go on (`ignoreWarnings`). */
+  const handleUpload = useCallback(
+    async (ignoreWarnings: boolean) => {
+      if (!uploadFile || !uploadFilename.trim()) return;
+      setUploading(true);
+      setUploadError(null);
+      setUploadWarnings([]);
       try {
-        const result = await uploadMutation.mutateAsync({
+        const result = await postUpload(uploadFile, {
           filename: uploadFilename,
-          fileBase64: base64,
           description: uploadDescription,
-          comment: "Uploaded via WikiOS",
+          license: uploadLicense,
+          ignoreWarnings,
         });
-
-        if (result.success) {
-          // Auto-insert the uploaded file
-          const name = result.filename;
-          const parts = [`File:${name}`];
-          parts.push("thumb");
-          parts.push("right");
-          if (uploadDescription.trim()) parts.push(uploadDescription.trim());
-          onInsert(`[[${parts.join("|")}]]`);
-          onClose();
+        if (result.result === "Warning") {
+          setUploadWarnings(describeWarnings(result.warnings));
+          return;
         }
+        // Auto-insert the uploaded file
+        const parts = [`File:${result.filename}`, "thumb", "right"];
+        if (uploadDescription.trim()) parts.push(uploadDescription.trim());
+        onInsert(`[[${parts.join("|")}]]`);
+        onClose();
       } catch (err) {
-        console.error("Upload failed:", err);
+        setUploadError(err instanceof Error ? err.message : "The upload failed.");
+      } finally {
+        setUploading(false);
       }
-    };
-    reader.readAsDataURL(uploadFile);
-  }, [uploadFile, uploadFilename, uploadDescription, uploadMutation, onInsert, onClose]);
+    },
+    [uploadFile, uploadFilename, uploadDescription, uploadLicense, onInsert, onClose]
+  );
 
   if (!isOpen) return null;
 
@@ -259,7 +275,11 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                     <input
                       type="text"
                       value={uploadFilename}
-                      onChange={(e) => setUploadFilename(e.target.value)}
+                      onChange={(e) => {
+                        setUploadFilename(e.target.value);
+                        setUploadWarnings([]);
+                      }}
+                      maxLength={UPLOAD_FIELD_LIMITS.filename}
                       className="wikios-img-modal-field-input"
                     />
                   </label>
@@ -269,26 +289,47 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       value={uploadDescription}
                       onChange={(e) => setUploadDescription(e.target.value)}
                       placeholder="Describe this file..."
+                      maxLength={UPLOAD_FIELD_LIMITS.description}
                       rows={3}
                       className="wikios-img-modal-field-textarea"
                     />
                   </label>
+                  <label className="wikios-img-modal-field-label">
+                    License
+                    <input
+                      type="text"
+                      value={uploadLicense}
+                      onChange={(e) => setUploadLicense(e.target.value)}
+                      placeholder="e.g. {{PD-self}}, or who made it and under which terms"
+                      maxLength={UPLOAD_FIELD_LIMITS.license}
+                      className="wikios-img-modal-field-input"
+                    />
+                  </label>
+
+                  {uploadWarnings.length > 0 && (
+                    <div role="alert" className="wikios-img-modal-error-text">
+                      {uploadWarnings.map((warning) => (
+                        <p key={warning}>{warning}</p>
+                      ))}
+                    </div>
+                  )}
 
                   <button
                     className="wikios-img-insert-btn"
-                    disabled={!uploadFilename.trim() || uploadMutation.isPending}
-                    onClick={handleUpload}
+                    disabled={!uploadFilename.trim() || uploading}
+                    onClick={() => void handleUpload(uploadWarnings.length > 0)}
                   >
-                    {uploadMutation.isPending ? "Uploading..." : "Upload & Insert"}
+                    {uploading
+                      ? "Uploading..."
+                      : uploadWarnings.length > 0
+                        ? "Upload anyway"
+                        : "Upload & Insert"}
                   </button>
 
-                  {uploadMutation.isError && (
-                    <p className="wikios-img-modal-error-text">
-                      Upload failed: {uploadMutation.error.message}
+                  {uploadError && (
+                    <p role="alert" className="wikios-img-modal-error-text">
+                      Upload failed: {uploadError}
                     </p>
-                  )}
-                  {uploadMutation.isSuccess && (
-                    <p className="wikios-img-modal-success-text">Upload successful!</p>
                   )}
                 </div>
               )}

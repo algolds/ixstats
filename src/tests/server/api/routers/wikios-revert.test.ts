@@ -26,7 +26,6 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
-  MediaAssetService: { registerAsset: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
@@ -44,10 +43,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),
   getArticleHistoryShadow: jest.fn(),
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
-  __esModule: true,
-  executeMediaWikiWrite: jest.fn(),
 }));
 // Edit conflicts have their own suite (wikios-edit-conflict.test.ts); here no save ever conflicts.
 jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({
