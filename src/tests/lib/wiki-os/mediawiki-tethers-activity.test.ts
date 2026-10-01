@@ -70,9 +70,13 @@ describe("recent changes", () => {
   it("lists the revisions Postgres has", async () => {
     mocked.wikiRevision.findMany.mockResolvedValue([revision()]);
 
+    // The size is the revision's stored one, and no wikitext is read: the select names none.
     expect(await ixwikiRecentChanges(20)).toMatchObject([
-      { title: "Foo", user: "Kir", type: "edit", comment: "an edit", newLen: 10, parked: false },
+      { title: "Foo", user: "Kir", type: "edit", comment: "an edit", oldLen: 15, newLen: 20, parked: false },
     ]);
+    expect(mocked.wikiRevision.findMany.mock.calls[0]?.[0].select.article.select).not.toHaveProperty(
+      "wikitext"
+    );
   });
 });
 

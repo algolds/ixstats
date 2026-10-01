@@ -202,6 +202,7 @@ test("history asks for one more revision than the page to tell whether an older 
 
   mockWikiRevisionFindMany.mockResolvedValue([row(2), row(1)]);
   expect((await getArticleHistoryShadow("Foo", 2)).hasMore).toBe(false);
+  expect(guard.calls()).toEqual([]);
 });
 
 test("a page after a cursor is answered from PostgreSQL only, empty past the oldest revision", async () => {
@@ -212,7 +213,7 @@ test("a page after a cursor is answered from PostgreSQL only, empty past the old
   const res = await getArticleHistoryShadow("Foo", 50, { before: "rev-1" });
 
   expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
-  expect(mockGetPageHistory).not.toHaveBeenCalled();
+  expect(guard.calls()).toEqual([]);
 });
 
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {

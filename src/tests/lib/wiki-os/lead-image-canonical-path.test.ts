@@ -11,6 +11,7 @@ jest.mock("~/server/db", () => ({
     wikiRevision: { findMany: jest.fn() },
     wikiAccountLink: { findMany: jest.fn() },
     $queryRaw: jest.fn(),
+    $queryRawUnsafe: jest.fn(),
   },
   isDatabaseReadOnly: true,
 }));
@@ -31,6 +32,7 @@ import { ixwikiRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-
 const mocked = db as unknown as {
   wikiArticle: { findMany: jest.Mock };
   wikiRevision: { findMany: jest.Mock };
+  $queryRawUnsafe: jest.Mock;
 };
 
 const BASE_PATH = "/projects/ixstats";
@@ -127,22 +129,25 @@ describe("readers turn the stored path into a loadable URL", () => {
   });
 
   it("title search results", async () => {
-    mocked.wikiArticle.findMany.mockResolvedValue([
+    // The typeahead is one raw query over the search index.
+    mocked.$queryRawUnsafe.mockResolvedValue([
       {
         id: "a1",
         title: "Caphiria",
         summary: "A country.",
-        wikitext: "A country.",
         readingTime: 1,
         leadImageUrl: canonical,
+        tier: 1,
+        similarity: 0.8,
       },
       {
         id: "a2",
         title: "Caphiria City",
         summary: null,
-        wikitext: "A city.",
         readingTime: 1,
         leadImageUrl: null,
+        tier: 1,
+        similarity: 0.6,
       },
     ]);
 
@@ -154,17 +159,13 @@ describe("readers turn the stored path into a loadable URL", () => {
   it("recent changes thumbnails", async () => {
     mocked.wikiRevision.findMany.mockResolvedValue([
       {
-        id: "r1",
-        mwRevId: 1,
         author: "Kir",
         summary: "",
-        minor: false,
         parked: false,
         byteSize: 5,
         byteDelta: 5,
-        wikitext: "Text.",
         createdAt: new Date("2026-09-27T10:00:00Z"),
-        article: { title: "Foo", summary: null, leadImageUrl: canonical, wikitext: "Text." },
+        article: { title: "Foo", summary: null, leadImageUrl: canonical },
       },
     ]);
 

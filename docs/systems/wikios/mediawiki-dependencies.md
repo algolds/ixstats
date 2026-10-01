@@ -124,7 +124,7 @@ None of these files calls IxWiki's MediaWiki:
   `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
-  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`,
+  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/thinkpages/AccountCreationModal.tsx`,
