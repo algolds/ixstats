@@ -26,14 +26,19 @@ type Tx = Prisma.TransactionClient;
  * other namespaces (cards/serial-number.ts: 7331). Arbitrary; it identifies these locks in pg_locks.
  */
 export const STAGED_FILE_LOCK_NAMESPACE = 41101;
+const STAGED_FILE_TRANSACTION_TIMEOUT_MS = 30_000;
 
 /** Run `work` in a transaction that holds the advisory lock of the staged file `sha1` until it ends. */
 export function withStagedFileLock<T>(sha1: string, work: (tx: Tx) => Promise<T>): Promise<T> {
-  return db.$transaction(async (tx) => {
-    // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${STAGED_FILE_LOCK_NAMESPACE}::int, hashtext(${sha1}))`;
-    return work(tx);
-  });
+  return db.$transaction(
+    async (tx) => {
+      // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${STAGED_FILE_LOCK_NAMESPACE}::int, hashtext(${sha1}))`;
+      return work(tx);
+    },
+    // the work writes a file of up to 10 MB (and may wait for the lock): the default 5 s would cut a slow disk off mid-write
+    { timeout: STAGED_FILE_TRANSACTION_TIMEOUT_MS }
+  );
 }
 
 /** Whether an asset waits to be mirrored with the content `sha1`, or an unfinished upload job (other than `exceptJobId`) names it. */

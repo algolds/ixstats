@@ -175,7 +175,7 @@ export interface FakeWikiDb {
   wikiWatchlist: Table;
   stash: Table;
   stashItem: Table;
-  $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
+  $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>, options?: TransactionOptions): Promise<T>;
   /**
    * Records the statement (its `?` placeholders) and its values; changes no table. `pg_advisory_xact_lock(hashtext(key))`
    * is understood: it waits for the transaction that holds the key, and holds it until its own ends.
@@ -184,6 +184,15 @@ export interface FakeWikiDb {
   /** Returns no rows. The real client cannot read the `void` the advisory lock returns: asking it to is an error here too. */
   $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
 }
+
+/** What Prisma's interactive `$transaction` takes after the callback (the fake only records it). */
+export interface TransactionOptions {
+  maxWait?: number;
+  timeout?: number;
+}
+
+/** The options of each `$transaction` since the last `reset`, in order (`undefined` where none were given). */
+export const transactionOptions: Array<TransactionOptions | undefined> = [];
 
 /** The raw statements run on the fake database since the last `reset`. */
 export const executedSql: Array<{ sql: string; values: unknown[] }> = [];
@@ -248,7 +257,8 @@ export function createFakeWikiDb() {
   const db: FakeWikiDb = {
     ...tables,
     // a transaction that throws changes nothing, as in PostgreSQL
-    $transaction: async (work) => {
+    $transaction: async (work, options) => {
+      transactionOptions.push(options);
       const saved = Object.values(tables).map((table) => [table, table.snapshot()] as const);
       const transaction = { releases: [] as Array<() => void> };
       try {
@@ -285,6 +295,7 @@ export function createFakeWikiDb() {
       for (const table of Object.values(tables)) table.reset();
       executedSql.length = 0;
       advisoryLocks.length = 0;
+      transactionOptions.length = 0;
     },
   };
 }
