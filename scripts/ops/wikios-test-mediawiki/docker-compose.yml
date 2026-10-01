@@ -31,6 +31,9 @@ services:
       - ./LocalSettings.php:/config/LocalSettings.php:ro
       # The production snippet (plan 417, deliverable D), loaded by LocalSettings.php.
       - ../mediawiki/wikios-localsettings.php:/config/wikios-localsettings.php:ro
+      # PHP accepts an uploaded XML file of 8 MB (action=import of a page near the 2 MB limit); the image's default
+      # upload_max_filesize is 2M. The production runbook asks for the same (docs/operations/wikios-v1-cutover.md, 3a).
+      - ./php-wikios-import.ini:/usr/local/etc/php/conf.d/99-wikios-import.ini:ro
 
 volumes:
   wikios-test-mw-data:

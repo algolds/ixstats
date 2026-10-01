@@ -82,6 +82,20 @@ foreach ( [
 	'editprotected',
 	'import',
 	'importupload',
+	// The page-operation mirror jobs (plan 407): a move, delete, undelete or protection made in WikiOS is
+	// repeated here by this account, the same way. `move` and `move-subpages` are also a default of every
+	// signed-in account, listed so the group does not depend on that; `suppressredirect` is a move that
+	// leaves no redirect (WikiOS lets a mover ask for that). The bot password needs the matching grants:
+	// `createeditmovepage` for the moves (it has suppressredirect), `delete` for delete and undelete, and
+	// `protect`. Without delete/undelete/protect here those jobs fail with `permissiondenied` and end up dead.
+	// None of this reaches the interface: the MediaWiki: namespace stays behind `editinterface`, which
+	// the group does not have, for deleting, moving and protecting too (see the paragraph below).
+	'move',
+	'move-subpages',
+	'suppressredirect',
+	'delete',
+	'undelete',
+	'protect',
 ] as $right ) {
 	$wgGroupPermissions['wikios-mirror'][$right] = true;
 }
