@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * Plan 406 follow-up: recent changes, page history and user contributions keep a parked revision (a
+ * Plan 406 follow-up: recent changes and user contributions keep a parked revision (a
  * MediaWiki edit that conflicted with WikiOS's head and never went live) in the list, and say so.
  */
 jest.mock("~/server/db", () => ({
@@ -10,7 +10,6 @@ jest.mock("~/server/db", () => ({
 
 import { db } from "~/server/db";
 import {
-  ixwikiGetHistory,
   ixwikiGetUserContribs,
   ixwikiRecentChanges,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-activity";
@@ -57,17 +56,6 @@ describe("recent changes", () => {
     expect(changes.map((c) => c.parked)).toEqual([true, false]);
     // No `parked` filter: the row stays in the list.
     expect(findMany.mock.calls[0]?.[0].where).not.toHaveProperty("parked");
-  });
-});
-
-describe("page history (bridge)", () => {
-  it("flags parked revisions", async () => {
-    findMany.mockResolvedValue([row({ parked: true }), row({ id: "r2", mwRevId: 99 })]);
-
-    const history = await ixwikiGetHistory("Foo", 10);
-
-    expect(history.map((r) => r.parked)).toEqual([true, false]);
-    expect(findMany.mock.calls[0]?.[0].select).toHaveProperty("parked", true);
   });
 });
 

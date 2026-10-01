@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
@@ -62,7 +63,11 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** A request to IxWiki's MediaWiki is recorded (and rejected) even where the code under test would swallow it. */
+let guard: FetchGuard;
+
 beforeEach(() => {
+  guard = installFetchGuard();
   jest.clearAllMocks();
   mockTransaction.mockImplementation(async (cb: (tx: any) => any) => {
     if (typeof cb === "function") {
@@ -79,6 +84,8 @@ beforeEach(() => {
   mockWikiRevisionFindFirst.mockResolvedValue(null);
   mockWikiRevisionFindMany.mockResolvedValue([]);
 });
+
+afterEach(() => guard.restore());
 
 test("fresh shadow row is served without touching MediaWiki", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(row({ updatedAt: new Date("2026-06-01T00:00:00Z") }));
@@ -165,6 +172,7 @@ test("history read-through serves local revisions when present", async () => {
     byteDelta: -2,
   });
   expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
+  expect(guard.calls()).toEqual([]);
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { articleId: "art1", parked: false } })
   );
@@ -193,6 +201,7 @@ test("history lists ask for parked revisions and get them flagged; everything el
   });
 
   expect(res.revisions[0]).toMatchObject({ revid: "9002", parked: true });
+  expect(guard.calls()).toEqual([]);
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { articleId: "art1" } })
   );
@@ -204,6 +213,7 @@ test("a page with no local revisions has an empty history: MediaWiki is not aske
   const res = await getArticleHistoryShadow("Foo", 50);
 
   expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
+  expect(guard.calls()).toEqual([]);
 });
 
 describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and limited (NEW-5)", () => {

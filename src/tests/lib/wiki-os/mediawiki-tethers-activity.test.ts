@@ -1,7 +1,7 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 418 (A5-A7): recent changes, a page's history, a user's contributions and the pages a user created
+// Plan 418 (A5-A7): recent changes, a user's contributions and the pages a user created
 // are read from Postgres alone. When Postgres has little or nothing, the answer is little or nothing:
 // MediaWiki is never asked.
 jest.mock("~/server/db", () => ({
@@ -17,7 +17,6 @@ import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
-  ixwikiGetHistory,
   ixwikiGetUserContribs,
   ixwikiGetUserCreatedPages,
   ixwikiRecentChanges,
@@ -74,33 +73,6 @@ describe("recent changes", () => {
     expect(await ixwikiRecentChanges(20)).toMatchObject([
       { title: "Foo", user: "Kir", type: "edit", comment: "an edit", newLen: 10, parked: false },
     ]);
-  });
-});
-
-describe("page history", () => {
-  it("answers with the single revision Postgres holds instead of asking MediaWiki for more", async () => {
-    mocked.wikiRevision.findMany.mockResolvedValue([revision()]);
-
-    const history = await ixwikiGetHistory("Foo", 50);
-
-    expect(history).toEqual([
-      {
-        rev_id: 100,
-        rev_timestamp: "2026-09-27T10:00:00.000Z",
-        rev_user_text: "Kir",
-        rev_comment: "an edit",
-        rev_len: 20,
-        rev_minor_edit: 0,
-        diff: 5,
-        parked: false,
-      },
-    ]);
-    expect(guard.calls()).toEqual([]);
-  });
-
-  it("is empty for a page with no revision, without asking MediaWiki", async () => {
-    expect(await ixwikiGetHistory("Nowhere", 50)).toEqual([]);
-    expect(guard.calls()).toEqual([]);
   });
 });
 

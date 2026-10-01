@@ -7,7 +7,6 @@
 
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
-import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { loadWikiUserInfo, type WikiUserInfo } from "~/lib/wiki-os/core/wiki-user-info";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
@@ -60,63 +59,6 @@ export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecen
           parked: r.parked,
         };
       });
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  return [];
-}
-
-export async function ixwikiGetHistory(
-  title: string,
-  limit: number = 50,
-  _offset?: number
-): Promise<
-  Array<{
-    rev_id: number;
-    rev_timestamp: string;
-    rev_user_text: string;
-    rev_comment: string;
-    rev_len: number;
-    rev_minor_edit: number;
-    diff: number;
-    /** A MediaWiki edit that did not go live (conflict): in the history, never the page's text. */
-    parked: boolean;
-  }>
-> {
-  try {
-    const revs = await db.wikiRevision.findMany({
-      where: {
-        article: {
-          source: "ixwiki",
-          OR: [{ title }, { slug: toArticleSlug(title) }],
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      select: {
-        id: true,
-        mwRevId: true,
-        author: true,
-        summary: true,
-        byteSize: true,
-        byteDelta: true,
-        minor: true,
-        parked: true,
-        createdAt: true,
-      },
-    });
-
-    return revs.map((r) => ({
-      rev_id: r.mwRevId || 0,
-      rev_timestamp: new Date(r.createdAt).toISOString(),
-      rev_user_text: r.author || "MediaWiki Editor",
-      rev_comment: r.summary || "",
-      rev_len: r.byteSize || 0,
-      rev_minor_edit: r.minor ? 1 : 0,
-      diff: r.byteDelta || 0,
-      parked: r.parked,
-    }));
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
