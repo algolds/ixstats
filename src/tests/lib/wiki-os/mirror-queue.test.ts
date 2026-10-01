@@ -23,11 +23,13 @@ const mockFindMany = jest.fn();
 const mockUpdate = jest.fn();
 const mockUpdateMany = jest.fn();
 const mockDeleteMany = jest.fn();
+const mockFindUnique = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
     wikiMirrorJob: {
       findMany: (...a: unknown[]) => mockFindMany(...a),
+      findUnique: (...a: unknown[]) => mockFindUnique(...a),
       update: (...a: unknown[]) => mockUpdate(...a),
       updateMany: (...a: unknown[]) => mockUpdateMany(...a),
       deleteMany: (...a: unknown[]) => mockDeleteMany(...a),
@@ -285,13 +287,25 @@ describe("the queue's writes", () => {
     });
   });
 
-  it("claims a job: running, one more attempt", async () => {
-    await claimJob("job1");
+  it("claims a job only while it is pending: running, one more attempt, and the row as it is now", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 1 });
+    mockFindUnique.mockResolvedValue(job({ id: "job1", state: "running", attempts: 1 }));
 
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: "job1" },
+    await expect(claimJob("job1")).resolves.toMatchObject({ id: "job1", state: "running" });
+
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: "job1", state: "pending" },
       data: { state: "running", attempts: { increment: 1 } },
     });
+    expect(mockFindUnique).toHaveBeenCalledWith({ where: { id: "job1" } });
+  });
+
+  it("does not claim a job another runner already took, and reads nothing back", async () => {
+    mockUpdateMany.mockResolvedValue({ count: 0 });
+
+    await expect(claimJob("job1")).resolves.toBeNull();
+
+    expect(mockFindUnique).not.toHaveBeenCalled();
   });
 
   it("completes a job with the MediaWiki revision it made, and clears the last error", async () => {

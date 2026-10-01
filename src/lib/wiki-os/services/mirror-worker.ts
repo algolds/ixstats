@@ -99,9 +99,15 @@ async function failAll(jobs: readonly MirrorJob[], error: unknown): Promise<Mirr
  * resolve to the jobs as stored afterwards. Every attempt counts for every job it carried.
  */
 async function runJobs(candidates: readonly MirrorJob[]): Promise<MirrorJob[]> {
+  // Claim them in order and stop at the first one another runner took: a later job must not run before it.
   const claimed: MirrorJob[] = [];
-  for (const candidate of candidates) claimed.push(await claimJob(candidate.id));
+  for (const candidate of candidates) {
+    const job = await claimJob(candidate.id);
+    if (!job) break;
+    claimed.push(job);
+  }
   const [job] = claimed;
+  if (!job) return [];
   if (job.kind === "revision") return runRevisionBatch(claimed);
   try {
     await withinAttempt(ATTEMPT_TIMEOUT_MS, () => runPageJob(job));
@@ -152,7 +158,10 @@ export async function runMirrorCycle({
       now,
       Math.min(MAX_BATCH_JOBS, maxJobs - result.done - result.failed)
     );
-    for (const job of await runJobs(batch)) {
+    const tried = await runJobs(batch);
+    // Nothing could be claimed: another runner is working these jobs (it should never be, the lock is held).
+    if (tried.length === 0) break;
+    for (const job of tried) {
       if (job.state === "done") {
         result.done++;
       } else {

@@ -103,12 +103,16 @@ export function loadWindow(): Promise<MirrorJob[]> {
   });
 }
 
-/** Start an attempt: the job is `running` and counts one more try. */
-export function claimJob(id: string): Promise<MirrorJob> {
-  return db.wikiMirrorJob.update({
-    where: { id },
+/**
+ * Start an attempt: the job is `running` and counts one more try. Only a job that is still pending can be claimed; null
+ * when it is not any more (another runner took it first), and it is then left alone.
+ */
+export async function claimJob(id: string): Promise<MirrorJob | null> {
+  const { count } = await db.wikiMirrorJob.updateMany({
+    where: { id, state: "pending" },
     data: { state: "running", attempts: { increment: 1 } },
   });
+  return count === 0 ? null : db.wikiMirrorJob.findUnique({ where: { id } });
 }
 
 /**

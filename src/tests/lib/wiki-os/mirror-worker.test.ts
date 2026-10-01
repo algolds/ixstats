@@ -24,6 +24,8 @@ import { withJobLock } from "~/lib/system/job-lock";
 
 type Row = WikiMirrorJob;
 let rows: Row[] = [];
+/** Ids of jobs another runner claims just before this worker's claim. */
+const racedClaims = new Set<string>();
 let counter = 0;
 
 const matches = (row: Row, where: Record<string, unknown>): boolean =>
@@ -58,6 +60,10 @@ jest.mock("~/server/db", () => ({
           .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id))
           .slice(0, take)
           .map((row) => ({ ...row })),
+      findUnique: async ({ where }: { where: { id: string } }) => {
+        const row = rows.find((candidate) => candidate.id === where.id);
+        return row ? { ...row } : null;
+      },
       update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
         const row = rows.find((candidate) => candidate.id === where.id)!;
         apply(row, data);
@@ -70,6 +76,11 @@ jest.mock("~/server/db", () => ({
         where: Record<string, unknown>;
         data: Record<string, unknown>;
       }) => {
+        // another runner takes the job a moment before this claim (see `racedClaims`)
+        if (data.state === "running" && racedClaims.has(String(where.id))) {
+          const taken = rows.find((row) => row.id === where.id);
+          if (taken) taken.state = "running";
+        }
         const found = rows.filter((row) => matches(row, where));
         for (const row of found) apply(row, data);
         return { count: found.length };
@@ -135,6 +146,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   rows = [];
   counter = 0;
+  racedClaims.clear();
   delete process.env.SKIP_MEDIAWIKI_SYNC;
   revisionJob.mockReset().mockResolvedValue(555);
   // The planner takes every job it is given (a size cap is the real one's business, tested with it).
@@ -487,6 +499,33 @@ describe("batches of revision jobs", () => {
 
     expect(result).toMatchObject({ failed: 2, dead: 2 });
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves alone a job another runner claimed first, and never runs a later job of the batch before it", async () => {
+    const first = addJob({ title: "Foo" });
+    const second = addJob({ title: "Foo" });
+    const third = addJob({ title: "Foo" });
+    racedClaims.add(second.id);
+
+    const result = await runMirrorCycle();
+
+    // the first was claimed; the second was taken by the other runner, so the batch stops there
+    expect(planBatch.mock.calls[0]?.[0].map((job) => job.id)).toEqual([first.id]);
+    expect(result.done).toBe(1);
+    expect(byId(second.id)).toMatchObject({ state: "running", attempts: 0 });
+    expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("ends the cycle when not even the first job could be claimed", async () => {
+    const taken = addJob({ title: "Foo" });
+    addJob({ title: "Bar" });
+    racedClaims.add(taken.id);
+
+    const result = await runMirrorCycle();
+
+    expect(result).toMatchObject({ done: 0, failed: 0 });
+    expect(planBatch).not.toHaveBeenCalled();
+    expect(byId(taken.id)).toMatchObject({ state: "running", attempts: 0 });
   });
 
   it("counts a batch against maxJobs by its jobs", async () => {
