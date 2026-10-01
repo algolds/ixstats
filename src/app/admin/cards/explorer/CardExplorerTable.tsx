@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
 import {
@@ -16,6 +17,8 @@ import { LoreCategory, isValidLoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { Input } from "~/components/ui/input";
+import { Badge, badgeVariants } from "~/components/ui/badge";
 
 interface CardExplorerTableProps {
   cards: any[];
@@ -70,19 +73,11 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       if (isIIWiki) {
         return <IIWikiBadge size="xs" />;
       }
-      return (
-        <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-500 backdrop-blur-md dark:text-amber-300">
-          Wiki
-        </span>
-      );
+      return <Badge variant="yellow">Wiki</Badge>;
     }
 
     if (card.cardType === "COMMONS_IMPORT") {
-      return (
-        <span className="inline-flex items-center rounded-full border border-teal-500/30 bg-teal-500/15 px-2 py-0.5 text-xs font-bold text-teal-600 backdrop-blur-md dark:text-teal-300">
-          Commons Import
-        </span>
-      );
+      return <Badge variant="teal">Commons Import</Badge>;
     }
 
     if (
@@ -91,18 +86,10 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       card.nsCardId > 0 &&
       card.cardType === "NS_IMPORT"
     ) {
-      return (
-        <span className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/15 px-2 py-0.5 text-xs font-bold text-blue-600 backdrop-blur-md dark:text-blue-300">
-          NS Import
-        </span>
-      );
+      return <Badge variant="blue">NS Import</Badge>;
     }
 
-    return (
-      <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 text-xs font-bold text-cyan-600 backdrop-blur-md dark:text-cyan-300">
-        User Imported
-      </span>
-    );
+    return <Badge variant="teal">User Imported</Badge>;
   };
 
   const columns = useMemo<FacetColumn<any>[]>(
@@ -119,7 +106,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               type="button"
               onClick={() => onOpen3DViewer(card)}
               title="Click to view interactive 3D card"
-              className="border-border bg-muted/60 hover:border-primary/60 group/thumb relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 hover:shadow-md active:scale-95"
+              className="border-separator bg-fill-3 hover:border-tint/60 group/thumb rounded-control-sm hover:shadow-card relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 active:scale-95"
             >
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
                 <CategoryIcon category={card.category || "SPECIAL"} treatment="seal" />
@@ -148,7 +135,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           if (isEditingTitle) {
             return (
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                <input
+                <Input
                   value={editingTitleValue}
                   onChange={(e) => setEditingTitleValue(e.target.value)}
                   onKeyDown={(e) => {
@@ -157,49 +144,56 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                       setEditingTitleId(null);
                     } else if (e.key === "Escape") setEditingTitleId(null);
                   }}
-                  className="border-primary bg-card text-foreground h-7 w-full rounded-lg border px-2 text-xs font-semibold focus:outline-none"
+                  className="w-full"
                   autoFocus
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => {
                     onSaveTitle(card.id, editingTitleValue.trim());
                     setEditingTitleId(null);
                   }}
                   disabled={isPending}
-                  className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
+                  aria-label="Save title"
+                  className="text-success"
                 >
                   <Check className="h-3.5 w-3.5" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setEditingTitleId(null)}
-                  className="rounded-md bg-rose-500/20 p-1 text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
+                  aria-label="Cancel"
+                  className="text-destructive"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             );
           }
           return (
             <div className="group/title flex items-center justify-between gap-2">
               <div>
-                <div className="text-foreground max-w-[180px] truncate font-semibold">
-                  {card.title}
-                </div>
-                <div className="text-muted-foreground font-mono text-xs">
+                <div className="text-label max-w-[180px] truncate font-semibold">{card.title}</div>
+                <div className="text-label-secondary text-footnote font-mono">
                   {card.nsCardId ? `NS ID: ${card.nsCardId}` : `ID: ${card.id.slice(0, 8)}`}
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Edit Title"
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditingTitleId(card.id);
                   setEditingTitleValue(card.title);
                 }}
-                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:opacity-100"
+                className="opacity-0 group-hover/title:opacity-100"
                 title="Edit Title"
               >
                 <Edit2 className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           );
         },
@@ -216,12 +210,8 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         mobileRole: "badge",
         render: (_val: unknown, card: any) => (
           <div className="flex items-center gap-1.5">
-            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-xs font-bold text-purple-600 backdrop-blur-md dark:text-purple-300">
-              S{card.season}
-            </span>
-            <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-600 backdrop-blur-md dark:text-amber-300">
-              {card.rarity}
-            </span>
+            <Badge variant="purple">S{card.season}</Badge>
+            <Badge variant="yellow">{card.rarity}</Badge>
           </div>
         ),
       },
@@ -237,7 +227,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           if (isEditingValue) {
             return (
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                <input
+                <Input
                   type="number"
                   value={editingValueNum}
                   onChange={(e) => setEditingValueNum(parseInt(e.target.value, 10) || 0)}
@@ -247,45 +237,54 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                       setEditingValueId(null);
                     } else if (e.key === "Escape") setEditingValueId(null);
                   }}
-                  className="border-primary bg-card text-foreground h-7 w-20 rounded-lg border px-2 text-xs font-semibold focus:outline-none"
+                  className="w-20"
                   autoFocus
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => {
                     onSaveValue(card.id, editingValueNum);
                     setEditingValueId(null);
                   }}
                   disabled={isPending}
-                  className="rounded-md bg-emerald-500/20 p-1 text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
+                  aria-label="Save value"
+                  className="text-success"
                 >
                   <Check className="h-3.5 w-3.5" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setEditingValueId(null)}
-                  className="rounded-md bg-rose-500/20 p-1 text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
+                  aria-label="Cancel"
+                  className="text-destructive"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             );
           }
           return (
             <div className="group/val flex items-center gap-2">
-              <span className="text-foreground font-semibold">
+              <span className="text-label font-semibold">
                 {(card.marketValue || 0).toLocaleString()}{" "}
-                <span className="text-muted-foreground text-xs">CR</span>
+                <span className="text-label-secondary text-footnote">CR</span>
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Edit Value"
                 onClick={(e) => {
                   e.stopPropagation();
                   setEditingValueId(card.id);
                   setEditingValueNum(card.marketValue || 0);
                 }}
-                className="text-muted-foreground hover:text-primary hover:bg-accent rounded p-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/val:opacity-100"
+                className="opacity-0 group-hover/val:opacity-100"
                 title="Edit Value"
               >
                 <Edit2 className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           );
         },
@@ -320,9 +319,9 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
 
           if (isLoreCard) {
             return (
-              <div className="bg-primary/10 border-primary/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 backdrop-blur-md">
+              <div className="bg-tint-fill border-tint/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5">
                 <CategoryIcon category={resolvedCategory || "SPECIAL"} treatment="seal" size="xs" />
-                <span className="text-primary text-xs font-bold">
+                <span className="text-tint text-caption">
                   {resolvedCategory ? getCategoryLabel(resolvedCategory) : "Lore"}
                 </span>
               </div>
@@ -330,17 +329,17 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           }
           if (isCTE) {
             return (
-              <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2.5 py-0.5 text-xs font-bold text-rose-600 backdrop-blur-md dark:text-rose-300">
-                <AlertTriangle className="h-3 w-3 text-rose-500" />
+              <Badge variant="red">
+                <AlertTriangle className="text-red h-3 w-3" />
                 CTE (Defunct)
-              </span>
+              </Badge>
             );
           }
           return (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-600 backdrop-blur-md dark:text-emerald-300">
-              <CheckCircle className="h-3 w-3 text-emerald-500" />
+            <Badge variant="green">
+              <CheckCircle className="text-green h-3 w-3" />
               Active Nation
-            </span>
+            </Badge>
           );
         },
       },
@@ -357,21 +356,20 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                 onToggleTakedown(card.id, isRetired);
               }}
               disabled={isPending}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
-                isRetired
-                  ? "border border-amber-500/30 bg-amber-500/20 text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
-                  : "bg-muted/80 border-border text-muted-foreground hover:bg-accent hover:text-foreground border"
-              }`}
+              className={cn(
+                badgeVariants({ variant: isRetired ? "caution" : "neutral" }),
+                "cursor-pointer active:scale-95"
+              )}
               title="Click to toggle visibility / takedown state"
             >
               {isRetired ? (
                 <>
-                  <EyeOff className="h-3 w-3 text-amber-500" />
+                  <EyeOff aria-hidden />
                   Hidden (Click to Restore)
                 </>
               ) : (
                 <>
-                  <Eye className="h-3 w-3 text-emerald-500" />
+                  <Eye aria-hidden className="text-green" />
                   Visible (Click to Hide)
                 </>
               )}
@@ -387,12 +385,11 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         render: (_val: unknown, card: any) => (
           <Button
             size="sm"
-            variant="outline"
+            variant="tinted"
             onClick={(e) => {
               e.stopPropagation();
               onOpenEditModal(card);
             }}
-            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-7 rounded-lg text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
           >
             <Eye className="mr-1 h-3 w-3" /> Edit Studio
           </Button>

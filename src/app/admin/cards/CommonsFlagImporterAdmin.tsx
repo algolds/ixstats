@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   Globe,
   Download,
@@ -22,6 +22,8 @@ import {
   Check,
 } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
 
 function cleanCategoryTitle(input: string): string {
   let cleaned = input.trim();
@@ -133,21 +135,18 @@ export function CommonsFlagImporterAdmin() {
   };
 
   return (
-    <FacetCard
-      depth={2}
-      className="border-border bg-card/70 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
-    >
+    <FacetCard className="space-y-6 p-6">
       {/* Header */}
-      <div className="border-border flex flex-col gap-2 border-b pb-4">
+      <div className="border-separator flex flex-col gap-2 border-b pb-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-2.5 backdrop-blur-md">
-            <Globe className="h-5 w-5 text-cyan-500" />
+          <div className="rounded-row border-teal/30 bg-teal/10 border p-2.5">
+            <Globe className="text-teal h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-foreground flex items-center gap-2 text-xl font-bold tracking-tight">
+            <h2 className="text-label text-title-2 flex items-center gap-2">
               Wikimedia Commons Flag & Image Importer
             </h2>
-            <p className="text-muted-foreground text-xs font-medium">
+            <p className="text-label-secondary text-caption">
               Parse any Wikimedia Commons Category URL or title, resolve vector/raster flag images,
               and batch-mint them into IxCards.
             </p>
@@ -156,18 +155,14 @@ export function CommonsFlagImporterAdmin() {
       </div>
 
       {/* Category URL/Title Parser Control Panel */}
-      <FacetContainer
-        depth={1}
-        enableRefraction={true}
-        className="border-border bg-card/60 space-y-4 rounded-2xl border p-4 shadow-sm backdrop-blur-md"
-      >
+      <FacetCard className="space-y-4 p-4">
         <div className="space-y-3">
-          <label className="text-foreground block text-xs font-semibold">
+          <label className="text-label text-caption block">
             Wikimedia Commons Category URL or Category Title
           </label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={categoryInput}
                 onChange={(e) => setCategoryInput(e.target.value)}
@@ -175,13 +170,14 @@ export function CommonsFlagImporterAdmin() {
                   if (e.key === "Enter") handleParseCategory();
                 }}
                 placeholder="https://commons.wikimedia.org/wiki/Category:SVG_flags_of_fictional_countries"
-                className="border-border bg-card text-foreground placeholder:text-muted-foreground h-10 rounded-xl pr-3 pl-9 font-mono text-xs focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) pr-3 pl-9 font-mono"
               />
             </div>
             <Button
+              variant="tinted"
               onClick={handleParseCategory}
               disabled={commonsQuery.isFetching}
-              className="h-10 rounded-xl border border-cyan-500/30 bg-cyan-500/20 px-5 text-xs font-semibold text-cyan-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
+              className="h-10"
             >
               {commonsQuery.isFetching ? (
                 <>
@@ -197,7 +193,7 @@ export function CommonsFlagImporterAdmin() {
 
           {/* Quick Preset Shortcuts */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-muted-foreground text-xs font-medium">Quick Categories:</span>
+            <span className="text-label-secondary text-caption">Quick Categories:</span>
             <button
               onClick={() => {
                 const url =
@@ -206,7 +202,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_flags_of_fictional_countries");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="border-separator bg-surface text-label hover:bg-fill-4 rounded-control text-caption border px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG flags of fictional countries
             </button>
@@ -218,7 +214,7 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_special_or_fictional_flags");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-border bg-card/60 text-foreground hover:bg-accent rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="border-separator bg-surface text-label hover:bg-fill-4 rounded-control text-caption border px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG special or fictional flags
             </button>
@@ -226,16 +222,15 @@ export function CommonsFlagImporterAdmin() {
         </div>
 
         {/* Active Query Status Badge */}
-        <div className="border-border flex items-center justify-between border-t pt-3 text-xs">
-          <span className="text-muted-foreground font-medium">
-            Active Query: <code className="font-mono text-cyan-500">{activeCategory}</code>
+        <div className="border-separator text-footnote flex items-center justify-between border-t pt-3">
+          <span className="text-label-secondary font-medium">
+            Active Query: <code className="text-teal tabular-nums">{activeCategory}</code>
           </span>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => void commonsQuery.refetch()}
             disabled={commonsQuery.isFetching}
-            className="text-muted-foreground hover:text-foreground h-7 text-xs"
           >
             <RefreshCw
               className={`mr-1 h-3 w-3 ${commonsQuery.isFetching ? "animate-spin" : ""}`}
@@ -245,121 +240,101 @@ export function CommonsFlagImporterAdmin() {
         </div>
 
         {/* Card Minting Parameters */}
-        <div className="border-border/40 grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
+        <div className="border-separator grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2">
           {/* Default Rarity */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-xs font-medium">
+            <label className="text-label-secondary text-caption mb-1 block">
               Target Card Rarity
             </label>
             <select
               value={defaultRarity}
               onChange={(e) => setDefaultRarity(e.target.value as CardRarity)}
-              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className={cn(
+                fieldStyles,
+                "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+              )}
             >
-              <option value="COMMON" className="bg-background text-foreground">
-                Common
-              </option>
-              <option value="UNCOMMON" className="bg-background text-foreground">
-                Uncommon
-              </option>
-              <option value="RARE" className="bg-background text-foreground">
-                Rare
-              </option>
-              <option value="ULTRA_RARE" className="bg-background text-foreground">
-                Ultra Rare
-              </option>
-              <option value="EPIC" className="bg-background text-foreground">
-                Epic
-              </option>
-              <option value="LEGENDARY" className="bg-background text-foreground">
-                Legendary
-              </option>
+              <option value="COMMON">Common</option>
+              <option value="UNCOMMON">Uncommon</option>
+              <option value="RARE">Rare</option>
+              <option value="ULTRA_RARE">Ultra Rare</option>
+              <option value="EPIC">Epic</option>
+              <option value="LEGENDARY">Legendary</option>
             </select>
           </div>
 
           {/* Season */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-xs font-medium">
+            <label className="text-label-secondary text-caption mb-1 block">
               Target Card Season
             </label>
             <select
               value={season}
               onChange={(e) => setSeason(parseInt(e.target.value, 10))}
-              className="border-border/40 bg-background text-foreground h-9 w-full rounded-xl border px-3 text-xs font-medium focus:outline-none"
+              className={cn(
+                fieldStyles,
+                "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+              )}
             >
-              <option value={1} className="bg-background text-foreground">
-                Season 1
-              </option>
-              <option value={2} className="bg-background text-foreground">
-                Season 2
-              </option>
-              <option value={3} className="bg-background text-foreground">
-                Season 3
-              </option>
+              <option value={1}>Season 1</option>
+              <option value={2}>Season 2</option>
+              <option value={3}>Season 3</option>
             </select>
           </div>
         </div>
-      </FacetContainer>
+      </FacetCard>
 
       {/* Results Browser */}
       {commonsQuery.isLoading || commonsQuery.isFetching ? (
-        <div className="border-border bg-card/40 flex h-52 flex-col items-center justify-center space-y-2 rounded-2xl border backdrop-blur-md">
-          <Loader2 className="h-7 w-7 animate-spin text-cyan-500" />
-          <p className="text-muted-foreground text-xs font-medium">
+        <div className="border-separator rounded-row flex h-52 flex-col items-center justify-center space-y-2 border">
+          <Loader2 className="text-teal h-7 w-7 animate-spin" />
+          <p className="text-label-secondary text-caption">
             Fetching category members from Wikimedia Commons API...
           </p>
         </div>
       ) : commonsQuery.isError ? (
-        <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-6 text-center backdrop-blur-md">
-          <AlertCircle className="h-8 w-8 text-rose-500" />
-          <p className="text-foreground text-sm font-semibold">Failed to fetch Commons Category</p>
-          <p className="max-w-md font-mono text-xs text-rose-600 dark:text-rose-300">
-            {commonsQuery.error.message}
-          </p>
+        <div className="rounded-card border-red/30 bg-red/10 flex flex-col items-center justify-center space-y-2 border p-6 text-center">
+          <AlertCircle className="text-red h-8 w-8" />
+          <p className="text-label text-headline">Failed to fetch Commons Category</p>
+          <p className="text-footnote text-red max-w-md font-mono">{commonsQuery.error.message}</p>
           <Button
+            variant="destructive"
             size="sm"
             onClick={() => void commonsQuery.refetch()}
-            className="mt-2 h-8 rounded-xl border border-rose-500/30 bg-rose-500/20 text-xs font-semibold text-rose-600 dark:text-rose-200"
+            className="mt-2"
           >
             Retry Category Fetch
           </Button>
         </div>
       ) : items.length === 0 ? (
-        <div className="border-border bg-card/30 flex h-44 flex-col items-center justify-center space-y-2 rounded-2xl border border-dashed backdrop-blur-md">
-          <Globe className="text-muted-foreground/40 h-8 w-8" />
-          <p className="text-foreground text-sm font-semibold">
-            No images found in this Commons category
-          </p>
-          <p className="text-muted-foreground max-w-md text-center text-xs">
+        <div className="border-separator rounded-row flex h-44 flex-col items-center justify-center space-y-2 border border-dashed">
+          <Globe className="text-label-tertiary h-8 w-8" />
+          <p className="text-label text-headline">No images found in this Commons category</p>
+          <p className="text-label-secondary text-footnote max-w-md text-center">
             Make sure the Commons URL or category title is valid and contains image files.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+          <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleToggleSelectAll}
-                className="border-border bg-card h-8 rounded-xl text-xs font-semibold"
-              >
+              <Button size="sm" variant="outline" onClick={handleToggleSelectAll}>
                 {selectedItemUrls.size > 0 &&
                 unmintedItems.every((i) => selectedItemUrls.has(i.fileUrl)) ? (
                   <>
-                    <CheckSquare className="mr-1.5 h-3.5 w-3.5 text-cyan-500" /> Deselect All
+                    <CheckSquare className="text-teal mr-1.5 h-3.5 w-3.5" /> Deselect All
                   </>
                 ) : (
                   <>
-                    <Square className="text-muted-foreground mr-1.5 h-3.5 w-3.5" /> Select Unminted
-                    ({unmintedItems.length})
+                    <Square className="text-label-secondary mr-1.5 h-3.5 w-3.5" /> Select Unminted (
+                    {unmintedItems.length})
                   </>
                 )}
               </Button>
-              <span className="text-muted-foreground text-xs font-medium">
+              <span className="text-label-secondary text-caption">
                 {items.length} total image(s) •{" "}
-                <span className="font-bold text-cyan-500">{unmintedItems.length} new</span> •{" "}
-                <span className="font-bold text-emerald-500">{mintedCount} already minted</span> (
+                <span className="text-teal font-semibold">{unmintedItems.length} new</span> •{" "}
+                <span className="text-green font-semibold">{mintedCount} already minted</span> (
                 {selectedItemUrls.size} selected)
               </span>
             </div>
@@ -370,15 +345,15 @@ export function CommonsFlagImporterAdmin() {
                 variant="outline"
                 onClick={handleImportAll}
                 disabled={unmintedItems.length === 0 || importMutation.isPending}
-                className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold disabled:opacity-50"
+                className="disabled:opacity-50"
               >
                 Import New ({unmintedItems.length})
               </Button>
               <Button
+                variant="tinted"
                 size="sm"
                 onClick={() => handleImportSelected()}
                 disabled={selectedItemUrls.size === 0 || importMutation.isPending}
-                className="h-8 rounded-xl border border-cyan-500/30 bg-cyan-500/20 text-xs font-semibold text-cyan-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/30 active:scale-95 dark:text-cyan-300"
               >
                 {importMutation.isPending ? (
                   <>
@@ -404,42 +379,39 @@ export function CommonsFlagImporterAdmin() {
                 <div
                   key={item.fileUrl}
                   onClick={() => handleToggleItem(item.fileUrl)}
-                  className={`group relative flex cursor-pointer flex-col justify-between rounded-xl border p-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                  className={`group rounded-row relative flex cursor-pointer flex-col justify-between border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isMinted
-                      ? "border-border/40 bg-card/30 opacity-55 grayscale hover:opacity-100 hover:grayscale-0"
+                      ? "border-separator bg-surface opacity-55 grayscale hover:opacity-100 hover:grayscale-0"
                       : isSelected
-                        ? "border-cyan-500/60 bg-cyan-500/10 shadow-md ring-1 ring-cyan-500/40"
-                        : "border-border bg-card/60 hover:bg-accent/60"
+                        ? "border-teal/60 bg-teal/10 ring-teal/40 ring-1"
+                        : "border-separator bg-surface hover:bg-fill-4"
                   }`}
                 >
-                  <div className="relative flex aspect-3/2 w-full items-center justify-center overflow-hidden rounded-lg bg-black/40 p-1">
+                  <div className="rounded-control relative flex aspect-3/2 w-full items-center justify-center overflow-hidden bg-black/40 p-1">
                     <img
                       src={item.fileUrl}
                       alt={item.cleanTitle}
-                      className="max-h-full max-w-full object-contain drop-shadow-sm"
+                      className="max-h-full max-w-full object-contain"
                       loading="lazy"
                     />
 
                     {/* Already Minted Badge */}
                     {isMinted && (
-                      <div className="absolute top-1 left-1 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-xs font-bold text-white shadow-xs">
+                      <div className="rounded-control-sm bg-green/90 text-caption text-label absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5">
                         <Check className="h-2.5 w-2.5" /> Minted
                       </div>
                     )}
 
                     <div className="absolute top-1 right-1">
                       {isSelected ? (
-                        <CheckCircle2 className="h-4 w-4 fill-cyan-500/20 text-cyan-500" />
+                        <CheckCircle2 className="fill-teal/20 text-teal h-4 w-4" />
                       ) : (
-                        <Square className="text-muted-foreground/50 h-4 w-4" />
+                        <Square className="text-label-tertiary h-4 w-4" />
                       )}
                     </div>
                   </div>
                   <div className="mt-2 space-y-1">
-                    <div
-                      className="text-foreground truncate text-xs font-bold"
-                      title={item.cleanTitle}
-                    >
+                    <div className="text-label text-caption truncate" title={item.cleanTitle}>
                       {item.cleanTitle}
                     </div>
                     <a
@@ -447,7 +419,7 @@ export function CommonsFlagImporterAdmin() {
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-muted-foreground inline-flex items-center gap-0.5 text-xs font-semibold hover:text-cyan-500"
+                      className="text-label-secondary text-caption hover:text-teal inline-flex items-center gap-0.5"
                     >
                       Wikimedia <ExternalLink className="h-2.5 w-2.5" />
                     </a>

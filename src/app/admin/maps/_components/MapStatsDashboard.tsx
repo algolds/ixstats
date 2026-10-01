@@ -33,19 +33,17 @@ export function MapStatsDashboard() {
   return (
     <div className="space-y-6">
       {/* Layer breakdown */}
-      <FacetCard className="rounded-xl p-6">
-        <Eyebrow className="text-foreground/80 mb-4 block text-sm">Layer Breakdown</Eyebrow>
+      <FacetCard className="rounded-row p-6">
+        <Eyebrow className="text-label text-body mb-4 block">Layer Breakdown</Eyebrow>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {layerInfo?.map((layer) => (
-            <div key={layer.type} className="border-border/50 rounded-lg border p-3">
-              <div className="text-muted-foreground text-xs font-medium capitalize">
-                {layer.type}
-              </div>
-              <div className="text-foreground mt-1 text-xl font-bold">
+            <div key={layer.type} className="border-separator rounded-control border p-3">
+              <div className="text-label-secondary text-caption capitalize">{layer.type}</div>
+              <div className="text-label text-title-2 mt-1">
                 {layer.featureCount.toLocaleString()}
               </div>
               <div
-                className={`mt-1 text-xs ${layer.available ? "text-emerald-500" : "text-muted-foreground"}`}
+                className={`text-footnote mt-1 ${layer.available ? "text-green" : "text-label-secondary"}`}
               >
                 {layer.available ? "Active" : "Empty"}
               </div>
@@ -55,50 +53,50 @@ export function MapStatsDashboard() {
       </FacetCard>
 
       {/* Linkage overview */}
-      <FacetCard className="rounded-xl p-6">
-        <Eyebrow className="text-foreground/80 mb-4 block text-sm">Country Linkage</Eyebrow>
+      <FacetCard className="rounded-row p-6">
+        <Eyebrow className="text-label text-body mb-4 block">Country Linkage</Eyebrow>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Progress bar */}
           <div>
-            <div className="mb-2 flex justify-between text-sm">
-              <span className="text-foreground/80">Political features linked</span>
-              <span className="text-foreground font-medium">
+            <div className="text-body mb-2 flex justify-between">
+              <span className="text-label">Political features linked</span>
+              <span className="text-label font-medium">
                 {stats?.linkedFeatures ?? 0} / {stats?.politicalFeatures ?? 0}
               </span>
             </div>
-            <div className="bg-muted h-3 overflow-hidden rounded-full">
+            <div className="bg-fill-3 h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-emerald-500"
+                className="bg-green h-full rounded-full"
                 style={{ width: `${stats?.linkageRate ?? 0}%` }}
               />
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="text-footnote mt-3 grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="font-bold text-emerald-600">{stats?.linkedFeatures ?? 0}</div>
-                <div className="text-muted-foreground">Linked</div>
+                <div className="text-green font-semibold">{stats?.linkedFeatures ?? 0}</div>
+                <div className="text-label-secondary">Linked</div>
               </div>
               <div>
-                <div className="font-bold text-amber-600">{stats?.unlinkedFeatures ?? 0}</div>
-                <div className="text-muted-foreground">Unlinked</div>
+                <div className="text-yellow font-semibold">{stats?.unlinkedFeatures ?? 0}</div>
+                <div className="text-label-secondary">Unlinked</div>
               </div>
               <div>
-                <div className="font-bold text-blue-600">{stats?.totalCountries ?? 0}</div>
-                <div className="text-muted-foreground">DB Countries</div>
+                <div className="text-blue font-semibold">{stats?.totalCountries ?? 0}</div>
+                <div className="text-label-secondary">DB Countries</div>
               </div>
             </div>
           </div>
 
           {/* DB coverage */}
           <div>
-            <div className="mb-2 flex justify-between text-sm">
-              <span className="text-foreground/80">Countries with geometry</span>
-              <span className="text-foreground font-medium">
+            <div className="text-body mb-2 flex justify-between">
+              <span className="text-label">Countries with geometry</span>
+              <span className="text-label font-medium">
                 {stats?.countriesWithGeometry ?? 0} / {stats?.totalCountries ?? 0}
               </span>
             </div>
-            <div className="bg-muted h-3 overflow-hidden rounded-full">
+            <div className="bg-fill-3 h-3 overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-blue-500"
+                className="bg-blue h-full rounded-full"
                 style={{
                   width: `${
                     stats && stats.totalCountries > 0
@@ -115,20 +113,23 @@ export function MapStatsDashboard() {
       {/* Linked features list */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Linked */}
-        <FacetCard className="rounded-xl p-6">
-          <Eyebrow className="mb-3 block text-sm">
+        <FacetCard className="rounded-row p-6">
+          <Eyebrow className="text-body mb-3 block">
             Linked Features ({linkedFeatures.length})
           </Eyebrow>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {linkedFeatures.map((f) => (
               <div
                 key={f.featureId}
-                className="hover:bg-accent flex items-center gap-2 rounded px-2 py-1 text-sm"
+                className="hover:bg-fill-4 rounded-control-sm text-body flex items-center gap-2 px-2 py-1"
               >
-                <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: f.fillColor }} />
-                <span className="text-foreground">{f.displayName}</span>
+                <div
+                  className="rounded-control-sm h-2.5 w-2.5"
+                  style={{ backgroundColor: f.fillColor }}
+                />
+                <span className="text-label">{f.displayName}</span>
                 {f.areaSqKm && (
-                  <span className="text-muted-foreground ml-auto text-xs">
+                  <span className="text-label-secondary text-footnote ml-auto">
                     {Math.round(f.areaSqKm).toLocaleString()} km²
                   </span>
                 )}
@@ -138,22 +139,22 @@ export function MapStatsDashboard() {
         </FacetCard>
 
         {/* Unlinked */}
-        <FacetCard className="rounded-xl p-6">
-          <Eyebrow className="mb-3 block text-sm">
+        <FacetCard className="rounded-row p-6">
+          <Eyebrow className="text-body mb-3 block">
             Unlinked Features ({unlinkedFeatures.length})
           </Eyebrow>
           <div className="max-h-64 space-y-1 overflow-y-auto">
             {unlinkedFeatures.map((f) => (
               <div
                 key={f.featureId}
-                className="hover:bg-accent flex items-center gap-2 rounded px-2 py-1 text-sm"
+                className="hover:bg-fill-4 rounded-control-sm text-body flex items-center gap-2 px-2 py-1"
               >
                 <div
-                  className="border-border h-2.5 w-2.5 rounded-sm border"
+                  className="border-separator rounded-control-sm h-2.5 w-2.5 border"
                   style={{ backgroundColor: f.fillColor }}
                 />
-                <span className="text-foreground">{f.displayName}</span>
-                <span className="text-muted-foreground ml-auto font-mono text-xs">
+                <span className="text-label">{f.displayName}</span>
+                <span className="text-label-secondary text-footnote ml-auto font-mono">
                   {f.featureId}
                 </span>
               </div>

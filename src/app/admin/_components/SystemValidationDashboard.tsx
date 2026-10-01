@@ -34,7 +34,7 @@ export function SystemValidationDashboard() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <Card className="facet-surface border-border/40">
+      <Card>
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -43,7 +43,7 @@ export function SystemValidationDashboard() {
                 {isLoading ? "Running Audit..." : "Run Full Audit"}
               </Button>
               {lastAuditTime && (
-                <span className="text-muted-foreground text-sm">
+                <span className="text-label-secondary text-body">
                   Last run: {new Date(lastAuditTime).toLocaleTimeString()}
                 </span>
               )}
@@ -53,7 +53,7 @@ export function SystemValidationDashboard() {
               <div className="flex items-center gap-3">
                 <Badge
                   variant="outline"
-                  className={`gap-1.5 px-3 py-1.5 text-sm ${getStatusBgColor(summary.overallStatus)} ${getStatusColor(summary.overallStatus)}`}
+                  className={`text-body gap-1.5 px-3 py-1.5 ${getStatusBgColor(summary.overallStatus)} ${getStatusColor(summary.overallStatus)}`}
                 >
                   {summary.overallStatus === "pass" && <CheckCircle className="h-3.5 w-3.5" />}
                   {summary.overallStatus === "warn" && <AlertTriangle className="h-3.5 w-3.5" />}
@@ -79,14 +79,14 @@ export function SystemValidationDashboard() {
 
       {/* Error banner */}
       {errorList.length > 0 && (
-        <Card className="border-red-500/20 bg-red-500/5">
+        <Card className="border-red/20 bg-red/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-2">
-              <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+              <XCircle className="text-red mt-0.5 h-5 w-5 shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-red-400">Some checks failed to execute</p>
+                <p className="text-body text-red font-medium">Some checks failed to execute</p>
                 {errorList.map(([key, err]) => (
-                  <p key={key} className="text-xs text-red-400/70">
+                  <p key={key} className="text-footnote text-red">
                     {key}: {(err as any)?.message || String(err)}
                   </p>
                 ))}
@@ -105,11 +105,11 @@ export function SystemValidationDashboard() {
         </div>
       ) : (
         !isRunning && (
-          <Card className="facet-surface border-border/40">
+          <Card>
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Clock className="text-muted-foreground/30 mb-4 h-12 w-12" />
-              <h3 className="text-foreground mb-1 text-lg font-medium">No Audit Results</h3>
-              <p className="text-muted-foreground max-w-sm text-sm">
+              <Clock className="text-label-tertiary mb-4 h-12 w-12" />
+              <h3 className="text-label text-title-3 mb-1">No Audit Results</h3>
+              <p className="text-label-secondary text-body max-w-sm">
                 Click &quot;Run Full Audit&quot; to validate all platform subsystems, database
                 connectivity, authentication, and economic engine health.
               </p>
@@ -120,34 +120,28 @@ export function SystemValidationDashboard() {
 
       {/* Summary */}
       {summary && (
-        <Card className="facet-surface border-border/40">
+        <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
               <div>
-                <Eyebrow className="block">
-                  Total Checks
-                </Eyebrow>
-                <p className="text-foreground text-2xl font-bold tabular-nums">
-                  {summary.totalChecks}
-                </p>
+                <Eyebrow className="block">Total Checks</Eyebrow>
+                <p className="text-label text-title-1 tabular-nums">{summary.totalChecks}</p>
               </div>
               <div>
-                <p className="text-xs tracking-wider text-green-400 uppercase">Passed</p>
-                <p className="text-2xl font-bold text-green-400 tabular-nums">{summary.passed}</p>
+                <p className="text-eyebrow text-green">Passed</p>
+                <p className="text-title-1 text-green tabular-nums">{summary.passed}</p>
               </div>
               <div>
-                <p className="text-xs tracking-wider text-amber-400 uppercase">Warnings</p>
-                <p className="text-2xl font-bold text-amber-400 tabular-nums">{summary.warnings}</p>
+                <p className="text-eyebrow text-yellow">Warnings</p>
+                <p className="text-title-1 text-yellow tabular-nums">{summary.warnings}</p>
               </div>
               <div>
-                <p className="text-xs tracking-wider text-red-400 uppercase">Failures</p>
-                <p className="text-2xl font-bold text-red-400 tabular-nums">{summary.failures}</p>
+                <p className="text-eyebrow text-red">Failures</p>
+                <p className="text-title-1 text-red tabular-nums">{summary.failures}</p>
               </div>
               <div>
                 <Eyebrow className="block">Duration</Eyebrow>
-                <p className="text-foreground text-2xl font-bold tabular-nums">
-                  {summary.duration}ms
-                </p>
+                <p className="text-label text-title-1 tabular-nums">{summary.duration}ms</p>
               </div>
             </div>
           </CardContent>

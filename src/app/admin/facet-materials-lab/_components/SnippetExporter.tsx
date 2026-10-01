@@ -1,4 +1,5 @@
 import * as React from "react";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Code, Check, Copy } from "iconoir-react";
 import { type LabConfig } from "./types";
@@ -59,32 +60,23 @@ export default function CustomFacetWidget() {
   };
 
   return (
-    <div className="bg-card/45 border-border/40 flex flex-col gap-4 rounded-2xl border p-6 backdrop-blur-md">
-      <div className="border-border/20 flex items-center justify-between border-b pb-3">
+    <FacetCard className="flex flex-col gap-4 p-6">
+      <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
-          <Code className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold tracking-wide uppercase">TSX Code Exporter</h3>
+          <Code className="text-tint h-4 w-4" />
+          <h3 className="text-headline">TSX code exporter</h3>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={copyCodeToClipboard}
-          className="bg-card/50 border-border/40 hover:bg-muted/50 h-8 gap-1.5"
-        >
-          {copied ? (
-            <Check className="h-3.5 w-3.5 text-emerald-500" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
-          )}
-          <span>{copied ? "Copied!" : "Copy Code"}</span>
+        <Button variant="outline" size="sm" onClick={copyCodeToClipboard} className="gap-1.5">
+          {copied ? <Check className="text-green h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          <span>{copied ? "Copied" : "Copy Code"}</span>
         </Button>
       </div>
 
       <div className="relative">
-        <pre className="bg-muted/90 border-border text-foreground max-h-[280px] overflow-x-auto rounded-xl border p-4 font-mono text-xs leading-relaxed shadow-inner">
+        <pre className="bg-fill-3 border-separator text-label rounded-row text-footnote max-h-[280px] overflow-x-auto border p-4 font-mono leading-relaxed">
           <code>{getSnippetCode()}</code>
         </pre>
       </div>
-    </div>
+    </FacetCard>
   );
 }

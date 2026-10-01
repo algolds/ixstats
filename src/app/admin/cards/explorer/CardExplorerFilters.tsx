@@ -1,10 +1,12 @@
 import React from "react";
 import { Search } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
 
 export type CardTypeFilter = "all" | "NS_IMPORT" | "USER_CUSTOM" | "LORE_BATCH" | "COMMONS_IMPORT";
 export type SortByOption = "recent" | "marketValue" | "marketValue_asc" | "name" | "rarity";
@@ -49,14 +51,10 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
   setOffset,
 }: CardExplorerFiltersProps) {
   return (
-    <FacetContainer
-      depth={1}
-      enableRefraction={true}
-      className="bg-card/60 border-border flex flex-wrap items-center gap-2.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl"
-    >
+    <FacetCard className="flex flex-wrap items-center gap-2.5 p-3.5">
       {/* Search Input */}
       <div className="relative max-w-md min-w-[220px] flex-1">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => {
@@ -64,7 +62,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setOffset(0);
           }}
           placeholder="Search title, nation, or keyword..."
-          className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-8.5 rounded-xl pl-8 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1"
+          className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
         />
       </div>
 
@@ -75,23 +73,16 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setCardTypeFilter(e.target.value as CardTypeFilter);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+        className={cn(
+          fieldStyles,
+          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+        )}
       >
-        <option value="all" className="bg-background text-foreground">
-          All Card Sources
-        </option>
-        <option value="LORE_BATCH" className="bg-background text-foreground">
-          Wiki Lore Cards
-        </option>
-        <option value="NS_IMPORT" className="bg-background text-foreground">
-          NS Official Imports
-        </option>
-        <option value="USER_CUSTOM" className="bg-background text-foreground">
-          User Imported / Custom
-        </option>
-        <option value="COMMONS_IMPORT" className="bg-background text-foreground">
-          Commons Flag Imports
-        </option>
+        <option value="all">All Card Sources</option>
+        <option value="LORE_BATCH">Wiki Lore Cards</option>
+        <option value="NS_IMPORT">NS Official Imports</option>
+        <option value="USER_CUSTOM">User Imported / Custom</option>
+        <option value="COMMONS_IMPORT">Commons Flag Imports</option>
       </select>
 
       {/* Lore Category Filter */}
@@ -102,13 +93,14 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setCategoryFilter(e.target.value as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+          className={cn(
+            fieldStyles,
+            "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+          )}
         >
-          <option value="all" className="bg-background text-foreground">
-            All Lore Categories
-          </option>
+          <option value="all">All Lore Categories</option>
           {Object.values(LoreCategory).map((cat) => (
-            <option key={cat} value={cat} className="bg-background text-foreground">
+            <option key={cat} value={cat}>
               {cat} — {getCategoryLabel(cat)}
             </option>
           ))}
@@ -123,17 +115,14 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setCteFilter(e.target.value as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+          className={cn(
+            fieldStyles,
+            "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+          )}
         >
-          <option value="all" className="bg-background text-foreground">
-            All Nation States
-          </option>
-          <option value="active_only" className="bg-background text-foreground">
-            Active Nations Only
-          </option>
-          <option value="cte_only" className="bg-background text-foreground">
-            CTE / Defunct Only
-          </option>
+          <option value="all">All Nation States</option>
+          <option value="active_only">Active Nations Only</option>
+          <option value="cte_only">CTE / Defunct Only</option>
         </select>
       )}
 
@@ -144,17 +133,14 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setTakedownFilter(e.target.value as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+        className={cn(
+          fieldStyles,
+          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+        )}
       >
-        <option value="all" className="bg-background text-foreground">
-          All Visibility
-        </option>
-        <option value="visible" className="bg-background text-foreground">
-          Visible Cards
-        </option>
-        <option value="takedown" className="bg-background text-foreground">
-          Hidden / Retired
-        </option>
+        <option value="all">All Visibility</option>
+        <option value="visible">Visible Cards</option>
+        <option value="takedown">Hidden / Retired</option>
       </select>
 
       {/* Season Filter */}
@@ -165,20 +151,15 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setSeason(val === "all" ? "all" : parseInt(val, 10));
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+        className={cn(
+          fieldStyles,
+          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+        )}
       >
-        <option value="all" className="bg-background text-foreground">
-          All Seasons
-        </option>
-        <option value="1" className="bg-background text-foreground">
-          Season 1
-        </option>
-        <option value="2" className="bg-background text-foreground">
-          Season 2
-        </option>
-        <option value="3" className="bg-background text-foreground">
-          Season 3
-        </option>
+        <option value="all">All Seasons</option>
+        <option value="1">Season 1</option>
+        <option value="2">Season 2</option>
+        <option value="3">Season 3</option>
       </select>
 
       {/* Rarity Filter */}
@@ -188,29 +169,18 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setRarity(e.target.value as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+        className={cn(
+          fieldStyles,
+          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+        )}
       >
-        <option value="all" className="bg-background text-foreground">
-          All Rarities
-        </option>
-        <option value="COMMON" className="bg-background text-foreground">
-          Common
-        </option>
-        <option value="UNCOMMON" className="bg-background text-foreground">
-          Uncommon
-        </option>
-        <option value="RARE" className="bg-background text-foreground">
-          Rare
-        </option>
-        <option value="ULTRA_RARE" className="bg-background text-foreground">
-          Ultra Rare
-        </option>
-        <option value="EPIC" className="bg-background text-foreground">
-          Epic
-        </option>
-        <option value="LEGENDARY" className="bg-background text-foreground">
-          Legendary
-        </option>
+        <option value="all">All Rarities</option>
+        <option value="COMMON">Common</option>
+        <option value="UNCOMMON">Uncommon</option>
+        <option value="RARE">Rare</option>
+        <option value="ULTRA_RARE">Ultra Rare</option>
+        <option value="EPIC">Epic</option>
+        <option value="LEGENDARY">Legendary</option>
       </select>
 
       {/* Sort Option */}
@@ -220,24 +190,17 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           setSortBy(e.target.value as SortByOption);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+        className={cn(
+          fieldStyles,
+          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+        )}
       >
-        <option value="recent" className="bg-background text-foreground">
-          Sort: Most Recent
-        </option>
-        <option value="marketValue" className="bg-background text-foreground">
-          Sort: Value (High to Low)
-        </option>
-        <option value="marketValue_asc" className="bg-background text-foreground">
-          Sort: Value (Low to High)
-        </option>
-        <option value="name" className="bg-background text-foreground">
-          Sort: Name (A-Z)
-        </option>
-        <option value="rarity" className="bg-background text-foreground">
-          Sort: Rarity Tier
-        </option>
+        <option value="recent">Sort: Most Recent</option>
+        <option value="marketValue">Sort: Value (High to Low)</option>
+        <option value="marketValue_asc">Sort: Value (Low to High)</option>
+        <option value="name">Sort: Name (A-Z)</option>
+        <option value="rarity">Sort: Rarity Tier</option>
       </select>
-    </FacetContainer>
+    </FacetCard>
   );
 });

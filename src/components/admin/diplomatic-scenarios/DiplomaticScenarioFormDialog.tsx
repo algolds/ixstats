@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -83,14 +83,14 @@ export function DiplomaticScenarioFormDialog({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Scenario" : "Add Scenario"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent size="wide" className="flex flex-col overflow-hidden">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? "Edit Scenario" : "Add Scenario"}</SheetTitle>
+          <SheetDescription>
             Configure diplomatic scenario template with player choices
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Tab Navigation */}
         <Tabs
@@ -98,7 +98,7 @@ export function DiplomaticScenarioFormDialog({
           onValueChange={setActiveTab}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+          <TabsList className="border-separator flex shrink-0 gap-2 overflow-x-auto border-b pb-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -138,11 +138,12 @@ export function DiplomaticScenarioFormDialog({
         </Tabs>
 
         {/* Footer Actions */}
-        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
+        <SheetFooter className="border-separator shrink-0 border-t pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
+            variant="destructive"
             onClick={onSave}
             disabled={
               !formData.title ||
@@ -151,13 +152,12 @@ export function DiplomaticScenarioFormDialog({
               !formData.country2Id ||
               isPending
             }
-            className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Scenario" : "Create Scenario"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -203,7 +203,7 @@ function GeneralTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Scenario Type *</label>
+        <label className="text-label text-body mb-2 block font-medium">Scenario Type *</label>
         <Select
           value={formData.type}
           onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
@@ -222,7 +222,7 @@ function GeneralTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Title *</label>
+        <label className="text-label text-body mb-2 block font-medium">Title *</label>
         <Input
           value={formData.title}
           onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
@@ -233,7 +233,7 @@ function GeneralTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Country 1 *</label>
+          <label className="text-label text-body mb-2 block font-medium">Country 1 *</label>
           <Select
             value={formData.country1Id}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, country1Id: value }))}
@@ -255,18 +255,18 @@ function GeneralTab({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <div className="border-b border-white/10 p-2">
+              <div className="border-separator border-b p-2">
                 <Input
                   placeholder="Search countries..."
                   value={country1Search}
                   onChange={(e) => setCountry1Search(e.target.value)}
-                  className="h-8 text-sm"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {filteredCountries1.length === 0 ? (
-                  <div className="text-muted-foreground py-6 text-center text-sm">
+                  <div className="text-label-secondary text-body py-6 text-center">
                     No countries found
                   </div>
                 ) : (
@@ -281,7 +281,7 @@ function GeneralTab({
                           />
                         )}
                         <span className="flex-1 truncate">{country.name}</span>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-label-secondary text-footnote">
                           {country.economicTier || "N/A"}
                         </span>
                       </div>
@@ -292,13 +292,13 @@ function GeneralTab({
             </SelectContent>
           </Select>
           {selectedCountry1 && (
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               {selectedCountry1.continent} • {selectedCountry1.economicTier || "No tier"}
             </p>
           )}
         </div>
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Country 2 *</label>
+          <label className="text-label text-body mb-2 block font-medium">Country 2 *</label>
           <Select
             value={formData.country2Id}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, country2Id: value }))}
@@ -320,18 +320,18 @@ function GeneralTab({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <div className="border-b border-white/10 p-2">
+              <div className="border-separator border-b p-2">
                 <Input
                   placeholder="Search countries..."
                   value={country2Search}
                   onChange={(e) => setCountry2Search(e.target.value)}
-                  className="h-8 text-sm"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {filteredCountries2.length === 0 ? (
-                  <div className="text-muted-foreground py-6 text-center text-sm">
+                  <div className="text-label-secondary text-body py-6 text-center">
                     No countries found
                   </div>
                 ) : (
@@ -346,7 +346,7 @@ function GeneralTab({
                           />
                         )}
                         <span className="flex-1 truncate">{country.name}</span>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-label-secondary text-footnote">
                           {country.economicTier || "N/A"}
                         </span>
                       </div>
@@ -357,7 +357,7 @@ function GeneralTab({
             </SelectContent>
           </Select>
           {selectedCountry2 && (
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               {selectedCountry2.continent} • {selectedCountry2.economicTier || "No tier"}
             </p>
           )}
@@ -366,9 +366,7 @@ function GeneralTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">
-            Relationship Level
-          </label>
+          <label className="text-label text-body mb-2 block font-medium">Relationship Level</label>
           <Select
             value={formData.relationshipState}
             onValueChange={(value) =>
@@ -388,7 +386,7 @@ function GeneralTab({
           </Select>
         </div>
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">
+          <label className="text-label text-body mb-2 block font-medium">
             Relationship Strength: {formData.relationshipStrength}
           </label>
           <Input
@@ -408,7 +406,7 @@ function GeneralTab({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Difficulty</label>
+          <label className="text-label text-body mb-2 block font-medium">Difficulty</label>
           <Select
             value={formData.difficulty}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, difficulty: value }))}
@@ -426,7 +424,7 @@ function GeneralTab({
           </Select>
         </div>
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Time Frame</label>
+          <label className="text-label text-body mb-2 block font-medium">Time Frame</label>
           <Select
             value={formData.timeFrame}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, timeFrame: value }))}
@@ -444,7 +442,7 @@ function GeneralTab({
           </Select>
         </div>
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Status</label>
+          <label className="text-label text-body mb-2 block font-medium">Status</label>
           <Select
             value={formData.status}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
@@ -474,14 +472,14 @@ function NarrativeTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Narrative *</label>
+        <label className="text-label text-body mb-2 block font-medium">Narrative *</label>
         <Textarea
           value={formData.narrative}
           onChange={(e) => setFormData((prev) => ({ ...prev, narrative: e.target.value }))}
           placeholder="Rich narrative describing the scenario (3-5 paragraphs)..."
           rows={15}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Provide context, situation, implications, and urgency. This will be displayed to players.
         </p>
       </div>
@@ -500,7 +498,7 @@ function MetadataTab({
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">
+          <label className="text-label text-body mb-2 block font-medium">
             Cultural Impact: {formData.culturalImpact}
           </label>
           <Input
@@ -515,11 +513,11 @@ function MetadataTab({
             min={0}
             max={100}
           />
-          <p className="text-muted-foreground mt-1 text-xs">0-100 scale</p>
+          <p className="text-label-secondary text-footnote mt-1">0-100 scale</p>
         </div>
 
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">
+          <label className="text-label text-body mb-2 block font-medium">
             Diplomatic Risk: {formData.diplomaticRisk}
           </label>
           <Input
@@ -534,11 +532,11 @@ function MetadataTab({
             min={0}
             max={100}
           />
-          <p className="text-muted-foreground mt-1 text-xs">0-100 scale</p>
+          <p className="text-label-secondary text-footnote mt-1">0-100 scale</p>
         </div>
 
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">
+          <label className="text-label text-body mb-2 block font-medium">
             Economic Cost: {formData.economicCost}
           </label>
           <Input
@@ -553,13 +551,13 @@ function MetadataTab({
             min={0}
             max={100}
           />
-          <p className="text-muted-foreground mt-1 text-xs">0-100 scale</p>
+          <p className="text-label-secondary text-footnote mt-1">0-100 scale</p>
         </div>
       </div>
 
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-        <h4 className="text-foreground mb-2 text-sm font-medium">Scenario Guidelines</h4>
-        <ul className="text-muted-foreground space-y-1 text-xs">
+      <div className="rounded-control border-blue/20 bg-blue/10 border p-4">
+        <h4 className="text-label text-body mb-2 font-medium">Scenario Guidelines</h4>
+        <ul className="text-label-secondary text-footnote space-y-1">
           <li>• Cultural Impact: How much this affects cultural ties and mutual understanding</li>
           <li>• Diplomatic Risk: Potential for relationship damage or escalation</li>
           <li>• Economic Cost: Financial resources required to address the scenario</li>

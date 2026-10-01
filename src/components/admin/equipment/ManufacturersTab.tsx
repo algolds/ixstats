@@ -74,13 +74,10 @@ export function ManufacturersTab({
 }: ManufacturersTabProps) {
   return (
     <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-white/10 p-4">
+      <div className="bg-surface rounded-row border-separator border p-4">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-foreground text-xl font-bold">Defense Manufacturers</h2>
-          <Button
-            onClick={onAddManufacturer}
-            className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
-          >
+          <h2 className="text-label text-title-2">Defense Manufacturers</h2>
+          <Button variant="destructive" onClick={onAddManufacturer}>
             <Plus className="mr-2 h-4 w-4" />
             Add Manufacturer
           </Button>
@@ -90,7 +87,7 @@ export function ManufacturersTab({
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           {/* Search */}
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Search manufacturers..."
               value={manufacturerSearchQuery}
@@ -130,9 +127,9 @@ export function ManufacturersTab({
           </Button>
 
           {/* Stats placeholder */}
-          <div className="bg-primary/5 border-primary/20 flex items-center justify-center rounded-md border px-4 py-2">
-            <Package className="text-primary mr-2 h-4 w-4" />
-            <span className="text-sm font-medium">
+          <div className="bg-tint-fill border-tint/20 rounded-control-sm flex items-center justify-center border px-4 py-2">
+            <Package className="text-tint mr-2 h-4 w-4" />
+            <span className="text-body font-medium">
               {filteredManufacturers.length} manufacturers
             </span>
           </div>
@@ -140,16 +137,16 @@ export function ManufacturersTab({
       </div>
 
       {/* Table */}
-      <div className="bg-card border-border/50 rounded-xl border p-6">
+      <div className="bg-surface border-separator rounded-row border p-6">
         {manufacturersLoading ? (
           <div className="py-12 text-center">
-            <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
-            <p className="text-muted-foreground">Loading manufacturers...</p>
+            <div className="border-tint mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
+            <p className="text-label-secondary">Loading manufacturers...</p>
           </div>
         ) : filteredManufacturers.length === 0 ? (
           <div className="py-12 text-center">
-            <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-muted-foreground">No manufacturers found</p>
+            <Filter className="text-label-secondary mx-auto mb-4 h-12 w-12" />
+            <p className="text-label-secondary">No manufacturers found</p>
             <Button className="mt-4" onClick={onAddManufacturer}>
               <Plus className="mr-2 h-4 w-4" />
               Add First Manufacturer
@@ -163,7 +160,7 @@ export function ManufacturersTab({
                   <TableHead>
                     <button
                       onClick={() => handleSort("name")}
-                      className="hover:text-primary flex items-center gap-1 transition-colors"
+                      className="hover:text-tint flex items-center gap-1 transition-colors"
                     >
                       Name
                       <ArrowUpDown className="h-3 w-3" />
@@ -172,7 +169,7 @@ export function ManufacturersTab({
                   <TableHead>
                     <button
                       onClick={() => handleSort("country")}
-                      className="hover:text-primary flex items-center gap-1 transition-colors"
+                      className="hover:text-tint flex items-center gap-1 transition-colors"
                     >
                       Country
                       <ArrowUpDown className="h-3 w-3" />
@@ -182,7 +179,7 @@ export function ManufacturersTab({
                   <TableHead>
                     <button
                       onClick={() => handleSort("founded")}
-                      className="hover:text-primary flex items-center gap-1 transition-colors"
+                      className="hover:text-tint flex items-center gap-1 transition-colors"
                     >
                       Founded
                       <ArrowUpDown className="h-3 w-3" />
@@ -191,7 +188,7 @@ export function ManufacturersTab({
                   <TableHead>
                     <button
                       onClick={() => handleSort("equipmentCount")}
-                      className="hover:text-primary flex items-center gap-1 transition-colors"
+                      className="hover:text-tint flex items-center gap-1 transition-colors"
                     >
                       Equipment
                       <ArrowUpDown className="h-3 w-3" />
@@ -211,7 +208,7 @@ export function ManufacturersTab({
                       <TableCell className="font-medium">{manufacturer.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Globe className="text-muted-foreground h-3 w-3" />
+                          <Globe className="text-label-secondary h-3 w-3" />
                           {manufacturer.country}
                         </div>
                       </TableCell>
@@ -219,40 +216,36 @@ export function ManufacturersTab({
                         {specialties.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {specialties.slice(0, 3).map((spec) => (
-                              <Badge key={spec} variant="secondary" className="text-xs">
+                              <Badge key={spec} variant="secondary">
                                 {spec}
                               </Badge>
                             ))}
                             {specialties.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{specialties.length - 3}
-                              </Badge>
+                              <Badge variant="outline">+{specialties.length - 3}</Badge>
                             )}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm italic">None</span>
+                          <span className="text-label-secondary text-body italic">None</span>
                         )}
                       </TableCell>
                       <TableCell>
                         {manufacturer.founded ? (
-                          <span className="text-sm">{manufacturer.founded}</span>
+                          <span className="text-body">{manufacturer.founded}</span>
                         ) : (
-                          <span className="text-muted-foreground text-sm italic">N/A</span>
+                          <span className="text-label-secondary text-body italic">N/A</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Package className="text-muted-foreground h-3 w-3" />
-                          <span className="text-sm font-medium">{equipmentCount}</span>
+                          <Package className="text-label-secondary h-3 w-3" />
+                          <span className="text-body font-medium">{equipmentCount}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         {manufacturer.isActive ? (
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                            Active
-                          </span>
+                          <Badge variant="green">Active</Badge>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+                          <span className="bg-surface-secondary text-caption text-label inline-flex items-center rounded-full px-2 py-1">
                             Inactive
                           </span>
                         )}
@@ -290,25 +283,25 @@ export function ManufacturersTab({
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="bg-card border-border/50 rounded-lg border p-4">
-          <div className="text-foreground text-2xl font-bold">{normalizedManufacturers.length}</div>
-          <div className="text-muted-foreground text-sm">Total Manufacturers</div>
+        <div className="bg-surface border-separator rounded-control border p-4">
+          <div className="text-label text-title-1">{normalizedManufacturers.length}</div>
+          <div className="text-label-secondary text-body">Total Manufacturers</div>
         </div>
-        <div className="bg-card border-border/50 rounded-lg border p-4">
-          <div className="text-foreground text-2xl font-bold">
+        <div className="bg-surface border-separator rounded-control border p-4">
+          <div className="text-label text-title-1">
             {normalizedManufacturers.filter((m) => m.isActive).length}
           </div>
-          <div className="text-muted-foreground text-sm">Active</div>
+          <div className="text-label-secondary text-body">Active</div>
         </div>
-        <div className="bg-card border-border/50 rounded-lg border p-4">
-          <div className="text-foreground text-2xl font-bold">{countries.length}</div>
-          <div className="text-muted-foreground text-sm">Countries</div>
+        <div className="bg-surface border-separator rounded-control border p-4">
+          <div className="text-label text-title-1">{countries.length}</div>
+          <div className="text-label-secondary text-body">Countries</div>
         </div>
-        <div className="bg-card border-border/50 rounded-lg border p-4">
-          <div className="text-foreground text-2xl font-bold">
+        <div className="bg-surface border-separator rounded-control border p-4">
+          <div className="text-label text-title-1">
             {normalizedManufacturers.reduce((sum, m) => sum + (m.equipment?.length ?? 0), 0)}
           </div>
-          <div className="text-muted-foreground text-sm">Total Equipment</div>
+          <div className="text-label-secondary text-body">Total Equipment</div>
         </div>
       </div>
     </div>

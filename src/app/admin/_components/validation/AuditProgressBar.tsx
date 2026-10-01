@@ -18,9 +18,9 @@ export const AuditProgressBar = React.memo(function AuditProgressBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Running system checks...</span>
-        <span className="text-foreground font-medium tabular-nums">
+      <div className="text-body flex items-center justify-between">
+        <span className="text-label-secondary">Running system checks...</span>
+        <span className="text-label font-medium tabular-nums">
           {progress}/{total} categories
         </span>
       </div>

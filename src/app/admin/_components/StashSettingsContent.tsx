@@ -13,6 +13,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Folder as FolderHeart, FloppyDisk as Save } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function StashSettingsContent() {
   usePageTitle({ title: "Admin - Stash Settings" });
@@ -67,61 +68,50 @@ export function StashSettingsContent() {
 
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Stashed Articles
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Total Stashed Articles</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="text-label text-title-2 mt-1 tabular-nums">
               {stats?.totalStashes.toLocaleString() ?? 0}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Text Highlight Marks
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Text Highlight Marks</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            <p className="text-title-2 text-purple mt-1 tabular-nums">
               {stats?.totalHighlights.toLocaleString() ?? 0}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Cache Quota per User
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Cache Quota per User</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            <p className="text-title-2 text-green mt-1 tabular-nums">
               {stats?.avgCacheSizeKb ?? 143} KB
             </p>
           )}
-        </div>
+        </FacetCard>
       </div>
 
       {/* Settings Form */}
-      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 flex items-center justify-between border-b pb-4">
+      <FacetCard className="space-y-5 p-5">
+        <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
-            <h3 className="text-foreground text-xs font-bold">Stash Configuration Parameters</h3>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <h3 className="text-label text-caption">Stash Configuration Parameters</h3>
+            <p className="text-label-secondary text-footnote mt-0.5">
               Client storage policies and offline synchronization settings
             </p>
           </div>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saveMutation.isPending || configLoading}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
             <Save className="mr-1.5 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
           </Button>
@@ -129,12 +119,10 @@ export function StashSettingsContent() {
 
         <div className="space-y-3">
           {/* Max Items */}
-          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-3.5 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Max Stash Limit per Account
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Max Stash Limit per Account</Label>
+              <p className="text-label-secondary text-footnote">
                 Cap the maximum number of stashed wiki pages per user
               </p>
             </div>
@@ -142,17 +130,17 @@ export function StashSettingsContent() {
               type="number"
               value={settings.maxStashCount}
               onChange={(e) => handleToggle("maxStashCount", parseInt(e.target.value) || 10)}
-              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
               min={10}
               max={500}
             />
           </div>
 
           {/* Offline Sync */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
             <div>
-              <Label className="text-foreground text-xs font-bold">Offline Storage Syncing</Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Offline Storage Syncing</Label>
+              <p className="text-label-secondary text-footnote">
                 Cache stashed articles locally in browser IndexedDB storage
               </p>
             </div>
@@ -164,12 +152,10 @@ export function StashSettingsContent() {
           </div>
 
           {/* Auto Category */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Automatic Image Categorization
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Automatic Image Categorization</Label>
+              <p className="text-label-secondary text-footnote">
                 Group stashed images by orientation and type filters automatically
               </p>
             </div>
@@ -181,10 +167,10 @@ export function StashSettingsContent() {
           </div>
 
           {/* Highlight Tracker */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
             <div>
-              <Label className="text-foreground text-xs font-bold">Text Highlight Tracking</Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Text Highlight Tracking</Label>
+              <p className="text-label-secondary text-footnote">
                 Persist user annotations and text highlights across sessions
               </p>
             </div>
@@ -195,7 +181,7 @@ export function StashSettingsContent() {
             />
           </div>
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }

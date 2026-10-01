@@ -193,13 +193,13 @@ export function AlertRulesPanel() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
+                    <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : data?.thresholds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-muted-foreground py-8 text-center">
+                    <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
                       <SlidersHorizontal className="mx-auto mb-2 h-8 w-8 opacity-50" />
                       No alert rules configured
                     </TableCell>
@@ -215,11 +215,9 @@ export function AlertRulesPanel() {
                       >
                         <TableCell className="font-medium">{t.metricName}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {t.alertType}
-                          </Badge>
+                          <Badge variant="outline">{t.alertType}</Badge>
                         </TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-body">
                           {country?.name ?? t.countryId.slice(0, 8)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -233,14 +231,14 @@ export function AlertRulesPanel() {
                         </TableCell>
                         <TableCell className="text-center">
                           <div
-                            className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green-500" : "bg-gray-400"}`}
+                            className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green" : "bg-fill"}`}
                           />
                         </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="w-8 p-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm("Delete this threshold rule?")) {
@@ -287,11 +285,11 @@ export function AlertRulesPanel() {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-red-500">Critical Min</Label>
+                <Label className="text-red">Critical Min</Label>
                 <Input type="number" placeholder="Min" {...field("criticalMin")} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-red-500">Critical Max</Label>
+                <Label className="text-red">Critical Max</Label>
                 <Input type="number" placeholder="Max" {...field("criticalMax")} />
               </div>
               <div className="space-y-1.5">
@@ -307,11 +305,11 @@ export function AlertRulesPanel() {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-orange-500">High Min</Label>
+                <Label className="text-orange">High Min</Label>
                 <Input type="number" placeholder="Min" {...field("highMin")} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-orange-500">High Max</Label>
+                <Label className="text-orange">High Max</Label>
                 <Input type="number" placeholder="Max" {...field("highMax")} />
               </div>
               <div className="space-y-1.5">
@@ -327,11 +325,11 @@ export function AlertRulesPanel() {
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-yellow-500">Medium Min</Label>
+                <Label className="text-yellow">Medium Min</Label>
                 <Input type="number" placeholder="Min" {...field("mediumMin")} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-yellow-500">Medium Max</Label>
+                <Label className="text-yellow">Medium Max</Label>
                 <Input type="number" placeholder="Max" {...field("mediumMax")} />
               </div>
               <div className="space-y-1.5">

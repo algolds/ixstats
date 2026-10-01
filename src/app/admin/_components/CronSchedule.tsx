@@ -239,7 +239,7 @@ function CronSchedule({
       <div
         data-slot="cron-schedule"
         className={cn(
-          "border-destructive/30 bg-destructive/5 text-destructive rounded-xl border px-4 py-3 text-sm",
+          "border-destructive/30 bg-destructive/5 text-destructive rounded-row text-body border px-4 py-3",
           className
         )}
         {...props}
@@ -256,36 +256,31 @@ function CronSchedule({
   return (
     <div
       data-slot="cron-schedule"
-      className={cn(
-        "border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm",
-        className
-      )}
+      className={cn("border-separator bg-surface rounded-row overflow-hidden border", className)}
       {...props}
     >
       {/* Header */}
-      <div className="border-border/40 flex items-start justify-between gap-3 border-b px-4 py-3">
+      <div className="border-separator flex items-start justify-between gap-3 border-b px-4 py-3">
         <div className="flex flex-col gap-1">
-          {title && <h3 className="text-foreground text-sm font-semibold">{title}</h3>}
-          <p className="text-muted-foreground text-sm">{summary}</p>
+          {title && <h3 className="text-label text-headline">{title}</h3>}
+          <p className="text-label-secondary text-body">{summary}</p>
         </div>
-        <code className="bg-muted text-foreground shrink-0 rounded-md px-2.5 py-1 font-mono text-xs">
+        <code className="bg-fill-3 text-label rounded-control-sm text-footnote shrink-0 px-2.5 py-1 font-mono">
           {expression}
         </code>
       </div>
 
       {/* Field breakdown */}
-      <div className="divide-border/40 grid grid-cols-5 divide-x">
+      <div className="divide-separator grid grid-cols-5 divide-x">
         {fields.map((field, i) => {
           const [min, max] = FIELD_RANGES[i];
           const description = describeField(field, i, min, max);
 
           return (
             <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-1.5 px-2 py-3">
-              <Eyebrow>
-                {FIELD_NAMES[i]}
-              </Eyebrow>
-              <span className="text-foreground font-mono text-sm font-semibold">{field}</span>
-              <span className="text-muted-foreground text-center text-xs">{description}</span>
+              <Eyebrow>{FIELD_NAMES[i]}</Eyebrow>
+              <span className="text-label text-headline tabular-nums">{field}</span>
+              <span className="text-label-secondary text-footnote text-center">{description}</span>
             </div>
           );
         })}
@@ -293,17 +288,17 @@ function CronSchedule({
 
       {/* Next runs */}
       {nextRuns.length > 0 && (
-        <div className="border-border/40 border-t px-4 py-3">
-          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+        <div className="border-separator border-t px-4 py-3">
+          <p className="text-label-secondary text-eyebrow mb-2">
             Next {nextRuns.length === 1 ? "run" : `${nextRuns.length} runs`}
           </p>
           <ol className="flex flex-col gap-1">
             {nextRuns.map((run, i) => (
-              <li key={run.toISOString()} className="flex items-center gap-2 text-sm">
-                <span className="bg-muted text-muted-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+              <li key={run.toISOString()} className="text-body flex items-center gap-2">
+                <span className="bg-fill-3 text-label-secondary text-caption flex size-5 shrink-0 items-center justify-center rounded-full">
                   {i + 1}
                 </span>
-                <span className="text-foreground font-mono text-xs">{formatNextRun(run)}</span>
+                <span className="text-label text-footnote tabular-nums">{formatNextRun(run)}</span>
               </li>
             ))}
           </ol>

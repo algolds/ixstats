@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 
 import { api } from "~/trpc/react";
 import { StatsReport as BarChart3, Reports as PieChartIcon } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function DiplomaticScenariosAnalyticsTab() {
   const {
@@ -30,12 +31,12 @@ export function DiplomaticScenariosAnalyticsTab() {
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-24" />
           ))}
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80 rounded-2xl" />
-          <Skeleton className="h-80 rounded-2xl" />
+          <Skeleton className="rounded-card h-80" />
+          <Skeleton className="rounded-card h-80" />
         </div>
       </div>
     );
@@ -43,8 +44,8 @@ export function DiplomaticScenariosAnalyticsTab() {
 
   if (error || !usageStats || !completionStats) {
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center backdrop-blur-md">
-        <p className="text-xs text-red-400">Failed to load diplomatic scenarios analytics.</p>
+      <div className="rounded-card border-red/20 bg-red/5 border p-8 text-center">
+        <p className="text-footnote text-red">Failed to load diplomatic scenarios analytics.</p>
       </div>
     );
   }
@@ -69,83 +70,67 @@ export function DiplomaticScenariosAnalyticsTab() {
   }));
 
   const COLORS = [
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#f59e0b",
-    "#10b981",
-    "#6366f1",
-    "#f97316",
-    "#14b8a6",
+    "var(--color-chart-1)",
+    "var(--color-chart-4)",
+    "var(--color-chart-5)",
+    "var(--color-chart-2)",
+    "var(--color-chart-3)",
+    "var(--color-indigo)",
+    "var(--color-chart-2)",
+    "var(--color-chart-6)",
   ];
 
   return (
     <div className="space-y-5">
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Generations
-          </p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-            {usageStats.totalGenerations}
-          </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Active Scenarios
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
-            {completionStats.active}
-          </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Completion Rate
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
-            {usageStats.completionRate}%
-          </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Scenario Types
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
-            {usageStats.byType.length}
-          </p>
-        </div>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Total Generations</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{usageStats.totalGenerations}</p>
+        </FacetCard>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Active Scenarios</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">{completionStats.active}</p>
+        </FacetCard>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Completion Rate</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">{usageStats.completionRate}%</p>
+        </FacetCard>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Scenario Types</p>
+          <p className="text-title-2 text-purple mt-1 tabular-nums">{usageStats.byType.length}</p>
+        </FacetCard>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <h3 className="text-foreground flex items-center gap-2 text-xs font-bold">
-            <BarChart3 className="h-4 w-4 text-cyan-400" />
+        <FacetCard className="space-y-4 p-5">
+          <h3 className="text-label text-caption flex items-center gap-2">
+            <BarChart3 className="text-teal h-4 w-4" />
             Top Generated Scenarios by Type
           </h3>
           <div className="h-72">
             <ChartContainer config={{}} className="h-full w-full">
               <BarChart data={topScenariosData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                <XAxis type="number" stroke="currentColor" className="text-xs" />
+                <XAxis type="number" stroke="currentColor" className="text-footnote" />
                 <YAxis
                   dataKey="name"
                   type="category"
                   width={140}
                   stroke="currentColor"
-                  className="text-xs"
+                  className="text-footnote"
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="count" fill="var(--color-chart-1)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ChartContainer>
           </div>
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <h3 className="text-foreground flex items-center gap-2 text-xs font-bold">
-            <PieChartIcon className="h-4 w-4 text-purple-400" />
+        <FacetCard className="space-y-4 p-5">
+          <h3 className="text-label text-caption flex items-center gap-2">
+            <PieChartIcon className="text-purple h-4 w-4" />
             Distribution by Scenario Status
           </h3>
           <div className="h-72">
@@ -160,7 +145,7 @@ export function DiplomaticScenariosAnalyticsTab() {
                     `${entry.name ?? ""} (${((entry.percent ?? 0) * 100).toFixed(0)}%)`
                   }
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill="var(--color-chart-1)"
                   dataKey="count"
                 >
                   {statusChartData.map((_entry, index: number) => (
@@ -171,7 +156,7 @@ export function DiplomaticScenariosAnalyticsTab() {
               </PieChart>
             </ChartContainer>
           </div>
-        </div>
+        </FacetCard>
       </div>
     </div>
   );

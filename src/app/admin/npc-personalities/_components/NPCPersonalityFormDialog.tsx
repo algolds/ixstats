@@ -89,24 +89,22 @@ export function NPCPersonalityFormDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">Name *</label>
+              <label className="text-label text-caption mb-1.5 block">Name *</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g., Strategic Realist"
-                className="text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">
-                Archetype *
-              </label>
+              <label className="text-label text-caption mb-1.5 block">Archetype *</label>
               <Select
                 value={formData.archetype}
                 onValueChange={(val) => setFormData((prev) => ({ ...prev, archetype: val }))}
               >
-                <SelectTrigger className="text-xs">
+                <SelectTrigger size="sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,16 +120,14 @@ export function NPCPersonalityFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">
-                Historical Basis
-              </label>
+              <label className="text-label text-caption mb-1.5 block">Historical Basis</label>
               <Input
                 value={formData.historicalBasis || ""}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, historicalBasis: e.target.value }))
                 }
                 placeholder="e.g., Caphirian Realpolitik"
-                className="text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
 
@@ -143,16 +139,14 @@ export function NPCPersonalityFormDialog({
                   setFormData((prev) => ({ ...prev, isActive: !!checked }))
                 }
               />
-              <label htmlFor="is-active-check" className="text-foreground cursor-pointer text-xs">
+              <label htmlFor="is-active-check" className="text-label text-footnote cursor-pointer">
                 Active in AI Simulation
               </label>
             </div>
           </div>
 
           <div>
-            <label className="text-foreground mb-1.5 block text-xs font-medium">
-              Historical Context
-            </label>
+            <label className="text-label text-caption mb-1.5 block">Historical Context</label>
             <Textarea
               value={formData.historicalContext || ""}
               onChange={(e) =>
@@ -160,15 +154,13 @@ export function NPCPersonalityFormDialog({
               }
               placeholder="Background context and foreign policy rationale..."
               rows={2}
-              className="text-xs"
+              className="md:text-footnote"
             />
           </div>
 
           {/* Trait Sliders */}
-          <div className="border-border/40 space-y-3 border-t pt-4">
-            <h4 className="text-foreground text-xs font-semibold">
-              Psychological & Strategic Traits
-            </h4>
+          <div className="border-separator space-y-3 border-t pt-4">
+            <h4 className="text-label text-caption">Psychological & Strategic Traits</h4>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
@@ -185,11 +177,11 @@ export function NPCPersonalityFormDialog({
                 return (
                   <div
                     key={key}
-                    className="bg-card/40 border-border/40 space-y-1 rounded-xl border p-2.5"
+                    className="bg-surface border-separator rounded-row space-y-1 border p-2.5"
                   >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-foreground font-medium">{label}</span>
-                      <span className="text-muted-foreground font-mono">{val}%</span>
+                    <div className="text-footnote flex items-center justify-between">
+                      <span className="text-label font-medium">{label}</span>
+                      <span className="text-label-secondary tabular-nums">{val}%</span>
                     </div>
                     <Slider
                       value={[val]}
@@ -208,14 +200,10 @@ export function NPCPersonalityFormDialog({
         </div>
 
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose} className="text-xs active:scale-[0.98]">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onSave}
-            disabled={!formData.name.trim() || isPending}
-            className="text-xs active:scale-[0.98]"
-          >
+          <Button onClick={onSave} disabled={!formData.name.trim() || isPending}>
             {isPending ? "Saving..." : isEditing ? "Update Personality" : "Create Personality"}
           </Button>
         </DialogFooter>

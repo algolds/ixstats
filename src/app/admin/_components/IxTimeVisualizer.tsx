@@ -247,20 +247,20 @@ export function IxTimeVisualizer() {
   }
 
   return (
-    <Card className="facet-surface border-border/40">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-1.5 text-blue-500">
+          <CardTitle className="text-headline flex items-center gap-2">
+            <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-1.5">
               <Clock className="h-4 w-4" />
             </div>
             IxTime Visualization
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+            <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
               <Label
                 htmlFor="visualizer-advanced-mode"
-                className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
+                className="text-label-secondary text-subhead cursor-pointer select-none"
               >
                 Advanced
               </Label>
@@ -273,7 +273,7 @@ export function IxTimeVisualizer() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
+
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
               {autoRefresh ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
@@ -282,7 +282,7 @@ export function IxTimeVisualizer() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
+
               onClick={() => {
                 updateTimeData();
                 updateAccuracyStatus();
@@ -299,102 +299,97 @@ export function IxTimeVisualizer() {
         {/* === TOP SECTION: Current Time Overview === */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Current IxTime */}
-          <div className="rounded-lg border border-blue-500/10 bg-blue-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-blue-500/20">
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-blue-400">
+          <div className="rounded-control border-blue/10 bg-blue/5 hover:border-blue/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+            <div className="text-caption text-blue mb-1 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" /> Current IxTime
             </div>
-            <div className="font-mono text-base leading-tight font-bold break-all text-blue-500">
+            <div className="text-headline text-blue leading-tight break-all tabular-nums">
               {timeData.formattedTime}
             </div>
-            <div className="text-muted-foreground mt-1 text-xs font-medium">
+            <div className="text-label-secondary text-caption mt-1">
               Game Year {timeData.currentGameYear}
             </div>
           </div>
 
           {/* Multiplier + Rate */}
-          <div className="rounded-lg border border-green-500/10 bg-green-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-green-500/20">
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-green-400">
+          <div className="rounded-control border-green/10 bg-green/5 hover:border-green/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+            <div className="text-caption text-green mb-1 flex items-center gap-2">
               <Activity className="h-3.5 w-3.5" /> Speed & Rate
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-green-500">{timeData.multiplier}x</span>
+              <span className="text-headline text-green">{timeData.multiplier}x</span>
               {timeData.isPaused && (
-                <Badge variant="destructive" className="px-1.5 py-0 text-xs">
+                <Badge variant="destructive" className="px-1.5 py-0">
                   PAUSED
                 </Badge>
               )}
             </div>
-            <div className="text-muted-foreground mt-1 text-xs font-medium">
+            <div className="text-label-secondary text-caption mt-1">
               1 real day = {timeData.ixDaysPerRealDay} IxTime days
             </div>
           </div>
 
           {/* System Health */}
-          <div className="rounded-lg border border-purple-500/10 bg-purple-500/5 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-purple-500/20">
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-purple-400">
+          <div className="rounded-control border-purple/10 bg-purple/5 hover:border-purple/20 duration-fast border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+            <div className="text-caption text-purple mb-1 flex items-center gap-2">
               <Target className="h-3.5 w-3.5" /> System Health
             </div>
             <div className="flex items-center gap-2">
               {accuracyStatus.status === "excellent" ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="text-green h-4 w-4" />
               ) : accuracyStatus.status === "critical" ? (
-                <XCircle className="h-4 w-4 text-red-500" />
+                <XCircle className="text-red h-4 w-4" />
               ) : (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                <AlertTriangle className="text-yellow h-4 w-4" />
               )}
-              <Badge
-                variant={getStatusBadgeVariant(accuracyStatus.status)}
-                className="px-1.5 py-0 text-xs"
-              >
+              <Badge variant={getStatusBadgeVariant(accuracyStatus.status)} className="px-1.5 py-0">
                 {accuracyStatus.status.toUpperCase()}
               </Badge>
-              <span className="font-mono text-xs font-bold">
+              <span className="text-caption tabular-nums">
                 {accuracyStatus.accuracy.toFixed(4)}%
               </span>
             </div>
-            <div className="text-muted-foreground mt-1 text-xs leading-tight font-medium">
+            <div className="text-label-secondary text-caption mt-1 leading-tight">
               {accuracyStatus.message}
             </div>
           </div>
         </div>
 
         {/* Prediction row */}
-        <div className="border-border/20 bg-card/20 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border px-4 py-2.5 text-xs font-medium">
-          <div className="text-muted-foreground">
-            <span className="text-foreground font-semibold">In 24 real hours:</span>{" "}
-            <span className="font-mono">{timeData.predictedIxTime24h}</span>
+        <div className="border-separator bg-surface rounded-control text-caption flex flex-wrap items-center gap-x-6 gap-y-2 border px-4 py-2.5">
+          <div className="text-label-secondary">
+            <span className="text-label font-semibold">In 24 real hours:</span>{" "}
+            <span className="tabular-nums">{timeData.predictedIxTime24h}</span>
           </div>
-          <div className="text-muted-foreground">
-            <span className="text-foreground font-semibold">IRL equivalent:</span>{" "}
+          <div className="text-label-secondary">
+            <span className="text-label font-semibold">IRL equivalent:</span>{" "}
             <span>{timeData.equivalentRealDate}</span>
           </div>
         </div>
 
         {showAdvanced && (
-          <div className="animate-in fade-in slide-in-from-top-2 space-y-6 pt-1 duration-200">
-            <Separator className="border-border/20 my-1" />
+          <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
+            <Separator className="border-separator my-1" />
 
             {/* === MIDDLE SECTION: IRL <-> IxTime Converter === */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <ArrowRightLeft className="h-4 w-4 text-blue-500" />
-                <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                <ArrowRightLeft className="text-blue h-4 w-4" />
+                <span className="text-label-secondary text-eyebrow">
                   IRL / IxTime Date Converter
                 </span>
               </div>
 
-              <div className="border-border/20 bg-card/20 rounded-lg border p-4">
+              <div className="border-separator bg-surface rounded-control border p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   {/* Mode toggle */}
                   <div className="shrink-0 space-y-1.5">
-                    <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                      Direction
-                    </Label>
+                    <Label className="text-label-secondary text-subhead">Direction</Label>
                     <div className="flex gap-1">
                       <Button
                         variant={converterMode === "irl-to-ix" ? "default" : "outline"}
                         size="sm"
-                        className="h-8 px-3 text-xs font-semibold"
+
                         onClick={() => {
                           setConverterMode("irl-to-ix");
                           setConverterResult(null);
@@ -405,7 +400,7 @@ export function IxTimeVisualizer() {
                       <Button
                         variant={converterMode === "ix-to-irl" ? "default" : "outline"}
                         size="sm"
-                        className="h-8 px-3 text-xs font-semibold"
+
                         onClick={() => {
                           setConverterMode("ix-to-irl");
                           setConverterResult(null);
@@ -418,7 +413,7 @@ export function IxTimeVisualizer() {
 
                   {/* Date input */}
                   <div className="flex-1 space-y-1.5">
-                    <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                    <Label className="text-label-secondary text-subhead">
                       {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
                     </Label>
                     <Input
@@ -426,7 +421,7 @@ export function IxTimeVisualizer() {
                       value={converterInput}
                       onChange={(e) => setConverterInput(e.target.value)}
                       placeholder="YYYY-MM-DD"
-                      className="bg-card/20 border-border/30 focus:border-primary/50 h-8 text-xs focus:ring-0"
+                      className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                     />
                   </div>
 
@@ -434,7 +429,7 @@ export function IxTimeVisualizer() {
                     onClick={handleConvert}
                     disabled={!converterInput}
                     size="sm"
-                    className="h-8 shrink-0 text-xs font-semibold"
+                    className="shrink-0"
                   >
                     <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
                     Convert
@@ -442,29 +437,27 @@ export function IxTimeVisualizer() {
                 </div>
 
                 {converterResult && (
-                  <div className="animate-in fade-in slide-in-from-top-1 mt-3 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2 duration-150">
-                    <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  <div className="animate-in fade-in slide-in-from-top-1 rounded-control-sm border-blue/20 bg-blue/5 mt-3 border px-3 py-2 duration-150">
+                    <span className="text-label-secondary text-eyebrow">
                       {converterMode === "irl-to-ix" ? "IxTime Date:" : "IRL Date:"}
                     </span>
-                    <div className="font-mono text-sm font-semibold text-blue-500">
-                      {converterResult}
-                    </div>
+                    <div className="text-headline text-blue tabular-nums">{converterResult}</div>
                   </div>
                 )}
               </div>
 
               {/* Reference Milestone Table */}
-              <div className="border-border/20 bg-card/10 overflow-x-auto rounded-lg border">
-                <table className="w-full text-xs">
+              <div className="border-separator bg-surface rounded-control overflow-x-auto border">
+                <table className="text-footnote w-full tabular-nums">
                   <thead>
-                    <tr className="border-border/20 bg-muted/20 border-b">
-                      <th className="text-muted-foreground px-3 py-2 text-left text-xs font-semibold tracking-wider uppercase">
+                    <tr className="border-separator bg-fill-4 border-b">
+                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
                         Milestone
                       </th>
-                      <th className="text-muted-foreground px-3 py-2 text-left text-xs font-semibold tracking-wider uppercase">
+                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
                         IxTime Date
                       </th>
-                      <th className="text-muted-foreground px-3 py-2 text-left text-xs font-semibold tracking-wider uppercase">
+                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
                         IRL Date
                       </th>
                     </tr>
@@ -473,16 +466,16 @@ export function IxTimeVisualizer() {
                     {dynamicMilestones.map((m, i) => (
                       <tr
                         key={i}
-                        className={`border-border/10 hover:bg-muted/5 border-b transition-colors last:border-b-0 ${m.label === "Current" ? "bg-blue-500/5 font-semibold text-blue-400" : ""}`}
+                        className={`border-separator hover:bg-fill-4 border-b transition-colors last:border-b-0 ${m.label === "Current" ? "bg-blue/5 text-blue font-semibold" : ""}`}
                       >
                         <td className="px-3 py-2">
                           {m.label === "Current" && (
-                            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            <span className="bg-blue mr-1.5 inline-block h-1.5 w-1.5 rounded-full" />
                           )}
                           {m.label}
                         </td>
-                        <td className="px-3 py-2 font-mono">{m.ixDate}</td>
-                        <td className="px-3 py-2 font-mono">{m.realDate}</td>
+                        <td className="px-3 py-2 tabular-nums">{m.ixDate}</td>
+                        <td className="px-3 py-2 tabular-nums">{m.realDate}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -490,33 +483,33 @@ export function IxTimeVisualizer() {
               </div>
             </div>
 
-            <Separator className="border-border/20 my-1" />
+            <Separator className="border-separator my-1" />
 
             {/* === VISUAL TIMELINE === */}
             <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
-                <div className="rounded-md border border-blue-500/10 bg-blue-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/20">
-                  <div className="font-semibold text-blue-400">Real World Epoch</div>
-                  <div className="text-muted-foreground mt-0.5 font-mono">Oct 4, 2020</div>
+              <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                  <div className="text-blue font-semibold">Real World Epoch</div>
+                  <div className="text-label-secondary mt-0.5 tabular-nums">Oct 4, 2020</div>
                 </div>
-                <div className="rounded-md border border-green-500/10 bg-green-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-green-500/20">
-                  <div className="font-semibold text-green-400">4x → 2x Transition</div>
-                  <div className="text-muted-foreground mt-0.5 font-mono">Jul 27, 2025 IRL</div>
-                  <div className="text-muted-foreground font-mono">Jan 1, 2040 IX</div>
+                <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                  <div className="text-green font-semibold">4x → 2x Transition</div>
+                  <div className="text-label-secondary mt-0.5 tabular-nums">Jul 27, 2025 IRL</div>
+                  <div className="text-label-secondary tabular-nums">Jan 1, 2040 IX</div>
                 </div>
-                <div className="rounded-md border border-purple-500/10 bg-purple-500/5 px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-purple-500/20">
-                  <div className="font-semibold text-purple-400">Now</div>
-                  <div className="text-muted-foreground mt-0.5 font-semibold">
+                <div className="rounded-control-sm border-purple/10 bg-purple/5 hover:border-purple/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                  <div className="text-purple font-semibold">Now</div>
+                  <div className="text-label-secondary mt-0.5 font-semibold">
                     Year {timeData.currentGameYear}
                   </div>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="border-border/20 relative h-2.5 rounded-full border bg-gradient-to-r from-blue-500/10 via-green-500/10 to-purple-500/10 p-[1px]">
+              <div className="border-separator bg-blue/10 relative h-2.5 rounded-full border p-[1px]">
                 {/* Pre-pivot progress (blue) - always full since we're past the pivot */}
                 <div
-                  className="absolute top-[1px] left-[1px] h-[8px] rounded-l-full bg-gradient-to-r from-blue-600 to-blue-500"
+                  className="bg-blue absolute top-[1px] left-[1px] h-[8px] rounded-l-full"
                   style={{ width: "calc(50% - 1px)" }}
                 />
                 {/* Post-pivot progress (green) */}
@@ -530,7 +523,7 @@ export function IxTimeVisualizer() {
                     const pct = Math.min(50, (realElapsed / fiveYearsMs) * 50);
                     return (
                       <div
-                        className="absolute top-[1px] left-1/2 h-[8px] bg-gradient-to-r from-green-500 to-purple-500"
+                        className="bg-green absolute top-[1px] left-1/2 h-[8px]"
                         style={{ width: `calc(${pct}% - 1px)`, borderRadius: "0 9999px 9999px 0" }}
                       />
                     );
@@ -540,50 +533,48 @@ export function IxTimeVisualizer() {
               </div>
             </div>
 
-            <Separator className="border-border/20 my-1" />
+            <Separator className="border-separator my-1" />
 
             {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
             <div className="space-y-4">
               <button
                 type="button"
                 onClick={() => setShowDiagnostics(!showDiagnostics)}
-                className="hover:text-foreground group flex w-full items-center justify-between text-left transition-colors"
+                className="hover:text-label group flex w-full items-center justify-between text-left transition-colors"
               >
-                <span className="text-muted-foreground group-hover:text-foreground text-xs font-bold tracking-wider uppercase">
+                <span className="text-label-secondary group-hover:text-label text-eyebrow">
                   Diagnostics & Testing
                 </span>
                 {showDiagnostics ? (
-                  <ChevronUp className="text-muted-foreground h-4 w-4" />
+                  <ChevronUp className="text-label-secondary h-4 w-4" />
                 ) : (
-                  <ChevronDown className="text-muted-foreground h-4 w-4" />
+                  <ChevronDown className="text-label-secondary h-4 w-4" />
                 )}
               </button>
 
               {showDiagnostics && (
-                <div className="animate-in fade-in slide-in-from-top-2 mt-2 grid grid-cols-1 gap-6 duration-200 md:grid-cols-3">
+                <div className="animate-in fade-in slide-in-from-top-2 duration-fast mt-2 grid grid-cols-1 gap-6 md:grid-cols-3">
                   {/* Accuracy Section */}
-                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                  <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
-                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
-                        <Activity className="h-3.5 w-3.5 text-blue-400" /> Accuracy Verification
+                      <div className="text-label-secondary text-caption flex items-center gap-2">
+                        <Activity className="text-blue h-3.5 w-3.5" /> Accuracy Verification
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-mono text-xl font-bold">
+                          <div className="text-title-2 tabular-nums">
                             {accuracyStatus.accuracy.toFixed(6)}%
                           </div>
-                          <div className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                            Target: ≥99.9998%
-                          </div>
+                          <div className="text-label-secondary text-eyebrow">Target: ≥99.9998%</div>
                         </div>
                         <div className="text-right">
                           <Badge
                             variant={getStatusBadgeVariant(accuracyStatus.status)}
-                            className="px-1.5 py-0 text-xs"
+                            className="px-1.5 py-0"
                           >
                             {accuracyStatus.status.toUpperCase()}
                           </Badge>
-                          <div className="text-muted-foreground mt-1 text-xs font-bold">
+                          <div className="text-label-secondary text-caption mt-1">
                             {accuracyStatus.isAccurate ? "PASSING" : "FAILING"}
                           </div>
                         </div>
@@ -592,19 +583,19 @@ export function IxTimeVisualizer() {
                     <div className="pt-2">
                       <Progress
                         value={Math.min(100, accuracyStatus.accuracy)}
-                        className="bg-muted/30 h-2"
+                        className="bg-fill-4 h-2"
                       />
                     </div>
                   </div>
 
                   {/* Sync Status Section */}
-                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                  <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
-                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
-                        <RefreshCw className="h-3.5 w-3.5 text-green-400" /> Sync Targets
+                      <div className="text-label-secondary text-caption flex items-center gap-2">
+                        <RefreshCw className="text-green h-3.5 w-3.5" /> Sync Targets
                       </div>
                       {syncStatuses.length === 0 ? (
-                        <div className="text-muted-foreground flex flex-col items-center justify-center py-6 text-center text-xs">
+                        <div className="text-label-secondary text-footnote flex flex-col items-center justify-center py-6 text-center">
                           <Timer className="mb-1.5 h-5 w-5 opacity-40" />
                           <span>No sync targets configured</span>
                         </div>
@@ -613,28 +604,28 @@ export function IxTimeVisualizer() {
                           {syncStatuses.map((status) => (
                             <div
                               key={status.target}
-                              className="border-border/10 bg-muted/5 flex items-center justify-between rounded-md border px-2.5 py-1.5 text-xs"
+                              className="border-separator bg-fill-4 rounded-control-sm text-footnote flex items-center justify-between border px-2.5 py-1.5"
                             >
                               <div className="flex min-w-0 items-center gap-1.5">
                                 {status.status === "synced" ? (
-                                  <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                                  <CheckCircle className="text-green h-3.5 w-3.5 shrink-0" />
                                 ) : status.status === "drift" ? (
-                                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                                  <AlertTriangle className="text-yellow h-3.5 w-3.5 shrink-0" />
                                 ) : (
-                                  <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                                  <XCircle className="text-red h-3.5 w-3.5 shrink-0" />
                                 )}
                                 <span className="truncate font-semibold">{status.target}</span>
                               </div>
-                              <div className="ml-2 shrink-0 text-right font-mono text-xs font-semibold">
+                              <div className="text-caption ml-2 shrink-0 text-right font-mono">
                                 <span
                                   className={
-                                    status.drift > 50 ? "text-yellow-500" : "text-muted-foreground"
+                                    status.drift > 50 ? "text-yellow" : "text-label-secondary"
                                   }
                                 >
                                   {status.drift > 0 ? "+" : ""}
                                   {status.drift}ms
                                 </span>
-                                <span className="ml-1.5 text-blue-400">
+                                <span className="text-blue ml-1.5">
                                   {status.accuracy.toFixed(1)}%
                                 </span>
                               </div>
@@ -648,7 +639,7 @@ export function IxTimeVisualizer() {
                         onClick={() => syncManager.forceSyncAll()}
                         variant="outline"
                         size="sm"
-                        className="h-8 w-full text-xs font-semibold"
+                        className="w-full"
                       >
                         <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                         Force Sync All
@@ -657,10 +648,10 @@ export function IxTimeVisualizer() {
                   </div>
 
                   {/* Simulation Section */}
-                  <div className="border-border/20 bg-card/10 flex flex-col justify-between space-y-3 rounded-lg border p-4">
+                  <div className="border-separator bg-surface rounded-control flex flex-col justify-between space-y-3 border p-4">
                     <div className="space-y-3">
-                      <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
-                        <Zap className="h-3.5 w-3.5 text-purple-400" /> Test Suite
+                      <div className="text-label-secondary text-caption flex items-center gap-2">
+                        <Zap className="text-purple h-3.5 w-3.5" /> Test Suite
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -668,7 +659,6 @@ export function IxTimeVisualizer() {
                           disabled={isRunningSimulation}
                           variant="outline"
                           size="sm"
-                          className="h-8 text-xs font-semibold"
                         >
                           {isRunningSimulation ? (
                             <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -681,7 +671,6 @@ export function IxTimeVisualizer() {
                           onClick={() => syncManager.runComprehensiveSync()}
                           variant="outline"
                           size="sm"
-                          className="h-8 text-xs font-semibold"
                         >
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                           Sync Verify
@@ -689,43 +678,35 @@ export function IxTimeVisualizer() {
                       </div>
 
                       {simulationResults && (
-                        <div className="border-border/10 bg-card/30 animate-in fade-in slide-in-from-top-1 rounded-lg border p-2.5 duration-150">
-                          <div className="grid grid-cols-4 gap-1 text-center text-xs font-semibold">
+                        <div className="border-separator bg-surface animate-in fade-in slide-in-from-top-1 rounded-control border p-2.5 duration-150">
+                          <div className="text-caption grid grid-cols-4 gap-1 text-center">
                             <div>
-                              <div className="text-sm font-bold text-green-500">
+                              <div className="text-headline text-green">
                                 {simulationResults.passedTests}
                               </div>
-                              <Eyebrow className="block">
-                                Passed
-                              </Eyebrow>
+                              <Eyebrow className="block">Passed</Eyebrow>
                             </div>
                             <div>
-                              <div className="text-sm font-bold text-red-500">
+                              <div className="text-headline text-red">
                                 {simulationResults.failedTests}
                               </div>
-                              <Eyebrow className="block">
-                                Failed
-                              </Eyebrow>
+                              <Eyebrow className="block">Failed</Eyebrow>
                             </div>
                             <div>
-                              <div className="font-mono text-sm font-bold">
+                              <div className="text-headline tabular-nums">
                                 {simulationResults.overallAccuracy.toFixed(1)}%
                               </div>
-                              <Eyebrow className="block">
-                                Accuracy
-                              </Eyebrow>
+                              <Eyebrow className="block">Accuracy</Eyebrow>
                             </div>
                             <div>
-                              <div className="font-mono text-sm font-bold">
+                              <div className="text-headline tabular-nums">
                                 {simulationResults.averageExecutionTime.toFixed(0)}ms
                               </div>
-                              <Eyebrow className="block">
-                                Avg Time
-                              </Eyebrow>
+                              <Eyebrow className="block">Avg Time</Eyebrow>
                             </div>
                           </div>
                           {simulationResults.criticalIssues.length > 0 && (
-                            <div className="mt-2 max-h-[60px] overflow-y-auto rounded border border-red-500/10 bg-red-500/5 p-1.5 text-xs font-medium text-red-400">
+                            <div className="rounded-control-sm border-red/10 bg-red/5 text-caption text-red mt-2 max-h-[60px] overflow-y-auto border p-1.5">
                               {simulationResults.criticalIssues.map((issue, idx) => (
                                 <div key={idx} className="flex items-start gap-1">
                                   <XCircle className="mt-0.5 h-3 w-3 shrink-0" />

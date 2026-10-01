@@ -60,15 +60,15 @@ export function SportsLabsInspector({
   const HeaderIcon = currentHeader.icon;
 
   return (
-    <Card className={cn("facet-card bg-card/60 flex h-full flex-col backdrop-blur-md", className)}>
-      <CardHeader className="border-border/40 border-b pb-3">
+    <Card className={cn("bg-surface flex h-full flex-col", className)}>
+      <CardHeader className="border-separator border-b pb-3">
         <div className="flex items-center gap-2">
-          <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
+          <div className="bg-tint-fill text-tint rounded-control flex h-8 w-8 items-center justify-center">
             <HeaderIcon className="h-4 w-4" />
           </div>
           <div>
-            <CardTitle className="text-sm font-semibold">{currentHeader.title}</CardTitle>
-            <CardDescription className="text-xs">{currentHeader.subtitle}</CardDescription>
+            <CardTitle className="text-headline">{currentHeader.title}</CardTitle>
+            <CardDescription className="text-footnote">{currentHeader.subtitle}</CardDescription>
           </div>
         </div>
       </CardHeader>

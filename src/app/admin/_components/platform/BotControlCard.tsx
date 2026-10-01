@@ -2,6 +2,7 @@
 // src/app/admin/_components/platform/BotControlCard.tsx
 // Redesigned with PM2 process grid, role permits, live logs, and command testing console.
 
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useEffect } from "react";
 import {
   Cpu as Bot,
@@ -34,6 +35,7 @@ import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 import { cn } from "~/lib/utils";
+import { fieldStyles } from "~/components/ui/input";
 
 interface BotControlCardProps {
   botStatus: AdminPageBotStatusView | undefined;
@@ -213,26 +215,27 @@ export function BotControlCard({
         <div key={opt.name} className="space-y-1.5">
           <Label
             htmlFor={`opt-${opt.name}`}
-            className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
+            className="text-label-secondary text-subhead flex items-center gap-1"
           >
-            {opt.name} {isRequired && <span className="text-red-500">*</span>}
+            {opt.name} {isRequired && <span className="text-red">*</span>}
           </Label>
           <select
             id={`opt-${opt.name}`}
             value={value}
             onChange={(e) => setOptionValues((prev) => ({ ...prev, [opt.name]: e.target.value }))}
-            className="bg-background border-border/40 text-foreground focus:border-primary/50 w-full rounded-xl border px-3 py-2 text-xs focus:outline-none"
+            className={cn(
+              fieldStyles,
+              "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+            )}
           >
-            <option value="" className="bg-background text-foreground">
-              Select option...
-            </option>
+            <option value="">Select option...</option>
             {opt.choices.map((c: any) => (
-              <option key={c.value} value={c.value} className="bg-background text-foreground">
+              <option key={c.value} value={c.value}>
                 {c.name}
               </option>
             ))}
           </select>
-          <span className="text-muted-foreground block text-xs leading-tight font-medium">
+          <span className="text-label-secondary text-caption block leading-tight">
             {opt.description}
           </span>
         </div>
@@ -244,16 +247,16 @@ export function BotControlCard({
       return (
         <div
           key={opt.name}
-          className="border-border/10 bg-card/10 flex items-center justify-between rounded-lg border px-3 py-2"
+          className="border-separator bg-surface rounded-control flex items-center justify-between border px-3 py-2"
         >
           <div className="space-y-0.5">
             <Label
               htmlFor={`opt-${opt.name}`}
-              className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
+              className="text-label-secondary text-subhead flex items-center gap-1"
             >
-              {opt.name} {isRequired && <span className="text-red-500">*</span>}
+              {opt.name} {isRequired && <span className="text-red">*</span>}
             </Label>
-            <span className="text-muted-foreground block text-xs leading-tight font-medium">
+            <span className="text-label-secondary text-caption block leading-tight">
               {opt.description}
             </span>
           </div>
@@ -274,9 +277,9 @@ export function BotControlCard({
       <div key={opt.name} className="space-y-1.5">
         <Label
           htmlFor={`opt-${opt.name}`}
-          className="text-muted-foreground flex items-center gap-1 text-xs font-bold tracking-wider uppercase"
+          className="text-label-secondary text-subhead flex items-center gap-1"
         >
-          {opt.name} {isRequired && <span className="text-red-500">*</span>}
+          {opt.name} {isRequired && <span className="text-red">*</span>}
         </Label>
         <Input
           id={`opt-${opt.name}`}
@@ -289,9 +292,9 @@ export function BotControlCard({
             }))
           }
           placeholder={`Enter ${opt.name}...`}
-          className="bg-card/20 border-border/30 focus:border-primary/50 h-9 text-xs focus:ring-0"
+          className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
         />
-        <span className="text-muted-foreground block text-xs leading-tight font-medium">
+        <span className="text-label-secondary text-caption block leading-tight">
           {opt.description}
         </span>
       </div>
@@ -301,33 +304,33 @@ export function BotControlCard({
   const isAvailable = botStatus?.botHealth?.available;
 
   return (
-    <Card className="facet-surface border-border/40 flex h-full flex-col">
+    <Card className="flex h-full flex-col">
       <CardHeader className="shrink-0 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-1.5 text-green-500">
+            <CardTitle className="text-headline flex items-center gap-2">
+              <div className="rounded-control border-green/20 bg-green/10 text-green border p-1.5">
                 <Bot className="h-4 w-4" />
               </div>
               Discord Bot Controller
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-footnote">
               Bot daemon processes, live command testing console, guild roles, and runtime logs
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             {isProcFetching && (
-              <Loader2 className="text-muted-foreground h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="text-label-secondary h-3.5 w-3.5 animate-spin" />
             )}
             {isAvailable ? (
-              <Badge className="border-green-500/20 bg-green-500/10 text-xs font-semibold tracking-wide text-green-500 uppercase dark:text-green-400">
-                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-green-500" />
+              <Badge variant="green" className="text-eyebrow">
+                <span className="bg-green mr-1.5 h-1.5 w-1.5 rounded-full" />
                 Daemon Active
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="border-border/30 bg-muted/20 text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+                className="border-separator bg-fill-4 text-label-secondary text-eyebrow"
               >
                 Offline
               </Badge>
@@ -335,39 +338,27 @@ export function BotControlCard({
           </div>
         </div>
 
-        {/* Custom Tab Switcher */}
-        <div className="border-border/20 mt-4 flex gap-1 border-b">
-          {[
-            { id: "processes", label: "Process Status", icon: Sliders },
-            { id: "commands", label: "Simulator", icon: FileCode },
-            { id: "roles", label: "Permissions", icon: Shield },
-            { id: "logs", label: "Live Logs", icon: Terminal },
-          ].map((tab) => {
-            const TabIcon = tab.icon;
-            const active = activeSubTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveSubTab(tab.id as any)}
-                className={cn(
-                  "-mb-[2px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                  active
-                    ? "border-primary text-foreground bg-primary/5 rounded-t-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/5 border-transparent"
-                )}
-              >
-                <TabIcon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Section switcher */}
+        <SegmentedControl
+          asTabs
+          size="sm"
+          className="mt-4"
+          aria-label="Bot console sections"
+          value={activeSubTab}
+          onValueChange={(tab) => setActiveSubTab(tab as any)}
+          options={[
+            { value: "processes", label: "Process Status", icon: <Sliders /> },
+            { value: "commands", label: "Simulator", icon: <FileCode /> },
+            { value: "roles", label: "Permissions", icon: <Shield /> },
+            { value: "logs", label: "Live Logs", icon: <Terminal /> },
+          ]}
+        />
       </CardHeader>
 
       <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
         {/* --- PROCESS STATUS TAB --- */}
         {activeSubTab === "processes" && (
-          <div className="animate-in fade-in space-y-4 pt-1 duration-200">
+          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {/* PM2 Processes Grid */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {(
@@ -394,20 +385,20 @@ export function BotControlCard({
                 return (
                   <div
                     key={proc.name}
-                    className="border-border/20 bg-card/15 hover:border-border/30 flex flex-col justify-between space-y-3 rounded-lg border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                    className="border-separator bg-surface hover:border-separator rounded-control flex flex-col justify-between space-y-3 border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-foreground max-w-[150px] truncate font-mono text-xs font-bold">
+                        <span className="text-label text-caption max-w-[150px] truncate font-mono">
                           {proc.name}
                         </span>
                         <Badge
                           variant={isOnline ? "default" : "destructive"}
                           className={cn(
-                            "px-1.5 py-0 text-xs font-bold tracking-wider uppercase",
+                            "text-eyebrow px-1.5 py-0",
                             isOnline
-                              ? "border-green-500/20 bg-green-500/10 text-green-500"
-                              : "border-red-500/20 bg-red-500/10 text-red-500"
+                              ? "border-green/20 bg-green/10 text-green"
+                              : "border-red/20 bg-red/10 text-red"
                           )}
                         >
                           {proc.status}
@@ -415,39 +406,39 @@ export function BotControlCard({
                       </div>
 
                       {/* Process Metrics Grid */}
-                      <div className="text-muted-foreground border-border/10 mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-2.5 text-xs font-medium">
+                      <div className="text-label-secondary border-separator text-caption mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-2.5">
                         <div className="flex items-center gap-1.5">
-                          <Activity className="text-muted-foreground h-3 w-3" />
+                          <Activity className="text-label-secondary h-3 w-3" />
                           <span>
                             CPU:{" "}
-                            <span className="text-foreground font-mono font-semibold">
+                            <span className="text-label font-semibold tabular-nums">
                               {proc.cpu}%
                             </span>
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Cpu className="text-muted-foreground h-3 w-3" />
+                          <Cpu className="text-label-secondary h-3 w-3" />
                           <span>
                             RAM:{" "}
-                            <span className="text-foreground font-mono font-semibold">
+                            <span className="text-label font-semibold tabular-nums">
                               {formatMemory(proc.memory)}
                             </span>
                           </span>
                         </div>
                         <div className="col-span-2 flex items-center gap-1.5">
-                          <Layers className="text-muted-foreground h-3 w-3" />
+                          <Layers className="text-label-secondary h-3 w-3" />
                           <span>
                             Uptime:{" "}
-                            <span className="text-foreground font-mono font-semibold">
+                            <span className="text-label font-semibold tabular-nums">
                               {formatUptime(proc.uptime)}
                             </span>
                           </span>
                         </div>
-                        <div className="col-span-2 flex items-center gap-1.5 text-xs">
-                          <RotateCcw className="text-muted-foreground h-3 w-3" />
+                        <div className="text-footnote col-span-2 flex items-center gap-1.5">
+                          <RotateCcw className="text-label-secondary h-3 w-3" />
                           <span>
                             Restarts:{" "}
-                            <span className="text-foreground font-mono font-semibold">
+                            <span className="text-label font-semibold tabular-nums">
                               {proc.restarts}
                             </span>
                           </span>
@@ -456,18 +447,18 @@ export function BotControlCard({
                     </div>
 
                     {/* PM2 Controls */}
-                    <div className="border-border/10 mt-3 grid grid-cols-3 gap-1.5 border-t pt-2.5">
+                    <div className="border-separator mt-3 grid grid-cols-3 gap-1.5 border-t pt-2.5">
                       <Button
                         variant="outline"
                         size="sm"
                         disabled={isOnline || actionPending[`${proc.name}-start`]}
                         onClick={() => handleControlProcess(proc.name as any, "start")}
-                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
+                        className="flex items-center justify-center p-0"
                       >
                         {actionPending[`${proc.name}-start`] ? (
-                          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+                          <Loader2 className="text-label-secondary h-3 w-3 animate-spin" />
                         ) : (
-                          <Play className="mr-1 h-3 w-3 text-green-500" />
+                          <Play className="text-green mr-1 h-3 w-3" />
                         )}
                         Start
                       </Button>
@@ -476,12 +467,12 @@ export function BotControlCard({
                         size="sm"
                         disabled={!isOnline || actionPending[`${proc.name}-stop`]}
                         onClick={() => handleControlProcess(proc.name as any, "stop")}
-                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
+                        className="flex items-center justify-center p-0"
                       >
                         {actionPending[`${proc.name}-stop`] ? (
-                          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+                          <Loader2 className="text-label-secondary h-3 w-3 animate-spin" />
                         ) : (
-                          <Pause className="mr-1 h-3 w-3 text-red-500" />
+                          <Pause className="text-red mr-1 h-3 w-3" />
                         )}
                         Stop
                       </Button>
@@ -490,12 +481,12 @@ export function BotControlCard({
                         size="sm"
                         disabled={actionPending[`${proc.name}-restart`]}
                         onClick={() => handleControlProcess(proc.name as any, "restart")}
-                        className="flex h-7 items-center justify-center p-0 text-xs font-semibold"
+                        className="flex items-center justify-center p-0"
                       >
                         {actionPending[`${proc.name}-restart`] ? (
-                          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+                          <Loader2 className="text-label-secondary h-3 w-3 animate-spin" />
                         ) : (
-                          <RotateCcw className="mr-1 h-3 w-3 text-blue-500" />
+                          <RotateCcw className="text-blue mr-1 h-3 w-3" />
                         )}
                         Restart
                       </Button>
@@ -506,11 +497,11 @@ export function BotControlCard({
             </div>
 
             {/* Existing Overrides & Sync Section */}
-            <div className="border-border/20 bg-card/5 space-y-4 rounded-lg border p-3">
+            <div className="border-separator bg-surface rounded-control space-y-4 border p-3">
               {botStatus?.botStatus?.hasTimeOverride && (
-                <Alert className="flex items-start gap-2.5 rounded-lg border-amber-500/20 bg-amber-500/5 py-2.5">
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <AlertDescription className="text-xs leading-relaxed text-amber-600 dark:text-amber-400">
+                <Alert className="rounded-control border-yellow/20 bg-yellow/5 flex items-start gap-2.5 py-2.5">
+                  <AlertTriangle className="text-yellow mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <AlertDescription className="text-footnote text-yellow leading-relaxed">
                     Bot has an active time override. Use <strong>Clear Overrides</strong> to return
                     to natural time progression.
                   </AlertDescription>
@@ -518,20 +509,16 @@ export function BotControlCard({
               )}
 
               {/* Grid matching details */}
-              <div className="border-border/10 grid grid-cols-2 gap-3 border-b pb-3 text-xs font-medium">
+              <div className="border-separator text-caption grid grid-cols-2 gap-3 border-b pb-3">
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
-                    Health Status
-                  </span>
-                  <span className="text-foreground block truncate font-semibold">
+                  <span className="text-label-secondary text-eyebrow block">Health Status</span>
+                  <span className="text-label block truncate font-semibold">
                     {botStatus?.botHealth?.message || "No report available"}
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
-                    Sync Time
-                  </span>
-                  <span className="text-foreground block font-semibold">
+                  <span className="text-label-secondary text-eyebrow block">Sync Time</span>
+                  <span className="text-label block font-semibold">
                     {lastBotSync ? lastBotSync.toLocaleTimeString() : "Never synced"}
                   </span>
                 </div>
@@ -539,16 +526,15 @@ export function BotControlCard({
 
               {/* Execution Overrides */}
               <div className="space-y-2">
-                <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
+                <span className="text-label-secondary text-eyebrow block">
                   Execution Override Controls
                 </span>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
-                    variant="outline"
+                    variant="destructive"
                     size="sm"
                     onClick={onPauseBot}
                     disabled={pausePending || !isAvailable}
-                    className="h-8 border-red-500/20 bg-red-500/5 text-xs font-semibold text-red-500 hover:border-red-500/30 hover:bg-red-500/10"
                   >
                     {pausePending ? (
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -558,11 +544,10 @@ export function BotControlCard({
                     Pause
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="tinted"
                     size="sm"
                     onClick={onResumeBot}
                     disabled={resumePending || !isAvailable}
-                    className="h-8 border-emerald-500/20 bg-emerald-500/5 text-xs font-semibold text-emerald-500 hover:border-emerald-500/30 hover:bg-emerald-500/10"
                   >
                     {resumePending ? (
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -576,7 +561,6 @@ export function BotControlCard({
                     size="sm"
                     onClick={onClearOverrides}
                     disabled={clearPending || !isAvailable}
-                    className="border-border/30 bg-muted/20 text-foreground hover:bg-muted/30 h-8 text-xs font-semibold"
                   >
                     {clearPending ? (
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -590,16 +574,15 @@ export function BotControlCard({
 
               {/* Synchronization actions */}
               <div className="space-y-2">
-                <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
+                <span className="text-label-secondary text-eyebrow block">
                   Time Synchronization
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    variant="outline"
+                    variant="tinted"
                     size="sm"
                     onClick={onSyncFromBot}
                     disabled={autoSyncPending || !isAvailable}
-                    className="h-8 border-blue-500/20 bg-blue-500/5 text-xs font-semibold text-blue-500 hover:border-blue-500/30 hover:bg-blue-500/10"
                   >
                     {autoSyncPending ? (
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -613,7 +596,6 @@ export function BotControlCard({
                     size="sm"
                     onClick={() => onSyncEpoch && onSyncEpoch(Date.now())}
                     disabled={syncEpochPending}
-                    className="h-8 border-orange-500/20 bg-orange-500/5 text-xs font-semibold text-orange-500 hover:border-orange-500/30 hover:bg-orange-500/10"
                   >
                     {syncEpochPending ? (
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -630,25 +612,25 @@ export function BotControlCard({
 
         {/* --- COMMAND SIMULATOR TAB --- */}
         {activeSubTab === "commands" && (
-          <div className="animate-in fade-in space-y-4 pt-1 duration-200">
+          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {isCommandsLoading ? (
-              <div className="text-muted-foreground flex items-center justify-center py-12 text-xs">
-                <Loader2 className="text-primary mr-2 h-4 w-4 animate-spin" />
+              <div className="text-label-secondary text-footnote flex items-center justify-center py-12">
+                <Loader2 className="text-tint mr-2 h-4 w-4 animate-spin" />
                 Fetching slash command registry...
               </div>
             ) : !commands || commands.length === 0 ? (
-              <div className="text-muted-foreground border-border/10 bg-card/5 flex flex-col items-center justify-center rounded-lg border p-6 py-12 text-center text-xs">
-                <Info className="text-muted-foreground/60 mb-2 h-6 w-6" />
+              <div className="text-label-secondary border-separator bg-surface rounded-control text-footnote flex flex-col items-center justify-center border p-6 py-12 text-center">
+                <Info className="text-label-secondary mb-2 h-6 w-6" />
                 <span>No commands returned by Discord bot.</span>
-                <span className="mt-1 text-xs">
+                <span className="text-footnote mt-1">
                   Make sure the ixwiki-discord-bot is online and running.
                 </span>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
                 {/* Commands list */}
-                <div className="border-border/20 bg-card/10 max-h-[450px] space-y-1 overflow-y-auto rounded-lg border p-2 lg:col-span-2">
-                  <span className="text-muted-foreground border-border/10 block border-b px-2 pb-1.5 text-xs font-bold tracking-wider uppercase">
+                <div className="border-separator bg-surface rounded-control max-h-[450px] space-y-1 overflow-y-auto border p-2 lg:col-span-2">
+                  <span className="text-label-secondary border-separator text-eyebrow block border-b px-2 pb-1.5">
                     Commands Registry
                   </span>
                   {commands.map((cmd: any) => (
@@ -656,14 +638,14 @@ export function BotControlCard({
                       key={cmd.name}
                       onClick={() => setSelectedCommandName(cmd.name)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-xs font-semibold transition-colors",
+                        "rounded-control-sm text-caption flex w-full items-center justify-between px-2.5 py-2 text-left transition-colors",
                         selectedCommandName === cmd.name
-                          ? "bg-primary/10 text-primary border-primary/20 border"
-                          : "text-muted-foreground hover:bg-muted/5 hover:text-foreground border border-transparent"
+                          ? "bg-tint-fill text-tint border-tint/20 border"
+                          : "text-label-secondary hover:bg-fill-4 hover:text-label border border-transparent"
                       )}
                     >
                       <span className="font-mono">/{cmd.name}</span>
-                      <ChevronRight className="text-muted-foreground h-3 w-3 opacity-60" />
+                      <ChevronRight className="text-label-secondary h-3 w-3 opacity-60" />
                     </button>
                   ))}
                 </div>
@@ -671,29 +653,29 @@ export function BotControlCard({
                 {/* Simulation controls & Preview mockup */}
                 <div className="space-y-4 lg:col-span-3">
                   {selectedCommand ? (
-                    <div className="border-border/20 bg-card/5 space-y-4 rounded-lg border p-4">
+                    <div className="border-separator bg-surface rounded-control space-y-4 border p-4">
                       {/* Description header */}
                       <div className="space-y-1">
-                        <div className="text-foreground font-mono text-sm font-bold">
+                        <div className="text-label text-headline font-mono">
                           /{selectedCommand.name}
                         </div>
-                        <p className="text-muted-foreground text-xs leading-relaxed">
+                        <p className="text-label-secondary text-footnote leading-relaxed">
                           {selectedCommand.description}
                         </p>
                       </div>
 
-                      <Separator className="border-border/10" />
+                      <Separator className="border-separator" />
 
                       {/* Mock Author settings */}
-                      <div className="bg-muted/10 border-border/10 space-y-3 rounded-lg border p-3">
-                        <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
+                      <div className="bg-fill-4 border-separator rounded-control space-y-3 border p-3">
+                        <span className="text-label-secondary text-eyebrow block">
                           Mock User Settings
                         </span>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <Label
                               htmlFor="mock-user"
-                              className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
+                              className="text-label-secondary text-subhead"
                             >
                               Username
                             </Label>
@@ -701,13 +683,13 @@ export function BotControlCard({
                               id="mock-user"
                               value={mockUsername}
                               onChange={(e) => setMockUsername(e.target.value)}
-                              className="bg-card/25 border-border/30 h-8 text-xs"
+                              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                             />
                           </div>
                           <div className="space-y-1">
                             <Label
                               htmlFor="mock-disp"
-                              className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
+                              className="text-label-secondary text-subhead"
                             >
                               Display Name
                             </Label>
@@ -715,18 +697,18 @@ export function BotControlCard({
                               id="mock-disp"
                               value={mockDisplayName}
                               onChange={(e) => setMockDisplayName(e.target.value)}
-                              className="bg-card/25 border-border/30 h-8 text-xs"
+                              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                             />
                           </div>
                           <div className="col-span-2 flex items-center justify-between pt-1">
                             <div className="space-y-0.5">
                               <Label
                                 htmlFor="mock-admin"
-                                className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
+                                className="text-label-secondary text-subhead"
                               >
                                 Admin Status (Roles Permission)
                               </Label>
-                              <span className="text-muted-foreground block text-xs">
+                              <span className="text-label-secondary text-footnote block">
                                 Allows execution of admin-locked commands
                               </span>
                             </div>
@@ -741,8 +723,8 @@ export function BotControlCard({
 
                       {/* Options fields */}
                       {selectedCommand.options && selectedCommand.options.length > 0 && (
-                        <div className="border-border/10 space-y-3.5 border-t pt-3.5">
-                          <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
+                        <div className="border-separator space-y-3.5 border-t pt-3.5">
+                          <span className="text-label-secondary text-eyebrow block">
                             Command Options
                           </span>
                           <div className="space-y-3">
@@ -755,7 +737,7 @@ export function BotControlCard({
                       <Button
                         onClick={handleSimulate}
                         disabled={simulateMutation.isPending || !isAvailable}
-                        className="h-9 w-full text-xs font-bold"
+                        className="w-full"
                       >
                         {simulateMutation.isPending ? (
                           <>
@@ -772,48 +754,46 @@ export function BotControlCard({
 
                       {/* Output section */}
                       {simulationResult && (
-                        <div className="border-border/15 animate-in fade-in space-y-3.5 border-t pt-3.5 duration-200">
+                        <div className="border-separator animate-in fade-in duration-fast space-y-3.5 border-t pt-3.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                            <span className="text-label-secondary text-eyebrow">
                               Output Console Preview
                             </span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground text-xs font-semibold">
-                                Raw JSON
-                              </span>
+                              <span className="text-label-secondary text-caption">Raw JSON</span>
                               <Switch checked={showRawJson} onCheckedChange={setShowRawJson} />
                             </div>
                           </div>
 
                           {showRawJson ? (
-                            <pre className="border-border/15 max-h-[250px] overflow-x-auto rounded-lg border bg-black/45 p-3 font-mono text-xs leading-tight text-emerald-400 select-all">
+                            <pre className="border-separator rounded-control text-footnote text-label bg-surface-secondary max-h-[250px] overflow-x-auto border p-3 font-mono leading-tight select-all">
                               {JSON.stringify(simulationResult, null, 2)}
                             </pre>
                           ) : (
                             <div className="space-y-2">
                               {simulationResult.success === false ? (
-                                <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-semibold text-red-500">
+                                <div className="rounded-control border-red/20 bg-red/5 text-caption text-red flex items-start gap-2 border p-3">
                                   <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                   <span>{simulationResult.error || "Simulation error"}</span>
                                 </div>
                               ) : simulationResult.payload ? (
                                 <div className="space-y-2.5">
                                   {/* Discord mockup window */}
-                                  <div className="space-y-4 rounded-lg border border-black/20 bg-zinc-800 p-4 font-sans text-xs text-zinc-300 md:text-sm">
+                                  <div className="rounded-control border-separator bg-surface-secondary text-footnote text-label-secondary md:text-body space-y-4 border p-4 font-sans">
                                     {/* Message */}
                                     <div className="flex items-start gap-3">
-                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 font-sans text-xs font-bold text-white uppercase shadow-sm select-none">
+                                      <div className="bg-blue text-eyebrow text-on-blue flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans select-none">
                                         IX
                                       </div>
                                       <div className="min-w-0 flex-1 space-y-1">
                                         <div className="flex flex-wrap items-center">
-                                          <span className="cursor-pointer font-bold text-zinc-100 hover:underline">
+                                          <span className="text-label cursor-pointer font-semibold hover:underline">
                                             IxTimeBot
                                           </span>
-                                          <span className="bg-discord ml-1.5 rounded px-1 py-0.5 text-xs leading-none font-bold text-white uppercase select-none">
+                                          <span className="bg-discord rounded-control-sm text-eyebrow text-label ml-1.5 px-1 py-0.5 leading-none select-none">
                                             BOT
                                           </span>
-                                          <span className="ml-2 text-xs text-zinc-400 select-none">
+                                          <span className="text-footnote text-label-secondary ml-2 select-none">
                                             Today at{" "}
                                             {new Date().toLocaleTimeString([], {
                                               hour: "2-digit",
@@ -824,13 +804,13 @@ export function BotControlCard({
 
                                         {/* Message Content */}
                                         {typeof simulationResult.payload === "string" ? (
-                                          <div className="break-words whitespace-pre-wrap text-zinc-300">
+                                          <div className="text-label-secondary break-words whitespace-pre-wrap">
                                             {simulationResult.payload}
                                           </div>
                                         ) : (
                                           <>
                                             {simulationResult.payload.content && (
-                                              <div className="mb-1 break-words whitespace-pre-wrap text-zinc-300">
+                                              <div className="text-label-secondary mb-1 break-words whitespace-pre-wrap">
                                                 {simulationResult.payload.content}
                                               </div>
                                             )}
@@ -841,7 +821,7 @@ export function BotControlCard({
                                                 (embed: any, idx: number) => (
                                                   <div
                                                     key={idx}
-                                                    className="mt-1.5 max-w-[520px] space-y-2 rounded-r border-l-4 bg-zinc-900 p-3 shadow-sm"
+                                                    className="rounded-r-control-sm bg-surface mt-1.5 max-w-[520px] space-y-2 border-l-4 p-3"
                                                     style={{
                                                       borderLeftColor: getEmbedColor(embed.color),
                                                     }}
@@ -855,20 +835,20 @@ export function BotControlCard({
                                                             className="h-5 w-5 rounded-full select-none"
                                                           />
                                                         )}
-                                                        <span className="cursor-pointer text-xs font-bold text-white hover:underline">
+                                                        <span className="text-caption text-label cursor-pointer hover:underline">
                                                           {embed.author.name}
                                                         </span>
                                                       </div>
                                                     )}
 
                                                     {embed.title && (
-                                                      <div className="cursor-pointer text-xs font-bold text-white hover:underline md:text-sm">
+                                                      <div className="text-caption text-label md:text-body cursor-pointer hover:underline">
                                                         {embed.title}
                                                       </div>
                                                     )}
 
                                                     {embed.description && (
-                                                      <div className="text-xs leading-relaxed break-words whitespace-pre-wrap text-zinc-300">
+                                                      <div className="text-footnote text-label-secondary leading-relaxed break-words whitespace-pre-wrap">
                                                         {embed.description}
                                                       </div>
                                                     )}
@@ -880,14 +860,14 @@ export function BotControlCard({
                                                             <div
                                                               key={fidx}
                                                               className={cn(
-                                                                "space-y-0.5 text-xs",
+                                                                "text-footnote space-y-0.5",
                                                                 f.inline ? "" : "col-span-full"
                                                               )}
                                                             >
-                                                              <div className="text-xs font-bold tracking-wide text-white uppercase opacity-90">
+                                                              <div className="text-eyebrow text-label opacity-90">
                                                                 {f.name}
                                                               </div>
-                                                              <div className="text-xs break-words whitespace-pre-wrap text-zinc-300">
+                                                              <div className="text-footnote text-label-secondary break-words whitespace-pre-wrap">
                                                                 {f.value}
                                                               </div>
                                                             </div>
@@ -897,7 +877,7 @@ export function BotControlCard({
                                                     )}
 
                                                     {embed.footer && (
-                                                      <div className="flex items-center gap-1 pt-1 text-xs text-zinc-400 select-none">
+                                                      <div className="text-footnote text-label-secondary flex items-center gap-1 pt-1 select-none">
                                                         {embed.footer.icon_url && (
                                                           <img
                                                             src={embed.footer.icon_url}
@@ -918,7 +898,7 @@ export function BotControlCard({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-start gap-2 rounded-lg border border-green-500/20 bg-green-500/5 p-3 text-xs font-semibold text-green-500">
+                                <div className="rounded-control border-green/20 bg-green/5 text-caption text-green flex items-start gap-2 border p-3">
                                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                                   <span>
                                     Command executed successfully with empty reply payload.
@@ -931,8 +911,8 @@ export function BotControlCard({
                       )}
                     </div>
                   ) : (
-                    <div className="border-border/10 bg-card/5 text-muted-foreground flex min-h-[220px] flex-col items-center justify-center rounded-lg border p-8 text-center text-xs">
-                      <Info className="text-muted-foreground mb-2 h-6 w-6 opacity-50" />
+                    <div className="border-separator bg-surface text-label-secondary rounded-control text-footnote flex min-h-[220px] flex-col items-center justify-center border p-8 text-center">
+                      <Info className="text-label-secondary mb-2 h-6 w-6 opacity-50" />
                       <span>
                         Select a slash command from the left registry panel to test execution
                         simulations.
@@ -947,35 +927,29 @@ export function BotControlCard({
 
         {/* --- ROLES & PERMISSIONS TAB --- */}
         {activeSubTab === "roles" && (
-          <div className="animate-in fade-in space-y-4 pt-1 duration-200">
+          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {isRolesLoading ? (
-              <div className="text-muted-foreground flex items-center justify-center py-12 text-xs">
-                <Loader2 className="text-primary mr-2 h-4 w-4 animate-spin" />
+              <div className="text-label-secondary text-footnote flex items-center justify-center py-12">
+                <Loader2 className="text-tint mr-2 h-4 w-4 animate-spin" />
                 Loading Discord roles...
               </div>
             ) : !roles || roles.length === 0 ? (
-              <div className="text-muted-foreground border-border/10 bg-card/5 flex flex-col items-center justify-center rounded-lg border p-6 py-12 text-center text-xs">
-                <Info className="text-muted-foreground/60 mb-2 h-6 w-6" />
+              <div className="text-label-secondary border-separator bg-surface rounded-control text-footnote flex flex-col items-center justify-center border p-6 py-12 text-center">
+                <Info className="text-label-secondary mb-2 h-6 w-6" />
                 <span>No roles fetched from Discord API.</span>
-                <span className="mt-1 text-xs">
+                <span className="text-footnote mt-1">
                   Ensure correct guild credentials and bot online status.
                 </span>
               </div>
             ) : (
-              <div className="border-border/20 bg-card/10 overflow-x-auto rounded-lg border">
-                <table className="w-full text-left text-xs">
+              <div className="border-separator bg-surface rounded-control overflow-x-auto border">
+                <table className="text-footnote w-full text-left tabular-nums">
                   <thead>
-                    <tr className="border-border/20 bg-muted/20 border-b">
-                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
-                        Position
-                      </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
-                        Role Name
-                      </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
-                        Role ID
-                      </th>
-                      <th className="text-muted-foreground px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
+                    <tr className="border-separator bg-fill-4 border-b">
+                      <th className="text-label-secondary text-eyebrow px-4 py-2.5">Position</th>
+                      <th className="text-label-secondary text-eyebrow px-4 py-2.5">Role Name</th>
+                      <th className="text-label-secondary text-eyebrow px-4 py-2.5">Role ID</th>
+                      <th className="text-label-secondary text-eyebrow px-4 py-2.5">
                         Permit Level
                       </th>
                     </tr>
@@ -987,34 +961,34 @@ export function BotControlCard({
                         <tr
                           key={role.id}
                           className={cn(
-                            "border-border/10 hover:bg-muted/5 border-b font-medium transition-colors last:border-b-0",
-                            isAdm ? "bg-amber-500/5 text-amber-500/90" : ""
+                            "border-separator hover:bg-fill-4 border-b font-medium transition-colors last:border-b-0",
+                            isAdm ? "bg-yellow/5 text-yellow" : ""
                           )}
                         >
-                          <td className="text-muted-foreground px-4 py-2 font-mono text-xs">
+                          <td className="text-label-secondary text-footnote px-4 py-2 tabular-nums">
                             #{role.position}
                           </td>
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-2">
                               <span
-                                className="h-2.5 w-2.5 shrink-0 rounded-full border border-black/10"
+                                className="border-separator h-2.5 w-2.5 shrink-0 rounded-full border"
                                 style={{ backgroundColor: getRoleColor(role.color) }}
                               />
                               <span className="font-semibold">{role.name}</span>
                             </div>
                           </td>
-                          <td className="text-muted-foreground px-4 py-2 font-mono text-xs">
+                          <td className="text-label-secondary text-footnote px-4 py-2 font-mono">
                             {role.id}
                           </td>
                           <td className="px-4 py-2">
                             {isAdm ? (
-                              <Badge className="border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-xs font-bold tracking-wide text-amber-500 uppercase">
+                              <Badge variant="yellow" className="text-eyebrow px-1.5 py-0">
                                 Admin Permit
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border/20 bg-muted/10 text-muted-foreground px-1.5 py-0 text-xs font-bold tracking-wide uppercase"
+                                className="border-separator bg-fill-4 text-label-secondary text-eyebrow px-1.5 py-0"
                               >
                                 Default
                               </Badge>
@@ -1032,15 +1006,15 @@ export function BotControlCard({
 
         {/* --- LIVE LOGS TAB --- */}
         {activeSubTab === "logs" && (
-          <div className="animate-in fade-in space-y-4 pt-1 duration-200">
+          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
             {/* Filter Controls */}
-            <div className="bg-muted/5 border-border/10 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-xs">
+            <div className="bg-fill-4 border-separator rounded-control text-footnote flex flex-wrap items-center justify-between gap-3 border p-3">
               <div className="flex flex-wrap items-center gap-3">
                 {/* Process Selector */}
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-proc-select"
-                    className="text-muted-foreground block text-xs font-bold tracking-wider uppercase"
+                    className="text-label-secondary text-subhead block"
                   >
                     Daemon Process
                   </Label>
@@ -1048,14 +1022,13 @@ export function BotControlCard({
                     id="log-proc-select"
                     value={logProcess}
                     onChange={(e) => setLogProcess(e.target.value as any)}
-                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
+                    className={cn(
+                      fieldStyles,
+                      "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+                    )}
                   >
-                    <option value="ixwiki-discord-bot" className="bg-background text-foreground">
-                      ixwiki-discord-bot
-                    </option>
-                    <option value="ixstats-ixtwitter" className="bg-background text-foreground">
-                      ixstats-ixtwitter
-                    </option>
+                    <option value="ixwiki-discord-bot">ixwiki-discord-bot</option>
+                    <option value="ixstats-ixtwitter">ixstats-ixtwitter</option>
                   </select>
                 </div>
 
@@ -1063,7 +1036,7 @@ export function BotControlCard({
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-type-select"
-                    className="text-muted-foreground block text-xs font-bold tracking-wider uppercase"
+                    className="text-label-secondary text-subhead block"
                   >
                     Stream Type
                   </Label>
@@ -1071,24 +1044,23 @@ export function BotControlCard({
                     id="log-type-select"
                     value={logType}
                     onChange={(e) => setLogType(e.target.value as any)}
-                    className="bg-background border-border/40 text-foreground focus:border-primary/50 rounded-xl border px-3 py-1.5 text-xs font-semibold focus:outline-none"
+                    className={cn(
+                      fieldStyles,
+                      "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+                    )}
                   >
-                    <option value="out" className="bg-background text-foreground">
-                      stdout (Logs)
-                    </option>
-                    <option value="err" className="bg-background text-foreground">
-                      stderr (Errors)
-                    </option>
+                    <option value="out">stdout (Logs)</option>
+                    <option value="err">stderr (Errors)</option>
                   </select>
                 </div>
               </div>
 
               {/* Refresh buttons and toggle */}
               <div className="flex items-center gap-3">
-                <div className="border-border/10 bg-card/10 flex items-center gap-1.5 rounded-lg border px-2 py-1.5">
+                <div className="border-separator bg-surface rounded-control flex items-center gap-1.5 border px-2 py-1.5">
                   <Label
                     htmlFor="auto-refresh-logs-switch"
-                    className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
+                    className="text-label-secondary text-subhead cursor-pointer select-none"
                   >
                     Auto-Refresh
                   </Label>
@@ -1104,7 +1076,6 @@ export function BotControlCard({
                   size="sm"
                   onClick={() => refetchLogs()}
                   disabled={isLogsFetching}
-                  className="h-8 px-3 text-xs font-semibold"
                 >
                   <RefreshCw
                     className={cn("mr-1.5 h-3 w-3", isLogsFetching ? "animate-spin" : "")}
@@ -1116,22 +1087,22 @@ export function BotControlCard({
 
             {/* Console output window */}
             <div className="relative">
-              <div className="text-muted-foreground border-border/10 absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded border bg-black/50 px-2 py-0.5 font-mono text-xs select-none">
+              <div className="text-label-secondary border-separator rounded-control-sm text-footnote bg-surface-elevated absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 border px-2 py-0.5 font-mono select-none">
                 <FileCode className="h-3 w-3" />
                 <span>50 lines</span>
               </div>
-              <div className="border-border/60 max-h-[450px] min-h-[280px] w-full overflow-x-auto rounded-lg border bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-300 md:text-xs">
+              <div className="border-separator rounded-control bg-surface text-footnote text-label-secondary md:text-footnote max-h-[450px] min-h-[280px] w-full overflow-x-auto border p-4 font-mono leading-relaxed">
                 {logs && logs.length > 0 ? (
                   <pre className="flex flex-col gap-0.5 whitespace-pre select-text">
                     {logs.map((line, idx) => (
                       <div
                         key={idx}
                         className={cn(
-                          "rounded px-1 transition-colors hover:bg-zinc-800/40",
-                          logType === "err" ? "text-red-400" : ""
+                          "rounded-control-sm hover:bg-fill-4 px-1 transition-colors",
+                          logType === "err" ? "text-red" : ""
                         )}
                       >
-                        <span className="mr-3 inline-block w-6 border-r border-zinc-700/55 pr-1.5 text-right text-zinc-500 select-none">
+                        <span className="border-separator text-label-secondary mr-3 inline-block w-6 border-r pr-1.5 text-right select-none">
                           {idx + 1}
                         </span>
                         <span>{line}</span>
@@ -1139,10 +1110,10 @@ export function BotControlCard({
                     ))}
                   </pre>
                 ) : (
-                  <div className="text-muted-foreground/60 flex flex-col items-center justify-center py-20 select-none">
+                  <div className="text-label-secondary flex flex-col items-center justify-center py-20 select-none">
                     <Terminal className="mb-2 h-6 w-6 opacity-40" />
                     <span>No process logs output recorded.</span>
-                    <span className="mt-0.5 text-xs">
+                    <span className="text-footnote mt-0.5">
                       Ensure process is started and writing output logs.
                     </span>
                   </div>

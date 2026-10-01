@@ -49,38 +49,32 @@ export function NPCPersonalityAssignDialog({
 
         <div className="space-y-4">
           <div>
-            <label className="text-foreground mb-1.5 block text-xs font-medium">Country ID *</label>
+            <label className="text-label text-caption mb-1.5 block">Country ID *</label>
             <Input
               value={countryId}
               onChange={(e) => setCountryId(e.target.value)}
               placeholder="e.g., urcea or caphiria"
-              className="text-xs"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
           </div>
 
           <div>
-            <label className="text-foreground mb-1.5 block text-xs font-medium">
-              Assignment Reason
-            </label>
+            <label className="text-label text-caption mb-1.5 block">Assignment Reason</label>
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Optional notes or historical rationale..."
               rows={3}
-              className="text-xs"
+              className="md:text-footnote"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="text-xs active:scale-[0.98]">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onAssign}
-            disabled={!countryId.trim() || isPending}
-            className="text-xs active:scale-[0.98]"
-          >
+          <Button onClick={onAssign} disabled={!countryId.trim() || isPending}>
             {isPending ? "Assigning..." : "Assign Personality"}
           </Button>
         </DialogFooter>

@@ -66,17 +66,19 @@ export function SystemLogs() {
   });
 
   return (
-    <Card className="border-border/40 bg-card/30 backdrop-blur-md">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="space-y-0.5">
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <Activity className="h-4 w-4 text-indigo-500" />
+          <CardTitle className="text-headline flex items-center gap-2">
+            <Activity className="text-indigo h-4 w-4" />
             System Audit logs
           </CardTitle>
-          <p className="text-muted-foreground text-xs">Live system execution trail and audit log</p>
+          <p className="text-label-secondary text-footnote">
+            Live system execution trail and audit log
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild className="h-8 gap-1 text-xs">
+          <Button variant="outline" size="sm" asChild className="gap-1">
             <Link href="/admin/logs">
               <ExternalLink className="h-3.5 w-3.5" />
               Dedicated View
@@ -87,7 +89,7 @@ export function SystemLogs() {
       <CardContent className="p-4 pt-2">
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+            <Loader2 className="text-indigo h-6 w-6 animate-spin" />
           </div>
         ) : (
           <LogViewerFilterable
@@ -95,7 +97,7 @@ export function SystemLogs() {
             title="Latest System Logs"
             maxHeight={400}
             onClear={handleClearLogs}
-            className="border-border/30 bg-black/10 dark:bg-black/30"
+            className="border-separator bg-fill-4"
           />
         )}
       </CardContent>

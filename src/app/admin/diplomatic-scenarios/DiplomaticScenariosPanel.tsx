@@ -14,6 +14,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Shield, StatsReport as BarChart3 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function DiplomaticScenariosPanel() {
   usePageTitle({ title: "Admin - Diplomatic Scenarios" });
@@ -30,19 +31,19 @@ export function DiplomaticScenariosPanel() {
 
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
         <div className="flex items-center justify-between">
-          <TabsList className="bg-card/40 border-border/40 flex w-full max-w-xs justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+          <TabsList className="bg-fill-3 flex w-full max-w-xs justify-start gap-1 rounded-full p-1">
             <TabsTrigger
               value="catalog"
-              className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
             >
-              <Shield className="h-4 w-4 text-purple-400" />
+              <Shield className="text-purple h-4 w-4" />
               Scenarios
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
             >
-              <BarChart3 className="h-4 w-4 text-cyan-400" />
+              <BarChart3 className="text-teal h-4 w-4" />
               Analytics
             </TabsTrigger>
           </TabsList>
@@ -83,15 +84,15 @@ export function DiplomaticScenariosPanel() {
           {admin.isLoading ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-56 rounded-2xl" />
+                <Skeleton key={i} className="rounded-card h-56" />
               ))}
             </div>
           ) : admin.filteredScenarios.length === 0 ? (
-            <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
-              <p className="text-muted-foreground text-xs">
+            <FacetCard className="p-12 text-center">
+              <p className="text-label-secondary text-footnote">
                 No scenarios found matching your filters
               </p>
-            </div>
+            </FacetCard>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {admin.filteredScenarios.map((scenario: any) => (

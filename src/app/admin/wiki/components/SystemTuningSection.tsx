@@ -18,6 +18,7 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { LorewardWeightsCard } from "./LorewardWeightsCard";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function SystemTuningSection() {
   const notify = useNotify();
@@ -147,12 +148,12 @@ export function SystemTuningSection() {
       {/* Right Column: Cache, Templates, Cron */}
       <div className="space-y-6">
         {/* Cache Utilities */}
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
-            <Database className="h-4 w-4 text-emerald-400" />
+        <FacetCard className="space-y-4 p-5">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
+            <Database className="text-green h-4 w-4" />
             <div>
-              <h3 className="text-foreground text-xs font-bold">Cache Operations</h3>
-              <p className="text-muted-foreground text-xs">
+              <h3 className="text-label text-caption">Cache Operations</h3>
+              <p className="text-label-secondary text-footnote">
                 Purge article wikitext and page parse trees from memory
               </p>
             </div>
@@ -163,7 +164,7 @@ export function SystemTuningSection() {
                 placeholder="Enter article title to purge..."
                 value={purgePage}
                 onChange={(e) => setPurgePage(e.target.value)}
-                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 required
               />
               <Button
@@ -171,7 +172,7 @@ export function SystemTuningSection() {
                 variant="outline"
                 size="sm"
                 disabled={purgeCacheMutation.isPending}
-                className="h-8 shrink-0 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+                className="shrink-0"
               >
                 {purgeCacheMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -181,13 +182,13 @@ export function SystemTuningSection() {
               </Button>
             </form>
 
-            <div className="border-border/20 border-t pt-2">
+            <div className="border-separator border-t pt-2">
               <Button
                 onClick={handlePurgeAll}
                 disabled={purgeAllCacheMutation.isPending}
                 variant="destructive"
                 size="sm"
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
+                className="w-full gap-2"
               >
                 {purgeAllCacheMutation.isPending ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -198,23 +199,23 @@ export function SystemTuningSection() {
               </Button>
             </div>
           </div>
-        </div>
+        </FacetCard>
 
         {/* Wiki Templates Synchronization */}
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
-            <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
+        <FacetCard className="space-y-4 p-5">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
+            <SlidersHorizontal className="text-indigo h-4 w-4" />
             <div>
-              <h3 className="text-foreground text-xs font-bold">Wiki Templates Synchronization</h3>
-              <p className="text-muted-foreground text-xs">
+              <h3 className="text-label text-caption">Wiki Templates Synchronization</h3>
+              <p className="text-label-secondary text-footnote">
                 Registered template components synced from MediaWiki
               </p>
             </div>
           </div>
           <div className="space-y-4">
-            <div className="border-border/20 grid gap-3 border-b pb-3 md:grid-cols-2">
+            <div className="border-separator grid gap-3 border-b pb-3 md:grid-cols-2">
               <form onSubmit={handleSyncTemplate} className="space-y-1.5">
-                <label className="text-foreground block text-xs font-medium">Sync by Name</label>
+                <label className="text-label text-caption block">Sync by Name</label>
                 <div className="relative flex gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -226,10 +227,10 @@ export function SystemTuningSection() {
                       }}
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                      className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                     />
                     {showSuggestions && suggestions && suggestions.length > 0 && (
-                      <div className="border-border/40 bg-popover/95 text-popover-foreground absolute z-50 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border p-1 shadow-lg backdrop-blur-md">
+                      <div className="border-separator bg-surface-elevated text-label rounded-row absolute z-50 mt-1 max-h-40 w-full overflow-y-auto border p-1">
                         {suggestions.map((name) => (
                           <button
                             key={name}
@@ -238,7 +239,7 @@ export function SystemTuningSection() {
                               setTemplateSearchInput(name);
                               setShowSuggestions(false);
                             }}
-                            className="hover:bg-muted/50 w-full rounded-lg px-2.5 py-1 text-left text-xs font-medium transition-colors"
+                            className="hover:bg-fill-4 rounded-control text-caption w-full px-2.5 py-1 text-left transition-colors"
                           >
                             {name}
                           </button>
@@ -251,7 +252,7 @@ export function SystemTuningSection() {
                     variant="outline"
                     size="sm"
                     disabled={syncTemplateMutation.isPending}
-                    className="h-8 shrink-0 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
+                    className="shrink-0"
                   >
                     {syncTemplateMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -263,22 +264,20 @@ export function SystemTuningSection() {
               </form>
 
               <form onSubmit={handleSyncCategory} className="space-y-1.5">
-                <label className="text-foreground block text-xs font-medium">
-                  Sync by Category
-                </label>
+                <label className="text-label text-caption block">Sync by Category</label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. Country templates"
                     value={templateCategoryInput}
                     onChange={(e) => setTemplateCategoryInput(e.target.value)}
-                    className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                    className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                   />
                   <Button
                     type="submit"
                     variant="outline"
                     size="sm"
                     disabled={syncCategoryMutation.isPending}
-                    className="h-8 shrink-0 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
+                    className="shrink-0"
                   >
                     {syncCategoryMutation.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -292,35 +291,33 @@ export function SystemTuningSection() {
 
             {isLoadingTemplates ? (
               <div className="space-y-2">
-                <Skeleton className="h-8 w-full rounded-lg" />
-                <Skeleton className="h-8 w-full rounded-lg" />
+                <Skeleton className="rounded-control h-8 w-full" />
+                <Skeleton className="rounded-control h-8 w-full" />
               </div>
             ) : !templates || templates.length === 0 ? (
-              <div className="text-muted-foreground py-4 text-center text-xs italic">
+              <div className="text-label-secondary text-footnote py-4 text-center italic">
                 No templates synchronized yet.
               </div>
             ) : (
-              <div className="border-border/30 max-h-[12rem] overflow-y-auto rounded-xl border text-xs">
-                <table className="w-full">
-                  <thead className="bg-muted/30 sticky top-0 font-medium">
-                    <tr className="border-border/30 border-b">
-                      <th className="text-muted-foreground px-3 py-2 text-left">Template Name</th>
-                      <th className="text-muted-foreground px-3 py-2 text-left">Category</th>
-                      <th className="text-muted-foreground px-3 py-2 text-right">Usage</th>
-                      <th className="text-muted-foreground px-3 py-2 text-right">Params</th>
+              <div className="border-separator rounded-row text-footnote max-h-[12rem] overflow-y-auto border">
+                <table className="w-full tabular-nums">
+                  <thead className="bg-fill-4 sticky top-0 font-medium">
+                    <tr className="border-separator border-b">
+                      <th className="text-label-secondary px-3 py-2 text-left">Template Name</th>
+                      <th className="text-label-secondary px-3 py-2 text-left">Category</th>
+                      <th className="text-label-secondary px-3 py-2 text-right">Usage</th>
+                      <th className="text-label-secondary px-3 py-2 text-right">Params</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/15 divide-y">
+                  <tbody className="divide-separator divide-y">
                     {templates.map((tpl) => (
-                      <tr key={tpl.id} className="hover:bg-foreground/[0.02]">
-                        <td className="text-foreground px-3 py-2 font-mono font-medium">
-                          {tpl.name}
-                        </td>
-                        <td className="text-muted-foreground px-3 py-2">{tpl.category || "—"}</td>
-                        <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                      <tr key={tpl.id} className="hover:bg-fill-4">
+                        <td className="text-label px-3 py-2 font-mono font-medium">{tpl.name}</td>
+                        <td className="text-label-secondary px-3 py-2">{tpl.category || "—"}</td>
+                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
                           {tpl.usageCount}
                         </td>
-                        <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
                           {tpl.paramCount}
                         </td>
                       </tr>
@@ -330,15 +327,15 @@ export function SystemTuningSection() {
               </div>
             )}
           </div>
-        </div>
+        </FacetCard>
 
         {/* Cron Schedules Editor */}
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <div className="border-border/20 flex items-center gap-2 border-b pb-3">
-            <Sliders className="h-4 w-4 text-emerald-400" />
+        <FacetCard className="space-y-4 p-5">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
+            <Sliders className="text-green h-4 w-4" />
             <div>
-              <h3 className="text-foreground text-xs font-bold">Cron Schedules Editor</h3>
-              <p className="text-muted-foreground text-xs">
+              <h3 className="text-label text-caption">Cron Schedules Editor</h3>
+              <p className="text-label-secondary text-footnote">
                 Configure background job intervals in standard 5-field cron syntax
               </p>
             </div>
@@ -346,67 +343,57 @@ export function SystemTuningSection() {
           <div className="space-y-4">
             <form onSubmit={handleSaveCron} className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-foreground text-xs font-medium">
-                  Lorewards Scoring Schedule
-                </label>
+                <label className="text-label text-caption">Lorewards Scoring Schedule</label>
                 <Input
                   placeholder="e.g. 0 6 * * *"
                   value={cronScoring}
                   onChange={(e) => setCronScoring(e.target.value)}
-                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-foreground text-xs font-medium">
-                  Passive Income Schedule
-                </label>
+                <label className="text-label text-caption">Passive Income Schedule</label>
                 <Input
                   placeholder="e.g. 0 0 * * *"
                   value={cronIncome}
                   onChange={(e) => setCronIncome(e.target.value)}
-                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-foreground text-xs font-medium">
-                  Card Value Tracking Schedule
-                </label>
+                <label className="text-label text-caption">Card Value Tracking Schedule</label>
                 <Input
                   placeholder="e.g. 0 */6 * * *"
                   value={cronCard}
                   onChange={(e) => setCronCard(e.target.value)}
-                  className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   required
                 />
               </div>
 
-              <div className="flex gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+              <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex gap-2 border p-3">
+                <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-semibold">PM2 Restart Required</p>
-                  <p className="mt-0.5 text-xs opacity-80">
+                  <p className="text-footnote mt-0.5 opacity-80">
                     Changing schedules updates SystemConfig values. Next time the custom server is
                     restarted via PM2, these new schedule intervals will take effect.
                   </p>
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                disabled={saveCronMutation.isPending}
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
-              >
+              <Button type="submit" disabled={saveCronMutation.isPending} className="w-full gap-2">
                 {saveCronMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />
                 Save Cron Configuration
               </Button>
             </form>
           </div>
-        </div>
+        </FacetCard>
       </div>
     </div>
   );

@@ -10,7 +10,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   SystemRestart as Loader2,
   EditPencil as Pencil,
@@ -20,12 +26,15 @@ import {
   Eye,
   Plus,
 } from "iconoir-react";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
+import { FacetCard } from "~/components/ui/facet-container";
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  draft: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  generating: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  archived: "bg-muted/50 text-muted-foreground border-border",
+  active: "bg-green/10 text-green border-green/20",
+  draft: "bg-yellow/10 text-yellow border-yellow/20",
+  generating: "bg-blue/10 text-blue border-blue/20",
+  archived: "bg-fill-3 text-label-secondary border-separator",
 };
 
 const VISIBILITY_ICONS: Record<string, typeof Globe> = {
@@ -62,7 +71,7 @@ function NationCapCell({
         max={20}
         step={1}
         aria-label="Nations per player"
-        className="h-8 w-20 text-xs"
+        className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-20"
         value={draft ?? String(current)}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -100,7 +109,7 @@ function NewRealmForm() {
 
   return (
     <form
-      className="border-border/40 bg-card/25 grid gap-4 rounded-2xl border p-4 backdrop-blur-md sm:grid-cols-2"
+      className="border-separator bg-surface rounded-card grid gap-4 border p-4 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate({
@@ -131,7 +140,7 @@ function NewRealmForm() {
           placeholder="eurth"
           onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           2–40 lower-case letters, digits or hyphens. Not editable after creation.
         </p>
       </div>
@@ -201,9 +210,9 @@ export function RealmsTab() {
 
   if (isLoading) {
     return (
-      <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
+      <div className="text-label-secondary flex items-center justify-center gap-2 py-16">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <span className="text-sm">Loading realms...</span>
+        <span className="text-body">Loading realms...</span>
       </div>
     );
   }
@@ -212,7 +221,7 @@ export function RealmsTab() {
     return (
       <div className="space-y-4">
         <NewRealmForm />
-        <div className="text-muted-foreground py-16 text-center">
+        <div className="text-label-secondary py-16 text-center">
           No realms found. The default realm should be seeded automatically.
         </div>
       </div>
@@ -244,21 +253,21 @@ export function RealmsTab() {
   return (
     <div className="space-y-4">
       <NewRealmForm />
-      <div className="border-border/40 bg-card/25 overflow-x-auto rounded-2xl border backdrop-blur-md">
-        <table className="w-full text-sm">
+      <FacetCard className="overflow-x-auto">
+        <table className="text-body w-full tabular-nums">
           <thead>
-            <tr className="border-border/40 bg-muted/20 border-b">
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Name</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Slug</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Visibility</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Countries</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+            <tr className="border-separator bg-fill-4 border-b">
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Name</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Slug</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Status</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Visibility</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Countries</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">
                 Nations per player
               </th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Owner</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Updated</th>
-              <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Owner</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Updated</th>
+              <th className="text-label-secondary px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -269,12 +278,12 @@ export function RealmsTab() {
               return (
                 <tr
                   key={realm.id}
-                  className="border-border/20 hover:bg-muted/20 border-b transition-colors"
+                  className="border-separator hover:bg-fill-4 border-b transition-colors"
                 >
                   <td className="px-4 py-3">
                     {isEditing ? (
-                      <input
-                        className="border-border/40 bg-background text-foreground w-full rounded-lg border px-2.5 py-1 text-sm focus:outline-none"
+                      <Input
+                        className="w-full"
                         value={editForm.name ?? ""}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                       />
@@ -282,13 +291,16 @@ export function RealmsTab() {
                       <span className="font-medium">{realm.name}</span>
                     )}
                   </td>
-                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+                  <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
                     {realm.slug}
                   </td>
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <select
-                        className="border-border/40 bg-background text-foreground rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                        className={cn(
+                          fieldStyles,
+                          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+                        )}
                         value={editForm.status}
                         onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
                       >
@@ -299,7 +311,7 @@ export function RealmsTab() {
                       </select>
                     ) : (
                       <span
-                        className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[realm.status] ?? STATUS_COLORS.draft}`}
+                        className={`text-caption inline-flex rounded-full border px-2 py-0.5 ${STATUS_COLORS[realm.status] ?? STATUS_COLORS.draft}`}
                       >
                         {realm.status}
                       </span>
@@ -308,7 +320,10 @@ export function RealmsTab() {
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <select
-                        className="border-border/40 bg-background text-foreground rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                        className={cn(
+                          fieldStyles,
+                          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
+                        )}
                         value={editForm.visibility}
                         onChange={(e) => setEditForm((f) => ({ ...f, visibility: e.target.value }))}
                       >
@@ -316,7 +331,7 @@ export function RealmsTab() {
                         <option value="unlisted">Unlisted</option>
                       </select>
                     ) : (
-                      <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                      <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
                         <VisIcon className="h-3 w-3" />
                         {realm.visibility}
                       </span>
@@ -329,10 +344,10 @@ export function RealmsTab() {
                     draft={editForm.maxNationsPerUser}
                     onChange={(v) => setEditForm((f) => ({ ...f, maxNationsPerUser: v }))}
                   />
-                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+                  <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
                     {realm.ownerId === "system" ? "system" : realm.ownerId.slice(0, 12) + "..."}
                   </td>
-                  <td className="text-muted-foreground px-4 py-3 text-xs">
+                  <td className="text-label-secondary text-footnote px-4 py-3">
                     {new Date(realm.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -342,7 +357,7 @@ export function RealmsTab() {
                           aria-label={`Save ${realm.name}`}
                           onClick={() => saveEdit(realm.id)}
                           disabled={updateMutation.isPending}
-                          className="rounded-lg p-1 text-emerald-500 transition-transform hover:bg-emerald-500/10 active:scale-[0.98]"
+                          className="rounded-control text-green hover:bg-green/10 p-1 transition-transform active:scale-[0.98]"
                         >
                           {updateMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,22 +365,24 @@ export function RealmsTab() {
                             <Check className="h-4 w-4" />
                           )}
                         </button>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           aria-label="Cancel edit"
                           onClick={() => setEditingId(null)}
-                          className="text-muted-foreground hover:bg-muted/50 rounded-lg p-1 transition-transform active:scale-[0.98]"
                         >
                           <X className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </span>
                     ) : (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         aria-label={`Edit ${realm.name}`}
                         onClick={() => startEdit(realm)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
                       >
                         <Pencil className="h-4 w-4" />
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -373,7 +390,7 @@ export function RealmsTab() {
             })}
           </tbody>
         </table>
-      </div>
+      </FacetCard>
     </div>
   );
 }

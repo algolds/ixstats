@@ -26,9 +26,9 @@ import { MapSettingsTab } from "./_components/MapSettingsTab";
 
 // Heavy tabs — lazy loaded (MapLibre dependent)
 const LazyLoading = () => (
-  <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
+  <div className="text-label-secondary flex items-center justify-center gap-2 py-16">
     <Loader2 className="h-5 w-5 animate-spin" />
-    <span className="text-sm">Loading...</span>
+    <span className="text-body">Loading...</span>
   </div>
 );
 
@@ -67,14 +67,14 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
       >
         <Link
           href="/admin/maps/editor"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-xs transition-[background-color,transform] active:scale-[0.98]"
+          className="bg-tint text-on-tint hover:bg-tint-hover rounded-control text-caption flex items-center gap-1.5 px-3 py-1.5 transition-[background-color,transform] active:scale-[0.98]"
         >
           <EditPencil className="h-3.5 w-3.5" />
           Open World Editor
         </Link>
         <Link
           href="/admin/maps/style-editor"
-          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[background-color,color,transform] active:scale-[0.98]"
+          className="border-separator text-label-secondary hover:bg-fill-4 hover:text-label rounded-control text-caption flex items-center gap-1.5 border px-3 py-1.5 transition-[background-color,color,transform] active:scale-[0.98]"
         >
           <Palette className="h-3.5 w-3.5" />
           Style Editor
@@ -83,45 +83,45 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <FacetCard className="rounded-2xl p-3.5">
+        <FacetCard className="p-3.5">
           <Eyebrow className="block">Total Features</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="text-label text-title-2 mt-1 tabular-nums">
               {stats?.totalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
         </FacetCard>
 
-        <FacetCard className="rounded-2xl p-3.5">
+        <FacetCard className="p-3.5">
           <Eyebrow className="block">Political Regions</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            <p className="text-title-2 text-green mt-1 tabular-nums">
               {stats?.politicalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
         </FacetCard>
 
-        <FacetCard className="rounded-2xl p-3.5">
+        <FacetCard className="p-3.5">
           <Eyebrow className="block">Linked Countries</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
+            <p className="text-title-2 text-yellow mt-1 tabular-nums">
               {stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : "—"}
             </p>
           )}
         </FacetCard>
 
-        <FacetCard className="rounded-2xl p-3.5">
+        <FacetCard className="p-3.5">
           <Eyebrow className="block">Linkage Rate</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            <p className="text-title-2 text-purple mt-1 tabular-nums">
               {stats ? `${stats.linkageRate}%` : "—"}
             </p>
           )}

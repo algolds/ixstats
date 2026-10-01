@@ -118,10 +118,10 @@ export function CountryAdminPanel() {
   // Loading state
   if (isLoading) {
     return (
-      <Card className="facet-card p-8">
+      <Card className="p-8">
         <div className="mb-6 flex items-center gap-3">
-          <Users className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Country Admin</h2>
+          <Users className="text-tint h-6 w-6" />
+          <h2 className="text-title-1">Country Admin</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -141,26 +141,26 @@ export function CountryAdminPanel() {
   }
   if (error) {
     return (
-      <Card className="facet-card p-8">
+      <Card className="p-8">
         <div className="mb-6 flex items-center gap-3">
-          <AlertCircle className="h-6 w-6 text-red-500" />
-          <h2 className="text-2xl font-bold text-red-600">Country Admin</h2>
+          <AlertCircle className="text-red h-6 w-6" />
+          <h2 className="text-title-1 text-red">Country Admin</h2>
         </div>
-        <div className="text-red-600">Error loading countries: {error.message}</div>
+        <div className="text-red">Error loading countries: {error.message}</div>
       </Card>
     );
   }
 
   return (
-    <Card className="facet-card p-8">
+    <Card className="p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <Users className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Country Admin</h2>
+          <Users className="text-tint h-6 w-6" />
+          <h2 className="text-title-1">Country Admin</h2>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               type="text"
               placeholder="Search countries..."
@@ -176,9 +176,9 @@ export function CountryAdminPanel() {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="bg-background min-w-full rounded-lg border">
+        <table className="bg-background rounded-control min-w-full border tabular-nums">
           <thead>
-            <tr className="bg-muted/50">
+            <tr className="bg-fill-3">
               <th className="p-2 text-left">Flag</th>
               <th className="p-2 text-left">Name</th>
               <th className="p-2 text-left">Continent</th>
@@ -190,13 +190,13 @@ export function CountryAdminPanel() {
               <th className="p-2 text-center" title="Hide Diplomatic Ops Tab">
                 <div className="flex items-center justify-center gap-1">
                   <EyeOff className="h-3 w-3" />
-                  <span className="text-xs">Dipl</span>
+                  <span className="text-footnote">Dipl</span>
                 </div>
               </th>
               <th className="p-2 text-center" title="Hide StratComm Intel Tab">
                 <div className="flex items-center justify-center gap-1">
                   <EyeOff className="h-3 w-3" />
-                  <span className="text-xs">Strat</span>
+                  <span className="text-footnote">Strat</span>
                 </div>
               </th>
               <th className="p-2 text-center">Actions</th>
@@ -207,21 +207,18 @@ export function CountryAdminPanel() {
               const isEditing = editId === country.id;
               const flagUrl = flagUrls[country.name] || null;
               return (
-                <tr
-                  key={country.id}
-                  className={isEditing ? "bg-blue-50 dark:bg-blue-900/20" : "hover:bg-muted/30"}
-                >
+                <tr key={country.id} className={isEditing ? "bg-blue/10" : "hover:bg-fill-4"}>
                   <td className="p-2">
                     {flagsLoading ? (
-                      <Skeleton className="h-6 w-10 rounded" />
+                      <Skeleton className="rounded-control-sm h-6 w-10" />
                     ) : flagUrl ? (
                       <img
                         src={flagUrl}
                         alt={country.name}
-                        className="h-6 w-10 rounded border object-cover"
+                        className="rounded-control-sm h-6 w-10 border object-cover"
                       />
                     ) : (
-                      <div className="bg-muted text-muted-foreground flex h-6 w-10 items-center justify-center rounded text-xs">
+                      <div className="bg-fill-3 text-label-secondary rounded-control-sm text-footnote flex h-6 w-10 items-center justify-center">
                         N/A
                       </div>
                     )}
@@ -345,14 +342,14 @@ export function CountryAdminPanel() {
                     {saveStatus &&
                       saveStatus.id === country.id &&
                       saveStatus.status === "success" && (
-                        <span className="ml-2 text-green-600">
+                        <span className="text-green ml-2">
                           <CheckCircle className="inline h-4 w-4" /> Saved
                         </span>
                       )}
                     {saveStatus &&
                       saveStatus.id === country.id &&
                       saveStatus.status === "error" && (
-                        <span className="ml-2 text-red-600">
+                        <span className="text-red ml-2">
                           <AlertCircle className="inline h-4 w-4" /> {saveStatus.error}
                         </span>
                       )}
@@ -364,7 +361,7 @@ export function CountryAdminPanel() {
         </table>
       </div>
       {countries.length === 0 && (
-        <div className="text-muted-foreground py-12 text-center">No countries found.</div>
+        <div className="text-label-secondary py-12 text-center">No countries found.</div>
       )}
     </Card>
   );

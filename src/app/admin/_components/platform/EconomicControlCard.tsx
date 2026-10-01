@@ -41,10 +41,10 @@ interface EconomicControlCardProps {
 }
 
 const GROWTH_PRESETS = [
-  { label: "Recession", value: 0.98, color: "text-red-500" },
-  { label: "Stagnant", value: 1.0, color: "text-muted-foreground" },
-  { label: "Normal", value: 1.0321, color: "text-green-500" },
-  { label: "Boom", value: 1.08, color: "text-blue-500" },
+  { label: "Recession", value: 0.98, color: "text-red" },
+  { label: "Stagnant", value: 1.0, color: "text-label-secondary" },
+  { label: "Normal", value: 1.0321, color: "text-green" },
+  { label: "Boom", value: 1.08, color: "text-blue" },
 ];
 
 const TIER_INFO = [
@@ -82,25 +82,25 @@ export function EconomicControlCard({
   const growthPercent = ((globalGrowthFactor - 1) * 100).toFixed(2);
 
   return (
-    <Card className="facet-surface border-border/40">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-1.5 text-indigo-500">
+            <CardTitle className="text-headline flex items-center gap-2">
+              <div className="rounded-control border-indigo/20 bg-indigo/10 text-indigo border p-1.5">
                 <Globe className="h-4 w-4" />
               </div>
               Global Economic Controls
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-footnote">
               Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on
               next calculation cycle.
             </CardDescription>
           </div>
-          <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
             <Label
               htmlFor="econ-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
+              className="text-label-secondary text-subhead cursor-pointer select-none"
             >
               Advanced
             </Label>
@@ -116,11 +116,8 @@ export function EconomicControlCard({
         {/* Growth Factor Slider */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-foreground text-xs font-semibold">Global Growth Factor</Label>
-            <Badge
-              variant="outline"
-              className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
-            >
+            <Label className="text-label text-caption">Global Growth Factor</Label>
+            <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
           </div>
@@ -132,7 +129,7 @@ export function EconomicControlCard({
             step={0.001}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
+          <div className="text-label-secondary text-eyebrow flex justify-between">
             <span>-50%</span>
             <span>0%</span>
             <span>+3.21%</span>
@@ -147,7 +144,6 @@ export function EconomicControlCard({
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   onClick={() => onGlobalGrowthFactorChange(preset.value)}
-                  className="h-8 px-3 text-xs font-semibold"
                 >
                   <span className={isActive ? "" : preset.color}>{preset.label}</span>
                 </Button>
@@ -156,16 +152,13 @@ export function EconomicControlCard({
           </div>
         </div>
 
-        <Separator className="border-border/20" />
+        <Separator className="border-separator" />
 
         {/* Base Inflation Rate */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-foreground text-xs font-semibold">Base Inflation Rate</Label>
-            <Badge
-              variant="outline"
-              className="rounded-full border-blue-500/20 bg-blue-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-blue-500 tabular-nums"
-            >
+            <Label className="text-label text-caption">Base Inflation Rate</Label>
+            <Badge variant="blue" className="rounded-full px-2.5 py-0.5 tabular-nums">
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
           </div>
@@ -177,7 +170,7 @@ export function EconomicControlCard({
             step={0.001}
             className="cursor-grab py-1 active:cursor-grabbing"
           />
-          <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
+          <div className="text-label-secondary text-eyebrow flex justify-between">
             <span>0%</span>
             <span>2% (default)</span>
             <span>5%</span>
@@ -186,28 +179,23 @@ export function EconomicControlCard({
         </div>
 
         {showAdvanced && (
-          <div className="animate-in fade-in slide-in-from-top-2 space-y-6 pt-1 duration-200">
-            <Separator className="border-border/20 my-1" />
+          <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-6 pt-1">
+            <Separator className="border-separator my-1" />
 
             {/* Diminishing Returns */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                  Diminishing Returns
-                </Label>
-                <Info className="text-muted-foreground h-3.5 w-3.5" />
+                <Label className="text-label-secondary text-subhead">Diminishing Returns</Label>
+                <Info className="text-label-secondary h-3.5 w-3.5" />
               </div>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-label-secondary text-footnote leading-relaxed">
                 Countries above the GDP/capita threshold experience reduced growth rates.
               </p>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-xs font-semibold">Threshold</Label>
-                  <Badge
-                    variant="outline"
-                    className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
-                  >
+                  <Label className="text-label text-caption">Threshold</Label>
+                  <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
                     ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
                   </Badge>
                 </div>
@@ -223,11 +211,8 @@ export function EconomicControlCard({
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-xs font-semibold">Factor (strength)</Label>
-                  <Badge
-                    variant="outline"
-                    className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
-                  >
+                  <Label className="text-label text-caption">Factor (strength)</Label>
+                  <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
                     {diminishingReturnsFactor.toFixed(2)}
                   </Badge>
                 </div>
@@ -239,7 +224,7 @@ export function EconomicControlCard({
                   step={0.01}
                   className="cursor-grab py-1 active:cursor-grabbing"
                 />
-                <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
+                <div className="text-label-secondary text-eyebrow flex justify-between">
                   <span>Weak (0.1)</span>
                   <span>Default (0.5)</span>
                   <span>Strong (1.0)</span>
@@ -247,18 +232,13 @@ export function EconomicControlCard({
               </div>
             </div>
 
-            <Separator className="border-border/20 my-1" />
+            <Separator className="border-separator my-1" />
 
             {/* Min Growth Floor */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-foreground text-xs font-semibold">
-                  Minimum Growth Floor
-                </Label>
-                <Badge
-                  variant="outline"
-                  className="rounded-full border-indigo-500/20 bg-indigo-500/5 px-2.5 py-0.5 font-mono text-xs font-semibold text-indigo-500 tabular-nums"
-                >
+                <Label className="text-label text-caption">Minimum Growth Floor</Label>
+                <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
                   {(minGrowthFloor * 100).toFixed(1)}%
                 </Badge>
               </div>
@@ -270,50 +250,50 @@ export function EconomicControlCard({
                 step={0.005}
                 className="cursor-grab py-1 active:cursor-grabbing"
               />
-              <div className="text-muted-foreground flex justify-between text-xs font-semibold tracking-wider uppercase">
+              <div className="text-label-secondary text-eyebrow flex justify-between">
                 <span>-20%</span>
                 <span>-10% (default)</span>
                 <span>0%</span>
               </div>
             </div>
 
-            <Separator className="border-border/20 my-1" />
+            <Separator className="border-separator my-1" />
 
             {/* Tier Growth Modifiers (Collapsible) */}
             <div className="space-y-3">
               <button
                 type="button"
                 onClick={() => setShowTierModifiers(!showTierModifiers)}
-                className="group hover:text-foreground flex w-full items-center justify-between text-left transition-colors"
+                className="group hover:text-label flex w-full items-center justify-between text-left transition-colors"
               >
-                <Label className="text-muted-foreground group-hover:text-foreground cursor-pointer text-xs font-bold tracking-wider uppercase">
+                <Label className="text-label-secondary group-hover:text-label text-subhead cursor-pointer">
                   Tier Growth Modifiers
                 </Label>
                 {showTierModifiers ? (
-                  <ChevronUp className="text-muted-foreground h-4 w-4" />
+                  <ChevronUp className="text-label-secondary h-4 w-4" />
                 ) : (
-                  <ChevronDown className="text-muted-foreground h-4 w-4" />
+                  <ChevronDown className="text-label-secondary h-4 w-4" />
                 )}
               </button>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-label-secondary text-footnote leading-relaxed">
                 Per-tier multipliers applied to base growth rates. 1.0x = no change.
               </p>
 
               {showTierModifiers && (
-                <div className="border-border/20 bg-card/10 space-y-4 rounded-lg border p-4">
+                <div className="border-separator bg-surface rounded-control space-y-4 border p-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {TIER_INFO.map(({ tier, range, maxGrowth }) => {
                       const value = tierGrowthModifiers[tier] ?? 1.0;
                       return (
                         <div
                           key={tier}
-                          className="border-border/10 bg-card/5 space-y-2 rounded-lg border p-3"
+                          className="border-separator bg-surface rounded-control space-y-2 border p-3"
                         >
-                          <div className="flex items-center justify-between text-xs font-medium">
-                            <span className="text-foreground font-semibold">{tier}</span>
-                            <span className="text-muted-foreground text-xs">
+                          <div className="text-caption flex items-center justify-between">
+                            <span className="text-label font-semibold">{tier}</span>
+                            <span className="text-label-secondary text-footnote">
                               {range} | max {maxGrowth} |{" "}
-                              <span className="font-mono font-bold text-blue-500">
+                              <span className="text-blue font-semibold tabular-nums">
                                 {value.toFixed(2)}x
                               </span>
                             </span>
@@ -335,7 +315,7 @@ export function EconomicControlCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-full text-xs font-semibold"
+                    className="w-full"
                     onClick={() =>
                       TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))
                     }
@@ -348,32 +328,30 @@ export function EconomicControlCard({
           </div>
         )}
 
-        <Separator className="border-border/20" />
+        <Separator className="border-separator" />
 
         {/* Toggle Settings */}
         <div className="space-y-3">
-          <span className="text-muted-foreground block text-xs font-bold tracking-wider uppercase">
-            Calculation Automation
-          </span>
+          <span className="text-label-secondary text-eyebrow block">Calculation Automation</span>
           <div className="space-y-3">
-            <div className="border-border/10 bg-card/5 flex items-center justify-between rounded-lg border p-3">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-3">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-update" className="text-foreground text-xs font-semibold">
+                <Label htmlFor="auto-update" className="text-label text-caption">
                   Auto Calculations
                 </Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Enable automatic economic calculations
                 </p>
               </div>
               <Switch id="auto-update" checked={autoUpdate} onCheckedChange={onAutoUpdateChange} />
             </div>
 
-            <div className="border-border/10 bg-card/5 flex items-center justify-between rounded-lg border p-3">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-3">
               <div className="space-y-0.5">
-                <Label htmlFor="bot-sync" className="text-foreground text-xs font-semibold">
+                <Label htmlFor="bot-sync" className="text-label text-caption">
                   Discord Bot Sync
                 </Label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Enable time synchronization with Discord bot
                 </p>
               </div>
@@ -386,14 +364,10 @@ export function EconomicControlCard({
           </div>
         </div>
 
-        <Separator className="border-border/20" />
+        <Separator className="border-separator" />
 
         {/* Force Recalculation */}
-        <Button
-          onClick={onForceCalculation}
-          disabled={calculationPending}
-          className="h-10 w-full text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 hover:scale-[1.01]"
-        >
+        <Button onClick={onForceCalculation} disabled={calculationPending} className="h-10 w-full">
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

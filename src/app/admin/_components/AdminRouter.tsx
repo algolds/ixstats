@@ -17,13 +17,13 @@ import { Skeleton } from "~/components/ui/skeleton";
 // Loader wireframe
 const Loader = () => (
   <div className="space-y-6">
-    <Skeleton className="h-32 w-full rounded-2xl" />
+    <Skeleton className="rounded-card h-32 w-full" />
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Skeleton key={i} className="h-24 rounded-xl" />
+        <Skeleton key={i} className="rounded-row h-24" />
       ))}
     </div>
-    <Skeleton className="h-96 w-full rounded-2xl" />
+    <Skeleton className="rounded-card h-96 w-full" />
   </div>
 );
 

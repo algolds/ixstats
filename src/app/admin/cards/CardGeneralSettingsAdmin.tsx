@@ -15,7 +15,8 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Input } from "~/components/ui/input";
 
 export function CardGeneralSettingsAdmin() {
   const notify = useNotify();
@@ -43,33 +44,22 @@ export function CardGeneralSettingsAdmin() {
   };
 
   return (
-    <FacetContainer className="space-y-6">
+    <FacetCard className="space-y-6">
       {/* Header bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-foreground text-lg font-bold">General Card System Policies</h2>
-          <p className="text-muted-foreground text-xs font-medium">
+          <h2 className="text-label text-title-3">General Card System Policies</h2>
+          <p className="text-label-secondary text-caption">
             Configure global marketplace controls, free pack allowances, drop rates, and lore
             permissions.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => void refetch()}
-            disabled={isLoading}
-            className="border-border/40 rounded-xl active:scale-[0.98]"
-          >
+          <Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isLoading}>
             <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             Reload
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="rounded-xl active:scale-[0.98]"
-          >
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
             <Save className="mr-1.5 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Policies"}
           </Button>
@@ -78,23 +68,20 @@ export function CardGeneralSettingsAdmin() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Marketplace & Trading Policies */}
-        <FacetCard
-          depth={1}
-          className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
-        >
-          <div className="border-border/40 flex items-center gap-2.5 border-b pb-3">
-            <ShoppingBag className="h-4 w-4 text-emerald-500" />
-            <h3 className="text-foreground text-sm font-bold">Marketplace & Trading</h3>
+        <FacetCard className="space-y-4 p-6">
+          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+            <ShoppingBag className="text-green h-4 w-4" />
+            <h3 className="text-label text-headline">Marketplace & Trading</h3>
           </div>
 
           <div className="space-y-4">
             {/* Global Trading Toggle */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
+                <label className="text-label text-caption block">
                   Global Trading & Auction House
                 </label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Master kill-switch for direct card trades and auction marketplace
                 </p>
               </div>
@@ -105,108 +92,98 @@ export function CardGeneralSettingsAdmin() {
             </div>
 
             {/* Auction House Rake / Fee % */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
+                <label className="text-label text-caption block">
                   Marketplace Transaction Tax (House Rake)
                 </label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Percentage fee deducted from card sales/auctions
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={0}
                   max={50}
                   step={0.5}
                   value={form.auctionHouseRakePct ?? 5}
                   onChange={(e) => handleChange("auctionHouseRakePct", Number(e.target.value))}
-                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-20 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="w-20 text-right font-mono"
                 />
-                <span className="text-muted-foreground text-xs font-semibold">%</span>
+                <span className="text-label-secondary text-caption">%</span>
               </div>
             </div>
           </div>
         </FacetCard>
 
         {/* Daily Claims & Allowance */}
-        <FacetCard
-          depth={1}
-          className="border-border bg-card/60 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
-        >
-          <div className="border-border/60 flex items-center gap-2.5 border-b pb-3">
-            <Gift className="h-4 w-4 text-purple-500" />
-            <h3 className="text-foreground text-sm font-bold">Daily Free Packs & Cooldowns</h3>
+        <FacetCard className="space-y-4 p-6">
+          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+            <Gift className="text-purple h-4 w-4" />
+            <h3 className="text-label text-headline">Daily Free Packs & Cooldowns</h3>
           </div>
 
           <div className="space-y-4">
             {/* Daily Free Packs Amount */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
-                  Daily Free Pack Allowance
-                </label>
-                <p className="text-muted-foreground text-xs">
+                <label className="text-label text-caption block">Daily Free Pack Allowance</label>
+                <p className="text-label-secondary text-footnote">
                   Number of complimentary packs grantable per cooldown cycle
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={0}
                   max={50}
                   value={form.dailyFreePacks ?? 1}
                   onChange={(e) => handleChange("dailyFreePacks", Number(e.target.value))}
-                  className="border-border bg-card text-foreground focus:border-primary h-8 w-20 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="w-20 text-right font-mono"
                 />
-                <span className="text-muted-foreground text-xs font-semibold">packs</span>
+                <span className="text-label-secondary text-caption">packs</span>
               </div>
             </div>
 
             {/* Cooldown Hours */}
-            <div className="border-border bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
-                  Free Pack Reset Interval
-                </label>
-                <p className="text-muted-foreground text-xs">
+                <label className="text-label text-caption block">Free Pack Reset Interval</label>
+                <p className="text-label-secondary text-footnote">
                   Hours required between consecutive free pack claims
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={1}
                   max={168}
                   value={form.dailyPackCooldownHours ?? 24}
                   onChange={(e) => handleChange("dailyPackCooldownHours", Number(e.target.value))}
-                  className="border-border bg-card text-foreground focus:border-primary h-8 w-20 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="w-20 text-right font-mono"
                 />
-                <span className="text-muted-foreground text-xs font-semibold">hours</span>
+                <span className="text-label-secondary text-caption">hours</span>
               </div>
             </div>
           </div>
         </FacetCard>
 
         {/* Player Minting & Lore Permissions */}
-        <FacetCard
-          depth={1}
-          className="border-border bg-card/60 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
-        >
-          <div className="border-border/60 flex items-center gap-2.5 border-b pb-3">
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            <h3 className="text-foreground text-sm font-bold">Lore Creation & Permissions</h3>
+        <FacetCard className="space-y-4 p-6">
+          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+            <Sparkles className="text-yellow h-4 w-4" />
+            <h3 className="text-label text-headline">Lore Creation & Permissions</h3>
           </div>
 
           <div className="space-y-4">
             {/* Player Minting Toggle */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
+                <label className="text-label text-caption block">
                   Player Lore Card Submissions
                 </label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Allow regular players to propose lore cards for review
                 </p>
               </div>
@@ -217,12 +194,12 @@ export function CardGeneralSettingsAdmin() {
             </div>
 
             {/* Auto Generate Lore Thumbnails */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
+                <label className="text-label text-caption block">
                   Auto-Resolve Wiki Thumbnails
                 </label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Automatically extract artwork during bulk wiki lore card scraping
                 </p>
               </div>
@@ -237,66 +214,61 @@ export function CardGeneralSettingsAdmin() {
         </FacetCard>
 
         {/* Binder & Recycler Limits */}
-        <FacetCard
-          depth={1}
-          className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-6 backdrop-blur-md"
-        >
-          <div className="border-border/40 flex items-center gap-2.5 border-b pb-3">
-            <Layers className="h-4 w-4 text-cyan-500" />
-            <h3 className="text-foreground text-sm font-bold">Inventory & Recycler Limits</h3>
+        <FacetCard className="space-y-4 p-6">
+          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+            <Layers className="text-teal h-4 w-4" />
+            <h3 className="text-label text-headline">Inventory & Recycler Limits</h3>
           </div>
 
           <div className="space-y-4">
             {/* Max Inventory Cards */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
-                  Player Binder Capacity Cap
-                </label>
-                <p className="text-muted-foreground text-xs">
+                <label className="text-label text-caption block">Player Binder Capacity Cap</label>
+                <p className="text-label-secondary text-footnote">
                   Maximum active cards a user can hold in their collection
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={100}
                   max={50000}
                   step={100}
                   value={form.maxInventoryCards ?? 2500}
                   onChange={(e) => handleChange("maxInventoryCards", Number(e.target.value))}
-                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="w-24 text-right font-mono"
                 />
-                <span className="text-muted-foreground text-xs font-semibold">cards</span>
+                <span className="text-label-secondary text-caption">cards</span>
               </div>
             </div>
 
             {/* Max Junk Batch Size */}
-            <div className="border-border/40 bg-card/40 flex items-center justify-between gap-4 rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
               <div className="space-y-0.5">
-                <label className="text-foreground block text-xs font-semibold">
+                <label className="text-label text-caption block">
                   Max Batch Junk/Recycle Limit
                 </label>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-label-secondary text-footnote">
                   Maximum cards recyclable in a single batch payout call
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={10}
                   max={500}
                   step={10}
                   value={form.maxJunkBatchSize ?? 100}
                   onChange={(e) => handleChange("maxJunkBatchSize", Number(e.target.value))}
-                  className="border-border/40 bg-background text-foreground focus:border-primary h-8 w-24 rounded-lg border px-2 text-right font-mono text-xs font-semibold focus:outline-none"
+                  className="w-24 text-right font-mono"
                 />
-                <span className="text-muted-foreground text-xs font-semibold">cards</span>
+                <span className="text-label-secondary text-caption">cards</span>
               </div>
             </div>
           </div>
         </FacetCard>
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 }

@@ -10,13 +10,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetCard } from "~/components/ui/facet-container";
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -113,21 +107,21 @@ export function SvgProcessingDialog({
   const isCommitting = commitMutation.isPending;
 
   return (
-    <Dialog open={!!uploadId} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={!!uploadId} onOpenChange={() => onClose()}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             Process SVG Upload
             <Badge variant="outline">{layerType}</Badge>
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm">{fileName}</p>
-        </DialogHeader>
+          </SheetTitle>
+          <p className="text-label-secondary text-body">{fileName}</p>
+        </SheetHeader>
 
         <div className="space-y-4">
           {/* Step 1: Process */}
           {!processResult && !isProcessing && (
-            <div className="border-border rounded-lg border p-6 text-center">
-              <p className="text-foreground/80 mb-4 text-sm">
+            <div className="border-separator rounded-control border p-6 text-center">
+              <p className="text-label text-body mb-4">
                 Click Process to extract features from the SVG and convert to GeoJSON.
               </p>
               <Button onClick={handleProcess}>
@@ -140,15 +134,15 @@ export function SvgProcessingDialog({
           {/* Processing spinner */}
           {isProcessing && (
             <div className="flex items-center justify-center gap-3 py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-              <span className="text-foreground/80 text-sm">Processing SVG...</span>
+              <Loader2 className="text-blue h-5 w-5 animate-spin" />
+              <span className="text-label text-body">Processing SVG...</span>
             </div>
           )}
 
           {/* Processing error */}
           {processMutation.isError && (
-            <div className="border-destructive/30 rounded-lg border p-4">
-              <div className="text-destructive flex items-center gap-2 text-sm">
+            <div className="border-destructive/30 rounded-control border p-4">
+              <div className="text-destructive text-body flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 {processMutation.error.message}
               </div>
@@ -160,21 +154,21 @@ export function SvgProcessingDialog({
             <>
               {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
-                <FacetCard surface="solid" className="rounded-lg p-3">
+                <FacetCard className="rounded-control p-3">
                   <Eyebrow className="block">Features</Eyebrow>
-                  <div className="text-foreground text-lg font-semibold tabular-nums">
+                  <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount}
                   </div>
                 </FacetCard>
-                <FacetCard surface="solid" className="rounded-lg p-3">
+                <FacetCard className="rounded-control p-3">
                   <Eyebrow className="block">Matched</Eyebrow>
-                  <div className="text-foreground text-lg font-semibold tabular-nums">
+                  <div className="text-label text-title-3 tabular-nums">
                     {Object.keys(processResult.countryMatches).length}
                   </div>
                 </FacetCard>
-                <FacetCard surface="solid" className="rounded-lg p-3">
+                <FacetCard className="rounded-control p-3">
                   <Eyebrow className="block">Unmatched</Eyebrow>
-                  <div className="text-foreground text-lg font-semibold tabular-nums">
+                  <div className="text-label text-title-3 tabular-nums">
                     {processResult.featureCount - Object.keys(processResult.countryMatches).length}
                   </div>
                 </FacetCard>
@@ -186,19 +180,19 @@ export function SvgProcessingDialog({
                   {processResult.features.map((f) => (
                     <div
                       key={f.featureId}
-                      className="hover:bg-accent flex items-center justify-between rounded px-3 py-1.5 text-sm"
+                      className="hover:bg-fill-4 rounded-control-sm text-body flex items-center justify-between px-3 py-1.5"
                     >
                       <div className="flex items-center gap-2">
                         {f.countryMatch ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" />
+                          <Check className="text-green h-3.5 w-3.5" />
                         ) : (
-                          <X className="h-3.5 w-3.5 text-amber-500" />
+                          <X className="text-yellow h-3.5 w-3.5" />
                         )}
                         <span className="font-medium">{f.displayName}</span>
                       </div>
-                      <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                      <div className="text-label-secondary text-footnote flex items-center gap-3">
                         {f.countryMatch && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary">
                             {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} →{" "}
                             {f.countryMatch.countryName}
                           </Badge>
@@ -216,11 +210,11 @@ export function SvgProcessingDialog({
               )}
 
               {/* Processing log */}
-              <details className="text-muted-foreground text-xs">
-                <summary className="hover:text-foreground cursor-pointer">
+              <details className="text-label-secondary text-footnote">
+                <summary className="hover:text-label cursor-pointer">
                   Processing log ({processResult.log.length} entries)
                 </summary>
-                <pre className="bg-muted mt-2 max-h-32 overflow-auto rounded p-2">
+                <pre className="bg-fill-3 rounded-control-sm mt-2 max-h-32 overflow-auto p-2">
                   {processResult.log.join("\n")}
                 </pre>
               </details>
@@ -229,8 +223,8 @@ export function SvgProcessingDialog({
 
           {/* Commit error */}
           {commitMutation.isError && (
-            <div className="border-destructive/30 rounded-lg border p-4">
-              <div className="text-destructive flex items-center gap-2 text-sm">
+            <div className="border-destructive/30 rounded-control border p-4">
+              <div className="text-destructive text-body flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 {commitMutation.error.message}
               </div>
@@ -238,7 +232,7 @@ export function SvgProcessingDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="outline" onClick={onClose} disabled={isCommitting}>
             Cancel
           </Button>
@@ -249,11 +243,7 @@ export function SvgProcessingDialog({
             </Button>
           )}
           {processResult && (
-            <Button
-              onClick={handleCommit}
-              disabled={isCommitting}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
+            <Button onClick={handleCommit} disabled={isCommitting}>
               {isCommitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -267,8 +257,8 @@ export function SvgProcessingDialog({
               )}
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

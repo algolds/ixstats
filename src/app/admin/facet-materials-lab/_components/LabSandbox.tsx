@@ -3,6 +3,10 @@ import { cn } from "~/lib/utils";
 import { SunLight as Sun, HalfMoon as Moon, Sparks as Sparkles, Bug } from "iconoir-react";
 import { type LabConfig, type BgStyleType } from "./types";
 import { LabTemplates } from "./LabTemplates";
+import { useTheme } from "~/context/theme-context";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface LabSandboxProps {
   config: LabConfig;
@@ -15,20 +19,20 @@ function getBgClasses(style: BgStyleType, theme: "light" | "dark") {
   switch (style) {
     case "refraction":
       return isDark
-        ? "dark border-zinc-800 bg-zinc-950 text-white"
-        : "light border-zinc-200 bg-zinc-50 text-zinc-900";
+        ? "border-separator bg-surface text-label"
+        : "border-separator bg-surface-secondary text-label";
     case "gradient":
-      return isDark ? "dark border-zinc-800 text-white" : "light border-zinc-200 text-zinc-900";
+      return isDark ? "border-separator text-label" : "border-separator text-label";
     case "solid":
-      return isDark ? "dark border-zinc-800 text-white" : "light border-zinc-200 text-zinc-900";
+      return isDark ? "border-separator text-label" : "border-separator text-label";
     case "pattern":
       return isDark
-        ? "dark border-zinc-800 bg-zinc-950 text-white"
-        : "light border-zinc-200 bg-zinc-50 text-zinc-900";
+        ? "border-separator bg-surface text-label"
+        : "border-separator bg-surface-secondary text-label";
     case "none":
       return isDark
-        ? "dark border-transparent bg-transparent text-white"
-        : "light border-transparent bg-transparent text-zinc-900";
+        ? "border-transparent bg-transparent text-label"
+        : "border-transparent bg-transparent text-label";
   }
 }
 
@@ -41,9 +45,9 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
       return (
         <>
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-50 select-none">
-            <div className="absolute -top-16 -left-16 h-48 w-48 rounded-full bg-indigo-500/25 blur-3xl" />
-            <div className="absolute top-1/4 -right-16 h-56 w-56 rounded-full bg-pink-500/20 blur-3xl" />
-            <div className="absolute -bottom-16 left-1/3 h-64 w-64 rounded-full bg-teal-500/20 blur-3xl" />
+            <div className="bg-indigo/25 absolute -top-16 -left-16 h-48 w-48 rounded-full blur-3xl" />
+            <div className="bg-pink/20 absolute top-1/4 -right-16 h-56 w-56 rounded-full blur-3xl" />
+            <div className="bg-teal/20 absolute -bottom-16 left-1/3 h-64 w-64 rounded-full blur-3xl" />
 
             <div
               className={cn(
@@ -56,7 +60,7 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
 
             <div
               className={cn(
-                "absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono text-xs tracking-widest uppercase",
+                "text-eyebrow absolute inset-0 flex flex-col items-center justify-between px-6 py-12 font-mono",
                 textColor
               )}
             >
@@ -64,7 +68,7 @@ function renderBackdrop(style: BgStyleType, theme: "light" | "dark", customColor
                 <span>Facet UI Engine</span>
                 <span>1.1.0 Ogma</span>
               </div>
-              <div className="flex -rotate-3 gap-12 text-xs font-bold">
+              <div className="text-caption flex -rotate-3 gap-12">
                 <span>Tactile Shading Grid</span>
                 <span>Optic Refraction Field</span>
               </div>
@@ -131,6 +135,12 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
   } = config;
 
   const [showDebug, setShowDebug] = React.useState(false);
+  const { effectiveTheme, setTheme } = useTheme();
+
+  // Keep the exported snippet's theme in step with the real appearance.
+  React.useEffect(() => {
+    if (simulatedTheme !== effectiveTheme) onChange({ simulatedTheme: effectiveTheme });
+  }, [effectiveTheme, simulatedTheme, onChange]);
 
   // Real-time pointer coordinates tracker for highlight sheen styles
   const previewRef = React.useRef<HTMLDivElement>(null);
@@ -263,46 +273,32 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
   } as React.CSSProperties;
 
   return (
-    <div className="bg-card/45 border-border/40 flex flex-1 flex-col gap-4 rounded-2xl border p-6 backdrop-blur-md">
-      <div className="border-border/20 flex items-center justify-between border-b pb-3">
+    <FacetCard className="flex flex-1 flex-col gap-4 p-6">
+      <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="text-primary h-4 w-4" />
-          <h3 className="text-sm font-semibold tracking-wide uppercase">
-            Simulated Sandbox Preview
-          </h3>
+          <Sparkles className="text-tint h-4 w-4" />
+          <h3 className="text-headline">Sandbox preview</h3>
         </div>
-        <div className="bg-muted/40 border-border/20 flex items-center gap-1.5 rounded-lg border p-0.5">
-          <button
-            onClick={() => onChange({ simulatedTheme: "light" })}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              simulatedTheme === "light"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Sun className="h-3.5 w-3.5" />
-            <span>Light</span>
-          </button>
-          <button
-            onClick={() => onChange({ simulatedTheme: "dark" })}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md p-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              simulatedTheme === "dark"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Moon className="h-3.5 w-3.5" />
-            <span>Dark</span>
-          </button>
-        </div>
+        {/* Previews follow the app appearance: Facet roles switch on html[data-theme]. */}
+        <SegmentedControl
+          size="sm"
+          aria-label="Appearance"
+          value={effectiveTheme}
+          onValueChange={(value) => {
+            setTheme(value);
+            onChange({ simulatedTheme: value });
+          }}
+          options={[
+            { value: "light", label: "Light", icon: <Sun /> },
+            { value: "dark", label: "Dark", icon: <Moon /> },
+          ]}
+        />
       </div>
 
       {/* Live Interactive Rendering Canvas */}
       <div
         className={cn(
-          "relative flex min-h-[360px] items-center justify-center overflow-hidden rounded-xl border p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-350",
+          "rounded-row duration-fast relative flex min-h-[360px] items-center justify-center overflow-hidden border p-12 transition-colors",
           getBgClasses(bgStyle, simulatedTheme)
         )}
         style={
@@ -319,7 +315,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           <>
             {/* Background element — shifts backward with depth */}
             <div
-              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
+              className="pointer-events-none absolute z-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${15 - dofStrength * 0.08}%`,
                 left: `${10 - dofStrength * 0.05}%`,
@@ -335,7 +331,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[2] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
+              className="pointer-events-none absolute z-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 bottom: `${12 - dofStrength * 0.06}%`,
                 right: `${8 - dofStrength * 0.04}%`,
@@ -353,7 +349,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
             {/* Foreground element — shifts forward with depth */}
             <div
-              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
+              className="pointer-events-none absolute z-20 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${75 + dofStrength * 0.05}%`,
                 left: `${80 + dofStrength * 0.08}%`,
@@ -369,7 +365,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               }}
             />
             <div
-              className="pointer-events-none absolute z-[15] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
+              className="pointer-events-none absolute z-20 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 select-none"
               style={{
                 top: `${20 - dofStrength * 0.03}%`,
                 right: `${5 + dofStrength * 0.06}%`,
@@ -397,26 +393,24 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       </div>
 
       {/* Debug toggle */}
-      <button
+      <Button
+        variant={showDebug ? "tinted" : "gray"}
+        size="sm"
+        aria-pressed={showDebug}
         onClick={() => setShowDebug(!showDebug)}
-        className={cn(
-          "flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-          showDebug
-            ? "bg-primary border-primary text-primary-foreground"
-            : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground"
-        )}
+        className="self-end"
       >
-        <Bug className="h-3 w-3" />
+        <Bug />
         {showDebug ? "Hide CSS Debug" : "CSS Debug"}
-      </button>
+      </Button>
 
       {/* Debug panel */}
       {showDebug && (
-        <div className="bg-background/80 border-border/20 space-y-2 rounded-xl border p-4 font-mono text-xs leading-relaxed backdrop-blur-sm">
-          <div className="text-muted-foreground mb-1.5 flex items-center gap-2 border-b pb-1.5 text-xs font-bold tracking-wider uppercase">
+        <div className="bg-surface-secondary rounded-row text-footnote space-y-2 p-4 font-mono leading-relaxed">
+          <div className="text-label-secondary text-subhead border-separator mb-1.5 flex items-center gap-2 border-b pb-1.5 font-sans">
             <Bug className="h-3 w-3" />
             Computed CSS
-            <span className="text-muted-foreground/50 ml-auto font-normal normal-case">live</span>
+            <span className="text-label-tertiary ml-auto font-normal normal-case">live</span>
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
             {[
@@ -425,28 +419,26 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               ["Material", `facet-material-${material}`],
             ].map(([label, val]) => (
               <React.Fragment key={label}>
-                <span className="text-muted-foreground">{label}</span>
-                <span className="text-foreground truncate" title={val}>
+                <span className="text-label-secondary">{label}</span>
+                <span className="text-label truncate" title={val}>
                   {val}
                 </span>
               </React.Fragment>
             ))}
           </div>
-          <div className="border-border/10 border-t pt-1.5">
-            <div className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-              Computed Styles
-            </div>
+          <div className="border-separator border-t pt-1.5">
+            <div className="text-label-secondary text-subhead mb-1 font-sans">Computed styles</div>
             <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
               {Object.entries(computed).map(([prop, val]) => (
                 <React.Fragment key={prop}>
-                  <span className="text-muted-foreground truncate">{prop}</span>
+                  <span className="text-label-secondary truncate">{prop}</span>
                   <span
-                    className="text-foreground truncate font-normal"
+                    className="text-label truncate font-normal"
                     title={val}
                     style={{
                       color:
                         val === "none" || val === "not set"
-                          ? "var(--color-error, #ef4444)"
+                          ? "var(--color-destructive)"
                           : undefined,
                       fontStyle: val === "not set" ? "italic" : undefined,
                     }}
@@ -459,6 +451,6 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
           </div>
         </div>
       )}
-    </div>
+    </FacetCard>
   );
 }

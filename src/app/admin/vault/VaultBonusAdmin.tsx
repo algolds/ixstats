@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Input } from "~/components/ui/input";
 
 interface BonusField {
   key: string;
@@ -37,7 +38,7 @@ const GROUPS: BonusGroup[] = [
     title: "Onboarding Rewards",
     description: "One-time milestone grants for player registration and nation founding",
     icon: UserCheck,
-    accentColor: "text-emerald-500",
+    accentColor: "text-green",
     fields: [
       {
         key: "newPlayer",
@@ -55,7 +56,7 @@ const GROUPS: BonusGroup[] = [
     title: "NationStates Deck Import",
     description: "IxCredits rewarded for syncing external NationStates trading cards",
     icon: Globe,
-    accentColor: "text-blue-500",
+    accentColor: "text-blue",
     fields: [
       { key: "nsPerCard", label: "Credits Per Card", hint: "Credits awarded per imported card" },
       {
@@ -69,7 +70,7 @@ const GROUPS: BonusGroup[] = [
     title: "Achievement Unlock Tiers",
     description: "One-time milestone payouts when players unlock cards of specific rarities",
     icon: Trophy,
-    accentColor: "text-amber-500",
+    accentColor: "text-yellow",
     fields: [
       { key: "achievementCommon", label: "Common Unlock" },
       { key: "achievementUncommon", label: "Uncommon Unlock" },
@@ -82,7 +83,7 @@ const GROUPS: BonusGroup[] = [
     title: "Loreward Metagame Payouts",
     description: "Competitive lore creation and community showcase rewards",
     icon: Award,
-    accentColor: "text-purple-500",
+    accentColor: "text-purple",
     fields: [
       {
         key: "loreward",
@@ -115,7 +116,7 @@ export function VaultBonusAdmin() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin" />
+        <RefreshCw className="text-label-secondary h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -123,32 +124,29 @@ export function VaultBonusAdmin() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <FacetCard
-        depth={2}
-        className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 shadow-lg backdrop-blur-xl"
-      >
+      <FacetCard className="border-green/30 bg-green/10 p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/20 p-2.5 backdrop-blur-md">
-              <Gift className="h-6 w-6 text-emerald-400" />
+            <div className="rounded-row border-green/40 bg-green/20 border p-2.5">
+              <Gift className="text-green h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-foreground text-xl font-bold">Metagame Economy & Bonuses</h2>
-              <p className="text-muted-foreground text-xs">
+              <h2 className="text-label text-title-2">Metagame Economy & Bonuses</h2>
+              <p className="text-label-secondary text-footnote">
                 Global credit grants for milestones, deck imports, achievements, and lore rewards.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="bg-card/60 border-border flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5">
+            <label className="bg-surface border-separator rounded-row flex cursor-pointer items-center gap-2 border px-3 py-1.5">
               <input
                 type="checkbox"
                 checked={enabled}
                 onChange={(e) => setForm((p) => ({ ...p, enabled: e.target.checked ? 1 : 0 }))}
-                className="border-border h-4 w-4 rounded accent-emerald-500"
+                className="border-separator rounded-control-sm accent-green h-4 w-4"
               />
-              <span className="text-foreground text-xs font-semibold">
+              <span className="text-label text-caption">
                 {enabled ? "Bonuses Active" : "Bonuses Paused"}
               </span>
             </label>
@@ -161,16 +159,12 @@ export function VaultBonusAdmin() {
         {GROUPS.map((group) => {
           const GroupIcon = group.icon;
           return (
-            <FacetCard
-              key={group.title}
-              depth={1}
-              className="border-border bg-card/80 space-y-4 rounded-2xl border p-5 shadow-sm backdrop-blur-xl"
-            >
-              <div className="border-border flex items-center gap-2.5 border-b pb-2">
+            <FacetCard key={group.title} className="space-y-4 p-5">
+              <div className="border-separator flex items-center gap-2.5 border-b pb-2">
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
-                  <h3 className="text-foreground text-sm font-bold">{group.title}</h3>
-                  <p className="text-muted-foreground text-xs">{group.description}</p>
+                  <h3 className="text-label text-headline">{group.title}</h3>
+                  <p className="text-label-secondary text-footnote">{group.description}</p>
                 </div>
               </div>
 
@@ -178,15 +172,15 @@ export function VaultBonusAdmin() {
                 {group.fields.map((field) => (
                   <div key={field.key} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-foreground text-xs font-semibold">{field.label}</label>
+                      <label className="text-label text-caption">{field.label}</label>
                       {field.hint && (
-                        <span className="text-muted-foreground hidden text-xs sm:inline">
+                        <span className="text-label-secondary text-footnote hidden sm:inline">
                           {field.hint}
                         </span>
                       )}
                     </div>
                     <div className="relative">
-                      <input
+                      <Input
                         type="number"
                         step="any"
                         min={0}
@@ -195,9 +189,9 @@ export function VaultBonusAdmin() {
                           setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
-                        className="border-border bg-background/60 text-foreground h-8 w-full rounded-lg border px-3 font-mono text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-emerald-500 focus:outline-none"
+                        className="w-full font-mono"
                       />
-                      <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 font-mono text-xs uppercase">
+                      <span className="text-label-secondary text-eyebrow absolute top-1/2 right-3 -translate-y-1/2 tabular-nums">
                         Credits
                       </span>
                     </div>
@@ -212,9 +206,10 @@ export function VaultBonusAdmin() {
       {/* Save Button Bar */}
       <div className="flex justify-end pt-2">
         <Button
+          variant="tinted"
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
-          className="h-10 rounded-xl border border-emerald-400/30 bg-emerald-500/20 px-6 text-xs font-semibold text-emerald-600 shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
+          className="h-10"
         >
           {saveMutation.isPending ? (
             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

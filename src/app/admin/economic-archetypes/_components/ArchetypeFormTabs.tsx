@@ -35,53 +35,53 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">Key *</label>
+          <label className="text-label text-caption mb-1.5 block">Key *</label>
           <Input
             value={formData.key}
             onChange={(e) => setFormData((prev) => ({ ...prev, key: e.target.value }))}
             placeholder="e.g., silicon-valley"
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">Name *</label>
+          <label className="text-label text-caption mb-1.5 block">Name *</label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="e.g., Silicon Valley Model"
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">Description *</label>
+        <label className="text-label text-caption mb-1.5 block">Description *</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Brief description of the economic archetype..."
           rows={3}
-          className="text-xs"
+          className="md:text-footnote"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">Region *</label>
+          <label className="text-label text-caption mb-1.5 block">Region *</label>
           <Input
             value={formData.region}
             onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value }))}
             placeholder="e.g., United States (California)"
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">Era *</label>
+          <label className="text-label text-caption mb-1.5 block">Era *</label>
           <Select
             value={formData.era}
             onValueChange={(v: ArchetypeEra) => setFormData((prev) => ({ ...prev, era: v }))}
           >
-            <SelectTrigger className="text-xs">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -93,14 +93,12 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">
-          Implementation Complexity
-        </label>
+        <label className="text-label text-caption mb-1.5 block">Implementation Complexity</label>
         <Select
           value={formData.implementationComplexity}
           onValueChange={(v) => setFormData((prev) => ({ ...prev, implementationComplexity: v }))}
         >
-          <SelectTrigger className="text-xs">
+          <SelectTrigger size="sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -114,15 +112,13 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">
-          Historical Context
-        </label>
+        <label className="text-label text-caption mb-1.5 block">Historical Context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData((prev) => ({ ...prev, historicalContext: e.target.value }))}
           placeholder="Historical background and development..."
           rows={3}
-          className="text-xs"
+          className="md:text-footnote"
         />
       </div>
     </div>
@@ -133,9 +129,7 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">
-          Economic Components
-        </label>
+        <label className="text-label text-caption mb-1.5 block">Economic Components</label>
         <MultiSelect
           options={ECONOMIC_COMPONENTS as readonly string[]}
           value={formData.economicComponents}
@@ -145,13 +139,13 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">Sector Focus (%)</label>
+        <label className="text-label text-caption mb-1.5 block">Sector Focus (%)</label>
         <div className="space-y-3">
           {SECTOR_TYPES.map((sector) => (
             <div key={sector} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-foreground font-medium capitalize">{sector}</span>
-                <span className="text-muted-foreground">{formData.sectorFocus[sector] || 0}%</span>
+              <div className="text-footnote flex items-center justify-between">
+                <span className="text-label font-medium capitalize">{sector}</span>
+                <span className="text-label-secondary">{formData.sectorFocus[sector] || 0}%</span>
               </div>
               <Slider
                 value={[formData.sectorFocus[sector] || 0]}
@@ -176,9 +170,7 @@ export function GovernmentTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">
-          Government Components
-        </label>
+        <label className="text-label text-caption mb-1.5 block">Government Components</label>
         <MultiSelect
           options={GOVERNMENT_COMPONENTS as readonly string[]}
           value={formData.governmentComponents}
@@ -195,9 +187,9 @@ export function TaxTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Corporate Tax Rate</span>
-            <span className="text-muted-foreground">{formData.taxProfile.corporateTax}%</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Corporate Tax Rate</span>
+            <span className="text-label-secondary">{formData.taxProfile.corporateTax}%</span>
           </div>
           <Slider
             value={[formData.taxProfile.corporateTax]}
@@ -213,9 +205,9 @@ export function TaxTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Income Tax Rate</span>
-            <span className="text-muted-foreground">{formData.taxProfile.incomeTax}%</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Income Tax Rate</span>
+            <span className="text-label-secondary">{formData.taxProfile.incomeTax}%</span>
           </div>
           <Slider
             value={[formData.taxProfile.incomeTax]}
@@ -231,9 +223,9 @@ export function TaxTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Consumption Tax Rate</span>
-            <span className="text-muted-foreground">{formData.taxProfile.consumptionTax}%</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Consumption Tax Rate</span>
+            <span className="text-label-secondary">{formData.taxProfile.consumptionTax}%</span>
           </div>
           <Slider
             value={[formData.taxProfile.consumptionTax]}
@@ -249,9 +241,9 @@ export function TaxTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Tax Efficiency</span>
-            <span className="text-muted-foreground">{formData.taxProfile.taxEfficiency}%</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Tax Efficiency</span>
+            <span className="text-label-secondary">{formData.taxProfile.taxEfficiency}%</span>
           </div>
           <Slider
             value={[formData.taxProfile.taxEfficiency]}
@@ -275,9 +267,7 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="space-y-3">
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">
-            Unemployment Rate (%)
-          </label>
+          <label className="text-label text-caption mb-1.5 block">Unemployment Rate (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -291,14 +281,12 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
                 },
               }))
             }
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
 
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">
-            Labor Participation (%)
-          </label>
+          <label className="text-label text-caption mb-1.5 block">Labor Participation (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -312,14 +300,12 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
                 },
               }))
             }
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
 
         <div>
-          <label className="text-foreground mb-1.5 block text-xs font-medium">
-            Wage Growth (%)
-          </label>
+          <label className="text-label text-caption mb-1.5 block">Wage Growth (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -333,7 +319,7 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
                 },
               }))
             }
-            className="text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
         </div>
       </div>
@@ -346,9 +332,9 @@ export function MetricsTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">GDP Growth (%)</span>
-            <span className="text-muted-foreground">{formData.growthMetrics.gdpGrowth}%</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">GDP Growth (%)</span>
+            <span className="text-label-secondary">{formData.growthMetrics.gdpGrowth}%</span>
           </div>
           <Slider
             value={[formData.growthMetrics.gdpGrowth]}
@@ -364,9 +350,9 @@ export function MetricsTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Innovation Index</span>
-            <span className="text-muted-foreground">{formData.growthMetrics.innovationIndex}</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Innovation Index</span>
+            <span className="text-label-secondary">{formData.growthMetrics.innovationIndex}</span>
           </div>
           <Slider
             value={[formData.growthMetrics.innovationIndex]}
@@ -382,9 +368,9 @@ export function MetricsTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Competitiveness</span>
-            <span className="text-muted-foreground">{formData.growthMetrics.competitiveness}</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Competitiveness</span>
+            <span className="text-label-secondary">{formData.growthMetrics.competitiveness}</span>
           </div>
           <Slider
             value={[formData.growthMetrics.competitiveness]}
@@ -400,9 +386,9 @@ export function MetricsTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-foreground font-medium">Stability</span>
-            <span className="text-muted-foreground">{formData.growthMetrics.stability}</span>
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label font-medium">Stability</span>
+            <span className="text-label-secondary">{formData.growthMetrics.stability}</span>
           </div>
           <Slider
             value={[formData.growthMetrics.stability]}
@@ -447,7 +433,7 @@ export function CharacteristicsTab({ formData, setFormData }: TabProps) {
     const items = (formData[field] as string[]) || [];
     return (
       <div>
-        <label className="text-foreground mb-1.5 block text-xs font-medium">{label}</label>
+        <label className="text-label text-caption mb-1.5 block">{label}</label>
         <div className="space-y-2">
           {items.map((item, index) => (
             <div key={index} className="flex gap-2">
@@ -455,24 +441,19 @@ export function CharacteristicsTab({ formData, setFormData }: TabProps) {
                 value={item}
                 onChange={(e) => updateArrayItem(field, index, e.target.value)}
                 placeholder={placeholder}
-                className="text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => removeArrayItem(field, index)}
-                className="h-8 px-2 text-red-400 active:scale-[0.98]"
+                className="text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => addArrayItem(field)}
-            className="text-xs active:scale-[0.98]"
-          >
+          <Button size="sm" variant="outline" onClick={() => addArrayItem(field)}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add {label.slice(0, -1)}
           </Button>

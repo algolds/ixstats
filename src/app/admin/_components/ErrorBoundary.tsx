@@ -1,6 +1,8 @@
 "use client";
 // src/app/admin/_components/ErrorBoundary.tsx
 
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import {
   WarningTriangle as AlertTriangle,
@@ -63,28 +65,28 @@ export class AdminErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="bg-background flex min-h-screen items-center justify-center p-4">
-          <div className="bg-card w-full max-w-md rounded-lg p-6 text-center shadow-lg">
+        <div className="bg-grouped flex min-h-screen items-center justify-center p-4">
+          <FacetCard padding="lg" className="w-full max-w-md text-center">
             <div className="mb-4">
-              <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-              <h1 className="text-foreground mb-2 text-xl font-bold">Admin Dashboard Error</h1>
-              <p className="text-muted-foreground mb-4">
+              <AlertTriangle aria-hidden className="text-destructive mx-auto mb-4 size-12" />
+              <h1 className="text-label text-title-1 mb-2">Admin Dashboard Error</h1>
+              <p className="text-label-secondary mb-4">
                 Something went wrong with the admin dashboard. This error has been logged.
               </p>
             </div>
 
             {this.state.error && (
-              <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-left">
-                <h3 className="mb-2 text-sm font-medium text-red-700">Error Details:</h3>
-                <p className="font-mono text-xs break-words text-red-600">
+              <div className="rounded-control border-red/20 bg-red/10 mb-6 border p-4 text-left">
+                <h3 className="text-body text-red mb-2 font-medium">Error Details:</h3>
+                <p className="text-footnote text-red font-mono break-words">
                   {this.state.error.message}
                 </p>
                 {process.env.NODE_ENV === "development" && this.state.errorInfo && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-red-600">
+                    <summary className="text-footnote text-red cursor-pointer">
                       Stack Trace (Dev Mode)
                     </summary>
-                    <pre className="mt-2 max-h-32 overflow-auto text-xs whitespace-pre-wrap text-red-600">
+                    <pre className="text-footnote text-red mt-2 max-h-32 overflow-auto whitespace-pre-wrap">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </details>
@@ -93,37 +95,28 @@ export class AdminErrorBoundary extends Component<Props, State> {
             )}
 
             <div className="space-y-2">
-              <button
-                onClick={this.handleRetry}
-                className="flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
+              <Button onClick={this.handleRetry} className="w-full">
+                <RefreshCw />
                 Try Again
-              </button>
+              </Button>
 
-              <button
-                onClick={this.handleReload}
-                className="bg-muted text-foreground hover:bg-muted/80 flex w-full items-center justify-center rounded-md px-4 py-2 font-medium transition-colors"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
+              <Button variant="gray" onClick={this.handleReload} className="w-full">
+                <RefreshCw />
                 Reload Page
-              </button>
+              </Button>
 
-              <button
-                onClick={this.handleGoHome}
-                className="bg-muted text-foreground hover:bg-muted/80 flex w-full items-center justify-center rounded-md px-4 py-2 font-medium transition-colors"
-              >
-                <Home className="mr-2 h-4 w-4" />
+              <Button variant="gray" onClick={this.handleGoHome} className="w-full">
+                <Home />
                 Go to Homepage
-              </button>
+              </Button>
             </div>
 
-            <div className="border-border mt-6 border-t pt-4">
-              <p className="text-muted-foreground text-xs">
+            <div className="border-separator mt-6 border-t pt-4">
+              <p className="text-label-secondary text-footnote">
                 If this problem persists, please contact your system administrator.
               </p>
             </div>
-          </div>
+          </FacetCard>
         </div>
       );
     }
@@ -141,22 +134,19 @@ export function AdminErrorFallback({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6">
+    <div className="rounded-row border-destructive/20 bg-destructive/10 border p-6">
       <div className="flex items-center">
-        <AlertTriangle className="mr-2 h-5 w-5 text-red-500" />
-        <h3 className="text-sm font-medium text-red-700">Component Error</h3>
+        <AlertTriangle className="text-red mr-2 h-5 w-5" />
+        <h3 className="text-body text-red font-medium">Component Error</h3>
       </div>
       <div className="mt-2">
-        <p className="text-sm text-red-600">
+        <p className="text-body text-red">
           {error?.message || "An unexpected error occurred in this component."}
         </p>
         {onRetry && (
-          <button
-            onClick={onRetry}
-            className="mt-3 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
-          >
+          <Button variant="destructive" size="sm" onClick={onRetry} className="mt-3">
             Retry
-          </button>
+          </Button>
         )}
       </div>
     </div>

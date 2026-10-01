@@ -26,26 +26,26 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
       />
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 flex w-full max-w-lg justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 flex w-full max-w-lg justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="realms"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Globe className="h-4 w-4 text-cyan-400" />
+            <Globe className="text-teal h-4 w-4" />
             Realms
           </TabsTrigger>
           <TabsTrigger
             value="claims"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <CheckCircle className="h-4 w-4 text-amber-400" />
+            <CheckCircle className="text-yellow h-4 w-4" />
             Claims
           </TabsTrigger>
           <TabsTrigger
             value="users"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Users className="h-4 w-4 text-purple-400" />
+            <Users className="text-purple h-4 w-4" />
             User Access
           </TabsTrigger>
         </TabsList>

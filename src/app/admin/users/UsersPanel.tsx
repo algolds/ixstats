@@ -43,6 +43,7 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
@@ -219,9 +220,7 @@ export function UsersPanel() {
     );
   });
 
-  const activeImpersonatedIdentity = userIdentities?.find(
-    (u) => u.clerkUserId === activePlayAs
-  );
+  const activeImpersonatedIdentity = userIdentities?.find((u) => u.clerkUserId === activePlayAs);
 
   return (
     <div className="space-y-6">
@@ -233,29 +232,25 @@ export function UsersPanel() {
 
       {/* Active Impersonation Session Banner */}
       {activePlayAs && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 shadow-[0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-card border-red/40 bg-red/10 flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="relative flex h-3 w-3 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+              <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+              <span className="bg-red relative inline-flex h-3 w-3 rounded-full"></span>
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tracking-wide text-red-600 uppercase dark:text-red-400">
-                  Active Admin Impersonation Session
-                </span>
-                <Badge className="border-red-500/30 bg-red-500/20 text-xs font-semibold text-red-600 dark:text-red-400">
-                  Playing As
-                </Badge>
+                <span className="text-eyebrow text-red">Active Admin Impersonation Session</span>
+                <Badge variant="red">Playing As</Badge>
               </div>
-              <p className="mt-0.5 text-xs text-foreground">
+              <p className="text-footnote text-label mt-0.5">
                 Simulating user identity:{" "}
-                <strong className="font-mono font-bold text-red-500">{activePlayAs}</strong>
+                <strong className="text-red font-semibold tabular-nums">{activePlayAs}</strong>
                 {activeImpersonatedIdentity?.country?.name && (
-                  <span className="text-muted-foreground">
+                  <span className="text-label-secondary">
                     {" "}
                     — Claimed Nation:{" "}
-                    <strong className="text-foreground">
+                    <strong className="text-label">
                       {activeImpersonatedIdentity.country.name}
                     </strong>
                   </span>
@@ -271,7 +266,7 @@ export function UsersPanel() {
               onClick={() => {
                 window.location.href = "/dashboard";
               }}
-              className="h-8 gap-1.5 rounded-xl border-border/40 text-xs transition-transform active:scale-[0.98]"
+              className="gap-1.5"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               Open Dashboard
@@ -282,16 +277,12 @@ export function UsersPanel() {
               onClick={() => {
                 window.location.href = "/mycountry";
               }}
-              className="h-8 gap-1.5 rounded-xl border-border/40 text-xs transition-transform active:scale-[0.98]"
+              className="gap-1.5"
             >
               <Globe className="h-3.5 w-3.5" />
               Open MyCountry
             </Button>
-            <Button
-              size="sm"
-              onClick={handleStopPlayAs}
-              className="h-8 gap-1.5 rounded-xl bg-red-600 px-3.5 text-xs font-semibold text-white shadow-xs transition-transform hover:bg-red-700 active:scale-[0.98]"
-            >
+            <Button variant="destructive" size="sm" onClick={handleStopPlayAs} className="gap-1.5">
               <LogOut className="h-3.5 w-3.5" />
               Stop Impersonation
             </Button>
@@ -301,20 +292,20 @@ export function UsersPanel() {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="bg-muted/40 border-border/30 h-9 p-1 backdrop-blur-md">
-            <TabsTrigger value="identities" className="text-xs">
+          <TabsList className="bg-fill-3 border-separator h-9 p-1">
+            <TabsTrigger value="identities" className="text-footnote">
               <Shield className="mr-1.5 h-3.5 w-3.5" />
               Master Identity Matrix
             </TabsTrigger>
-            <TabsTrigger value="wiki-reconciliation" className="text-xs">
+            <TabsTrigger value="wiki-reconciliation" className="text-footnote">
               <WikiIcon className="mr-1.5 h-3.5 w-3.5" />
               Wiki Reconciliation & Alts
             </TabsTrigger>
-            <TabsTrigger value="discord-sync" className="text-xs">
+            <TabsTrigger value="discord-sync" className="text-footnote">
               <DiscordIcon className="mr-1.5 h-3.5 w-3.5" />
               Discord Bot Member Sync
             </TabsTrigger>
-            <TabsTrigger value="country-claims" className="text-xs">
+            <TabsTrigger value="country-claims" className="text-footnote">
               <Crown className="mr-1.5 h-3.5 w-3.5" />
               Country Claims & Tiers
             </TabsTrigger>
@@ -322,12 +313,12 @@ export function UsersPanel() {
 
           <div className="flex items-center gap-2">
             <div className="relative w-64">
-              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 placeholder="Search across all identities..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
               />
             </div>
             <Button
@@ -338,7 +329,7 @@ export function UsersPanel() {
                 void refetchWikiMatrix();
                 if (activeTab === "discord-sync") void refetchDiscordSync();
               }}
-              className="h-8 gap-1 rounded-xl text-xs"
+              className="gap-1"
             >
               <RefreshDouble className="h-3.5 w-3.5" />
               Sync
@@ -350,13 +341,11 @@ export function UsersPanel() {
         {/* TAB 1: MASTER IDENTITY MATRIX */}
         {/* ================================================================= */}
         <TabsContent value="identities" className="mt-4 space-y-4">
-          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
+          <FacetCard className="p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-foreground text-sm font-semibold">
-                  Registered User Identities
-                </h3>
-                <p className="text-muted-foreground text-xs">
+                <h3 className="text-label text-headline">Registered User Identities</h3>
+                <p className="text-label-secondary text-footnote">
                   Showing {filteredIdentities?.length ?? 0} registered user profiles with unified
                   cross-platform linkages.
                 </p>
@@ -366,14 +355,14 @@ export function UsersPanel() {
             {identitiesLoading ? (
               <div className="space-y-3 py-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <Skeleton key={i} className="rounded-row h-14 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="divide-border/20 divide-y overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="divide-separator divide-y overflow-x-auto">
+                <table className="text-footnote w-full text-left tabular-nums">
                   <thead>
-                    <tr className="text-muted-foreground border-border/30 border-b pb-2">
+                    <tr className="text-label-secondary border-separator border-b pb-2">
                       <th className="py-2.5 font-medium">User / Clerk ID</th>
                       <th className="py-2.5 font-medium">Claimed Nation</th>
                       <th className="py-2.5 font-medium">MediaWiki Account</th>
@@ -382,21 +371,21 @@ export function UsersPanel() {
                       <th className="py-2.5 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/20 divide-y">
+                  <tbody className="divide-separator divide-y">
                     {filteredIdentities?.map((u) => (
-                      <tr key={u.id} className="hover:bg-muted/20 transition-colors">
+                      <tr key={u.id} className="hover:bg-fill-4 transition-colors">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
-                            <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg font-mono text-xs font-bold">
+                            <div className="bg-tint-fill text-tint rounded-control text-caption flex h-7 w-7 items-center justify-center font-mono">
                               {u.country?.name
                                 ? u.country.name.substring(0, 2).toUpperCase()
                                 : "US"}
                             </div>
                             <div>
-                              <div className="text-foreground font-mono text-xs font-semibold">
+                              <div className="text-label text-caption font-mono">
                                 {u.clerkUserId}
                               </div>
-                              <div className="text-muted-foreground text-xs">
+                              <div className="text-label-secondary text-footnote">
                                 ID: {u.id.substring(0, 10)}...
                               </div>
                             </div>
@@ -407,12 +396,12 @@ export function UsersPanel() {
                           {u.country ? (
                             <Badge
                               variant="outline"
-                              className="border-border/40 bg-background/50 font-medium"
+                              className="border-separator bg-fill-3 font-medium"
                             >
                               {u.country.name}
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground text-xs italic">
+                            <span className="text-label-secondary text-footnote italic">
                               No nation claimed
                             </span>
                           )}
@@ -429,20 +418,19 @@ export function UsersPanel() {
                                   {u.wikiUsername}
                                 </Badge>
                                 {u.wikiUserId && (
-                                  <span className="text-muted-foreground text-xs">
+                                  <span className="text-label-secondary text-footnote">
                                     #{u.wikiUserId}
                                   </span>
                                 )}
                               </div>
                               {u.wikiAlts && u.wikiAlts.length > 0 && (
-                                <div className="text-muted-foreground text-xs">
-                                  Alts:{" "}
-                                  <span className="text-foreground">{u.wikiAlts.join(", ")}</span>
+                                <div className="text-label-secondary text-footnote">
+                                  Alts: <span className="text-label">{u.wikiAlts.join(", ")}</span>
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs">Unlinked</span>
+                            <span className="text-label-secondary text-footnote">Unlinked</span>
                           )}
                         </td>
 
@@ -456,25 +444,23 @@ export function UsersPanel() {
                                 @{u.discordUsername}
                               </Badge>
                               {u.discordUserId && (
-                                <div className="text-muted-foreground font-mono text-xs">
+                                <div className="text-label-secondary text-footnote font-mono">
                                   ID: {u.discordUserId}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs">Unlinked</span>
+                            <span className="text-label-secondary text-footnote">Unlinked</span>
                           )}
                         </td>
 
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="text-xs capitalize">
+                            <Badge variant="outline" className="capitalize">
                               {u.role?.name || "Member"}
                             </Badge>
                             {u.membershipTier === "mycountry_premium" && (
-                              <Badge className="border-amber-500/30 bg-amber-500/20 text-xs text-amber-500">
-                                VIP
-                              </Badge>
+                              <Badge variant="yellow">VIP</Badge>
                             )}
                           </div>
                         </td>
@@ -483,12 +469,12 @@ export function UsersPanel() {
                           <div className="flex items-center justify-end gap-1.5">
                             {activePlayAs === u.clerkUserId ? (
                               <Button
-                                variant="outline"
+                                variant="destructive"
                                 size="sm"
                                 onClick={handleStopPlayAs}
-                                className="h-7 gap-1 rounded-lg border-red-500/40 bg-red-500/10 px-2 text-xs font-semibold text-red-600 transition-transform hover:bg-red-500/20 active:scale-[0.98] dark:text-red-400"
+                                className="gap-1"
                               >
-                                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                <span className="bg-red h-1.5 w-1.5 rounded-full" />
                                 Active (Stop)
                               </Button>
                             ) : (
@@ -496,9 +482,9 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleStartPlayAs(u.clerkUserId, u.country?.name)}
-                                className="h-7 gap-1 rounded-lg border-border/40 px-2 text-xs font-medium transition-transform hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-[0.98]"
+                                className="gap-1"
                               >
-                                <Play className="h-3 w-3 fill-current text-primary" />
+                                <Play className="text-tint h-3 w-3 fill-current" />
                                 Play As
                               </Button>
                             )}
@@ -510,7 +496,6 @@ export function UsersPanel() {
                                 setWikiUsernameInput(u.wikiUsername || "");
                                 setIsWikiDialogOpen(true);
                               }}
-                              className="h-7 px-2 text-xs"
                             >
                               Wiki Link
                             </Button>
@@ -523,7 +508,6 @@ export function UsersPanel() {
                                 setDiscordUserIdInput(u.discordUserId || "");
                                 setIsDiscordDialogOpen(true);
                               }}
-                              className="h-7 px-2 text-xs"
                             >
                               Discord
                             </Button>
@@ -535,19 +519,19 @@ export function UsersPanel() {
                 </table>
               </div>
             )}
-          </div>
+          </FacetCard>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}
         {/* ================================================================= */}
         <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
-          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
+          <FacetCard className="p-4">
             <div className="mb-4">
-              <h3 className="text-foreground text-sm font-semibold">
+              <h3 className="text-label text-headline">
                 MediaWiki ↔ IxnayID Reconciliation Ledger
               </h3>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 All 131 MediaWiki accounts cross-referenced with primary nation personas and active
                 user profiles.
               </p>
@@ -556,14 +540,14 @@ export function UsersPanel() {
             {wikiMatrixLoading ? (
               <div className="space-y-3 py-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                  <Skeleton key={i} className="rounded-row h-12 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="divide-border/20 divide-y overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="divide-separator divide-y overflow-x-auto">
+                <table className="text-footnote w-full text-left tabular-nums">
                   <thead>
-                    <tr className="text-muted-foreground border-border/30 border-b pb-2">
+                    <tr className="text-label-secondary border-separator border-b pb-2">
                       <th className="py-2.5 font-medium">MediaWiki Account</th>
                       <th className="py-2.5 font-medium">Target Nation</th>
                       <th className="py-2.5 font-medium">Status & Confidence</th>
@@ -572,33 +556,33 @@ export function UsersPanel() {
                       <th className="py-2.5 text-right font-medium">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-border/20 divide-y">
+                  <tbody className="divide-separator divide-y">
                     {wikiMatrix?.entries?.map((e) => (
-                      <tr key={e.wikiUsername} className="hover:bg-muted/20 transition-colors">
-                        <td className="text-foreground py-3 font-semibold">{e.wikiUsername}</td>
+                      <tr key={e.wikiUsername} className="hover:bg-fill-4 transition-colors">
+                        <td className="text-label py-3 font-semibold">{e.wikiUsername}</td>
                         <td className="py-3">
-                          <Badge variant="outline" className="border-border/40 font-medium">
+                          <Badge variant="outline" className="border-separator font-medium">
                             {e.targetCountry}
                           </Badge>
                         </td>
                         <td className="py-3">
                           {e.status === "ALREADY_LINKED" && (
-                            <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400">
+                            <Badge variant="green" className="gap-1">
                               <CheckCircle className="h-3 w-3" /> Linked & Verified
                             </Badge>
                           )}
                           {e.status === "ALT_MERGED" && (
-                            <Badge className="gap-1 border-blue-500/30 bg-blue-500/20 text-xs text-blue-600 dark:text-blue-400">
+                            <Badge variant="blue" className="gap-1">
                               <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
                             </Badge>
                           )}
                           {e.status === "READY_TO_LINK" && (
-                            <Badge className="gap-1 border-amber-500/30 bg-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
+                            <Badge variant="yellow" className="gap-1">
                               <WarningCircle className="h-3 w-3" /> Ready to Link
                             </Badge>
                           )}
                           {e.status === "UNMATCHED_USER" && (
-                            <Badge variant="outline" className="text-muted-foreground text-xs">
+                            <Badge variant="outline" className="text-label-secondary">
                               Awaiting User Claim
                             </Badge>
                           )}
@@ -606,28 +590,25 @@ export function UsersPanel() {
                         <td className="py-3">
                           {e.matchedUser ? (
                             <div>
-                              <div className="font-mono text-xs font-medium">
+                              <div className="text-caption font-mono">
                                 {e.matchedUser.clerkUserId}
                               </div>
-                              <div className="text-muted-foreground text-xs">
+                              <div className="text-label-secondary text-footnote">
                                 {e.matchedUser.countryName}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-xs italic">—</span>
+                            <span className="text-label-secondary text-footnote italic">—</span>
                           )}
                         </td>
-                        <td className="text-muted-foreground py-3 text-xs">{e.notes || "—"}</td>
+                        <td className="text-label-secondary text-footnote py-3">
+                          {e.notes || "—"}
+                        </td>
                         <td className="py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {e.matchedUser && (
-                              activePlayAs === e.matchedUser.clerkUserId ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleStopPlayAs}
-                                  className="h-7 border-red-500/30 bg-red-500/10 px-2 text-xs font-semibold text-red-600 dark:text-red-400"
-                                >
+                            {e.matchedUser &&
+                              (activePlayAs === e.matchedUser.clerkUserId ? (
+                                <Button variant="destructive" size="sm" onClick={handleStopPlayAs}>
                                   Active (Stop)
                                 </Button>
                               ) : (
@@ -640,14 +621,13 @@ export function UsersPanel() {
                                       e.matchedUser!.countryName
                                     )
                                   }
-                                  className="h-7 gap-1 border-border/40 px-2 text-xs font-medium hover:text-primary active:scale-[0.98]"
+                                  className="gap-1"
                                   title={`Play as ${e.matchedUser.clerkUserId}`}
                                 >
-                                  <Play className="h-2.5 w-2.5 fill-current text-primary" />
+                                  <Play className="text-tint h-2.5 w-2.5 fill-current" />
                                   Play As
                                 </Button>
-                              )
-                            )}
+                              ))}
                             {e.matchedUser && e.status === "READY_TO_LINK" && (
                               <Button
                                 size="sm"
@@ -658,7 +638,6 @@ export function UsersPanel() {
                                   });
                                 }}
                                 disabled={linkWikiMutation.isPending}
-                                className="h-7 rounded-lg text-xs"
                               >
                                 1-Click Link
                               </Button>
@@ -668,9 +647,12 @@ export function UsersPanel() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  unlinkWikiMutation.mutate({ userId: e.matchedUser!.id, source: "ixwiki" });
+                                  unlinkWikiMutation.mutate({
+                                    userId: e.matchedUser!.id,
+                                    source: "ixwiki",
+                                  });
                                 }}
-                                className="text-destructive h-7 text-xs"
+                                className="text-destructive"
                               >
                                 Unlink
                               </Button>
@@ -683,20 +665,18 @@ export function UsersPanel() {
                 </table>
               </div>
             )}
-          </div>
+          </FacetCard>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 3: DISCORD BOT MEMBER SYNC */}
         {/* ================================================================= */}
         <TabsContent value="discord-sync" className="mt-4 space-y-4">
-          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
+          <FacetCard className="p-4">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-foreground text-sm font-semibold">
-                  Discord Server Member Discovery
-                </h3>
-                <p className="text-muted-foreground text-xs">
+                <h3 className="text-label text-headline">Discord Server Member Discovery</h3>
+                <p className="text-label-secondary text-footnote">
                   Queries Ixnay Discord guild via bot token, parses server nicknames like{" "}
                   <code>[Urcea] John</code>, and matches them to nations.
                 </p>
@@ -714,7 +694,7 @@ export function UsersPanel() {
                     applyDiscordAutoAssignments.mutate({ assignments });
                   }}
                   disabled={applyDiscordAutoAssignments.isPending}
-                  className="h-8 gap-1.5 rounded-xl text-xs"
+                  className="gap-1.5"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Auto-Assign All ({discordSyncData.suggestions.length})
@@ -725,26 +705,26 @@ export function UsersPanel() {
             {discordSyncLoading ? (
               <div className="space-y-3 py-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <Skeleton key={i} className="rounded-row h-14 w-full" />
                 ))}
               </div>
             ) : discordSyncData?.error ? (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400">
+              <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow border p-4">
                 ⚠️ {discordSyncData.error}
               </div>
             ) : (
               <div className="space-y-6">
                 {/* Auto Match Suggestions */}
                 <div>
-                  <h4 className="text-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
+                  <h4 className="text-label text-subhead mb-2">
                     High Confidence Match Candidates ({discordSyncData?.suggestions.length || 0})
                   </h4>
                   {discordSyncData?.suggestions.length === 0 ? (
-                    <p className="text-muted-foreground py-2 text-xs italic">
+                    <p className="text-label-secondary text-footnote py-2 italic">
                       No unlinked high-confidence candidates found.
                     </p>
                   ) : (
-                    <div className="divide-border/20 border-border/30 bg-background/30 divide-y rounded-xl border p-2">
+                    <div className="divide-separator border-separator bg-fill-3 rounded-row divide-y border p-2">
                       {discordSyncData?.suggestions.map((s) => (
                         <div
                           key={s.discordUserId}
@@ -752,19 +732,13 @@ export function UsersPanel() {
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-foreground font-semibold">
-                                @{s.discordUsername}
-                              </span>
+                              <span className="text-label font-semibold">@{s.discordUsername}</span>
                               {s.discordNick && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Nick: {s.discordNick}
-                                </Badge>
+                                <Badge variant="secondary">Nick: {s.discordNick}</Badge>
                               )}
-                              <Badge className="border-emerald-500/30 bg-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400">
-                                Match: {s.matchedCountryName}
-                              </Badge>
+                              <Badge variant="green">Match: {s.matchedCountryName}</Badge>
                             </div>
-                            <div className="text-muted-foreground text-xs">{s.reason}</div>
+                            <div className="text-label-secondary text-footnote">{s.reason}</div>
                           </div>
 
                           <Button
@@ -776,7 +750,6 @@ export function UsersPanel() {
                                 discordUsername: s.discordUsername,
                               });
                             }}
-                            className="h-7 rounded-lg text-xs"
                           >
                             Accept Link
                           </Button>
@@ -787,51 +760,45 @@ export function UsersPanel() {
                 </div>
               </div>
             )}
-          </div>
+          </FacetCard>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 4: COUNTRY CLAIMS & TIERS */}
         {/* ================================================================= */}
         <TabsContent value="country-claims" className="mt-4 space-y-4">
-          <div className="border-border/40 bg-card/40 rounded-2xl border p-4 shadow-xs backdrop-blur-xl">
+          <FacetCard className="p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-foreground text-sm font-semibold">
-                  Country Claims & Player Overrides
-                </h3>
-                <p className="text-muted-foreground text-xs">
+                <h3 className="text-label text-headline">Country Claims & Player Overrides</h3>
+                <p className="text-label-secondary text-footnote">
                   Manage direct country assignments and VIP executive privileges.
                 </p>
               </div>
-              <Button
-                size="sm"
-                onClick={() => setIsAssignDialogOpen(true)}
-                className="h-8 gap-1.5 rounded-xl text-xs"
-              >
+              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="gap-1.5">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Assign User to Nation
               </Button>
             </div>
 
-            <div className="divide-border/20 divide-y overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="divide-separator divide-y overflow-x-auto">
+              <table className="text-footnote w-full text-left tabular-nums">
                 <thead>
-                  <tr className="text-muted-foreground border-border/30 border-b pb-2">
+                  <tr className="text-label-secondary border-separator border-b pb-2">
                     <th className="py-2.5 font-medium">Nation</th>
                     <th className="py-2.5 font-medium">Assigned User</th>
                     <th className="py-2.5 text-right font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-border/20 divide-y">
+                <tbody className="divide-separator divide-y">
                   {countriesWithUsers?.map((c) => (
-                    <tr key={c.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="text-foreground py-2.5 font-semibold">{c.name}</td>
+                    <tr key={c.id} className="hover:bg-fill-4 transition-colors">
+                      <td className="text-label py-2.5 font-semibold">{c.name}</td>
                       <td className="py-2.5">
                         {c.user ? (
-                          <span className="font-mono text-xs">{c.user.clerkUserId}</span>
+                          <span className="text-footnote font-mono">{c.user.clerkUserId}</span>
                         ) : (
-                          <span className="text-muted-foreground text-xs italic">
+                          <span className="text-label-secondary text-footnote italic">
                             Unclaimed
                           </span>
                         )}
@@ -841,10 +808,10 @@ export function UsersPanel() {
                           <div className="flex items-center justify-end gap-1.5">
                             {activePlayAs === c.user.clerkUserId ? (
                               <Button
-                                variant="outline"
+                                variant="destructive"
                                 size="sm"
                                 onClick={handleStopPlayAs}
-                                className="h-6 gap-1 rounded-md border-red-500/40 bg-red-500/10 px-2 text-xs font-semibold text-red-600 dark:text-red-400"
+                                className="gap-1"
                               >
                                 Active (Stop)
                               </Button>
@@ -853,9 +820,9 @@ export function UsersPanel() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleStartPlayAs(c.user!.clerkUserId, c.name)}
-                                className="h-6 gap-1 rounded-md border-border/40 px-2 text-xs font-medium hover:text-primary active:scale-[0.98]"
+                                className="gap-1"
                               >
-                                <Play className="h-2.5 w-2.5 fill-current text-primary" />
+                                <Play className="text-tint h-2.5 w-2.5 fill-current" />
                                 Play As
                               </Button>
                             )}
@@ -868,7 +835,7 @@ export function UsersPanel() {
                                   countryId: c.id,
                                 });
                               }}
-                              className="text-destructive h-6 text-xs"
+                              className="text-destructive"
                             >
                               Unassign
                             </Button>
@@ -880,18 +847,18 @@ export function UsersPanel() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </FacetCard>
         </TabsContent>
       </Tabs>
 
       {/* Manual Wiki Link Dialog */}
       <Dialog open={isWikiDialogOpen} onOpenChange={setIsWikiDialogOpen}>
-        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-sm font-semibold">Link MediaWiki Profile</DialogTitle>
+            <DialogTitle>Link MediaWiki Profile</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Enter the canonical MediaWiki username or known alt (e.g. <code>Kir</code>,{" "}
               <code>Carthinova</code>, <code>Urcea</code>).
             </p>
@@ -899,7 +866,7 @@ export function UsersPanel() {
               placeholder="MediaWiki Username..."
               value={wikiUsernameInput}
               onChange={(e) => setWikiUsernameInput(e.target.value)}
-              className="text-xs"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
           </div>
           <DialogFooter>
@@ -925,25 +892,25 @@ export function UsersPanel() {
 
       {/* Manual Discord Link Dialog */}
       <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
-        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-sm font-semibold">Link Discord Identity</DialogTitle>
+            <DialogTitle>Link Discord Identity</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Enter the Discord username and numeric snowflake ID.
             </p>
             <Input
               placeholder="Discord Username (e.g. username)..."
               value={discordUsernameInput}
               onChange={(e) => setDiscordUsernameInput(e.target.value)}
-              className="text-xs"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
             <Input
               placeholder="Discord Snowflake User ID (e.g. 123456789012345678)..."
               value={discordUserIdInput}
               onChange={(e) => setDiscordUserIdInput(e.target.value)}
-              className="text-xs"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
           </div>
           <DialogFooter>
@@ -970,18 +937,18 @@ export function UsersPanel() {
 
       {/* Country Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
-        <DialogContent className="border-border/40 bg-card/90 rounded-2xl backdrop-blur-xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-sm font-semibold">Assign Country to User</DialogTitle>
+            <DialogTitle>Assign Country to User</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger className="text-xs">
+              <SelectTrigger size="sm">
                 <SelectValue placeholder="Select a user..." />
               </SelectTrigger>
               <SelectContent>
                 {userIdentities?.map((u) => (
-                  <SelectItem key={u.id} value={u.clerkUserId} className="text-xs">
+                  <SelectItem key={u.id} value={u.clerkUserId} className="text-footnote">
                     {u.clerkUserId} {u.country ? `(${u.country.name})` : ""}
                   </SelectItem>
                 ))}
@@ -989,12 +956,12 @@ export function UsersPanel() {
             </Select>
 
             <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger className="text-xs">
+              <SelectTrigger size="sm">
                 <SelectValue placeholder="Select a nation..." />
               </SelectTrigger>
               <SelectContent>
                 {countriesWithUsers?.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-xs">
+                  <SelectItem key={c.id} value={c.id} className="text-footnote">
                     {c.name}
                   </SelectItem>
                 ))}

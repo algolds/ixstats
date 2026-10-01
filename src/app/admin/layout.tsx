@@ -8,6 +8,7 @@ import { AdminNavigationProvider } from "./_components";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePermissions } from "~/hooks/usePermissions";
@@ -20,27 +21,26 @@ interface AdminLayoutProps {
 function AccessDeniedScreen() {
   const { signOut } = useAuth();
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center">
-      <div className="border-border bg-card w-full max-w-sm rounded-lg border p-8 text-center shadow-lg">
-        <h1 className="text-red-650 mb-4 text-2xl font-bold dark:text-red-500">Access Denied</h1>
-        <p className="text-muted-foreground mb-6 text-sm">
+    <div className="bg-grouped text-label flex min-h-screen flex-col items-center justify-center p-4">
+      <FacetCard padding="lg" className="w-full max-w-sm text-center">
+        <h1 className="text-destructive text-title-1 mb-4">Access Denied</h1>
+        <p className="text-label-secondary text-body mb-6">
           You do not have permission to view the Administration console.
         </p>
         <div className="flex justify-center gap-3">
           <Button
-            variant="outline"
+            variant="bordered"
             onClick={() => {
               void signOut();
             }}
-            className="border-border/60 hover:bg-muted text-foreground"
           >
             Sign Out
           </Button>
-          <Button asChild className="bg-indigo-650 font-semibold text-white hover:bg-indigo-700">
+          <Button asChild>
             <Link href="/">Go to Home</Link>
           </Button>
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }
@@ -54,8 +54,11 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600" />
-          <p className="text-muted-foreground">Loading...</p>
+          <div
+            aria-hidden
+            className="border-tint mx-auto mb-4 size-12 animate-spin rounded-full border-b-2 motion-reduce:animate-none"
+          />
+          <p className="text-label-secondary">Loading...</p>
         </div>
       </div>
     );

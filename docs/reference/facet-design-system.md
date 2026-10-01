@@ -243,7 +243,7 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
@@ -315,7 +315,8 @@ Link only to routes that render (the guard rejects redirect stubs such as `/wiki
 `data-app-subnav`: `shell.css` hides it with `html[data-nav="facet"] [data-app-subnav] { display: none }` (utilities
 layer, so it beats the element's own `flex`/`lg:block`; pure CSS, so no flash). Everything it linked to must be in the
 section map — the guard reads the hrefs of each marked file and fails if one is unreachable. Marked today: the vault
-pill bar, the admin console rail and its mobile header, the settings tab rail (the panel then spans the grid with
+pill bar, the admin console rail (status card and sections — under the new shell a `SystemStatusStrip` above
+the console carries the status) and its mobile header, the settings tab rail (the panel then spans the grid with
 `facet-nav:lg:col-span-12` — the `facet-nav:` variant applies only under the new shell), the forum rail and pill bar,
 and the WikiOS rail's navigation/library rows (its search, create-page and page tools stay). Entity-scoped section
 bars — a sports league's or club's sections (`SportsShell`), the vault's in-page tabs, Onoma's own navigation — are

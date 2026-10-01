@@ -51,12 +51,12 @@ export interface CalculationResult {
 }
 
 export const CALCULATION_CATEGORIES = {
-  economic: { label: "Economic", icon: DollarSign, color: "text-green-500" },
-  demographic: { label: "Demographics", icon: Users, color: "text-blue-500" },
-  stability: { label: "Stability", icon: Globe, color: "text-purple-500" },
-  governance: { label: "Governance", icon: TrendingUp, color: "text-orange-500" },
-  synergy: { label: "Synergy", icon: HandshakeIcon, color: "text-indigo-500" },
-  military: { label: "Military", icon: Shield, color: "text-red-500" },
-  diplomatic: { label: "Diplomatic", icon: Globe, color: "text-cyan-500" },
-  tax: { label: "Tax System", icon: Scale, color: "text-amber-500" },
+  economic: { label: "Economic", icon: DollarSign, color: "text-green" },
+  demographic: { label: "Demographics", icon: Users, color: "text-blue" },
+  stability: { label: "Stability", icon: Globe, color: "text-purple" },
+  governance: { label: "Governance", icon: TrendingUp, color: "text-orange" },
+  synergy: { label: "Synergy", icon: HandshakeIcon, color: "text-indigo" },
+  military: { label: "Military", icon: Shield, color: "text-red" },
+  diplomatic: { label: "Diplomatic", icon: Globe, color: "text-teal" },
+  tax: { label: "Tax System", icon: Scale, color: "text-yellow" },
 } as const;

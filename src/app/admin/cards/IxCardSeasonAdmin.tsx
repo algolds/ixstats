@@ -7,6 +7,9 @@ import { Component as Layers, Refresh as RefreshCw, FloppyDisk as Save } from "i
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function IxCardSeasonAdmin() {
   const notify = useNotify();
@@ -30,35 +33,39 @@ export function IxCardSeasonAdmin() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="text-primary h-6 w-6 animate-spin" />
+        <RefreshCw className="text-tint h-6 w-6 animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="border-border/30 bg-card/25 rounded-2xl border p-6 backdrop-blur-md">
+      <FacetCard className="p-6">
         <div className="flex items-center gap-3">
-          <div className="border-primary/20 bg-primary/10 rounded-xl border p-3">
-            <Layers className="text-primary h-6 w-6" />
+          <div className="border-tint/20 bg-tint-fill rounded-row border p-3">
+            <Layers className="text-tint h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-foreground text-lg font-semibold">IxCard Season Configuration</h2>
-            <p className="text-muted-foreground text-sm">
+            <h2 className="text-label text-title-3">IxCard Season Configuration</h2>
+            <p className="text-label-secondary text-body">
               Set the current active IxCard season. This controls which season newly created cards
               (crafting, lore, special) are assigned to. NS-imported cards keep their original
-              season in the <code className="text-primary font-mono text-xs">nsSeason</code> field.
+              season in the <code className="text-tint text-footnote tabular-nums">nsSeason</code>{" "}
+              field.
             </p>
           </div>
         </div>
 
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="text-foreground text-sm font-medium">Current IxCard Season:</label>
+            <label className="text-label text-body font-medium">Current IxCard Season:</label>
             <select
               value={selectedSeason}
               onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-              className="border-border/40 bg-background text-foreground rounded-xl border px-3 py-2 text-sm focus:outline-none"
+              className={cn(
+                fieldStyles,
+                "rounded-control text-body h-(--control-height) cursor-pointer px-3"
+              )}
             >
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((s) => (
                 <option key={s} value={s}>
@@ -69,7 +76,7 @@ export function IxCardSeasonAdmin() {
             <Button
               onClick={() => setSeasonMutation.mutate({ season: selectedSeason })}
               disabled={setSeasonMutation.isPending || selectedSeason === currentSeason}
-              className="gap-2 rounded-xl active:scale-[0.98]"
+              className="gap-2"
             >
               {setSeasonMutation.isPending ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -80,27 +87,27 @@ export function IxCardSeasonAdmin() {
             </Button>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
-      <div className="border-border/30 bg-card/25 rounded-2xl border p-6 backdrop-blur-md">
+      <FacetCard className="p-6">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
-            <Layers className="h-6 w-6 text-amber-400" />
+          <div className="rounded-row border-yellow/20 bg-yellow/10 border p-3">
+            <Layers className="text-yellow h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-foreground text-lg font-semibold">How Season Assignment Works</h3>
-            <ul className="text-muted-foreground mt-2 list-disc space-y-1 pl-5 text-sm">
+            <h3 className="text-label text-title-3">How Season Assignment Works</h3>
+            <ul className="text-label-secondary text-body mt-2 list-disc space-y-1 pl-5">
               <li>
-                <strong className="text-foreground">NS-imported cards</strong> set both{" "}
-                <code className="text-primary font-mono text-xs">season</code> and{" "}
-                <code className="text-primary font-mono text-xs">nsSeason</code> to the NS season
-                number
+                <strong className="text-label">NS-imported cards</strong> set both{" "}
+                <code className="text-tint text-footnote tabular-nums">season</code> and{" "}
+                <code className="text-tint text-footnote tabular-nums">nsSeason</code> to the NS
+                season number
               </li>
               <li>
-                <strong className="text-foreground">Crafted cards</strong> and{" "}
-                <strong className="text-foreground">Lore cards</strong> set{" "}
-                <code className="text-primary font-mono text-xs">season</code> to the current IxCard
-                season
+                <strong className="text-label">Crafted cards</strong> and{" "}
+                <strong className="text-label">Lore cards</strong> set{" "}
+                <code className="text-tint text-footnote tabular-nums">season</code> to the current
+                IxCard season
               </li>
               <li>
                 Season drops in the Vault store dynamically draw from the corresponding active
@@ -109,7 +116,7 @@ export function IxCardSeasonAdmin() {
             </ul>
           </div>
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }

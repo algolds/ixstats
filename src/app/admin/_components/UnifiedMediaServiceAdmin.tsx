@@ -11,6 +11,8 @@ import {
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface CacheStats {
   totalRequests: number;
@@ -105,51 +107,39 @@ export function UnifiedMediaServiceAdmin() {
     <div className="space-y-5">
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Cached Items
-          </p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-            {stats?.cacheSize ?? 0}
-          </p>
-        </div>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Cached Items</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? 0}</p>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Hit Rate
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
-            {hitRate}%
-          </p>
-        </div>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Hit Rate</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">{hitRate}%</p>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Flag Requests
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Flag Requests</p>
+          <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {stats?.serviceStats?.flagRequests ?? 0}
           </p>
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Requests
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Total Requests</p>
+          <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.serviceStats?.totalRequests ?? 0}
           </p>
-        </div>
+        </FacetCard>
       </div>
 
       {/* Main Controls Card */}
-      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <FacetCard className="space-y-5 p-5">
+        <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-blue-400" />
+            <Database className="text-blue h-4 w-4" />
             <div>
-              <h3 className="text-foreground text-xs font-bold">Media Service Controls</h3>
-              <p className="text-muted-foreground text-xs">
+              <h3 className="text-label text-caption">Media Service Controls</h3>
+              <p className="text-label-secondary text-footnote">
                 Centralized flag and wiki data caching system
               </p>
             </div>
@@ -158,39 +148,39 @@ export function UnifiedMediaServiceAdmin() {
           <div className="flex flex-wrap gap-1.5">
             <span
               className={cn(
-                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
+                "rounded-control-sm text-caption inline-block border px-2 py-0.5",
                 stats?.cacheSize
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                  : "border-border/30 bg-background/50 text-muted-foreground"
+                  ? "border-green/30 bg-green/10 text-green"
+                  : "border-separator bg-fill-3 text-label-secondary"
               )}
             >
               Cache: {stats?.cacheSize ? "Active" : "Empty"}
             </span>
             <span
               className={cn(
-                "inline-block rounded-md border px-2 py-0.5 text-xs font-semibold",
+                "rounded-control-sm text-caption inline-block border px-2 py-0.5",
                 parseFloat(hitRate) > 80
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                  ? "border-green/30 bg-green/10 text-green"
+                  : "border-yellow/30 bg-yellow/10 text-yellow"
               )}
             >
               Health: {parseFloat(hitRate) > 80 ? "Optimal" : "Cold"}
             </span>
             {lastUpdated && (
-              <span className="border-border/20 bg-background/30 text-muted-foreground inline-block rounded-md border px-2 py-0.5 font-mono text-xs">
+              <Badge variant="neutral" className="tabular-nums">
                 Synced {lastUpdated.toLocaleTimeString()}
-              </span>
+              </Badge>
             )}
           </div>
         </div>
 
         {/* Cache Health Warning */}
         {stats && stats.cacheSize === 0 && (
-          <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+          <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3">
+            <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
             <div>
               <p className="font-semibold">Cache is currently uninitialized</p>
-              <p className="text-xs opacity-80">
+              <p className="text-footnote opacity-80">
                 Initialize the cache to index flags and improve UI response times.
               </p>
             </div>
@@ -199,13 +189,7 @@ export function UnifiedMediaServiceAdmin() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={fetchStats}
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <Button onClick={fetchStats} disabled={isLoading} variant="outline" size="sm">
             {isLoading ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -214,12 +198,7 @@ export function UnifiedMediaServiceAdmin() {
             Refresh Stats
           </Button>
 
-          <Button
-            onClick={initializeCache}
-            disabled={isInitializing}
-            size="sm"
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <Button onClick={initializeCache} disabled={isInitializing} size="sm">
             {isInitializing ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -228,58 +207,50 @@ export function UnifiedMediaServiceAdmin() {
             Initialize Cache
           </Button>
 
-          <Button
-            onClick={clearCache}
-            disabled={isLoading}
-            variant="destructive"
-            size="sm"
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
+          <Button onClick={clearCache} disabled={isLoading} variant="destructive" size="sm">
             Clear Cache
           </Button>
         </div>
 
         {/* Detailed Stats */}
         {stats && (
-          <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
-            <div className="border-border/20 bg-background/20 space-y-2 rounded-xl border p-3">
-              <h4 className="text-foreground text-xs font-bold">Request Statistics</h4>
-              <div className="space-y-1.5 text-xs">
+          <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
+            <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
+              <h4 className="text-label text-caption">Request Statistics</h4>
+              <div className="text-footnote space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cache Hits:</span>
-                  <span className="text-foreground font-mono font-semibold">{stats.cacheHits}</span>
+                  <span className="text-label-secondary">Cache Hits:</span>
+                  <span className="text-label font-semibold tabular-nums">{stats.cacheHits}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cache Misses:</span>
-                  <span className="text-foreground font-mono font-semibold">
-                    {stats.cacheMisses}
-                  </span>
+                  <span className="text-label-secondary">Cache Misses:</span>
+                  <span className="text-label font-semibold tabular-nums">{stats.cacheMisses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Hit Ratio:</span>
-                  <span className="font-mono font-semibold text-emerald-400">{hitRate}%</span>
+                  <span className="text-label-secondary">Hit Ratio:</span>
+                  <span className="text-green font-semibold tabular-nums">{hitRate}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="border-border/20 bg-background/20 space-y-2 rounded-xl border p-3">
-              <h4 className="text-foreground text-xs font-bold">Service Breakdown</h4>
-              <div className="space-y-1.5 text-xs">
+            <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
+              <h4 className="text-label text-caption">Service Breakdown</h4>
+              <div className="text-footnote space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Flag Requests:</span>
-                  <span className="text-foreground font-mono font-semibold">
+                  <span className="text-label-secondary">Flag Requests:</span>
+                  <span className="text-label font-semibold tabular-nums">
                     {stats.serviceStats?.flagRequests ?? 0}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Infobox Requests:</span>
-                  <span className="text-foreground font-mono font-semibold">
+                  <span className="text-label-secondary">Infobox Requests:</span>
+                  <span className="text-label font-semibold tabular-nums">
                     {stats.serviceStats?.infoboxRequests ?? 0}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Service Requests:</span>
-                  <span className="text-foreground font-mono font-semibold">
+                  <span className="text-label-secondary">Total Service Requests:</span>
+                  <span className="text-label font-semibold tabular-nums">
                     {stats.serviceStats?.totalRequests ?? 0}
                   </span>
                 </div>
@@ -287,7 +258,7 @@ export function UnifiedMediaServiceAdmin() {
             </div>
           </div>
         )}
-      </div>
+      </FacetCard>
     </div>
   );
 }

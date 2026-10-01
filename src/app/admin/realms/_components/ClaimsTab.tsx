@@ -18,7 +18,7 @@ const WIKI_LABELS: Record<string, string> = {
 function ClaimantName({ user }: { user: Claimant }) {
   if (user.wikiAccountLinks.length > 0) {
     return (
-      <span className="text-foreground">
+      <span className="text-label">
         {user.wikiAccountLinks
           .map((link) => `${WIKI_LABELS[link.source] ?? link.source}: ${link.username} ✓`)
           .join(", ")}
@@ -28,7 +28,7 @@ function ClaimantName({ user }: { user: Claimant }) {
   if (user.wikiUsername) {
     return (
       <span>
-        {user.wikiUsername} <span className="text-amber-500">(unverified)</span>
+        {user.wikiUsername} <span className="text-yellow">(unverified)</span>
       </span>
     );
   }
@@ -43,7 +43,9 @@ function ClaimedNation({ claim }: { claim: Claim }) {
   return (
     <>
       {claim.wikiPageTitle}{" "}
-      <span className="text-muted-foreground text-xs font-normal">(new nation from {wiki})</span>
+      <span className="text-label-secondary text-footnote font-normal">
+        (new nation from {wiki})
+      </span>
     </>
   );
 }
@@ -66,22 +68,22 @@ export function ClaimsTab() {
     onSettled: () => void utils.realms.listClaims.invalidate(),
   });
 
-  if (isLoading) return <p className="text-muted-foreground text-sm">Loading claims…</p>;
-  if (!claims?.length) return <p className="text-muted-foreground text-sm">No pending claims.</p>;
+  if (isLoading) return <p className="text-label-secondary text-body">Loading claims…</p>;
+  if (!claims?.length) return <p className="text-label-secondary text-body">No pending claims.</p>;
 
   return (
-    <ul className="divide-border/40 divide-y">
+    <ul className="divide-separator divide-y">
       {claims.map((claim) => (
         <li
           key={claim.id}
           className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <p className="text-foreground text-sm font-semibold">
+            <p className="text-label text-headline">
               <ClaimedNation claim={claim} />{" "}
-              <span className="text-muted-foreground">· {claim.realm.name}</span>
+              <span className="text-label-secondary">· {claim.realm.name}</span>
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Claimed by <ClaimantName user={claim.user} /> on{" "}
               {new Date(claim.createdAt).toLocaleDateString()}
             </p>
@@ -91,7 +93,7 @@ export function ClaimsTab() {
               value={reasons[claim.id] ?? ""}
               onChange={(e) => setReasons((r) => ({ ...r, [claim.id]: e.target.value }))}
               placeholder="Reason (required to reject)"
-              className="h-8 w-56 text-xs"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-56"
             />
             <Button
               size="sm"

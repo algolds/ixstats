@@ -59,7 +59,7 @@ export function CountrySelector({
       {/* Search + bulk actions */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search countries..."
             value={search}
@@ -112,7 +112,7 @@ export function CountrySelector({
       )}
 
       {/* Country list */}
-      <ScrollArea className="border-border/50 h-[280px] rounded-lg border">
+      <ScrollArea className="border-separator rounded-control h-[280px] border">
         <div className="space-y-0.5 p-2">
           {filtered.map((c) => {
             const isSelected = selectedIds.includes(c.id);
@@ -120,28 +120,28 @@ export function CountrySelector({
               <button
                 key={c.id}
                 onClick={() => toggle(c.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  isSelected ? "border-primary/30 bg-primary/10 border" : "hover:bg-muted/30"
+                className={`rounded-control text-body flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ${
+                  isSelected ? "border-tint/30 bg-tint-fill border" : "hover:bg-fill-4"
                 }`}
               >
                 <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-foreground font-medium">{c.name}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">
+                  <span className="text-label font-medium">{c.name}</span>
+                  <span className="text-label-secondary text-footnote ml-2">
                     {c.economicTier ?? "Unknown"}
                   </span>
                 </div>
-                {isSelected && <CheckCircle2 className="text-primary h-4 w-4 shrink-0" />}
+                {isSelected && <CheckCircle2 className="text-tint h-4 w-4 shrink-0" />}
               </button>
             );
           })}
           {filtered.length === 0 && (
-            <p className="text-muted-foreground py-4 text-center text-sm">No countries found</p>
+            <p className="text-label-secondary text-body py-4 text-center">No countries found</p>
           )}
         </div>
       </ScrollArea>
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         {selectedIds.length} of {countries.length} countries selected
       </p>
     </div>

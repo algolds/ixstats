@@ -32,6 +32,7 @@ import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 import { NarratorPlaygroundTab } from "./_components/NarratorPlaygroundTab";
 import { NarratorCacheTab } from "./_components/NarratorCacheTab";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function NarratorPanel() {
   usePageTitle({ title: "Admin - AI Narrator & Flavor" });
@@ -123,10 +124,8 @@ export function NarratorPanel() {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <div className="space-y-2 text-center">
-          <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground text-xs font-semibold">
-            Loading Narrator Settings...
-          </p>
+          <Loader2 className="text-tint mx-auto h-8 w-8 animate-spin" />
+          <p className="text-label-secondary text-caption">Loading Narrator Settings...</p>
         </div>
       </div>
     );
@@ -141,42 +140,40 @@ export function NarratorPanel() {
       />
 
       <Tabs defaultValue="config" className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="config"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Settings className="h-4 w-4 text-cyan-400" />
+            <Settings className="text-teal h-4 w-4" />
             Configuration
           </TabsTrigger>
           <TabsTrigger
             value="playground"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Play className="h-4 w-4 text-amber-400" />
+            <Play className="text-yellow h-4 w-4" />
             Playground
           </TabsTrigger>
           <TabsTrigger
             value="cache"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Database className="h-4 w-4 text-emerald-400" />
+            <Database className="text-green h-4 w-4" />
             Cache Lab
           </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Configuration */}
         <TabsContent value="config" className="mt-4 focus-visible:outline-none">
-          <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-            <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <FacetCard className="space-y-5 p-5">
+            <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4 text-amber-400" />
-                  <h3 className="text-foreground text-xs font-bold">
-                    Global AI Narrator Configuration
-                  </h3>
+                  <SlidersHorizontal className="text-yellow h-4 w-4" />
+                  <h3 className="text-label text-caption">Global AI Narrator Configuration</h3>
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5">
                   Manage LLM credentials and connection parameters. Falls back to SPORTS_LLM_API_KEY
                   if left blank.
                 </p>
@@ -185,7 +182,6 @@ export function NarratorPanel() {
                 onClick={handleSaveSettings}
                 disabled={saveSettingsMutation.isPending}
                 size="sm"
-                className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
               >
                 <Save className="mr-1.5 h-3.5 w-3.5" />
                 {saveSettingsMutation.isPending ? "Saving..." : "Save Settings"}
@@ -194,12 +190,10 @@ export function NarratorPanel() {
 
             <div className="space-y-4">
               {/* Enable Switch */}
-              <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+              <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
                 <div>
-                  <Label className="text-foreground text-xs font-bold">
-                    Enable Flavor Cards Globally
-                  </Label>
-                  <p className="text-muted-foreground text-xs">
+                  <Label className="text-label text-caption">Enable Flavor Cards Globally</Label>
+                  <p className="text-label-secondary text-footnote">
                     Enable or disable AI flavorization cards globally across all events and issues.
                   </p>
                 </div>
@@ -209,11 +203,9 @@ export function NarratorPanel() {
               {/* Grid Configs */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    LLM Provider
-                  </Label>
+                  <Label className="text-label-secondary text-subhead">LLM Provider</Label>
                   <Select value={provider} onValueChange={setProvider}>
-                    <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
+                    <SelectTrigger size="sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -227,12 +219,8 @@ export function NarratorPanel() {
 
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                      Temperature
-                    </Label>
-                    <span className="font-mono text-xs font-bold text-amber-400">
-                      {temperature}
-                    </span>
+                    <Label className="text-label-secondary text-subhead">Temperature</Label>
+                    <span className="text-caption text-yellow tabular-nums">{temperature}</span>
                   </div>
                   <input
                     type="range"
@@ -241,41 +229,35 @@ export function NarratorPanel() {
                     step={0.1}
                     value={temperature}
                     onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="bg-muted/40 h-1.5 w-full cursor-pointer rounded-lg accent-amber-500"
+                    className="bg-fill-3 rounded-control accent-yellow h-1.5 w-full cursor-pointer"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    API Endpoint URL
-                  </Label>
+                  <Label className="text-label-secondary text-subhead">API Endpoint URL</Label>
                   <Input
                     type="text"
                     value={apiUrl}
                     onChange={(e) => setApiUrl(e.target.value)}
                     placeholder={placeholders.apiUrl}
-                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                    className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Model Name
-                  </Label>
+                  <Label className="text-label-secondary text-subhead">Model Name</Label>
                   <Input
                     type="text"
                     value={modelName}
                     onChange={(e) => setModelName(e.target.value)}
                     placeholder={placeholders.modelName}
-                    className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                    className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  API Key / Token
-                </Label>
+                <Label className="text-label-secondary text-subhead">API Key / Token</Label>
                 <Input
                   type="password"
                   autoComplete="off"
@@ -289,7 +271,7 @@ export function NarratorPanel() {
                       ? `Saved (${settingsData.apiKeyHint}) — leave blank to keep`
                       : "Fallback to SPORTS_LLM_API_KEY if empty"
                   }
-                  className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
                 {settingsData?.hasApiKey && (
                   <button
@@ -298,7 +280,7 @@ export function NarratorPanel() {
                       setClearApiKey((v) => !v);
                       setApiKey("");
                     }}
-                    className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+                    className="text-label-secondary hover:text-label text-footnote underline-offset-2 hover:underline"
                   >
                     {clearApiKey ? "Keep the saved key" : "Remove the saved key on save"}
                   </button>
@@ -308,9 +290,7 @@ export function NarratorPanel() {
               {/* System Prompt Editor */}
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Global System Prompt
-                  </Label>
+                  <Label className="text-label-secondary text-subhead">Global System Prompt</Label>
                   <button
                     type="button"
                     onClick={() => {
@@ -322,7 +302,7 @@ export function NarratorPanel() {
                         setSystemPrompt(DEFAULT_FLAVOR_SYSTEM_PROMPT);
                       }
                     }}
-                    className="text-xs font-bold text-amber-400 uppercase hover:underline"
+                    className="text-eyebrow text-yellow hover:underline"
                   >
                     Reset to Default
                   </button>
@@ -332,11 +312,11 @@ export function NarratorPanel() {
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder={DEFAULT_FLAVOR_SYSTEM_PROMPT}
                   rows={5}
-                  className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
+                  className="md:text-footnote font-mono"
                 />
               </div>
             </div>
-          </div>
+          </FacetCard>
         </TabsContent>
 
         {/* Tab 2: Playground */}

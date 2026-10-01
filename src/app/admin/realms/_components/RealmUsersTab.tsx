@@ -8,15 +8,15 @@ export function RealmUsersTab() {
 
   if (isLoading) {
     return (
-      <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
+      <div className="text-label-secondary flex items-center justify-center gap-2 py-16">
         <Loader2 className="h-5 w-5 animate-spin" />
-        <span className="text-sm">Loading users...</span>
+        <span className="text-body">Loading users...</span>
       </div>
     );
   }
 
   if (!users?.length) {
-    return <div className="text-muted-foreground py-16 text-center">No users found.</div>;
+    return <div className="text-label-secondary py-16 text-center">No users found.</div>;
   }
 
   const withCountry = users.filter((u) => u.country);
@@ -26,43 +26,43 @@ export function RealmUsersTab() {
     <div className="space-y-6">
       {/* Summary */}
       <div className="flex gap-4">
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-2">
-          <span className="text-muted-foreground text-xs">Assigned</span>
-          <div className="text-lg font-bold text-emerald-500">{withCountry.length}</div>
+        <div className="rounded-control border-green/20 bg-green/5 border px-4 py-2">
+          <span className="text-label-secondary text-footnote">Assigned</span>
+          <div className="text-title-3 text-green">{withCountry.length}</div>
         </div>
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2">
-          <span className="text-muted-foreground text-xs">Unassigned</span>
-          <div className="text-lg font-bold text-amber-500">{withoutCountry.length}</div>
+        <div className="rounded-control border-yellow/20 bg-yellow/5 border px-4 py-2">
+          <span className="text-label-secondary text-footnote">Unassigned</span>
+          <div className="text-title-3 text-yellow">{withoutCountry.length}</div>
         </div>
       </div>
 
       {/* Users table */}
-      <div className="border-border/50 overflow-x-auto rounded-xl border">
-        <table className="w-full text-sm">
+      <div className="border-separator rounded-row overflow-x-auto border">
+        <table className="text-body w-full tabular-nums">
           <thead>
-            <tr className="border-border/50 bg-muted/30 border-b">
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+            <tr className="border-separator bg-fill-4 border-b">
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">
                 Clerk User ID
               </th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Membership</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Country</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Realm</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
-              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Joined</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Membership</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Country</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Realm</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Status</th>
+              <th className="text-label-secondary px-4 py-3 text-left font-medium">Joined</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="border-border/30 hover:bg-muted/20 border-b">
-                <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+              <tr key={user.id} className="border-separator hover:bg-fill-4 border-b">
+                <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
                   {user.clerkUserId.slice(0, 20)}...
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    className={`text-caption rounded-full border px-2 py-0.5 ${
                       user.membershipTier === "basic"
-                        ? "border-gray-500/20 bg-gray-500/10 text-gray-400"
-                        : "border-violet-500/20 bg-violet-500/10 text-violet-500"
+                        ? "border-separator bg-fill-3 text-label-secondary"
+                        : "border-purple/20 bg-purple/10 text-purple"
                     }`}
                   >
                     {user.membershipTier}
@@ -72,28 +72,28 @@ export function RealmUsersTab() {
                   {user.country ? (
                     <span className="font-medium">{user.country.name}</span>
                   ) : (
-                    <span className="text-muted-foreground/50 text-xs">No country</span>
+                    <span className="text-label-tertiary text-footnote">No country</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {user.country?.realmId ? (
                     <span
-                      className={`text-xs ${user.country.realmId === "default" ? "text-emerald-500" : "text-violet-500"}`}
+                      className={`text-footnote ${user.country.realmId === "default" ? "text-green" : "text-purple"}`}
                     >
                       {user.country.realmId === "default"
                         ? "IxWorld"
                         : user.country.realmId.slice(0, 12)}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground/50 text-xs">N/A</span>
+                    <span className="text-label-tertiary text-footnote">N/A</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   <div
-                    className={`h-2 w-2 rounded-full ${user.isActive ? "bg-green-500" : "bg-red-500"}`}
+                    className={`h-2 w-2 rounded-full ${user.isActive ? "bg-green" : "bg-red"}`}
                   />
                 </td>
-                <td className="text-muted-foreground px-4 py-3 text-xs">
+                <td className="text-label-secondary text-footnote px-4 py-3">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
               </tr>

@@ -10,12 +10,12 @@ import { formatDistanceToNow } from "date-fns";
 import { Clock, User, Page as FileText } from "iconoir-react";
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE_WORLD_EVENT: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300",
-  UPDATE_COUNTRY: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  ADD_STORYTELLER_EFFECT: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  DELETE_STORYTELLER_EFFECT: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300",
-  TRIGGER_CALCULATION: "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300",
-  CONFIG_UPDATE: "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+  CREATE_WORLD_EVENT: "border-green/30 bg-green/10 text-green",
+  UPDATE_COUNTRY: "border-blue/30 bg-blue/10 text-blue",
+  ADD_STORYTELLER_EFFECT: "border-yellow/30 bg-yellow/10 text-yellow",
+  DELETE_STORYTELLER_EFFECT: "border-red/30 bg-red/10 text-red",
+  TRIGGER_CALCULATION: "border-purple/30 bg-purple/10 text-purple",
+  CONFIG_UPDATE: "border-indigo/30 bg-indigo/10 text-indigo",
 };
 
 export function StorytellerHistory() {
@@ -28,7 +28,7 @@ export function StorytellerHistory() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          <Skeleton key={i} className="rounded-control h-16 w-full" />
         ))}
       </div>
     );
@@ -39,9 +39,9 @@ export function StorytellerHistory() {
   if (logs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <FileText className="text-muted-foreground mb-3 h-10 w-10" />
-        <h3 className="text-foreground text-lg font-semibold">No History</h3>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <FileText className="text-label-secondary mb-3 h-10 w-10" />
+        <h3 className="text-label text-title-3">No History</h3>
+        <p className="text-label-secondary text-body mt-1">
           Admin actions will appear here as they occur.
         </p>
       </div>
@@ -51,18 +51,16 @@ export function StorytellerHistory() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <Clock className="text-muted-foreground h-5 w-5" />
-        <h3 className="text-foreground text-lg font-semibold">Admin History</h3>
-        <Badge variant="outline" className="text-xs">
-          {logs.length} entries
-        </Badge>
+        <Clock className="text-label-secondary h-5 w-5" />
+        <h3 className="text-label text-title-3">Admin History</h3>
+        <Badge variant="outline">{logs.length} entries</Badge>
       </div>
 
       <ScrollArea className="h-[500px]">
         <div className="space-y-2">
           {logs.map((log: any) => {
             const colorClass =
-              ACTION_COLORS[log.action] ?? "border-gray-500/30 bg-gray-500/10 text-gray-600";
+              ACTION_COLORS[log.action] ?? "border-separator bg-fill-3 text-label-secondary";
             let details: Record<string, unknown> | null = null;
             try {
               const raw = log.details ?? log.changes;
@@ -74,25 +72,25 @@ export function StorytellerHistory() {
             return (
               <div
                 key={log.id}
-                className="facet-hierarchy-child border-border/20 hover:bg-muted/15 rounded-lg border p-3 transition-colors"
+                className="bg-surface-secondary border-separator hover:bg-fill-4 rounded-control border p-3 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-xs ${colorClass}`}>
+                    <Badge variant="outline" className={`text-footnote ${colorClass}`}>
                       {log.action.replace(/_/g, " ")}
                     </Badge>
                   </div>
-                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                  <span className="text-label-secondary text-footnote flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                   </span>
                 </div>
-                <div className="mt-1.5 flex items-center gap-2 text-xs">
-                  <User className="text-muted-foreground h-3 w-3" />
-                  <span className="text-muted-foreground">{log.adminName}</span>
+                <div className="text-footnote mt-1.5 flex items-center gap-2">
+                  <User className="text-label-secondary h-3 w-3" />
+                  <span className="text-label-secondary">{log.adminName}</span>
                 </div>
                 {details && (
-                  <div className="text-muted-foreground mt-1 text-xs">
+                  <div className="text-label-secondary text-footnote mt-1">
                     {Object.entries(details)
                       .filter(([k]) => k !== "eventId" && k !== "countryId")
                       .map(([k, v]) => (

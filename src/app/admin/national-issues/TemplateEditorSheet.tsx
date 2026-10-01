@@ -242,12 +242,10 @@ export function TemplateEditorSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="z-[100000] w-full max-w-xl overflow-y-auto border-white/10 bg-black/90 text-white backdrop-blur-xl sm:max-w-xl">
+      <SheetContent className="w-full max-w-xl overflow-y-auto sm:max-w-xl">
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-lg font-bold text-white">
-            {isEdit ? `Edit Template: ${slug}` : "Create Issue Template"}
-          </SheetTitle>
-          <SheetDescription className="text-xs text-slate-400">
+          <SheetTitle>{isEdit ? `Edit Template: ${slug}` : "Create Issue Template"}</SheetTitle>
+          <SheetDescription>
             {isEdit
               ? "Update this template configuration. Fields persist immediately on submit."
               : "Create a new event/decision template for the engine."}
@@ -255,11 +253,13 @@ export function TemplateEditorSheet({
         </SheetHeader>
 
         {isOpen && isEdit && isQueryLoading ? (
-          <div className="py-8 text-center text-xs text-slate-400">Loading template details...</div>
+          <div className="text-footnote text-label-secondary py-8 text-center">
+            Loading template details...
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 pb-8">
             {formError && (
-              <div className="flex items-center gap-2 rounded border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400">
+              <div className="rounded-control-sm border-red/20 bg-red/10 text-footnote text-red flex items-center gap-2 border p-2">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>{formError}</span>
               </div>
@@ -268,7 +268,7 @@ export function TemplateEditorSheet({
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="text-subhead text-label-secondary mb-1 block">
                   Slug (Unique identifier)
                 </label>
                 <Input
@@ -279,39 +279,35 @@ export function TemplateEditorSheet({
                   placeholder="e.g. workers_strike"
                   disabled={isEdit}
                   required
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white focus-visible:ring-amber-500"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  Title
-                </label>
+                <label className="text-subhead text-label-secondary mb-1 block">Title</label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Workers Strike in {{sectorName}}"
                   required
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white focus-visible:ring-amber-500"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                Description
-              </label>
+              <label className="text-subhead text-label-secondary mb-1 block">Description</label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Labor unions in {{countryName}} are threatening a general strike..."
                 required
                 rows={2}
-                className="border-white/10 bg-white/5 text-xs text-white focus-visible:ring-amber-500"
+                className="md:text-footnote"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <label className="text-subhead text-label-secondary mb-1 block">
                 Long Description (Optional)
               </label>
               <Textarea
@@ -319,26 +315,24 @@ export function TemplateEditorSheet({
                 onChange={(e) => setLongDescription(e.target.value)}
                 placeholder="Union leaders demand a {{percentageMedium}}% wage increase..."
                 rows={3}
-                className="border-white/10 bg-white/5 text-xs text-white focus-visible:ring-amber-500"
+                className="md:text-footnote"
               />
             </div>
 
             {/* Classification */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  Domain
-                </label>
+                <label className="text-subhead text-label-secondary mb-1 block">Domain</label>
                 <Select value={domain} onValueChange={(val: any) => setDomain(val)}>
-                  <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                  <SelectContent>
                     {DOMAINS.map((d) => (
                       <SelectItem
                         key={d}
                         value={d}
-                        className="text-xs focus:bg-white/10 focus:text-white"
+                        className="text-footnote focus:bg-fill-4 focus:text-label"
                       >
                         {d}
                       </SelectItem>
@@ -348,19 +342,17 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  Category
-                </label>
+                <label className="text-subhead text-label-secondary mb-1 block">Category</label>
                 <Select value={category} onValueChange={(val: any) => setCategory(val)}>
-                  <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                  <SelectContent>
                     {CATEGORIES.map((c) => (
                       <SelectItem
                         key={c}
                         value={c}
-                        className="text-xs focus:bg-white/10 focus:text-white"
+                        className="text-footnote focus:bg-fill-4 focus:text-label"
                       >
                         {c}
                       </SelectItem>
@@ -370,19 +362,17 @@ export function TemplateEditorSheet({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  Severity
-                </label>
+                <label className="text-subhead text-label-secondary mb-1 block">Severity</label>
                 <Select value={baseSeverity} onValueChange={(val: any) => setBaseSeverity(val)}>
-                  <SelectTrigger className="h-8 border-white/10 bg-white/5 text-xs text-white">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                  <SelectContent>
                     {SEVERITIES.map((s) => (
                       <SelectItem
                         key={s}
                         value={s}
-                        className="text-xs focus:bg-white/10 focus:text-white"
+                        className="text-footnote focus:bg-fill-4 focus:text-label"
                       >
                         {s.toUpperCase()}
                       </SelectItem>
@@ -395,7 +385,7 @@ export function TemplateEditorSheet({
             {/* Mechanics parameters */}
             <div className="grid grid-cols-4 gap-2">
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="text-subhead text-label-secondary mb-1 block">
                   Urgency (0-100)
                 </label>
                 <Input
@@ -404,12 +394,12 @@ export function TemplateEditorSheet({
                   max={100}
                   value={baseUrgency}
                   onChange={(e) => setBaseUrgency(Number(e.target.value))}
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="text-subhead text-label-secondary mb-1 block">
                   Deadline (Days)
                 </label>
                 <Input
@@ -420,12 +410,12 @@ export function TemplateEditorSheet({
                     setDeadlineDaysBase(e.target.value === "" ? "" : Number(e.target.value))
                   }
                   placeholder="None"
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                <label className="text-subhead text-label-secondary mb-1 block">
                   Cooldown (Days)
                 </label>
                 <Input
@@ -433,42 +423,40 @@ export function TemplateEditorSheet({
                   min={1}
                   value={cooldownDays}
                   onChange={(e) => setCooldownDays(Number(e.target.value))}
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  Max Active
-                </label>
+                <label className="text-subhead text-label-secondary mb-1 block">Max Active</label>
                 <Input
                   type="number"
                   min={1}
                   value={maxActivePerCountry}
                   onChange={(e) => setMaxActivePerCountry(Number(e.target.value))}
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             </div>
 
             {/* Settings Toggles */}
             <div className="flex gap-4">
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold">
+              <label className="text-caption flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/10 bg-white/5 accent-amber-500"
+                  className="rounded-control-sm border-separator bg-fill-4 accent-yellow h-4 w-4"
                 />
                 <span>Active Template</span>
               </label>
 
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold">
+              <label className="text-caption flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isGlobal}
                   onChange={(e) => setIsGlobal(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/10 bg-white/5 accent-amber-500"
+                  className="rounded-control-sm border-separator bg-fill-4 accent-yellow h-4 w-4"
                 />
                 <span>Is Global Event</span>
               </label>
@@ -477,13 +465,13 @@ export function TemplateEditorSheet({
             {/* JSON Code Blocks */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  <FileCode className="h-3.5 w-3.5 text-slate-400" />
+                <label className="text-subhead text-label-secondary flex items-center gap-1.5">
+                  <FileCode className="text-label-secondary h-3.5 w-3.5" />
                   Trigger Conditions (JSON Expression Tree)
                 </label>
                 <Badge
                   variant="outline"
-                  className={`px-1 py-0 text-xs ${triggerValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
+                  className={`text-footnote px-1 py-0 ${triggerValid ? "border-green/20 bg-green/10 text-green" : "border-red/20 bg-red/10 text-red"}`}
                 >
                   {triggerValid ? <Check className="mr-0.5 inline-block h-3 w-3" /> : null}
                   {triggerValid ? "Valid JSON" : "Invalid JSON"}
@@ -493,29 +481,23 @@ export function TemplateEditorSheet({
                 value={triggerConditions}
                 onChange={(e) => setTriggerConditions(e.target.value)}
                 rows={5}
-                className="border-white/10 bg-white/5 font-mono text-xs text-white focus-visible:ring-amber-500"
+                className="md:text-footnote font-mono"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-                  <FileCode className="h-3.5 w-3.5 text-slate-400" />
+                <label className="text-subhead text-label-secondary flex items-center gap-1.5">
+                  <FileCode className="text-label-secondary h-3.5 w-3.5" />
                   Response Options (JSON Option Array)
                 </label>
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handlePrefillResponse}
-                    className="h-5 p-1 text-xs text-amber-400 hover:bg-white/10 hover:text-white"
-                  >
+                  <Button type="button" variant="ghost" size="sm" onClick={handlePrefillResponse}>
                     Prefill Template
                   </Button>
                   <Badge
                     variant="outline"
-                    className={`px-1 py-0 text-xs ${responseValid ? "border-green-500/20 bg-green-500/10 text-green-400" : "border-red-500/20 bg-red-500/10 text-red-400"}`}
+                    className={`text-footnote px-1 py-0 ${responseValid ? "border-green/20 bg-green/10 text-green" : "border-red/20 bg-red/10 text-red"}`}
                   >
                     {responseValid ? <Check className="mr-0.5 inline-block h-3 w-3" /> : null}
                     {responseValid ? "Valid JSON" : "Invalid JSON"}
@@ -526,25 +508,15 @@ export function TemplateEditorSheet({
                 value={responseOptions}
                 onChange={(e) => setResponseOptions(e.target.value)}
                 rows={8}
-                className="border-white/10 bg-white/5 font-mono text-xs text-white focus-visible:ring-amber-500"
+                className="md:text-footnote font-mono"
               />
             </div>
 
-            <SheetFooter className="mt-6 flex gap-2 border-t border-white/10 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onOpenChange(false)}
-                className="h-8 border-white/10 text-xs text-slate-300 hover:bg-white/5 hover:text-white"
-              >
+            <SheetFooter className="border-separator mt-6 flex gap-2 border-t pt-4">
+              <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isPending || !triggerValid || !responseValid}
-                className="h-8 bg-amber-500 text-xs font-semibold text-black hover:bg-amber-400"
-              >
+              <Button type="submit" disabled={isPending || !triggerValid || !responseValid}>
                 {isPending ? "Saving..." : isEdit ? "Update Template" : "Create Template"}
               </Button>
             </SheetFooter>

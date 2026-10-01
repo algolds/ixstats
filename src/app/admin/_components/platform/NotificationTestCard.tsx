@@ -19,6 +19,8 @@ import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
+import { fieldStyles } from "~/components/ui/input";
+import { cn } from "~/lib/utils";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -156,23 +158,23 @@ export function NotificationTestCard() {
   };
 
   return (
-    <Card className="facet-surface border-border/40">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Bell className="h-4 w-4 text-indigo-500" />
+            <CardTitle className="text-headline flex items-center gap-2">
+              <Bell className="text-indigo h-4 w-4" />
               Notification Simulator Suite
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-footnote">
               Simulate notifications and test Dynamic Island animations (scale bump, ripple,
               critical pulse) and Sonner toast rendering.
             </CardDescription>
           </div>
-          <div className="border-border/20 bg-card/20 flex shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5">
+          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
             <Label
               htmlFor="notif-advanced-mode"
-              className="text-muted-foreground cursor-pointer text-xs font-bold tracking-wider uppercase select-none"
+              className="text-label-secondary text-subhead cursor-pointer select-none"
             >
               Custom Builder
             </Label>
@@ -187,55 +189,50 @@ export function NotificationTestCard() {
       <CardContent className="space-y-6">
         {/* Preset Buttons */}
         <div className="space-y-3">
-          <Label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-            Test Presets
-          </Label>
+          <Label className="text-label-secondary text-subhead">Test Presets</Label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button
-              variant="outline"
+              variant="destructive"
               onClick={() => triggerPreset("crisis")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 dark:text-red-400"
+              className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <ShieldAlert className="h-5 w-5" />
-              <span className="text-xs font-semibold">Crisis Alert</span>
+              <span className="text-caption">Crisis Alert</span>
             </Button>
             <Button
-              variant="outline"
+              variant="tinted"
               onClick={() => triggerPreset("achievement")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-emerald-500/20 bg-emerald-500/5 text-emerald-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-emerald-500/30 hover:bg-emerald-500/10 dark:text-emerald-400"
+              className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <Award className="h-5 w-5" />
-              <span className="text-xs font-semibold">Achievement</span>
+              <span className="text-caption">Achievement</span>
             </Button>
             <Button
-              variant="outline"
+              variant="tinted"
               onClick={() => triggerPreset("security")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-amber-500/20 bg-amber-500/5 text-amber-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/30 hover:bg-amber-500/10 dark:text-amber-400"
+              className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <AlertTriangle className="h-5 w-5" />
-              <span className="text-xs font-semibold">Security Intel</span>
+              <span className="text-caption">Security Intel</span>
             </Button>
             <Button
-              variant="outline"
+              variant="tinted"
               onClick={() => triggerPreset("trade")}
-              className="flex h-16 flex-col items-center justify-center gap-1 rounded-xl border-blue-500/20 bg-blue-500/5 text-blue-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/30 hover:bg-blue-500/10 dark:text-blue-400"
+              className="flex h-16 flex-col items-center justify-center gap-1"
             >
               <Sparkles className="h-5 w-5" />
-              <span className="text-xs font-semibold">Trade Pact</span>
+              <span className="text-caption">Trade Pact</span>
             </Button>
           </div>
         </div>
 
         {showAdvanced && (
           <>
-            <div className="border-border/20 animate-in fade-in grid grid-cols-1 gap-6 border-t pt-4 duration-200 md:grid-cols-2">
+            <div className="border-separator animate-in fade-in duration-fast grid grid-cols-1 gap-6 border-t pt-4 md:grid-cols-2">
               {/* Custom Notification Config */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="notif-title"
-                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                  >
+                  <Label htmlFor="notif-title" className="text-label-secondary text-subhead">
                     Title
                   </Label>
                   <Input
@@ -243,15 +240,11 @@ export function NotificationTestCard() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter alert title..."
-                    className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 focus:ring-1"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="notif-message"
-                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                  >
+                  <Label htmlFor="notif-message" className="text-label-secondary text-subhead">
                     Message
                   </Label>
                   <Textarea
@@ -259,23 +252,23 @@ export function NotificationTestCard() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Enter alert description..."
-                    className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 h-20 focus:ring-1"
+                    className="h-20"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label
-                      htmlFor="notif-type"
-                      className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                    >
+                    <Label htmlFor="notif-type" className="text-label-secondary text-subhead">
                       Type
                     </Label>
                     <select
                       id="notif-type"
                       value={type}
                       onChange={(e) => setType(e.target.value as ToastType)}
-                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
+                      className={cn(
+                        fieldStyles,
+                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+                      )}
                     >
                       {TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
@@ -286,17 +279,17 @@ export function NotificationTestCard() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label
-                      htmlFor="notif-priority"
-                      className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                    >
+                    <Label htmlFor="notif-priority" className="text-label-secondary text-subhead">
                       Priority
                     </Label>
                     <select
                       id="notif-priority"
                       value={priority}
                       onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                      className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
+                      className={cn(
+                        fieldStyles,
+                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+                      )}
                     >
                       {PRIORITIES.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -308,17 +301,17 @@ export function NotificationTestCard() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="notif-category"
-                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                  >
+                  <Label htmlFor="notif-category" className="text-label-secondary text-subhead">
                     Category
                   </Label>
                   <select
                     id="notif-category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                    className="border-border/40 bg-background text-foreground focus:border-primary/50 flex h-9 w-full rounded-xl border px-3 py-1.5 text-xs focus:outline-none"
+                    className={cn(
+                      fieldStyles,
+                      "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
+                    )}
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c.value} value={c.value}>
@@ -330,11 +323,11 @@ export function NotificationTestCard() {
               </div>
 
               {/* Behavior Settings */}
-              <div className="bg-card/10 border-border/20 space-y-4 rounded-xl border p-4">
+              <div className="bg-surface border-separator rounded-row space-y-4 border p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-medium">Persistent Alert</Label>
-                    <p className="text-muted-foreground text-xs">
+                    <Label className="text-body font-medium">Persistent Alert</Label>
+                    <p className="text-label-secondary text-footnote">
                       Requires manual closing; will not auto-dismiss.
                     </p>
                   </div>
@@ -343,8 +336,8 @@ export function NotificationTestCard() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-medium">Silent Alert</Label>
-                    <p className="text-muted-foreground text-xs">
+                    <Label className="text-body font-medium">Silent Alert</Label>
+                    <p className="text-label-secondary text-footnote">
                       Only add to notification center, suppress toast banner.
                     </p>
                   </div>
@@ -353,8 +346,8 @@ export function NotificationTestCard() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-medium">With Action Callback</Label>
-                    <p className="text-muted-foreground text-xs">
+                    <Label className="text-body font-medium">With Action Callback</Label>
+                    <p className="text-label-secondary text-footnote">
                       Includes a clickable action button on the toast.
                     </p>
                   </div>
@@ -362,10 +355,7 @@ export function NotificationTestCard() {
                 </div>
 
                 <div className="space-y-1.5 pt-2">
-                  <Label
-                    htmlFor="notif-duration"
-                    className="text-muted-foreground text-xs font-bold tracking-wider uppercase"
-                  >
+                  <Label htmlFor="notif-duration" className="text-label-secondary text-subhead">
                     Auto-dismiss Duration (ms)
                   </Label>
                   <Input
@@ -375,17 +365,12 @@ export function NotificationTestCard() {
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="5000"
                     disabled={persistent}
-                    className="border-border/30 bg-card/10 focus:border-primary/50 focus:ring-primary/20 focus:ring-1"
                   />
                 </div>
               </div>
             </div>
 
-            <Button
-              onClick={handleTrigger}
-              size="lg"
-              className="w-full rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
+            <Button onClick={handleTrigger} size="lg" className="w-full">
               <Play className="mr-2 h-4 w-4" />
               Trigger Custom Notification
             </Button>

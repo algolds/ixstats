@@ -66,21 +66,21 @@ const PRIORITY_OPTIONS = [
 function getTypeIcon(type: string | null) {
   switch (type) {
     case "info":
-      return <Info className="h-4 w-4 text-blue-500" />;
+      return <Info className="text-blue h-4 w-4" />;
     case "warning":
-      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      return <AlertTriangle className="text-yellow h-4 w-4" />;
     case "success":
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="text-green h-4 w-4" />;
     case "error":
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="text-red h-4 w-4" />;
     case "crisis":
-      return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      return <AlertTriangle className="text-red h-4 w-4" />;
     case "economic":
-      return <Zap className="h-4 w-4 text-purple-500" />;
+      return <Zap className="text-purple h-4 w-4" />;
     case "diplomatic":
-      return <Users className="h-4 w-4 text-indigo-500" />;
+      return <Users className="text-indigo h-4 w-4" />;
     default:
-      return <Bell className="h-4 w-4 text-gray-500" />;
+      return <Bell className="text-label-secondary h-4 w-4" />;
   }
 }
 
@@ -104,17 +104,17 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
 
   const colors =
     n.priority === "critical"
-      ? { bg: "bg-red-500/10", text: "text-red-500" }
+      ? { bg: "bg-red/10", text: "text-red" }
       : n.priority === "high"
-        ? { bg: "bg-orange-500/10", text: "text-orange-500" }
+        ? { bg: "bg-orange/10", text: "text-orange" }
         : n.priority === "medium"
-          ? { bg: "bg-yellow-500/10", text: "text-yellow-500" }
-          : { bg: "bg-slate-500/10", text: "text-slate-400" };
+          ? { bg: "bg-yellow/10", text: "text-yellow" }
+          : { bg: "bg-fill-3", text: "text-label-secondary" };
 
   return (
     <SwipeableRow
       id={n.id}
-      className="mb-2 overflow-hidden rounded-xl last:mb-0"
+      className="rounded-row mb-2 overflow-hidden last:mb-0"
       springPreset="tight"
       expanded={isExpanded}
       onExpandedChange={setIsExpanded}
@@ -140,14 +140,14 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
       <SwipeableRow.Content>
         <div
           className={cn(
-            "relative flex cursor-grab items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.05] p-3.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-white/[0.12] hover:bg-white/[0.08] active:cursor-grabbing dark:border-white/10 dark:bg-slate-950/75 dark:hover:bg-slate-900/80",
-            !n.read && "border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/20"
+            "rounded-row border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 duration-fast relative flex cursor-grab items-center justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:cursor-grabbing",
+            !n.read && "border-blue/30 bg-blue/5"
           )}
         >
           {/* Left indicator accent border */}
           <div
             className={cn(
-              "absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "rounded-l-row duration-fast absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               colors.text.replace("text-", "bg-")
             )}
           />
@@ -155,7 +155,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           <div className="flex min-w-0 flex-1 items-center gap-3 pl-1.5">
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/5",
+                "rounded-control border-separator flex h-8 w-8 shrink-0 items-center justify-center border",
                 colors.bg
               )}
             >
@@ -163,21 +163,17 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-foreground max-w-[280px] truncate text-sm font-semibold">
-                  {n.title}
-                </span>
-                {!n.read && (
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
-                )}
+                <span className="text-label text-headline max-w-[280px] truncate">{n.title}</span>
+                {!n.read && <span className="bg-blue h-1.5 w-1.5 animate-pulse rounded-full" />}
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground h-4 border-white/10 px-1.5 py-0 text-xs tracking-wider uppercase"
+                  className="text-label-secondary border-separator text-eyebrow h-4 px-1.5 py-0"
                 >
                   {n.category || n.type || "system"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="text-muted-foreground flex h-4 items-center gap-1 border-white/10 px-1.5 py-0 text-xs"
+                  className="text-label-secondary border-separator flex h-4 items-center gap-1 px-1.5 py-0"
                 >
                   {scope.icon}
                   <span>{scope.label}</span>
@@ -190,13 +186,13 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                         ? "default"
                         : "secondary"
                   }
-                  className="h-4 px-1.5 py-0 text-xs leading-none"
+                  className="h-4 px-1.5 py-0 leading-none"
                 >
                   {n.priority}
                 </Badge>
               </div>
               {n.description && (
-                <div className="text-muted-foreground mt-1 max-w-[500px] truncate text-xs">
+                <div className="text-label-secondary text-footnote mt-1 max-w-[500px] truncate">
                   {n.description}
                 </div>
               )}
@@ -204,21 +200,21 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
           </div>
 
           <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
-            <span className="text-muted-foreground/80 text-xs font-medium whitespace-nowrap">
+            <span className="text-label-secondary text-caption whitespace-nowrap">
               {formattedTime}
             </span>
             <div className="flex items-center gap-1.5">
               {n.read ? (
                 <span title="Read">
-                  <Eye className="text-muted-foreground/60 h-3.5 w-3.5" />
+                  <Eye className="text-label-secondary h-3.5 w-3.5" />
                 </span>
               ) : (
                 <span title="Unread">
-                  <EyeOff className="h-3.5 w-3.5 text-blue-400" />
+                  <EyeOff className="text-blue h-3.5 w-3.5" />
                 </span>
               )}
               <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
-                <ChevronRight className="text-muted-foreground/40 h-4 w-4" />
+                <ChevronRight className="text-label-tertiary h-4 w-4" />
               </motion.div>
             </div>
           </div>
@@ -227,53 +223,49 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
 
       {/* Expanded details */}
       <SwipeableRow.Expanded>
-        <div className="space-y-3 rounded-b-xl border-t border-white/5 bg-slate-950/40 p-4 pl-[52px]">
+        <div className="rounded-b-row border-separator bg-fill-3 space-y-3 border-t p-4 pl-[52px]">
           {n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Full Message
-              </span>
-              <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
+              <span className="text-label-secondary text-eyebrow">Full Message</span>
+              <p className="text-label text-caption leading-relaxed whitespace-pre-wrap select-text">
                 {n.message}
               </p>
             </div>
           )}
           {n.description && !n.message && (
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Description
-              </span>
-              <p className="text-foreground/90 text-xs leading-relaxed font-medium whitespace-pre-wrap select-text">
+              <span className="text-label-secondary text-eyebrow">Description</span>
+              <p className="text-label text-caption leading-relaxed whitespace-pre-wrap select-text">
                 {n.description}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-white/5 pt-2 text-xs">
+          <div className="border-separator text-footnote grid grid-cols-2 gap-x-6 gap-y-2 border-t pt-2">
             <div>
-              <span className="text-muted-foreground font-semibold">User ID:</span>{" "}
-              <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
+              <span className="text-label-secondary font-semibold">User ID:</span>{" "}
+              <code className="text-label rounded-control-sm bg-fill-4 px-1 py-0.5">
                 {n.userId || "Global / System"}
               </code>
             </div>
             <div>
-              <span className="text-muted-foreground font-semibold">Country ID:</span>{" "}
-              <code className="text-foreground/90 rounded bg-white/5 px-1 py-0.5">
+              <span className="text-label-secondary font-semibold">Country ID:</span>{" "}
+              <code className="text-label rounded-control-sm bg-fill-4 px-1 py-0.5">
                 {n.countryId || "Global / System"}
               </code>
             </div>
             {n.href && (
               <div className="col-span-2">
-                <span className="text-muted-foreground font-semibold">Target URL:</span>{" "}
-                <a href={n.href} className="text-blue-400 hover:underline">
+                <span className="text-label-secondary font-semibold">Target URL:</span>{" "}
+                <a href={n.href} className="text-blue hover:underline">
                   {n.href}
                 </a>
               </div>
             )}
             {n.metadata && (
               <div className="col-span-2 mt-1 space-y-1">
-                <span className="text-muted-foreground font-semibold">Metadata:</span>
-                <pre className="max-w-full overflow-x-auto rounded border border-white/5 bg-black/30 p-2 font-mono text-xs text-emerald-400">
+                <span className="text-label-secondary font-semibold">Metadata:</span>
+                <pre className="rounded-control-sm border-separator text-footnote text-label bg-surface-secondary max-w-full overflow-x-auto border p-2 font-mono">
                   {JSON.stringify(JSON.parse(n.metadata), null, 2)}
                 </pre>
               </div>
@@ -284,7 +276,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             <Button
               variant="outline"
               size="sm"
-              className="h-7 border-red-500/20 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-500"
+              className="text-destructive"
               onClick={() => handleDelete(n.id)}
               disabled={deleteMutation.isPending}
             >
@@ -351,7 +343,7 @@ export function NotificationBrowser() {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+          <Search className="text-label-secondary absolute top-2.5 left-2.5 h-4 w-4" />
           <Input
             placeholder="Search title, description, message..."
             value={search}
@@ -426,7 +418,7 @@ export function NotificationBrowser() {
         <Button
           variant="outline"
           size="sm"
-          className="text-red-500 hover:bg-red-500/10 hover:text-red-600"
+          className="text-destructive"
           onClick={() => {
             if (confirm("Delete ALL notifications from database? This cannot be undone.")) {
               deleteAllMutation.mutate({ adminUserId: "system-admin" });
@@ -442,7 +434,7 @@ export function NotificationBrowser() {
       {/* List container */}
       <Card>
         <CardHeader className="py-3">
-          <CardTitle className="flex items-center justify-between text-sm">
+          <CardTitle className="text-body flex items-center justify-between">
             <span>
               {data
                 ? `${data.totalCount} notification${data.totalCount !== 1 ? "s" : ""}`
@@ -453,9 +445,9 @@ export function NotificationBrowser() {
         <CardContent className="p-3">
           <ScrollArea className="max-h-[600px] pr-2">
             {isLoading ? (
-              <div className="text-muted-foreground py-8 text-center">Loading...</div>
+              <div className="text-label-secondary py-8 text-center">Loading...</div>
             ) : data?.notifications.length === 0 ? (
-              <div className="text-muted-foreground py-8 text-center">
+              <div className="text-label-secondary py-8 text-center">
                 <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 No notifications found
               </div>
@@ -491,7 +483,7 @@ export function NotificationBrowser() {
             <ChevronLeft className="mr-1 h-4 w-4" />
             Previous
           </Button>
-          <span className="text-muted-foreground text-sm">
+          <span className="text-label-secondary text-body">
             Page {page + 1} of {Math.ceil(data.totalCount / limit)}
           </span>
           <Button

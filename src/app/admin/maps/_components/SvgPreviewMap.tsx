@@ -131,13 +131,13 @@ export function SvgPreviewMap({
   }, [initMap]);
 
   if (!geojson) {
-    return <Skeleton className={`w-full rounded-lg ${className}`} style={{ height }} />;
+    return <Skeleton className={`rounded-control w-full ${className}`} style={{ height }} />;
   }
 
   return (
     <div
       ref={containerRef}
-      className={`border-border w-full rounded-lg border ${className}`}
+      className={`border-separator rounded-control w-full border ${className}`}
       style={{ height }}
     />
   );

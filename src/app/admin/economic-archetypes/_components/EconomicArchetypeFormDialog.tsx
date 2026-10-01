@@ -3,13 +3,13 @@
 
 import React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import {
@@ -77,23 +77,27 @@ export function EconomicArchetypeFormDialog({
   isPending,
 }: ArchetypeEditorDialogProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Archetype" : "Add Archetype"}</DialogTitle>
-          <DialogDescription>Configure the economic archetype template</DialogDescription>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent size="wide" className="flex flex-col overflow-hidden">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? "Edit Archetype" : "Add Archetype"}</SheetTitle>
+          <SheetDescription>Configure the economic archetype template</SheetDescription>
+        </SheetHeader>
 
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+          <TabsList className="border-separator flex shrink-0 gap-2 overflow-x-auto border-b pb-2">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger key={tab.id} value={tab.id} className="text-xs active:scale-[0.98]">
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="text-footnote active:scale-[0.98]"
+                >
                   <Icon className="mr-1.5 inline h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>
@@ -126,19 +130,15 @@ export function EconomicArchetypeFormDialog({
           </div>
         </Tabs>
 
-        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
-          <Button variant="ghost" onClick={onClose} className="text-xs active:scale-[0.98]">
+        <SheetFooter className="border-separator shrink-0 border-t pt-4">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onSave}
-            disabled={!formData.name || !formData.key || isPending}
-            className="text-xs active:scale-[0.98]"
-          >
+          <Button onClick={onSave} disabled={!formData.name || !formData.key || isPending}>
             {isPending ? "Saving..." : isEditing ? "Update Archetype" : "Create Archetype"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

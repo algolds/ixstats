@@ -33,7 +33,7 @@ export function WikiOSSettingsPanel() {
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
 
-      <div className="border-border/40 space-y-6 border-t pt-6">
+      <div className="border-separator space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
         <ManualLinkEditorSection countriesData={countriesData} />
         <SystemTuningSection />

@@ -377,8 +377,9 @@ values on hover or tap.
    `/admin`. Flag-off rendering is unchanged (the variables keep their legacy values; hidden nodes are CSS-gated).
    **Still before flipping the flag:** `/countries` index needs its `ShellPageHeader` (left for the countries work in
    progress); sports keep a league's/club's section bar inside `SportsShell` — entity-scoped, not in the map, so it
-   stays (decide whether the sidebar should show contextual entity sections); the admin rail still shows
-   `SystemStatusWidget` beside the sidebar; the WikiOS rail keeps search/create/page tools, so wiki pages still show
+   stays (decide whether the sidebar should show contextual entity sections); ~~the admin rail still shows
+   `SystemStatusWidget` beside the sidebar~~ (✅ the whole admin rail is `data-app-subnav`; its status moves to a
+   `SystemStatusStrip` above the console under the flag); the WikiOS rail keeps search/create/page tools, so wiki pages still show
    a slim rail; the sidebar collapse is instant (animating `--shell-sidebar-width` relayouts `<main>`); Onoma's
    chrome is converted (Phase 4) but its in-page navigation stays (entity-scoped, like sports); retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the legacy
    shell.
@@ -437,6 +438,28 @@ values on hover or tap.
    steps; ~200 Onoma raw `<button>`s that are role-styled toggles/chips rather than `Button` styles; native `<select>`s
    in Onoma's sections (field-styled by roles, not the `Select` primitive); BBCode post HTML is styled by
    `forum.css` (roles, not utilities).
+   **Admin — ✅ converted 2026-10-01** (`app/admin`, `components/admin`; default indigo `data-app="admin"` with
+   `PortalTintSync`, now in `facet-guards`' converted areas). The console is a grouped page; the rail's section list
+   is an inset group with a `SearchField` filter and tint selection (`aria-current`); under `facet-nav` the whole rail
+   (status card + sections) is `data-app-subnav` and a `SystemStatusStrip` (IxTime, bot, countries, storyteller
+   events, last recalc, warnings) sits above every console page instead. Glass/`bg-card/NN`+`backdrop-blur` panels,
+   `FacetContainer`/`FacetNavigation`, `CutoutCard` and `facet-hierarchy-*`/`facet-surface` → opaque `FacetCard`/`Card`
+   with border-only insets; metric tiles → `Stat`; hand-rolled tab strips, filter pills and choice pairs →
+   `SegmentedControl`/`ToggleGroup`; pill `<span>`s and status helpers → `Badge` variants; icon-only `<button>`s →
+   `Button size="icon-sm"` (with `aria-label`s); native fields → `Input`/`Textarea`/`fieldStyles`, `SelectTrigger`
+   overrides dropped; `Button` colour overrides → `filled`/`tinted`/`destructive`; the import preview's `fixed inset-0`
+   overlay → `Dialog`; large form dialogs (archetype, scenario, template, equipment, card edit, SVG processing,
+   transaction history) → wide `Sheet`; `animate-pulse` placeholders → `Skeleton`; chart hex → `chart-1…8` and role
+   variables; ~7k palette/`dark:`/`text-xs`/`rounded-xl`/`tracking-*` hits → roles, text styles and radius tokens;
+   tables carry `tabular-nums`, `font-mono` stays for IDs, cron expressions and code. **Facet materials lab** opens on
+   a *Facet 3 system* showcase (tint scopes, `FacetCard` vs `material-thin/regular/thick`, `Stat`, `FacetList`, every
+   `Button`/`Badge` style, `SegmentedControl`/`ToggleGroup`/`SearchField`, text styles, system colours, `EmptyState`);
+   the v2 configurator stays as *Lab materials* (lab-only `lab.css` materials, labelled as such) and its appearance
+   toggle now switches the real theme (roles only switch on `html[data-theme]`). **Remaining:** `x.5` spacing steps;
+   ~60 role-styled selectable list/option `<button>`s (master–detail lists, radio cards, wizard steps); native
+   checkboxes/range inputs in a few forms; MapLibre fallback paint hex in `SvgPreviewMap` (map data); the lab
+   templates keep their v2 demo classes. Primitive gap: `Table` (`components/ui/table.tsx`) still ships v2 classes
+   (`border-border/50 bg-background/50 rounded-lg`, a gradient scroll hint, no `tabular-nums`).
 
 ## 15. Governance
 

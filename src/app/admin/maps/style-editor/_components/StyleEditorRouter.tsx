@@ -1,5 +1,6 @@
 "use client";
 
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
@@ -20,9 +21,9 @@ export function StyleEditorRouter() {
   const iframeUrl = `/admin/maputnik/index.html?style=/api/maps/style-store?theme=${selectedTheme}`;
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-900 text-white">
+    <div className="bg-surface text-label flex h-screen w-screen flex-col overflow-hidden">
       {/* Top Header Bar */}
-      <header className="flex h-12 items-center justify-between border-b border-slate-800 bg-slate-950 px-4">
+      <header className="border-separator bg-surface flex h-12 items-center justify-between border-b px-4">
         {/* Left Section: Back button */}
         <div className="flex items-center gap-3">
           <Button
@@ -37,57 +38,53 @@ export function StyleEditorRouter() {
             <span>Exit Editor</span>
           </Button>
 
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="bg-surface-secondary h-4 w-px" />
 
           <div className="flex items-center gap-2">
-            <Layers className="h-4.5 w-4 text-blue-400" />
+            <Layers className="text-blue h-4.5 w-4" />
             <Eyebrow>Style Editor</Eyebrow>
           </div>
         </div>
 
         {/* Middle Section: Theme Selector Buttons */}
-        <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
-          {(["standard", "dark", "paper"] as ThemeType[]).map((theme) => (
-            <button
-              key={theme}
-              onClick={() => handleThemeChange(theme)}
-              className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                selectedTheme === theme
-                  ? "bg-blue-600 text-white shadow"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-              }`}
-            >
-              {theme}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Map theme"
+          value={selectedTheme}
+          onValueChange={(theme) => handleThemeChange(theme)}
+          options={(["standard", "dark", "paper"] as ThemeType[]).map((theme) => ({
+            value: theme,
+            label: <span className="capitalize">{theme}</span>,
+            "aria-label": theme,
+          }))}
+        />
 
         {/* Right Section: Info & Reload */}
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="w-7"
             onClick={() => setKey((prev) => prev + 1)}
             title="Reload Style Editor"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
 
-          <div className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-400">
+          <div className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label-secondary border px-2 py-0.5">
             Maputnik v1.7.0
           </div>
         </div>
       </header>
 
       {/* Embedded Maputnik Iframe */}
-      <div className="relative w-full flex-1 bg-slate-900">
+      <div className="bg-surface relative w-full flex-1">
         {/* oxlint-disable-next-line -- Maputnik admin editor requires scripts + same-origin for style-store API, trusted same-origin iframe */}
         <iframe
           key={key}
           src={iframeUrl}
           sandbox="allow-scripts allow-same-origin"
-          className="absolute inset-0 h-full w-full border-none bg-slate-900"
+          className="bg-surface absolute inset-0 h-full w-full border-none"
           title="Maputnik Visual Style Editor"
         />
       </div>

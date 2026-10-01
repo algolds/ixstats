@@ -3,6 +3,7 @@
 // Unified reference data hub with grouped categories and live record counts
 export const dynamic = "force-dynamic";
 
+import { cn } from "~/lib/utils";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
@@ -29,6 +30,20 @@ import {
 } from "iconoir-react";
 
 // ── Data Type Registry ───────────────────────────────────────────────────────
+
+/** Category icon colours (static class names so Tailwind generates them). */
+const CATEGORY_ICON_COLOR: Record<string, string> = {
+  cyan: "text-cyan",
+  red: "text-red",
+  purple: "text-purple",
+  green: "text-green",
+  amber: "text-yellow",
+  blue: "text-blue",
+  orange: "text-orange",
+  indigo: "text-indigo",
+  pink: "text-pink",
+  teal: "text-teal",
+};
 
 interface DataTypeConfig {
   key: string;
@@ -250,7 +265,7 @@ export default function ReferenceDataPage() {
         description="Manage all platform reference data types"
       >
         {totalRecords > 0 && (
-          <Badge variant="outline" className="text-sm">
+          <Badge variant="outline" className="text-body">
             {totalRecords.toLocaleString()}+ records across{" "}
             {Object.values(counts).filter((c) => c != null).length} tracked types
           </Badge>
@@ -267,11 +282,14 @@ export default function ReferenceDataPage() {
           return (
             <div key={category.key}>
               <div className="mb-3 flex items-center gap-2">
-                <CategoryIcon className={`h-4 w-4 text-${category.color}-500`} />
-                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
-                  {category.label}
-                </h2>
-                <div className="bg-border/50 h-px flex-1" />
+                <CategoryIcon
+                  className={cn(
+                    "h-4 w-4",
+                    CATEGORY_ICON_COLOR[category.color] ?? "text-label-secondary"
+                  )}
+                />
+                <h2 className="text-label text-headline uppercase">{category.label}</h2>
+                <div className="bg-separator h-px flex-1" />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -283,36 +301,36 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="group border-border/30 bg-card/25 hover:border-border/60 block rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors transition-transform active:scale-[0.98]"
+                      className="group border-separator bg-surface hover:border-separator rounded-card shadow-card block border p-3.5 transition-colors transition-transform active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className="border-border/40 bg-card/40 text-foreground rounded-xl border p-2">
-                            <Icon className="text-primary h-4 w-4" />
+                          <div className="border-separator bg-surface text-label rounded-row border p-2">
+                            <Icon className="text-tint h-4 w-4" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-foreground group-hover:text-primary text-xs font-semibold tracking-tight transition-colors">
+                            <h3 className="text-label group-hover:text-tint text-caption transition-colors">
                               {type.label}
                             </h3>
-                            <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                            <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">
                               {type.description}
                             </p>
                           </div>
                         </div>
-                        <ExternalLink className="text-muted-foreground h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <ExternalLink className="text-label-secondary h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
 
                       {/* Count badge */}
                       {count != null ? (
-                        <div className="border-border/20 mt-3 flex items-center justify-between border-t pt-2 text-xs">
-                          <span className="text-muted-foreground">Records</span>
-                          <span className="text-foreground font-mono font-bold">
+                        <div className="border-separator text-footnote mt-3 flex items-center justify-between border-t pt-2">
+                          <span className="text-label-secondary">Records</span>
+                          <span className="text-label font-semibold tabular-nums">
                             {count.toLocaleString()}
                           </span>
                         </div>
                       ) : count === undefined &&
                         (govComponents.isLoading || econComponents.isLoading) ? (
-                        <div className="border-border/20 mt-3 border-t pt-2">
+                        <div className="border-separator mt-3 border-t pt-2">
                           <Skeleton className="ml-auto h-3.5 w-12" />
                         </div>
                       ) : null}

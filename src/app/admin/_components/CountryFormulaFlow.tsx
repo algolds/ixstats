@@ -25,21 +25,21 @@ function CalcNode({ data, selected }: NodeProps) {
   const outputs = (data.outputs as string[]) || [];
 
   const borderColors: Record<string, string> = {
-    baseline: "border-sky-500/40 hover:border-sky-400 focus:border-sky-400",
-    settings: "border-amber-500/40 hover:border-amber-400 focus:border-amber-400",
-    storyteller: "border-indigo-500/40 hover:border-indigo-400 focus:border-indigo-400",
-    popGrowth: "border-teal-500/40 hover:border-teal-400 focus:border-teal-400",
-    gdpGrowth: "border-purple-500/40 hover:border-purple-400 focus:border-purple-400",
-    rawGdpGrowth: "border-purple-500/40 hover:border-purple-400 focus:border-purple-400",
-    diminishingReturns: "border-yellow-500/40 hover:border-yellow-400 focus:border-yellow-400",
-    tierCap: "border-pink-500/40 hover:border-pink-400 focus:border-pink-400",
-    progression: "border-orange-500/40 hover:border-orange-400 focus:border-orange-400",
-    directModifiers: "border-red-500/40 hover:border-red-400 focus:border-red-400",
-    output: "border-emerald-500/40 hover:border-emerald-400 focus:border-emerald-400",
-    vitality: "border-emerald-500/40 hover:border-emerald-400 focus:border-emerald-400",
-    wellbeing: "border-teal-500/40 hover:border-teal-400 focus:border-teal-400",
-    efficiency: "border-purple-500/40 hover:border-purple-400 focus:border-purple-400",
-    diplomatic: "border-indigo-500/40 hover:border-indigo-400 focus:border-indigo-400",
+    baseline: "border-blue/40 hover:border-blue focus:border-blue",
+    settings: "border-yellow/40 hover:border-yellow focus:border-yellow",
+    storyteller: "border-indigo/40 hover:border-indigo focus:border-indigo",
+    popGrowth: "border-teal/40 hover:border-teal focus:border-teal",
+    gdpGrowth: "border-purple/40 hover:border-purple focus:border-purple",
+    rawGdpGrowth: "border-purple/40 hover:border-purple focus:border-purple",
+    diminishingReturns: "border-yellow/40 hover:border-yellow focus:border-yellow",
+    tierCap: "border-pink/40 hover:border-pink focus:border-pink",
+    progression: "border-orange/40 hover:border-orange focus:border-orange",
+    directModifiers: "border-red/40 hover:border-red focus:border-red",
+    output: "border-green/40 hover:border-green focus:border-green",
+    vitality: "border-green/40 hover:border-green focus:border-green",
+    wellbeing: "border-teal/40 hover:border-teal focus:border-teal",
+    efficiency: "border-purple/40 hover:border-purple focus:border-purple",
+    diplomatic: "border-indigo/40 hover:border-indigo focus:border-indigo",
   };
 
   const bgGlows: Record<string, string> = {
@@ -61,32 +61,30 @@ function CalcNode({ data, selected }: NodeProps) {
   };
 
   const glowColors: Record<string, string> = {
-    baseline: "shadow-sky-500/5",
-    settings: "shadow-amber-500/5",
-    storyteller: "shadow-indigo-500/5",
-    popGrowth: "shadow-teal-500/5",
-    gdpGrowth: "shadow-purple-500/5",
-    rawGdpGrowth: "shadow-purple-500/5",
-    diminishingReturns: "shadow-yellow-500/5",
-    tierCap: "shadow-pink-500/5",
-    progression: "shadow-orange-500/5",
-    directModifiers: "shadow-red-500/5",
-    output: "shadow-emerald-500/5",
-    vitality: "shadow-emerald-500/5",
-    wellbeing: "shadow-teal-500/5",
-    efficiency: "shadow-purple-500/5",
-    diplomatic: "shadow-indigo-500/5",
+    baseline: "",
+    settings: "",
+    storyteller: "",
+    popGrowth: "",
+    gdpGrowth: "",
+    rawGdpGrowth: "",
+    diminishingReturns: "",
+    tierCap: "",
+    progression: "",
+    directModifiers: "",
+    output: "",
+    vitality: "",
+    wellbeing: "",
+    efficiency: "",
+    diplomatic: "",
   };
 
   return (
     <div
       className={cn(
-        "bg-card/90 relative min-w-[210px] rounded-xl border p-4 text-left shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-        borderColors[category] || "border-border",
+        "bg-surface rounded-row duration-fast relative min-w-[210px] border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        borderColors[category] || "border-separator",
         glowColors[category],
-        selected
-          ? "border-primary shadow-primary/10 ring-primary/30 scale-105 shadow-xl ring-1"
-          : ""
+        selected ? "border-tint ring-tint/30 scale-105 ring-1" : ""
       )}
       style={{
         backgroundColor: bgGlows[category],
@@ -105,26 +103,22 @@ function CalcNode({ data, selected }: NodeProps) {
             type="target"
             id={pos}
             position={position}
-            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           />
         );
       })}
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-            {data.title as string}
-          </span>
+          <span className="text-label-secondary text-eyebrow">{data.title as string}</span>
           {selected && (
-            <Badge className="bg-primary/20 text-primary h-3.5 border-0 px-1 text-xs select-none">
+            <Badge className="bg-tint-fill text-tint h-3.5 border-0 px-1 select-none">
               Selected
             </Badge>
           )}
         </div>
-        <div className="text-foreground truncate text-sm font-extrabold">
-          {data.mainValue as string}
-        </div>
-        <div className="text-muted-foreground truncate text-xs">{data.subValue as string}</div>
+        <div className="text-label text-headline truncate">{data.mainValue as string}</div>
+        <div className="text-label-secondary text-footnote truncate">{data.subValue as string}</div>
       </div>
 
       {outputs.map((pos) => {
@@ -139,7 +133,7 @@ function CalcNode({ data, selected }: NodeProps) {
             type="source"
             id={pos}
             position={position}
-            className="border-background !bg-primary !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+            className="border-background !bg-tint duration-fast !h-2.5 !w-2.5 border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           />
         );
       })}
@@ -167,7 +161,7 @@ export function CountryFormulaFlow({
   onNodeClick,
 }: CountryFormulaFlowProps) {
   return (
-    <div className="border-border/40 bg-card/30 relative h-[480px] w-full overflow-hidden rounded-xl border shadow-inner">
+    <div className="border-separator bg-surface rounded-row relative h-[480px] w-full overflow-hidden border">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -184,16 +178,16 @@ export function CountryFormulaFlow({
         minZoom={0.5}
         maxZoom={1.5}
       >
-        <Background color="#444" gap={16} size={1} />
+        <Background color="var(--color-separator-opaque)" gap={16} size={1} />
         <Controls
           showInteractive={false}
-          className="bg-popover border-border text-foreground border"
+          className="bg-surface-elevated border-separator text-label border"
         />
         <Panel
           position="top-left"
-          className="bg-background/80 border-border/55 text-muted-foreground rounded-lg border px-3 py-1.5 text-xs shadow-sm backdrop-blur-sm select-none"
+          className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-1.5 select-none"
         >
-          <span className="mr-1 font-bold text-indigo-500">💡 Formula Map:</span>
+          <span className="text-indigo mr-1 font-semibold">💡 Formula Map:</span>
           Click nodes to inspect formulas and values in the details panel below.
         </Panel>
       </ReactFlow>

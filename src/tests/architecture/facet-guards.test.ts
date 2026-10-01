@@ -83,6 +83,9 @@ const FACET_CONVERTED = [
   "components/onoma/",
   "app/(forum)/",
   "components/forum/",
+  // Phase 4 apps: Admin console (+ the Facet materials lab) and its shared admin components.
+  "app/admin/",
+  "components/admin/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));

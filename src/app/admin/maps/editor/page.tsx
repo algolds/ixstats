@@ -23,7 +23,7 @@ export default function WorldEditorPage() {
   const realm = useSearchParams().get("realm") ?? undefined;
 
   return (
-    <div className="bg-background text-foreground absolute inset-0 z-40">
+    <div className="bg-background text-label absolute inset-0 z-40">
       <MapRealmProvider value={realm}>
         <MapEditorOverlay isWorldMode={true} onExit={() => router.push("/admin/maps")} />
       </MapRealmProvider>

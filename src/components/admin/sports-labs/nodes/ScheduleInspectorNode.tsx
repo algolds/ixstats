@@ -94,12 +94,15 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
 
         {mockSchedule.length > 0 ? (
           <div className="thin-scrollbar max-h-[350px] space-y-2 overflow-y-auto pr-1">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               {mockSchedule.length} Fixtures Generated
             </p>
             {mockSchedule.map((f, i) => (
-              <div key={i} className="bg-muted/10 flex justify-between rounded border p-2 text-xs">
-                <span className="text-muted-foreground font-bold">Day {f.matchDay}</span>
+              <div
+                key={i}
+                className="bg-fill-4 rounded-control-sm text-footnote flex justify-between border p-2"
+              >
+                <span className="text-label-secondary font-semibold">Day {f.matchDay}</span>
                 <span>
                   Team {f.homeTeamIndex + 1} vs Team {f.awayTeamIndex + 1}
                 </span>
@@ -107,7 +110,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground py-6 text-center text-xs">
+          <p className="text-label-secondary text-footnote py-6 text-center">
             Click Generate to build a mock schedule.
           </p>
         )}
@@ -153,24 +156,19 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
       )}
 
       {dbSeason && (
-        <div className="border-border/40 flex items-center justify-between border-b py-1.5 text-xs">
-          <span className="text-muted-foreground">Active Stage:</span>
-          <Badge
-            variant="outline"
-            className="border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-400"
-          >
-            Stage {(dbSeason as any).activeStage ?? 1}
-          </Badge>
+        <div className="border-separator text-footnote flex items-center justify-between border-b py-1.5">
+          <span className="text-label-secondary">Active Stage:</span>
+          <Badge variant="yellow">Stage {(dbSeason as any).activeStage ?? 1}</Badge>
         </div>
       )}
 
       {dbLeague && (dbLeague as any).settings?.stages && (
-        <div className="border-primary/20 bg-primary/5 space-y-1 rounded-lg border p-2.5 text-xs">
-          <p className="text-primary font-semibold">Tournament Stages Configured:</p>
+        <div className="border-tint/20 bg-tint-fill rounded-control text-footnote space-y-1 border p-2.5">
+          <p className="text-tint font-semibold">Tournament Stages Configured:</p>
           {((dbLeague as any).settings.stages as any[]).map((stg: any, sIdx: number) => (
             <div
               key={sIdx}
-              className="text-muted-foreground border-border/20 flex justify-between border-b py-0.5 text-xs last:border-0"
+              className="text-label-secondary border-separator text-footnote flex justify-between border-b py-0.5 last:border-0"
             >
               <span className="font-medium">
                 Stage {stg.id}:{" "}
@@ -190,20 +188,20 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
 
       {dbSeason && dbSeason.matches && (
         <div className="thin-scrollbar max-h-[220px] space-y-2 overflow-y-auto pr-1">
-          <h5 className="text-xs font-semibold">Matches scheduled: {dbSeason.matches.length}</h5>
+          <h5 className="text-caption">Matches scheduled: {dbSeason.matches.length}</h5>
           {dbSeason.matches.map((m) => (
             <div
               key={m.id}
-              className="flex items-center justify-between rounded border p-2 text-xs"
+              className="rounded-control-sm text-footnote flex items-center justify-between border p-2"
             >
-              <span className="text-muted-foreground font-bold">Day {m.matchDay}</span>
+              <span className="text-label-secondary font-semibold">Day {m.matchDay}</span>
               <span className="max-w-[140px] truncate">
                 {m.homeTeam.shortName ?? m.homeTeam.name} vs{" "}
                 {m.awayTeam.shortName ?? m.awayTeam.name}
               </span>
               <div className="flex items-center gap-1.5">
                 {(m as any).stage && (
-                  <Badge variant="secondary" className="px-1 font-mono text-xs">
+                  <Badge variant="secondary" className="px-1 tabular-nums">
                     S{(m as any).stage}
                   </Badge>
                 )}

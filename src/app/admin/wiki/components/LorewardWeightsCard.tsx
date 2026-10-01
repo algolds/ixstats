@@ -14,6 +14,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function LorewardWeightsCard() {
   const notify = useNotify();
@@ -129,13 +130,13 @@ export function LorewardWeightsCard() {
   return (
     <div className="space-y-6">
       {/* Scoring Parameter Weights */}
-      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 border-b pb-3">
+      <FacetCard className="space-y-4 p-5">
+        <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-blue-400" />
-            <h3 className="text-foreground text-xs font-bold">Scoring Parameters Tuning</h3>
+            <SlidersHorizontal className="text-blue h-4 w-4" />
+            <h3 className="text-label text-caption">Scoring Parameters Tuning</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-label-secondary text-footnote mt-0.5">
             Tune the daily Loreward scoring engine weights in real-time
           </p>
         </div>
@@ -144,9 +145,9 @@ export function LorewardWeightsCard() {
             <form onSubmit={handleSaveWeights} className="space-y-4">
               <div className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-foreground">Bytes Added Weight</span>
-                    <span className="font-mono font-bold text-blue-400">
+                  <div className="text-caption flex justify-between">
+                    <span className="text-label">Bytes Added Weight</span>
+                    <span className="text-blue font-semibold tabular-nums">
                       {tempWeights.lorewardWeight_bytesAdded}
                     </span>
                   </div>
@@ -159,14 +160,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_bytesAdded", parseFloat(e.target.value))
                     }
-                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
+                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-foreground">Prose Ratio Weight</span>
-                    <span className="font-mono font-bold text-blue-400">
+                  <div className="text-caption flex justify-between">
+                    <span className="text-label">Prose Ratio Weight</span>
+                    <span className="text-blue font-semibold tabular-nums">
                       {tempWeights.lorewardWeight_proseRatio}
                     </span>
                   </div>
@@ -179,14 +180,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_proseRatio", parseFloat(e.target.value))
                     }
-                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
+                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-foreground">Edit Depth Weight</span>
-                    <span className="font-mono font-bold text-blue-400">
+                  <div className="text-caption flex justify-between">
+                    <span className="text-label">Edit Depth Weight</span>
+                    <span className="text-blue font-semibold tabular-nums">
                       {tempWeights.lorewardWeight_editDepth}
                     </span>
                   </div>
@@ -199,14 +200,14 @@ export function LorewardWeightsCard() {
                     onChange={(e) =>
                       handleWeightChange("lorewardWeight_editDepth", parseFloat(e.target.value))
                     }
-                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
+                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-foreground">Collaboration Bonus Weight</span>
-                    <span className="font-mono font-bold text-blue-400">
+                  <div className="text-caption flex justify-between">
+                    <span className="text-label">Collaboration Bonus Weight</span>
+                    <span className="text-blue font-semibold tabular-nums">
                       {tempWeights.lorewardWeight_collaborationBonus}
                     </span>
                   </div>
@@ -222,14 +223,14 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
+                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-foreground">New Article Bonus Weight</span>
-                    <span className="font-mono font-bold text-blue-400">
+                  <div className="text-caption flex justify-between">
+                    <span className="text-label">New Article Bonus Weight</span>
+                    <span className="text-blue font-semibold tabular-nums">
                       {tempWeights.lorewardWeight_newArticleBonus}
                     </span>
                   </div>
@@ -245,7 +246,7 @@ export function LorewardWeightsCard() {
                         parseFloat(e.target.value)
                       )
                     }
-                    className="bg-muted/40 h-1.5 w-full rounded-lg accent-blue-500"
+                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
                   />
                 </div>
               </div>
@@ -253,7 +254,7 @@ export function LorewardWeightsCard() {
               <Button
                 type="submit"
                 disabled={saveWeightsMutation.isPending}
-                className="h-8 w-full gap-2 rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
+                className="w-full gap-2"
               >
                 {saveWeightsMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 <Save className="h-3.5 w-3.5" />
@@ -262,41 +263,37 @@ export function LorewardWeightsCard() {
             </form>
           ) : (
             <div className="space-y-3">
-              <Skeleton className="h-8 w-full rounded-lg" />
-              <Skeleton className="h-8 w-full rounded-lg" />
-              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="rounded-control h-8 w-full" />
+              <Skeleton className="rounded-control h-8 w-full" />
+              <Skeleton className="rounded-control h-8 w-full" />
             </div>
           )}
         </div>
-      </div>
+      </FacetCard>
 
       {/* Weight Tuning Preview Console */}
-      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 border-b pb-3">
+      <FacetCard className="space-y-4 p-5">
+        <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-indigo-400" />
-            <h3 className="text-foreground text-xs font-bold">Weight Tuning Preview</h3>
+            <SlidersHorizontal className="text-indigo h-4 w-4" />
+            <h3 className="text-label text-caption">Weight Tuning Preview</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-label-secondary text-footnote mt-0.5">
             Preview candidate ranks under simulated weights
           </p>
         </div>
         <div className="space-y-4">
           <div className="flex items-end gap-2">
             <div className="flex-1 space-y-1.5">
-              <label className="text-foreground text-xs font-medium">Scoring Date</label>
+              <label className="text-label text-caption">Scoring Date</label>
               <Input
                 type="date"
                 value={previewDate}
                 onChange={(e) => setPreviewDate(e.target.value)}
-                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
-            <Button
-              onClick={handleRunPreview}
-              disabled={isPreviewLoading || !tempWeights}
-              className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-            >
+            <Button onClick={handleRunPreview} disabled={isPreviewLoading || !tempWeights}>
               {isPreviewLoading ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -308,14 +305,14 @@ export function LorewardWeightsCard() {
 
           {isPreviewLoading ? (
             <div className="space-y-2 py-4">
-              <Skeleton className="h-8 w-full rounded-lg" />
-              <Skeleton className="h-8 w-full rounded-lg" />
-              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="rounded-control h-8 w-full" />
+              <Skeleton className="rounded-control h-8 w-full" />
+              <Skeleton className="rounded-control h-8 w-full" />
             </div>
           ) : rankDeltas.length > 0 ? (
-            <div className="border-border/30 max-h-80 overflow-y-auto rounded-xl border text-xs">
-              <table className="w-full">
-                <thead className="bg-muted/30 border-border/30 text-muted-foreground sticky top-0 border-b font-medium backdrop-blur-md">
+            <div className="border-separator rounded-row text-footnote max-h-80 overflow-y-auto border">
+              <table className="w-full tabular-nums">
+                <thead className="bg-fill-4 border-separator text-label-secondary sticky top-0 border-b font-medium">
                   <tr>
                     <th className="w-16 px-3 py-2 text-left">Rank</th>
                     <th className="px-3 py-2 text-left">Candidate</th>
@@ -323,29 +320,29 @@ export function LorewardWeightsCard() {
                     <th className="px-3 py-2 text-right font-semibold">Sim Score</th>
                   </tr>
                 </thead>
-                <tbody className="divide-border/15 divide-y">
+                <tbody className="divide-separator divide-y">
                   {rankDeltas.map((item: any, idx: number) => {
                     const delta = item.rankDelta;
                     return (
-                      <tr key={idx} className="hover:bg-foreground/[0.02]">
+                      <tr key={idx} className="hover:bg-fill-4">
                         <td className="px-3 py-2 font-mono">
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold">{item.simulatedRank}</span>
                             {delta > 0 && (
-                              <span className="font-bold text-emerald-400">▲{delta}</span>
+                              <span className="text-green font-semibold">▲{delta}</span>
                             )}
                             {delta < 0 && (
-                              <span className="font-bold text-red-400">▼{Math.abs(delta)}</span>
+                              <span className="text-red font-semibold">▼{Math.abs(delta)}</span>
                             )}
                           </div>
                         </td>
                         <td className="px-3 py-2">
-                          <span className="text-foreground font-semibold">{item.user}</span>
-                          <span className="text-muted-foreground block text-xs">
+                          <span className="text-label font-semibold">{item.user}</span>
+                          <span className="text-label-secondary text-footnote block">
                             {item.page}
                           </span>
                         </td>
-                        <td className="text-muted-foreground px-3 py-2 text-right font-mono">
+                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
                           {item.currentScore.toFixed(2)}
                         </td>
                         <td className="px-3 py-2 text-right font-mono">
@@ -353,8 +350,8 @@ export function LorewardWeightsCard() {
                           {item.scoreDelta !== 0 && (
                             <span
                               className={cn(
-                                "block text-xs font-medium",
-                                item.scoreDelta > 0 ? "text-emerald-400" : "text-red-400"
+                                "text-caption block",
+                                item.scoreDelta > 0 ? "text-green" : "text-red"
                               )}
                             >
                               {item.scoreDelta > 0 ? "+" : ""}
@@ -369,12 +366,12 @@ export function LorewardWeightsCard() {
               </table>
             </div>
           ) : currentPreviewData ? (
-            <div className="text-muted-foreground py-8 text-center text-xs italic">
+            <div className="text-label-secondary text-footnote py-8 text-center italic">
               No edits or candidates qualified on {previewDate}.
             </div>
           ) : null}
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }

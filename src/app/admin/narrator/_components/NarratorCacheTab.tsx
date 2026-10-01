@@ -13,6 +13,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function NarratorCacheTab() {
   const notify = useNotify();
@@ -43,67 +44,61 @@ export function NarratorCacheTab() {
     <div className="space-y-5">
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Cached Cards
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Total Cached Cards</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
-            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="text-label text-title-2 mt-1 tabular-nums">
               {(cacheStats?.total ?? 0).toLocaleString()}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Cache Hits
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Total Cache Hits</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+            <p className="text-title-2 text-teal mt-1 tabular-nums">
               {(cacheStats?.totalHits ?? 0).toLocaleString()}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Avg Hits per Card
-          </p>
+        <FacetCard className="p-3.5">
+          <p className="text-label-secondary text-eyebrow">Avg Hits per Card</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            <p className="text-title-2 text-green mt-1 tabular-nums">
               {cacheStats?.averageHitCount ?? 0}x
             </p>
           )}
-        </div>
+        </FacetCard>
       </div>
 
       {/* Cache Control Card */}
-      <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 border-b pb-3">
+      <FacetCard className="space-y-4 p-5">
+        <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-amber-400" />
-            <h3 className="text-foreground text-xs font-bold">Cache Policy & Storage</h3>
+            <Database className="text-yellow h-4 w-4" />
+            <h3 className="text-label text-caption">Cache Policy & Storage</h3>
           </div>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <p className="text-label-secondary text-footnote mt-0.5">
             To prevent quota drainage and API rate limits, flavor text descriptions are cached for
             14 days in the database. Clearing the cache forces new narrative cards to generate on
             demand.
           </p>
         </div>
 
-        <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 sm:flex-row sm:items-center">
+        <div className="rounded-row border-red/20 bg-red/5 flex flex-col items-start justify-between gap-4 border p-4 sm:flex-row sm:items-center">
           <div>
-            <h4 className="flex items-center gap-1.5 text-xs font-bold text-rose-400">
+            <h4 className="text-caption text-red flex items-center gap-1.5">
               <AlertTriangle className="h-4 w-4" />
               Flush AI Narrator Cache
             </h4>
-            <p className="text-muted-foreground mt-0.5 max-w-xl text-xs">
+            <p className="text-label-secondary text-footnote mt-0.5 max-w-xl">
               Deletes all database cache entries with the flavor prefix. This will force subsequent
               requests to load directly from the LLM provider.
             </p>
@@ -113,7 +108,7 @@ export function NarratorCacheTab() {
             disabled={clearCacheMutation.isPending}
             variant="destructive"
             size="sm"
-            className="h-8 shrink-0 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="shrink-0"
           >
             {clearCacheMutation.isPending ? (
               <>
@@ -128,7 +123,7 @@ export function NarratorCacheTab() {
             )}
           </Button>
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }

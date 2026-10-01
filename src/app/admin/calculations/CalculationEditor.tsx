@@ -25,6 +25,7 @@ import {
 } from "./calculation-types";
 import { SYSTEM_FORMULAS } from "./system-formulas";
 import { CalculationSimulator } from "./CalculationSimulator";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function CalculationEditor() {
   const notify = useNotify();
@@ -155,14 +156,14 @@ export function CalculationEditor() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
       {/* Sidebar List */}
-      <div className="border-border/30 bg-card/25 space-y-3 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md lg:col-span-1">
+      <FacetCard className="space-y-3 p-3.5 lg:col-span-1">
         <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search formulas..."
             value={sidebarSearch}
             onChange={(e) => setSidebarSearch(e.target.value)}
-            className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
           />
         </div>
         <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-0.5">
@@ -178,16 +179,16 @@ export function CalculationEditor() {
                   setSelectedModule(module);
                   setIsEditing(false);
                 }}
-                className={`flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+                className={`rounded-row flex w-full items-start gap-2.5 p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
                   isSelected
-                    ? "border-primary/40 bg-primary/10 text-foreground border font-semibold"
-                    : "text-muted-foreground hover:text-foreground border border-transparent hover:bg-white/5"
+                    ? "border-tint/40 bg-tint-fill text-label border font-semibold"
+                    : "text-label-secondary hover:text-label hover:bg-fill-4 border border-transparent"
                 }`}
               >
                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cat.color}`} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs">{module.name}</p>
-                  <p className="text-muted-foreground truncate text-xs capitalize">
+                  <p className="text-footnote truncate">{module.name}</p>
+                  <p className="text-label-secondary text-footnote truncate capitalize">
                     {module.category}
                   </p>
                 </div>
@@ -195,51 +196,42 @@ export function CalculationEditor() {
             );
           })}
         </div>
-      </div>
+      </FacetCard>
 
       {/* Main Detail / Editor */}
       <div className="space-y-6 lg:col-span-3">
         {selectedModule ? (
           <>
-            <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-              <div className="border-border/20 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <FacetCard className="space-y-4 p-5">
+              <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-foreground text-sm font-bold">{selectedModule.name}</h3>
-                    <Badge variant="outline" className="text-xs capitalize">
+                    <h3 className="text-label text-headline">{selectedModule.name}</h3>
+                    <Badge variant="outline" className="capitalize">
                       {selectedModule.category}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mt-1 text-xs">{selectedModule.description}</p>
+                  <p className="text-label-secondary text-footnote mt-1">
+                    {selectedModule.description}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {isEditing ? (
                     <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsEditing(false)}
-                        className="h-8 rounded-xl px-3 text-xs"
-                      >
+                      <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
                         Cancel
                       </Button>
                       <Button
                         size="sm"
                         onClick={handleSaveModule}
                         disabled={updateFormulaMutation.isPending}
-                        className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
                       >
                         <Save className="mr-1.5 h-3.5 w-3.5" />
                         {updateFormulaMutation.isPending ? "Saving..." : "Save"}
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditing(true)}
-                      className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
-                    >
+                    <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" />
                       Edit Formula
                     </Button>
@@ -249,7 +241,7 @@ export function CalculationEditor() {
 
               {/* Code / Formula Display */}
               <div className="space-y-2">
-                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                <label className="text-label-secondary text-subhead">
                   Mathematical Formula (JavaScript Expression)
                 </label>
                 {isEditing ? (
@@ -261,15 +253,15 @@ export function CalculationEditor() {
                       )
                     }
                     rows={4}
-                    className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
+                    className="md:text-footnote font-mono"
                   />
                 ) : (
-                  <div className="border-border/20 bg-background/30 rounded-xl border p-3.5 font-mono text-xs text-cyan-400">
+                  <div className="border-separator bg-fill-3 rounded-row text-footnote text-teal border p-3.5 font-mono">
                     <code>{selectedModule.formula}</code>
                   </div>
                 )}
               </div>
-            </div>
+            </FacetCard>
 
             {/* Interactive Sandbox Simulator */}
             <CalculationSimulator
@@ -282,12 +274,12 @@ export function CalculationEditor() {
             />
           </>
         ) : (
-          <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
-            <Calculator className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-            <p className="text-muted-foreground text-xs">
+          <FacetCard className="p-12 text-center">
+            <Calculator className="text-label-secondary mx-auto mb-2 h-8 w-8" />
+            <p className="text-label-secondary text-footnote">
               Select a formula module to inspect and simulate.
             </p>
-          </div>
+          </FacetCard>
         )}
       </div>
     </div>

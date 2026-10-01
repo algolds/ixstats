@@ -55,32 +55,32 @@ export function DiplomaticScenariosHeader({
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search scenarios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="Scenario Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">
+              <SelectItem value="all" className="text-footnote">
                 All Types
               </SelectItem>
               {SCENARIO_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value} className="text-xs">
+                <SelectItem key={t.value} value={t.value} className="text-footnote">
                   {t.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
             <Checkbox
               id="showInactive"
               checked={showInactive}
@@ -91,10 +91,7 @@ export function DiplomaticScenariosHeader({
           </label>
         </div>
 
-        <Button
-          onClick={onOpenAddDialog}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-        >
+        <Button onClick={onOpenAddDialog}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           Create Scenario
         </Button>
@@ -102,7 +99,7 @@ export function DiplomaticScenariosHeader({
 
       {/* Advanced Tag Filter Pills */}
       <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="text-muted-foreground mr-1 text-xs font-medium">Filter by:</span>
+        <span className="text-label-secondary text-caption mr-1">Filter by:</span>
 
         {/* Relationship filters */}
         {RELATIONSHIP_LEVELS.map((rel) => {
@@ -116,10 +113,10 @@ export function DiplomaticScenariosHeader({
                   isSelected ? prev.filter((r) => r !== rel.value) : [...prev, rel.value]
                 );
               }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
+              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
                 isSelected
-                  ? "bg-blue-500 text-white"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
+                  ? "bg-blue text-on-blue"
+                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
               }`}
             >
               {rel.label}
@@ -139,10 +136,10 @@ export function DiplomaticScenariosHeader({
                   isSelected ? prev.filter((d) => d !== diff.value) : [...prev, diff.value]
                 );
               }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
+              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
                 isSelected
-                  ? "bg-yellow-500 font-medium text-black"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
+                  ? "bg-yellow text-on-yellow font-medium"
+                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
               }`}
             >
               {diff.label}
@@ -162,10 +159,10 @@ export function DiplomaticScenariosHeader({
                   isSelected ? prev.filter((t) => t !== tf.value) : [...prev, tf.value]
                 );
               }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
+              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
                 isSelected
-                  ? "bg-cyan-500 text-white"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
+                  ? "bg-teal text-on-teal"
+                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
               }`}
             >
               {tf.label}

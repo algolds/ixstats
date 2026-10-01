@@ -30,6 +30,7 @@ import { useAbility, Can } from "~/components/providers/AbilityProvider";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { FacetCard } from "~/components/ui/facet-container";
 
 const SYSTEM_ROLES = [
   {
@@ -126,52 +127,47 @@ export function UserRolesPanel() {
       />
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="bg-card/40 border-border/40 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="roles"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Shield className="h-4 w-4 text-cyan-400" />
+            <Shield className="text-teal h-4 w-4" />
             System Roles
           </TabsTrigger>
           <TabsTrigger
             value="memberships"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Users className="h-4 w-4 text-purple-400" />
+            <Users className="text-purple h-4 w-4" />
             Account Elevation
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="mt-4 space-y-4 focus-visible:outline-none">
-          <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-            <div className="border-border/20 flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+          <FacetCard className="space-y-4 p-5">
+            <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-foreground text-xs font-bold">Configured System Roles</h3>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <h3 className="text-label text-caption">Configured System Roles</h3>
+                <p className="text-label-secondary text-footnote mt-0.5">
                   Hierarchy levels and attached permission profiles
                 </p>
               </div>
               <Can I="manage" a="Role">
                 <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
                   <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-                    >
+                    <Button size="sm">
                       <Mail className="mr-1.5 h-3.5 w-3.5" />
                       Invite VIP / Role
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="border-border/30 bg-card/95 max-h-[85vh] max-w-md overflow-y-auto rounded-2xl backdrop-blur-md">
+                  <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle className="text-sm font-bold">
-                        Send Waitlist Bypass Invitation
-                      </DialogTitle>
+                      <DialogTitle>Send Waitlist Bypass Invitation</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
                       <div className="space-y-1.5">
-                        <label className="text-foreground text-xs font-medium">Email Address</label>
+                        <label className="text-label text-caption">Email Address</label>
                         <Input
                           type="email"
                           value={inviteForm.emailAddress}
@@ -179,31 +175,29 @@ export function UserRolesPanel() {
                             setInviteForm({ ...inviteForm, emailAddress: e.target.value })
                           }
                           placeholder="player@domain.com"
-                          className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                          className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-foreground text-xs font-medium">
-                          Reserved Nation Name
-                        </label>
+                        <label className="text-label text-caption">Reserved Nation Name</label>
                         <Input
                           value={inviteForm.reservedNationName}
                           onChange={(e) =>
                             setInviteForm({ ...inviteForm, reservedNationName: e.target.value })
                           }
                           placeholder="Kingdom of Solaria"
-                          className="border-border/30 bg-background/50 h-8 rounded-xl text-xs"
+                          className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-foreground text-xs font-medium">Initial Role</label>
+                        <label className="text-label text-caption">Initial Role</label>
                         <Select
                           value={inviteForm.role}
                           onValueChange={(val: "admin" | "user" | "owner") =>
                             setInviteForm({ ...inviteForm, role: val })
                           }
                         >
-                          <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
+                          <SelectTrigger size="sm">
                             <SelectValue placeholder="Choose a role..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -219,7 +213,6 @@ export function UserRolesPanel() {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowInviteDialog(false)}
-                        className="h-8 rounded-xl px-3 text-xs"
                       >
                         Cancel
                       </Button>
@@ -231,7 +224,6 @@ export function UserRolesPanel() {
                           !inviteForm.emailAddress ||
                           !inviteForm.reservedNationName
                         }
-                        className="h-8 rounded-xl px-3.5 text-xs font-semibold active:scale-[0.98]"
                       >
                         {inviteUserMutation.isPending ? "Sending..." : "Send Invitation"}
                       </Button>
@@ -245,44 +237,44 @@ export function UserRolesPanel() {
               {SYSTEM_ROLES.map((role) => (
                 <div
                   key={role.name}
-                  className="border-border/20 bg-background/30 hover:border-border/40 flex flex-col justify-between gap-2 rounded-xl border p-3.5 transition-colors sm:flex-row sm:items-center"
+                  className="border-separator bg-fill-3 hover:border-separator rounded-row flex flex-col justify-between gap-2 border p-3.5 transition-colors sm:flex-row sm:items-center"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground text-xs font-bold">{role.displayName}</span>
+                      <span className="text-label text-caption">{role.displayName}</span>
                       <Badge
                         variant="outline"
                         className={
                           role.level === 0
-                            ? "border-red-500/30 bg-red-500/10 text-xs text-red-400"
+                            ? "border-red/30 bg-red/10 text-footnote text-red"
                             : role.level === 10
-                              ? "border-cyan-500/30 bg-cyan-500/10 text-xs text-cyan-400"
-                              : "text-xs"
+                              ? "border-teal/30 bg-teal/10 text-footnote text-teal"
+                              : "text-footnote"
                         }
                       >
                         Level {role.level}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground mt-0.5 text-xs">{role.description}</p>
-                    <p className="text-muted-foreground/70 mt-0.5 font-mono text-xs">
+                    <p className="text-label-secondary text-footnote mt-0.5">{role.description}</p>
+                    <p className="text-label-secondary text-footnote mt-0.5 tabular-nums">
                       Permissions: {role.permissions}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </FacetCard>
         </TabsContent>
 
         <TabsContent value="memberships" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex items-center justify-between">
             <div className="relative max-w-sm flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 placeholder="Search accounts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-border/30 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
               />
             </div>
           </div>
@@ -291,30 +283,28 @@ export function UserRolesPanel() {
             {usersLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <Skeleton key={i} className="rounded-row h-14 w-full" />
                 ))}
               </div>
             ) : !filteredUsers || filteredUsers.length === 0 ? (
-              <div className="border-border/30 bg-card/25 rounded-2xl border p-8 text-center backdrop-blur-md">
-                <p className="text-muted-foreground text-xs">No accounts found.</p>
-              </div>
+              <FacetCard className="p-8 text-center">
+                <p className="text-label-secondary text-footnote">No accounts found.</p>
+              </FacetCard>
             ) : (
               filteredUsers?.map((user) => (
-                <div
+                <FacetCard
                   key={user.id}
-                  className="border-border/30 bg-card/25 hover:border-border/50 flex items-center justify-between rounded-2xl border p-3.5 shadow-xs backdrop-blur-md transition-colors"
+                  className="hover:border-separator flex items-center justify-between p-3.5 transition-colors"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground font-mono text-xs font-semibold">
-                        {user.clerkUserId}
-                      </span>
+                      <span className="text-label text-caption font-mono">{user.clerkUserId}</span>
                       <Badge
                         variant="outline"
                         className={
                           user.membershipTier === "mycountry_premium"
-                            ? "border-purple-500/30 bg-purple-500/10 text-xs text-purple-400"
-                            : "text-xs"
+                            ? "border-purple/30 bg-purple/10 text-footnote text-purple"
+                            : "text-footnote"
                         }
                       >
                         {user.membershipTier === "mycountry_premium"
@@ -322,14 +312,14 @@ export function UserRolesPanel() {
                           : "Basic Player"}
                       </Badge>
                     </div>
-                    <span className="text-muted-foreground mt-0.5 block text-xs">
+                    <span className="text-label-secondary text-footnote mt-0.5 block">
                       {user.country ? `Nation: ${user.country.name}` : "No Claimed Nation"}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    <span className="text-muted-foreground text-xs">Premium</span>
+                    <Sparkles className="text-purple h-3.5 w-3.5" />
+                    <span className="text-label-secondary text-footnote">Premium</span>
                     <Switch
                       checked={user.membershipTier === "mycountry_premium"}
                       onCheckedChange={() =>
@@ -345,7 +335,7 @@ export function UserRolesPanel() {
                       className="scale-90"
                     />
                   </div>
-                </div>
+                </FacetCard>
               ))
             )}
           </div>
