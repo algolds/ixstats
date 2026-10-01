@@ -32,9 +32,13 @@ export class WikiStandaloneConfigError extends Error {
  * - /flags and /images/flags: flag files and the flag placeholder (src/lib/flags/local-flag-cache.server.ts,
  *   src/hooks/useUnifiedFlags.ts).
  * - /fonts: National/Akzidenz fonts (src/styles/typography.css) and map glyphs (src/lib/base-path.ts).
+ * - /w: `/w/api.php`, WikiOS's MediaWiki-compatible Action API for bots and tools (plan 410,
+ *   src/app/w/api.php/route.ts). Without it the standalone guard would answer a bot with a redirect
+ *   to the IxStates page of that path.
  */
 export const WIKIOS_ALLOWED_PREFIXES: readonly string[] = [
   "/wiki",
+  "/w",
   "/util",
   "/stashes",
   "/api/trpc",

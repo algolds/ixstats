@@ -34,7 +34,9 @@ const OPAQUE_TAG_NAMES = [
 /** `<ref>` content is wikitext, but it may hold blank lines, so a block scan steps over it whole. */
 const STEP_OVER_TAG_NAMES = [...OPAQUE_TAG_NAMES, "ref"] as const;
 
-const OPEN_TAG = new RegExp(`<(${STEP_OVER_TAG_NAMES.join("|")})(?=[\\s/>])[^>]*>`, "iy");
+const STEP_OVER_NAMES: ReadonlySet<string> = new Set(STEP_OVER_TAG_NAMES);
+/** The longest name in `STEP_OVER_TAG_NAMES`, with a little room: a longer run of letters is no such tag. */
+const MAX_TAG_NAME_LENGTH = 16;
 
 export interface OpenTag {
   /** Lower-case tag name. */
@@ -47,20 +49,8 @@ export interface OpenTag {
   selfClosing: boolean;
 }
 
-/** The opaque (or `<ref>`) opening tag that starts at `text[i]`, or null. */
-export function matchOpenTag(text: string, i: number): OpenTag | null {
-  if (text.charCodeAt(i) !== 60) return null;
-  OPEN_TAG.lastIndex = i;
-  const match = OPEN_TAG.exec(text);
-  if (!match) return null;
-  const openEnd = i + match[0].length;
-  return {
-    name: match[1]!.toLowerCase(),
-    start: i,
-    openEnd,
-    selfClosing: match[0].endsWith("/>"),
-  };
-}
+const isAsciiLetter = (code: number) => (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+const WHITESPACE = /\s/;
 
 interface CloseTags {
   starts: number[];
@@ -68,38 +58,76 @@ interface CloseTags {
 }
 
 /**
- * Where every `</name>` of a text starts and ends, found in one scan and kept for the last few texts
- * asked about. Looking for the closing tag of each opening tag by scanning forward is quadratic when
- * thousands of tags never close (every scan runs to the end).
+ * What a scan of one text keeps so that a text full of `<nowiki ` openers that never close is read
+ * in linear time (each opener would otherwise scan to the end of the text for its `>` and for its
+ * closing tag). It belongs to ONE scan: make it with `new ProtectedScanner(text)` where the scan
+ * starts and pass it to every call about that text. Nothing is kept between scans, and nothing is
+ * compared against a text (a cache keyed on the text's content costs a comparison per lookup).
+ * The functions below require one, so a loop over a text cannot go quadratic by forgetting it.
  */
-const closeTagCache: Array<{ text: string; byName: Map<string, CloseTags> }> = [];
-const CLOSE_TAG_CACHE_SIZE = 4;
+export class ProtectedScanner {
+  /** The first `>` at or after `gtFrom` is `gtAt` (-1: there is none); so it is for every later position up to it. */
+  private gtFrom = 0;
+  private gtAt = -2;
+  private readonly closeTags = new Map<string, CloseTags>();
 
-function closeTagsOf(text: string, name: string): CloseTags {
-  let entry = closeTagCache.find((candidate) => candidate.text === text);
-  if (!entry) {
-    entry = { text, byName: new Map() };
-    closeTagCache.unshift(entry);
-    closeTagCache.length = Math.min(closeTagCache.length, CLOSE_TAG_CACHE_SIZE);
+  constructor(readonly text: string) {}
+
+  nextGreaterThan(from: number): number {
+    if (this.gtAt !== -2 && from >= this.gtFrom && (this.gtAt === -1 || from <= this.gtAt)) return this.gtAt;
+    this.gtFrom = from;
+    this.gtAt = this.text.indexOf(">", from);
+    return this.gtAt;
   }
-  let tags = entry.byName.get(name);
-  if (!tags) {
-    tags = { starts: [], ends: [] };
-    const close = new RegExp(`</${name}\\s*>`, "gi");
-    let match: RegExpExecArray | null;
-    while ((match = close.exec(text)) !== null) {
-      tags.starts.push(match.index);
-      tags.ends.push(match.index + match[0].length);
+
+  /** Where every `</name>` of the text starts and ends, found in one scan. */
+  closingTags(name: string): CloseTags {
+    let tags = this.closeTags.get(name);
+    if (!tags) {
+      tags = { starts: [], ends: [] };
+      const close = closeTagPattern(name);
+      close.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = close.exec(this.text)) !== null) {
+        tags.starts.push(match.index);
+        tags.ends.push(match.index + match[0].length);
+      }
+      this.closeTags.set(name, tags);
     }
-    entry.byName.set(name, tags);
+    return tags;
   }
-  return tags;
+}
+
+const closePatterns = new Map<string, RegExp>();
+/** The shared global pattern for `</name>`; the caller sets `lastIndex` and uses it at once. */
+function closeTagPattern(name: string): RegExp {
+  let pattern = closePatterns.get(name);
+  if (!pattern) {
+    pattern = new RegExp(`</${name}\\s*>`, "gi");
+    closePatterns.set(name, pattern);
+  }
+  return pattern;
+}
+
+/** The opaque (or `<ref>`) opening tag that starts at `text[i]`, or null. */
+export function matchOpenTag(text: string, i: number, scanner: ProtectedScanner): OpenTag | null {
+  if (text.charCodeAt(i) !== 60) return null;
+  let nameEnd = i + 1;
+  while (nameEnd - i <= MAX_TAG_NAME_LENGTH && isAsciiLetter(text.charCodeAt(nameEnd))) nameEnd++;
+  const name = text.slice(i + 1, nameEnd).toLowerCase();
+  if (!STEP_OVER_NAMES.has(name)) return null;
+  // The name must end at whitespace, "/" or ">" (`<referencesfoo>` is no `<references>`).
+  const next = text[nameEnd];
+  if (next === undefined || !(next === "/" || next === ">" || WHITESPACE.test(next))) return null;
+  const close = scanner.nextGreaterThan(nameEnd);
+  if (close === -1) return null;
+  return { name, start: i, openEnd: close + 1, selfClosing: text[close - 1] === "/" };
 }
 
 /** Index just after the closing tag that matches `tag`, or -1 when it is never closed. */
-export function findTagClose(text: string, tag: OpenTag): number {
+export function findTagClose(tag: OpenTag, scanner: ProtectedScanner): number {
   if (tag.selfClosing) return tag.openEnd;
-  const { starts, ends } = closeTagsOf(text, tag.name);
+  const { starts, ends } = scanner.closingTags(tag.name);
   // the first closing tag that starts at or after the end of the opening tag
   let low = 0;
   let high = starts.length;
@@ -122,12 +150,17 @@ function findCommentEnd(text: string, i: number): number {
  * a `<ref>…</ref>` when `includeRef`, or a self-closing tag) starts at `text[i]`, the index just after
  * it; otherwise null. An unclosed tag is not a region: MediaWiki shows it as text.
  */
-export function skipProtectedAt(text: string, i: number, includeRef = false): number | null {
+export function skipProtectedAt(
+  text: string,
+  i: number,
+  includeRef: boolean,
+  scanner: ProtectedScanner
+): number | null {
   if (text.charCodeAt(i) !== 60) return null;
   if (text.startsWith("<!--", i)) return findCommentEnd(text, i);
-  const tag = matchOpenTag(text, i);
+  const tag = matchOpenTag(text, i, scanner);
   if (!tag || (tag.name === "ref" && !includeRef)) return null;
-  const end = findTagClose(text, tag);
+  const end = findTagClose(tag, scanner);
   return end === -1 ? null : end;
 }
 

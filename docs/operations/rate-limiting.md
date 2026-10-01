@@ -100,6 +100,27 @@ Other callers of the limiter:
 
 `publicProcedure`, `protectedProcedure`, `countryOwnerProcedure`, `premiumProcedure` and the `cached*Procedure` builders apply **no** rate limit.
 
+### WikiOS buckets
+
+The WikiOS routes (plans 410, 412, 416) use their own buckets, so a bot reading in bulk does not use up a reader's
+limit. Every key is the trusted client identity (`resolveRateLimitIdentifier`: `ip:<CF-Connecting-IP or X-Real-IP>`,
+never `X-Forwarded-For`); the login bucket adds a hash of the account name. They are set in code, not by
+`RATE_LIMIT_MAX_REQUESTS`.
+
+| Bucket | Where | Limit | Key |
+|--------|-------|-------|-----|
+| `wiki_api` | every request to `/w/api.php` (`src/lib/wiki-os/api-compat/dispatch.ts`) | 120 per minute anonymous, 600 signed in (bot session or browser user); callers with the `noratelimit` right are skipped | client |
+| `wiki_api_write` | the POST actions of `/w/api.php` (edit, move, delete, undelete, protect, rollback, purge, login, logout), on top of `wiki_api` | 120 per minute | client |
+| `wiki_api_login` | `action=login`, counted once the login token is valid | 10 per 5 minutes; over it the answer is MediaWiki's `Throttled` with a `wait` | client + sha256 of the lower-cased account name (so a name of any length is a fixed-size key) |
+| `wiki_api_render` | the renders api.php causes: `action=parse` of text or an old revision (MediaWiki renders it) for callers without a bot session, 20 per minute; and each page `action=purge` queues for a render, 60 per minute (a request that would pass it is refused whole, `ratelimited`, before any page is purged; accounts with the `noratelimit` right are not counted) | 20 per minute for parse, 60 for purge, one count | client (a signed-in account: `user:<id>`) |
+| `wiki_media` | the two media proxies under `/api/mediawiki/` (a page loads dozens of images) | 600 per minute | client |
+| `wiki_export` | `/api/wiki/export` (Special:Export) | 10 per minute | client or signed-in user |
+| `wiki_raw` | `/api/wiki/raw` (`/wiki/<title>?action=raw`, for bots reading wikitext in bulk) | 300 per minute | client |
+
+A client over a `wiki_api*` bucket gets MediaWiki's `ratelimited` error (HTTP 200 with the error in the body, as
+MediaWiki does); the other buckets answer HTTP 429 with `Retry-After`. Redis holds the counters in production
+(in-memory per process otherwise, so a restart resets them).
+
 ### Operation Examples by Tier
 
 **Standard Mutations (60 req/min):** country-owner writes such as `countryGeo.upsertCity`, `countryGeo.populateFromWiki`, `countryGeo.updateGeoRollupMode`.

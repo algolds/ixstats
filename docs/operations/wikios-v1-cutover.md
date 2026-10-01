@@ -138,6 +138,42 @@ dry-run the import, read its plan, and write:
 WikiOS. Its group and block rows carry `source = 'mw-import'` (`delete from wiki_user_groups where source = 'mw-import'`,
 the same for `wiki_blocks`); the restriction rows it adds are not marked, so undo those from the dump taken in step 1.
 
+## 1c. The api.php session secret (plan 410), before bots use `/w/api.php`
+
+WikiOS serves a MediaWiki-compatible `api.php` at `/w/api.php` for bots (Pywikibot, AWB, the Discord bot). Bot-password
+sessions, login tokens and CSRF tokens are HMACs under one key, **`WIKIOS_API_SESSION_SECRET`**:
+
+- **Needed for bots to log in, not for the app to start.** `src/env.ts` treats it as optional, so deploying IxStates
+  or WikiOS before it is set takes nothing down. Without it, api.php answers `action=login`, a login token
+  (`meta=tokens&type=login`) and any request that carries a session cookie with the MediaWiki error
+  `sessionsecretmissing`; it never signs or accepts a session with a fallback key, in development either. Anonymous
+  reads (`meta=siteinfo`, `list=allpages`, `action=parse&page=`, ...) keep working, and one warning is logged the first
+  time the missing key is needed. Set it before the cutover so bots can log in (step 9's login-token row fails until then).
+- **At least 32 characters to be used.** The environment check accepts any value, so a typo never stops a process
+  from starting; api.php treats an empty or shorter value as missing (the same `sessionsecretmissing` answers and
+  one warning in the log).
+- It is a key, not a password: generate it, never type it, and never print it.
+
+```bash
+bk "$IX/.env.production.local" env.production.local.1c
+grep -c '^WIKIOS_API_SESSION_SECRET=' "$IX/.env.production.local"          # 0 = not set yet; 1 = already there, skip the next line
+( umask 077; printf '\nWIKIOS_API_SESSION_SECRET=%s\n' "$(openssl rand -base64 48 | tr -d '\n')" >> "$IX/.env.production.local" )
+ls -l "$IX/.env.production.local"                                          # same mode as before (-rw-------)
+```
+
+**Changing it later** ends every bot session and invalidates every outstanding token (bots log in again; nothing is
+stored that cannot be recreated): rotate it if it may have leaked, then restart IxStates (its usual restart) and
+WikiOS (`pm2 restart wikios --update-env`). Bot passwords themselves are not affected: users create them on
+`Special:BotPasswords` in WikiOS, and each is stored as a salted scrypt hash.
+
+**Rate limits.** api.php counts requests per client in the buckets `wiki_api`, `wiki_api_write`, `wiki_api_login` and
+`wiki_api_render` (limits and keys in [rate-limiting.md](rate-limiting.md#wikios-buckets)); there is nothing to
+configure, but a bot that is throttled sees MediaWiki's `ratelimited` error, and a client that logs in over and over sees
+`Throttled`. The same file lists `wiki_media`, `wiki_export` and `wiki_raw`, the other WikiOS buckets.
+
+**Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"` and restart the two processes: bots
+get `sessionsecretmissing` again and nothing else changes.
+
 ## 2. Deploy IxStates as usual
 
 ```bash
@@ -451,6 +487,8 @@ sudo cp "$IX/scripts/ops/nginx/wikios-takeover.conf"     /etc/nginx/snippets/wik
 #   step 10b: route the chatty locations to their own log (the sed on the copied snippet), before nginx -t
 sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"
 #   - add  `include snippets/wikios-takeover.conf;`  at the top of the ixwiki.com server block
+#     (it also holds `location ^~ /w/`, which sends WikiOS's api.php, /w/api.php, to WikiOS with a 5m body limit;
+#      classic MediaWiki does not use /w/ on this server, so nothing is replaced for it)
 #   - delete what the header of wikios-takeover.conf lists as replaced:
 #       * location ^~ /wiki/ { try_files $uri @mediawiki; }
 #       * the ^/wiki/(.*)$ rewrite line inside location @mediawiki  (keep the /search/ and /([^/]+) rewrites)
@@ -498,8 +536,11 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_ca
     --file <ExistingFile.png> --image /images/<a>/<ab>/<ExistingFile.png> )
 ```
 
-Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`; it changes when
-WikiOS serves its own `api.php` subset. Also click through by hand: an article, an old revision
+Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`: `/api.php` stays
+MediaWiki's, and WikiOS's own api.php has two rows of its own at `/w/api.php` (siteinfo, and a login token, which
+answers `sessionsecretmissing` and so fails while `WIKIOS_API_SESSION_SECRET` is missing). A bot's smoke test: `curl -s
+'https://ixwiki.com/w/api.php?action=query&meta=siteinfo&format=json'` answers JSON with the site name, and a
+Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Also click through by hand: an article, an old revision
 (`/index.php?title=Foo&oldid=N` redirects to `/wiki/Foo?oldid=N`), `action=edit` on classic, a classic
 `Special:` page, an image, login, and one `?action=purge` (`/wiki/Foo?action=purge` is answered by classic MediaWiki).
 
@@ -644,7 +685,7 @@ Every one of them is copied into `$BK` before its first edit.
 | File | Edit | Step |
 |------|------|------|
 | `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite** | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`) | 3c, 4 |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`) | 1c, 3c, 4 |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example` | 5 |
 | `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | 5 |
 | `/etc/nginx/conf.d/wikios-render-internal.conf`, `wikios-upstream.conf` | new | 4, 8 |
@@ -659,6 +700,6 @@ Every one of them is copied into `$BK` before its first edit.
 ## Later
 
 IxStates moves to ixstates.com (owner decision D11): then `NEXT_PUBLIC_IXSTATES_URL` in `$WK/.env.wikios-build`
-changes, the WikiOS build is redeployed, and classic MediaWiki moves to `classic.ixwiki.com`. When WikiOS serves its own
-`api.php`, `/api.php` joins the WikiOS locations in `wikios-takeover.conf` and the matching row of
-`verify-wikios-takeover.ts` changes.
+changes, the WikiOS build is redeployed, and classic MediaWiki moves to `classic.ixwiki.com`. WikiOS's api.php already
+answers at `/w/api.php` (step 8a); when bots have moved to it, `/api.php` can join the WikiOS locations in
+`wikios-takeover.conf` and the matching row of `verify-wikios-takeover.ts` changes.
