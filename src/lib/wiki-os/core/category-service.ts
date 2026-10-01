@@ -339,40 +339,6 @@ export class CategoryService {
   }
 
   /**
-   * Sync Category Memberships for an article
-   */
-  static async syncArticleCategories(articleId: string, categoryNames: string[]): Promise<void> {
-    if (categoryNames.length === 0) {
-      return;
-    }
-
-    // Ensure all categories exist
-    const categoryIds: string[] = [];
-    for (const name of categoryNames) {
-      const slug = toArticleSlug(name);
-      const cat = await db.wikiCategory.upsert({
-        where: { slug },
-        create: { slug, name: name.replace(/_/g, " ") },
-        update: {},
-        select: { id: true },
-      });
-      categoryIds.push(cat.id);
-    }
-
-    // Transactionally update category memberships
-    await db.$transaction(async (tx) => {
-      await tx.wikiCategoryMember.deleteMany({ where: { articleId } });
-      await tx.wikiCategoryMember.createMany({
-        data: categoryIds.map((categoryId) => ({
-          articleId,
-          categoryId,
-        })),
-        skipDuplicates: true,
-      });
-    });
-  }
-
-  /**
    * Get Category Members (Articles and Subcategories) for bridge dispatchers
    */
   static async getCategoryMembers(
