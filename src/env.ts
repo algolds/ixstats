@@ -98,6 +98,8 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_INTERNAL_URL: z.string().optional(),
     // iiwiki api.php proxy URL that overrides the default iiwiki endpoint
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
+    // "0" removes every TemplateStyles <style> from article HTML (the pre-plan-415 behaviour): the emergency lever if a CSS bypass is reported. Default on; config.ts reads it once, and it is part of the sanitizer fingerprint
+    WIKIOS_TEMPLATESTYLES: z.string().optional(),
     // "true" stops the mirror worker (services/mirror-worker.ts): outbox jobs accumulate and nothing is lost
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
@@ -244,6 +246,7 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_API: process.env.WIKIOS_MEDIAWIKI_API,
     WIKIOS_MEDIAWIKI_INTERNAL_URL: process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL,
     IIWIKI_DEV_PROXY_URL: process.env.IIWIKI_DEV_PROXY_URL,
+    WIKIOS_TEMPLATESTYLES: process.env.WIKIOS_TEMPLATESTYLES,
     SKIP_MEDIAWIKI_SYNC: process.env.SKIP_MEDIAWIKI_SYNC,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,

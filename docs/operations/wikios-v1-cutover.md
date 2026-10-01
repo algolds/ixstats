@@ -690,6 +690,39 @@ seen by the daemon and fail2ban (Cloudflare still sees it, and `wikios-quiet.log
 **Rollback:** `sudo cp -a "$BK/ixwiki-defense.conf" /etc/ixwiki-defense.conf && sudo cp -a "$BK/ixwiki-bots.jail.conf" /etc/fail2ban/jail.d/ixwiki-bots.conf && sudo systemctl restart ixwiki-bot-defense && sudo fail2ban-client reload`;
 for change 1, re-copy the snippet from the checkout (step 8a) and `sudo nginx -t && sudo systemctl reload nginx`.
 
+### 10c. Emergency lever: turn TemplateStyles off
+
+Articles keep the `<style>` blocks that MediaWiki's TemplateStyles extension writes, after the sanitizer has scoped every
+selector under `.mw-parser-output` and filtered each declaration (`src/lib/utils/scope-template-styles.ts`; plan 415).
+If a CSS bypass is ever reported (a template's sheet styling the reader's chrome, hiding the page, or loading a host
+other than the wiki's), do not debug it first: switch the feature off, then fix it. With `WIKIOS_TEMPLATESTYLES=0` the
+sanitizer removes **every** `<style>` from article HTML, the behaviour before plan 415 (templates that lay themselves out
+with TemplateStyles then render unstyled, which is ugly but safe). `0`, `false`, `off` and `no` all mean off; unset, empty
+or anything else means on.
+
+```bash
+bk "$IX/.env.production.local" env.production.local
+( umask 077; printf '\nWIKIOS_TEMPLATESTYLES=0\n' >> "$IX/.env.production.local" )
+ls -l "$IX/.env.production.local"                      # same mode as before (-rw-------)
+# the setting is read once at start by config.ts: restart IxStates (its usual restart) and WikiOS
+pm2 restart wikios --update-env
+```
+
+The setting is part of the sanitizer fingerprint that every stored article bundle carries (`RENDERER_VERSION`), so no
+purge is needed: a stored bundle built under the other setting is never served, and each article re-renders without its
+styles the next time it is read (sister-wiki renders live in memory and go with the restart). Check an article whose
+templates use TemplateStyles (`<Title>` below; it printed 1 or more before):
+
+```bash
+curl -s "https://ixwiki.com/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 0 once the lever is pulled
+```
+
+**Turning it back on** (after the scoper is fixed and `bun run audit:template-styles` reports 0 violations and 0
+non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`) or delete the
+`WIKIOS_TEMPLATESTYLES` line, and restart both processes as above; bundles re-render again.
+
+**Rollback:** the same lines, in reverse.
+
 ## 11. Footprint measurement
 
 Compare with `baseline.txt` from step 0 (run once traffic has settled, then again a day later):

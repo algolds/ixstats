@@ -29,6 +29,8 @@ export interface WikiosConfigInput {
   writeApiUrl?: string | undefined;
   /** `WIKIOS_MEDIAWIKI_BOT_USER`: the mirror's bot login (`Name@BotName`). */
   botUser?: string | undefined;
+  /** `WIKIOS_TEMPLATESTYLES`: `0` (or `false`, `off`, `no`) turns TemplateStyles off; anything else, or unset, leaves it on. */
+  templateStyles?: string | undefined;
 }
 
 export interface WikiosConfig {
@@ -43,6 +45,12 @@ export interface WikiosConfig {
   readonly articlePath: string;
   /** Sent to every wiki WikiOS reads; the sister wikis allow-list it. */
   readonly userAgent: string;
+  /**
+   * Whether an article's TemplateStyles `<style>` blocks survive the sanitizer (scoped and filtered). On unless
+   * `WIKIOS_TEMPLATESTYLES=0`: the emergency lever if a CSS bypass is reported, which removes every `<style>` again
+   * (the behaviour before plan 415). Part of the sanitizer fingerprint, so toggling it re-renders stored bundles.
+   */
+  readonly templateStyles: boolean;
   readonly mediawiki: {
     /** The public `api.php`: what a browser or an outside tool would call. */
     readonly publicApiUrl: string;
@@ -86,6 +94,7 @@ export function buildWikiosConfig(input: WikiosConfigInput): WikiosConfig {
     publicHost: hostOf(publicBaseUrl),
     articlePath: "/wiki/",
     userAgent: DEFAULT_USER_AGENT,
+    templateStyles: !/^(?:0|false|off|no)$/i.test(input.templateStyles?.trim() ?? ""),
     mediawiki: Object.freeze({
       publicApiUrl,
       internalApiUrl,
@@ -101,6 +110,7 @@ export const wikiosConfig: WikiosConfig = buildWikiosConfig({
   internalApiUrl: process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL,
   writeApiUrl: process.env.WIKIOS_MEDIAWIKI_API,
   botUser: process.env.WIKIOS_MEDIAWIKI_BOT_USER,
+  templateStyles: process.env.WIKIOS_TEMPLATESTYLES,
 });
 
 /** The public origin, with no trailing slash: where a browser reaches the wiki. */

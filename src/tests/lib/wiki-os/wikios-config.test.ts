@@ -33,6 +33,15 @@ describe("buildWikiosConfig", () => {
     });
   });
 
+  it("leaves TemplateStyles on unless WIKIOS_TEMPLATESTYLES says 0, false, off or no", () => {
+    expect(buildWikiosConfig({}).templateStyles).toBe(true);
+    expect(buildWikiosConfig({ templateStyles: "" }).templateStyles).toBe(true);
+    expect(buildWikiosConfig({ templateStyles: "1" }).templateStyles).toBe(true);
+    for (const off of ["0", "false", "OFF", " no ", " 0"]) {
+      expect(buildWikiosConfig({ templateStyles: off }).templateStyles).toBe(false);
+    }
+  });
+
   it("drops the trailing slash of the configured origin and keeps its port", () => {
     const config = buildWikiosConfig({ publicUrl: "http://localhost:8080//" });
 

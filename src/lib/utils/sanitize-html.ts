@@ -12,7 +12,7 @@
  */
 
 import DOMPurify, { type Config } from "dompurify";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
@@ -75,7 +75,9 @@ const sanitizeTemplateStyle: StyleSanitizer = (style) => {
     ? (style.textContent ?? "")
     : "";
   const css =
-    style.namespaceURI === HTML_NAMESPACE && style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
+    wikiosConfig.templateStyles &&
+    style.namespaceURI === HTML_NAMESPACE &&
+    style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
       ? scopeTemplateStyles(text, new URL(mediaWikiOrigin()).origin)
       : "";
   if (!css) {
@@ -410,14 +412,20 @@ let articleSanitizerFingerprint: string | null = null;
 
 /**
  * Identifies everything that decides what `sanitizeWikiArticleHtml` outputs: its allow and forbid
- * lists (regular expressions included), the hooks version, DOMPurify's own version and the wiki's origin (the
- * one host a TemplateStyles `url()` may name). Stored
- * article bundles carry it, so changing the sanitizer invalidates them by itself.
+ * lists (regular expressions included), the hooks version, DOMPurify's own version, the wiki's origin (the
+ * one host a TemplateStyles `url()` may name) and whether TemplateStyles is on (`WIKIOS_TEMPLATESTYLES`).
+ * Stored article bundles carry it, so changing the sanitizer invalidates them by itself.
  */
 export function wikiArticleSanitizerFingerprint(): string {
   articleSanitizerFingerprint ??= hashString(
     JSON.stringify(
-      [WIKI_ARTICLE_SANITIZE_CONFIG, SANITIZER_HOOKS_VERSION, DOMPurify.version, mediaWikiOrigin()],
+      [
+        WIKI_ARTICLE_SANITIZE_CONFIG,
+        SANITIZER_HOOKS_VERSION,
+        DOMPurify.version,
+        mediaWikiOrigin(),
+        wikiosConfig.templateStyles,
+      ],
       (_key: string, value: object | string | number | boolean | null) =>
         value instanceof RegExp ? value.toString() : value
     )
