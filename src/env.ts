@@ -80,12 +80,15 @@ export const env = createEnv({
             .string()
             .min(32, "WIKI_SYNC_WEBHOOK_SECRET must be at least 32 characters in production")
         : z.string().optional(),
-    // HMAC key for WikiOS api.php sessions and tokens (src/lib/wiki-os/api-compat/auth.ts) - REQUIRED in
-    // production; outside production a fixed development key is used when it is unset
-    WIKIOS_API_SESSION_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string().min(32, "WIKIOS_API_SESSION_SECRET must be at least 32 characters in production")
-        : z.string().optional(),
+    // HMAC key for WikiOS api.php sessions and tokens (src/lib/wiki-os/api-compat/auth.ts). Optional here
+    // on purpose: a missing key must not stop the app from starting. Without it api.php answers
+    // `sessionsecretmissing` to a login, a login token and any request that carries a session cookie
+    // (it never signs or accepts one with a fallback key) and keeps serving anonymous reads; when it
+    // is set it must be at least 32 characters.
+    WIKIOS_API_SESSION_SECRET: z
+      .string()
+      .min(32, "WIKIOS_API_SESSION_SECRET must be at least 32 characters when set")
+      .optional(),
     // cron-runner.mjs job allowlist: comma-separated names from src/server/cron/jobs.ts, or "*".
     // Unset/empty schedules nothing.
     CRON_ENABLED_JOBS: z.string().optional(),

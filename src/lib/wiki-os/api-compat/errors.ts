@@ -18,6 +18,13 @@ export class ApiError extends Error {
 
 const quoted = (name: string) => `"${name}"`;
 
+/** api.php has no key to sign sessions with (`WIKIOS_API_SESSION_SECRET`): logins and session cookies are refused, never served with a fallback key. */
+export const sessionSecretMissing = () =>
+  new ApiError(
+    "sessionsecretmissing",
+    "Logging in through api.php is not available: the server has no session secret configured."
+  );
+
 export const missingParam = (name: string) =>
   new ApiError("missingparam", `The ${quoted(name)} parameter must be set.`);
 

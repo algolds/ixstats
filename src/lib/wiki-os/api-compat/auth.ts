@@ -10,6 +10,7 @@
 
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { env } from "~/env";
+import { sessionSecretMissing } from "./errors";
 import { rightsForGrants } from "./grants";
 import type {
   ApiSession,
@@ -43,15 +44,27 @@ export const TOKEN_TYPES: readonly TokenType[] = ["csrf", "login", "watch", "rol
 // Secret and HMACs
 // ---------------------------------------------------------------------------
 
-const DEVELOPMENT_SECRET = "wikios-api-development-secret-not-for-production";
+/** `src/env.ts` enforces this when the secret is set; checked again here, as the validation can be skipped. */
+const MIN_SECRET_LENGTH = 32;
+let warnedAboutMissingSecret = false;
 
+/**
+ * The key sessions, login nonces and tokens are signed with. There is no fallback, in development
+ * either: without a key (or with one under 32 characters) nothing is signed and nothing is verified,
+ * the caller gets the `sessionsecretmissing` error, and one warning is logged at the first use.
+ * Requests that need no signature (anonymous reads) never get here.
+ */
 function signingSecret(): string {
   const configured = env.WIKIOS_API_SESSION_SECRET;
-  if (configured) return configured;
-  if (env.NODE_ENV === "production") {
-    throw new Error("WIKIOS_API_SESSION_SECRET is not set");
+  if (configured && configured.length >= MIN_SECRET_LENGTH) return configured;
+  if (!warnedAboutMissingSecret) {
+    warnedAboutMissingSecret = true;
+    console.warn(
+      "[api.php] WIKIOS_API_SESSION_SECRET is not set (or is shorter than 32 characters): logins, login tokens and " +
+        "session cookies are refused with sessionsecretmissing until it is; anonymous reads keep working."
+    );
   }
-  return DEVELOPMENT_SECRET;
+  throw sessionSecretMissing();
 }
 
 function hmac(label: string, value: string): Buffer {

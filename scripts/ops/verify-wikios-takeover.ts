@@ -22,8 +22,8 @@
  * - --page, --revid, --subpage and --category must name things that exist: a page and one of its
  *   revisions, a template subpage and a category page. The defaults are guesses.
  * - /api.php is MediaWiki's on the public host; WikiOS's own MediaWiki-compatible api.php is /w/api.php
- *   (two rows below: siteinfo, and a login token, which fails with a 500 when WIKIOS_API_SESSION_SECRET is
- *   not set in production).
+ *   (two rows below: siteinfo, and a login token, which answers `sessionsecretmissing`, so the row fails,
+ *   while WIKIOS_API_SESSION_SECRET is not set).
  * - --standalone keeps only the rows that do not need the nginx takeover or classic MediaWiki on --base:
  *   WikiOS itself, plus the render engine when --internal is given.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it

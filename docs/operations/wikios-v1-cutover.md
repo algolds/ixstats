@@ -138,15 +138,19 @@ dry-run the import, read its plan, and write:
 WikiOS. Its group and block rows carry `source = 'mw-import'` (`delete from wiki_user_groups where source = 'mw-import'`,
 the same for `wiki_blocks`); the restriction rows it adds are not marked, so undo those from the dump taken in step 1.
 
-## 1c. The api.php session secret (plan 410), before step 2
+## 1c. The api.php session secret (plan 410), before bots use `/w/api.php`
 
 WikiOS serves a MediaWiki-compatible `api.php` at `/w/api.php` for bots (Pywikibot, AWB, the Discord bot). Bot-password
 sessions, login tokens and CSRF tokens are HMACs under one key, **`WIKIOS_API_SESSION_SECRET`**:
 
-- **At least 32 characters, and required in production.** `src/env.ts` refuses to start any process that loads the
-  production environment without it (`WIKIOS_API_SESSION_SECRET must be at least 32 characters in production`):
-  IxStates and WikiOS both read `.env.production.local`, so **step 2 fails to start IxStates until it is set.** Outside
-  production a fixed development key is used when it is unset; production never falls back to it.
+- **Needed for bots to log in, not for the app to start.** `src/env.ts` treats it as optional, so deploying IxStates
+  or WikiOS before it is set takes nothing down. Without it, api.php answers `action=login`, a login token
+  (`meta=tokens&type=login`) and any request that carries a session cookie with the MediaWiki error
+  `sessionsecretmissing`; it never signs or accepts a session with a fallback key, in development either. Anonymous
+  reads (`meta=siteinfo`, `list=allpages`, `action=parse&page=`, ...) keep working, and one warning is logged the first
+  time the missing key is needed. Set it before the cutover so bots can log in (step 9's login-token row fails until then).
+- **At least 32 characters when set.** A shorter value stops the process at start (the environment check), and the
+  code treats an empty or short value as missing.
 - It is a key, not a password: generate it, never type it, and never print it.
 
 ```bash
@@ -166,8 +170,8 @@ WikiOS (`pm2 restart wikios --update-env`). Bot passwords themselves are not aff
 configure, but a bot that is throttled sees MediaWiki's `ratelimited` error, and a client that logs in over and over sees
 `Throttled`. The same file lists `wiki_media`, `wiki_export` and `wiki_raw`, the other WikiOS buckets.
 
-**Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"`, only before step 2 (after it, IxStates
-needs the line to start).
+**Rollback:** `sudo cp -a "$BK/env.production.local.1c" "$IX/.env.production.local"` and restart the two processes: bots
+get `sessionsecretmissing` again and nothing else changes.
 
 ## 2. Deploy IxStates as usual
 
@@ -533,7 +537,7 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_ca
 
 Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`: `/api.php` stays
 MediaWiki's, and WikiOS's own api.php has two rows of its own at `/w/api.php` (siteinfo, and a login token, which
-answers 500 when `WIKIOS_API_SESSION_SECRET` is missing). A bot's smoke test: `curl -s
+answers `sessionsecretmissing` and so fails while `WIKIOS_API_SESSION_SECRET` is missing). A bot's smoke test: `curl -s
 'https://ixwiki.com/w/api.php?action=query&meta=siteinfo&format=json'` answers JSON with the site name, and a
 Pywikibot login with a bot password made on `Special:BotPasswords` succeeds. Also click through by hand: an article, an old revision
 (`/index.php?title=Foo&oldid=N` redirects to `/wiki/Foo?oldid=N`), `action=edit` on classic, a classic
