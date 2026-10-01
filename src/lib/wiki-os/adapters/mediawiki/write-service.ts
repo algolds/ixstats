@@ -3,8 +3,8 @@
  *
  * `postMediaWikiAction` / `getMediaWikiAction` send one parsed, schema-checked call; an API error is a
  * `MediaWikiApiError` carrying MediaWiki's error code, so callers can tell "already done" from "refused".
- * The mirror worker (services/mirror-worker.ts) is the only writer of pages; `executeMediaWikiWrite` stays
- * for the upload route until plan 411 gives uploads their own job.
+ * The mirror worker (services/mirror-worker.ts) is the only writer: pages (mirror-revision.ts, mirror-page-ops.ts)
+ * and uploaded files (mirror-upload.ts, plan 411) all go out through these helpers.
  */
 
 import { z } from "zod";
@@ -19,8 +19,9 @@ import {
 
 const REQUEST_TIMEOUT_MS = 30_000;
 /**
- * An import (a file upload) is longer: MediaWiki updates its link tables and caches for every revision it makes the
- * page's current one, so a batch of revisions of a big page takes a while.
+ * A call with a file part is longer: an import updates MediaWiki's link tables and caches for every revision it makes
+ * the page's current one, so a batch of revisions of a big page takes a while; an upload sends up to 10 MB and has
+ * MediaWiki check and store it.
  */
 const IMPORT_TIMEOUT_MS = 120_000;
 
@@ -39,12 +40,12 @@ const apiErrorSchema = z.object({
   error: z.object({ code: z.string(), info: z.string().optional() }),
 });
 
-/** A file sent as a multipart part: the XML of an `action=import`. */
+/** A file sent as a multipart part: the XML of an `action=import`, or the bytes of an `action=upload`. */
 export interface UploadPart {
   field: string;
   filename: string;
   contentType: string;
-  content: string;
+  content: string | Uint8Array<ArrayBuffer>;
 }
 
 export interface MediaWikiWriteResult {
@@ -65,14 +66,6 @@ const writeResponseSchema = z.looseObject({
       newrevid: z.number().optional(),
       nochange: z.boolean().optional(),
       oldrevid: z.number().optional(),
-    })
-    .optional(),
-  upload: z
-    .looseObject({
-      filename: z.string().optional(),
-      imageinfo: z
-        .looseObject({ url: z.string().optional(), descriptionurl: z.string().optional() })
-        .optional(),
     })
     .optional(),
 });

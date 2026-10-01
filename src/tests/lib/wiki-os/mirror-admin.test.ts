@@ -14,6 +14,7 @@ const mockGroupBy = jest.fn();
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
 const mockUpdateMany = jest.fn();
+const mockCount = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -22,6 +23,7 @@ jest.mock("~/server/db", () => ({
       findFirst: (...a: unknown[]) => mockFindFirst(...a),
       findMany: (...a: unknown[]) => mockFindMany(...a),
       updateMany: (...a: unknown[]) => mockUpdateMany(...a),
+      count: (...a: unknown[]) => mockCount(...a),
     },
   },
 }));
@@ -50,6 +52,7 @@ beforeEach(() => {
   mockGroupBy.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
   mockFindMany.mockResolvedValue([]);
+  mockCount.mockResolvedValue(0);
 });
 
 describe("getMirrorStatus", () => {
@@ -68,6 +71,17 @@ describe("getMirrorStatus", () => {
       by: ["state"],
       where: { source: "ixwiki" },
       _count: { _all: true },
+    });
+  });
+
+  it("counts the uploads MediaWiki does not hold yet (dead ones too: only WikiOS has their bytes)", async () => {
+    mockCount.mockResolvedValue(4);
+
+    const status = await getMirrorStatus(NOW);
+
+    expect(status.uploadsWaiting).toBe(4);
+    expect(mockCount).toHaveBeenCalledWith({
+      where: { source: "ixwiki", kind: "upload", state: { in: ["pending", "running", "dead"] } },
     });
   });
 

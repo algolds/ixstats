@@ -3,7 +3,8 @@
  *
  * `runMirrorCycle` works through the due jobs (per-title FIFO, mirror-queue.ts), each as the dedicated mirror
  * account: the `revision` jobs of a title that wait next in line together, through one `action=import`
- * (mirror-revision.ts), the page operations one by one through their own API calls (mirror-page-ops.ts). A failed
+ * (mirror-revision.ts), the page operations one by one through their own API calls (mirror-page-ops.ts), and an
+ * uploaded file through `action=upload` (mirror-upload.ts). A failed
  * job is retried with backoff and ends up `dead` after 8 attempts (the operators are warned on Discord, at most once
  * in 30 minutes: mirror-alerts.ts); a login that fails is a failure of the job, never an anonymous write.
  *
@@ -17,6 +18,7 @@ import { withJobLock } from "~/lib/system/job-lock";
 import { alertDeadJobs } from "./mirror-alerts";
 import { MIRROR_LOCK_NAME } from "./mirror-outbox";
 import { runPageJob } from "./mirror-page-ops";
+import { runUploadJob } from "./mirror-upload";
 import { withinAttempt } from "../adapters/mediawiki/attempt-scope";
 import {
   ATTEMPT_TIMEOUT_MS,
@@ -128,7 +130,9 @@ async function runJobs(candidates: readonly MirrorJob[]): Promise<MirrorJob[]> {
   if (!job) return [];
   if (job.kind === "revision") return runRevisionBatch(claimed);
   try {
-    await withinAttempt(ATTEMPT_TIMEOUT_MS, () => runPageJob(job));
+    await withinAttempt(ATTEMPT_TIMEOUT_MS, () =>
+      job.kind === "upload" ? runUploadJob(job) : runPageJob(job)
+    );
     return [await completeJob(job, null)];
   } catch (error) {
     return failAll(claimed, error);

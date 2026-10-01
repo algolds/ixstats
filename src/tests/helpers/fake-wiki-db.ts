@@ -28,12 +28,16 @@ function matches(row: Row, where: Where): boolean {
         ? text.toLowerCase().includes(needle.toLowerCase())
         : text.includes(needle);
     }
-    if (value === undefined && !("in" in condition || "not" in condition || "gt" in condition)) {
+    if (
+      value === undefined &&
+      !("in" in condition || "notIn" in condition || "not" in condition || "gt" in condition)
+    ) {
       return matches(row, condition); // a compound unique key: { source_title: { source, title } }
     }
     if ("startsWith" in condition)
       return String(value ?? "").startsWith(String(condition.startsWith));
     if ("in" in condition) return (condition.in as unknown[]).includes(value);
+    if ("notIn" in condition) return !(condition.notIn as unknown[]).includes(value);
     if ("not" in condition) return value !== condition.not;
     if ("gt" in condition) return value !== null && (value as Date) > (condition.gt as Date);
     return false;
@@ -154,7 +158,12 @@ export interface FakeWikiDb {
   stash: Table;
   stashItem: Table;
   $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
+  /** Records the statement (its `?` placeholders) and its values; changes no table. */
+  $executeRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<number>;
 }
+
+/** The raw statements run on the fake database since the last `reset`. */
+export const executedSql: Array<{ sql: string; values: unknown[] }> = [];
 
 /** The WikiOS tables plus `$transaction` (which just runs the callback against the same tables). */
 export function createFakeWikiDb() {
@@ -194,12 +203,17 @@ export function createFakeWikiDb() {
   const db: FakeWikiDb = {
     ...tables,
     $transaction: async (work) => work(db),
+    $executeRaw: async (strings, ...values) => {
+      executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
+      return 0;
+    },
   };
   return {
     db,
     tables,
     reset() {
       for (const table of Object.values(tables)) table.reset();
+      executedSql.length = 0;
     },
   };
 }

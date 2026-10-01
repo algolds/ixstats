@@ -18,6 +18,7 @@ import { ATTEMPT_TIMEOUT_MS, INTERRUPTED_AFTER_MS } from "~/lib/wiki-os/services
 import { CRON_JOBS } from "~/server/cron/jobs";
 import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/mirror-revision";
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
+import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
 import { discordWebhook } from "~/lib/discord/webhook";
 import { withJobLock } from "~/lib/system/job-lock";
@@ -132,6 +133,7 @@ jest.mock("~/lib/wiki-os/services/mirror-revision", () => ({
   executeRevisionBatch: jest.fn(),
 }));
 jest.mock("~/lib/wiki-os/services/mirror-page-ops", () => ({ runPageJob: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/mirror-upload", () => ({ runUploadJob: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
   invalidateTemplateDependents: jest.fn().mockResolvedValue(0),
 }));
@@ -145,6 +147,7 @@ const sendBatch = jest.mocked(executeRevisionBatch);
 /** What sending one revision does (MediaWiki's revision id, or a rejection): the batch sends its jobs in order. */
 const revisionJob = jest.fn<Promise<number | null>, [WikiMirrorJob]>();
 const pageJob = jest.mocked(runPageJob);
+const uploadJob = jest.mocked(runUploadJob);
 const warn = jest.mocked(discordWebhook.sendWarning);
 
 /** A job in the outbox, `ageMs` old (older jobs are written first). */
@@ -199,6 +202,7 @@ beforeEach(() => {
     return outcomes;
   });
   pageJob.mockResolvedValue(undefined);
+  uploadJob.mockResolvedValue(undefined);
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
 });
 
@@ -244,6 +248,41 @@ describe("runMirrorCycle", () => {
     expect(revisionJob).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
     expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Box", "ixwiki");
+  });
+
+  it("runs an upload job through the upload handler, after the revision job of its File: page, and retries it like any other job", async () => {
+    const page = addJob({ title: "File:Flag.png" });
+    const upload = addJob({
+      kind: "upload",
+      title: "File:Flag.png",
+      payload: { sha1: "x".repeat(31), comment: "A flag" },
+      revisionId: null,
+    });
+    const order: string[] = [];
+    revisionJob.mockImplementation(async (job) => {
+      order.push(`revision ${job.id}`);
+      return 700;
+    });
+    uploadJob.mockImplementationOnce(async (job) => {
+      order.push(`upload ${job.id}`);
+      throw new Error("MediaWiki 503");
+    });
+
+    const first = await runMirrorCycle();
+
+    expect(order).toEqual([`revision ${page.id}`, `upload ${upload.id}`]);
+    expect(first).toMatchObject({ done: 1, failed: 1, dead: 0 });
+    expect(pageJob).not.toHaveBeenCalled();
+    expect(byId(upload.id)).toMatchObject({
+      state: "pending",
+      attempts: 1,
+      lastError: "MediaWiki 503",
+    });
+
+    makeDue(upload.id);
+    await runMirrorCycle();
+    expect(byId(upload.id)).toMatchObject({ state: "done", attempts: 2, lastError: null });
+    expect(uploadJob).toHaveBeenCalledTimes(2);
   });
 
   it("does not re-render anything for a revision job that failed", async () => {
