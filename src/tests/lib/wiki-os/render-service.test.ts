@@ -7,6 +7,7 @@
 const mockFindUnique = jest.fn();
 const mockUpdateMany = jest.fn();
 const mockRenderViaMediaWiki = jest.fn();
+const mockSanitizeHook = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -36,6 +37,20 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
         };
   },
 }));
+
+// The real sanitizer; `mockSanitizeHook` sees each call first, so a test can make it throw.
+jest.mock("~/lib/utils/sanitize-html", () => {
+  const actual = jest.requireActual<typeof import("~/lib/utils/sanitize-html")>(
+    "~/lib/utils/sanitize-html"
+  );
+  return {
+    ...actual,
+    sanitizeWikiArticleHtml: (html: string) => {
+      mockSanitizeHook(html);
+      return actual.sanitizeWikiArticleHtml(html);
+    },
+  };
+});
 
 import {
   buildViewBundle,
@@ -559,6 +574,19 @@ describe("loadViewBundle", () => {
       expect(loaded).toMatchObject({ htmlSyncedAt: null, outdated: true });
       expect(loaded?.bundle.infoboxHtml).toBeNull();
       expect(loaded?.bundle.noticesHtml).toBeNull();
+    });
+
+    it("is null, with a warning, when the sanitizer throws on it: one page cannot fail every read", async () => {
+      mockSanitizeHook.mockImplementationOnce(() => {
+        throw new Error("pathological markup");
+      });
+      mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      await expect(loadViewBundle("a")).resolves.toBeNull();
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("a"), expect.any(Error));
+      warn.mockRestore();
     });
 
     it("keeps the template chip markers the sanitizer lets through", async () => {

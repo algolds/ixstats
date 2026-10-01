@@ -11,6 +11,7 @@ const mockFindArticleForView = jest.fn();
 const mockRenderViaMediaWiki = jest.fn();
 const mockEnsureRendered = jest.fn();
 const mockRenderInBackground = jest.fn();
+const mockSanitizeHook = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -43,6 +44,19 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   },
 }));
 jest.mock("~/lib/wiki-os/services/auto-sync-service", () => ({ syncSinglePage: jest.fn() }));
+// The real sanitizer; `mockSanitizeHook` sees each call first, so a test can make it throw.
+jest.mock("~/lib/utils/sanitize-html", () => {
+  const actual = jest.requireActual<typeof import("~/lib/utils/sanitize-html")>(
+    "~/lib/utils/sanitize-html"
+  );
+  return {
+    ...actual,
+    sanitizeWikiArticleHtml: (html: string) => {
+      mockSanitizeHook(html);
+      return actual.sanitizeWikiArticleHtml(html);
+    },
+  };
+});
 // The real service, with the two calls the reader makes into the render queue observable.
 jest.mock("~/lib/wiki-os/services/render-service", () => {
   const actual = jest.requireActual<typeof import("~/lib/wiki-os/services/render-service")>(
@@ -120,6 +134,7 @@ const read = () => getArticleView("Pelaxia", async () => null);
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSanitizeHook.mockReset();
   mockUpdateMany.mockResolvedValue({ count: 1 });
 });
 
@@ -201,6 +216,23 @@ describe("an outdated bundle", () => {
     expect(view).toMatchObject({ stale: true, renderQuality: "rendered" });
     expect(view?.contentHtml).toContain("Old body.");
     expect(view?.contentHtml).not.toMatch(/<script|onerror/i);
+  });
+});
+
+describe("an outdated bundle the sanitizer throws on", () => {
+  it("is treated as no bundle: the reader waits for the render, then gets the fallback, not an error", async () => {
+    article(SYNCED, { ...HOSTILE_BUNDLE, bodyHtml: "<p>pathological</p>" });
+    mockSanitizeHook.mockImplementation((html: string) => {
+      if (html.includes("pathological")) throw new Error("pathological markup");
+    });
+    mockRenderViaMediaWiki.mockResolvedValue(null);
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    const view = await read();
+
+    expect(mockEnsureRendered).toHaveBeenCalledWith(expect.any(String), { waitMs: 6_000 });
+    expect(view).toMatchObject({ stale: true, renderQuality: "fallback" });
+    warn.mockRestore();
   });
 });
 

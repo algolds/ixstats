@@ -146,7 +146,8 @@ function resanitizeViewBundle(bundle: ViewBundle): ViewBundle {
  * The bundle and freshness of an article. A bundle of this renderer version is returned as it is. One
  * that only differs in its renderer version (an older transform or sanitizer built it) is returned
  * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule.
- * Null when the article has no bundle, or one whose shape is not a bundle's at all.
+ * Null when the article has no bundle, or one whose shape is not a bundle's at all, or one the sanitizer
+ * throws on.
  */
 export async function loadViewBundle(articleId: string): Promise<LoadedViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
@@ -160,13 +161,21 @@ export async function loadViewBundle(articleId: string): Promise<LoadedViewBundl
     return { bundle: current.data, htmlSyncedAt: row.htmlSyncedAt, outdated: false };
   }
   const outdated = outdatedViewBundleSchema.safeParse(row.renderedView);
-  return outdated.success
-    ? {
-        bundle: resanitizeViewBundle(outdated.data),
-        htmlSyncedAt: row.htmlSyncedAt,
-        outdated: true,
-      }
-    : null;
+  if (!outdated.success) return null;
+  try {
+    return {
+      bundle: resanitizeViewBundle(outdated.data),
+      htmlSyncedAt: row.htmlSyncedAt,
+      outdated: true,
+    };
+  } catch (error) {
+    // a page the sanitizer cannot take must not fail every read: it is as good as having no bundle
+    console.warn(
+      `[WikiOS:render] Re-sanitizing the outdated bundle of ${articleId} failed:`,
+      error
+    );
+    return null;
+  }
 }
 
 /**
