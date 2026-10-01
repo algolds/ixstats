@@ -31,6 +31,9 @@
  *   --page), asked for as an anonymous page load (`Accept: text/html`, no cookie). The row catches an SSR
  *   stash miss of lean-flight mode (WIKIOS_LEAN_FLIGHT=1), where the article's HTML is swapped for a marker in
  *   the page data and read back from the server-rendered DOM: a miss serves the page with no article body.
+ *   It looks only inside the article element, with meta tags, <title>, <link> and scripts removed: the lead
+ *   paragraph is also the page's meta description / og / twitter text and sits in the page data, so a lead
+ *   sentence would pass on a page with no body at all. Pick a sentence from deep in the article, not the lead.
  *   Lean mode only applies to an article of 20,000 or more characters of HTML, so name a long one. Without
  *   --article-text the row is left out.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it
@@ -50,6 +53,8 @@ export interface Expectation {
   /** Checked only on 3xx responses: exact path+query, or a prefix when it ends with "*". */
   readonly expectLocation?: string;
   readonly expectBodyIncludes?: string;
+  /** The text must be in the article element of the page (see `articleElementHtml`), not only in its meta tags or page data. */
+  readonly expectArticleText?: string;
   /** The Content-Type header must include this text (case-insensitive). */
   readonly expectContentType?: string;
   /** The body must parse as JSON. */
@@ -160,6 +165,31 @@ function bodyFailure(expectation: Expectation, observed: Observation): string | 
   return `body does not include ${JSON.stringify(needle)}`;
 }
 
+/** What opens the article element of the reader (`ArticleRenderer`): the body and the infobox are inside it. */
+const ARTICLE_ELEMENT_OPENING = 'class="wikios-article-body';
+
+/**
+ * The HTML from the article element on, without what is not the article: scripts (the page data holds the
+ * metadata too), meta and link tags (the description, og and twitter text are attributes), and titles. Empty
+ * when the page has no article element.
+ */
+export function articleElementHtml(html: string): string {
+  const start = html.indexOf(ARTICLE_ELEMENT_OPENING);
+  if (start === -1) return "";
+  return html
+    .slice(start)
+    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
+    .replace(/<title\b[\s\S]*?<\/title>/gi, "")
+    .replace(/<(?:meta|link)\b[^>]*>/gi, "");
+}
+
+function articleTextFailure(expectation: Expectation, observed: Observation): string | null {
+  const needle = expectation.expectArticleText;
+  if (needle === undefined) return null;
+  if (articleElementHtml(observed.body).includes(needle)) return null;
+  return `the article element does not include ${JSON.stringify(needle)} (meta tags and page data do not count)`;
+}
+
 function contentTypeFailure(expectation: Expectation, observed: Observation): string | null {
   const needle = expectation.expectContentType;
   if (needle === undefined) return null;
@@ -175,6 +205,7 @@ const CHECKS: readonly Check[] = [
   statusFailure,
   locationFailure,
   bodyFailure,
+  articleTextFailure,
   contentTypeFailure,
   jsonFailure,
 ];
@@ -404,7 +435,7 @@ function articleBodyRow(options: ChecklistOptions): Expectation[] {
       path: `/wiki/${options.article ?? options.page}`,
       via: "public",
       expectStatus: 200,
-      expectBodyIncludes: options.articleText,
+      expectArticleText: options.articleText,
       headers: { accept: "text/html" },
       standalone: true,
     },

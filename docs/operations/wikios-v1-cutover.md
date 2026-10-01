@@ -828,13 +828,15 @@ pm2 startOrReload "$WK/ecosystem.wikios.config.cjs" --update-env
 ```
 
 **Verify, and keep it only if it passes.** Pick a long article (the one you would open to show someone WikiOS) and one plain
-sentence from its body: words only, no quotes, ampersands or links. The row asks the loopback WikiOS for the article as an
-anonymous page load and requires the sentence in the first HTML, which is exactly what an SSR stash miss (the page served with
-no article body) would lack; every other row would still call that page a 200:
+sentence from **deep in its body, not from the lead paragraph**: words only, no quotes, ampersands or links. The lead paragraph
+is also the page's meta description and its og and twitter text, and it is in the page data, so a lead sentence would be found
+on a page that has no article body at all. The row asks the loopback WikiOS for the article as an anonymous page load and
+requires the sentence inside the article element of the first HTML (meta tags, titles and scripts are ignored), which is exactly
+what an SSR stash miss (the page served with no article body) would lack; every other row would still call that page a 200:
 
 ```bash
 ( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" --standalone \
-    --article <Long_article> --article-text "<a plain sentence from its body>" )
+    --article <Long_article> --article-text "<a plain sentence from deep in its body>" )
 curl -s -H 'Accept: text/html' "http://127.0.0.1:3560/wiki/<Long_article>" | grep -c 'id="wikios-lean-'     # 1 or more: the mode is on for this page
 ```
 
