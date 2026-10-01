@@ -29,7 +29,7 @@ interface WithPatch {
 }
 
 /** A diff the server already computed (an answer of `getDiff`): the viewer only draws it. */
-interface WithHunks extends Partial<Omit<WikitextDiff, "hunks">> {
+interface WithHunks {
   hunks: readonly DiffHunk[];
   oldCode?: never;
   newCode?: never;
@@ -38,7 +38,13 @@ interface WithHunks extends Partial<Omit<WikitextDiff, "hunks">> {
 
 type DiffInput = WithStrings | WithPatch | WithHunks;
 
+/** The rest of a `getDiff` answer that goes with its hunks: what was left out, and the whole diff's counts. */
+type ServerDiffExtras = Partial<
+  Pick<WikitextDiff, "trailingSkipped" | "tooLarge" | "truncated" | "added" | "removed">
+>;
+
 type DiffViewerProps = DiffInput &
+  ServerDiffExtras &
   Omit<React.ComponentProps<"div">, "children"> & {
     layout?: DiffLayout;
     /** Shiki language key for syntax highlighting. Plain text when omitted. */
@@ -101,7 +107,7 @@ function compute({
   trailingSkipped,
   tooLarge,
   truncated,
-}: DiffInput & Pick<WikitextDiff, "trailingSkipped" | "tooLarge" | "truncated">): Drawn {
+}: DiffInput & Pick<ServerDiffExtras, "trailingSkipped" | "tooLarge" | "truncated">): Drawn {
   if (hunks) {
     return {
       entries: entriesFromHunks(hunks, trailingSkipped),
