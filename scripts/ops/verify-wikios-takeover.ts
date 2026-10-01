@@ -11,6 +11,7 @@
  *   bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com \
  *     --ixstates "$NEXT_PUBLIC_IXSTATES_URL" [--internal http://127.0.0.1:8081] \
  *     [--file Some_Real_File.png] [--image /images/a/ab/Some_Real_File.png] \
+ *     [--upload /images/uploads/some_real_upload.png] \
  *     [--page Main_Page] [--revid 1] [--subpage Template:Infobox_country/doc] [--category Category:Countries] \
  *     [--article Some_Long_Article --article-text "a plain sentence from its body"]
  *   bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$URL" --standalone
@@ -38,6 +39,9 @@
  *   --article-text the row is left out.
  * - --image is a real upload path (for example one listed under /ixwiki/shared/images); without it
  *   the /images/ row is reported as skipped rather than guessed.
+ * - --upload is a real IxStates upload (a file of /ixwiki/public/projects/ixstats/public/images/uploads, which
+ *   is where a country's uploaded flag lives): WikiOS serves /images/uploads/ itself, while the rest of
+ *   /images/ is MediaWiki's. Without it the row is skipped.
  */
 
 export type Via = "public" | "internal";
@@ -85,6 +89,8 @@ export interface Options {
   readonly internal: string | null;
   readonly file: string;
   readonly image: string | null;
+  /** A real IxStates upload (`/images/uploads/<file>`), served by WikiOS; null leaves its row out. */
+  readonly upload: string | null;
   readonly page: string;
   readonly revid: string;
   readonly subpage: string;
@@ -100,7 +106,7 @@ export type ChecklistOptions = Pick<
   Options,
   "file" | "image" | "ixstates" | "page" | "revid" | "subpage" | "category"
 > &
-  Partial<Pick<Options, "article" | "articleText">>;
+  Partial<Pick<Options, "article" | "articleText" | "upload">>;
 
 const DEFAULT_BASE = "https://ixwiki.com";
 const DEFAULT_FILE = "Example.png";
@@ -442,9 +448,29 @@ function articleBodyRow(options: ChecklistOptions): Expectation[] {
   ];
 }
 
-/** The takeover checklist. `image` is optional: without a real upload path the row is left out. */
+/** An IxStates upload is WikiOS's, not MediaWiki's: nginx sends /images/uploads/ to WikiOS. */
+function uploadRow(options: ChecklistOptions): Expectation[] {
+  if (!options.upload) return [];
+  return [
+    {
+      name: "IxStates upload (a country's flag) served by WikiOS",
+      path: options.upload,
+      via: "public",
+      expectStatus: 200,
+      expectContentType: "image/",
+      standalone: true,
+    },
+  ];
+}
+
+/** The takeover checklist. `image` and `upload` are optional: without a real path the row is left out. */
 export function buildExpectations(options: ChecklistOptions): Expectation[] {
-  const rows = [...wikiosRows(options), ...articleBodyRow(options), ...takeoverRows(options)];
+  const rows = [
+    ...wikiosRows(options),
+    ...articleBodyRow(options),
+    ...uploadRow(options),
+    ...takeoverRows(options),
+  ];
   if (options.image) {
     rows.push({
       name: "upload served from /images/",
@@ -487,6 +513,10 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Opti
   const internal = readFlag(argv, "--internal");
   const image = readFlag(argv, "--image");
   if (image !== null && !image.startsWith("/")) throw new Error("--image must be an absolute path");
+  const upload = readFlag(argv, "--upload");
+  if (upload !== null && !upload.startsWith("/images/uploads/")) {
+    throw new Error("--upload must be a path under /images/uploads/");
+  }
   const page = readFlag(argv, "--page") ?? DEFAULT_PAGE;
   return {
     base: stripTrailingSlashes(readFlag(argv, "--base") ?? DEFAULT_BASE),
@@ -494,6 +524,7 @@ export function parseArgs(argv: readonly string[], env: Env = process.env): Opti
     internal: internal === null ? null : stripTrailingSlashes(internal),
     file: readFlag(argv, "--file") ?? DEFAULT_FILE,
     image,
+    upload,
     page,
     revid: readFlag(argv, "--revid") ?? DEFAULT_REVID,
     subpage: readFlag(argv, "--subpage") ?? DEFAULT_SUBPAGE,
@@ -550,8 +581,11 @@ async function main(argv: readonly string[]): Promise<number> {
   );
   if (!options.internal) console.log("(no --internal: render-engine rows are skipped)");
   if (!options.image) console.log("(no --image: the /images/ row is skipped)");
+  if (!options.upload) console.log("(no --upload: the IxStates upload row is skipped)");
   if (!options.articleText) {
-    console.log("(no --article-text: the article body text row, the lean-flight check, is skipped)");
+    console.log(
+      "(no --article-text: the article body text row, the lean-flight check, is skipped)"
+    );
   }
 
   let failed = 0;

@@ -82,6 +82,7 @@ describe("wikiStandaloneRedirect", () => {
     "/maplibre/maplibre-gl-worker.mjs",
     "/maplibre/maplibre-gl-shared.mjs",
     "/images/flags/placeholder.svg",
+    "/images/uploads/uploaded_1784640623616_c02c54d0_Dushina_Flags_and_Test_Flags_1_.png",
     "/opensearch.xml",
   ])("serves %s in WikiOS", (pathname) => {
     expect(wikiStandaloneRedirect(pathname, "?x=1")).toBeNull();
@@ -98,6 +99,11 @@ describe("wikiStandaloneRedirect", () => {
     ["/api/onoma/other", ""],
     ["/maps", "?embed=true&lat=1&lng=2&zoom=3"],
     ["/images/cards/placeholder-nation.png", ""],
+    // only /images/uploads, /images/flags and /images/wikios are WikiOS's: a longer name is not a match, and
+    // MediaWiki's own uploads (nginx sends them to MediaWiki, never to WikiOS) are not either
+    ["/images/uploads_backup/Flag.png", ""],
+    ["/images/a/ab/Flag.png", ""],
+    ["/images/thumb/a/ab/Flag.png/330px-Flag.png", ""],
     ["/sw.js", ""],
     ["/manifest.json", ""],
     ["/sounds/cards/card-flip.mp3", ""],
