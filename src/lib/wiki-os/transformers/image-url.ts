@@ -211,7 +211,11 @@ export function getCommonsProxyUrl(url: string): string {
   }
 
   try {
-    const decodedUrl = decodeURIComponent(url);
+    // A file is named by its path. The query (MediaWiki's imageinfo links end in `?utm_source=...`)
+    // and the fragment are not part of the name, and the proxy asks imageinfo for the name only:
+    // left in, they were encoded into the file name and the proxy answered 404.
+    const pathEnd = url.search(/[?#]/);
+    const decodedUrl = decodeURIComponent(pathEnd === -1 ? url : url.slice(0, pathEnd));
 
     // Match /wikipedia/commons/... or /wikipedia/en/... and extract filename
     const commonsMatch = decodedUrl.match(
@@ -226,7 +230,8 @@ export function getCommonsProxyUrl(url: string): string {
 
     // Fallback: extract last segment if valid image extension
     const urlObj = new URL(url.startsWith("//") ? `https:${url}` : url);
-    const lastSegment = urlObj.pathname.split("/").pop();
+    // (`pathname` is percent-encoded: decode the name once, `encodeURIComponent` encodes it again)
+    const lastSegment = decodeURIComponent(urlObj.pathname.split("/").pop() ?? "");
     if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
       const cleanSeg = lastSegment.replace(/\.svg\.png$/i, ".svg");
       return withBasePath(
