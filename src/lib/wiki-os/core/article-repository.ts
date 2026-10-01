@@ -662,23 +662,39 @@ type SaveTransaction = Prisma.TransactionClient;
  * left. The lock is the row's own, so a writer that updates the row (a page move, the inbound sync, an import) queues
  * behind a save too. NO KEY UPDATE, not UPDATE: it conflicts with every other writer of the row but not with the
  * FOR KEY SHARE lock that the foreign-key check of an insert referencing the row takes (the render's link, category
- * and image rows), so a render storing its metadata is never blocked behind a save, nor a save behind it. A page with no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the
- * one that gets it second reads the page the first created.
+ * and image rows), so a render storing its metadata is never blocked behind a save, nor a save behind it. A page with
+ * no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the one that gets it
+ * second reads the page the first created. Resolves to the locked row's id; null when there was no row.
  */
-async function lockPageForSave(tx: SaveTransaction, source: string, title: string): Promise<void> {
+async function lockPageForSave(
+  tx: SaveTransaction,
+  source: string,
+  title: string
+): Promise<string | null> {
   // for this transaction only (`is_local`); the statement that waits too long fails with 55P03, which reads as busy
   await tx.$executeRaw`SELECT set_config('lock_timeout', ${SAVE_LOCK_TIMEOUT}, true)`;
   const locked = await tx.$queryRaw<Array<{ id: string }>>`
     SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR NO KEY UPDATE`;
-  if (locked.length > 0) return;
+  if (locked[0]) return locked[0].id;
   // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ARTICLE_SAVE_LOCK_NAMESPACE}::int, hashtext(${`${source}:${title}`}))`;
+  return null;
 }
 
-/** The page's latest live revision (a parked one is not the page), as a save under the page's lock reads it. */
-function loadHeadForSave(tx: SaveTransaction, source: string, title: string) {
+/**
+ * The page's latest live revision (a parked one is not the page), as a save under the page's lock reads it. With the
+ * locked row's id it reads by `articleId` (the (articleId, parked, createdAt) index: one row, whatever the history's
+ * length). Without one (the page had no row when the lock was asked for) the page may have been created by the save
+ * that held the advisory lock, so it is found by title.
+ */
+function loadHeadForSave(
+  tx: SaveTransaction,
+  source: string,
+  title: string,
+  articleId: string | null
+) {
   return tx.wikiRevision.findFirst({
-    where: { article: { source, title }, parked: false },
+    where: { ...(articleId ? { articleId } : { article: { source, title } }), parked: false },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: { id: true, mwRevId: true, byteSize: true },
   });
@@ -791,8 +807,8 @@ export class ArticleRepository {
     const result = await db.$transaction(async (tx) => {
       // 0. Queue behind any other save of this page, then read the head it left: the edit-conflict check, the byte
       // delta and the new revision's parent all come from this one read.
-      await lockPageForSave(tx, source, title);
-      const previous = await loadHeadForSave(tx, source, title);
+      const lockedId = await lockPageForSave(tx, source, title);
+      const previous = await loadHeadForSave(tx, source, title, lockedId);
       if (input.expectedHeadRef !== undefined && !headMatchesBase(previous, input.expectedHeadRef)) {
         throw await conflictOf(tx, source, title, previous);
       }

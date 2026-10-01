@@ -101,9 +101,11 @@ export function createLockingWikiDb({ locks = true }: { locks?: boolean } = {}) 
         },
       },
       wikiRevision: {
-        async findFirst({ where, orderBy }: { where: { article: { source: string; title: string }; parked: boolean }; orderBy: Array<Record<string, "asc" | "desc">> }) {
+        async findFirst({ where, orderBy }: { where: { articleId?: string; article?: { source: string; title: string }; parked: boolean }; orderBy: Array<Record<string, "asc" | "desc">> }) {
           await tick();
-          const page = articleOf(where.article.source, where.article.title);
+          const page = where.articleId
+            ? articles().find((a) => a.id === where.articleId)
+            : where.article && articleOf(where.article.source, where.article.title);
           if (!page) return null;
           const live = revisions().filter((r) => r.articleId === page.id && r.parked === where.parked);
           if (JSON.stringify(orderBy) !== JSON.stringify([{ createdAt: "desc" }, { id: "desc" }])) {

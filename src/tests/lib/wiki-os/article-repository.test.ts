@@ -394,7 +394,7 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
     await save("four");
 
     expect(mockRevisionFindFirst.mock.calls[0]?.[0]).toMatchObject({
-      where: { article: { source: "ixwiki", title: "Foo" }, parked: false },
+      where: { articleId: "a1", parked: false },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ byteSize: 4, byteDelta: 1 });
@@ -578,8 +578,18 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
   });
 
-  it("makes the check against the latest LIVE revision: a parked one is not the head", async () => {
+  it("makes the check against the latest LIVE revision, read by the locked row's id: a parked one is not the head", async () => {
     await save({ expectedHeadRef: "rev-head" }).catch(() => undefined);
+
+    // O(1) in the length of the history: the (articleId, parked, createdAt) index, no join
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({ articleId: "a1", parked: false });
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+  });
+
+  it("finds the head by title (a join) only when the page had no row to lock: the creator before it may have made it", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+
+    await save({ expectedHeadRef: null });
 
     expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({
       article: { source: "ixwiki", title: "Foo" },
