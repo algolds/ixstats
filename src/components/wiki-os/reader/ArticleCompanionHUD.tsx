@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface ArticleCompanionHUDProps {
   title: string;
@@ -309,10 +310,10 @@ export function ArticleCompanionHUD({
               aria-hidden="true"
               className="border-border/20 min-h-[10.5rem] space-y-2.5 border-t pt-2.5"
             >
-              <div className="h-4 w-3/4 animate-pulse rounded bg-white/5" />
-              <div className="h-4 w-2/3 animate-pulse rounded bg-white/5" />
-              <div className="h-4 w-3/4 animate-pulse rounded bg-white/5" />
-              <div className="h-12 w-full animate-pulse rounded bg-white/5" />
+              <Skeleton className="h-4 w-3/4 rounded bg-white/5" />
+              <Skeleton className="h-4 w-2/3 rounded bg-white/5" />
+              <Skeleton className="h-4 w-3/4 rounded bg-white/5" />
+              <Skeleton className="h-12 w-full rounded bg-white/5" />
             </div>
           )}
 
