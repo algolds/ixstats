@@ -47,14 +47,13 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
     },
     {
       id: "export",
-      title: "Portable MDX & JSON Snapshot Exporter",
+      title: "Page Exporter",
       description:
-        "Download portable Markdown files with YAML frontmatter or structured JSON AST dumps.",
+        "Download pages as a MediaWiki XML dump (export-0.11), with their full history if you are signed in.",
       legacyAlias: "Special:Export",
       icon: Download,
-      href: "/api/wiki/export?format=json",
-      isExternal: true,
-      badge: "MDX / JSON",
+      href: "/util/export",
+      badge: "XML",
       color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
     },
     {
@@ -96,7 +95,6 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
             <Link
               key={tool.id}
               href={withBasePath(tool.href)}
-              target={(tool as any).isExternal ? "_blank" : undefined}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
