@@ -89,7 +89,7 @@ const MAX_BOUNDARY_LENGTH = 70;
  * it, and a boundary of 8 KB (what nginx lets through in a header) would make that search cost seconds.
  */
 function multipartBoundary(contentType: string): string {
-  let boundary: string | undefined;
+  let boundary: string | null = null;
   try {
     boundary = new MIMEType(contentType).params.get("boundary");
   } catch {
