@@ -25,12 +25,9 @@ export const SettingsDropdown = memo(function SettingsDropdown({
       <PopoverTrigger className="wikios-editor-format-btn" title="Editor Settings">
         <Settings className="h-3.5 w-3.5" />
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
-      >
-        <div className="flex flex-col gap-2.5 p-1 text-xs">
-          <div className="mb-1 border-b border-[var(--wikios-border)] pb-1.5 font-semibold text-[var(--wikios-text-dim)]">
+      <PopoverContent align="end" className="text-label w-56 p-2">
+        <div className="text-footnote flex flex-col gap-2.5 p-1">
+          <div className="border-separator text-label-secondary mb-1 border-b pb-1.5 font-semibold">
             Editor Settings
           </div>
 

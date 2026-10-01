@@ -20,7 +20,7 @@ function EditorLoading({ text = "Loading editor..." }: { text?: string }) {
   return (
     <div className="wikios-loading flex min-h-[400px] flex-col items-center justify-center">
       <div className="wikios-loading-spinner" />
-      <p className="mt-4 text-sm text-zinc-400">{text}</p>
+      <p className="text-body text-label-secondary mt-4">{text}</p>
     </div>
   );
 }
@@ -183,7 +183,7 @@ export function WikiEditBridge({
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
       {editConflict && (
-        <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+        <div className="rounded-row border-red/30 bg-red/10 text-body text-red mb-4 border p-4">
           <strong>Edit Conflict Detected:</strong> Someone else modified this page since you opened
           it. Please review your edits before saving.
         </div>

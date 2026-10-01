@@ -39,7 +39,7 @@ export default function HistoryPage() {
         <div>
           <Link
             href={withBasePath(`/wiki/${encodeURIComponent(rawSlug)}`)}
-            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to {title}

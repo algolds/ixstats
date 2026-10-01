@@ -4,6 +4,7 @@
 // and renders enriched views with IxStats data integration.
 
 import { useMemo } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { useParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -148,21 +149,21 @@ export default function CategoryPage({
   return (
     <WikiOSLayout hideTitleHeading>
       {isLoading ? (
-        <div className="mx-auto w-full max-w-6xl animate-pulse space-y-6 select-none">
-          <div className="bg-muted/40 border-border/40 h-40 rounded-3xl border" />
+        <div className="mx-auto w-full max-w-6xl space-y-6 select-none" aria-busy="true">
+          <Skeleton className="rounded-card h-40 w-full" />
           <div className="space-y-3">
-            <div className="bg-muted/50 h-5 w-32 rounded-lg" />
+            <Skeleton className="rounded-control h-5 w-32" />
             <div className="flex flex-wrap gap-2">
               {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="bg-muted/40 h-8 w-28 rounded-xl" />
+                <Skeleton key={i} className="rounded-row h-8 w-28" />
               ))}
             </div>
           </div>
           <div className="space-y-3 pt-4">
-            <div className="bg-muted/50 h-5 w-40 rounded-lg" />
+            <Skeleton className="rounded-control h-5 w-40" />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-muted/40 h-16 rounded-2xl" />
+                <Skeleton key={i} className="rounded-card h-16" />
               ))}
             </div>
           </div>

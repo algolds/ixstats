@@ -2,12 +2,10 @@
 // src/components/wiki-os/reader/StashManagerModal.tsx
 // Quick modal for managing multi-stash assignments on an article page.
 
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Bookmark,
-  Xmark as X,
   Check,
   Plus,
   WarningCircle as AlertCircle,
@@ -17,6 +15,15 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
 
 const PRESET_COLORS = [
   "#3b82f6",
@@ -46,13 +53,6 @@ export function StashManagerModal({
   const [newColor, setNewColor] = useState("#3b82f6");
   const [showCreate, setShowCreate] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
-
   const utils = api.useUtils();
   const stashesQuery = api.wikios.getStashes.useQuery(undefined, { staleTime: 5000 });
   const createMutation = api.wikios.createStash.useMutation({
@@ -81,29 +81,23 @@ export function StashManagerModal({
     createMutation.mutate({ name: trimmed, color: newColor });
   };
 
-  if (!mounted) return null;
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-sm gap-4 p-5">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="text-headline flex items-center gap-2">
+            <Bookmark className="text-tint size-4" aria-hidden="true" />
+            Save to Lore Stash
+          </DialogTitle>
+          <DialogDescription>
+            Choose which stashes to save <strong>{pageTitle.replace(/_/g, " ")}</strong> to:
+          </DialogDescription>
+        </DialogHeader>
 
-  return createPortal(
-    <div className="wikios-modal-backdrop" onClick={onClose}>
-      <div className="wikios-quick-modal wikios-stash-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="wikios-quick-modal-header">
-          <div className="wikios-quick-modal-title">
-            <Bookmark className="h-4 w-4" />
-            <span>Save to Lore Stash</span>
-          </div>
-          <button onClick={onClose} className="wikios-quick-modal-close" type="button">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <p className="wikios-stash-modal-subtitle">
-          Choose which stashes to save <strong>{pageTitle.replace(/_/g, " ")}</strong> to:
-        </p>
-
-        <div className="wikios-quick-modal-body">
+        <div className="max-h-[50vh] space-y-1 overflow-y-auto">
           {stashesQuery.isLoading && (
-            <div className="wikios-quick-modal-loading">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading stashes...
+            <div className="text-footnote text-label-secondary flex items-center gap-2 p-3">
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading stashes...
             </div>
           )}
 
@@ -113,22 +107,33 @@ export function StashManagerModal({
               <button
                 key={s.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => onToggle(s.id)}
                 className={cn(
-                  "wikios-stash-manager-row",
-                  active && "wikios-stash-manager-row-active"
+                  "rounded-control duration-fast flex w-full items-center gap-3 px-3 py-2 text-left transition-colors",
+                  active ? "bg-tint-fill" : "hover:bg-fill-4"
                 )}
               >
-                <span className="wikios-stash-manager-color" style={{ background: s.color }} />
-                <span className="wikios-stash-manager-name">{s.name}</span>
-                <span className="wikios-stash-manager-count">{s.itemCount} pages</span>
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ background: s.color }}
+                  aria-hidden="true"
+                />
+                <span className="text-body text-label min-w-0 flex-1 truncate">{s.name}</span>
+                <span className="text-footnote text-label-secondary tabular-nums">
+                  {s.itemCount} pages
+                </span>
                 <span
                   className={cn(
-                    "wikios-stash-manager-toggle",
-                    active && "wikios-stash-manager-toggle-active"
+                    "flex size-6 shrink-0 items-center justify-center rounded-full",
+                    active ? "bg-tint text-on-tint" : "bg-fill-3 text-label-secondary"
                   )}
                 >
-                  {active ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                  {active ? (
+                    <Check className="size-3.5" aria-hidden="true" />
+                  ) : (
+                    <Plus className="size-3.5" aria-hidden="true" />
+                  )}
                 </span>
               </button>
             );
@@ -136,8 +141,8 @@ export function StashManagerModal({
 
           {/* Create new stash */}
           {showCreate ? (
-            <div className="wikios-stash-create-form">
-              <input
+            <div className="rounded-row bg-surface-secondary space-y-3 p-3">
+              <Input
                 type="text"
                 value={newName}
                 onChange={(e) => {
@@ -145,78 +150,86 @@ export function StashManagerModal({
                   setError(null);
                 }}
                 placeholder="e.g. Characters, Geography, Timeline..."
-                className="wikios-stash-create-input"
                 autoFocus
                 maxLength={100}
+                aria-label="New stash name"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleCreate();
-                  if (e.key === "Escape") setShowCreate(false);
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    setShowCreate(false);
+                  }
                 }}
               />
-              <div className="wikios-stash-create-colors">
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Stash colour">
                 {PRESET_COLORS.map((c) => (
                   <button
                     key={c}
                     type="button"
+                    role="radio"
+                    aria-checked={newColor === c}
+                    aria-label={c}
                     onClick={() => setNewColor(c)}
                     className={cn(
-                      "wikios-stash-preset-color",
-                      newColor === c && "wikios-stash-preset-active"
+                      "duration-fast size-6 rounded-full transition-transform",
+                      newColor === c
+                        ? "ring-tint ring-offset-surface-secondary scale-110 ring-2 ring-offset-2"
+                        : ""
                     )}
                     style={{ background: c }}
                   />
                 ))}
               </div>
               {error && (
-                <div className="wikios-stash-error">
-                  <AlertCircle className="mr-1 inline h-3 w-3" /> {error}
-                </div>
+                <p className="text-footnote text-red flex items-center gap-1">
+                  <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" /> {error}
+                </p>
               )}
-              <div className="wikios-stash-create-actions">
-                <button
-                  type="button"
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="gray"
                   onClick={() => {
                     setShowCreate(false);
                     setError(null);
                   }}
-                  className="wikios-stash-create-cancel"
                 >
                   Cancel
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
                   onClick={handleCreate}
-                  className="wikios-stash-create-save"
                   disabled={!newName.trim() || createMutation.isPending}
                 >
-                  {createMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {createMutation.isPending ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : null}
                   {createMutation.isPending ? "Creating..." : "Create"}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="wikios-stash-manager-add"
+              className="rounded-control text-body text-tint duration-fast hover:bg-fill-4 flex w-full items-center gap-2 px-3 py-2 text-left transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-4" aria-hidden="true" />
               Create new stash
-              <span className="wikios-stash-manager-hint">{allStashes.length}/25</span>
+              <span className="text-footnote text-label-secondary ml-auto tabular-nums">
+                {allStashes.length}/25
+              </span>
             </button>
           )}
         </div>
 
-        <Link
-          href={withBasePath("/stashes")}
-          className="wikios-quick-modal-fullpage"
-          onClick={onClose}
-        >
-          <ChevronRight className="h-3 w-3" />
-          Go to My Stashes
-        </Link>
-      </div>
-    </div>,
-    document.body
+        <Button asChild variant="plain" size="sm" className="justify-start">
+          <Link href={withBasePath("/stashes")} onClick={onClose}>
+            <ChevronRight aria-hidden="true" />
+            Go to My Stashes
+          </Link>
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }

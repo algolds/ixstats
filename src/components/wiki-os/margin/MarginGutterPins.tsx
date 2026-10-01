@@ -7,7 +7,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { ChatBubble as MessageSquare, DesignPencil as Highlighter } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface GutterPinItem {
   id: string;
@@ -273,7 +272,6 @@ export function MarginGutterPins({
   }, [contentRef]);
 
   const handlePinClick = (pin: GutterPinItem) => {
-    soundEffects.press();
     if (pin.type === "annotation") {
       onSelectAnchor(null, pin.id, "markup");
     } else if (pin.type === "thread") {
@@ -361,11 +359,11 @@ export function MarginGutterPins({
           >
             {/* Elevated Flyout Tooltip (Floats above pin to avoid blocking article text) */}
             {isHovered && hasFlyout && (
-              <div className="animate-in fade-in zoom-in-95 pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 px-3 py-1.5 text-xs whitespace-nowrap text-[var(--wikios-text)] shadow-2xl backdrop-blur-xl duration-150">
+              <div className="animate-in fade-in zoom-in-95 rounded-row border-separator bg-surface text-footnote text-label shadow-floating pointer-events-none absolute right-0 bottom-full z-50 mb-2 flex max-w-xs origin-bottom-right flex-col gap-1 border px-3 py-1.5 whitespace-nowrap duration-150">
                 {isCluster ? (
                   <>
-                    <div className="flex items-center gap-2 border-b border-[var(--wikios-border)] pb-1 text-xs font-bold text-[var(--wikios-text)]">
-                      <span className="py-0.2 bg-margin-accent rounded px-1.5 text-xs font-bold text-stone-950">
+                    <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-1 font-semibold">
+                      <span className="py-0.2 bg-margin-accent rounded-control-sm text-caption px-1.5 font-semibold text-(--margin-badge-text)">
                         Cluster
                       </span>
                       <span>({pin.count} items)</span>
@@ -375,10 +373,7 @@ export function MarginGutterPins({
                     </div>
                     <div className="max-h-32 space-y-0.5 overflow-y-auto">
                       {pin.children?.slice(0, 3).map((c) => (
-                        <div
-                          key={c.id}
-                          className="truncate text-xs font-medium text-[var(--wikios-text-dim)]"
-                        >
+                        <div key={c.id} className="text-caption text-label-secondary truncate">
                           • {c.title}
                         </div>
                       ))}
@@ -386,7 +381,7 @@ export function MarginGutterPins({
                   </>
                 ) : (
                   <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 bg-margin-accent rounded px-1.5 text-xs font-black tracking-wider text-stone-950 uppercase">
+                    <span className="py-0.2 bg-margin-accent rounded-control-sm text-eyebrow px-1.5 text-(--margin-badge-text)">
                       {isAnnotation ? "Note" : "Thread"}
                     </span>
                     <span className="opacity-40">·</span>
@@ -403,16 +398,16 @@ export function MarginGutterPins({
                 onClick={() => handlePinClick(pin)}
                 aria-label={pin.title}
                 className={cn(
-                  "bg-margin-accent flex cursor-pointer items-center justify-center rounded-full border border-yellow-400/60 font-bold text-stone-950 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
+                  "bg-margin-accent border-yellow/60 shadow-card flex cursor-pointer items-center justify-center rounded-full border font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                   isHovered
-                    ? "z-40 scale-110 border-yellow-400 shadow-[0_0_14px_rgba(254,240,54,0.5)]"
+                    ? "border-yellow/50 z-40 scale-110"
                     : isCluster
-                      ? "h-6 min-w-7 px-2 py-0.5 hover:scale-105"
-                      : "h-6 w-6 hover:scale-105"
+                      ? "h-6 min-w-7 px-2 py-0.5"
+                      : "h-6 w-6"
                 )}
               >
                 {isCluster ? (
-                  <div className="flex items-center gap-0.5 text-xs font-black">
+                  <div className="text-caption flex items-center gap-0.5 font-semibold">
                     <span>💬{pin.threadCount}</span>
                     {pin.annotationCount ? <span>🖍️{pin.annotationCount}</span> : null}
                   </div>

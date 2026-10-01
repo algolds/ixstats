@@ -16,6 +16,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import {
   OpenBook as BookOpen,
@@ -187,9 +188,11 @@ export function GlobalLinkTooltips() {
 
   if (!activeLink || typeof document === "undefined") return null;
 
+  // Hover card anchored to an arbitrary link element (the HoverCard primitive needs a React
+  // trigger), so it portals itself with the hover-card styling: surface-elevated, z-popover.
   return createPortal(
     <div
-      className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
+      className="global-link-tooltip animate-facet-in z-popover rounded-card border-separator bg-surface-elevated text-label shadow-floating fixed w-80 border p-3"
       style={{ left: activeLink.x, top: activeLink.y }}
       onMouseEnter={keepOpen}
       onMouseLeave={() => {
@@ -222,26 +225,26 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium">
+        <BookOpen className="text-tint size-3.5 shrink-0" aria-hidden="true" />
+        <span className="text-label text-headline truncate">{title}</span>
+        <span className="bg-fill-3 text-label-secondary text-caption ml-auto shrink-0 rounded-full px-1.5 py-0.5">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
       {intro?.text ? (
-        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote line-clamp-4 leading-relaxed">
           {intro.text.substring(0, 300)}
           {intro.text.length > 300 ? "…" : ""}
         </p>
       ) : (
-        <div className="bg-muted h-10 animate-pulse rounded" />
+        <Skeleton className="rounded-control-sm h-10 w-full" />
       )}
       <a
         href={articleUrl}
         {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className="flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
+        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
-        Read full article <ExternalLink className="h-2.5 w-2.5" />
+        Read full article <ExternalLink className="size-3" />
       </a>
     </div>
   );
@@ -263,10 +266,10 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-          <span className="text-foreground text-sm font-medium">Loading thread...</span>
+          <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+          <span className="text-headline text-label">Loading thread...</span>
         </div>
-        <div className="bg-muted h-10 animate-pulse rounded" />
+        <Skeleton className="rounded-control-sm h-10 w-full" />
       </div>
     );
   }
@@ -274,31 +277,31 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
+        <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+        <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
       {thread.forumName && (
-        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
+        <span className="bg-orange/10 text-caption text-orange inline-block rounded-full px-1.5 py-0.5">
           {thread.forumName}
         </span>
       )}
       {thread.excerpt && (
-        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote line-clamp-3 leading-relaxed">
           {thread.excerpt.substring(0, 250)}
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
+      <div className="text-label-secondary text-footnote flex items-center gap-3">
         <span className="flex items-center gap-0.5">
-          <Users className="h-2.5 w-2.5" />
+          <Users className="size-3" />
           {thread.author}
         </span>
         <span className="flex items-center gap-0.5">
-          <MessageSquare className="h-2.5 w-2.5" />
+          <MessageSquare className="size-3" />
           {thread.replyCount} replies
         </span>
         <span className="flex items-center gap-0.5">
-          <Eye className="h-2.5 w-2.5" />
+          <Eye className="size-3" />
           {thread.viewCount}
         </span>
       </div>
@@ -306,9 +309,9 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         href={forumUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-xs font-medium text-orange-500 transition-colors hover:text-orange-400"
+        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
-        Open thread <ExternalLink className="h-2.5 w-2.5" />
+        Open thread <ExternalLink className="size-3" />
       </a>
     </div>
   );

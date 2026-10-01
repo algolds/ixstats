@@ -2,6 +2,7 @@
 // src/app/(wiki-os)/wiki/diff/page.tsx
 // WikiOS Native Revision Diff Comparator with DiffViewer
 
+import { cn } from "~/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -45,7 +46,7 @@ export default function DiffPage() {
         <div>
           <Link
             href={withBasePath("/util")}
-            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Utilities
@@ -53,13 +54,13 @@ export default function DiffPage() {
         </div>
 
         {isLoading && (
-          <div className="border-border/40 bg-card/50 flex h-64 items-center justify-center rounded-2xl border">
-            <div className="border-wiki h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="border-separator bg-surface rounded-card flex h-64 items-center justify-center border">
+            <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
         {error && (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-xs text-red-400">
+          <div className="rounded-card border-red/30 bg-red/10 text-footnote text-red border p-6">
             Failed to load revision comparison: {error.message}
           </div>
         )}
@@ -67,28 +68,27 @@ export default function DiffPage() {
         {data && (
           <div className="space-y-4">
             {/* Diff Meta Card */}
-            <div className="border-border/40 bg-card/75 space-y-4 rounded-2xl border p-6 backdrop-blur-xl">
+            <div className="border-separator bg-surface rounded-card space-y-4 border p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="text-wiki text-xs font-semibold tracking-wider uppercase">
-                    Comparing Revisions
-                  </span>
-                  <h2 className="text-foreground mt-1 text-lg font-bold">
+                  <span className="text-tint text-eyebrow">Comparing Revisions</span>
+                  <h2 className="text-label text-title-3 mt-1">
                     r{data.from.revid} &rarr; r{data.to.revid}
                   </h2>
                 </div>
 
                 {/* Layout Switcher */}
                 <div className="flex items-center gap-2">
-                  <div className="border-border/40 bg-secondary/50 flex rounded-xl border p-0.5">
+                  <div className="border-separator bg-fill-3 rounded-row flex border p-0.5">
                     <button
                       type="button"
                       onClick={() => setLayout("unified")}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={cn(
+                        "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         layout === "unified"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                          ? "bg-background text-label shadow-card"
+                          : "text-label-secondary hover:text-label"
+                      )}
                     >
                       <AlignLeft className="h-3.5 w-3.5" />
                       Unified
@@ -96,11 +96,12 @@ export default function DiffPage() {
                     <button
                       type="button"
                       onClick={() => setLayout("split")}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={cn(
+                        "rounded-control text-caption flex items-center gap-1.5 px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                         layout === "split"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                          ? "bg-background text-label shadow-card"
+                          : "text-label-secondary hover:text-label"
+                      )}
                     >
                       <Columns2 className="h-3.5 w-3.5" />
                       Split
@@ -112,7 +113,7 @@ export default function DiffPage() {
                     <button
                       type="button"
                       onClick={() => setUndoConfirm(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
+                      className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 inline-flex items-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                     >
                       <Undo className="h-3.5 w-3.5" />
                       Revert to r{data.from.revid}
@@ -131,14 +132,14 @@ export default function DiffPage() {
                             });
                           }
                         }}
-                        className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 active:scale-[0.98]"
+                        className="rounded-row bg-yellow text-caption hover:bg-yellow/70 px-3 py-1.5 font-semibold text-black active:scale-[0.98]"
                       >
                         {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
                       </button>
                       <button
                         type="button"
                         onClick={() => setUndoConfirm(false)}
-                        className="border-border/50 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl border px-3 py-1.5 text-xs font-medium"
+                        className="border-separator bg-fill-3 text-label hover:bg-fill-2 rounded-row text-caption border px-3 py-1.5"
                       >
                         Cancel
                       </button>
@@ -149,7 +150,7 @@ export default function DiffPage() {
 
               {/* Status alerts */}
               {revertMutation.isSuccess && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
+                <div className="rounded-row border-green/30 bg-green/10 text-caption text-green flex items-center gap-2 border px-3 py-2">
                   <Check className="h-4 w-4" />
                   Successfully reverted to revision r{data.from.revid}.
                 </div>
@@ -157,7 +158,7 @@ export default function DiffPage() {
             </div>
 
             {/* DiffViewer Component */}
-            <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
+            <div className="border-separator bg-surface rounded-card overflow-hidden border p-4">
               <DiffViewer
                 oldCode={data.oldWikitext ?? ""}
                 newCode={data.newWikitext ?? ""}
@@ -171,7 +172,7 @@ export default function DiffPage() {
         )}
 
         {!isLoading && !data && !torev && (
-          <div className="border-border/50 bg-card/30 text-muted-foreground rounded-2xl border border-dashed p-12 text-center text-xs">
+          <div className="border-separator bg-surface text-label-secondary rounded-card text-footnote border border-dashed p-12 text-center">
             No revisions selected for comparison. Specify <code>?to=REV</code> or{" "}
             <code>?from=REV&to=REV</code> in the URL.
           </div>

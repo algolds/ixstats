@@ -223,7 +223,7 @@ export default function WikiOSArticlePage() {
             {isLoading && !data && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
-                <p className="mt-4 text-sm text-zinc-400">Loading article...</p>
+                <p className="text-body text-label-secondary mt-4">Loading article...</p>
               </div>
             )}
             {error && !data && (

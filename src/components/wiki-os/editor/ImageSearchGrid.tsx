@@ -230,7 +230,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                       title="Copy wikitext"
                     >
                       {copiedId === img.url ? (
-                        <Check className="h-3 w-3 text-green-400" />
+                        <Check className="text-green h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}

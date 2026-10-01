@@ -8,7 +8,7 @@ import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { Copy, Check, ArrowUpRight, ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import { useNotify } from "~/hooks/useNotify";
 import type { StashedQuoteItem } from "./types";
 
@@ -25,7 +25,6 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(text);
-      soundEffects.press();
       setCopiedId(id);
       notify.success("Quote copied to clipboard");
       setTimeout(() => setCopiedId(null), 1200);
@@ -43,11 +42,11 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
         return (
           <div
             key={q.id}
-            className="group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2.5 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             {/* Left Highlighter Ink Bar */}
             <div
-              className="absolute top-0 bottom-0 left-0 w-1.5 rounded-l-2xl shadow-xs"
+              className="rounded-l-card absolute top-0 bottom-0 left-0 w-1.5"
               style={{
                 backgroundColor: swatchColor,
                 boxShadow: `0 0 10px ${swatchColor}60`,
@@ -58,10 +57,9 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             <div className="flex items-center justify-between gap-2 pl-2">
               <Link
                 href={withBasePath(`/wiki/${q.pageSlug}`)}
-                onClick={() => soundEffects.press()}
-                className="flex max-w-sm items-center gap-1.5 truncate text-xs font-bold text-[var(--wikios-text)] transition-colors hover:text-[var(--wikios-accent)]"
+                className="text-caption text-label hover:text-tint flex max-w-sm items-center gap-1.5 truncate font-semibold transition-colors"
               >
-                <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-[var(--wikios-accent)]" />
+                <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{cleanArticleTitle}</span>
               </Link>
 
@@ -69,13 +67,13 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 <button
                   type="button"
                   onClick={(e) => handleCopyQuote(e, q.id, q.selectedText)}
-                  className="flex h-7 cursor-pointer items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2 text-xs font-semibold text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 cursor-pointer items-center gap-1 border px-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Copy quote"
                 >
                   {copiedId === q.id ? (
                     <>
-                      <Check className="h-3 w-3 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
+                      <Check className="text-green h-3 w-3" />
+                      <span className="text-green">Copied</span>
                     </>
                   ) : (
                     <>
@@ -87,8 +85,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
                 <Link
                   href={withBasePath(`/wiki/${q.pageSlug}`)}
-                  onClick={() => soundEffects.press()}
-                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Open article"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -98,16 +95,16 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
 
             {/* Excerpt Quote Text */}
             <div className="pt-0.5 pl-2">
-              <blockquote className="border-l-2 border-[var(--wikios-border)] py-0.5 pl-3 font-serif text-[12.5px] leading-relaxed text-[var(--wikios-text)] italic">
+              <blockquote className="border-separator text-callout text-label border-l-2 py-0.5 pl-3 font-[family-name:var(--wikios-font-reading)] italic">
                 &ldquo;{q.selectedText}&rdquo;
               </blockquote>
             </div>
 
             {/* Lore Significance Note if present */}
             {q.comment && q.comment !== "Saved quote" && (
-              <div className="ml-2 space-y-0.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-2.5 text-xs text-[var(--wikios-text-muted)] shadow-2xs">
-                <div className="flex items-center gap-1 text-xs font-bold text-[var(--wikios-text)]">
-                  <MessageSquare className="h-3 w-3 text-blue-400" />
+              <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary ml-2 space-y-0.5 border p-2.5">
+                <div className="text-caption text-label flex items-center gap-1 font-semibold">
+                  <MessageSquare className="text-tint h-3 w-3" />
                   <span>Lore Note</span>
                 </div>
                 <p className="leading-relaxed italic">{q.comment}</p>
@@ -115,7 +112,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             )}
 
             {/* Timestamp */}
-            <div className="flex items-center gap-1 pt-0.5 pl-2 text-xs text-[var(--wikios-text-dim)]">
+            <div className="text-footnote text-label-secondary flex items-center gap-1 pt-0.5 pl-2">
               <Clock className="h-2.5 w-2.5" />
               <span>
                 Saved on{" "}

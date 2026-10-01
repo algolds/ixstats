@@ -131,7 +131,7 @@ const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: num
       loading="lazy"
       allow="fullscreen"
       title="Map preview"
-      className="h-32 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5"
+      className="rounded-control border-separator bg-fill-4 h-32 w-full overflow-hidden border"
       style={{ height: 130, border: "none" }}
     />
   );
@@ -158,31 +158,31 @@ export function CoordsPill({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-coords-pill inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:border-white/20 hover:bg-white/10">
-          <MapPin className="h-3 w-3 text-blue-400" />
+        <span className="wikios-coords-pill border-separator bg-fill-4 text-caption text-tint hover:border-separator hover:bg-fill-4 inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
+          <MapPin className="text-tint h-3 w-3" />
           <span>{label}</span>
-          <span className="text-xs tabular-nums opacity-65">
+          <span className="text-footnote tabular-nums opacity-65">
             ({lat.toFixed(2)}, {lng.toFixed(2)})
           </span>
         </span>
       </PopoverTrigger>
-      <PopoverContent className="z-[10001] flex w-64 flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/90 p-3 shadow-2xl backdrop-blur-xl">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-zinc-200">{label}</span>
-          <span className="text-xs text-zinc-400 tabular-nums">Zoom {zoom}</span>
+      <PopoverContent className="flex w-64 flex-col gap-2 p-3">
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label font-semibold">{label}</span>
+          <span className="text-footnote text-label-secondary tabular-nums">Zoom {zoom}</span>
         </div>
 
         <CoordsMiniMap lat={lat} lng={lng} zoom={zoom} />
 
-        <div className="flex flex-col gap-0.5 text-xs font-medium text-zinc-400">
+        <div className="text-caption text-label-secondary flex flex-col gap-0.5">
           <div>
-            Latitude: <span className="text-zinc-200 tabular-nums">{lat.toFixed(4)}</span>
+            Latitude: <span className="text-label tabular-nums">{lat.toFixed(4)}</span>
           </div>
           <div>
-            Longitude: <span className="text-zinc-200 tabular-nums">{lng.toFixed(4)}</span>
+            Longitude: <span className="text-label tabular-nums">{lng.toFixed(4)}</span>
           </div>
           {calc && (
-            <div className="mt-1 font-semibold text-blue-400">
+            <div className="text-tint mt-1 font-semibold">
               Distance: {calc.distanceKm.toLocaleString()} km {calc.bearing} of home
             </div>
           )}
@@ -219,7 +219,7 @@ export function DynamicStatSpan({
   data?: DynamicStatData | null;
 }) {
   if (!data) {
-    return <span className="text-xs text-zinc-500">Loading...</span>;
+    return <span className="text-footnote text-label-secondary">Loading...</span>;
   }
 
   const metadata = data.metadata;
@@ -227,42 +227,40 @@ export function DynamicStatSpan({
   return (
     <Popover>
       <PopoverTrigger>
-        <span className="wikios-stat-span cursor-pointer border-b border-dotted border-white/40 font-semibold text-zinc-200 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:border-white/90 hover:text-white">
+        <span className="wikios-stat-span border-separator text-label hover:border-separator hover:text-tint cursor-pointer border-b border-dotted font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
           {data.value}
         </span>
       </PopoverTrigger>
-      <PopoverContent className="z-[10001] flex w-60 flex-col gap-3 rounded-2xl border border-white/10 bg-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl">
-        <div className="text-xs font-bold tracking-wider text-zinc-500 uppercase">
-          Simulation Metrics
-        </div>
+      <PopoverContent className="flex w-60 flex-col gap-3 p-4">
+        <div className="text-subhead text-label-secondary">Simulation Metrics</div>
 
         <div className="flex flex-col text-left">
-          <span className="text-xs font-medium text-zinc-400">{metadata?.label || "Value"}</span>
-          <span className="mt-0.5 text-xl leading-tight font-bold text-white">{data.value}</span>
+          <span className="text-caption text-label-secondary">{metadata?.label || "Value"}</span>
+          <span className="text-title-2 text-label mt-0.5 tabular-nums">{data.value}</span>
           {metadata?.comparisonRank && (
-            <span className="mt-1 text-xs font-semibold text-blue-400">
+            <span className="text-caption text-tint mt-1 font-semibold">
               {metadata.comparisonRank}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-white/5 pt-2.5 text-xs text-zinc-400">
+        <div className="border-separator text-footnote text-label-secondary flex flex-col gap-1 border-t pt-2.5">
           {metadata?.countryName && (
             <div className="flex justify-between">
               <span>Country</span>
-              <span className="font-medium text-zinc-200">{metadata.countryName}</span>
+              <span className="text-label font-medium">{metadata.countryName}</span>
             </div>
           )}
           {metadata?.companyName && (
             <div className="flex justify-between">
               <span>Enterprise</span>
-              <span className="font-medium text-zinc-200">{metadata.companyName}</span>
+              <span className="text-label font-medium">{metadata.companyName}</span>
             </div>
           )}
           {metadata?.lastCalculated && (
             <div className="flex justify-between">
               <span>Updated</span>
-              <span className="text-zinc-200 tabular-nums">
+              <span className="text-label tabular-nums">
                 {new Date(metadata.lastCalculated).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
@@ -275,7 +273,7 @@ export function DynamicStatSpan({
         {metadata?.detailsUrl && (
           <Link
             href={withBasePath(metadata.detailsUrl)}
-            className="border-t border-white/5 pt-2 text-center text-xs font-bold text-blue-400 transition-colors hover:text-blue-300"
+            className="border-separator text-caption text-tint hover:text-tint border-t pt-2 text-center font-semibold transition-colors"
           >
             Analyze Dashboard &rarr;
           </Link>

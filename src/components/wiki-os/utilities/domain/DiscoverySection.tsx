@@ -32,7 +32,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Compass,
       href: "/util/recent-changes",
       badge: "Real-Time",
-      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+      color: "border-blue/20 bg-blue/10 text-blue",
     },
     {
       id: "watchlist",
@@ -42,7 +42,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: BookmarkBook,
       href: "/stashes",
       badge: "Stash Integrated",
-      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+      color: "border-yellow/20 bg-yellow/10 text-yellow",
     },
     {
       id: "contributions",
@@ -52,7 +52,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: User,
       href: "/util/contributions",
       badge: "Identity",
-      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+      color: "border-green/20 bg-green/10 text-green",
     },
     {
       id: "random",
@@ -62,7 +62,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Shuffle,
       href: "/util/random",
       badge: "Serendipity",
-      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
+      color: "border-indigo/20 bg-indigo/10 text-indigo",
     },
     {
       id: "categories",
@@ -72,7 +72,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: Folder,
       href: "/util/categories",
       badge: "Taxonomy",
-      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+      color: "border-teal/20 bg-teal/10 text-teal",
     },
     {
       id: "media-commons",
@@ -82,7 +82,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: MediaImage,
       href: "/util/repository",
       badge: "7,555 Assets",
-      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+      color: "border-blue/20 bg-blue/10 text-blue",
     },
     {
       id: "backlinks",
@@ -93,7 +93,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       icon: LinkIcon,
       href: "/util/whatlinkshere",
       badge: "O(1) Graph",
-      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+      color: "border-teal/20 bg-teal/10 text-teal",
     },
     {
       id: "feeds",
@@ -104,7 +104,7 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
       href: "/api/wiki/feed/recent-changes.atom",
       isExternal: true,
       badge: "Atom 1.0",
-      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+      color: "border-yellow/20 bg-yellow/10 text-yellow",
     },
   ];
 
@@ -121,8 +121,8 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <Compass className="h-4 w-4 text-blue-400" />
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+        <Compass className="text-tint h-4 w-4" />
+        <h3 className="text-label-secondary text-subhead">
           Discovery & Syndication ({filtered.length})
         </h3>
       </div>
@@ -138,31 +138,29 @@ export function DiscoverySection({ searchFilter }: DiscoverySectionProps) {
               rel={tool.isExternal ? "noreferrer" : undefined}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
+              className="group border-separator bg-surface hover:border-tint/40 hover:bg-surface rounded-row hover:shadow-floating relative flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
             >
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg border bg-gradient-to-br ${tool.color}`}
+                    className={`rounded-control flex h-9 w-9 items-center justify-center border ${tool.color}`}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
+                  <span className="border-separator bg-fill-3 text-label-secondary text-caption rounded-full border px-2 py-0.5">
                     {tool.badge}
                   </span>
                 </div>
 
-                <h4 className="text-foreground group-hover:text-wiki text-sm font-semibold">
-                  {tool.title}
-                </h4>
-                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                <h4 className="text-label group-hover:text-tint text-headline">{tool.title}</h4>
+                <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
                   {tool.description}
                 </p>
               </div>
 
-              <div className="border-border/30 text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs">
-                <span className="font-mono text-xs opacity-70">{tool.legacyAlias}</span>
-                <ArrowRight className="text-muted-foreground group-hover:text-wiki h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
+              <div className="border-separator text-label-secondary text-footnote mt-4 flex items-center justify-between border-t pt-3">
+                <span className="text-footnote tabular-nums opacity-70">{tool.legacyAlias}</span>
+                <ArrowRight className="text-label-secondary group-hover:text-tint h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </Link>
           );

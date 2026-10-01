@@ -29,23 +29,20 @@ export const StashDropdown = memo(function StashDropdown({
       >
         <Bookmark className="h-3.5 w-3.5" />
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="z-[10001] flex w-80 flex-col gap-2 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-3 text-[var(--wikios-text)] shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--wikios-text-muted)]">
-            <Bookmark className="h-3.5 w-3.5 text-amber-400" />
+      <PopoverContent align="end" className="text-label flex w-80 flex-col gap-2 p-3">
+        <div className="border-separator flex items-center justify-between border-b pb-2">
+          <span className="text-caption text-label-secondary flex items-center gap-1.5 font-semibold">
+            <Bookmark className="text-yellow h-3.5 w-3.5" />
             <span>Stash Explorer</span>
           </span>
           {modal.stashes.length > 1 && (
             <select
               value={modal.activeStashId}
               onChange={(e) => modal.setSelectedStashId(e.target.value)}
-              className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-zinc-300 outline-none"
+              className="rounded-control-sm border-separator bg-fill-4 text-footnote text-label-secondary border px-2 py-0.5 outline-none"
             >
               {modal.stashes.map((s) => (
-                <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
+                <option key={s.id} value={s.id} className="bg-surface-secondary text-label">
                   {s.name} ({s.itemCount})
                 </option>
               ))}
@@ -54,10 +51,10 @@ export const StashDropdown = memo(function StashDropdown({
         </div>
 
         {modal.imageItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400">
+          <div className="text-label-secondary flex flex-col items-center justify-center p-6 text-center">
             <ImageIcon className="mb-2 h-6 w-6 opacity-40" />
-            <div className="text-xs">No media files in this stash</div>
-            <div className="mt-1 text-xs text-zinc-500">
+            <div className="text-footnote">No media files in this stash</div>
+            <div className="text-footnote text-label-secondary mt-1">
               Stash Commons images from the repository to quickly insert them here.
             </div>
           </div>

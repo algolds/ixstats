@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
 import { cn } from "~/lib/utils";
 import { IxWikiLogo } from "./IxWikiLogo";
 import { IxWikiWordmark } from "./IxWikiWordmark";
 import { motion } from "motion/react";
+import { PRESS_SCALE, springSnappy } from "~/lib/design/motion";
 
 interface WikiOSBrandLockupProps {
   className?: string;
@@ -27,36 +27,21 @@ export function WikiOSBrandLockup({
       <div
         className={cn("group inline-flex cursor-default items-center gap-3 select-none", className)}
       >
-        {/* Apple-grade glass icon tile */}
+        {/* Icon tile */}
         <div
           className={cn(
-            "relative flex items-center justify-center overflow-hidden rounded-2xl border border-white/15 dark:border-white/10",
-            "bg-gradient-to-b from-white/90 via-white/70 to-white/50 dark:from-zinc-800/80 dark:via-zinc-900/80 dark:to-black/80",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_8px_24px_rgba(0,0,0,0.4)]",
-            "backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out group-hover:scale-105 group-active:scale-95",
-            isCompact ? "h-9 w-9 rounded-xl" : "h-11 w-11 rounded-2xl"
+            "border-separator bg-surface relative flex items-center justify-center overflow-hidden border",
+            isCompact ? "rounded-row size-9" : "rounded-card size-11"
           )}
         >
-          {/* Ambient inner glow */}
-          <div className="absolute inset-0 bg-radial from-blue-500/10 to-transparent opacity-60 dark:opacity-80" />
-
-          {/* Logomark */}
-          <IxWikiLogo
-            size={isCompact ? 20 : 24}
-            className={cn(
-              "text-wiki relative z-10 transition-transform duration-300 group-hover:scale-105 dark:text-blue-400"
-            )}
-          />
-
-          {/* Shimmer sweep */}
-          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full dark:via-white/10" />
+          <IxWikiLogo size={isCompact ? 20 : 24} className="text-tint relative" />
         </div>
 
         {/* Text Stack */}
         <div className="flex flex-col justify-center text-left">
-          <IxWikiWordmark size={isCompact ? "sm" : "md"} className="text-foreground" />
+          <IxWikiWordmark size={isCompact ? "sm" : "md"} className="text-label" />
           {showSubtitle && !isCompact && (
-            <span className="text-muted-foreground mt-0.5 text-xs font-medium tracking-wider uppercase">
+            <span className="text-footnote text-label-secondary mt-0.5">
               Worldbuilding Encyclopedia
             </span>
           )}
@@ -75,30 +60,23 @@ export function WikiOSBrandLockup({
     >
       {/* 1. Free-Standing Laurel Emblem */}
       <motion.div
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.96 }}
-        transition={{ type: "spring", stiffness: 360, damping: 24 }}
+        whileTap={{ scale: PRESS_SCALE }}
+        transition={springSnappy}
         className="relative mb-2.5 flex cursor-pointer items-center justify-center"
       >
         {/* The Laurel Logo */}
-        <IxWikiLogo
-          size={84}
-          className="text-wiki relative z-10 h-18 w-18 drop-shadow-[0_4px_16px_rgba(29,78,137,0.2)] transition-transform duration-300 group-hover:scale-105 sm:h-22 sm:w-22 dark:text-blue-400 dark:drop-shadow-[0_4px_20px_rgba(96,165,250,0.35)]"
-        />
+        <IxWikiLogo size={84} className="text-tint relative size-18 sm:size-22" />
       </motion.div>
 
       {/* 2. Wordmark ("IxWiki") */}
       <div className="mb-1 flex items-center justify-center">
-        <IxWikiWordmark
-          size="2xl"
-          className="leading-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:brightness-110"
-        />
+        <IxWikiWordmark size="2xl" className="leading-none" />
       </div>
 
       {/* 3. Subtitle & Editorial Tagline */}
       {showSubtitle && (
-        <div className="text-muted-foreground/80 mt-1 flex items-center justify-center text-xs font-medium tracking-wide">
-          <span className="text-muted-foreground/80 text-xs leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
+        <div className="mt-1 flex items-center justify-center">
+          <span className="text-eyebrow text-label-secondary leading-none">
             Worldbuilding Encyclopedia
           </span>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React from "react";
 import Link from "next/link";
 import { User, EditPencil as PenTool, Calendar } from "iconoir-react";
@@ -42,7 +43,7 @@ export function EditorialMastheadHeader({
   const lastEditorAvatar = authorInfo?.lastEditorAvatar || null;
 
   return (
-    <header className="wikios-editorial-masthead border-border/40 relative mb-8 border-b pt-2 pb-6 select-none">
+    <header className="wikios-editorial-masthead border-separator relative mb-8 border-b pt-2 pb-6 select-none">
       {/* Subtle Ambient Radial Aura */}
       <div
         aria-hidden="true"
@@ -53,33 +54,31 @@ export function EditorialMastheadHeader({
       />
 
       {/* Top Bar: Breadcrumb */}
-      <div className="text-muted-foreground mb-3.5 flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
+      <div className="text-label-secondary text-eyebrow mb-3.5 flex items-center gap-1">
         <CategoryBreadcrumb title={title} />
       </div>
 
       {/* Main Title Display */}
       <div className="mb-4 flex flex-wrap items-baseline gap-3">
-        <h1 className="text-foreground font-['Host_Grotesk'] text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
-          {title.replace(/_/g, " ")}
-        </h1>
+        <h1 className="text-large-title text-label lg:text-display">{title.replace(/_/g, " ")}</h1>
         <WatchButton title={title} wikiSource={wikiSource} />
       </div>
 
       {/* Metadata & Awards Ledger */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-1">
-        <div className="text-muted-foreground flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[12px]">
+        <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-3.5 gap-y-2">
           {/* Author Attribution */}
           {creatorName && (
             <div className="flex items-center gap-1.5 font-medium">
-              <span className="text-muted-foreground/75 text-xs font-normal">Author:</span>
+              <span className="text-label-secondary text-footnote font-normal">Author:</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="group/author text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                className="group/author text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-1.5 rounded-full border bg-black/5 px-2.5 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 {creatorAvatar ? (
-                  <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
+                  <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
                     <img
                       src={creatorAvatar}
                       alt={creatorName}
@@ -88,10 +87,10 @@ export function EditorialMastheadHeader({
                         (e.currentTarget as HTMLElement).style.display = "none";
                       }}
                     />
-                    <User className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
+                    <User className="text-tint absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
                   </span>
                 ) : (
-                  <User className="h-3 w-3 shrink-0 text-wiki" />
+                  <User className="text-tint h-3 w-3 shrink-0" />
                 )}
                 <span>{creatorName}</span>
               </Link>
@@ -103,18 +102,16 @@ export function EditorialMastheadHeader({
             creatorName &&
             lastEditorName.toLowerCase() !== creatorName.toLowerCase() && (
               <div className="flex items-center gap-1.5 font-medium">
-                <span className="text-muted-foreground/30 select-none">•</span>
-                <span className="text-muted-foreground/75 text-xs font-normal">
-                  Updated by:
-                </span>
+                <span className="text-label-secondary select-none">•</span>
+                <span className="text-label-secondary text-footnote font-normal">Updated by:</span>
                 <Link
                   href={withBasePath(
                     `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                   )}
-                  className="group/editor text-foreground inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/5 px-2.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/40 hover:bg-wiki/10 hover:text-wiki active:scale-95 dark:border-white/10 dark:bg-white/5"
+                  className="group/editor text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-1.5 rounded-full border bg-black/5 px-2.5 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   {lastEditorAvatar ? (
-                    <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 dark:ring-white/20">
+                    <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
                       <img
                         src={lastEditorAvatar}
                         alt={lastEditorName}
@@ -123,10 +120,10 @@ export function EditorialMastheadHeader({
                           (e.currentTarget as HTMLElement).style.display = "none";
                         }}
                       />
-                      <PenTool className="absolute inset-0 -z-10 m-auto h-2.5 w-2.5 text-wiki" />
+                      <PenTool className="text-tint absolute inset-0 -z-10 m-auto h-2.5 w-2.5" />
                     </span>
                   ) : (
-                    <PenTool className="h-3 w-3 shrink-0 text-wiki" />
+                    <PenTool className="text-tint h-3 w-3 shrink-0" />
                   )}
                   <span>{lastEditorName}</span>
                 </Link>
@@ -135,12 +132,12 @@ export function EditorialMastheadHeader({
 
           {/* Updated Timestamp */}
           {lastModified && (
-            <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs">
+            <div className="text-label-secondary text-footnote flex items-center gap-1.5">
               {(creatorName || lastEditorName) && (
-                <span className="text-muted-foreground/30 select-none">•</span>
+                <span className="text-label-secondary select-none">•</span>
               )}
               <span className="flex items-center gap-1.5">
-                <Calendar className="text-muted-foreground/60 h-3.5 w-3.5" />
+                <Calendar className="text-label-secondary h-3.5 w-3.5" />
                 {new Date(lastModified).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -156,13 +153,13 @@ export function EditorialMastheadHeader({
           <Popover open={showPopover} onOpenChange={setShowPopover}>
             <PopoverTrigger asChild>
               <button
-                className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:shadow-md active:scale-95 ${
-                  badgeConfig.classes
-                } ${
-                  showCelebration && primaryAward.category === "LOREWARD"
-                    ? "loreward-badge-celebrate"
-                    : ""
-                }`}
+                className={cn(
+                  "group text-caption duration-fast relative flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                  badgeConfig.classes,
+                  showCelebration &&
+                    primaryAward.category === "LOREWARD" &&
+                    "loreward-badge-celebrate"
+                )}
               >
                 {showCelebration && primaryAward.category === "LOREWARD" && (
                   <div className="pointer-events-none absolute inset-0 overflow-visible">
@@ -171,15 +168,13 @@ export function EditorialMastheadHeader({
                     ))}
                   </div>
                 )}
-                <badgeConfig.Icon
-                  className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
-                />
+                <badgeConfig.Icon className={cn("size-3.5 shrink-0", badgeConfig.iconColor)} />
                 {awardsData.awards.length > 1 && (
-                  <span className="text-xs leading-none font-bold tabular-nums opacity-80">
+                  <span className="text-caption leading-none font-semibold tabular-nums opacity-80">
                     +{awardsData.awards.length - 1}
                   </span>
                 )}
-                <span className="tracking-wider uppercase">{badgeConfig.text}</span>
+                <span className="uppercase">{badgeConfig.text}</span>
               </button>
             </PopoverTrigger>
 
@@ -187,20 +182,20 @@ export function EditorialMastheadHeader({
               side="bottom"
               align="end"
               sideOffset={8}
-              className="z-[100055] w-72 space-y-2.5 rounded-xl border border-zinc-200 bg-white/95 p-3.5 text-xs shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/90"
+              className="text-footnote w-72 space-y-2.5 p-3.5"
             >
-              <div className="text-muted-foreground text-left text-xs font-semibold tracking-wider uppercase">
+              <div className="text-label-secondary text-eyebrow text-left">
                 Article Distinctions
               </div>
               <div className="space-y-2">
                 {awardsData.awards.map((award) => (
                   <div
                     key={award.id}
-                    className="space-y-0.5 border-b border-black/5 pb-2 last:border-0 last:pb-0 dark:border-white/5"
+                    className="border-separator space-y-0.5 border-b pb-2 last:border-0 last:pb-0"
                   >
-                    <div className="text-foreground font-semibold">{award.name}</div>
+                    <div className="text-label font-semibold">{award.name}</div>
                     {award.description && (
-                      <p className="text-muted-foreground text-xs leading-relaxed">
+                      <p className="text-label-secondary text-footnote leading-relaxed">
                         {award.description}
                       </p>
                     )}

@@ -16,19 +16,19 @@ export function IxWikiWordmark({
   ...props
 }: IxWikiWordmarkProps) {
   const sizeClasses = {
-    sm: "text-base tracking-normal",
-    md: "text-lg tracking-normal",
-    lg: "text-2xl tracking-tight",
-    xl: "text-3xl sm:text-4xl tracking-tight leading-none",
-    "2xl": "text-4xl sm:text-5xl lg:text-[50px] tracking-[-0.02em] leading-none",
-    "3xl": "text-5xl sm:text-6xl lg:text-7xl tracking-[-0.03em] leading-none",
-    hero: "text-5xl sm:text-6xl lg:text-[64px] tracking-[-0.03em] leading-none",
+    sm: "text-body",
+    md: "text-title-3",
+    lg: "text-title-1",
+    xl: "text-large-title sm:text-large-title",
+    "2xl": "text-large-title sm:text-large-title lg:text-[50px] tracking-[-0.02em]",
+    "3xl": "text-large-title sm:text-large-title lg:text-7xl tracking-[-0.03em]",
+    hero: "text-large-title sm:text-large-title lg:text-[64px] tracking-[-0.03em]",
   };
 
   return (
     <span
       className={cn(
-        "text-foreground inline-flex items-baseline font-['SangBleu_Empire',serif] font-bold subpixel-antialiased select-none",
+        "text-label inline-flex items-baseline font-['SangBleu_Empire',serif] font-semibold subpixel-antialiased select-none",
         sizeClasses[size],
         className
       )}
@@ -39,8 +39,8 @@ export function IxWikiWordmark({
     >
       {highlightIx ? (
         <>
-          <span className="text-blue-500 dark:text-blue-400">Ix</span>
-          <span className="text-foreground">Wiki</span>
+          <span className="text-tint">Ix</span>
+          <span className="text-label">Wiki</span>
         </>
       ) : (
         "IxWiki"

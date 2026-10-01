@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import type React from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 export type RefractionMode = "ambient-underglow" | "facet-lens";
 
@@ -69,143 +68,33 @@ interface FeaturedArticleRefractionCardProps {
 }
 
 /**
- * Harmonious Refraction Card Container
- * Built on Apple Design & Web Interface Guidelines:
- * - Concentric corner radii: R_outer = R_inner + Inset (24px + 6px = 30px)
- * - Proportional optical balance between thumbnail and content columns
- * - Multi-layer luminance falloff with paper grain texture overlay
- * - Strictly contained (zero layout shifting or scale distortion)
+ * Featured article card on the main page. Facet 3 (spec §5, §14 decorative imagery): content is
+ * an opaque card and hero imagery never washes the full width, so the former "under-glow" and
+ * "crystal lens" artwork washes are gone; `mode` and `imgSrc` are accepted for the stored
+ * preference and ignored.
  */
 export function FeaturedArticleRefractionCard({
-  imgSrc,
-  mode = "ambient-underglow",
+  imgSrc: _imgSrc,
+  mode: _mode = "ambient-underglow",
   className,
   children,
 }: FeaturedArticleRefractionCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const handleMouseEnter = useCallback(() => {
-    setIsHovered(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-  }, []);
-
   return (
-    <div
-      ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="group relative w-full select-none"
-    >
-      {/* ══════════════════════════════════════════════════════════════════════
-          DIRECTION 1: HARMONIC UNDER-GLOW (CONCENTRIC BACKLIGHT HALO)
-          Mathematically balanced corner radii (R_outer = 30px for R_inner = 24px)
-         ══════════════════════════════════════════════════════════════════════ */}
-      {mode === "ambient-underglow" && imgSrc && (
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute -inset-1 z-0 overflow-hidden rounded-[20px] sm:-inset-1.5 sm:rounded-[30px]",
-            "transition-opacity duration-300 ease-out",
-            isHovered ? "opacity-90 dark:opacity-95" : "opacity-60 dark:opacity-75"
-          )}
-          style={{
-            maskImage:
-              "radial-gradient(ellipse 96% 92% at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 90%, transparent 100%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 96% 92% at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 90%, transparent 100%)",
-          }}
-        >
-          <img
-            src={imgSrc}
-            alt=""
-            className="h-full w-full transform-gpu object-cover opacity-85 blur-xl contrast-[1.15] saturate-[1.85] sm:blur-2xl dark:opacity-95"
-            loading="lazy"
-          />
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          CORE GLASS CARD CONTAINER (HARMONIOUS 24PX CORNER RADIUS)
-         ══════════════════════════════════════════════════════════════════════ */}
+    <div className="group relative w-full select-none">
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl sm:rounded-3xl",
-          "border border-black/[0.08] dark:border-white/[0.12]",
-          "bg-white/[0.84] backdrop-blur-2xl dark:bg-zinc-900/[0.84]",
-          "p-4 sm:p-5 lg:p-6",
-          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.75),0_8px_24px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_12px_32px_rgba(0,0,0,0.3)]",
-          "transition-colors duration-200",
+          "rounded-card border-separator bg-surface relative overflow-hidden border p-4 sm:p-5 lg:p-6",
           className
         )}
       >
-        {/* ──────────────────────────────────────────────────────────────────
-            DIRECTION 2: FACET CRYSTAL LENS (INTERNAL OPTICAL REFRACTION)
-            Internal color tint + precision chamfered rim + top specular hairline
-           ────────────────────────────────────────────────────────────────── */}
-        {mode === "facet-lens" && (
-          <>
-            {/* Internal Artwork Color Refraction (Masked for 100% text contrast) */}
-            {imgSrc && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
-              >
-                <img
-                  src={imgSrc}
-                  alt=""
-                  className={cn(
-                    "h-full w-full transform-gpu object-cover blur-3xl saturate-150",
-                    "transition-opacity duration-300 ease-out",
-                    isHovered
-                      ? "opacity-[0.24] dark:opacity-[0.32]"
-                      : "opacity-[0.16] dark:opacity-[0.22]",
-                    "mix-blend-luminosity dark:mix-blend-lighten"
-                  )}
-                  loading="lazy"
-                />
-                {/* Contrast Preservation Mask */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/65 to-white/20 backdrop-blur-[1px] dark:from-zinc-950/90 dark:via-zinc-950/70 dark:to-zinc-950/20" />
-              </div>
-            )}
-
-            {/* Precision Facet Double-Rim Inverted Chamfer */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-20 rounded-2xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.85),inset_0_-1.5px_3px_rgba(0,0,0,0.4)] sm:rounded-3xl dark:shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.35),inset_0_-1.5px_3px_rgba(0,0,0,0.8)]"
-            />
-
-            {/* Top Razor-Sharp Specular Caustic Hairline */}
-            <div
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute inset-x-6 top-0 z-20 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/60",
-                "transition-opacity duration-250 ease-out",
-                isHovered ? "opacity-100" : "opacity-60"
-              )}
-            />
-          </>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════════════
-            PHYSICAL TACTILE TEXTURE OVERLAY (PAPER GRAIN OVER GLASS & GLOW)
-           ══════════════════════════════════════════════════════════════════════ */}
-        <TextureOverlay texture="paperGrain" opacity={0.06} className="pointer-events-none z-20" />
-
-        {/* ══════════════════════════════════════════════════════════════════════
-            STATIONARY SURFACE EDITORIAL CONTENT
-           ══════════════════════════════════════════════════════════════════════ */}
-        <div className="relative z-25">{children}</div>
+        {children}
       </div>
     </div>
   );
 }
 
 /**
- * Featured Thumbnail Artwork Frame with Golden Ratio Proportions
+ * Featured thumbnail artwork frame.
  */
 export function FeaturedThumbnailFrame({
   imgSrc,
@@ -219,24 +108,19 @@ export function FeaturedThumbnailFrame({
   return (
     <Link
       href={withBasePath(`/wiki/${slug}`)}
-      data-cuelume-press="droplet"
-      data-cuelume-hover="tick"
       className={cn(
         "group/img relative block w-full shrink-0 sm:w-[240px] md:w-[270px] lg:w-[290px]",
         "aspect-[16/10] sm:aspect-[3/2] md:aspect-[16/10]",
-        "overflow-hidden rounded-xl sm:rounded-2xl",
-        "border border-black/[0.08] dark:border-white/[0.12]",
-        "bg-black/5 shadow-2xs dark:bg-white/5",
-        "focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+        "rounded-row border-separator bg-surface-secondary overflow-hidden border",
+        "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2"
       )}
     >
       <img
         src={imgSrc}
         alt={title}
         loading="lazy"
-        className="h-full w-full transform-gpu object-cover transition-transform duration-300 ease-out group-hover/img:scale-105"
+        className="ease-out-facet h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-[1.02] motion-reduce:transition-none"
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
     </Link>
   );
 }

@@ -94,7 +94,7 @@ export function WikiSourceToolbar({
         extraActions={
           <button
             className={cn(
-              "wikios-editor-btn-preview active:scale-[0.97] transition-transform duration-100",
+              "wikios-editor-btn-preview transition-transform duration-100 active:scale-[0.98]",
               showPreview && "wikios-editor-btn-active"
             )}
             onClick={() => setShowPreview(!showPreview)}
@@ -159,52 +159,49 @@ export function WikiSourceToolbar({
         <div className="wikios-editor-format-group">
           <Popover>
             <PopoverTrigger className="wikios-editor-format-btn wikios-editor-format-select">
-              <span className="text-xs font-semibold tracking-tight">Heading</span>
+              <span className="text-caption font-semibold">Heading</span>
               <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="z-[10001] w-44 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex flex-col gap-0.5 text-xs">
+            <PopoverContent align="start" className="text-label w-44 p-1">
+              <div className="text-footnote flex flex-col gap-0.5">
                 <button
                   type="button"
                   onClick={() => insertAtLine("= ", " =")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-base font-bold hover:bg-[var(--wikios-border)]"
+                  className="rounded-control text-title-3 hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left"
                 >
-                  <Hash className="h-3.5 w-3.5 text-blue-400" />
+                  <Hash className="text-tint h-3.5 w-3.5" />
                   <span>Heading 1</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => insertAtLine("== ", " ==")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold hover:bg-[var(--wikios-border)]"
+                  className="rounded-control text-headline hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left"
                 >
-                  <Hash className="h-3.5 w-3.5 text-indigo-400" />
+                  <Hash className="text-indigo h-3.5 w-3.5" />
                   <span>Heading 2</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => insertAtLine("=== ", " ===")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-[var(--wikios-border)]"
+                  className="rounded-control text-caption hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left"
                 >
-                  <Hash className="h-3.5 w-3.5 text-amber-400" />
+                  <Hash className="text-yellow h-3.5 w-3.5" />
                   <span>Heading 3</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => insertAtLine("==== ", " ====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-80 hover:bg-[var(--wikios-border)]"
+                  className="rounded-control text-footnote hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left opacity-80"
                 >
-                  <Hash className="h-3.5 w-3.5 text-emerald-400" />
+                  <Hash className="text-green h-3.5 w-3.5" />
                   <span>Heading 4</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => insertAtLine("===== ", " =====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-60 hover:bg-[var(--wikios-border)]"
+                  className="rounded-control text-footnote hover:bg-fill-3 flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left opacity-60"
                 >
-                  <Hash className="h-3.5 w-3.5 text-zinc-400" />
+                  <Hash className="text-label-secondary h-3.5 w-3.5" />
                   <span>Heading 5</span>
                 </button>
               </div>
@@ -265,8 +262,8 @@ export function WikiSourceToolbar({
             align="start"
             triggerContent={
               <>
-                <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                <span className="text-xs font-semibold tracking-tight">Templates</span>
+                <Puzzle className="text-tint h-3.5 w-3.5 shrink-0" />
+                <span className="text-caption font-semibold">Templates</span>
                 <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
               </>
             }
@@ -317,7 +314,7 @@ function FmtBtn({
     <button
       type="button"
       className={cn(
-        "wikios-editor-format-btn active:scale-[0.97] transition-transform duration-100",
+        "wikios-editor-format-btn transition-transform duration-100 active:scale-[0.98]",
         active && "wikios-editor-format-btn-active"
       )}
       onClick={onClick}

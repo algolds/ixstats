@@ -143,10 +143,10 @@ export function StashButton({ title, isAuthenticated, isCollapsed = false }: Sta
           onMouseLeave={handleMouseLeave}
           disabled={isPending}
           className={cn(
-            "wikios-sidebar-icon-box flex h-10 w-10 items-center justify-center rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+            "wikios-sidebar-icon-box rounded-row shadow-card flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
             isStashed
-              ? "rail-glow-amber rail-animate-pulse border-amber-500/20 bg-amber-500/5 text-amber-400 hover:bg-amber-500/15"
-              : "rail-glow-rose rail-animate-pulse border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15",
+              ? "rail-glow-amber rail-animate-pulse border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15"
+              : "rail-glow-rose rail-animate-pulse border-red/20 bg-red/5 text-red hover:bg-red/15",
             animState === "pulse" && "wikios-stash-pulse",
             animState === "ripple" && "wikios-stash-ripple",
             animState === "color-shift" && "wikios-stash-color-shift"

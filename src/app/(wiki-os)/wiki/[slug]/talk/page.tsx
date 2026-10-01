@@ -22,11 +22,11 @@ export default function TalkPageRedirect() {
   return (
     <WikiOSLayout title={`Margin: ${title}`}>
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl border border-sky-500/20 bg-sky-500/10 text-sky-400">
+        <div className="rounded-card bg-tint-fill text-tint flex size-12 items-center justify-center">
           <MessageSquare className="h-6 w-6" />
         </div>
-        <h3 className="text-base font-bold text-slate-100">Opening Margin...</h3>
-        <p className="max-w-sm text-xs text-slate-400">
+        <h3 className="text-title-3 text-label">Opening Margin...</h3>
+        <p className="text-footnote text-label-secondary max-w-sm">
           WikiOS has upgraded talk pages to the Margin split-canvas suite. Redirecting to &ldquo;
           {title}&rdquo;...
         </p>

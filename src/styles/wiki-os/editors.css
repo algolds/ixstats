@@ -43,12 +43,12 @@
   }
 
   .wikios-imgs-tab:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-fill-4);
   }
 
   .wikios-imgs-tab-active {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.2);
+    background: color-mix(in srgb, var(--tint) 10%, transparent);
+    border-color: color-mix(in srgb, var(--tint) 20%, transparent);
     color: var(--wikios-accent);
   }
 
@@ -60,8 +60,7 @@
     padding: 8px 14px;
     border-radius: 10px;
     border: 1px solid var(--wikios-border);
-    background: rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(8px);
+    background: var(--color-fill-2);
     color: var(--wikios-text-dim);
     transition: border-color 0.2s;
   }
@@ -95,13 +94,13 @@
   }
 
   .wikios-imgs-search-clear:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-fill-3);
   }
 
   /* Status line */
 
   .wikios-imgs-status {
-    font-size: 11px;
+    font-size: 0.75rem;
     color: var(--wikios-text-dim);
     margin-bottom: 12px;
     padding-left: 2px;
@@ -130,7 +129,7 @@
     width: 72px;
     height: 72px;
     border-radius: 18px;
-    background: rgba(59, 130, 246, 0.08);
+    background: color-mix(in srgb, var(--tint) 8%, transparent);
     color: var(--wikios-accent);
     margin-bottom: 4px;
   }
@@ -180,31 +179,27 @@
   .wikios-imgs-card {
     position: relative;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-separator);
+    background: var(--color-fill-4);
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .wikios-imgs-card:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--color-separator);
+    background: var(--color-fill-4);
     transform: translateY(-3px);
-    box-shadow:
-      0 8px 24px rgba(0, 0, 0, 0.25),
-      0 0 0 1px rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-imgs-card-selected {
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow:
-      0 0 0 2px rgba(59, 130, 246, 0.15),
-      0 4px 16px rgba(59, 130, 246, 0.1);
+    border-color: color-mix(in srgb, var(--tint) 40%, transparent);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-imgs-card-expanded {
-    border-color: rgba(139, 92, 246, 0.3);
+    border-color: color-mix(in srgb, var(--color-purple) 30%, transparent);
   }
 
   /* Card image */
@@ -236,7 +231,6 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
     color: white;
     opacity: 0;
     transition: opacity 0.2s;
@@ -257,7 +251,7 @@
   }
 
   .wikios-imgs-card-name {
-    font-size: 11px;
+    font-size: 0.75rem;
     color: var(--wikios-text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -286,7 +280,7 @@
     height: 24px;
     border-radius: 5px;
     border: none;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-fill-3);
     color: var(--wikios-text-dim);
     cursor: pointer;
     transition: all 0.15s;
@@ -294,7 +288,7 @@
   }
 
   .wikios-imgs-card-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-fill-2);
     color: var(--wikios-text);
   }
 
@@ -307,9 +301,8 @@
     top: 80px;
     align-self: flex-start;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-separator);
+    background: var(--color-fill-4);
     overflow: hidden;
   }
 
@@ -331,7 +324,6 @@
     border-radius: 6px;
     border: none;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
     color: white;
     cursor: pointer;
   }
@@ -366,7 +358,7 @@
   .wikios-imgs-detail-meta {
     display: flex;
     gap: 10px;
-    font-size: 11px;
+    font-size: 0.75rem;
     color: var(--wikios-text-dim);
     margin-bottom: 14px;
   }
@@ -389,13 +381,13 @@
     cursor: pointer;
     transition: all 0.15s;
     text-decoration: none;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid color-mix(in srgb, var(--tint) 30%, transparent);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
     color: var(--wikios-accent);
   }
 
   .wikios-imgs-detail-btn:hover {
-    background: rgba(59, 130, 246, 0.2);
+    background: color-mix(in srgb, var(--tint) 20%, transparent);
   }
 
   .wikios-imgs-detail-btn-secondary {
@@ -405,7 +397,7 @@
   }
 
   .wikios-imgs-detail-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-fill-4);
   }
 
   @media (max-width: 768px) {
@@ -422,40 +414,6 @@
 
   /* Image search modal — kept from before */
 
-  .wikios-img-modal {
-    width: 720px;
-    max-width: 95vw;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: var(--wikios-surface);
-    box-shadow:
-      0 24px 80px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(24px);
-    animation: wikios-modal-slide-in 0.2s ease-out;
-    overflow: hidden;
-  }
-
-  .wikios-img-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--wikios-border);
-  }
-
-  .wikios-img-modal-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--wikios-text);
-  }
-
   .wikios-img-modal-body {
     flex: 1;
     overflow-y: auto;
@@ -468,8 +426,8 @@
     margin-top: 14px;
     padding: 14px;
     border-radius: 10px;
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    background: rgba(59, 130, 246, 0.03);
+    border: 1px solid color-mix(in srgb, var(--tint) 15%, transparent);
+    background: color-mix(in srgb, var(--tint) 3%, transparent);
   }
 
   .wikios-img-insert-preview {
@@ -484,7 +442,7 @@
     height: 56px;
     object-fit: cover;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-separator);
   }
 
   .wikios-img-insert-name {
@@ -506,50 +464,15 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 11px;
+    font-size: 0.75rem;
     color: var(--wikios-text-dim);
     font-weight: 500;
-  }
-
-  .wikios-img-insert-input,
-  .wikios-img-insert-select {
-    padding: 7px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--wikios-border);
-    background: rgba(0, 0, 0, 0.15);
-    color: var(--wikios-text);
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .wikios-img-insert-input:focus,
-  .wikios-img-insert-select:focus {
-    border-color: var(--wikios-accent);
   }
 
   .wikios-img-insert-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-  }
-
-  .wikios-img-insert-btn {
-    width: 100%;
-    padding: 9px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--wikios-accent);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-top: 4px;
-  }
-
-  .wikios-img-insert-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
   }
 
   /* ===========================================================================
@@ -572,7 +495,7 @@
     border-radius: 14px;
     overflow: hidden;
     background: var(--wikios-surface);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-card);
     box-sizing: border-box;
   }
 
@@ -592,48 +515,13 @@
   /* Segmented Control styling */
 
   .wikios-ve-dirty {
-    font-size: 10px;
+    font-size: 0.75rem;
     color: var(--wikios-accent);
     opacity: 0.7;
     flex-shrink: 0;
   }
 
   /* Buttons */
-
-  .wikios-ve-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-
-  .wikios-ve-btn-ghost {
-    background: transparent;
-    color: var(--wikios-text-muted);
-    border-color: transparent;
-  }
-
-  .wikios-ve-btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--wikios-text);
-  }
-
-  .wikios-ve-btn-primary {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: var(--wikios-accent);
-  }
-
-  .wikios-ve-btn-primary:hover {
-    background: rgba(59, 130, 246, 0.25);
-  }
 
   /* Save bar */
 
@@ -643,7 +531,7 @@
     gap: 8px;
     padding: 8px 16px;
     border-bottom: 1px solid var(--wikios-border);
-    background: rgba(59, 130, 246, 0.03);
+    background: color-mix(in srgb, var(--tint) 3%, transparent);
     flex-shrink: 0;
   }
 
@@ -652,7 +540,7 @@
     padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid var(--wikios-border);
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--color-fill-2);
     color: var(--wikios-text);
     font-size: 13px;
     outline: none;
@@ -695,20 +583,16 @@
     gap: 1px;
     padding: 2px;
     border-radius: 6px;
-    background: rgba(120, 120, 120, 0.05);
-    border: 1px solid rgba(120, 120, 120, 0.12);
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.01);
+    background: var(--color-fill-4);
+    border: 1px solid var(--color-separator);
+    box-shadow: var(--shadow-card);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .wikios-ve-toolbar-group:hover {
-    border-color: rgba(59, 130, 246, 0.25);
-    background: rgba(120, 120, 120, 0.08);
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.05),
-      0 0 10px rgba(59, 130, 246, 0.08);
+    border-color: color-mix(in srgb, var(--tint) 25%, transparent);
+    background: var(--color-fill-3);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-ve-toolbar-sep {
@@ -735,7 +619,7 @@
   }
 
   .wikios-ve-toolbar-btn:hover {
-    background: rgba(120, 120, 120, 0.12);
+    background: var(--color-fill-2);
     color: var(--wikios-text);
   }
 
@@ -744,17 +628,17 @@
   }
 
   .wikios-ve-toolbar-btn-active {
-    background: rgba(59, 130, 246, 0.22);
+    background: color-mix(in srgb, var(--tint) 22%, transparent);
     background: color-mix(in srgb, var(--wikios-accent, #3b82f6) 22%, transparent);
-    color: var(--color-info);
+    color: var(--tint);
     color: var(--wikios-accent, #3b82f6);
     font-weight: 600;
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.35);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wikios-accent, #3b82f6) 35%, transparent);
+    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-ve-heading-label {
-    font-size: 11px;
+    font-size: 0.75rem;
     font-weight: 700;
     font-family: var(--wikios-font-mono);
     line-height: 1;
@@ -801,8 +685,8 @@
   }
 
   .wikios-ve-template:hover {
-    outline-color: rgba(139, 92, 246, 0.4);
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.06);
+    outline-color: color-mix(in srgb, var(--color-purple) 40%, transparent);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-ve-template::after {
@@ -812,9 +696,9 @@
     right: 4px;
     padding: 2px 8px;
     border-radius: 4px;
-    background: rgba(139, 92, 246, 0.85);
+    background: color-mix(in srgb, var(--color-purple) 85%, transparent);
     color: white;
-    font-size: 9px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -840,8 +724,8 @@
   }
 
   .wikios-ve-infobox:hover {
-    outline-color: rgba(139, 92, 246, 0.3);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.05);
+    outline-color: color-mix(in srgb, var(--color-purple) 30%, transparent);
+    box-shadow: var(--shadow-card);
   }
 
   .wikios-ve-infobox::after {
@@ -851,9 +735,9 @@
     right: 0;
     padding: 2px 8px;
     border-radius: 4px;
-    background: rgba(139, 92, 246, 0.85);
+    background: color-mix(in srgb, var(--color-purple) 85%, transparent);
     color: white;
-    font-size: 9px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -931,14 +815,10 @@
   }
 
   .wikios-ve-media:hover {
-    outline-color: rgba(59, 130, 246, 0.4);
+    outline-color: color-mix(in srgb, var(--tint) 40%, transparent);
   }
 
   /* ─── Template Editor Dialog ─── */
-
-  .wikios-ve-template-dialog {
-    width: 520px;
-  }
 
   .wikios-ve-template-field {
     margin-bottom: 10px;
@@ -952,35 +832,6 @@
     margin-bottom: 4px;
   }
 
-  .wikios-ve-template-dialog-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-top: 1px solid var(--wikios-border);
-  }
-
-  .wikios-ve-template-remove {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: none;
-    background: transparent;
-    color: var(--wikios-text-dim);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .wikios-ve-template-remove:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--color-error);
-  }
-
-  .wikios-ve-template-dialog-actions {
-    display: flex;
-    gap: 6px;
-  }
-
   @media (max-width: 768px) {
     .wikios-ve-editable {
       padding: 16px 20px 64px;
@@ -988,7 +839,6 @@
     .wikios-ve-toolbar {
       padding: 4px 8px;
     }
-
   }
 
   /* Ensure neutral left alignment for visual editor canvas elements with high specificity */
@@ -1051,7 +901,7 @@
     border-radius: 14px;
     overflow: hidden;
     background: var(--wikios-surface);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-card);
   }
 
   /* Title bar */
@@ -1104,8 +954,8 @@
   }
 
   .wikios-editor-btn-active {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: color-mix(in srgb, var(--tint) 15%, transparent);
+    border-color: color-mix(in srgb, var(--tint) 30%, transparent);
     color: var(--wikios-accent);
   }
 
@@ -1119,15 +969,18 @@
     width: 30px;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border: 1px solid color-mix(in srgb, var(--color-red) 25%, transparent);
     background: transparent;
     color: var(--wikios-red);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s, color 0.15s;
+    transition:
+      all 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .wikios-editor-btn-cancel:hover {
-    background: rgba(239, 68, 68, 0.12);
+    background: color-mix(in srgb, var(--color-red) 12%, transparent);
     color: var(--wikios-red);
     border-color: var(--wikios-red);
     transform: scale(1.08);
@@ -1151,15 +1004,18 @@
     width: 30px;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid rgba(34, 197, 94, 0.25);
+    border: 1px solid color-mix(in srgb, var(--color-green) 25%, transparent);
     background: transparent;
     color: var(--wikios-green);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s, color 0.15s;
+    transition:
+      all 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .wikios-editor-btn-save:hover {
-    background: rgba(34, 197, 94, 0.12);
+    background: color-mix(in srgb, var(--color-green) 12%, transparent);
     color: var(--wikios-green);
     border-color: var(--wikios-green);
     transform: scale(1.08);
@@ -1183,15 +1039,18 @@
     width: 30px;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    border: 1px solid color-mix(in srgb, var(--tint) 25%, transparent);
     background: transparent;
     color: var(--wikios-accent);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s, color 0.15s;
+    transition:
+      all 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.15s,
+      color 0.15s;
   }
 
   .wikios-editor-btn-preview:hover {
-    background: rgba(59, 130, 246, 0.12);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
     color: var(--wikios-accent-hover);
     border-color: var(--wikios-accent);
     transform: scale(1.08);
@@ -1208,8 +1067,8 @@
   }
 
   .wikios-editor-btn-preview.wikios-editor-btn-active {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.4);
+    background: color-mix(in srgb, var(--tint) 15%, transparent);
+    border-color: color-mix(in srgb, var(--tint) 40%, transparent);
     color: var(--wikios-accent);
   }
 
@@ -1240,9 +1099,9 @@
     gap: 2px;
     padding: 2px 3px;
     border-radius: 8px;
-    background: rgba(120, 120, 120, 0.05);
-    border: 1px solid rgba(120, 120, 120, 0.12);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    background: var(--color-fill-4);
+    border: 1px solid var(--color-separator);
+    box-shadow: var(--shadow-card);
     flex-shrink: 0;
     height: 32px;
     box-sizing: border-box;
@@ -1251,13 +1110,12 @@
 
   .wikios-editor-format-group:hover,
   .wikios-ve-toolbar-group:hover {
-    border-color: rgba(59, 130, 246, 0.25);
-    background: rgba(120, 120, 120, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 10px rgba(59, 130, 246, 0.08);
+    border-color: color-mix(in srgb, var(--tint) 25%, transparent);
+    background: var(--color-fill-3);
+    box-shadow: var(--shadow-card);
   }
 
-  .wikios-editor-format-btn,
-  .wikios-ve-btn {
+  .wikios-editor-format-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1268,22 +1126,23 @@
     border-radius: 5px;
     background: transparent;
     color: var(--wikios-text-muted);
-    font-size: 11px;
+    font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.1s, color 0.1s;
+    transition:
+      all 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.1s,
+      color 0.1s;
   }
 
-  .wikios-editor-format-btn:hover,
-  .wikios-ve-btn:hover {
-    background: rgba(120, 120, 120, 0.14);
+  .wikios-editor-format-btn:hover {
+    background: var(--color-fill-2);
     color: var(--wikios-text);
     transform: translateY(-1px);
   }
 
-  .wikios-editor-format-btn:active,
-  .wikios-ve-btn:active {
+  .wikios-editor-format-btn:active {
     transform: scale(0.95);
   }
 
@@ -1358,7 +1217,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    font-size: 10px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1383,8 +1242,8 @@
   }
 
   .wikios-editor-btn-active {
-    background: rgba(59, 130, 246, 0.12);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: color-mix(in srgb, var(--tint) 12%, transparent);
+    border-color: color-mix(in srgb, var(--tint) 30%, transparent);
     color: var(--wikios-accent);
   }
 
@@ -1400,8 +1259,8 @@
     gap: 16px;
     padding: 4px 16px;
     border-top: 1px solid var(--wikios-border);
-    background: rgba(255, 255, 255, 0.02);
-    font-size: 11px;
+    background: var(--color-fill-4);
+    font-size: 0.75rem;
     color: var(--wikios-text-dim);
     flex-shrink: 0;
   }

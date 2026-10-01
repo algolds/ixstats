@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
@@ -55,7 +56,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: EyeClosed,
       count: orphans?.length ?? 0,
       badge: "0 Inbound",
-      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+      color: "border-yellow/20 bg-yellow/10 text-yellow",
     },
     {
       id: "deadEnds",
@@ -65,7 +66,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: LinkSlash,
       count: deadEnds?.length ?? 0,
       badge: "0 Outbound",
-      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
+      color: "border-indigo/20 bg-indigo/10 text-indigo",
     },
     {
       id: "brokenRedirects",
@@ -75,7 +76,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: WarningTriangle,
       count: brokenRedirects?.length ?? 0,
       badge: "Broken Links",
-      color: "border-red-500/20 bg-red-500/10 text-red-400",
+      color: "border-red/20 bg-red/10 text-red",
     },
     {
       id: "short",
@@ -85,7 +86,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: Page,
       count: shortestArticles?.length ?? 0,
       badge: "Stubs",
-      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+      color: "border-blue/20 bg-blue/10 text-blue",
     },
     {
       id: "long",
@@ -95,7 +96,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
       icon: Page,
       count: longestArticles?.length ?? 0,
       badge: "Flagship",
-      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+      color: "border-green/20 bg-green/10 text-green",
     },
   ];
 
@@ -112,8 +113,8 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
-        <Activity className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+        <Activity className="text-green h-4 w-4" />
+        <h3 className="text-label-secondary text-subhead">
           Health & Link Integrity Diagnostics ({filteredCards.length})
         </h3>
       </div>
@@ -130,32 +131,33 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               onClick={() => setActiveTab(activeTab === card.id ? null : (card.id as any))}
-              className={`group flex flex-col justify-between rounded-xl border p-4 text-left backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98] ${
+              className={cn(
+                "group rounded-row flex flex-col justify-between border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                 isSelected
-                  ? "border-wiki/60 bg-card/90 ring-wiki/30 shadow-md ring-1"
-                  : "border-border/40 bg-card/60 hover:border-wiki/30 hover:bg-card/80"
-              }`}
+                  ? "border-tint/60 bg-surface ring-tint/30 shadow-card ring-1"
+                  : "border-separator bg-surface hover:border-tint/30 hover:bg-surface"
+              )}
             >
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg border bg-gradient-to-br ${card.color}`}
+                    className={`rounded-control flex h-8 w-8 items-center justify-center border ${card.color}`}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
+                  <span className="border-separator bg-fill-3 text-label text-caption rounded-full border px-2 py-0.5">
                     {card.count}
                   </span>
                 </div>
-                <h4 className="text-foreground group-hover:text-wiki text-xs font-semibold">
+                <h4 className="text-label group-hover:text-tint text-caption font-semibold">
                   {card.title}
                 </h4>
-                <p className="text-muted-foreground mt-1 line-clamp-1 text-xs">
+                <p className="text-label-secondary text-footnote mt-1 line-clamp-1">
                   {card.description}
                 </p>
               </div>
 
-              <div className="text-muted-foreground mt-2 font-mono text-xs opacity-60">
+              <div className="text-label-secondary text-footnote mt-2 tabular-nums opacity-60">
                 {card.legacyAlias}
               </div>
             </button>
@@ -171,24 +173,24 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
             animate={{ opacity: 1, height: "auto", scale: 1 }}
             exit={{ opacity: 0, height: 0, scale: 0.98 }}
             transition={{ type: "spring", bounce: 0.1, duration: 0.3 }}
-            className="border-border/40 bg-card/50 overflow-hidden rounded-xl border shadow-md backdrop-blur-md"
+            className="border-separator bg-surface rounded-row shadow-card overflow-hidden border"
           >
-            <div className="border-border/40 bg-muted/20 flex items-center justify-between border-b px-4 py-2.5">
-              <span className="text-foreground text-xs font-medium">
+            <div className="border-separator bg-fill-4 flex items-center justify-between border-b px-4 py-2.5">
+              <span className="text-label text-caption">
                 Live Inspector:{" "}
-                <span className="text-wiki font-semibold">
+                <span className="text-tint font-semibold">
                   {cards.find((c) => c.id === activeTab)?.title}
                 </span>
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">
+                <span className="text-label-secondary text-footnote">
                   Showing top results from PostgreSQL index
                 </span>
                 <button
                   type="button"
                   data-cuelume-press="tap"
                   onClick={() => setActiveTab(null)}
-                  className="text-muted-foreground hover:bg-muted/40 hover:text-foreground rounded-md p-1 active:scale-90"
+                  className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm p-1 active:scale-[0.98]"
                   title="Close Inspector"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -196,11 +198,11 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               </div>
             </div>
 
-            <div className="divide-border/20 max-h-72 divide-y overflow-y-auto p-2">
+            <div className="divide-separator max-h-72 divide-y overflow-y-auto p-2">
               {activeTab === "orphans" && (
                 <div>
                   {loadingOrphans ? (
-                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center justify-center p-8">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Scanning orphan articles...
                     </div>
                   ) : orphans && orphans.length > 0 ? (
@@ -208,7 +210,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                       {orphans.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `orphan-${idx}`}
-                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
+                          className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
                           <Link
                             href={withBasePath(
@@ -216,18 +218,18 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                             )}
                             data-cuelume-press="page"
                             data-cuelume-hover="tick"
-                            className="text-foreground hover:text-wiki font-medium hover:underline"
+                            className="text-label hover:text-tint font-medium hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-xs">
+                          <span className="text-label-secondary text-footnote tabular-nums">
                             {item.length} bytes
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-emerald-400">
+                    <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
                       <span>Zero orphan pages detected — 100% graph connectivity!</span>
                     </div>
@@ -238,7 +240,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               {activeTab === "deadEnds" && (
                 <div>
                   {loadingDeadEnds ? (
-                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center justify-center p-8">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Scanning dead-end pages...
                     </div>
                   ) : deadEnds && deadEnds.length > 0 ? (
@@ -246,7 +248,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                       {deadEnds.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `deadend-${idx}`}
-                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
+                          className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
                           <Link
                             href={withBasePath(
@@ -254,18 +256,18 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                             )}
                             data-cuelume-press="page"
                             data-cuelume-hover="tick"
-                            className="text-foreground hover:text-wiki font-medium hover:underline"
+                            className="text-label hover:text-tint font-medium hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-xs">
+                          <span className="text-label-secondary text-footnote tabular-nums">
                             {item.length} bytes
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-emerald-400">
+                    <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
                       <span>All lore articles have active outbound wikilinks!</span>
                     </div>
@@ -276,7 +278,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               {activeTab === "brokenRedirects" && (
                 <div>
                   {loadingRedirects ? (
-                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center justify-center p-8">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Inspecting redirects...
                     </div>
                   ) : brokenRedirects && brokenRedirects.length > 0 ? (
@@ -284,17 +286,17 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                       {brokenRedirects.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `broken-${idx}`}
-                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
+                          className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
-                          <span className="text-foreground font-medium">{item.title}</span>
-                          <span className="font-mono text-xs text-rose-400">
+                          <span className="text-label font-medium">{item.title}</span>
+                          <span className="text-footnote text-red tabular-nums">
                             Target missing: [[{item.targetSlug}]]
                           </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 text-center text-xs text-emerald-400">
+                    <div className="text-footnote text-green flex flex-col items-center justify-center p-6 text-center">
                       <CheckCircle className="mb-1 h-5 w-5" />
                       <span>Zero broken redirects — all aliases resolve cleanly!</span>
                     </div>
@@ -305,7 +307,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               {activeTab === "short" && (
                 <div>
                   {loadingShort ? (
-                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center justify-center p-8">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Loading short articles...
                     </div>
                   ) : (
@@ -313,7 +315,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                       {shortestArticles?.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `short-${idx}`}
-                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
+                          className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
                           <Link
                             href={withBasePath(
@@ -321,11 +323,11 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                             )}
                             data-cuelume-press="page"
                             data-cuelume-hover="tick"
-                            className="text-foreground hover:text-wiki font-medium hover:underline"
+                            className="text-label hover:text-tint font-medium hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <span className="text-muted-foreground font-mono text-xs">
+                          <span className="text-label-secondary text-footnote tabular-nums">
                             {item.wordCount} words ({item.readingTime}m read)
                           </span>
                         </div>
@@ -338,7 +340,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
               {activeTab === "long" && (
                 <div>
                   {loadingLong ? (
-                    <div className="text-muted-foreground flex items-center justify-center p-8 text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center justify-center p-8">
                       <Refresh className="mr-2 h-4 w-4 animate-spin" /> Loading flagship articles...
                     </div>
                   ) : (
@@ -346,7 +348,7 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                       {longestArticles?.map((item: any, idx: number) => (
                         <div
                           key={item.id || item.slug || `long-${idx}`}
-                          className="hover:bg-muted/30 flex items-center justify-between rounded-lg px-3 py-2 text-xs transition-colors"
+                          className="hover:bg-fill-4 rounded-control text-footnote flex items-center justify-between px-3 py-2 transition-colors"
                         >
                           <Link
                             href={withBasePath(
@@ -354,11 +356,11 @@ export function DiagnosticSection({ searchFilter }: DiagnosticSectionProps) {
                             )}
                             data-cuelume-press="page"
                             data-cuelume-hover="tick"
-                            className="text-foreground hover:text-wiki font-medium hover:underline"
+                            className="text-label hover:text-tint font-medium hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <span className="font-mono text-xs text-emerald-400">
+                          <span className="text-footnote text-green tabular-nums">
                             {item.wordCount} words ({item.readingTime}m read)
                           </span>
                         </div>

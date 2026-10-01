@@ -20,7 +20,7 @@ export interface TemplateDropdownProps {
 }
 
 const itemClass =
-  "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]";
+  "flex w-full cursor-pointer items-center gap-2 rounded-control px-2.5 py-1.5 text-left transition-colors hover:bg-fill-3";
 
 export const TemplateDropdown = memo(function TemplateDropdown({
   onSelect,
@@ -42,17 +42,14 @@ export const TemplateDropdown = memo(function TemplateDropdown({
       <PopoverTrigger className={triggerClassName} title="Insert Template" onClick={onBeforeOpen}>
         {triggerContent ?? <Puzzle className="h-3.5 w-3.5" />}
       </PopoverTrigger>
-      <PopoverContent
-        align={align}
-        className="z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-      >
-        <div className="flex flex-col gap-0.5 text-xs">
+      <PopoverContent align={align} className="text-label w-56 p-1">
+        <div className="text-footnote flex flex-col gap-0.5">
           <button
             type="button"
             onClick={() => handleSelect(modal.setShowInfoboxModal)}
             className={itemClass}
           >
-            <Puzzle className="h-3.5 w-3.5 text-blue-400" />
+            <Puzzle className="text-tint h-3.5 w-3.5" />
             <span>Infobox Country</span>
           </button>
           <button
@@ -60,7 +57,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             onClick={() => handleSelect(modal.setShowCountryStatsModal)}
             className={itemClass}
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <Sparkles className="text-yellow h-3.5 w-3.5" />
             <span>Country Stats</span>
           </button>
           <button
@@ -68,7 +65,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             onClick={() => handleSelect(modal.setShowBusinessStatsModal)}
             className={itemClass}
           >
-            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <Sparkles className="text-teal h-3.5 w-3.5" />
             <span>Business Stats</span>
           </button>
           <button
@@ -76,7 +73,7 @@ export const TemplateDropdown = memo(function TemplateDropdown({
             onClick={() => handleSelect(modal.setShowMapCoordsModal)}
             className={itemClass}
           >
-            <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
+            <MapIcon className="text-green h-3.5 w-3.5" />
             <span>Map Coords &amp; Embeds</span>
           </button>
         </div>

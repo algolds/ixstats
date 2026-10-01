@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -98,8 +99,6 @@ export function WikiOSHeader({
   }, [rawBackdropUrl]);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [showPopover, setShowPopover] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -156,88 +155,50 @@ export function WikiOSHeader({
         return {
           Icon: Trophy,
           text: "Loreward Winner",
-          classes:
-            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
-          iconColor: "text-amber-600 dark:text-amber-400",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          iconColor: "text-yellow",
         };
       case "FEATURED":
         return {
           Icon: Star,
           text: "Featured Article",
-          classes:
-            "border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-500/15 dark:text-yellow-400 dark:hover:bg-yellow-500/25 hover:bg-yellow-500/20",
-          iconColor: "text-yellow-600 dark:text-yellow-400",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          iconColor: "text-yellow",
         };
       case "COLLABORATION":
         return {
           Icon: Users,
           text: "Collaborative Work",
-          classes:
-            "border-green-600/20 bg-green-600/10 text-green-800 dark:border-green-500/30 dark:bg-green-500/15 dark:text-green-400 dark:hover:bg-green-500/25 hover:bg-green-600/20",
-          iconColor: "text-green-600 dark:text-green-400",
+          classes: "border-green/20 bg-green/10 text-green hover:bg-green/20",
+          iconColor: "text-green",
         };
       case "PEER_REVIEW":
         return {
           Icon: CheckCircle2,
           text: "Peer Reviewed",
-          classes:
-            "border-blue-600/20 bg-blue-600/10 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/25 hover:bg-blue-600/20",
-          iconColor: "text-blue-600 dark:text-blue-400",
+          classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
+          iconColor: "text-blue",
         };
       case "EDITOR_MILESTONE":
         return {
           Icon: Sparkles,
           text: "Editor Milestone",
-          classes:
-            "border-indigo-600/20 bg-indigo-600/10 text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400 dark:hover:bg-indigo-500/25 hover:bg-indigo-600/20",
-          iconColor: "text-indigo-600 dark:text-indigo-400",
+          classes: "border-indigo/20 bg-indigo/10 text-indigo hover:bg-indigo/20",
+          iconColor: "text-indigo",
         };
       default:
         return {
           Icon: Trophy,
           text: "Wiki Award",
-          classes:
-            "border-amber-600/20 bg-amber-600/10 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25 hover:bg-amber-600/20",
-          iconColor: "text-amber-600 dark:text-amber-400",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          iconColor: "text-yellow",
         };
     }
   }, [primaryAward]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setCoords({ x, y });
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setCoords({ x: 0, y: 0 });
-  };
-
-  const tiltStyle = isHovered
-    ? {
-        transform: `perspective(1200px) rotateY(${coords.x * 12}deg) rotateX(${-coords.y * 12}deg) scale3d(1.015, 1.015, 1.015)`,
-        transition: "transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
-      }
-    : {
-        transform: `perspective(1200px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)`,
-        transition: "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease",
-      };
-
-  const sheenStyle = isHovered
-    ? {
-        background: `radial-gradient(circle 250px at ${(coords.x + 0.5) * 100}% ${(coords.y + 0.5) * 100}%, rgba(255, 255, 255, 0.18), transparent)`,
-        mixBlendMode: "overlay" as const,
-      }
-    : {
-        background: "transparent",
-      };
-
+  // The hero is the article's lead image (content); the former pointer tilt and sheen are gone
+  // (spec §8: no decorative parallax/tilt on content).
   const containerStyle = {
-    ...tiltStyle,
-    transformStyle: "preserve-3d" as const,
     aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
     minHeight: "150px",
     maxHeight: "260px",
@@ -289,17 +250,14 @@ export function WikiOSHeader({
   return (
     <div
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
       style={containerStyle}
-      className="wikios-header facet-surface facet-refraction relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none"
+      className="wikios-header rounded-card border-separator shadow-card relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden border select-none"
     >
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
+          className="rounded-card pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
           style={
             heroMediaStyle.backgroundColor
               ? { backgroundColor: heroMediaStyle.backgroundColor }
@@ -310,7 +268,7 @@ export function WikiOSHeader({
             <>
               {/* Subtle Chromatic Radial Underglow */}
               <div
-                className="pointer-events-none absolute inset-0 -z-10 opacity-25 blur-3xl dark:opacity-15"
+                className="pointer-events-none absolute inset-0 -z-10 opacity-25"
                 style={{
                   background: `radial-gradient(circle at 60% 50%, ${themeColors?.primary ?? "#3b82f6"} 0%, transparent 65%)`,
                 }}
@@ -343,15 +301,15 @@ export function WikiOSHeader({
               referrerPolicy="no-referrer"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent" />
+          <div className="absolute inset-0 bg-black/20" />
         </div>
       ) : (
         <div
           aria-hidden="true"
-          className="bg-card pointer-events-none absolute inset-0 z-0 rounded-2xl select-none"
+          className="bg-surface rounded-card pointer-events-none absolute inset-0 z-0 select-none"
         >
           <div
-            className="absolute inset-0 bg-gradient-to-br"
+            className="absolute inset-0"
             style={{
               background: `linear-gradient(135deg, ${themeColors?.primary ?? "#3b82f6"}08 0%, transparent 100%)`,
             }}
@@ -359,25 +317,17 @@ export function WikiOSHeader({
         </div>
       )}
 
-      {/* Floating Glass HUD Box */}
-      <div
-        className="relative z-10 m-3 max-w-xl self-start sm:m-4"
-        style={{
-          transform: "translateZ(30px)",
-          transformStyle: "preserve-3d" as const,
-        }}
-      >
-        <div className="facet-surface facet-refraction space-y-2.5 rounded-2xl border border-black/15 bg-white/95 p-4 text-left shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:p-5 dark:border-white/10 dark:bg-zinc-950/80 dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+      {/* Title card */}
+      <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
+        <div className="rounded-row border-separator bg-surface shadow-floating space-y-2.5 border p-4 text-left sm:p-5">
           {/* Breadcrumb Path */}
-          <div className="text-muted-foreground flex items-center gap-1 text-xs font-semibold tracking-wider uppercase">
+          <div className="text-label-secondary text-eyebrow flex items-center gap-1">
             <CategoryBreadcrumb title={title} />
           </div>
 
           {/* Title & Award Badge */}
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-foreground text-xl leading-tight font-bold tracking-tight sm:text-2xl">
-              {title.replace(/_/g, " ")}
-            </h1>
+            <h1 className="text-label text-title-2 sm:text-title-1">{title.replace(/_/g, " ")}</h1>
 
             <WatchButton title={title} wikiSource={wikiSource} />
 
@@ -385,13 +335,13 @@ export function WikiOSHeader({
               <Popover open={showPopover} onOpenChange={setShowPopover}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`group relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:shadow-md active:scale-95 ${
-                      badgeConfig.classes
-                    } ${
-                      showCelebration && primaryAward.category === "LOREWARD"
-                        ? "loreward-badge-celebrate"
-                        : ""
-                    }`}
+                    className={cn(
+                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                      badgeConfig.classes,
+                      showCelebration &&
+                        primaryAward.category === "LOREWARD" &&
+                        "loreward-badge-celebrate"
+                    )}
                   >
                     {showCelebration && primaryAward.category === "LOREWARD" && (
                       <div className="pointer-events-none absolute inset-0 overflow-visible">
@@ -403,12 +353,10 @@ export function WikiOSHeader({
                         ))}
                       </div>
                     )}
-                    <badgeConfig.Icon
-                      className={`h-3.5 w-3.5 shrink-0 group-hover:animate-bounce ${badgeConfig.iconColor}`}
-                    />
+                    <badgeConfig.Icon className={cn("size-3.5 shrink-0", badgeConfig.iconColor)} />
 
                     {awardsData.awards.length > 1 && (
-                      <span className="text-xs leading-none font-bold tabular-nums opacity-80">
+                      <span className="text-caption leading-none font-semibold tabular-nums opacity-80">
                         +{awardsData.awards.length - 1}
                       </span>
                     )}
@@ -416,9 +364,11 @@ export function WikiOSHeader({
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="font-ui w-72 p-3" align="start">
-                  <div className="mb-2 flex items-center justify-between border-b border-zinc-100 pb-2 dark:border-white/5">
-                    <span className="text-foreground text-xs font-bold">Lorewards & Accolades</span>
-                    <span className="text-muted-foreground text-xs font-medium">
+                  <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
+                    <span className="text-label text-caption font-semibold">
+                      Lorewards & Accolades
+                    </span>
+                    <span className="text-label-secondary text-caption">
                       {awardsData.awards.length} awarded
                     </span>
                   </div>
@@ -426,40 +376,40 @@ export function WikiOSHeader({
                     {awardsData.awards.map((award: any, idx: number) => {
                       const date = new Date(award.awardedAt || award.createdAt);
                       let AwardIcon = Trophy;
-                      let iconColor = "text-amber-500";
+                      let iconColor = "text-yellow";
                       if (award.category === "LOREWARD") {
                         AwardIcon = Trophy;
-                        iconColor = "text-amber-500";
+                        iconColor = "text-yellow";
                       } else if (award.category === "FEATURED") {
                         AwardIcon = Star;
-                        iconColor = "text-yellow-500";
+                        iconColor = "text-yellow";
                       } else if (award.category === "COLLABORATION") {
                         AwardIcon = Users;
-                        iconColor = "text-green-500";
+                        iconColor = "text-green";
                       } else if (award.category === "PEER_REVIEW") {
                         AwardIcon = CheckCircle2;
-                        iconColor = "text-blue-500";
+                        iconColor = "text-tint";
                       } else if (award.category === "EDITOR_MILESTONE") {
                         AwardIcon = Sparkles;
-                        iconColor = "text-indigo-500";
+                        iconColor = "text-indigo";
                       }
 
                       return (
                         <div
                           key={award.id || idx}
-                          className="flex items-start gap-2 border-b border-zinc-100 pb-2 last:border-0 last:pb-0 dark:border-white/5"
+                          className="border-separator flex items-start gap-2 border-b pb-2 last:border-0 last:pb-0"
                         >
                           <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
                           <div className="flex flex-col text-left">
-                            <span className="text-foreground text-xs font-semibold">
+                            <span className="text-label text-caption font-semibold">
                               {award.name}
                             </span>
                             {award.description && (
-                              <span className="text-muted-foreground mt-0.5 text-xs leading-normal">
+                              <span className="text-label-secondary text-footnote mt-0.5 leading-normal">
                                 {award.description}
                               </span>
                             )}
-                            <span className="text-muted-foreground/60 mt-0.5 text-xs">
+                            <span className="text-label-secondary text-footnote mt-0.5">
                               {date.toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
@@ -471,10 +421,10 @@ export function WikiOSHeader({
                       );
                     })}
                   </div>
-                  <div className="flex justify-end border-t border-zinc-100 pt-2 dark:border-white/5">
+                  <div className="border-separator flex justify-end border-t pt-2">
                     <Link
                       href={withBasePath("/wiki/lorewards")}
-                      className="text-xs font-bold text-amber-600 transition-colors hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      className="text-caption text-tint duration-fast hover:text-tint-hover transition-colors"
                     >
                       View Leaderboard &rarr;
                     </Link>
@@ -485,12 +435,6 @@ export function WikiOSHeader({
           </div>
         </div>
       </div>
-
-      {/* Dynamic Cursor Sheen Overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 z-20 rounded-2xl transition-opacity duration-300"
-        style={sheenStyle}
-      />
     </div>
   );
 }

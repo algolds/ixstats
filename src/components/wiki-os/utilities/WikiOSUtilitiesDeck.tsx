@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React, { useState, useDeferredValue, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Book, Compass, EditPencil, Activity, Shield, X } from "iconoir-react";
@@ -70,7 +71,7 @@ export function WikiOSUtilitiesDeck({
       {/* Spotlight Command Search & Segmented Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Domain Segmented Control with Apple Spring Pill Physics */}
-        <div className="border-border/40 bg-card/60 relative flex flex-wrap items-center gap-1 rounded-xl border p-1 shadow-xs backdrop-blur-xl">
+        <div className="border-separator bg-surface rounded-row relative flex flex-wrap items-center gap-1 border p-1">
           {domains.map((dom) => {
             const Icon = dom.icon;
             const isSelected = selectedDomain === dom.id;
@@ -81,27 +82,27 @@ export function WikiOSUtilitiesDeck({
                 data-cuelume-press="soft"
                 data-cuelume-hover="tick"
                 onClick={() => setSelectedDomain(dom.id as UtilityDomain)}
-                className={`relative z-10 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
-                  isSelected
-                    ? "font-semibold text-black dark:text-black"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={cn(
+                  "rounded-control text-caption relative z-10 flex items-center gap-1.5 px-3 py-1.5 transition-colors active:scale-[0.98]",
+                  isSelected ? "font-semibold text-black" : "text-label-secondary hover:text-label"
+                )}
               >
                 {isSelected && (
                   <motion.div
                     layoutId="activeUtilityDomain"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
-                    className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
+                    className="bg-tint rounded-control absolute inset-0 -z-10"
                   />
                 )}
                 <Icon className="h-3.5 w-3.5" />
                 <span>{dom.label}</span>
                 <span
-                  className={`py-0.2 rounded-full px-1.5 text-xs ${
+                  className={cn(
+                    "py-0.2 text-caption rounded-full px-1.5",
                     isSelected
-                      ? "bg-black/20 font-bold text-black"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+                      ? "bg-black/20 font-semibold text-black"
+                      : "bg-fill-3 text-label-secondary"
+                  )}
                 >
                   {dom.count}
                 </span>
@@ -112,7 +113,7 @@ export function WikiOSUtilitiesDeck({
 
         {/* Search / Spotlight Filter */}
         <div className="relative max-w-md min-w-[280px] flex-1 sm:max-w-xs">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <input
             ref={searchInputRef}
             type="text"
@@ -120,20 +121,20 @@ export function WikiOSUtilitiesDeck({
             data-cuelume-hover="tick"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search tools or type Special:..."
-            className="border-border/40 bg-card/60 text-foreground placeholder:text-muted-foreground/60 focus:border-wiki/60 focus:ring-wiki/30 w-full rounded-xl border py-1.5 pr-8 pl-9 text-xs shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
+            className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint/60 focus:ring-tint/30 rounded-row text-footnote w-full border py-1.5 pr-8 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
           />
           {searchQuery ? (
             <button
               type="button"
               data-cuelume-press="tap"
               onClick={() => setSearchQuery("")}
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 rounded-md p-0.5 active:scale-90"
+              className="text-label-secondary hover:text-label rounded-control-sm absolute top-1/2 right-2.5 -translate-y-1/2 p-0.5 active:scale-[0.98]"
               title="Clear search (Esc)"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           ) : (
-            <kbd className="text-muted-foreground/60 border-border/40 bg-secondary/50 py-0.2 pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 rounded border px-1 font-mono text-xs">
+            <kbd className="text-label-secondary border-separator bg-fill-3 py-0.2 rounded-control-sm text-footnote pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 border px-1 tabular-nums">
               /
             </kbd>
           )}

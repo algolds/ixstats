@@ -15,7 +15,7 @@ import {
   Group as Users,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
 
@@ -60,26 +60,24 @@ function IxWikiPageTools({
         <button
           type="button"
           onClick={() => {
-            soundEffects.bloom();
             onOpenBacklinks?.();
           }}
-          className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+          className="text-label-secondary hover:text-label rounded-row border-separator bg-fill-4 text-caption hover:bg-fill-4 flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
           title="What Links Here"
         >
-          <LinkIcon className="h-3 w-3 text-cyan-400" />
+          <LinkIcon className="text-teal h-3 w-3" />
           <span>Backlinks</span>
         </button>
 
         <button
           type="button"
           onClick={() => {
-            soundEffects.bloom();
             onOpenHistory?.();
           }}
-          className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/5 px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-[0.97]"
+          className="text-label-secondary hover:text-label rounded-row border-separator bg-fill-4 text-caption hover:bg-fill-4 flex cursor-pointer items-center justify-center gap-1.5 border px-2 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
           title="Revision History"
         >
-          <Clock className="text-muted-foreground h-3 w-3" />
+          <Clock className="text-label-secondary h-3 w-3" />
           <span>History</span>
         </button>
       </div>
@@ -88,25 +86,22 @@ function IxWikiPageTools({
       <button
         type="button"
         onClick={() => {
-          soundEffects.bloom();
           onOpenMargin?.("threads");
         }}
-        className="group border-border/20 text-muted-foreground hover:text-foreground mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 text-xs font-medium transition-colors"
+        className="group border-separator text-label-secondary hover:text-label text-caption mt-1 flex w-full cursor-pointer items-center justify-between border-t pt-2 transition-colors"
       >
         <span className="flex items-center gap-1.5">
-          <ChatBubble className="h-3 w-3 text-amber-400/80 group-hover:text-amber-400" />
+          <ChatBubble className="text-yellow/80 group-hover:text-yellow h-3 w-3" />
           <span>Margin notes</span>
           {notes > 0 ? (
-            <span className="text-muted-foreground/60 tabular-nums">
+            <span className="text-label-secondary tabular-nums">
               · {notes} {notes === 1 ? "thread" : "threads"}
             </span>
           ) : (
-            <span className="text-muted-foreground/40">· none yet</span>
+            <span className="text-label-secondary">· none yet</span>
           )}
         </span>
-        <span className="text-muted-foreground/40 group-hover:text-foreground transition-colors">
-          →
-        </span>
+        <span className="text-label-secondary group-hover:text-label transition-colors">→</span>
       </button>
     </>
   );
@@ -192,21 +187,21 @@ export function ArticleCompanionHUD({
   return (
     <div className="wikios-companion-hud flex flex-col gap-3 select-none">
       {/* 1. Article Intelligence & Provenance Capsule */}
-      <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-        <div className="border-border/30 mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
+      <div className="bg-surface rounded-card border-separator border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+        <div className="border-separator mb-2.5 flex items-center justify-between gap-2 border-b pb-2">
           {awardsData?.hasLoreward && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-400">
+            <span className="border-yellow/30 bg-yellow/15 text-caption text-yellow inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-semibold">
               <Trophy className="h-2.5 w-2.5" />
               Awarded
             </span>
           )}
         </div>
 
-        <div className="text-muted-foreground font-ui space-y-2 text-xs">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground/70">Read Time</span>
+        <div className="text-label-secondary font-ui text-footnote space-y-2">
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label-secondary">Read Time</span>
             <span
-              className="text-foreground font-semibold tabular-nums"
+              className="text-label font-semibold tabular-nums"
               title={`${wordCount.toLocaleString()} words`}
             >
               ~{readingTime} min
@@ -215,25 +210,25 @@ export function ArticleCompanionHUD({
 
           {/* Original Creator / Author — with IxnayID avatar when available */}
           {creatorName && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-xs">
-              <span className="text-muted-foreground/70">Created by</span>
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-1.5">
+              <span className="text-label-secondary">Created by</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(creatorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors hover:text-wiki"
+                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-1.5 font-semibold transition-colors"
                 title={`Original Author: ${creatorName}`}
               >
                 {creatorAvatar ? (
                   <img
                     src={creatorAvatar}
                     alt=""
-                    className="h-4 w-4 shrink-0 rounded-full border border-white/10 object-cover"
+                    className="border-separator h-4 w-4 shrink-0 rounded-full border object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs leading-none font-bold">
+                  <span className="text-label-secondary bg-fill-4 text-caption flex h-4 w-4 shrink-0 items-center justify-center rounded-full leading-none font-semibold">
                     {creatorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -244,9 +239,9 @@ export function ArticleCompanionHUD({
 
           {/* Creation Date */}
           {createdAt && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground/70">Created</span>
-              <span className="text-foreground/80 text-xs font-medium tabular-nums">
+            <div className="text-footnote flex items-center justify-between">
+              <span className="text-label-secondary">Created</span>
+              <span className="text-label-secondary text-caption tabular-nums">
                 {new Date(createdAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -258,9 +253,9 @@ export function ArticleCompanionHUD({
 
           {/* Last Updated Timestamp */}
           {effectiveLastModified && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-1.5 text-xs">
-              <span className="text-muted-foreground/70">Last Updated</span>
-              <span className="text-foreground/90 text-xs font-medium tabular-nums">
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-1.5">
+              <span className="text-label-secondary">Last Updated</span>
+              <span className="text-label text-caption tabular-nums">
                 {new Date(effectiveLastModified).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -272,25 +267,25 @@ export function ArticleCompanionHUD({
 
           {/* Last Editor (if distinct) — with IxnayID avatar when available */}
           {lastEditorName && lastEditorName.toLowerCase() !== creatorName?.toLowerCase() && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground/70">Last Editor</span>
+            <div className="text-footnote flex items-center justify-between">
+              <span className="text-label-secondary">Last Editor</span>
               <Link
                 href={withBasePath(
                   `/wiki/User:${encodeURIComponent(lastEditorName.replace(/ /g, "_"))}`
                 )}
-                className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors hover:text-wiki"
+                className="text-label hover:text-tint inline-flex max-w-[140px] items-center gap-1.5 font-medium transition-colors"
                 title={`Last edited by ${lastEditorName}`}
               >
                 {lastEditorAvatar ? (
                   <img
                     src={lastEditorAvatar}
                     alt=""
-                    className="h-4 w-4 shrink-0 rounded-full border border-white/10 object-cover"
+                    className="border-separator h-4 w-4 shrink-0 rounded-full border object-cover"
                     loading="lazy"
                     decoding="async"
                   />
                 ) : (
-                  <span className="text-muted-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs leading-none font-bold">
+                  <span className="text-label-secondary bg-fill-4 text-caption flex h-4 w-4 shrink-0 items-center justify-center rounded-full leading-none font-semibold">
                     {lastEditorName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -301,13 +296,13 @@ export function ArticleCompanionHUD({
 
           {/* Other Contributors Section */}
           {otherContributors.length > 0 && (
-            <div className="border-border/20 space-y-1.5 border-t pt-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground/80 flex items-center gap-1 font-medium">
-                  <Users className="h-3 w-3 text-cyan-400" />
+            <div className="border-separator space-y-1.5 border-t pt-2">
+              <div className="text-footnote flex items-center justify-between">
+                <span className="text-label-secondary flex items-center gap-1 font-medium">
+                  <Users className="text-teal h-3 w-3" />
                   Contributors
                 </span>
-                <span className="text-muted-foreground/70 text-xs font-bold tabular-nums">
+                <span className="text-label-secondary text-caption font-semibold tabular-nums">
                   {totalContributorsCount}
                 </span>
               </div>
@@ -320,12 +315,12 @@ export function ArticleCompanionHUD({
                       href={withBasePath(
                         `/wiki/User:${encodeURIComponent(contrib.username.replace(/ /g, "_"))}`
                       )}
-                      className="text-foreground/90 inline-flex max-w-[140px] items-center gap-1 truncate rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs font-medium transition-colors hover:bg-white/10 hover:text-cyan-300"
+                      className="text-label rounded-control-sm border-separator bg-fill-4 text-caption hover:bg-fill-4 hover:text-teal inline-flex max-w-[140px] items-center gap-1 truncate border px-1.5 py-0.5 transition-colors"
                       title={`${contrib.username} (${contrib.editCount || 1} edits)`}
                     >
                       <span>{contrib.username}</span>
                       {contrib.editCount && contrib.editCount > 1 && (
-                        <span className="text-muted-foreground/70 text-xs tabular-nums">
+                        <span className="text-label-secondary text-footnote tabular-nums">
                           ({contrib.editCount})
                         </span>
                       )}
@@ -337,7 +332,7 @@ export function ArticleCompanionHUD({
                   <button
                     type="button"
                     onClick={() => setShowAllContributors((v) => !v)}
-                    className="cursor-pointer px-1 py-0.5 text-xs font-semibold text-cyan-400 transition-colors hover:text-cyan-300"
+                    className="text-caption text-teal hover:text-teal cursor-pointer px-1 py-0.5 font-semibold transition-colors"
                   >
                     {showAllContributors ? "Show less" : `+${otherContributors.length - 3} more`}
                   </button>
@@ -349,13 +344,12 @@ export function ArticleCompanionHUD({
       </div>
 
       {/* 2. Quick Actions Glass Control Center */}
-      <div className="facet-surface bg-card/40 space-y-1.5 rounded-2xl border border-white/10 p-2.5 shadow-xs backdrop-blur-xl">
+      <div className="bg-surface rounded-card border-separator space-y-1.5 border p-2.5">
         {/* Listen / Voice Narrator Toggle */}
         {narrator && (
           <button
             type="button"
             onClick={() => {
-              soundEffects.bloom();
               if (narrator.isPlaying) {
                 narrator.pause();
               } else {
@@ -363,28 +357,28 @@ export function ArticleCompanionHUD({
               }
             }}
             className={cn(
-              "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.97]",
+              "group rounded-row text-caption flex w-full cursor-pointer items-center justify-between px-2.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
               narrator.isPlaying
-                ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-xs"
-                : "text-foreground border border-white/5 bg-white/5 hover:bg-white/10"
+                ? "border-teal/40 bg-teal/20 text-teal border"
+                : "text-label border-separator bg-fill-4 hover:bg-fill-4 border"
             )}
           >
             <div className="flex items-center gap-2">
               {narrator.isPlaying ? (
-                <Pause className="h-3.5 w-3.5 animate-pulse text-cyan-400" />
+                <Pause className="text-teal h-3.5 w-3.5 animate-pulse" />
               ) : (
-                <Play className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5" />
+                <Play className="text-label-secondary group-hover:text-label h-3.5 w-3.5" />
               )}
               <span>{narrator.isPlaying ? "Narrating..." : "Listen to article"}</span>
             </div>
             {narrator.isPlaying ? (
               <span className="flex items-center gap-0.5">
-                <span className="h-2 w-0.5 animate-[bounce_1s_infinite_100ms] rounded-full bg-cyan-400" />
-                <span className="h-3 w-0.5 animate-[bounce_1s_infinite_200ms] rounded-full bg-cyan-400" />
-                <span className="h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full bg-cyan-400" />
+                <span className="bg-teal/70 h-2 w-0.5 animate-[bounce_1s_infinite_100ms] rounded-full" />
+                <span className="bg-teal/70 h-3 w-0.5 animate-[bounce_1s_infinite_200ms] rounded-full" />
+                <span className="bg-teal/70 h-2 w-0.5 animate-[bounce_1s_infinite_300ms] rounded-full" />
               </span>
             ) : (
-              <span className="rounded-full border border-cyan-500/30 bg-cyan-500/15 px-1.5 py-0.5 text-xs leading-none font-bold tracking-wider text-cyan-400 uppercase">
+              <span className="border-teal/30 bg-teal/15 text-eyebrow text-teal rounded-full border px-1.5 py-0.5 leading-none">
                 Beta
               </span>
             )}
@@ -403,10 +397,8 @@ export function ArticleCompanionHUD({
 
       {/* 3. Top Categories / Domain Tags */}
       {categories.length > 0 && (
-        <div className="facet-surface bg-card/40 rounded-2xl border border-white/10 p-3 shadow-xs backdrop-blur-xl">
-          <div className="text-muted-foreground/80 font-brand mb-2 text-xs font-bold tracking-wider uppercase">
-            Categories
-          </div>
+        <div className="bg-surface rounded-card border-separator border p-3">
+          <div className="text-label-secondary font-brand text-eyebrow mb-2">Categories</div>
           <div className="flex flex-wrap gap-1.5">
             {categories.slice(0, 4).map((cat) => {
               const cleanCat = typeof cat === "string" ? cat : ((cat as any)?.title ?? "");
@@ -415,7 +407,7 @@ export function ArticleCompanionHUD({
                 <Link
                   key={cleanCat}
                   href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
-                  className="text-muted-foreground hover:text-foreground max-w-[180px] truncate rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 active:scale-95"
+                  className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 >
                   {cleanCat}
                 </Link>

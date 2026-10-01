@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import type { StashedThreadItem } from "./types";
 
 interface StashThreadsListProps {
@@ -26,22 +26,21 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
         return (
           <div
             key={item.id}
-            className="group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2.5 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             <div className="flex items-start justify-between gap-3">
               <Link
                 href={withBasePath(forumUrl)}
-                onClick={() => soundEffects.press()}
                 className="group/title flex min-w-0 flex-1 items-center gap-2.5"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-orange-500/30 bg-orange-500/15 text-orange-400 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
+                <div className="rounded-row border-orange/30 bg-orange/15 text-orange flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
                   <MessageSquare className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-sm font-bold tracking-tight text-[var(--wikios-text)] transition-colors group-hover/title:text-orange-400">
+                  <h3 className="text-headline text-label group-hover/title:text-orange truncate transition-colors">
                     {cleanTitle}
                   </h3>
-                  <div className="flex items-center gap-2 pt-0.5 text-xs text-[var(--wikios-text-dim)]">
+                  <div className="text-footnote text-label-secondary flex items-center gap-2 pt-0.5">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(item.savedAt).toLocaleDateString("en-US", {
@@ -50,7 +49,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                         year: "numeric",
                       })}
                     </span>
-                    <span className="py-0.2 rounded-md border border-orange-500/25 bg-orange-500/15 px-1.5 text-xs font-bold tracking-wider text-orange-400 uppercase">
+                    <span className="py-0.2 rounded-control-sm border-orange/25 bg-orange/15 text-eyebrow text-orange border px-1.5">
                       Forum
                     </span>
                   </div>
@@ -60,8 +59,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(forumUrl)}
-                  onClick={() => soundEffects.press()}
-                  className="flex items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Open forum thread"
                 >
                   <span>Open</span>
@@ -72,10 +70,9 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    soundEffects.release();
                     onUnstash(item.pageTitle);
                   }}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
+                  className="rounded-row border-separator bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-7 w-7 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Remove from stash"
                 >
                   <X className="h-3.5 w-3.5" />

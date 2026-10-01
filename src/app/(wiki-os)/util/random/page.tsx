@@ -26,11 +26,11 @@ export default function RandomPage() {
       {isLoading || data?.title ? (
         <div className="wikios-loading">
           <div className="wikios-loading-spinner" />
-          <p className="mt-4 text-sm text-zinc-400">Finding a random page...</p>
+          <p className="text-body text-label-secondary mt-4">Finding a random page...</p>
         </div>
       ) : (
-        <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
-          <p className="text-sm text-zinc-400">Could not fetch a random page.</p>
+        <div className="wikios-error rounded-card border-separator bg-surface border p-6">
+          <p className="text-body text-label-secondary">Could not fetch a random page.</p>
           <button onClick={() => refetch()} className="wikios-action-btn mt-3">
             Try again
           </button>

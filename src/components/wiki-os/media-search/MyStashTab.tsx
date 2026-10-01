@@ -3,7 +3,14 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import { Search, SystemRestart as Loader2, Bookmark, Folder, ZoomIn, Xmark as X } from "iconoir-react";
+import {
+  Search,
+  SystemRestart as Loader2,
+  Bookmark,
+  Folder,
+  ZoomIn,
+  Xmark as X,
+} from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
@@ -145,22 +152,22 @@ export function MyStashTab({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Search and Navigation */}
-      <div className="border-border/10 bg-card/5 border-b p-3">
+      <div className="border-separator bg-surface border-b p-3">
         <div className="relative mb-2">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder={
               stashViewMode === "stashes" ? "Search collections..." : "Search stash images..."
             }
             value={stashSearchQuery}
             onChange={(e) => setStashSearchQuery(e.target.value)}
-            className="h-9 pl-9 pr-8 text-xs bg-muted/30 border-border/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
+            className="text-footnote bg-fill-4 border-separator focus-visible:bg-background focus-visible:ring-ring h-9 pr-8 pl-9 focus-visible:ring-1"
           />
           {stashSearchQuery && (
             <button
               type="button"
               onClick={() => setStashSearchQuery("")}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] cursor-pointer"
+              className="text-label-secondary hover:text-label hover:bg-fill-3 absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded-full p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               title="Clear search"
               aria-label="Clear search"
             >
@@ -170,7 +177,7 @@ export function MyStashTab({
         </div>
 
         {/* Breadcrumb row */}
-        <div className="text-muted-foreground border-border/5 flex items-center gap-1.5 border-t py-1.5 text-xs">
+        <div className="text-label-secondary border-separator text-footnote flex items-center gap-1.5 border-t py-1.5">
           <button
             type="button"
             onClick={() => {
@@ -179,7 +186,7 @@ export function MyStashTab({
               onSelectImage(null as any);
               setStashSearchQuery("");
             }}
-            className="hover:text-foreground flex items-center gap-1 font-semibold transition-colors active:scale-[0.97] cursor-pointer"
+            className="hover:text-label flex cursor-pointer items-center gap-1 font-semibold transition-colors active:scale-[0.98]"
           >
             <Bookmark className="h-3.5 w-3.5" />
             <span>Stashes</span>
@@ -187,7 +194,7 @@ export function MyStashTab({
           {selectedStashId && (
             <>
               <span>/</span>
-              <span className="text-foreground flex items-center gap-1.5 font-semibold">
+              <span className="text-label flex items-center gap-1.5 font-semibold">
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: selectedStashColor || "var(--color-info)" }}
@@ -206,7 +213,7 @@ export function MyStashTab({
           {stashViewMode === "stashes" &&
             (isLoadingStashes ? (
               <div className="flex h-32 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
               </div>
             ) : filteredStashes.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
@@ -220,22 +227,22 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border border-border/40 flex cursor-pointer items-center justify-between rounded-xl bg-card p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-muted/40 hover:border-border/70 active:scale-[0.98] shadow-2xs select-none"
+                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
                       <div className="min-w-0">
-                        <p className="text-foreground truncate text-xs font-bold">{stash.name}</p>
-                        <p className="text-muted-foreground text-xs font-medium">
-                          {stash.itemCount} items
+                        <p className="text-label text-caption truncate font-semibold">
+                          {stash.name}
                         </p>
+                        <p className="text-label-secondary text-caption">{stash.itemCount} items</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-muted-foreground py-12 text-center text-xs">
+              <div className="text-label-secondary text-footnote py-12 text-center">
                 No stashes found.
               </div>
             ))}
@@ -244,10 +251,10 @@ export function MyStashTab({
           {stashViewMode === "images" &&
             (isLoadingStashItems || isLoadingImages ? (
               <div className="flex h-32 items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
               </div>
             ) : filteredPageImages.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
                 {filteredPageImages.map((img) => {
                   const isSelected = selectedImageObj?.pageid === img.pageid;
                   const cleanTitle = (img.title || "").replace(/^File:/, "").replace(/_/g, " ");
@@ -259,10 +266,10 @@ export function MyStashTab({
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
-                        "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98] cursor-pointer",
+                        "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
                         isSelected
-                          ? "border-primary ring-2 ring-primary/30 shadow-sm"
-                          : "border-border/50 hover:border-border hover:shadow-xs"
+                          ? "border-tint ring-primary/30 shadow-card ring-2"
+                          : "border-separator hover:border-separator"
                       )}
                       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                     >
@@ -272,26 +279,28 @@ export function MyStashTab({
                         className="mix-blend-overlay"
                       />
                       <TextureOverlay texture="dots" opacity={0.03} className="mix-blend-overlay" />
-                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/20">
+                      <div className="bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
                         <img
                           src={img.thumbUrl}
                           alt={cleanTitle}
                           loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-300"
                           onContextMenu={(e) => e.preventDefault()}
                         />
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
-                          <div className="rounded-full border border-white/20 bg-black/60 p-1.5 text-white shadow-md">
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <div className="border-separator shadow-card rounded-full border bg-black/60 p-1.5 text-white">
                             <ZoomIn className="h-4 w-4" />
                           </div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-0.5 p-2 text-left">
-                        <span className="truncate text-xs font-medium text-foreground/90 group-hover:text-foreground">
+                        <span className="text-caption text-label group-hover:text-label truncate">
                           {cleanTitle}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
+                        <span className="text-footnote text-label-secondary">
+                          {img.width > 0 && img.height > 0
+                            ? `${img.width}×${img.height}`
+                            : "Vector"}
                         </span>
                       </div>
                     </button>
@@ -299,7 +308,7 @@ export function MyStashTab({
                 })}
               </div>
             ) : (
-              <div className="text-muted-foreground py-12 text-center text-xs">
+              <div className="text-label-secondary text-footnote py-12 text-center">
                 No images found in this stash.
               </div>
             ))}
@@ -307,7 +316,7 @@ export function MyStashTab({
 
         {/* Right Side Detail Panel for Stash view */}
         {selectedImageObj && (
-          <div className="border-border/40 w-80 shrink-0 overflow-y-auto border-l bg-card/40 backdrop-blur-md">
+          <div className="border-separator bg-surface w-80 shrink-0 overflow-y-auto border-l">
             <CommonsDetailPanel
               image={selectedImageObj}
               onClose={() => {

@@ -13,9 +13,9 @@ export function ArticleNotFound({
   onCreate: () => void;
 }) {
   return (
-    <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
-      <h2 className="mb-2 text-lg font-semibold text-red-400">Article not found</h2>
-      <p className="text-sm text-zinc-400">
+    <div className="wikios-error rounded-card border-separator bg-surface border p-6">
+      <h2 className="text-title-3 text-red mb-2">Article not found</h2>
+      <p className="text-body text-label-secondary">
         The page &ldquo;{title}&rdquo; does not exist on {WIKI_SOURCES[wikiSource].name}.
       </p>
       {wikiSource === "ixwiki" && (
@@ -23,7 +23,7 @@ export function ArticleNotFound({
           <button
             type="button"
             onClick={onCreate}
-            className="wikios-action-btn cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+            className="wikios-action-btn rounded-control bg-tint text-caption text-on-tint hover:bg-tint cursor-pointer px-4 py-2 font-semibold transition-colors"
           >
             Create this page
           </button>

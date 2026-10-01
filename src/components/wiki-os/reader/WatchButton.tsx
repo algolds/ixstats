@@ -49,7 +49,7 @@ function IxWikiWatchButton({ title }: { title: string }) {
       size="xs"
       onClick={handleClick}
       title={isWatched ? "Remove from your watchlist" : "Add to your watchlist"}
-      className="border-border/60 bg-background/60 text-muted-foreground hover:text-foreground gap-1.5 rounded-lg backdrop-blur-md"
+      className="border-separator bg-surface text-label-secondary hover:text-label rounded-control gap-1.5"
     >
       <Icon className="h-3.5 w-3.5" />
       {isWatched ? "Unwatch" : "Watch"}

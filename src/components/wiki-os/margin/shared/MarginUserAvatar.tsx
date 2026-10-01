@@ -44,9 +44,9 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
   const flagUrl = author.country?.flag;
 
   const sizeClasses = {
-    xs: "w-5 h-5 text-xs",
-    sm: "w-6 h-6 text-xs",
-    md: "w-8 h-8 text-xs",
+    xs: "w-5 h-5 text-footnote",
+    sm: "w-6 h-6 text-footnote",
+    md: "w-8 h-8 text-footnote",
   }[size];
 
   return (
@@ -55,9 +55,9 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
     >
       <div
         className={cn(
-          "flex items-center justify-center overflow-hidden rounded-full border font-bold shadow-xs transition-transform duration-100",
+          "flex items-center justify-center overflow-hidden rounded-full border font-semibold transition-transform duration-100",
           sizeClasses,
-          "bg-margin-accent border-yellow-400/60 font-black text-stone-950"
+          "bg-margin-accent border-yellow/60 font-semibold text-(--margin-badge-text)"
         )}
       >
         {avatarUrl ? (
@@ -75,7 +75,7 @@ export const MarginUserAvatar = memo(function MarginUserAvatar({
       {/* Country Flag Micro Badge */}
       {flagUrl && (
         <span
-          className="absolute -right-0.5 -bottom-0.5 flex h-2.5 w-3 items-center justify-center overflow-hidden rounded-xs border border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-xs"
+          className="border-separator bg-background absolute -right-0.5 -bottom-0.5 flex h-2.5 w-3 items-center justify-center overflow-hidden rounded-xs border"
           title={author.country?.name}
         >
           <img src={flagUrl} alt="" className="h-full w-full object-cover" />

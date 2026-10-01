@@ -206,7 +206,7 @@ export function SculptedEmblemHero({
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
           <IxWikiLogo
             size={96}
-            className="text-wiki relative z-10 h-22 w-22 drop-shadow-[0_4px_20px_rgba(29,78,137,0.2)] transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] sm:h-26 sm:w-26 lg:h-28 lg:w-28 dark:text-blue-400 dark:drop-shadow-[0_4px_24px_rgba(96,165,250,0.38)]"
+            className="text-tint relative z-10 h-22 w-22 transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] sm:h-26 sm:w-26 lg:h-28 lg:w-28"
           />
         </motion.div>
 
@@ -214,10 +214,10 @@ export function SculptedEmblemHero({
         <div className="flex max-w-xl flex-col items-center justify-center gap-1 px-4">
           <IxWikiWordmark
             size="hero"
-            className="group-hover/brand:text-foreground/90 leading-none transition-colors"
+            className="group-hover/brand:text-label leading-none transition-colors"
           />
           <div className="mt-1.5 flex items-center justify-center">
-            <span className="text-muted-foreground/75 text-xs leading-none font-semibold tracking-[0.18em] uppercase sm:text-xs">
+            <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none tracking-[0.18em]">
               Worldbuilding Encyclopedia
             </span>
           </div>
@@ -247,15 +247,15 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-amber-500/40 hover:bg-amber-500/[0.06] dark:hover:bg-amber-500/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "border-separator border",
+            "bg-surface",
+            "",
+            "hover:border-yellow/40 hover:bg-yellow/6",
+            "text-label-secondary hover:text-label group focus-visible:ring-yellow transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
           )}
         >
-          <IconoirTrophy className="h-3.5 w-3.5 text-amber-500 transition-transform group-hover:scale-110" />
+          <IconoirTrophy className="text-yellow h-3.5 w-3.5 transition-transform" />
           <span>Award-Winning Lore</span>
         </Link>
 
@@ -265,15 +265,15 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-wiki/40 hover:bg-wiki/[0.06] dark:hover:bg-wiki/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-wiki focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "border-separator border",
+            "bg-surface",
+            "",
+            "hover:border-tint/40 hover:bg-tint-fill",
+            "text-label-secondary hover:text-label group focus-visible:ring-tint transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
           )}
         >
-          <IconoirOpenBook className="h-3.5 w-3.5 text-wiki transition-transform group-hover:scale-110" />
+          <IconoirOpenBook className="text-tint h-3.5 w-3.5 transition-transform" />
           <span>Getting Started</span>
         </Link>
 
@@ -283,15 +283,15 @@ export function SculptedEmblemHero({
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
-            "flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
-            "hover:border-emerald-500/40 hover:bg-emerald-500/[0.06] dark:hover:bg-emerald-500/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none active:scale-95"
+            "text-caption flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1",
+            "border-separator border",
+            "bg-surface",
+            "",
+            "hover:border-green/40 hover:bg-green/6",
+            "text-label-secondary hover:text-label group focus-visible:ring-green transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
           )}
         >
-          <IconoirFolder className="h-3.5 w-3.5 text-emerald-500 transition-transform group-hover:scale-110" />
+          <IconoirFolder className="text-green h-3.5 w-3.5 transition-transform" />
           <span>Resources</span>
         </Link>
       </motion.div>
@@ -306,21 +306,21 @@ export function SculptedEmblemHero({
         {/* Tile: Timeline (Milestones & Canon Historical Events) */}
         <div
           className={cn(
-            "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-            "border border-black/[0.08] dark:border-white/[0.1]",
-            "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-            "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-            "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+            "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+            "border-separator border",
+            "bg-surface",
+            "",
+            "hover:border-separator hover:bg-surface hover:shadow-card",
             "group text-left transition-colors duration-200"
           )}
         >
           <TextureOverlay texture="paperGrain" opacity={0.06} />
           <div className="mb-1 flex w-full items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
+            <span className="text-eyebrow text-yellow flex items-center gap-1.5">
               <History className="h-3.5 w-3.5" /> Timeline
             </span>
             {/* Apple-grade stepper pill */}
-            <div className="flex items-center gap-0.5 rounded-md border border-black/[0.04] bg-black/[0.04] px-1 py-0.5 dark:border-white/[0.06] dark:bg-white/[0.05]">
+            <div className="rounded-control-sm border-separator bg-fill-4 flex items-center gap-0.5 border px-1 py-0.5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -331,12 +331,12 @@ export function SculptedEmblemHero({
                 }}
                 data-cuelume-press="tick"
                 data-cuelume-hover="tick"
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
+                className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-[0.98]"
                 aria-label="Previous historical event"
               >
                 <ChevronLeft className="h-3 w-3" />
               </button>
-              <span className="text-muted-foreground/80 px-1 text-xs font-medium tabular-nums select-none">
+              <span className="text-label-secondary text-caption px-1 tabular-nums select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
               <button
@@ -347,7 +347,7 @@ export function SculptedEmblemHero({
                 }}
                 data-cuelume-press="tick"
                 data-cuelume-hover="tick"
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-90 dark:hover:bg-white/10"
+                className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/10 active:scale-[0.98]"
                 aria-label="Next historical event"
               >
                 <ChevronRight className="h-3 w-3" />
@@ -373,14 +373,14 @@ export function SculptedEmblemHero({
                   className="group/event block transition-transform active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-1.5">
-                    <span className="py-0.2 shrink-0 rounded border border-amber-500/20 bg-amber-500/10 px-1.5 text-xs font-bold text-amber-600 tabular-nums dark:text-amber-400">
+                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow shrink-0 border px-1.5 font-semibold tabular-nums">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
-                    <span className="text-foreground truncate text-xs leading-tight font-semibold transition-colors group-hover/event:text-amber-500 sm:text-[13px]">
+                    <span className="text-label text-caption group-hover/event:text-yellow sm:text-callout truncate leading-tight font-semibold transition-colors">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].title}
                     </span>
                   </div>
-                  <span className="text-muted-foreground mt-0.5 line-clamp-1 block text-xs leading-snug font-medium">
+                  <span className="text-label-secondary text-caption mt-0.5 line-clamp-1 block leading-snug">
                     {CANON_CHRONICLE_EVENTS[chronicleIndex].description}
                   </span>
                 </Link>
@@ -397,23 +397,23 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-              "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-              "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+              "border-separator border",
+              "bg-surface",
+              "",
+              "hover:border-separator hover:bg-surface hover:shadow-card",
               "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
+              <span className="text-eyebrow text-tint flex items-center gap-1.5">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span className="tabular-nums">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
@@ -421,7 +421,7 @@ export function SculptedEmblemHero({
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span>Respond now</span>
                     <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
                   </span>
@@ -429,10 +429,10 @@ export function SculptedEmblemHero({
               </div>
             </div>
             <div>
-              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
+              <span className="text-label group-hover:text-label text-caption sm:text-callout block truncate leading-tight font-semibold transition-colors">
                 {activePrompt.title}
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
+              <span className="text-label-secondary text-caption mt-0.5 block truncate">
                 {activePrompt.question}
               </span>
             </div>
@@ -444,29 +444,29 @@ export function SculptedEmblemHero({
             data-cuelume-press="droplet"
             data-cuelume-hover="tick"
             className={cn(
-              "relative flex min-h-[82px] flex-col justify-between overflow-hidden rounded-2xl p-3 sm:min-h-[86px] sm:p-3.5",
-              "border border-black/[0.08] dark:border-white/[0.1]",
-              "bg-white/70 backdrop-blur-xl dark:bg-zinc-900/70",
-              "shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_14px_rgba(0,0,0,0.2)]",
-              "hover:border-black/20 hover:bg-white/85 hover:shadow-md dark:hover:border-white/20 dark:hover:bg-zinc-900/85",
+              "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-3.5",
+              "border-separator border",
+              "bg-surface",
+              "",
+              "hover:border-separator hover:bg-surface hover:shadow-card",
               "group cursor-pointer text-left transition-colors duration-200 active:scale-[0.98]"
             )}
           >
             <TextureOverlay texture="paperGrain" opacity={0.06} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-blue-500 uppercase dark:text-blue-400">
+              <span className="text-eyebrow text-tint flex items-center gap-1.5">
                 <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:border-blue-500/30 group-hover:bg-blue-500/20 dark:bg-blue-500/15 dark:text-blue-300">
+              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                 <span>View prompts</span>
                 <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
               </span>
             </div>
             <div>
-              <span className="text-foreground group-hover:text-foreground block truncate text-xs leading-tight font-semibold transition-colors sm:text-[13px]">
+              <span className="text-label group-hover:text-label text-caption sm:text-callout block truncate leading-tight font-semibold transition-colors">
                 Worldbuilding Prompts
               </span>
-              <span className="text-muted-foreground mt-0.5 block truncate text-xs font-medium">
+              <span className="text-label-secondary text-caption mt-0.5 block truncate">
                 Share your nation's perspective
               </span>
             </div>
@@ -489,8 +489,8 @@ export function SculptedEmblemHero({
             {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
             <div className="relative z-10 mb-3.5 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold tracking-tight text-amber-600 dark:text-amber-400">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold">
+                  <Star className="fill-yellow text-yellow h-3.5 w-3.5" />
                   <span>Featured Article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
@@ -500,21 +500,20 @@ export function SculptedEmblemHero({
                     typeof creator === "object" ? (creator as any)?.username : creator;
                   if (!creatorName) return null;
                   return (
-                    <div className="text-muted-foreground hidden items-center gap-1.5 text-xs font-medium sm:flex">
-                      <span className="text-muted-foreground/40 select-none">·</span>
+                    <div className="text-label-secondary text-caption hidden items-center gap-1.5 sm:flex">
+                      <span className="text-label-secondary select-none">·</span>
                       <span className="flex items-center gap-1">
                         {featuredArticleData?.authorInfo?.creatorAvatar ? (
                           <img
                             src={featuredArticleData.authorInfo.creatorAvatar}
                             alt={creatorName}
-                            className="h-3.5 w-3.5 rounded-full border border-black/10 object-cover dark:border-white/20"
+                            className="border-separator h-3.5 w-3.5 rounded-full border object-cover"
                           />
                         ) : (
-                          <User className="text-muted-foreground/70 h-3 w-3" />
+                          <User className="text-label-secondary h-3 w-3" />
                         )}
                         <span>
-                          By{" "}
-                          <strong className="text-foreground font-semibold">{creatorName}</strong>
+                          By <strong className="text-label font-semibold">{creatorName}</strong>
                         </span>
                       </span>
                     </div>
@@ -523,22 +522,22 @@ export function SculptedEmblemHero({
               </div>
 
               {/* Archive & Suggest Links */}
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Link
                   href={withBasePath("/wiki/IxWiki:Featured_articles")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+                  className="hover:text-label text-caption flex items-center gap-1 transition-colors"
                 >
                   <History className="h-3 w-3" />
                   <span>Archive</span>
                 </Link>
-                <span className="text-muted-foreground/30 select-none">·</span>
+                <span className="text-label-secondary select-none">·</span>
                 <Link
                   href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="flex items-center gap-1 text-xs font-medium transition-colors hover:text-amber-500 dark:hover:text-amber-400"
+                  className="text-caption hover:text-yellow flex items-center gap-1 transition-colors"
                 >
                   <Lightbulb className="h-3 w-3" />
                   <span>Suggest</span>
@@ -562,13 +561,13 @@ export function SculptedEmblemHero({
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
-                      className="group/title block rounded focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+                      className="group/title rounded-control-sm focus-visible:ring-yellow block focus-visible:ring-2 focus-visible:outline-none"
                     >
-                      <h3 className="text-foreground text-lg leading-snug font-bold tracking-tight transition-colors group-hover/title:text-amber-500 sm:text-xl lg:text-[22px] dark:group-hover/title:text-amber-400">
+                      <h3 className="text-label text-title-3 group-hover/title:text-yellow sm:text-title-2 lg:text-title-1] transition-colors">
                         {featuredArticleData.title}
                       </h3>
                     </Link>
-                    <p className="text-muted-foreground mt-2 line-clamp-3 text-xs leading-relaxed font-normal sm:text-[13.5px]">
+                    <p className="text-label-secondary text-footnote sm:text-callout mt-2 line-clamp-3 leading-relaxed font-normal">
                       {featuredArticleData.summary}
                     </p>
                   </div>
@@ -577,7 +576,7 @@ export function SculptedEmblemHero({
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
-                      className="text-foreground group/cta inline-flex items-center gap-1.5 text-xs font-semibold transition-colors hover:text-amber-500 dark:hover:text-amber-400"
+                      className="text-label group/cta text-caption hover:text-yellow inline-flex items-center gap-1.5 font-semibold transition-colors"
                     >
                       <span>Read full article</span>
                       <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cta:translate-x-1" />
@@ -587,7 +586,7 @@ export function SculptedEmblemHero({
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed"
+                className="wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
               />
             )}

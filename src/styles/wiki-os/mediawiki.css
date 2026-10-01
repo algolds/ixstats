@@ -38,7 +38,11 @@
     display: none !important;
   }
 
-  .wikios-article-content .navbox:not(.wikios-navbox-expanded) .navbox-inner > tbody > tr:not(:first-child) {
+  .wikios-article-content
+    .navbox:not(.wikios-navbox-expanded)
+    .navbox-inner
+    > tbody
+    > tr:not(:first-child) {
     display: none !important;
   }
 
@@ -119,8 +123,14 @@
 
   [data-theme="light"] .wikios-article-content .sidebar th[style*="background"],
   [data-theme="light"] .wikios-article-content .sidebar .sidebar-heading[style*="background"],
-  :is(html.light, html[data-theme="light"]) .wikios-article-content .sidebar th[style*="background"],
-  :is(html.light, html[data-theme="light"]) .wikios-article-content .sidebar .sidebar-heading[style*="background"] {
+  :is(html.light, html[data-theme="light"])
+    .wikios-article-content
+    .sidebar
+    th[style*="background"],
+  :is(html.light, html[data-theme="light"])
+    .wikios-article-content
+    .sidebar
+    .sidebar-heading[style*="background"] {
     background: rgba(0, 0, 0, 0.05) !important;
   }
 

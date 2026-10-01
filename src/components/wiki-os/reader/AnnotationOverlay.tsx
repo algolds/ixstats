@@ -4,7 +4,6 @@
 // Full Apple Design & Facet compliance.
 
 import { useEffect, useCallback, type RefObject } from "react";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface AnnotationItem {
   id: string;
@@ -32,7 +31,6 @@ export function useAnnotationOverlay({
 }: UseAnnotationOverlayProps) {
   const handleMarkClick = useCallback(
     (id: string) => {
-      soundEffects.press();
       onSelectAnnotation?.(id);
     },
     [onSelectAnnotation]

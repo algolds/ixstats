@@ -102,10 +102,8 @@ export function MediaSearchModal({
         )}
         data-dialog-nested="true"
       >
-        <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-5 pb-3">
-          <DialogTitle className="text-foreground text-base font-bold">
-            Search Repository
-          </DialogTitle>
+        <DialogHeader className="border-separator shrink-0 border-b px-6 pt-5 pb-3">
+          <DialogTitle className="text-label text-title-3">Search Repository</DialogTitle>
         </DialogHeader>
 
         <Tabs
@@ -113,18 +111,18 @@ export function MediaSearchModal({
           onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="border-border/40 grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
+          <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
             <TabsTrigger
               value="wiki-repository"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer select-none"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
             >
               Repository
             </TabsTrigger>
             <TabsTrigger
               value="upload"
-              className="data-[state=active]:text-foreground rounded-none py-2.5 text-xs data-[state=active]:bg-muted/50 data-[state=active]:shadow-none transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer select-none"
+              className="data-[state=active]:text-label text-footnote data-[state=active]:bg-fill-3 cursor-pointer rounded-none py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none data-[state=active]:shadow-none"
             >
-              Upload 
+              Upload
             </TabsTrigger>
           </TabsList>
 
@@ -159,10 +157,10 @@ export function MediaSearchModal({
 
         {/* Modal Bottom Action Controls */}
         {activeTab !== "upload" && (
-          <div className="border-border/40 bg-card/10 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
+          <div className="border-separator bg-surface flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
             {isDownloading && (
-              <div className="flex items-center gap-2 text-xs text-primary">
-                <Download className="h-3.5 w-3.5 animate-bounce" />
+              <div className="text-footnote text-tint flex items-center gap-2">
+                <Download className="size-3.5" aria-hidden="true" />
                 <span>Downloading file to local cache...</span>
               </div>
             )}
@@ -170,7 +168,7 @@ export function MediaSearchModal({
               onClick={handleSelectConfirm}
               disabled={!selectedImage || isDownloading}
               size="sm"
-              className="h-8 px-4 text-xs font-semibold active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
+              className="text-caption h-8 cursor-pointer px-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               {isDownloading ? (
                 <>

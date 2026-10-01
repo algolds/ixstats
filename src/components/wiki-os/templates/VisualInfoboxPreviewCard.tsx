@@ -191,7 +191,7 @@ export function VisualInfoboxPreviewCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", bounce: 0, duration: 0.3 }}
       className={cn(
-        "wikios-infobox facet-hierarchy-child border-border/60 bg-card/90 w-[330px] max-w-[340px] shrink-0 overflow-hidden rounded-2xl border text-[13px] leading-[1.4] shadow-xl backdrop-blur-xl select-text",
+        "wikios-infobox border-separator bg-surface rounded-card shadow-floating w-[330px] max-w-[340px] shrink-0 overflow-hidden border text-[13px] leading-[1.4] select-text",
         className
       )}
       style={{ float: "none", margin: 0 }}
@@ -202,11 +202,11 @@ export function VisualInfoboxPreviewCard({
           <tr>
             <th
               colSpan={2}
-              className="infobox-above font-brand border-border/40 bg-wiki/10 text-foreground border-b px-4 py-3 text-center text-base font-bold"
+              className="infobox-above font-brand border-separator bg-tint/10 text-label text-title-3 border-b px-4 py-3 text-center"
             >
-              <div className="tracking-tight">{title}</div>
+              <div className="">{title}</div>
               {subheader && (
-                <div className="infobox-subheader text-muted-foreground mt-0.5 text-xs font-normal italic">
+                <div className="infobox-subheader text-label-secondary text-footnote mt-0.5 font-normal italic">
                   {subheader}
                 </div>
               )}
@@ -218,28 +218,24 @@ export function VisualInfoboxPreviewCard({
             <tr>
               <td
                 colSpan={2}
-                className="infobox-image border-border/30 bg-secondary/15 border-b p-3 text-center"
+                className="infobox-image border-separator bg-fill-4 border-b p-3 text-center"
               >
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
-                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                      National Flag
-                    </span>
-                    <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
+                  <div className="border-separator bg-surface rounded-row flex h-20 flex-col items-center justify-center border p-2">
+                    <span className="text-label-secondary text-subhead">National Flag</span>
+                    <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                       {customValues.image_flag || "Flag.svg"}
                     </span>
                   </div>
-                  <div className="border-border/40 bg-background/60 flex h-20 flex-col items-center justify-center rounded-xl border p-2">
-                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                      Coat of Arms
-                    </span>
-                    <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
+                  <div className="border-separator bg-surface rounded-row flex h-20 flex-col items-center justify-center border p-2">
+                    <span className="text-label-secondary text-eyebrow">Coat of Arms</span>
+                    <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                       {customValues.image_coat || "Crest.svg"}
                     </span>
                   </div>
                 </div>
                 {motto && (
-                  <div className="text-muted-foreground mt-2 font-serif text-xs italic">
+                  <div className="text-label-secondary text-footnote mt-2 font-serif italic">
                     &ldquo;{motto}&rdquo;
                   </div>
                 )}
@@ -249,13 +245,11 @@ export function VisualInfoboxPreviewCard({
             <tr>
               <td
                 colSpan={2}
-                className="infobox-image border-border/30 bg-secondary/15 border-b p-3 text-center"
+                className="infobox-image border-separator bg-fill-4 border-b p-3 text-center"
               >
-                <div className="border-border/40 bg-background/60 flex h-24 flex-col items-center justify-center rounded-xl border p-4">
-                  <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    Primary Entity Image
-                  </span>
-                  <span className="text-muted-foreground/60 mt-1 font-mono text-xs">
+                <div className="border-separator bg-surface rounded-row flex h-24 flex-col items-center justify-center border p-4">
+                  <span className="text-label-secondary text-subhead">Primary Entity Image</span>
+                  <span className="text-label-secondary text-footnote mt-1 tabular-nums">
                     {customValues.image || `${cleanName.replace(/\s+/g, "_")}.jpg`}
                   </span>
                 </div>
@@ -268,11 +262,11 @@ export function VisualInfoboxPreviewCard({
             <tr>
               <th
                 scope="row"
-                className="infobox-label text-muted-foreground border-border/20 w-[38%] border-b px-3 py-1.5 text-right text-xs font-medium"
+                className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-1.5 text-right"
               >
                 Anthem
               </th>
-              <td className="infobox-data text-foreground border-border/20 border-b px-3 py-1.5 text-xs font-normal">
+              <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-1.5 font-normal">
                 {anthem}
               </td>
             </tr>
@@ -284,7 +278,7 @@ export function VisualInfoboxPreviewCard({
               <tr>
                 <th
                   colSpan={2}
-                  className="infobox-header text-foreground/90 border-border/40 bg-secondary/30 border-t border-b px-3 py-1.5 text-center text-xs font-semibold tracking-wider uppercase"
+                  className="infobox-header text-label border-separator bg-fill-4 text-eyebrow border-t border-b px-3 py-1.5 text-center"
                 >
                   {sec.title}
                 </th>
@@ -295,14 +289,14 @@ export function VisualInfoboxPreviewCard({
                   customValues[p.name] || p.example || p.label || p.name.replace(/_/g, " ");
 
                 return (
-                  <tr key={p.name} className="hover:bg-secondary/20 transition-colors">
+                  <tr key={p.name} className="hover:bg-fill-4 transition-colors">
                     <th
                       scope="row"
-                      className="infobox-label text-muted-foreground border-border/20 w-[38%] border-b px-3 py-1.5 text-right align-top text-xs font-medium break-words"
+                      className="infobox-label text-label-secondary border-separator text-caption w-[38%] border-b px-3 py-1.5 text-right align-top break-words"
                     >
                       {p.label || p.name.replace(/_/g, " ")}
                     </th>
-                    <td className="infobox-data text-foreground border-border/20 border-b px-3 py-1.5 align-top text-xs font-normal break-words">
+                    <td className="infobox-data text-label border-separator text-footnote border-b px-3 py-1.5 align-top font-normal break-words">
                       {rawVal}
                     </td>
                   </tr>

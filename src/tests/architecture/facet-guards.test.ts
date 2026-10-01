@@ -86,6 +86,10 @@ const FACET_CONVERTED = [
   // Phase 4 apps: Admin console (+ the Facet materials lab) and its shared admin components.
   "app/admin/",
   "components/admin/",
+  // Phase 4 apps: WikiOS (reader, editors, margin, stashes, repository, commons) and its media player.
+  "components/wiki-os/",
+  "app/(wiki-os)/",
+  "components/media/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));

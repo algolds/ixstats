@@ -70,9 +70,7 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs font-medium tracking-wider text-[var(--wikios-text-muted)] uppercase">
-        Select Page Type
-      </label>
+      <p className="text-subhead text-label-secondary">Select page type</p>
       <div className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto pr-1">
         {items.map((item) => {
           const Icon = item.icon;
@@ -80,27 +78,24 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
             <button
               key={item.id}
               type="button"
+              aria-pressed={pageType === item.id}
               onClick={() => setPageType(item.id as PageType)}
               className={cn(
-                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                "rounded-row duration-fast flex items-start gap-2 border p-3 text-left transition-colors",
                 pageType === item.id
-                  ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)]"
-                  : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                  ? "border-tint bg-tint-fill text-label"
+                  : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3"
               )}
             >
               <Icon
                 className={cn(
-                  "mt-0.5 h-4 w-4",
-                  pageType === item.id
-                    ? "text-[var(--wikios-accent)]"
-                    : "text-[var(--wikios-text-dim)]"
+                  "mt-0.5 size-4 shrink-0",
+                  pageType === item.id ? "text-tint" : "text-label-secondary"
                 )}
               />
               <div>
-                <div className="text-xs font-semibold text-[var(--wikios-text)]">{item.label}</div>
-                <div className="mt-0.5 text-xs leading-tight text-[var(--wikios-text-dim)]">
-                  {item.desc}
-                </div>
+                <div className="text-headline text-label">{item.label}</div>
+                <div className="text-footnote text-label-secondary mt-0.5">{item.desc}</div>
               </div>
             </button>
           );

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import {
@@ -121,7 +122,7 @@ function renderWikiLink(
   const className = isRedLink
     ? RED_LINK_CLASS
     : element.className ||
-      "text-wiki hover:text-wiki-hover font-semibold underline transition-colors";
+      "text-tint hover:text-wiki-hover font-semibold underline transition-colors";
 
   return (
     <a
@@ -170,26 +171,24 @@ function domNodeToReact(
           }
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-slate-500/[0.03] p-3.5 shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
+          className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-3.5 border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
         >
           <div className="min-w-0 flex-1 text-left">
             <div className="mb-1 flex items-center gap-1.5">
-              <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
-              <span className="text-xs font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
+              <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
+              <span className="text-eyebrow text-label-secondary">
                 {source === "iiwiki" ? "IIWiki Article" : "IxWiki Article"}
               </span>
             </div>
-            <h4 className="truncate text-sm leading-snug font-semibold text-slate-800 dark:text-slate-200">
-              {title}
-            </h4>
-            <p className="mt-0.5 line-clamp-2 text-xs leading-normal text-slate-500 dark:text-slate-400">
+            <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
+            <p className="text-footnote text-label-secondary mt-0.5 line-clamp-2 leading-normal">
               {summary}
             </p>
           </div>
           {imageUrl && (
             <img
               src={imageUrl}
-              className="h-16 w-16 rounded-xl border border-slate-200 object-cover dark:border-white/10"
+              className="rounded-row border-separator h-16 w-16 border object-cover"
               alt=""
             />
           )}
@@ -206,8 +205,7 @@ function domNodeToReact(
   // Custom Handler: Hashtag Link
   if (tagName === "a" && element.getAttribute("href")?.startsWith("/hashtags/")) {
     const href = element.getAttribute("href") || "";
-    const className =
-      element.className || "text-blue-500 hover:underline cursor-pointer font-medium";
+    const className = element.className || "text-tint hover:underline cursor-pointer font-medium";
 
     return (
       <Link key={index} href={withBasePath(href)} className={className}>
@@ -243,19 +241,17 @@ function domNodeToReact(
 
       // Determine style classes: Minimalist Glass Pills with default light and dark mode classes
       let badgeStyle =
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.03] hover:-translate-y-0.5 backdrop-blur-[2px] border ";
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
       if (isLeague) {
         badgeStyle +=
-          "bg-amber-600/[0.06] border-amber-600/20 text-amber-700 hover:bg-amber-600/[0.1] hover:border-amber-600/30 dark:bg-amber-500/[0.04] dark:border-amber-500/15 dark:text-amber-400/90 dark:hover:bg-amber-500/[0.08] dark:hover:border-amber-500/25";
+          "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30";
       } else if (isClub) {
-        badgeStyle +=
-          "bg-blue-600/[0.06] border-blue-600/20 text-blue-700 hover:bg-blue-600/[0.1] hover:border-blue-600/30 dark:bg-blue-500/[0.04] dark:border-blue-500/15 dark:text-blue-400/90 dark:hover:bg-blue-500/[0.08] dark:hover:border-blue-500/25";
+        badgeStyle += "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30";
       } else if (isCountry) {
         badgeStyle +=
-          "bg-emerald-600/[0.06] border-emerald-600/20 text-emerald-700 hover:bg-emerald-600/[0.1] hover:border-emerald-600/30 dark:bg-emerald-500/[0.04] dark:border-emerald-500/15 dark:text-emerald-400/90 dark:hover:bg-emerald-500/[0.08] dark:hover:border-emerald-500/25";
+          "bg-green/6 border-green/20 text-green hover:bg-green/10 hover:border-green/30";
       } else {
-        badgeStyle +=
-          "bg-wiki/10 border-wiki/30 text-wiki hover:bg-wiki/20 hover:text-wiki-hover";
+        badgeStyle += "bg-tint/10 border-tint/30 text-tint hover:bg-tint/20 hover:text-wiki-hover";
       }
 
       return (
@@ -417,15 +413,15 @@ export function MentionPopover({
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
         <Link href={withBasePath(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
-          {icon && <span className="shrink-0 text-[12px] leading-none">{icon}</span>}
+          {icon && <span className="text-footnote shrink-0 leading-none">{icon}</span>}
           <span>{label}</span>
         </Link>
       </HoverCardTrigger>
       <HoverCardContent side="top" align="center" sideOffset={6} className="w-64 p-4">
         {isLoading ? (
           <div className="flex flex-col gap-2 py-1">
-            <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-white/10" />
-            <div className="h-3 w-40 animate-pulse rounded bg-neutral-100 dark:bg-white/5" />
+            <Skeleton className="rounded-control-sm h-4 w-24" />
+            <Skeleton className="rounded-control-sm h-3 w-40" />
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -433,12 +429,10 @@ export function MentionPopover({
             {isLeague && leagueData && (
               <div className="flex flex-col gap-2 text-left">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🏆</span>
+                  <span className="text-title-3">🏆</span>
                   <div>
-                    <h4 className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                      {leagueData.name}
-                    </h4>
-                    <p className="text-xs text-neutral-500 capitalize dark:text-slate-400">
+                    <h4 className="text-headline text-yellow">{leagueData.name}</h4>
+                    <p className="text-footnote text-label-secondary capitalize">
                       {leagueData.sportPreset} · {leagueData.archetype}
                     </p>
                   </div>
@@ -446,7 +440,7 @@ export function MentionPopover({
                 <div className="mt-1 flex gap-2">
                   <Link
                     href={withBasePath(`/myleague/${entityId}`)}
-                    className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
+                    className="rounded-control-sm bg-yellow/10 text-caption text-yellow hover:bg-yellow/20 flex-1 py-1 text-center font-semibold"
                   >
                     View Workspace
                   </Link>
@@ -459,16 +453,14 @@ export function MentionPopover({
               <div className="flex flex-col gap-2 text-left">
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-lg"
+                    className="text-title-3"
                     style={{ color: teamData.color || "var(--color-warning-light)" }}
                   >
                     🛡️
                   </span>
                   <div>
-                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                      {teamData.name}
-                    </h4>
-                    <p className="text-xs text-neutral-500 dark:text-slate-400">
+                    <h4 className="text-headline text-tint">{teamData.name}</h4>
+                    <p className="text-footnote text-label-secondary">
                       Stadium Cap: {teamData.stadiumCapacity}
                     </p>
                   </div>
@@ -476,7 +468,7 @@ export function MentionPopover({
                 <div className="mt-1 flex gap-2">
                   <Link
                     href={withBasePath(`/myclub/${entityId}`)}
-                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                    className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
                   >
                     View Roster & Stats
                   </Link>
@@ -488,12 +480,12 @@ export function MentionPopover({
             {isCountry && countryData && (
               <div className="flex flex-col gap-2 text-left">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🌍</span>
+                  <span className="text-title-3">🌍</span>
                   <div>
-                    <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                    <h4 className="text-headline text-green">
                       {(countryData as any)?.title ?? entityId}
                     </h4>
-                    <p className="line-clamp-2 text-xs text-neutral-500 dark:text-slate-400">
+                    <p className="text-footnote text-label-secondary line-clamp-2">
                       {countryData.paragraphs?.[0] || "Explore country details."}
                     </p>
                   </div>
@@ -501,13 +493,13 @@ export function MentionPopover({
                 <div className="mt-1 flex gap-2">
                   <Link
                     href={withBasePath(`/countries/${entityId}`)}
-                    className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
+                    className="rounded-control-sm bg-green/10 text-caption text-green hover:bg-green/20 flex-1 py-1 text-center font-semibold"
                   >
                     View Profile
                   </Link>
                   <Link
                     href={withBasePath(`/mycountry/diplomacy`)}
-                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 flex-1 border py-1 text-center font-semibold"
                   >
                     Open Embassy
                   </Link>
@@ -519,17 +511,13 @@ export function MentionPopover({
             {isUser && authorData && (
               <div className="flex flex-col gap-2 text-left">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10">
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-300">
-                      👤
-                    </span>
+                  <div className="bg-tint/10 flex h-8 w-8 items-center justify-center rounded-full">
+                    <span className="text-headline text-tint">👤</span>
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                      @{entityId}
-                    </h4>
+                    <h4 className="text-headline text-tint">@{entityId}</h4>
                     {authorData.country && (
-                      <p className="text-xs text-neutral-500 dark:text-slate-400">
+                      <p className="text-footnote text-label-secondary">
                         From {authorData.country.name}
                       </p>
                     )}
@@ -538,13 +526,13 @@ export function MentionPopover({
                 <div className="mt-1 flex gap-2">
                   <Link
                     href={withBasePath(`/dashboard`)}
-                    className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
+                    className="rounded-control-sm bg-tint/10 text-caption text-tint hover:bg-tint/20 flex-1 py-1 text-center font-semibold"
                   >
                     View Feed
                   </Link>
                   <Link
                     href={withBasePath(`/messages`)}
-                    className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 flex-1 border py-1 text-center font-semibold"
                   >
                     Message
                   </Link>
@@ -555,13 +543,11 @@ export function MentionPopover({
             {/* Fallback if no data was found or loaded */}
             {!isLoading && !leagueData && !teamData && !countryData && !authorData && (
               <div className="flex flex-col gap-2 text-left">
-                <h4 className="text-xs font-bold text-neutral-600 dark:text-slate-300">{label}</h4>
-                <p className="text-xs text-neutral-500 dark:text-slate-400">
-                  Explore page profile.
-                </p>
+                <h4 className="text-caption text-label-secondary font-semibold">{label}</h4>
+                <p className="text-footnote text-label-secondary">Explore page profile.</p>
                 <Link
                   href={withBasePath(href)}
-                  className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
                 >
                   Go to Page
                 </Link>

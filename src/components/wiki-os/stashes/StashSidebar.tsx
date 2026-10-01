@@ -14,7 +14,7 @@ import {
   Folder as FolderIcon,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import { PRESET_COLORS, type StashHeaderItem } from "./types";
 import { CreateStashPopover } from "./CreateStashPopover";
 
@@ -47,7 +47,6 @@ export function StashSidebar({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const handleStartEdit = (stash: StashHeaderItem) => {
-    soundEffects.press();
     setEditingStash(stash.id);
     setEditName(stash.name);
     setEditColor(stash.color);
@@ -56,13 +55,11 @@ export function StashSidebar({
 
   const handleSaveEdit = async (id: string) => {
     if (!editName.trim()) return;
-    soundEffects.press();
     await onUpdateStash({ id, name: editName.trim(), color: editColor });
     setEditingStash(null);
   };
 
   const handleConfirmDelete = async (id: string) => {
-    soundEffects.release();
     await onDeleteStash(id);
     setConfirmDelete(null);
   };
@@ -70,16 +67,14 @@ export function StashSidebar({
   return (
     <aside className="w-full shrink-0 space-y-3 md:w-64 lg:w-72">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/60 px-3 py-2 shadow-xs backdrop-blur-xl">
+      <div className="rounded-card border-separator bg-surface-secondary flex items-center justify-between border px-3 py-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-400">
+          <div className="rounded-row border-yellow/30 bg-yellow/15 text-yellow flex h-7 w-7 items-center justify-center border">
             <FolderIcon className="h-3.5 w-3.5" />
           </div>
-          <span className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
-            Collections
-          </span>
+          <span className="text-caption text-label font-semibold">Collections</span>
         </div>
-        <span className="rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-xs font-bold text-[var(--wikios-text-dim)]">
+        <span className="border-separator bg-surface text-caption text-label-secondary rounded-full border px-2 py-0.5 font-semibold">
           {stashes.length}
         </span>
       </div>
@@ -95,20 +90,20 @@ export function StashSidebar({
             <div
               key={s.id}
               className={cn(
-                "group relative overflow-hidden rounded-2xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+                "group rounded-card relative overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
                 isActive
-                  ? "border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 shadow-sm ring-1 ring-[var(--wikios-border)]"
-                  : "border-transparent hover:border-[var(--wikios-border)]/60 hover:bg-[var(--wikios-surface)]/50"
+                  ? "border-separator bg-surface shadow-card ring-separator ring-1"
+                  : "hover:border-separator hover:bg-surface-secondary border-transparent"
               )}
             >
               {isEditing ? (
                 /* Inline Edit State */
-                <div className="animate-in fade-in zoom-in-95 space-y-2.5 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] p-3 shadow-lg duration-150">
+                <div className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-2.5 border p-3 duration-150">
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2.5 py-1.5 text-xs text-[var(--wikios-text)] transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)]"
+                    className="rounded-row border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint w-full border px-2.5 py-1.5 transition-colors outline-none"
                     autoFocus
                     placeholder="Collection name..."
                     onKeyDown={(e) => {
@@ -125,10 +120,10 @@ export function StashSidebar({
                         type="button"
                         onClick={() => setEditColor(c)}
                         className={cn(
-                          "relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full shadow-2xs transition-transform active:scale-90",
+                          "relative flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-[0.98]",
                           editColor === c
                             ? "scale-115 ring-2 ring-white/80"
-                            : "opacity-80 hover:scale-105 hover:opacity-100"
+                            : "opacity-80 hover:opacity-100"
                         )}
                         style={{ backgroundColor: c }}
                       >
@@ -142,7 +137,7 @@ export function StashSidebar({
                     <button
                       type="button"
                       onClick={() => setEditingStash(null)}
-                      className="cursor-pointer rounded-xl px-2.5 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-[var(--wikios-text)] active:scale-95"
+                      className="rounded-row text-caption text-label-secondary hover:bg-fill-4 hover:text-label cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                     >
                       Cancel
                     </button>
@@ -150,7 +145,7 @@ export function StashSidebar({
                       type="button"
                       onClick={() => handleSaveEdit(s.id)}
                       disabled={isUpdating || !editName.trim()}
-                      className="cursor-pointer rounded-xl bg-[var(--wikios-accent)] px-3 py-1 text-xs font-bold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:opacity-40"
+                      className="rounded-row bg-tint text-caption text-on-tint hover:bg-tint-hover cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-40"
                     >
                       Save
                     </button>
@@ -162,13 +157,12 @@ export function StashSidebar({
                   <button
                     type="button"
                     onClick={() => {
-                      soundEffects.press();
                       onSelectStash(s.id);
                     }}
                     className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-2 py-1 text-left"
                   >
                     <span
-                      className="h-3 w-3 shrink-0 rounded-full shadow-2xs transition-transform group-hover:scale-110"
+                      className="h-3 w-3 shrink-0 rounded-full transition-transform"
                       style={{
                         backgroundColor: s.color,
                         boxShadow: isActive ? `0 0 10px ${s.color}80` : undefined,
@@ -176,10 +170,10 @@ export function StashSidebar({
                     />
                     <span
                       className={cn(
-                        "truncate text-xs font-semibold transition-colors",
+                        "text-caption truncate font-semibold transition-colors",
                         isActive
-                          ? "font-bold text-[var(--wikios-text)]"
-                          : "text-[var(--wikios-text-muted)] group-hover:text-[var(--wikios-text)]"
+                          ? "text-label font-semibold"
+                          : "text-label-secondary group-hover:text-label"
                       )}
                     >
                       {s.name}
@@ -190,10 +184,8 @@ export function StashSidebar({
                     {/* Item count badge */}
                     <span
                       className={cn(
-                        "rounded-md px-1.5 py-0.5 text-xs font-bold transition-opacity",
-                        isActive
-                          ? "bg-[var(--wikios-card-bg)] text-[var(--wikios-text)]"
-                          : "bg-white/5 text-[var(--wikios-text-dim)]",
+                        "rounded-control-sm text-caption px-1.5 py-0.5 font-semibold transition-opacity",
+                        isActive ? "bg-surface text-label" : "bg-fill-4 text-label-secondary",
                         "group-hover:pointer-events-none group-hover:opacity-0"
                       )}
                     >
@@ -208,7 +200,7 @@ export function StashSidebar({
                           e.stopPropagation();
                           handleStartEdit(s);
                         }}
-                        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+                        className="rounded-control border-separator bg-surface text-label-secondary hover:bg-fill-3 hover:text-label flex h-6 w-6 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                         title="Edit collection"
                       >
                         <Pencil className="h-3 w-3" />
@@ -216,7 +208,7 @@ export function StashSidebar({
 
                       {!s.isDefault &&
                         (isDeletingThis ? (
-                          <div className="flex items-center gap-1 rounded-lg border border-red-500/40 bg-[var(--wikios-surface)] p-0.5 shadow-md">
+                          <div className="rounded-control border-red/40 bg-surface shadow-card flex items-center gap-1 border p-0.5">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -224,7 +216,7 @@ export function StashSidebar({
                                 handleConfirmDelete(s.id);
                               }}
                               disabled={isDeleting}
-                              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded bg-red-500 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-600 active:scale-90"
+                              className="rounded-control-sm bg-red text-on-red hover:bg-red flex h-5 w-5 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                               title="Confirm delete"
                             >
                               {isDeleting ? (
@@ -239,7 +231,7 @@ export function StashSidebar({
                                 e.stopPropagation();
                                 setConfirmDelete(null);
                               }}
-                              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
+                              className="rounded-control-sm text-label-secondary hover:bg-fill-4 hover:text-label flex h-5 w-5 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                               title="Cancel"
                             >
                               <X className="h-2.5 w-2.5" />
@@ -252,7 +244,7 @@ export function StashSidebar({
                               e.stopPropagation();
                               setConfirmDelete(s.id);
                             }}
-                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+                            className="rounded-control border-separator bg-surface text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-6 w-6 cursor-pointer items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                             title="Delete collection"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -276,7 +268,7 @@ export function StashSidebar({
       >
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--wikios-border)] px-3 py-2 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:border-amber-500/40 hover:bg-amber-500/5 hover:text-amber-400 active:scale-[0.98]"
+          className="rounded-card border-separator text-caption text-label-secondary hover:border-yellow/40 hover:bg-yellow/5 hover:text-yellow flex w-full cursor-pointer items-center justify-center gap-2 border border-dashed px-3 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>New Collection</span>

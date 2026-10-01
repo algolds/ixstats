@@ -2,6 +2,7 @@
 // src/components/wiki-os/watchlist/WikiWatchlistFeed.tsx
 // Native Stash Watchlist Activity Feed with inline DiffViewer & unread indicators
 
+import { cn } from "~/lib/utils";
 import * as React from "react";
 import Link from "next/link";
 import { Eye, EyeClosed, Check, Search, Calendar, Refresh as RefreshCw } from "iconoir-react";
@@ -58,22 +59,22 @@ export function WikiWatchlistFeed() {
   return (
     <div className="space-y-6">
       {/* Header Deck */}
-      <div className="border-border/40 bg-card/75 rounded-2xl border p-6 backdrop-blur-xl">
+      <div className="border-separator bg-surface rounded-card border p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400">
+              <div className="rounded-control bg-yellow/15 text-yellow flex h-8 w-8 items-center justify-center">
                 <Eye className="h-5 w-5" />
               </div>
-              <h1 className="text-foreground text-xl font-bold">Stash Watchlist</h1>
+              <h1 className="text-label text-title-2">Stash Watchlist</h1>
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Tracking changes across{" "}
-              <span className="text-foreground font-semibold">{watchlistItems?.length ?? 0}</span>{" "}
+              <span className="text-label font-semibold">{watchlistItems?.length ?? 0}</span>{" "}
               watched articles
               {unreadCount > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-400">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                <span className="bg-green/15 text-caption text-green ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+                  <span className="bg-green/70 h-1.5 w-1.5 animate-pulse rounded-full" />
                   {unreadCount} unread
                 </span>
               )}
@@ -87,9 +88,9 @@ export function WikiWatchlistFeed() {
                 type="button"
                 onClick={() => markAllVisitedMutation.mutate()}
                 disabled={markAllVisitedMutation.isPending}
-                className="border-border/40 bg-secondary/60 text-foreground hover:bg-secondary inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
+                className="border-separator bg-fill-3 text-label hover:bg-fill-3 rounded-row text-caption inline-flex items-center gap-1.5 border px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               >
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="text-green h-3.5 w-3.5" />
                 Mark all as visited
               </button>
             )}
@@ -98,7 +99,7 @@ export function WikiWatchlistFeed() {
               type="button"
               onClick={() => void refetch()}
               disabled={isRefetching}
-              className="border-border/40 bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex h-8 w-8 items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
+              className="border-separator bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label rounded-row inline-flex h-8 w-8 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]"
               title="Refresh Watchlist"
             >
               <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
@@ -107,10 +108,10 @@ export function WikiWatchlistFeed() {
         </div>
 
         {/* Filters Bar */}
-        <div className="border-border/30 mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="border-separator mt-5 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
           {/* Timeframe Selector */}
           <div className="flex items-center gap-1.5">
-            <Calendar className="text-muted-foreground mr-1 h-4 w-4" />
+            <Calendar className="text-label-secondary mr-1 h-4 w-4" />
             {[
               { label: "24h", val: 1 },
               { label: "3d", val: 3 },
@@ -121,11 +122,12 @@ export function WikiWatchlistFeed() {
                 key={t.val}
                 type="button"
                 onClick={() => setDays(t.val)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98] ${
+                className={cn(
+                  "rounded-control text-caption px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]",
                   days === t.val
-                    ? "bg-wiki/20 border-wiki/40 text-wiki border font-semibold"
-                    : "bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
+                    ? "bg-tint/20 border-tint/40 text-tint border font-semibold"
+                    : "bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label"
+                )}
               >
                 {t.label}
               </button>
@@ -134,13 +136,13 @@ export function WikiWatchlistFeed() {
 
           {/* Search Filter */}
           <div className="relative flex-1 sm:max-w-xs">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
             <input
               type="text"
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filter changes…"
-              className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground/60 focus:border-wiki/60 focus:ring-wiki/60 h-8 w-full rounded-xl border pr-3 pl-8 text-xs focus:ring-1 focus:outline-none"
+              className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint/60 focus:ring-tint/60 rounded-row text-footnote h-8 w-full border pr-3 pl-8 focus:ring-1 focus:outline-none"
             />
           </div>
         </div>
@@ -149,14 +151,14 @@ export function WikiWatchlistFeed() {
       {/* Feed List */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="border-border/40 bg-card/40 flex h-48 items-center justify-center rounded-2xl border">
-            <div className="border-wiki h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="border-separator bg-surface rounded-card flex h-48 items-center justify-center border">
+            <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : filteredFeed.length === 0 ? (
-          <div className="border-border/50 bg-card/30 flex flex-col items-center justify-center rounded-2xl border border-dashed p-12 text-center">
-            <EyeClosed className="text-muted-foreground/40 mb-3 h-10 w-10" />
-            <h3 className="text-foreground text-sm font-semibold">No recent changes</h3>
-            <p className="text-muted-foreground mt-1 max-w-sm text-xs">
+          <div className="border-separator bg-surface rounded-card flex flex-col items-center justify-center border border-dashed p-12 text-center">
+            <EyeClosed className="text-label-secondary mb-3 h-10 w-10" />
+            <h3 className="text-label text-headline">No recent changes</h3>
+            <p className="text-label-secondary text-footnote mt-1 max-w-sm">
               {watchlistItems?.length === 0
                 ? "You haven't added any articles to your watchlist yet. Star or watch articles to track changes here."
                 : `None of your watched articles were edited in the last ${days} day${days > 1 ? "s" : ""}.`}
@@ -172,7 +174,7 @@ export function WikiWatchlistFeed() {
             return (
               <div
                 key={item.id}
-                className="border-border/40 bg-card/60 hover:border-border hover:bg-card/80 overflow-hidden rounded-2xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160"
+                className="border-separator bg-surface hover:border-separator hover:bg-surface rounded-card overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160"
               >
                 {/* Row Header */}
                 <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -180,7 +182,7 @@ export function WikiWatchlistFeed() {
                     {/* Unread indicator */}
                     <div className="mt-1 flex h-4 w-4 items-center justify-center">
                       {item.isUnread ? (
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 ring-4 ring-emerald-400/20" />
+                        <span className="bg-green/70 ring-green/20 h-2 w-2 animate-pulse rounded-full ring-4" />
                       ) : (
                         <span className="bg-muted-foreground/30 h-1.5 w-1.5 rounded-full" />
                       )}
@@ -190,26 +192,25 @@ export function WikiWatchlistFeed() {
                       <div className="flex items-center gap-2">
                         <Link
                           href={withBasePath(`/wiki/${item.articleSlug}`)}
-                          className="text-foreground hover:text-wiki text-sm font-semibold transition-colors"
+                          className="text-label hover:text-tint text-headline transition-colors"
                         >
                           {item.articleTitle}
                         </Link>
                         {item.namespacePrefix && (
-                          <span className="bg-secondary/80 text-muted-foreground rounded px-1.5 py-0.5 text-xs font-medium">
+                          <span className="bg-fill-2 text-label-secondary rounded-control-sm text-caption px-1.5 py-0.5">
                             {item.namespacePrefix}
                           </span>
                         )}
                         {item.minor && (
-                          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs font-semibold text-amber-400">
+                          <span className="rounded-control-sm bg-yellow/15 text-caption text-yellow px-1.5 py-0.5 font-semibold">
                             m
                           </span>
                         )}
                       </div>
 
-                      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+                      <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-2">
                         <span>
-                          by{" "}
-                          <strong className="text-foreground/90 font-medium">{item.author}</strong>
+                          by <strong className="text-label font-medium">{item.author}</strong>
                         </span>
                         <span>•</span>
                         <span>
@@ -224,7 +225,7 @@ export function WikiWatchlistFeed() {
                           <>
                             <span>•</span>
                             <span
-                              className={`font-mono text-xs font-medium ${isPositive ? "text-emerald-400" : isNegative ? "text-rose-400" : "text-muted-foreground"}`}
+                              className={`text-caption tabular-nums ${isPositive ? "text-green" : isNegative ? "text-red" : "text-label-secondary"}`}
                             >
                               {isPositive ? `+${delta}` : delta} B
                             </span>
@@ -233,7 +234,7 @@ export function WikiWatchlistFeed() {
                       </div>
 
                       {item.summary && (
-                        <p className="text-muted-foreground/80 mt-1 text-xs italic">
+                        <p className="text-label-secondary text-footnote mt-1 italic">
                           &ldquo;{item.summary}&rdquo;
                         </p>
                       )}
@@ -245,11 +246,12 @@ export function WikiWatchlistFeed() {
                     <button
                       type="button"
                       onClick={() => setExpandedRevId(isExpanded ? null : item.id)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98] ${
+                      className={cn(
+                        "rounded-row text-caption px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-160 active:scale-[0.98]",
                         isExpanded
-                          ? "bg-wiki/20 border-wiki/40 text-wiki border"
-                          : "border-border/40 bg-secondary/60 text-foreground hover:bg-secondary border"
-                      }`}
+                          ? "bg-tint/20 border-tint/40 text-tint border"
+                          : "border-separator bg-fill-3 text-label hover:bg-fill-3 border"
+                      )}
                     >
                       {isExpanded ? "Hide Diff" : "Inline Diff"}
                     </button>
@@ -257,7 +259,7 @@ export function WikiWatchlistFeed() {
                     <button
                       type="button"
                       onClick={() => unwatchMutation.mutate({ pageTitle: item.articleTitle })}
-                      className="text-muted-foreground hover:bg-secondary rounded-xl p-1.5 transition-colors hover:text-rose-400"
+                      className="text-label-secondary hover:bg-fill-3 rounded-row hover:text-red p-1.5 transition-colors"
                       title="Unwatch page"
                     >
                       <EyeClosed className="h-4 w-4" />
@@ -267,14 +269,14 @@ export function WikiWatchlistFeed() {
 
                 {/* Inline Slide-Down Diff Viewer */}
                 {isExpanded && (
-                  <div className="border-border/40 bg-background/75 animate-in fade-in border-t p-4 duration-200">
+                  <div className="border-separator bg-surface animate-in fade-in border-t p-4 duration-200">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-muted-foreground text-xs font-medium">
-                        Revision <strong className="text-foreground">{item.id}</strong> preview
+                      <span className="text-label-secondary text-caption">
+                        Revision <strong className="text-label">{item.id}</strong> preview
                       </span>
                       <Link
                         href={withBasePath(`/wiki/history/${item.articleSlug}`)}
-                        className="text-wiki text-xs font-medium hover:underline"
+                        className="text-tint text-caption hover:underline"
                       >
                         View Full History &rarr;
                       </Link>

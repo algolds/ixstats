@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "~/lib/utils";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import React, { useState, useId } from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
@@ -24,7 +26,6 @@ import {
   Page as FormIcon,
   Puzzle as TemplateIcon,
 } from "iconoir-react";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export interface PlateTemplateBlockProps {
   attributes: Record<string, unknown>;
@@ -147,35 +148,36 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
       <div
         contentEditable={false}
         onDoubleClick={() => !readOnly && setIsModalOpen(true)}
-        className="group relative flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/75 px-3 py-2 text-xs shadow-xs backdrop-blur-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/50 hover:bg-card/95"
+        className="group rounded-row border-separator bg-surface text-footnote hover:border-tint/50 hover:bg-surface relative flex items-center justify-between gap-3 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
       >
         {/* Left: Icon, Template Name & Summary */}
         <div className="flex min-w-0 items-center gap-2.5">
           <span
-            className={`flex h-6 items-center justify-center rounded-lg px-2 text-xs font-bold tracking-wider uppercase border shadow-xs ${
+            className={cn(
+              "rounded-control text-caption flex h-6 items-center justify-center border px-2",
               classification === "infobox"
-                ? "border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-600 dark:text-amber-400"
-                : "border-wiki/30 bg-gradient-to-br from-wiki/20 to-cyan-500/10 text-wiki"
-            }`}
+                ? "border-yellow/30 bg-yellow/15 text-yellow"
+                : "border-tint/30 bg-tint-fill text-tint"
+            )}
           >
             {classification === "infobox" ? "IB" : "🧩"}
           </span>
 
           <div className="flex items-center gap-2 truncate">
-            <span className="font-bold text-foreground text-xs">{templateName}</span>
+            <span className="text-label text-caption font-semibold">{templateName}</span>
 
             {previewValue && (
-              <span className="truncate rounded-md bg-secondary/80 px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border/40 max-w-[180px] sm:max-w-[260px]">
+              <span className="rounded-control-sm bg-fill-2 text-caption text-label-secondary border-separator max-w-[180px] truncate border px-2 py-0.5 sm:max-w-[260px]">
                 {previewValue}
               </span>
             )}
 
-            <span className="hidden sm:inline-block rounded-full bg-secondary/50 px-2 py-0.5 text-xs font-mono text-muted-foreground/80">
+            <span className="bg-fill-3 text-footnote text-label-secondary hidden rounded-full px-2 py-0.5 tabular-nums sm:inline-block">
               {configuredParamCount} {configuredParamCount === 1 ? "param" : "params"}
             </span>
 
             {element?.parseState === "incomplete" && (
-              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-500 border border-amber-500/30">
+              <span className="bg-yellow/10 text-caption text-yellow border-yellow/30 rounded-full border px-2 py-0.5 font-semibold">
                 Incomplete
               </span>
             )}
@@ -190,10 +192,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 type="button"
                 data-cuelume-press="droplet"
                 onClick={() => {
-                  soundEffects.bloom();
                   setIsModalOpen(true);
                 }}
-                className="flex items-center gap-1 rounded-lg bg-wiki/10 px-2.5 py-1 text-xs font-semibold text-wiki hover:bg-wiki/20 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer shadow-xs"
+                className="rounded-control bg-tint/10 text-caption text-tint hover:bg-tint/20 flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 title="Edit template parameters"
               >
                 <EditIcon className="h-3 w-3" />
@@ -204,7 +205,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 type="button"
                 data-cuelume-press="droplet"
                 onClick={handleDelete}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-500/10 hover:text-red-500 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
+                className="rounded-control text-label-secondary hover:bg-red/10 hover:text-red flex h-7 w-7 cursor-pointer items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 title="Remove template"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
@@ -216,69 +217,42 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
       {/* ─── Dedicated Apple-Design Dialog Modal ─── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-background/95 backdrop-blur-xl border border-border/80 shadow-2xl rounded-2xl">
+        <DialogContent className="bg-surface border-separator shadow-floating rounded-card flex max-h-[85vh] max-w-2xl flex-col overflow-hidden border p-0">
           {/* Header */}
-          <DialogHeader className="p-5 border-b border-border/40 pb-4 text-left">
+          <DialogHeader className="border-separator border-b p-5 pb-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-3 pr-6">
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold ${
+                  className={cn(
+                    "rounded-control text-caption flex h-7 w-7 items-center justify-center font-semibold",
                     classification === "infobox"
-                      ? "border border-amber-500/30 bg-amber-500/20 text-amber-500"
-                      : "border border-wiki/30 bg-wiki/20 text-wiki"
-                  }`}
+                      ? "border-yellow/30 bg-yellow/20 text-yellow border"
+                      : "border-tint/30 bg-tint/20 text-tint border"
+                  )}
                 >
                   {classification === "infobox" ? "IB" : <TemplateIcon className="h-4 w-4" />}
                 </span>
                 <div>
-                  <DialogTitle className="text-base font-bold text-foreground">
-                    {templateName}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs text-muted-foreground">
+                  <DialogTitle className="text-title-3 text-label">{templateName}</DialogTitle>
+                  <DialogDescription className="text-footnote text-label-secondary">
                     Configure parameters, verify live MediaWiki expansion, or inspect wikitext.
                   </DialogDescription>
                 </div>
               </div>
 
               {/* Modal Tabs */}
-              <div className="flex items-center rounded-lg bg-secondary/80 p-0.5 border border-border/40">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("form")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    activeTab === "form"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <FormIcon className="h-3 w-3" />
-                  <span>Form</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("preview")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    activeTab === "preview"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <EyeIcon className="h-3 w-3" />
-                  <span>Preview</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("raw")}
-                  className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    activeTab === "raw"
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <CodeIcon className="h-3 w-3" />
-                  <span>Wikitext</span>
-                </button>
-              </div>
+              <SegmentedControl
+                asTabs
+                aria-label="Template editor view"
+                size="sm"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                options={[
+                  { value: "form", label: "Form", icon: <FormIcon aria-hidden="true" /> },
+                  { value: "preview", label: "Preview", icon: <EyeIcon aria-hidden="true" /> },
+                  { value: "raw", label: "Wikitext", icon: <CodeIcon aria-hidden="true" /> },
+                ]}
+              />
             </div>
           </DialogHeader>
 
@@ -288,8 +262,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             {activeTab === "form" && (
               <div className="space-y-4">
                 {loading && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-wiki border-t-transparent" />
+                  <div className="text-footnote text-label-secondary flex items-center gap-2">
+                    <div className="border-tint h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent" />
                     <span>Loading template schema...</span>
                   </div>
                 )}
@@ -303,13 +277,15 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
                     return (
                       <div key={key} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <label htmlFor={inputId} className="font-semibold text-foreground">
+                        <div className="text-footnote flex items-center justify-between">
+                          <label htmlFor={inputId} className="text-label font-semibold">
                             {meta.label || key}
-                            {meta.required && <span className="ml-1 font-bold text-red-500">*</span>}
+                            {meta.required && (
+                              <span className="text-red ml-1 font-semibold">*</span>
+                            )}
                           </label>
                           {meta.description && (
-                            <span className="max-w-[60%] truncate text-xs text-muted-foreground">
+                            <span className="text-footnote text-label-secondary max-w-[60%] truncate">
                               {meta.description}
                             </span>
                           )}
@@ -323,7 +299,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             value={val}
                             placeholder={meta.example || meta.default || `Enter ${key}...`}
                             onChange={(e) => handleParamChange(key, e.target.value)}
-                            className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+                            className="rounded-control border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border px-3 py-2 focus:outline-none"
                           />
                         ) : (
                           <input
@@ -333,7 +309,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             value={val}
                             placeholder={meta.example || meta.default || `Enter ${key}...`}
                             onChange={(e) => handleParamChange(key, e.target.value)}
-                            className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+                            className="rounded-control border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border px-3 py-1.5 focus:outline-none"
                           />
                         )}
                       </div>
@@ -342,10 +318,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
                 {/* Custom / Discovered fields */}
                 {customParamKeys.length > 0 && (
-                  <div className="space-y-3 border-t border-border/30 pt-3">
-                    <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Additional Parameters
-                    </div>
+                  <div className="border-separator space-y-3 border-t pt-3">
+                    <div className="text-eyebrow text-label-secondary">Additional Parameters</div>
                     {customParamKeys.map((key) => {
                       const val = params[key] ?? "";
                       const inputId = `${fallbackId}-${key}`;
@@ -353,7 +327,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                         <div key={key} className="space-y-1">
                           <label
                             htmlFor={inputId}
-                            className="text-xs font-semibold text-foreground"
+                            className="text-caption text-label font-semibold"
                           >
                             {key}
                           </label>
@@ -363,7 +337,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                             disabled={readOnly}
                             value={val}
                             onChange={(e) => handleParamChange(key, e.target.value)}
-                            className="w-full rounded-lg border border-border/50 bg-background/50 px-3 py-1.5 text-xs text-foreground focus:border-wiki/60 focus:outline-none"
+                            className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-full border px-3 py-1.5 focus:outline-none"
                           />
                         </div>
                       );
@@ -373,7 +347,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
 
                 {/* Add parameter button */}
                 {!readOnly && (
-                  <div className="border-t border-border/30 pt-3">
+                  <div className="border-separator border-t pt-3">
                     {showAddParam ? (
                       <form onSubmit={handleAddParam} className="flex items-center gap-2">
                         <input
@@ -381,25 +355,25 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                           placeholder="Param name"
                           value={newParamKey}
                           onChange={(e) => setNewParamKey(e.target.value)}
-                          className="w-1/3 rounded-lg border border-border/60 bg-background/60 px-3 py-1.5 text-xs text-foreground focus:border-wiki/60 focus:outline-none"
+                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 w-1/3 border px-3 py-1.5 focus:outline-none"
                         />
                         <input
                           type="text"
                           placeholder="Param value"
                           value={newParamVal}
                           onChange={(e) => setNewParamVal(e.target.value)}
-                          className="flex-1 rounded-lg border border-border/60 bg-background/60 px-3 py-1.5 text-xs text-foreground focus:border-wiki/60 focus:outline-none"
+                          className="rounded-control border-separator bg-surface text-footnote text-label focus:border-tint/60 flex-1 border px-3 py-1.5 focus:outline-none"
                         />
                         <button
                           type="submit"
-                          className="rounded-lg bg-wiki px-3 py-1.5 text-xs font-semibold text-white hover:bg-wiki/90 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                          className="rounded-control bg-tint text-caption text-on-tint hover:bg-tint/90 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                         >
                           Add
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowAddParam(false)}
-                          className="rounded-lg border border-border/60 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                          className="rounded-control border-separator text-footnote text-label-secondary hover:text-label border px-2.5 py-1.5"
                         >
                           Cancel
                         </button>
@@ -408,7 +382,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                       <button
                         type="button"
                         onClick={() => setShowAddParam(true)}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-wiki hover:underline cursor-pointer"
+                        className="text-caption text-tint flex cursor-pointer items-center gap-1.5 font-semibold hover:underline"
                       >
                         <PlusIcon className="h-3 w-3" />
                         <span>Add custom parameter</span>
@@ -418,8 +392,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 )}
 
                 {!hasSchema && customParamKeys.length === 0 && !showAddParam && (
-                  <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
-                    No parameters configured yet. Click <strong>Add custom parameter</strong> or switch to the <strong>Wikitext</strong> tab.
+                  <div className="rounded-row border-separator text-footnote text-label-secondary border border-dashed p-6 text-center">
+                    No parameters configured yet. Click <strong>Add custom parameter</strong> or
+                    switch to the <strong>Wikitext</strong> tab.
                   </div>
                 )}
               </div>
@@ -429,34 +404,34 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
             {activeTab === "preview" && (
               <div>
                 {previewQuery.isLoading ? (
-                  <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border/40 bg-secondary/10 p-10 text-center text-muted-foreground">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-wiki border-t-transparent" />
-                    <span className="text-xs">Rendering live MediaWiki preview...</span>
+                  <div className="rounded-row border-separator bg-fill-4 text-label-secondary flex flex-col items-center justify-center gap-2 border p-10 text-center">
+                    <div className="border-tint h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+                    <span className="text-footnote">Rendering live MediaWiki preview...</span>
                   </div>
                 ) : previewQuery.data ? (
-                  <div className="overflow-x-auto rounded-xl border border-border/40 bg-card p-4 shadow-sm">
+                  <div className="rounded-row border-separator bg-surface shadow-card overflow-x-auto border p-4">
                     <div
-                      className="wikios-article-body text-xs"
+                      className="wikios-article-body text-footnote"
                       dangerouslySetInnerHTML={{ __html: previewQuery.data }}
                     />
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-border/40 bg-secondary/10 p-4">
-                    <div className="mb-2 border-b border-border/30 pb-2 text-center text-xs font-bold text-foreground">
+                  <div className="rounded-row border-separator bg-fill-4 border p-4">
+                    <div className="border-separator text-caption text-label mb-2 border-b pb-2 text-center font-semibold">
                       {params["name"] || params["title"] || templateName}
                     </div>
-                    <div className="space-y-1.5 text-xs">
+                    <div className="text-footnote space-y-1.5">
                       {Object.entries(params).map(([k, v]) => {
                         if (/^\d+$/.test(k) || !v) return null;
                         return (
                           <div
                             key={k}
-                            className="flex justify-between gap-2 border-b border-border/20 py-1 last:border-0"
+                            className="border-separator flex justify-between gap-2 border-b py-1 last:border-0"
                           >
-                            <span className="w-1/3 font-medium break-words text-muted-foreground">
+                            <span className="text-label-secondary w-1/3 font-medium break-words">
                               {k}
                             </span>
-                            <span className="w-2/3 text-right break-words text-foreground">{v}</span>
+                            <span className="text-label w-2/3 text-right break-words">{v}</span>
                           </div>
                         );
                       })}
@@ -474,10 +449,10 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                   disabled={readOnly}
                   value={rawWikitext}
                   onChange={(e) => handleRawChange(e.target.value)}
-                  className="w-full rounded-xl border border-border/60 bg-muted/30 p-3.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-wiki/60 focus:outline-none"
+                  className="rounded-row border-separator bg-fill-4 text-footnote text-label placeholder:text-label-tertiary focus:border-tint/60 w-full border p-3.5 tabular-nums focus:outline-none"
                   placeholder="{{TemplateName|param=value}}"
                 />
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="text-footnote text-label-secondary mt-2">
                   Direct edits to raw wikitext synchronize immediately with visual form fields.
                 </p>
               </div>
@@ -485,11 +460,11 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           </div>
 
           {/* Footer Actions */}
-          <DialogFooter className="p-4 border-t border-border/40 bg-muted/20 flex items-center justify-between sm:justify-between">
+          <DialogFooter className="border-separator bg-fill-4 flex items-center justify-between border-t p-4 sm:justify-between">
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
+              className="rounded-control text-caption text-red hover:bg-red/10 flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <TrashIcon className="h-3.5 w-3.5" />
               <span>Remove Template</span>
@@ -499,7 +474,7 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-lg border border-border/60 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer"
+                className="rounded-control border-separator bg-background text-caption text-label-secondary hover:text-label cursor-pointer border px-3 py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 Close
               </button>
@@ -507,10 +482,9 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 type="button"
                 data-cuelume-press="droplet"
                 onClick={() => {
-                  soundEffects.bloom();
                   setIsModalOpen(false);
                 }}
-                className="rounded-lg bg-wiki px-4 py-1.5 text-xs font-bold text-white hover:bg-wiki/90 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer shadow-xs"
+                className="rounded-control bg-tint text-caption text-on-tint hover:bg-tint/90 cursor-pointer px-4 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 Done
               </button>

@@ -22,7 +22,7 @@ import {
   HelpCircle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
@@ -144,7 +144,7 @@ function HoldToResolveButton({
     if (isPending) return;
     setHolding(true);
     timerRef.current = setTimeout(() => {
-      soundEffects.success();
+      soundCues?.success?.();
       onResolveToggle(!isResolved);
       setHolding(false);
     }, 900);
@@ -160,7 +160,7 @@ function HoldToResolveButton({
       <button
         type="button"
         onClick={() => onResolveToggle(false)}
-        className="flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400 transition-[background-color,border-color,transform] duration-100 hover:bg-emerald-500/20 active:scale-95"
+        className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2.5 py-1 font-semibold transition-[background-color,border-color,transform] duration-100 active:scale-[0.98]"
         title="Reopen discussion thread"
       >
         <Check className="h-3 w-3" />
@@ -180,20 +180,20 @@ function HoldToResolveButton({
         onTouchEnd={cancelHold}
         disabled={isPending}
         className={cn(
-          "relative cursor-pointer overflow-hidden rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-xs transition-[background-color,border-color,transform] duration-100",
+          "rounded-control text-caption relative cursor-pointer overflow-hidden border px-2.5 py-1 font-semibold transition-[background-color,border-color,transform] duration-100",
           holding
-            ? "scale-95 border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
-            : "border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-muted)] hover:border-[var(--wikios-border)] hover:text-[var(--wikios-text)]"
+            ? "border-green/60 bg-green/20 text-green scale-95"
+            : "border-separator bg-surface text-label-secondary hover:border-separator hover:text-label"
         )}
       >
         {holding && (
           <div
-            className="absolute inset-0 origin-left bg-emerald-500/30 transition-[width] duration-900 ease-linear"
+            className="bg-green/30 absolute inset-0 origin-left transition-[width] duration-900 ease-linear"
             style={{ width: "100%" }}
           />
         )}
         <span className="relative z-10 flex items-center gap-1">
-          <Check className="h-3 w-3 text-emerald-400" />
+          <Check className="text-green h-3 w-3" />
           <span>{holding ? "Keep holding..." : "Hold to resolve"}</span>
         </span>
       </button>
@@ -249,7 +249,7 @@ function ThreadCard({
 
   const resolveMutation = api.wikios.resolveThread.useMutation({
     onSuccess: () => {
-      soundEffects.success();
+      soundCues?.success?.();
       notify.success(thread.status === "OPEN" ? "Thread resolved" : "Thread reopened");
       onRefetch();
     },
@@ -260,7 +260,6 @@ function ThreadCard({
 
   const postCommentMutation = api.wikios.postComment.useMutation({
     onSuccess: () => {
-      soundEffects.press();
       setReplyText("");
       setShowSuggestEdit(false);
       notify.success("Reply posted");
@@ -273,7 +272,6 @@ function ThreadCard({
 
   const deleteThreadMutation = api.wikios.deleteThread.useMutation({
     onSuccess: () => {
-      soundEffects.release();
       notify.success("Thread deleted");
       onRefetch();
     },
@@ -294,7 +292,6 @@ function ThreadCard({
   };
 
   const handleQuoteComment = (authorName: string, snippet: string) => {
-    soundEffects.press();
     const quoteFormat = `> @${authorName}: "${snippet.slice(0, 80)}${snippet.length > 80 ? "..." : ""}"\n`;
     setReplyText((prev) => (prev ? `${prev}\n${quoteFormat}` : quoteFormat));
     replyInputRef.current?.focus();
@@ -303,7 +300,6 @@ function ThreadCard({
   const handleCopyReplacement = async (commentId: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      soundEffects.press();
       setCopiedReplacementId(commentId);
       notify.success("Replacement copied to clipboard");
       setTimeout(() => setCopiedReplacementId(null), 1500);
@@ -323,16 +319,16 @@ function ThreadCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md transition-[border-color,background-color,box-shadow,opacity] duration-150",
+        "rounded-card overflow-hidden border transition-[border-color,background-color,box-shadow,opacity] duration-150",
         isResolved
-          ? "border-emerald-500/20 bg-emerald-950/10 opacity-75 hover:opacity-100"
-          : "border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/70 hover:border-[var(--margin-accent-border)] hover:shadow-[0_0_15px_var(--margin-accent-glow)]"
+          ? "border-green/20 bg-green/10 opacity-75 hover:opacity-100"
+          : "border-separator bg-surface hover:border-margin-border"
       )}
     >
       {/* Header Bar */}
       <div
         onClick={onToggleExpand}
-        className="group flex cursor-pointer items-start justify-between gap-2.5 p-2.5 transition-colors select-none hover:bg-[var(--wikios-border)]/40"
+        className="group hover:bg-fill-4 flex cursor-pointer items-start justify-between gap-2.5 p-2.5 transition-colors select-none"
       >
         <MarginUserAvatar
           author={thread.createdBy}
@@ -346,7 +342,7 @@ function ThreadCard({
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             {dimensionInfo && (
               <span
-                className="py-0.2 inline-flex items-center gap-1 rounded-md px-1.5 text-xs font-bold shadow-xs"
+                className="py-0.2 rounded-control-sm text-caption inline-flex items-center gap-1 px-1.5 font-semibold"
                 style={{
                   backgroundColor: `color-mix(in srgb, ${dimensionInfo.color === "#fef036" ? "var(--margin-accent)" : dimensionInfo.color} 18%, transparent)`,
                   color:
@@ -361,32 +357,32 @@ function ThreadCard({
               </span>
             )}
 
-            <span className="truncate text-xs font-bold text-[var(--wikios-text)] transition-colors group-hover:text-[var(--margin-accent-text)]">
+            <span className="text-caption text-label truncate font-semibold transition-colors group-hover:text-(--margin-accent-text)">
               {thread.createdBy.username}
             </span>
 
             {thread.createdBy.country && (
-              <span className="py-0.2 inline-flex items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1 text-xs font-semibold text-[var(--margin-accent-text)]">
+              <span className="py-0.2 rounded-control-sm border-margin-border bg-margin-bg text-caption inline-flex items-center gap-1 border px-1 font-semibold text-(--margin-accent-text)">
                 <Crown className="h-2.5 w-2.5" />
                 <span className="max-w-[75px] truncate">{thread.createdBy.country.name}</span>
               </span>
             )}
 
             {thread.sectionAnchor && (
-              <span className="py-0.2 max-w-28 truncate rounded border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 px-1 text-xs font-semibold text-[var(--wikios-text-dim)]">
+              <span className="py-0.2 rounded-control-sm border-separator bg-surface-secondary text-caption text-label-secondary max-w-28 truncate border px-1 font-semibold">
                 #{thread.sectionAnchor}
               </span>
             )}
           </div>
 
           {/* Title */}
-          <h4 className="line-clamp-2 text-xs leading-snug font-semibold text-[var(--wikios-text)] transition-colors">
+          <h4 className="text-caption text-label line-clamp-2 leading-snug font-semibold transition-colors">
             {displayTitle}
           </h4>
 
           {/* Selected text quote if anchored */}
           {thread.selectedText && (
-            <div className="mt-1.5 line-clamp-2 rounded-lg border-l-2 border-[var(--margin-accent)] bg-[var(--margin-accent-bg)] p-2 text-xs leading-snug text-[var(--wikios-text-muted)] italic">
+            <div className="rounded-control border-margin-accent bg-margin-bg text-footnote text-label-secondary mt-1.5 line-clamp-2 border-l-2 p-2 leading-snug italic">
               &ldquo;{thread.selectedText}&rdquo;
             </div>
           )}
@@ -396,27 +392,27 @@ function ThreadCard({
         <div className="flex shrink-0 items-center gap-1.5">
           <span
             className={cn(
-              "py-0.2 rounded-full px-1.5 text-xs leading-none font-bold tracking-wider uppercase",
+              "py-0.2 text-eyebrow rounded-full px-1.5 leading-none",
               isResolved
-                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                : "border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 text-[var(--wikios-text-muted)]"
+                ? "border-green/30 bg-green/10 text-green border"
+                : "border-separator bg-surface-secondary text-label-secondary border"
             )}
           >
             {isResolved ? "Done" : `${thread.comments.length}`}
           </span>
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
+            <ChevronDown className="text-label-secondary h-3.5 w-3.5" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
+            <ChevronRight className="text-label-secondary h-3.5 w-3.5" />
           )}
         </div>
       </div>
 
       {/* Expanded Details & Discussion Timeline */}
       {isExpanded && (
-        <div className="animate-in fade-in-50 space-y-3 border-t border-[var(--wikios-border)]/60 px-3 pt-1 pb-3 duration-150">
+        <div className="animate-in fade-in-50 border-separator space-y-3 border-t px-3 pt-1 pb-3 duration-150">
           {/* Discussion Comments List */}
-          <div className="space-y-2 border-t border-[var(--wikios-border)]/40 pt-1">
+          <div className="border-separator space-y-2 border-t pt-1">
             {thread.comments.map((comment) => {
               const isCommentAuthorMatch =
                 (currentUserId && comment.author.id === currentUserId) ||
@@ -427,19 +423,19 @@ function ThreadCard({
               return (
                 <div
                   key={comment.id}
-                  className="group relative space-y-1.5 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/50 p-2.5 text-xs"
+                  className="group rounded-row border-separator bg-surface-secondary text-footnote relative space-y-1.5 border p-2.5"
                 >
-                  <div className="flex items-center justify-between text-xs text-[var(--wikios-text-dim)]">
-                    <div className="flex items-center gap-1.5 font-semibold text-[var(--wikios-text)]">
+                  <div className="text-footnote text-label-secondary flex items-center justify-between">
+                    <div className="text-label flex items-center gap-1.5 font-semibold">
                       <MarginUserAvatar
                         author={comment.author}
                         size="xs"
                         primaryColor={primaryColor}
                         liveAvatar={commentLiveAvatar}
                       />
-                      <span className="text-xs">{comment.author.username}</span>
+                      <span className="text-footnote">{comment.author.username}</span>
                       {comment.author.country?.name && (
-                        <span className="text-xs font-medium text-[var(--margin-accent-text)]">
+                        <span className="text-caption text-(--margin-accent-text)">
                           ({comment.author.country.name})
                         </span>
                       )}
@@ -453,7 +449,7 @@ function ThreadCard({
                           onClick={() =>
                             handleQuoteComment(comment.author.username, comment.content)
                           }
-                          className="cursor-pointer rounded p-0.5 text-[var(--wikios-text-dim)] opacity-0 transition-[opacity,color] duration-100 group-hover:opacity-100 hover:text-[var(--margin-accent-text)]"
+                          className="rounded-control-sm text-label-secondary cursor-pointer p-0.5 opacity-0 transition-[opacity,color] duration-100 group-hover:opacity-100 hover:text-(--margin-accent-text)"
                           title="Quote in reply"
                         >
                           <Quote className="h-3 w-3" />
@@ -462,14 +458,14 @@ function ThreadCard({
                     </div>
                   </div>
 
-                  <p className="pl-6.5 leading-relaxed whitespace-pre-wrap text-[var(--wikios-text)]">
+                  <p className="text-label pl-6.5 leading-relaxed whitespace-pre-wrap">
                     {comment.content}
                   </p>
 
                   {/* Interactive Suggested Edit DiffViewer */}
                   {comment.suggestedEdit && (
                     <div className="space-y-1.5 pt-1 pl-6.5">
-                      <div className="flex items-center justify-between text-xs font-bold text-[var(--margin-accent-text)]">
+                      <div className="text-caption flex items-center justify-between font-semibold text-(--margin-accent-text)">
                         <span className="flex items-center gap-1">
                           <Edit3 className="h-3 w-3" />
                           <span>Suggested edit</span>
@@ -478,11 +474,11 @@ function ThreadCard({
                         <button
                           type="button"
                           onClick={() => handleCopyReplacement(comment.id, comment.suggestedEdit!)}
-                          className="flex cursor-pointer items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1.5 py-0.5 text-xs text-[var(--margin-accent-text)] transition-transform duration-100 hover:bg-[var(--margin-accent-bg)]/80 active:scale-95"
+                          className="rounded-control-sm border-margin-border bg-margin-bg text-footnote hover:bg-margin-bg/80 flex cursor-pointer items-center gap-1 border px-1.5 py-0.5 text-(--margin-accent-text) transition-transform duration-100 active:scale-[0.98]"
                         >
                           {copiedReplacementId === comment.id ? (
                             <>
-                              <Check className="h-2.5 w-2.5 text-emerald-400" />
+                              <Check className="text-green h-2.5 w-2.5" />
                               <span>Copied</span>
                             </>
                           ) : (
@@ -494,14 +490,14 @@ function ThreadCard({
                         </button>
                       </div>
 
-                      <div className="overflow-hidden rounded-xl border border-[var(--wikios-border)] shadow-xs">
+                      <div className="rounded-row border-separator overflow-hidden border">
                         <DiffViewer
                           oldCode={thread.selectedText || ""}
                           newCode={comment.suggestedEdit}
                           layout="unified"
                           oldTitle="Current text"
                           newTitle="Proposed replacement"
-                          className="text-xs"
+                          className="text-footnote"
                         />
                       </div>
                     </div>
@@ -512,7 +508,7 @@ function ThreadCard({
           </div>
 
           {/* Action Bar: Hold-to-Resolve, Create Child Page & Delete */}
-          <div className="flex items-center justify-between border-t border-[var(--wikios-border)] pt-1">
+          <div className="border-separator flex items-center justify-between border-t pt-1">
             <div className="flex items-center gap-2">
               {isAuthenticated && (
                 <HoldToResolveButton
@@ -527,7 +523,7 @@ function ThreadCard({
               {/* Create Subpage Button */}
               <Link
                 href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(thread.articleTitle)}`}
-                className="flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-400 shadow-xs transition-transform duration-100 hover:bg-emerald-500/20 active:scale-95"
+                className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold transition-transform duration-100 active:scale-[0.98]"
                 title="Create a new subpage from this discussion"
               >
                 <Sprout className="h-3 w-3" />
@@ -543,7 +539,7 @@ function ThreadCard({
                     deleteThreadMutation.mutate({ threadId: thread.id });
                   }
                 }}
-                className="cursor-pointer p-1 text-[var(--wikios-text-dim)] transition-colors hover:text-rose-400"
+                className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors"
                 title="Delete thread"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -559,21 +555,21 @@ function ThreadCard({
                   type="button"
                   onClick={() => setShowSuggestEdit((prev) => !prev)}
                   className={cn(
-                    "flex cursor-pointer items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-semibold transition-[background-color,border-color,color] duration-100 active:scale-95",
+                    "rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[background-color,border-color,color] duration-100 active:scale-[0.98]",
                     showSuggestEdit
-                      ? "border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] text-[var(--margin-accent-text)]"
-                      : "border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+                      ? "border-margin-border bg-margin-bg text-(--margin-accent-text)"
+                      : "border-separator bg-surface text-label-secondary hover:text-label"
                   )}
                 >
-                  <Edit3 className="h-3 w-3 text-[var(--margin-accent-text)]" />
+                  <Edit3 className="h-3 w-3 text-(--margin-accent-text)" />
                   <span>{showSuggestEdit ? "Suggested edit enabled" : "Suggest edit"}</span>
                 </button>
               </div>
 
               {/* Secondary textarea for suggested edit replacement */}
               {showSuggestEdit && (
-                <div className="space-y-2 rounded-xl border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] p-2.5">
-                  <span className="text-xs font-bold text-[var(--margin-accent-text)]">
+                <div className="rounded-row border-margin-border bg-margin-bg space-y-2 border p-2.5">
+                  <span className="text-caption font-semibold text-(--margin-accent-text)">
                     Proposed replacement:
                   </span>
                   <textarea
@@ -581,7 +577,7 @@ function ThreadCard({
                     value={suggestedReplacement}
                     onChange={(e) => setSuggestedReplacement(e.target.value)}
                     placeholder="Type replacement text..."
-                    className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2.5 py-1.5 font-mono text-xs text-[var(--wikios-text)] outline-none focus:border-[var(--margin-accent)]"
+                    className="rounded-control border-separator bg-surface text-footnote text-label focus:border-margin-accent w-full border px-2.5 py-1.5 tabular-nums outline-none"
                   />
                   {thread.selectedText && suggestedReplacement && (
                     <div className="pt-1">
@@ -591,7 +587,7 @@ function ThreadCard({
                         layout="unified"
                         oldTitle="Current"
                         newTitle="Proposed"
-                        className="text-xs"
+                        className="text-footnote"
                       />
                     </div>
                   )}
@@ -605,12 +601,12 @@ function ThreadCard({
                   placeholder="Write a reply..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  className="flex-1 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 px-3 py-1.5 text-xs text-[var(--wikios-text)] transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--margin-accent)]"
+                  className="rounded-row border-separator bg-surface text-footnote text-label placeholder:text-label-tertiary focus:border-margin-accent flex-1 border px-3 py-1.5 transition-colors outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!replyText.trim() || postCommentMutation.isPending}
-                  className="bg-margin-accent hover:bg-margin-accent/90 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold text-stone-950 shadow-xs transition-transform duration-100 active:scale-95 disabled:opacity-40"
+                  className="bg-margin-accent hover:bg-margin-accent/90 rounded-row text-caption cursor-pointer px-3.5 py-1.5 font-semibold text-(--margin-badge-text) transition-transform duration-100 active:scale-[0.98] disabled:opacity-40"
                 >
                   Reply
                 </button>
@@ -676,7 +672,7 @@ export function MarginThreadsTab({
 
   const createThreadMutation = api.wikios.createThread.useMutation({
     onSuccess: () => {
-      soundEffects.success();
+      soundCues?.success?.();
       notify.success("Discussion created");
       setShowNewThread(false);
       setNewTitle("");
@@ -729,7 +725,7 @@ export function MarginThreadsTab({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           {/* Status Segmented Pill */}
-          <div className="flex items-center rounded-xl border border-[var(--wikios-border)] bg-white/5 p-0.5 shadow-xs">
+          <div className="rounded-row border-separator bg-fill-4 flex items-center border p-0.5">
             {(
               [
                 { id: "OPEN", label: "Open" },
@@ -743,10 +739,10 @@ export function MarginThreadsTab({
                   type="button"
                   onClick={() => setFilter(f.id)}
                   className={cn(
-                    "cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
+                    "rounded-control text-caption cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]",
                     isActive
-                      ? "border border-yellow-400/50 bg-[var(--wikios-surface)] font-bold text-[var(--wikios-text)] shadow-xs"
-                      : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                      ? "border-yellow/50 bg-surface text-label border font-semibold"
+                      : "text-label-secondary hover:text-label"
                   )}
                 >
                   {f.label}
@@ -759,7 +755,7 @@ export function MarginThreadsTab({
             <button
               type="button"
               onClick={() => setShowNewThread((prev) => !prev)}
-              className="bg-margin-accent hover:bg-margin-accent/90 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-yellow-400/50 px-3 py-1 text-xs font-bold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95"
+              className="bg-margin-accent hover:bg-margin-accent/90 rounded-row border-yellow/50 text-caption flex shrink-0 cursor-pointer items-center gap-1.5 border px-3 py-1 font-semibold text-(--margin-badge-text) transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>New Thread</span>
@@ -769,13 +765,13 @@ export function MarginThreadsTab({
 
         {/* Instant Search Bar */}
         <div className="relative">
-          <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-[var(--wikios-text-dim)]" />
+          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search discussions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-[var(--wikios-border)] bg-white/5 py-1.5 pr-3 pl-8 text-xs text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-yellow-400/60 focus:bg-[var(--wikios-surface)]"
+            className="rounded-row border-separator bg-fill-4 text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 focus:bg-surface w-full border py-1.5 pr-3 pl-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none"
           />
         </div>
       </div>
@@ -784,10 +780,10 @@ export function MarginThreadsTab({
       {showNewThread && (
         <form
           onSubmit={handleCreateSubmit}
-          className="animate-in fade-in zoom-in-95 space-y-3 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/95 p-3.5 shadow-lg backdrop-blur-md"
+          className="animate-in fade-in zoom-in-95 rounded-card border-separator bg-surface shadow-floating space-y-3 border p-3.5"
         >
           {/* Composer Header */}
-          <div className="flex items-center gap-1.5 border-b border-[var(--wikios-border)]/60 pb-1.5 text-xs font-semibold text-[var(--wikios-text)]">
+          <div className="border-separator text-caption text-label flex items-center gap-1.5 border-b pb-1.5 font-semibold">
             <MarginUserAvatar
               author={{
                 id: currentUserId || "you",
@@ -800,29 +796,24 @@ export function MarginThreadsTab({
               primaryColor={primaryColor}
               liveAvatar={currentUserAvatar}
             />
-            <span className="text-xs text-[var(--wikios-text-dim)]">
+            <span className="text-footnote text-label-secondary">
               Posting as{" "}
-              <strong className="font-bold text-[var(--wikios-text)]">
-                {currentUsername || "You"}
-              </strong>
+              <strong className="text-label font-semibold">{currentUsername || "You"}</strong>
             </span>
           </div>
 
           {/* 5 Ws Priority Hierarchy Chips */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
-                Category
-              </span>
+              <span className="text-eyebrow text-label-secondary">Category</span>
               <button
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setShowCategoryHelp(true);
                 }}
-                className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-[var(--wikios-text)] transition-colors hover:underline"
+                className="text-caption text-label flex cursor-pointer items-center gap-1 font-semibold transition-colors hover:underline"
               >
-                <HelpCircle className="dark:text-margin-accent h-3 w-3 text-yellow-600" />
+                <HelpCircle className="text-yellow h-3 w-3" />
                 <span>Category Guide</span>
               </button>
             </div>
@@ -835,15 +826,15 @@ export function MarginThreadsTab({
                     type="button"
                     onClick={() => setSelectedDimension(dim.id)}
                     className={cn(
-                      "flex cursor-pointer flex-col items-center rounded-xl border px-1 py-1.5 text-center transition-[background-color,border-color,color,box-shadow] duration-100 select-none active:scale-95",
+                      "rounded-row flex cursor-pointer flex-col items-center border px-1 py-1.5 text-center transition-[background-color,border-color,color,box-shadow] duration-100 select-none active:scale-[0.98]",
                       isSelected
-                        ? "bg-margin-accent/20 border-yellow-400/60 font-bold text-[var(--wikios-text)] shadow-xs ring-1 ring-yellow-400/40"
-                        : "border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+                        ? "bg-margin-accent/20 border-yellow/60 text-label ring-yellow/40 font-semibold ring-1"
+                        : "border-separator bg-surface text-label-secondary hover:text-label"
                     )}
                     title={dim.desc}
                   >
-                    <span className="text-xs">{dim.emoji}</span>
-                    <span className="mt-0.5 text-xs font-bold">{dim.short}</span>
+                    <span className="text-footnote">{dim.emoji}</span>
+                    <span className="text-caption mt-0.5 font-semibold">{dim.short}</span>
                   </button>
                 );
               })}
@@ -851,11 +842,9 @@ export function MarginThreadsTab({
           </div>
 
           {draftQuote && (
-            <div className="bg-margin-accent/15 space-y-1 rounded-xl border border-yellow-400/40 p-2.5 text-xs text-[var(--wikios-text-muted)]">
-              <span className="text-xs font-bold tracking-wider text-[var(--wikios-text)] uppercase">
-                Referenced passage:
-              </span>
-              <p className="line-clamp-2 text-xs text-[var(--wikios-text)] italic">
+            <div className="bg-margin-accent/15 rounded-row border-yellow/40 text-footnote text-label-secondary space-y-1 border p-2.5">
+              <span className="text-subhead text-label">Referenced passage:</span>
+              <p className="text-footnote text-label line-clamp-2 italic">
                 &ldquo;{draftQuote}&rdquo;
               </p>
             </div>
@@ -866,7 +855,7 @@ export function MarginThreadsTab({
             placeholder="Thread title..."
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/80 px-3 py-1.5 text-xs text-[var(--wikios-text)] transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-yellow-400/60"
+            className="rounded-row border-separator bg-background text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 w-full border px-3 py-1.5 transition-colors outline-none"
           />
 
           <textarea
@@ -874,7 +863,7 @@ export function MarginThreadsTab({
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             rows={3}
-            className="resize-vertical w-full rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/80 px-3 py-1.5 text-xs text-[var(--wikios-text)] transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-yellow-400/60"
+            className="resize-vertical rounded-row border-separator bg-background text-footnote text-label placeholder:text-label-tertiary focus:border-yellow/60 w-full border px-3 py-1.5 transition-colors outline-none"
           />
 
           {/* Toggle Propose Suggested Edit Diff */}
@@ -883,24 +872,24 @@ export function MarginThreadsTab({
               type="button"
               onClick={() => setShowNewSuggestEdit((prev) => !prev)}
               className={cn(
-                "flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold transition-[background-color,border-color,color] duration-100 active:scale-95",
+                "rounded-control text-caption flex cursor-pointer items-center gap-1.5 border px-2 py-1 font-semibold transition-[background-color,border-color,color] duration-100 active:scale-[0.98]",
                 showNewSuggestEdit
-                  ? "bg-margin-accent/20 border-yellow-400/50 font-bold text-[var(--wikios-text)]"
-                  : "border-[var(--wikios-border)] text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+                  ? "bg-margin-accent/20 border-yellow/50 text-label font-semibold"
+                  : "border-separator text-label-secondary hover:text-label"
               )}
             >
-              <Edit3 className="dark:text-margin-accent h-3 w-3 text-yellow-600" />
+              <Edit3 className="text-yellow h-3 w-3" />
               <span>{showNewSuggestEdit ? "Include text diff" : "Suggest edit"}</span>
             </button>
 
             {showNewSuggestEdit && (
-              <div className="bg-margin-accent/10 space-y-2 rounded-xl border border-yellow-400/40 p-2.5">
+              <div className="bg-margin-accent/10 rounded-row border-yellow/40 space-y-2 border p-2.5">
                 <textarea
                   rows={2}
                   value={newSuggestedEdit}
                   onChange={(e) => setNewSuggestedEdit(e.target.value)}
                   placeholder="Type replacement text..."
-                  className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2.5 py-1.5 font-mono text-xs text-[var(--wikios-text)] outline-none focus:border-yellow-400/60"
+                  className="rounded-control border-separator bg-surface text-footnote text-label focus:border-yellow/60 w-full border px-2.5 py-1.5 tabular-nums outline-none"
                 />
                 {draftQuote && newSuggestedEdit && (
                   <DiffViewer
@@ -909,7 +898,7 @@ export function MarginThreadsTab({
                     layout="unified"
                     oldTitle="Original"
                     newTitle="Proposed"
-                    className="text-xs"
+                    className="text-footnote"
                   />
                 )}
               </div>
@@ -923,14 +912,14 @@ export function MarginThreadsTab({
                 setShowNewThread(false);
                 onClearDraftQuote?.();
               }}
-              className="rounded-xl px-3 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
+              className="rounded-row text-caption text-label-secondary hover:text-label px-3 py-1 font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!newTitle.trim() || !newContent.trim() || createThreadMutation.isPending}
-              className="bg-margin-accent hover:bg-margin-accent/90 cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold text-stone-950 shadow-xs active:scale-95 disabled:opacity-40"
+              className="bg-margin-accent hover:bg-margin-accent/90 rounded-row text-caption cursor-pointer px-3.5 py-1.5 font-semibold text-(--margin-badge-text) active:scale-[0.98] disabled:opacity-40"
             >
               {createThreadMutation.isPending ? "Posting..." : "Post thread"}
             </button>
@@ -940,18 +929,18 @@ export function MarginThreadsTab({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center gap-2 py-12 text-[var(--wikios-text-muted)]">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
-          <span className="text-xs">Loading discussions...</span>
+        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-12">
+          <div className="border-yellow/50 h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-footnote">Loading discussions...</span>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && filteredThreads.length === 0 && (
-        <div className="space-y-1.5 py-12 text-center text-[var(--wikios-text-muted)]">
-          <MessageSquare className="mx-auto mb-2 h-8 w-8 text-[var(--wikios-text-dim)] opacity-50" />
-          <p className="text-xs font-semibold text-[var(--wikios-text)]">No discussions yet</p>
-          <p className="mx-auto max-w-xs text-xs text-[var(--wikios-text-dim)]">
+        <div className="text-label-secondary space-y-1.5 py-12 text-center">
+          <MessageSquare className="text-label-secondary mx-auto mb-2 h-8 w-8 opacity-50" />
+          <p className="text-caption text-label font-semibold">No discussions yet</p>
+          <p className="text-footnote text-label-secondary mx-auto max-w-xs">
             {searchQuery
               ? "Try a different search term"
               : "Select text in the article to start a discussion."}
