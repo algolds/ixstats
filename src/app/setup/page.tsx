@@ -23,10 +23,17 @@ import {
   Search,
   MapPin,
   Star,
+  SystemRestart,
 } from "iconoir-react";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { SearchField } from "~/components/ui/search-field";
+import { Skeleton } from "~/components/ui/skeleton";
+import { TintHairline } from "~/components/ui/facet";
+import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
@@ -214,12 +221,39 @@ export default function SetupPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading setup...</p>
+          <SystemRestart aria-hidden className="text-tint mx-auto mb-4 size-10 animate-spin" />
+          <p className="text-body text-label-secondary">Loading setup...</p>
         </div>
       </div>
     );
   }
+
+  const tierBadge = (tier: string) =>
+    tier === "Advanced"
+      ? "success"
+      : tier === "Developed"
+        ? "info"
+        : tier === "Emerging"
+          ? "caution"
+          : "neutral";
+
+  const errorNote = error && (
+    <motion.div
+      role="alert"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-destructive/10 rounded-row flex items-center gap-3 p-4"
+    >
+      <AlertCircle aria-hidden className="text-destructive size-5 shrink-0" />
+      <p className="text-body text-destructive">{error}</p>
+    </motion.div>
+  );
+
+  const stepTransition = {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0, transition: springSmooth },
+    exit: { opacity: 0, x: -20, transition: tweenExit },
+  };
 
   return (
     <>
@@ -243,269 +277,173 @@ export default function SetupPage() {
               width={40}
               height={40}
               squares={[50, 40]}
-              className="fixed inset-0 z-0 opacity-30 dark:opacity-20"
-              squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+              className="fixed inset-0 z-0 opacity-20"
+              squaresClassName="fill-label-tertiary stroke-separator transition-[fill,stroke] duration-200 [&:nth-child(4n+1):hover]:fill-tint/40 [&:nth-child(4n+2):hover]:fill-blue/40 [&:nth-child(4n+3):hover]:fill-indigo/40 [&:nth-child(4n+4):hover]:fill-red/40"
             />
 
-            <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="relative z-10 mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
               <AnimatePresence mode="wait">
                 {/* Welcome Step */}
                 {currentStep === "welcome" && (
                   <motion.div
                     key="welcome"
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.5 }}
+                    animate={{ opacity: 1, y: 0, transition: springSmooth }}
+                    exit={{ opacity: 0, y: -20, transition: tweenExit }}
                     className="text-center"
                   >
-                    <motion.div
-                      initial={{ scale: 0.96, opacity: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                      className="mb-8"
-                    >
+                    <div className="mb-8">
                       <div className="mx-auto mb-6">
                         <IxStatsLogo size="xl" animated={true} />
                       </div>
 
-                      <h1 className="text-foreground mb-6 text-3xl font-bold md:text-4xl">
+                      <h1 className="text-large-title text-label mb-4">
                         Welcome to IxStats, {user?.firstName || "User"}!
                       </h1>
 
-                      <p className="text-muted-foreground mx-auto max-w-4xl text-base leading-relaxed md:text-lg">
+                      <p className="text-body text-label-secondary mx-auto max-w-2xl">
                         To get started, please choose an option below.
                       </p>
-                    </motion.div>
-
-                    {/* Primary Option - Create New Country */}
-                    <div className="mx-auto mb-8 max-w-4xl">
-                      <motion.button
-                        onClick={() => setCurrentStep("create-new")}
-                        className="facet-hierarchy-parent group relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 md:p-8 dark:border-amber-800/30"
-                        whileHover={{
-                          y: -12,
-                          scale: 1.02,
-                          transition: { duration: 0.3, ease: "easeOut" },
-                        }}
-                        whileTap={{ scale: 0.98 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                      >
-                        {/* Animated background gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/20 via-transparent to-yellow-50/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:from-amber-950/20 dark:via-transparent dark:to-yellow-950/20" />
-
-                        {/* Animated border glow */}
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
-
-                        {/* Floating particles effect */}
-                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                        <div className="absolute top-8 right-8 h-1 w-1 rounded-full bg-yellow-400/60 opacity-0 transition-opacity delay-100 duration-500 group-hover:opacity-100" />
-                        <div className="absolute top-12 right-12 h-1.5 w-1.5 rounded-full bg-amber-300/60 opacity-0 transition-opacity delay-200 duration-700 group-hover:opacity-100" />
-
-                        <div className="relative z-10">
-                          <div className="mb-8 flex items-center">
-                            <div className="facet-hierarchy-child mr-6 rounded-2xl border border-amber-200/50 bg-gradient-to-br from-amber-100 to-yellow-100 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:scale-110 group-hover:rotate-3 dark:border-amber-700/50 dark:from-amber-900/50 dark:to-yellow-900/50">
-                              <MyCountryLogo size="lg" variant="icon-only" animated={true} />
-                            </div>
-                            <div>
-                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
-                                Create New Country
-                              </h3>
-                              <div className="flex items-center">
-                                <div className="rounded-full border border-amber-300/30 bg-gradient-to-r from-amber-400/20 to-yellow-400/20 px-3 py-1 dark:border-amber-600/30">
-                                  <p className="bg-gradient-to-r from-amber-700 to-yellow-600 bg-clip-text text-sm font-medium text-transparent dark:from-amber-300 dark:to-yellow-400">
-                                    ✨ Recommended
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <p className="text-muted-foreground group-hover:text-foreground/80 mb-6 text-base leading-relaxed transition-colors duration-300">
-                            Start fresh with a new nation. Create your country's government
-                            structure, economy, demographics, and policies to your liking.
-                          </p>
-
-                          <div className="flex items-center text-base text-amber-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
-                            <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text font-semibold text-transparent dark:from-amber-400 dark:to-yellow-400">
-                              Get Started with MyCountry© Builder
-                            </span>
-                            <ArrowRight className="ml-3 h-5 w-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 group-hover:translate-x-3 group-hover:scale-110" />
-                          </div>
-                        </div>
-                      </motion.button>
                     </div>
 
-                    {/* Secondary Option - Link Existing Country (Collapsed by default) */}
-                    <div className="mx-auto max-w-4xl">
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="facet-hierarchy-child border-border rounded-2xl border p-6"
+                    {/* Primary Option - Create New Country */}
+                    <div data-app="mycountry" className="mx-auto mb-6 max-w-3xl">
+                      <FacetCard
+                        onClick={() => setCurrentStep("create-new")}
+                        className="relative overflow-hidden p-6 text-left md:p-8"
                       >
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
-                              <LinkIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <h4 className="text-foreground text-xl font-bold">
-                              Link Existing Country
-                            </h4>
+                        <TintHairline />
+                        <div className="mb-6 flex items-center gap-5">
+                          <div className="bg-tint-fill rounded-card shrink-0 p-4">
+                            <MyCountryLogo size="lg" variant="icon-only" animated={true} />
                           </div>
-                          <button
-                            onClick={() => setCurrentStep("link-existing")}
-                            className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Use this option →
-                          </button>
+                          <div className="space-y-2">
+                            <h2 className="text-title-1 text-label">Create New Country</h2>
+                            <Badge variant="tinted">✨ Recommended</Badge>
+                          </div>
                         </div>
 
-                        <p className="text-muted-foreground mb-4 text-sm">
+                        <p className="text-body text-label-secondary mb-6">
+                          Start fresh with a new nation. Create your country's government structure,
+                          economy, demographics, and policies to your liking.
+                        </p>
+
+                        <div className="text-headline text-tint flex items-center gap-2">
+                          <span>Get Started with MyCountry© Builder</span>
+                          <ArrowRight aria-hidden className="size-5" />
+                        </div>
+                      </FacetCard>
+                    </div>
+
+                    {/* Secondary Option - Link Existing Country */}
+                    <div className="mx-auto max-w-3xl">
+                      <FacetCard className="p-6 text-left">
+                        <div className="mb-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue/10 rounded-row p-3">
+                              <LinkIcon aria-hidden className="text-blue size-6" />
+                            </div>
+                            <h2 className="text-title-2 text-label">Link Existing Country</h2>
+                          </div>
+                          <Button
+                            variant="plain"
+                            size="sm"
+                            onClick={() => setCurrentStep("link-existing")}
+                          >
+                            Use this option →
+                          </Button>
+                        </div>
+
+                        <p className="text-body text-label-secondary mb-4">
                           Connect your account to an existing country in the system. Perfect if
                           you're taking over management of an established nation.
                         </p>
 
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        <div role="note" className="bg-caution/10 rounded-row p-3">
+                          <p className="text-headline text-label">
                             ⚠️ Only choose this if told to do so
                           </p>
                         </div>
-                      </motion.div>
+                      </FacetCard>
                     </div>
                   </motion.div>
                 )}
 
                 {/* Link Existing Country Step */}
                 {currentStep === "link-existing" && (
-                  <motion.div
-                    key="link-existing"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="mb-10">
+                  <motion.div key="link-existing" {...stepTransition}>
+                    <div className="mb-8">
                       <Button
-                        variant="ghost"
+                        variant="plain"
                         onClick={() => setCurrentStep("welcome")}
-                        className="facet-hierarchy-child mb-8 rounded-xl px-6 py-3"
+                        className="mb-6"
                       >
-                        <ArrowLeft className="mr-3 h-5 w-5" />
+                        <ArrowLeft aria-hidden />
                         Back to options
                       </Button>
 
-                      <h1 className="text-foreground mb-6 text-5xl font-bold">
-                        Link to Existing Country
-                      </h1>
+                      <h1 className="text-large-title text-label mb-2">Link to Existing Country</h1>
 
-                      <p className="text-muted-foreground max-w-3xl text-2xl">
+                      <p className="text-body text-label-secondary max-w-2xl">
                         Search and select an existing country to link to your account.
                       </p>
                     </div>
 
-                    <div className="facet-hierarchy-parent border-border rounded-3xl border p-8">
-                      <div className="mb-8">
-                        <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-                          <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
-                            <Search className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                          </div>
+                    <FacetCard className="p-6 md:p-8">
+                      <div className="mb-6">
+                        <h2 className="text-title-2 text-label mb-1 flex items-center gap-3">
+                          <Search aria-hidden className="text-blue size-5" />
                           Search Countries
                         </h2>
-                        <p className="text-muted-foreground text-lg">
+                        <p className="text-callout text-label-secondary">
                           Find your country by name, continent, or region
                         </p>
                       </div>
 
-                      <div className="space-y-8">
-                        <div className="relative">
-                          <Search className="text-muted-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform" />
-                          <Input
-                            type="text"
-                            placeholder="Search by name, continent, or region..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="facet-hierarchy-child border-border rounded-2xl py-4 pl-12 text-lg"
-                          />
-                        </div>
+                      <div className="space-y-6">
+                        <SearchField
+                          size="lg"
+                          aria-label="Search countries"
+                          placeholder="Search by name, continent, or region..."
+                          value={searchTerm}
+                          onValueChange={setSearchTerm}
+                        />
 
                         {countriesLoading ? (
-                          <div className="py-16 text-center">
-                            <div className="border-primary mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-b-2"></div>
-                            <p className="text-muted-foreground text-xl">Loading countries...</p>
-                          </div>
-                        ) : (
-                          <div className="max-h-96 space-y-4 overflow-y-auto">
-                            {filteredCountries.map((country, index) => (
-                              <motion.button
-                                key={country.id}
-                                onClick={() => setSelectedCountryId(country.id)}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className={`facet-hierarchy-child w-full rounded-2xl p-6 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ${
-                                  selectedCountryId === country.id
-                                    ? "border-primary scale-105 border-2"
-                                    : "border-border border hover:scale-102"
-                                }`}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-4">
-                                    <div className="facet-hierarchy-child flex h-12 w-12 items-center justify-center rounded-xl">
-                                      <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <div>
-                                      <h3 className="text-foreground mb-2 text-xl font-bold">
-                                        {country.name}
-                                      </h3>
-                                      <p className="text-muted-foreground">
-                                        {country.continent}{" "}
-                                        {country.region && `• ${country.region}`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <span
-                                      className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-medium ${
-                                        country.economicTier === "Advanced"
-                                          ? "border border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
-                                          : country.economicTier === "Developed"
-                                            ? "border border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300"
-                                            : country.economicTier === "Emerging"
-                                              ? "border border-yellow-200 bg-yellow-100 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300"
-                                              : "border border-gray-200 bg-gray-100 text-gray-800 dark:border-gray-800 dark:bg-gray-900/20 dark:text-gray-300"
-                                      }`}
-                                    >
-                                      {country.economicTier}
-                                    </span>
-                                  </div>
-                                </div>
-                              </motion.button>
+                          <div className="space-y-2" aria-label="Loading countries...">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                              <Skeleton key={i} className="rounded-row h-16" />
                             ))}
                           </div>
+                        ) : (
+                          <FacetList className="max-h-96 overflow-y-auto">
+                            <FacetListSection>
+                              {filteredCountries.map((country) => (
+                                <FacetRow
+                                  key={country.id}
+                                  onClick={() => setSelectedCountryId(country.id)}
+                                  selected={selectedCountryId === country.id}
+                                  leading={<MapPin aria-hidden className="text-blue size-5" />}
+                                  title={country.name}
+                                  subtitle={`${country.continent ?? ""}${country.region ? ` • ${country.region}` : ""}`}
+                                  trailing={
+                                    <Badge variant={tierBadge(country.economicTier)}>
+                                      {country.economicTier}
+                                    </Badge>
+                                  }
+                                  accessory={selectedCountryId === country.id ? "check" : "none"}
+                                />
+                              ))}
+                            </FacetListSection>
+                          </FacetList>
                         )}
 
-                        {error && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="facet-hierarchy-child border-destructive rounded-2xl border p-6"
-                          >
-                            <div className="flex items-center">
-                              <AlertCircle className="text-destructive mr-4 h-6 w-6" />
-                              <p className="text-destructive text-lg">{error}</p>
-                            </div>
-                          </motion.div>
-                        )}
+                        {errorNote}
 
                         {claimPending && (
-                          <div className="facet-hierarchy-child border-border rounded-2xl border p-6">
-                            <p className="text-foreground text-lg font-semibold">Claim submitted</p>
-                            <p className="text-muted-foreground mt-1 text-sm">
+                          <div role="status" className="bg-surface-secondary rounded-row p-4">
+                            <p className="text-headline text-label">Claim submitted</p>
+                            <p className="text-body text-label-secondary mt-1">
                               A moderator will review it. Verify your wiki account under Settings →
                               IxnayID & Passport → Linked Accounts to have claims for nations you
                               created approved instantly.
@@ -514,69 +452,56 @@ export default function SetupPage() {
                         )}
 
                         {selectedCountryId && !claimPending && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="border-border border-t pt-8"
-                          >
+                          <div className="border-separator border-t pt-6">
                             <Button
                               onClick={handleLinkCountry}
                               disabled={isLinking}
-                              className="w-full rounded-2xl py-6 text-lg font-semibold"
+                              aria-busy={isLinking}
+                              className="w-full"
                               size="lg"
                             >
                               {isLinking ? (
                                 <>
-                                  <div className="mr-4 h-6 w-6 animate-spin rounded-full border-b-2 border-current"></div>
+                                  <SystemRestart aria-hidden className="animate-spin" />
                                   Submitting claim...
                                 </>
                               ) : (
                                 <>
-                                  <LinkIcon className="mr-4 h-6 w-6" />
+                                  <LinkIcon aria-hidden />
                                   Claim Country
                                 </>
                               )}
                             </Button>
-                          </motion.div>
+                          </div>
                         )}
                       </div>
-                    </div>
+                    </FacetCard>
                   </motion.div>
                 )}
 
                 {/* Create New Country Step */}
                 {currentStep === "create-new" && (
-                  <motion.div
-                    key="create-new"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <div className="mb-10">
+                  <motion.div key="create-new" data-app="mycountry" {...stepTransition}>
+                    <div className="mb-8">
                       <Button
-                        variant="ghost"
+                        variant="plain"
                         onClick={() => setCurrentStep("welcome")}
-                        className="facet-hierarchy-child mb-8 rounded-xl px-6 py-3"
+                        className="mb-6"
                       >
-                        <ArrowLeft className="mr-3 h-5 w-5" />
+                        <ArrowLeft aria-hidden />
                         Back to options
                       </Button>
 
-                      <h1 className="text-foreground mb-6 text-5xl font-bold">
-                        Create New Country
-                      </h1>
+                      <h1 className="text-large-title text-label">Create New Country</h1>
                     </div>
 
-                    <div className="facet-hierarchy-parent border-border rounded-3xl border p-8">
-                      <div className="mb-8">
-                        <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-                          <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
-                            <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                          </div>
+                    <FacetCard className="space-y-6 p-6 md:p-8">
+                      <div>
+                        <h2 className="text-title-2 text-label mb-2 flex items-center gap-3">
+                          <Building2 aria-hidden className="text-tint size-5" />
                           MyCountry® Builder
                         </h2>
-                        <p className="text-muted-foreground text-lg">
+                        <p className="text-body text-label-secondary">
                           Build your country exactly how you want. Our builder allows you to
                           customize everything from your government structure to your economy and
                           demographics to your policies and manage diplomatic relations. We use a
@@ -586,168 +511,123 @@ export default function SetupPage() {
                         </p>
                       </div>
 
-                      <div className="space-y-8">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="facet-hierarchy-child group rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                          {
+                            icon: Building2,
+                            color: "text-blue bg-blue/10",
+                            title: "National Identity",
+                            body: "Define your country's name and flag, and assign your country a currency, language, and other essential symbols.",
+                          },
+                          {
+                            icon: Crown,
+                            color: "text-purple bg-purple/10",
+                            title: "MyGovernment",
+                            body: "Customize everything from your political system to your departments and budgets to policies and more.",
+                          },
+                          {
+                            icon: TrendingUp,
+                            color: "text-green bg-green/10",
+                            title: "MyEconomy",
+                            body: "Configure your industry sectors, labor markets, income distribution, and trade policies to your liking.",
+                          },
+                          {
+                            icon: Users,
+                            color: "text-orange bg-orange/10",
+                            title: "Tax Builder",
+                            body: "Our intergrated tax builder allows you to design a comprehensive tax system with brackets, exemptions, and deductions that is connected to your economy.",
+                          },
+                        ].map(({ icon: Icon, color, title, body }) => (
+                          <div
+                            key={title}
+                            className="bg-surface-secondary rounded-row p-5 text-center"
                           >
-                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
-                              <Building2 className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                            <div
+                              className={`rounded-card mx-auto mb-4 flex size-14 items-center justify-center ${color}`}
+                            >
+                              <Icon aria-hidden className="size-7" />
                             </div>
-                            <h3 className="text-foreground mb-3 text-xl font-bold">
-                              National Identity
-                            </h3>
-                            <p className="text-muted-foreground">
-                              Define your country's name and flag, and assign your country a
-                              currency, language, and other essential symbols.
-                            </p>
-                          </motion.div>
-
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="facet-hierarchy-child group rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                          >
-                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
-                              <Crown className="h-10 w-10 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <h3 className="text-foreground mb-3 text-xl font-bold">MyGovernment</h3>
-                            <p className="text-muted-foreground">
-                              Customize everything from your political system to your departments
-                              and budgets to policies and more.
-                            </p>
-                          </motion.div>
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="facet-hierarchy-child group rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                          >
-                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
-                              <TrendingUp className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <h3 className="text-foreground mb-3 text-xl font-bold">MyEconomy</h3>
-                            <p className="text-muted-foreground">
-                              Configure your industry sectors, labor markets, income distribution,
-                              and trade policies to your liking.
-                            </p>
-                          </motion.div>
-
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="facet-hierarchy-child group rounded-2xl p-6 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                          >
-                            <div className="facet-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
-                              <Users className="h-10 w-10 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <h3 className="text-foreground mb-3 text-xl font-bold">Tax Builder</h3>
-                            <p className="text-muted-foreground">
-                              Our intergrated tax builder allows you to design a comprehensive tax
-                              system with brackets, exemptions, and deductions that is connected to
-                              your economy.
-                            </p>
-                          </motion.div>
-                        </div>
-
-                        <div className="facet-hierarchy-child rounded-2xl p-8">
-                          <div className="mb-6 flex items-center">
-                            <div className="facet-hierarchy-child mr-4 rounded-xl p-3">
-                              <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                            </div>
-                            <h3 className="text-foreground text-2xl font-bold">What You'll Get</h3>
+                            <h3 className="text-title-3 text-label mb-2">{title}</h3>
+                            <p className="text-callout text-label-secondary">{body}</p>
                           </div>
-                          <ul className="text-muted-foreground space-y-4">
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-4 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>MyCountry: </strong> Manage your country in real-time from
-                              your Executive Command Center with briefings and policies, monitor
-                              your economy and engage in diplomacy with other nations, and more.
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>MyCountry Builder: </strong> Use our builder to customize your
-                              country exactly how you want. Customize everything from your
-                              government structure to your economy and demographics to your tax
-                              system and more.
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>MyCountry Defense: </strong> Establish up to 8 military
-                              branches, organize units and assets, readiness levels, and manage
-                              national security.
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>Diplomacy: </strong> Establish embassies, conduct cultural
-                              exchanges, negotiate treaties, and build relationships that enhance
-                              trade opportunities and intelligence cooperation
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>Compete Globally: </strong> Track your nation's ranking across
-                              economic, diplomatic, and cultural metrics—unlock achievements and see
-                              how you compare to other nations worldwide
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>ThinkPages: </strong> Use ThinkPages to engage as government
-                              officials, citizens, or media on our in-world social platform.
-                              Collaborate with other players through ThinkTanks and discuss IC or
-                              OOC topics.
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>Wiki Integration: </strong> You can import your country's
-                              data/lore from IIWiki or AltHistoryWiki if you want to use it as a
-                              base for your country
-                            </li>
-                            <li className="flex items-center">
-                              <div className="mr-4 h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
-                              <strong>Image Repository: </strong> Use our image repository to
-                              natively search for images from Wiki Commons, IxWiki, and IIWiki.
-                            </li>
-                          </ul>
-                        </div>
-
-                        {error && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="facet-hierarchy-child border-destructive rounded-2xl border p-6"
-                          >
-                            <div className="flex items-center">
-                              <AlertCircle className="text-destructive mr-4 h-6 w-6" />
-                              <p className="text-destructive text-lg">{error}</p>
-                            </div>
-                          </motion.div>
-                        )}
-
-                        <Button
-                          onClick={handleCreateCountry}
-                          disabled={isCreating}
-                          className="w-full rounded-2xl py-6 text-lg font-semibold"
-                          size="lg"
-                        >
-                          {isCreating ? (
-                            <>
-                              <div className="mr-4 h-6 w-6 animate-spin rounded-full border-b-2 border-current"></div>
-                              Starting MyCountry Builder...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-4 h-6 w-6" />
-                              Start MyCountry Builder
-                            </>
-                          )}
-                        </Button>
+                        ))}
                       </div>
-                    </div>
+
+                      <div className="bg-surface-secondary rounded-row p-6">
+                        <h3 className="text-title-3 text-label mb-4 flex items-center gap-3">
+                          <Star aria-hidden className="text-tint size-5" />
+                          What You'll Get
+                        </h3>
+                        <ul className="text-body text-label-secondary space-y-3">
+                          {[
+                            [
+                              "MyCountry: ",
+                              "Manage your country in real-time from your Executive Command Center with briefings and policies, monitor your economy and engage in diplomacy with other nations, and more.",
+                            ],
+                            [
+                              "MyCountry Builder: ",
+                              "Use our builder to customize your country exactly how you want. Customize everything from your government structure to your economy and demographics to your tax system and more.",
+                            ],
+                            [
+                              "MyCountry Defense: ",
+                              "Establish up to 8 military branches, organize units and assets, readiness levels, and manage national security.",
+                            ],
+                            [
+                              "Diplomacy: ",
+                              "Establish embassies, conduct cultural exchanges, negotiate treaties, and build relationships that enhance trade opportunities and intelligence cooperation",
+                            ],
+                            [
+                              "Compete Globally: ",
+                              "Track your nation's ranking across economic, diplomatic, and cultural metrics—unlock achievements and see how you compare to other nations worldwide",
+                            ],
+                            [
+                              "ThinkPages: ",
+                              "Use ThinkPages to engage as government officials, citizens, or media on our in-world social platform. Collaborate with other players through ThinkTanks and discuss IC or OOC topics.",
+                            ],
+                            [
+                              "Wiki Integration: ",
+                              "You can import your country's data/lore from IIWiki or AltHistoryWiki if you want to use it as a base for your country",
+                            ],
+                            [
+                              "Image Repository: ",
+                              "Use our image repository to natively search for images from Wiki Commons, IxWiki, and IIWiki.",
+                            ],
+                          ].map(([label, text]) => (
+                            <li key={label} className="flex items-start gap-3">
+                              <CheckCircle
+                                aria-hidden
+                                className="text-green mt-0.5 size-4 shrink-0"
+                              />
+                              <span>
+                                <strong className="text-label font-semibold">{label}</strong> {text}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {errorNote}
+
+                      <Button
+                        onClick={handleCreateCountry}
+                        disabled={isCreating}
+                        aria-busy={isCreating}
+                        className="w-full"
+                        size="lg"
+                      >
+                        {isCreating ? (
+                          <>
+                            <SystemRestart aria-hidden className="animate-spin" />
+                            Starting MyCountry Builder...
+                          </>
+                        ) : (
+                          <>
+                            <Plus aria-hidden />
+                            Start MyCountry Builder
+                          </>
+                        )}
+                      </Button>
+                    </FacetCard>
                   </motion.div>
                 )}
 
@@ -755,36 +635,26 @@ export default function SetupPage() {
                 {currentStep === "complete" && (
                   <motion.div
                     key="complete"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.5 }}
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1, transition: springSmooth }}
+                    exit={{ opacity: 0, scale: 0.96, transition: tweenExit }}
                     className="text-center"
                   >
-                    <div className="mb-12">
-                      <motion.div
-                        initial={{ scale: 0.96, opacity: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                        className="facet-hierarchy-parent mx-auto mb-10 flex h-40 w-40 items-center justify-center rounded-full"
-                      >
-                        <CheckCircle className="h-20 w-20 text-emerald-600 dark:text-emerald-400" />
-                      </motion.div>
+                    <div className="mb-10">
+                      <div className="bg-green/10 mx-auto mb-8 flex size-32 items-center justify-center rounded-full">
+                        <CheckCircle aria-hidden className="text-green size-16" />
+                      </div>
 
-                      <h1 className="text-foreground mb-8 text-6xl font-bold">Setup Complete!</h1>
+                      <h1 className="text-display text-label mb-6">Setup Complete!</h1>
 
-                      <p className="text-muted-foreground mx-auto max-w-4xl text-2xl leading-relaxed">
+                      <p className="text-title-3 text-label-secondary mx-auto max-w-2xl">
                         Your country has been successfully set up. You're now ready to start
                         managing it and engage in the world of IxStats. Good luck!
                       </p>
                     </div>
 
-                    <Button
-                      onClick={handleComplete}
-                      className="rounded-2xl px-12 py-6 text-xl font-semibold"
-                      size="lg"
-                    >
-                      <ArrowRight className="mr-4 h-6 w-6" />
+                    <Button onClick={handleComplete} size="lg">
+                      <ArrowRight aria-hidden />
                       Go to Dashboard
                     </Button>
                   </motion.div>
@@ -796,17 +666,13 @@ export default function SetupPage() {
       </SignedIn>
 
       <SignedOut>
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="facet-hierarchy-parent rounded-2xl p-12 text-center"
-          >
+        <div className="bg-grouped flex min-h-screen flex-col items-center justify-center px-4">
+          <FacetCard className="p-12 text-center">
             <IxStatsLogo size="lg" animated={true} className="mx-auto mb-6" />
-            <h1 className="mb-4 text-3xl font-bold text-white">Welcome to IxStats</h1>
-            <p className="mb-8 text-white/80">Please sign in to continue</p>
+            <h1 className="text-large-title text-label mb-2">Welcome to IxStats</h1>
+            <p className="text-body text-label-secondary mb-8">Please sign in to continue</p>
             <SignInButton mode="modal" />
-          </motion.div>
+          </FacetCard>
         </div>
       </SignedOut>
     </>

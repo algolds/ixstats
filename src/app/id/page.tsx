@@ -7,6 +7,7 @@ import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-conte
 import { AccountIdentityPanel } from "~/app/settings/_components/panels/AccountIdentityPanel";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { Button } from "~/components/ui/button";
 
 export default function IdAccountHubPage() {
   const { user } = useUser();
@@ -46,22 +47,15 @@ export default function IdAccountHubPage() {
         </div>
       </SignedIn>
       <SignedOut>
-        <div className="border-border bg-card flex flex-col items-center justify-center gap-4 rounded-2xl border p-8 text-center backdrop-blur-xl">
-          <Crown className="text-foreground h-10 w-10" />
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Sign in to Access IxnayID
-          </h2>
-          <p className="text-muted-foreground max-w-md text-xs">
+        <div className="border-separator bg-surface rounded-card shadow-card flex flex-col items-center justify-center gap-4 border p-8 text-center">
+          <Crown className="text-label h-10 w-10" />
+          <h2 className="text-label text-title-2">Sign in to Access IxnayID</h2>
+          <p className="text-label-secondary text-footnote max-w-md">
             Manage your persistent digital passport, security credentials, and multi-tenant realm
             memberships.
           </p>
           <SignInButton mode="modal">
-            <button
-              type="button"
-              className="facet-interactive bg-primary text-primary-foreground rounded-xl px-5 py-2.5 text-xs font-bold shadow-md hover:opacity-90 active:scale-[0.98]"
-            >
-              Sign In to IxStates
-            </button>
+            <Button type="button">Sign In to IxStates</Button>
           </SignInButton>
         </div>
       </SignedOut>

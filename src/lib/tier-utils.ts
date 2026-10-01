@@ -4,18 +4,31 @@
 
 import type { EconomicTier, PopulationTier } from "~/types/ixstats";
 
+/** The `Badge` variant (Facet 3 §7.1) a membership tier renders with. */
+export type TierBadgeVariant = "caution" | "neutral";
+
 export interface TierInfo {
   label: string;
   isPremium: boolean;
+  /** Render with `<Badge variant={badgeVariant}>`. */
+  badgeVariant: TierBadgeVariant;
+  /**
+   * Role classes for callers that style their own chip (same look as the Badge variant: the
+   * caution role for Premium, a neutral fill otherwise). Prefer `badgeVariant`.
+   */
   badgeClass: string;
 }
+
+const NEUTRAL_BADGE_CLASS = "border-separator bg-fill-3 text-label-secondary";
+const PREMIUM_BADGE_CLASS = "border-caution/30 bg-caution/15 text-caution";
 
 export function formatMembershipTier(tier?: string | null): TierInfo {
   if (!tier) {
     return {
       label: "Citizen",
       isPremium: false,
-      badgeClass: "border-border/60 bg-muted/60 text-muted-foreground",
+      badgeVariant: "neutral",
+      badgeClass: NEUTRAL_BADGE_CLASS,
     };
   }
 
@@ -27,7 +40,8 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
     return {
       label: "Premium",
       isPremium: true,
-      badgeClass: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      badgeVariant: "caution",
+      badgeClass: PREMIUM_BADGE_CLASS,
     };
   }
 
@@ -37,7 +51,8 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
         ? "Citizen"
         : tier.charAt(0).toUpperCase() + tier.slice(1).replace(/_/g, " "),
     isPremium: false,
-    badgeClass: "border-border/60 bg-muted/60 text-muted-foreground",
+    badgeVariant: "neutral",
+    badgeClass: NEUTRAL_BADGE_CLASS,
   };
 }
 

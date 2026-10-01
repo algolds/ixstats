@@ -49,22 +49,22 @@ export function MetricCard({
   const getTrendIcon = () => {
     switch (trend) {
       case "up":
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
+        return <TrendingUp className="text-green h-4 w-4" />;
       case "down":
-        return <TrendingDown className="h-4 w-4 text-red-500" />;
+        return <TrendingDown className="text-red h-4 w-4" />;
       default:
-        return <Minus className="text-muted-foreground h-4 w-4" />;
+        return <Minus className="text-label-secondary h-4 w-4" />;
     }
   };
 
   const getTrendColor = () => {
     switch (trend) {
       case "up":
-        return "text-green-500";
+        return "text-green";
       case "down":
-        return "text-red-500";
+        return "text-red";
       default:
-        return "text-muted-foreground";
+        return "text-label-secondary";
     }
   };
 
@@ -72,7 +72,7 @@ export function MetricCard({
     <motion.div
       {...MOTION_VARIANTS.scaleIn}
       className={cn(
-        "relative overflow-hidden rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-lg",
+        "rounded-control hover:shadow-floating relative overflow-hidden p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
         getGlassClasses("base", resolvedTheme, sectionId),
         className
       )}
@@ -88,7 +88,7 @@ export function MetricCard({
           {Icon && (
             <motion.div
               whileHover={{ scale: 1.1 }}
-              className="shrink-0 rounded-lg p-2"
+              className="rounded-control shrink-0 p-2"
               style={{ backgroundColor: colors.background }}
             >
               <Icon className="h-5 w-5" style={{ color: colors.primary }} />
@@ -97,17 +97,17 @@ export function MetricCard({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground truncate text-sm font-bold">{label}</h3>
+              <h3 className="text-label text-headline truncate">{label}</h3>
               {tooltip && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="cursor-pointer p-0.5 text-zinc-400 transition-colors hover:text-emerald-400 focus:outline-none">
+                    <button className="text-label-secondary hover:text-green cursor-pointer p-0.5 transition-colors focus:outline-none">
                       <Info className="h-3.5 w-3.5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"
-                    className="max-w-[250px] px-3 py-2 text-xs font-normal"
+                    className="text-footnote max-w-[250px] px-3 py-2 font-normal"
                   >
                     {tooltip}
                   </TooltipContent>
@@ -115,7 +115,7 @@ export function MetricCard({
               )}
             </div>
             {description && (
-              <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{description}</p>
+              <p className="text-label-secondary text-footnote mt-1 line-clamp-2">{description}</p>
             )}
           </div>
         </div>
@@ -136,14 +136,11 @@ export function MetricCard({
       {/* Main Value */}
       <div className="relative z-10 mb-2">
         <div className="flex flex-wrap items-baseline gap-1">
-          <motion.span
-            className="text-foreground text-2xl font-bold"
-            style={{ color: colors.primary }}
-          >
+          <motion.span className="text-label text-title-1" style={{ color: colors.primary }}>
             {isNumeric ? animatedValue : safeValue}
           </motion.span>
 
-          {unit && <span className="text-muted-foreground text-sm font-medium">{unit}</span>}
+          {unit && <span className="text-label-secondary text-body font-medium">{unit}</span>}
         </div>
       </div>
 
@@ -153,20 +150,20 @@ export function MetricCard({
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="relative z-10 flex items-center gap-1 text-sm"
+          className="text-body relative z-10 flex items-center gap-1"
         >
           <span className={cn("font-bold", getTrendColor())}>
             {change > 0 ? "+" : ""}
             {!isNaN(change) ? change.toFixed(1) : "0"}
             {changeUnit}
           </span>
-          <span className="text-muted-foreground">from previous</span>
+          <span className="text-label-secondary">from previous</span>
         </motion.div>
       )}
 
       {/* Animated Background Glow on Hover */}
       <motion.div
-        className="pointer-events-none absolute inset-0 z-0 rounded-lg opacity-0"
+        className="rounded-control pointer-events-none absolute inset-0 z-0 opacity-0"
         whileHover={{ opacity: 0.1 }}
         style={{ backgroundColor: colors.primary }}
         transition={{ duration: 0.2 }}

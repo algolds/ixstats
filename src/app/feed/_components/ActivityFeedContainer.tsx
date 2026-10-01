@@ -15,6 +15,10 @@ import { ActivityFilters } from "./ActivityFilters";
 import { TrendingTopics } from "./TrendingTopics";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Switch } from "~/components/ui/switch";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
 type ActivityCategory = "all" | "game" | "platform" | "social";
@@ -60,28 +64,33 @@ export function ActivityFeedContainer() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 sm:gap-3">
-              <Activity className="h-6 w-6 text-purple-600 sm:h-8 sm:w-8 dark:text-purple-400" />
-              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-                Activity Feed
-              </h1>
+              <Activity aria-hidden className="text-tint h-6 w-6 sm:h-8 sm:w-8" />
+              <h1 className="text-large-title text-label">Activity Feed</h1>
             </div>
-            <p className="text-sm text-slate-600 sm:text-base lg:text-lg dark:text-slate-300">
+            <p className="text-body text-label-secondary">
               Real-time platform activity and updates
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="bordered"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="hidden sm:flex"
             >
-              <Filter className="mr-2 h-4 w-4" />
+              <Filter aria-hidden />
               Filters
             </Button>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            <Button
+              variant="bordered"
+              size="icon-sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              aria-label="Refresh feed"
+              title="Refresh feed"
+            >
+              <RefreshCw aria-hidden className={isFetching ? "animate-spin" : ""} />
             </Button>
           </div>
         </div>
@@ -89,36 +98,21 @@ export function ActivityFeedContainer() {
         {/* Stats Bar */}
         {stats && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-              <div className="text-muted-foreground mb-1 text-xs">Total Activities</div>
-              <div className="text-foreground text-xl font-bold sm:text-2xl">
-                {stats.totalActivities}
-              </div>
-            </div>
-            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-              <div className="text-muted-foreground mb-1 text-xs">Likes</div>
-              <div className="text-foreground text-xl font-bold sm:text-2xl">
-                {stats.totalLikes}
-              </div>
-            </div>
-            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-              <div className="text-muted-foreground mb-1 text-xs">Comments</div>
-              <div className="text-foreground text-xl font-bold sm:text-2xl">
-                {stats.totalComments}
-              </div>
-            </div>
-            <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-              <div className="text-muted-foreground mb-1 text-xs">Shares</div>
-              <div className="text-foreground text-xl font-bold sm:text-2xl">
-                {stats.totalShares}
-              </div>
-            </div>
-            <div className="facet-hierarchy-child col-span-2 rounded-lg p-3 sm:col-span-1 sm:p-4">
-              <div className="text-muted-foreground mb-1 text-xs">Views</div>
-              <div className="text-foreground text-xl font-bold sm:text-2xl">
-                {(stats.totalViews / 1000).toFixed(1)}k
-              </div>
-            </div>
+            {[
+              ["Total Activities", stats.totalActivities],
+              ["Likes", stats.totalLikes],
+              ["Comments", stats.totalComments],
+              ["Shares", stats.totalShares],
+              ["Views", `${(stats.totalViews / 1000).toFixed(1)}k`],
+            ].map(([label, value], i) => (
+              <FacetCard
+                key={String(label)}
+                padding="sm"
+                className={i === 4 ? "col-span-2 sm:col-span-1" : undefined}
+              >
+                <Stat label={String(label)} value={value} />
+              </FacetCard>
+            ))}
           </div>
         )}
       </div>
@@ -129,12 +123,12 @@ export function ActivityFeedContainer() {
           {/* Mobile Filter Button */}
           <div className="mb-4 sm:hidden">
             <Button
-              variant="outline"
+              variant="bordered"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="w-full"
             >
-              <Filter className="mr-2 h-4 w-4" />
+              <Filter aria-hidden />
               Filters
             </Button>
           </div>
@@ -163,7 +157,10 @@ export function ActivityFeedContainer() {
             {isLoading ? (
               // Loading skeletons
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="facet-hierarchy-child animate-pulse rounded-lg p-6">
+                <div
+                  key={i}
+                  className="bg-surface border-separator rounded-card shadow-card border p-6"
+                >
                   <div className="flex items-start gap-4">
                     <Skeleton className="h-12 w-12 rounded-full" />
                     <div className="flex-1 space-y-3">
@@ -176,13 +173,13 @@ export function ActivityFeedContainer() {
               ))
             ) : activities.length === 0 ? (
               // Empty state
-              <div className="facet-hierarchy-child rounded-lg p-12 text-center">
-                <Activity className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
-                <h3 className="text-foreground mb-2 text-xl font-semibold">No activities yet</h3>
-                <p className="text-muted-foreground">
-                  Check back soon for updates from the IxStats community
-                </p>
-              </div>
+              <FacetCard>
+                <EmptyState
+                  icon={<Activity />}
+                  title="No activities yet"
+                  message="Check back soon for updates from the IxStats community"
+                />
+              </FacetCard>
             ) : (
               // Activity items
               activities.map((activity, index) => (
@@ -201,7 +198,7 @@ export function ActivityFeedContainer() {
           {/* Load More */}
           {feedData?.nextCursor && (
             <div className="mt-6 text-center">
-              <Button variant="outline" onClick={() => refetch()}>
+              <Button variant="bordered" onClick={() => refetch()}>
                 Load More
               </Button>
             </div>
@@ -213,50 +210,47 @@ export function ActivityFeedContainer() {
           <TrendingTopics />
 
           {/* Auto-Refresh Toggle */}
-          <div className="facet-hierarchy-child rounded-lg p-4">
+          <FacetCard padding="md">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-foreground text-sm font-medium">Auto-Refresh</span>
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  autoRefresh ? "bg-purple-600" : "bg-gray-300 dark:bg-gray-600"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    autoRefresh ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
+              <label htmlFor="feed-auto-refresh" className="text-headline text-label">
+                Auto-Refresh
+              </label>
+              <Switch
+                id="feed-auto-refresh"
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+              />
             </div>
-            <p className="text-muted-foreground text-xs">Automatically refresh every 30 seconds</p>
-          </div>
+            <p className="text-label-secondary text-footnote">
+              Automatically refresh every 30 seconds
+            </p>
+          </FacetCard>
 
           {/* Quick Stats */}
-          <div className="facet-hierarchy-child rounded-lg p-4">
+          <FacetCard padding="md">
             <div className="mb-3 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-foreground font-semibold">Platform Pulse</h3>
+              <Zap aria-hidden className="text-tint h-5 w-5" />
+              <h3 className="text-headline text-label">Platform Pulse</h3>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Active Users</span>
-                <span className="text-foreground text-sm font-medium">
+                <span className="text-label-secondary text-body">Active Users</span>
+                <span className="text-label text-body font-medium">
                   {activities.length > 0 ? `${activities.length * 3}+` : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Recent Posts</span>
-                <span className="text-foreground text-sm font-medium">{activities.length}</span>
+                <span className="text-label-secondary text-body">Recent Posts</span>
+                <span className="text-label text-body font-medium">{activities.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">Engagement Rate</span>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                <span className="text-label-secondary text-body">Engagement Rate</span>
+                <span className="text-body text-green font-medium">
                   <TrendingUp className="inline h-3 w-3" /> High
                 </span>
               </div>
             </div>
-          </div>
+          </FacetCard>
         </div>
       </div>
     </div>

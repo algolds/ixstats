@@ -31,17 +31,17 @@ export function CountriesPageHeader({
     <header className="mb-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-foreground flex items-center text-3xl font-semibold tracking-tight md:text-4xl">
-            <Globe aria-hidden="true" className="mr-3 h-8 w-8 text-blue-500 md:h-10 md:w-10" />
+          <h1 className="text-label text-large-title md:text-large-title flex items-center">
+            <Globe aria-hidden="true" className="text-blue mr-3 h-8 w-8 md:h-10 md:w-10" />
             Explore Countries
           </h1>
-          <p className="text-muted-foreground mt-2 text-base md:text-lg">
+          <p className="text-label-secondary text-body md:text-title-3 mt-2">
             Browse detailed statistics for all countries in the world.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <ExpandableStatCard
-            icon={<Users aria-hidden="true" className="text-muted-foreground h-4 w-4" />}
+            icon={<Users aria-hidden="true" className="text-label-secondary h-4 w-4" />}
             label="Total Population"
             value={isLoading ? undefined : totalPopulation}
             isLoading={isLoading}
@@ -49,7 +49,7 @@ export function CountriesPageHeader({
             formattedValue={isLoading ? undefined : formatPopulation(totalPopulation)}
           />
           <ExpandableStatCard
-            icon={<BarChart3 aria-hidden="true" className="text-muted-foreground h-4 w-4" />}
+            icon={<BarChart3 aria-hidden="true" className="text-label-secondary h-4 w-4" />}
             label="Combined GDP"
             value={isLoading ? undefined : combinedGdp}
             isLoading={isLoading}
@@ -60,7 +60,7 @@ export function CountriesPageHeader({
             }
           />
           <ExpandableStatCard
-            icon={<BarChart3 aria-hidden="true" className="text-muted-foreground h-4 w-4" />}
+            icon={<BarChart3 aria-hidden="true" className="text-label-secondary h-4 w-4" />}
             label="Active Stats"
             value={isLoading ? undefined : "Real-time"}
             isLoading={isLoading}

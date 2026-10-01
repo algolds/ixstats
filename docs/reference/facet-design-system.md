@@ -64,13 +64,13 @@ Each app root sets `data-app`, which sets `--tint`, `--tint-hover`, `--on-tint` 
 | `data-app` | Tint | Where |
 |---|---|---|
 | *(none)* / `admin` | Indigo | Shell, dashboard, settings, admin |
-| `mycountry` | Gold | `/mycountry/**` |
+| `mycountry` | Gold | `/mycountry/**`, `/builder`, the guest landing |
 | `intel` | Crimson | `/mycountry/intelligence`, `/mycountry/defense` |
 | `maps` | Sky | `/maps`, `/labs/**` (Labs, Onoma) |
 | `thinkpages` | Emerald | `/thinkpages`, `/thinktanks`, `/messages` |
 | `vault` | Copper | `/vault` |
 | `forum` | Orange | `/forum` |
-| `wiki` | Ink indigo | WikiOS routes |
+| `wiki` | Ink indigo | WikiOS routes (`app/(wiki-os)` layout; `--wikios-*` chrome tokens alias the roles and this tint) |
 | `sports` | Teal | `/myleague`, `/myclub` |
 
 Use the tint for interaction and identity only: one filled tint button per view, selection, links, focus. For a new
@@ -228,7 +228,7 @@ labels; no exclamation marks in UI chrome.
 
 - `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
   utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
-  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only).
+  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS: `--wikios-*` aliases of the roles + Wiki tint, the Reading style and MediaWiki content styles), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only).
 - Material and surface classes never set position, z-index, radius, margin or letter-spacing.
 - Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
@@ -243,7 +243,7 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
@@ -279,7 +279,7 @@ to do the same for page-level differences (e.g. adopting `PageHeader` only under
 | `TabBar` | `pathname`, `searchParams`, `apps`. Floating `material-regular` bar above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
 | `PageHeader` | `title`, `subtitle?`, `back?: { href, label? }`, `actions?`. `text-large-title` `<h1>` that collapses into a sticky `material-thin` toolbar title when it scrolls under the toolbar (opacity only; instant under Reduce Motion). Reference adoption: `/help` (flag on only). |
 | `ShellGate` | `variant="facet" \| "legacy"`: render children only under that shell (CSS-gated until hydrated). |
-| `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`. |
+| `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`, `/countries`. |
 | `ShellHalo` | Halo floating top-centre over the content area, clear of the sidebar, `z-nav`. Hidden on /maps (MapDynamicIsland). |
 
 ### 12.3 Section map (`src/lib/navigation/app-sections.ts`)

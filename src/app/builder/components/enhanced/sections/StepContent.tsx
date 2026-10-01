@@ -14,12 +14,7 @@ interface StepContentProps {
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <FacetCard
-        depth={1}
-        texture="dots"
-        textureOpacity={0.03}
-        className="overflow-hidden rounded-2xl"
-      >
+      <FacetCard texture="dots" textureOpacity={0.03} className="rounded-card overflow-hidden">
         <FacetCardContent className="p-6 sm:p-8">{children}</FacetCardContent>
       </FacetCard>
     </div>

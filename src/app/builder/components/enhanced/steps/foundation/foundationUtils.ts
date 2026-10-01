@@ -104,30 +104,34 @@ export function getArchetypeIcon(key: string): ComponentType<{ className?: strin
   return Landmark;
 }
 
-export function getComplexityBadgeClass(complexity: string): string {
+/** Badge variant for an archetype's implementation complexity (status roles, Facet 3 §7.1). */
+export function getComplexityBadgeVariant(complexity: string): "destructive" | "success" | "info" {
   const comp = (complexity || "medium").toLowerCase();
-  if (comp === "high") {
-    return "text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/30 shadow-[0_0_8px_rgba(244,63,94,0.08)]";
-  }
-  if (comp === "low") {
-    return "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/30 shadow-[0_0_8px_rgba(16,185,129,0.08)]";
-  }
-  return "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/30 shadow-[0_0_8px_rgba(59,130,246,0.08)]";
+  if (comp === "high") return "destructive";
+  if (comp === "low") return "success";
+  return "info";
 }
 
+/** Role classes for the same complexity chip (kept for callers that style their own chip). */
+export function getComplexityBadgeClass(complexity: string): string {
+  const variant = getComplexityBadgeVariant(complexity);
+  if (variant === "destructive") return "text-red bg-red/10 border border-red/30";
+  if (variant === "success") return "text-green bg-green/10 border border-green/30";
+  return "text-blue bg-blue/10 border border-blue/30";
+}
+
+/** A `text-<colour>` + tinted background pair (system colours) for an archetype icon tile. */
 export function getArchetypeColorClass(key: string): string {
   const keyLower = key.toLowerCase();
-  if (keyLower.includes("nordic") || keyLower.includes("social"))
-    return "text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/5 hover:border-emerald-500/40 shadow-emerald-950/20";
+  if (keyLower.includes("nordic") || keyLower.includes("social")) return "text-green bg-green/10";
   if (keyLower.includes("valley") || keyLower.includes("capital") || keyLower.includes("free"))
-    return "text-cyan-600 dark:text-cyan-400 border-cyan-500/20 bg-cyan-500/10 dark:bg-cyan-500/5 hover:border-cyan-500/40 shadow-cyan-950/20";
+    return "text-teal bg-teal/10";
   if (keyLower.includes("command") || keyLower.includes("state") || keyLower.includes("plan"))
-    return "text-rose-600 dark:text-rose-400 border-rose-500/20 bg-rose-500/10 dark:bg-rose-500/5 hover:border-rose-500/40 shadow-rose-950/20";
-  if (keyLower.includes("industrial") || keyLower.includes("export"))
-    return "text-blue-600 dark:text-blue-400 border-blue-500/20 bg-blue-500/10 dark:bg-blue-500/5 hover:border-blue-500/40 shadow-blue-950/20";
+    return "text-red bg-red/10";
+  if (keyLower.includes("industrial") || keyLower.includes("export")) return "text-blue bg-blue/10";
   if (keyLower.includes("resource") || keyLower.includes("rentier"))
-    return "text-amber-600 dark:text-amber-400 border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5 hover:border-amber-500/40 shadow-amber-950/20";
-  return "text-amber-600 dark:text-amber-400 border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5 hover:border-amber-500/40 shadow-amber-950/20";
+    return "text-yellow bg-yellow/10";
+  return "text-tint bg-tint-fill";
 }
 
 export function getStepLabel(step: string): string {

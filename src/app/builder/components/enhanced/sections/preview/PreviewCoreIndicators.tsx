@@ -36,8 +36,8 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
   if (!coreIndicators) {
     return (
       <div className="py-8 text-center">
-        <BarChart3 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
-        <p className="text-sm text-muted-foreground">No economic indicators configured</p>
+        <BarChart3 className="text-label-tertiary mx-auto mb-3 h-10 w-10" />
+        <p className="text-body text-label-secondary">No economic indicators configured</p>
       </div>
     );
   }
@@ -100,20 +100,20 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
         return (
           <div
             key={idx}
-            className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md transition-colors hover:border-border/60 hover:bg-card/60"
+            className="rounded-row border-separator bg-surface hover:border-separator hover:bg-surface flex flex-col items-center justify-center border p-3 text-center transition-colors"
             title={item.subValue ? `${item.label}: ${item.subValue}` : item.label}
           >
-            <div className="mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="rounded-control bg-tint-fill text-tint mb-1.5 flex h-7 w-7 items-center justify-center">
               <Icon className="h-3.5 w-3.5" />
             </div>
-            <div className="max-w-full truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
+            <div className="text-headline text-label sm:text-title-3 max-w-full truncate">
               {item.value}
             </div>
-            <div className="max-w-full truncate text-xs font-medium text-muted-foreground">
+            <div className="text-caption text-label-secondary max-w-full truncate">
               {item.label}
             </div>
             {item.subValue && (
-              <div className="mt-0.5 max-w-full truncate font-mono text-xs text-muted-foreground/70">
+              <div className="text-footnote text-label-secondary mt-0.5 max-w-full truncate font-mono">
                 {item.subValue}
               </div>
             )}

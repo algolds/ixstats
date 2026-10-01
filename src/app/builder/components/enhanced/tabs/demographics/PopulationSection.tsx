@@ -30,29 +30,29 @@ export function PopulationSection({
   return (
     <div className="space-y-4">
       {/* Total Population - Read Only */}
-      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="rounded-control border-separator bg-surface border p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Users className="text-muted-foreground h-4 w-4" />
+            <Users className="text-label-secondary h-4 w-4" />
             <span className="font-medium">Total Population</span>
           </div>
           <Badge variant="outline">From Core Indicators</Badge>
         </div>
-        <p className="text-2xl font-bold">{demographics.totalPopulation.toLocaleString()}</p>
-        <p className="text-muted-foreground mt-1 text-sm">Set in the National Identity section</p>
+        <p className="text-title-1">{demographics.totalPopulation.toLocaleString()}</p>
+        <p className="text-label-secondary text-body mt-1">Set in the National Identity section</p>
       </div>
 
       {/* Population Growth Rate - Read Only */}
-      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="rounded-control border-separator bg-surface border p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="text-muted-foreground h-4 w-4" />
+            <TrendingUp className="text-label-secondary h-4 w-4" />
             <span className="font-medium">Population Growth Rate</span>
           </div>
           <Badge variant="outline">Calculated</Badge>
         </div>
-        <p className="text-2xl font-bold">{demographics.populationGrowthRate.toFixed(2)}%</p>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-title-1">{demographics.populationGrowthRate.toFixed(2)}%</p>
+        <p className="text-label-secondary text-body mt-1">
           Based on birth/death rates and migration
         </p>
       </div>

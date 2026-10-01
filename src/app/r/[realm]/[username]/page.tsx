@@ -7,9 +7,9 @@ import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Skeleton } from "~/components/ui/skeleton";
 import { PassportRealmsTab } from "~/components/passport/tabs/PassportRealmsTab";
+import { buttonVariants } from "~/components/ui/button";
 
-const LINK_CLASS =
-  "facet-interactive border-border bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-bold active:scale-[0.98]";
+const LINK_CLASS = buttonVariants({ variant: "bordered", size: "sm" });
 
 /** Contextual passport (plan 188 §3): one identity's memberships inside one realm. */
 export default function RealmPassportPage({
@@ -25,7 +25,8 @@ export default function RealmPassportPage({
   const memberships = api.ixnayid.getRealms.useQuery({ handle, realm });
 
   const realmName =
-    memberships.data?.[0]?.name ?? realm.charAt(0).toUpperCase() + realm.slice(1).replace(/-/g, " ");
+    memberships.data?.[0]?.name ??
+    realm.charAt(0).toUpperCase() + realm.slice(1).replace(/-/g, " ");
   const account = passport.data?.account;
   const displayName = account?.clerkDisplayName || account?.clerkUsername || handle;
 
@@ -34,8 +35,8 @@ export default function RealmPassportPage({
   if (passport.isLoading || memberships.isLoading) {
     return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-48 w-full rounded-3xl" />
+        <Skeleton className="rounded-card h-28 w-full" />
+        <Skeleton className="rounded-sheet h-48 w-full" />
       </div>
     );
   }
@@ -43,10 +44,10 @@ export default function RealmPassportPage({
   if (!passport.data) {
     return (
       <div className="mx-auto w-full max-w-5xl p-4 md:p-8">
-        <div className="border-border bg-card/70 space-y-3 rounded-2xl border p-8 text-center backdrop-blur-xl">
-          <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
-          <h1 className="text-foreground text-xl font-bold">Identity Not Found</h1>
-          <p className="text-muted-foreground text-sm">
+        <div className="border-separator bg-surface rounded-card space-y-3 border p-8 text-center">
+          <AlertTriangle className="text-yellow mx-auto h-10 w-10" />
+          <h1 className="text-label text-title-2">Identity Not Found</h1>
+          <p className="text-label-secondary text-body">
             Could not resolve a public passport for @{handle}.
           </p>
         </div>
@@ -58,9 +59,9 @@ export default function RealmPassportPage({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <div className="border-border bg-card/70 flex flex-col gap-4 rounded-2xl border p-6 shadow-xs backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-separator bg-surface rounded-card shadow-card flex flex-col gap-4 border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
-          <div className="bg-accent text-foreground flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border font-mono text-xl font-bold">
+          <div className="bg-fill-3 text-label rounded-card text-title-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border font-mono">
             {account?.clerkImageUrl ? (
               <img
                 src={account.clerkImageUrl}
@@ -73,17 +74,15 @@ export default function RealmPassportPage({
             )}
           </div>
           <div className="min-w-0">
-            <h1 className="text-foreground truncate text-2xl font-bold tracking-tight">
-              {displayName}
-            </h1>
-            <p className="text-muted-foreground font-mono text-xs">
+            <h1 className="text-label text-title-1 truncate">{displayName}</h1>
+            <p className="text-label-secondary text-footnote font-mono">
               @{handle} · Realm passport in {realmName}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/r/${encodeURIComponent(realm)}`} className={LINK_CLASS}>
-            <Globe className="text-muted-foreground h-4 w-4" />
+            <Globe className="text-label-secondary h-4 w-4" />
             <span>{realmName}</span>
           </Link>
           <Link href={`/@${encodeURIComponent(handle)}`} className={LINK_CLASS}>
@@ -96,7 +95,7 @@ export default function RealmPassportPage({
       {realms.length > 0 ? (
         <PassportRealmsTab realms={realms} cleanUsername={handle} />
       ) : (
-        <p className="border-border bg-card/50 text-muted-foreground rounded-2xl border p-8 text-center text-sm">
+        <p className="border-separator bg-surface text-label-secondary rounded-card text-body border p-8 text-center">
           @{handle} holds no membership or claimed country in {realmName}.
         </p>
       )}

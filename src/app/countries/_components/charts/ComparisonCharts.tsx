@@ -203,15 +203,17 @@ export function ComparisonCharts({
     };
 
     return (
-      <div className="bg-popover text-popover-foreground border-border rounded-lg border p-3 shadow-md">
+      <div className="bg-surface-elevated text-label border-separator rounded-control shadow-card border p-3">
         <div className="space-y-2">
           <div className="font-medium">{label}</div>
           {payload.map((entry: any) => (
             <div key={entry.dataKey} className="flex items-center justify-between gap-4">
-              <span style={{ color: entry.color }} className="text-sm">
+              <span style={{ color: entry.color }} className="text-body">
                 {entry.name}:
               </span>
-              <span className="text-sm font-medium">{formatValue(entry.value, entry.dataKey)}</span>
+              <span className="text-body font-medium">
+                {formatValue(entry.value, entry.dataKey)}
+              </span>
             </div>
           ))}
         </div>
@@ -408,7 +410,7 @@ export function ComparisonCharts({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Layers className="text-primary h-5 w-5" />
+              <Layers className="text-tint h-5 w-5" />
               {currentConfig.title}
             </CardTitle>
             <CardDescription>{currentConfig.description}</CardDescription>
@@ -419,7 +421,7 @@ export function ComparisonCharts({
         <div className="space-y-4">
           {/* Country Selection */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium">Countries:</span>
+            <span className="text-body font-medium">Countries:</span>
 
             {countries.map((country) => (
               <Badge
@@ -444,7 +446,7 @@ export function ComparisonCharts({
 
           {/* Chart Type Selection */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Chart Type:</span>
+            <span className="text-body font-medium">Chart Type:</span>
             <Select
               value={selectedChartType}
               onValueChange={(value) => setSelectedChartType(value as ComparisonChartType)}
@@ -491,11 +493,11 @@ export function ComparisonCharts({
 
       <CardContent>
         {countries.length === 0 ? (
-          <div className="text-muted-foreground flex h-96 items-center justify-center">
+          <div className="text-label-secondary flex h-96 items-center justify-center">
             <div className="text-center">
               <Layers className="mx-auto mb-4 h-12 w-12 opacity-50" />
-              <p className="text-lg font-medium">No countries selected</p>
-              <p className="text-sm">Add countries to start comparing metrics</p>
+              <p className="text-title-3">No countries selected</p>
+              <p className="text-body">Add countries to start comparing metrics</p>
             </div>
           </div>
         ) : (
@@ -511,24 +513,24 @@ export function ComparisonCharts({
           <div className="mt-6 border-t pt-4">
             <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
               <div>
-                <p className="text-muted-foreground text-sm">Countries</p>
-                <p className="text-lg font-semibold">{countries.length}</p>
+                <p className="text-label-secondary text-body">Countries</p>
+                <p className="text-title-3">{countries.length}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-sm">Total Population</p>
-                <p className="text-lg font-semibold">
+                <p className="text-label-secondary text-body">Total Population</p>
+                <p className="text-title-3">
                   {formatPopulation(countries.reduce((sum, c) => sum + c.currentPopulation, 0))}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground text-sm">Total GDP</p>
-                <p className="text-lg font-semibold">
+                <p className="text-label-secondary text-body">Total GDP</p>
+                <p className="text-title-3">
                   {formatCurrency(countries.reduce((sum, c) => sum + c.currentTotalGdp, 0))}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>
-                <p className="text-lg font-semibold">
+                <p className="text-label-secondary text-body">Avg GDP/Capita</p>
+                <p className="text-title-3">
                   {formatCurrency(
                     countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length
                   )}

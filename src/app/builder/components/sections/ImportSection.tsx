@@ -27,14 +27,13 @@ interface ParsedCountryData extends UnifiedInfoboxData {
 }
 
 const wikiSites: WikiSite[] = [
-
   {
     name: "iiwiki",
     displayName: "IIWiki",
     baseUrl: "https://iiwiki.com",
     description: "SimFic and Alt-History Encyclopedia",
     theme: "blue",
-    gradient: "from-teal-500/20 to-green-600/20",
+    gradient: "bg-teal/10",
   },
   {
     name: "althistory",
@@ -42,7 +41,7 @@ const wikiSites: WikiSite[] = [
     baseUrl: "https://althistory.fandom.com",
     description: "Alternative History and Speculative Fiction Encyclopedia",
     theme: "indigo",
-    gradient: "from-purple-500/20 to-indigo-600/20",
+    gradient: "bg-purple/10",
   },
 ];
 
@@ -347,7 +346,6 @@ export const ImportSection = React.memo(function ImportSection({
         activeCoreTab: "identity",
       };
 
-
       const storageData = {
         ...finalData,
         _wikiSource: selectedSite.name.toLowerCase(),
@@ -405,31 +403,25 @@ export const ImportSection = React.memo(function ImportSection({
       <div className="mt-4 space-y-6">
         {/* Loading State Back Button */}
         {selectedResult && !parsedData && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleBackFromSelection}
-              data-cuelume-press
-              className="rounded-xl border-border/60 text-xs active:scale-[0.97] cursor-pointer"
-            >
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Back to Search
-            </Button>
+          <Button type="button" variant="bordered" size="sm" onClick={handleBackFromSelection}>
+            <ArrowLeft aria-hidden />
+            Back to Search
+          </Button>
         )}
 
         {!parsedData && (
-          <div className="relative pb-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+          <div className="relative pb-4">
             {!selectedResult && (
               <div className="mb-2 flex items-center justify-between">
-                <button
+                <Button
                   type="button"
+                  variant="gray"
+                  size="sm"
                   onClick={() => onNavigate("foundation")}
-                  className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 hover:text-foreground active:scale-[0.97] cursor-pointer"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <ArrowLeft aria-hidden />
                   <span>Back to Foundation</span>
-                </button>
+                </Button>
               </div>
             )}
             <DynamicIslandSearch
@@ -461,9 +453,9 @@ export const ImportSection = React.memo(function ImportSection({
 
         {/* Loading Spinner */}
         {isLoading && !parsedData && (
-          <div className="border-border/50 bg-card/60 flex items-center justify-center gap-3 rounded-xl border px-6 py-8 backdrop-blur-md">
-            <div className="border-muted-foreground/30 h-5 w-5 animate-spin rounded-full border-2 border-t-blue-500" />
-            <span className="text-muted-foreground text-sm">
+          <div className="border-separator bg-surface rounded-card flex items-center justify-center gap-3 border px-6 py-8">
+            <div className="border-fill border-t-tint h-5 w-5 animate-spin rounded-full border-2" />
+            <span className="text-label-secondary text-body">
               Parsing {selectedResult?.title}...
             </span>
           </div>

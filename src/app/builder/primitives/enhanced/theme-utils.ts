@@ -76,23 +76,24 @@ export const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> =
 
 // Glass depth configurations for consistent visual hierarchy
 export const GLASS_DEPTHS = {
+  // Facet 3: opaque roles (content is never glass); names kept for callers.
   base: {
-    backdrop: "backdrop-blur-sm",
-    bg: "bg-[var(--color-bg-secondary)]/70 dark:bg-[var(--color-bg-secondary)]/80",
-    border: "border-[var(--color-border-primary)]/30 dark:border-[var(--color-border-primary)]/40",
-    shadow: "shadow-sm dark:shadow-md",
+    backdrop: "",
+    bg: "bg-surface-secondary",
+    border: "border-separator",
+    shadow: "",
   },
   elevated: {
-    backdrop: "backdrop-blur-md",
-    bg: "bg-[var(--color-bg-secondary)]/80 dark:bg-[var(--color-bg-secondary)]/90",
-    border: "border-[var(--color-border-primary)]/40 dark:border-[var(--color-border-primary)]/50",
-    shadow: "shadow-lg dark:shadow-xl",
+    backdrop: "",
+    bg: "bg-surface",
+    border: "border-separator",
+    shadow: "shadow-card",
   },
   modal: {
-    backdrop: "backdrop-blur-lg",
-    bg: "bg-[var(--color-bg-secondary)]/90 dark:bg-[var(--color-bg-secondary)]/95",
-    border: "border-[var(--color-border-primary)]/50 dark:border-[var(--color-border-primary)]/60",
-    shadow: "shadow-2xl dark:shadow-3xl",
+    backdrop: "",
+    bg: "bg-surface-elevated",
+    border: "border-separator",
+    shadow: "shadow-floating",
   },
 };
 
@@ -201,14 +202,11 @@ export function getGlassClasses(
     glassConfig.bg,
     glassConfig.border,
     glassConfig.shadow,
-    "rounded-lg",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
-    "hover:shadow-lg hover:bg-[var(--color-bg-secondary)]/80",
-    "dark:hover:bg-[var(--color-bg-secondary)]/95",
-    "focus-within:shadow-lg focus-within:bg-[var(--color-bg-secondary)]/85",
-    "dark:focus-within:bg-[var(--color-bg-secondary)]/95",
-    "group-hover:shadow-md",
-  ].join(" ");
+    "rounded-control",
+    "transition-[border-color,box-shadow] duration-fast ease-out-facet",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // Export section theme mapping for external use

@@ -169,68 +169,63 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
           label: "Total Population",
           value: formatPopulation(globalStats.totalPopulation),
           subValue: `${globalStats.countryCount} countries`,
-          color: "text-blue-200",
-          bgColor: "bg-blue-500/20",
+          color: "text-blue",
+          bgColor: "bg-blue/20",
         },
         {
           icon: DollarSign,
           label: "Total GDP",
           value: formatCurrency(globalStats.totalGdp),
           subValue: `Avg: ${formatCurrency(globalStats.averageGdpPerCapita)}/capita`,
-          color: "text-green-200",
-          bgColor: "bg-green-500/20",
+          color: "text-green",
+          bgColor: "bg-green/20",
         },
         {
           icon: TrendingUp,
           label: "Global Growth",
           value: formatGrowthRateFromDecimal(globalStats.globalGrowthRate),
           subValue: "Annual rate",
-          color: "text-purple-200",
-          bgColor: "bg-purple-500/20",
+          color: "text-purple",
+          bgColor: "bg-purple/20",
         },
         {
           icon: Building2,
           label: "Economic Activity",
           value: `${globalStats.countryCount}`,
           subValue: "Active economies",
-          color: "text-orange-200",
-          bgColor: "bg-orange-500/20",
+          color: "text-orange",
+          bgColor: "bg-orange/20",
         },
       ]
     : [];
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
+    <div className="border-separator bg-surface text-label relative border-b">
       <div className="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* GlassCard overlay for main info/time block */}
         <div className="relative z-10 mx-auto mb-6 max-w-2xl">
-          <Card className="facet-card animate-fade-in flex flex-col items-center justify-between gap-4 border-white/20 bg-white/10 p-6 shadow-xl backdrop-blur-md lg:flex-row dark:bg-black/30">
+          <Card className="flex flex-col items-center justify-between gap-4 p-6 lg:flex-row">
             {/* Game Time Section */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
                 <Clock className="h-6 w-6" />
                 <div>
-                  <div className="text-2xl font-bold">{currentTime.greeting}</div>
-                  <div className="text-sm opacity-90">The date is {currentTime.dateDisplay}</div>
-                  <div className="text-sm opacity-90">{currentTime.timeDisplay}</div>
+                  <div className="text-title-1">{currentTime.greeting}</div>
+                  <div className="text-body text-label-secondary">
+                    The date is {currentTime.dateDisplay}
+                  </div>
+                  <div className="text-body text-label-secondary">{currentTime.timeDisplay}</div>
                 </div>
               </div>
             </div>
             {/* Refresh Button with glass effect */}
             <div className="flex items-center gap-4">
-              <Button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                size="sm"
-                className="border border-white/30 bg-white/10 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/20 active:scale-95"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="gray">
+                <RefreshCw aria-hidden className={isLoading ? "animate-spin" : ""} />
                 Refresh All
               </Button>
             </div>
           </Card>
-          {/* Aurora/animated background effect (optional, subtle) */}
-          <div className="aurora-bg pointer-events-none absolute inset-0 -z-10 rounded-2xl" />
         </div>
 
         {/* Mobile-friendly time display */}
@@ -238,26 +233,26 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
           <div className="flex items-center gap-2">
             <Badge
               variant={botStatus.available ? "default" : "destructive"}
-              className={botStatus.available ? "bg-green-500" : "bg-red-500"}
+              className={botStatus.available ? "bg-green" : "bg-red"}
             ></Badge>
           </div>
-          <div className="text-sm opacity-90">{currentTime.timeDisplay}</div>
+          <div className="text-body text-label-secondary">{currentTime.timeDisplay}</div>
         </div>
 
         {/* Mobile Global Stats */}
         {globalStats && (
-          <div className="mt-3 border-t border-white/20 pt-3 lg:hidden">
+          <div className="border-separator mt-3 border-t pt-3 lg:hidden">
             <div className="grid grid-cols-2 gap-4">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center">
                   <div
-                    className={`mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg ${stat.bgColor}`}
+                    className={`rounded-control mb-2 inline-flex h-8 w-8 items-center justify-center ${stat.bgColor}`}
                   >
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
-                  <div className="text-sm font-bold">{stat.value}</div>
-                  <div className="text-xs font-medium opacity-90">{stat.label}</div>
-                  <div className="mt-1 text-xs opacity-75">{stat.subValue}</div>
+                  <div className="text-headline">{stat.value}</div>
+                  <div className="text-caption text-label-secondary">{stat.label}</div>
+                  <div className="text-footnote text-label-tertiary mt-1">{stat.subValue}</div>
                 </div>
               ))}
             </div>
@@ -266,48 +261,52 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
 
         {/* Left Side Additional Metrics Row - Desktop */}
         {globalStats && (
-          <div className="mt-4 hidden border-t border-white/20 pt-4 lg:block">
+          <div className="border-separator mt-4 hidden border-t pt-4 lg:block">
             <div className="flex items-center justify-between">
               {/* Left side - Icons with stats */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                    <Users className="h-4 w-4 text-blue-200" />
+                  <div className="rounded-control bg-blue/20 inline-flex h-8 w-8 items-center justify-center">
+                    <Users className="text-blue h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Global Population</div>
-                    <div className="text-xs opacity-90">
+                    <div className="text-body font-medium">Global Population</div>
+                    <div className="text-footnote text-label-secondary">
                       {formatPopulation(globalStats.totalPopulation)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20">
-                    <DollarSign className="h-4 w-4 text-green-200" />
+                  <div className="rounded-control bg-green/20 inline-flex h-8 w-8 items-center justify-center">
+                    <DollarSign className="text-green h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Global GDP</div>
-                    <div className="text-xs opacity-90">{formatCurrency(globalStats.totalGdp)}</div>
+                    <div className="text-body font-medium">Global GDP</div>
+                    <div className="text-footnote text-label-secondary">
+                      {formatCurrency(globalStats.totalGdp)}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20">
-                    <TrendingUp className="h-4 w-4 text-purple-200" />
+                  <div className="rounded-control bg-purple/20 inline-flex h-8 w-8 items-center justify-center">
+                    <TrendingUp className="text-purple h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Global Growth</div>
-                    <div className="text-xs opacity-90">
+                    <div className="text-body font-medium">Global Growth</div>
+                    <div className="text-footnote text-label-secondary">
                       {formatGrowthRateFromDecimal(globalStats.globalGrowthRate)}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/20">
-                    <Building2 className="h-4 w-4 text-orange-200" />
+                  <div className="rounded-control bg-orange/20 inline-flex h-8 w-8 items-center justify-center">
+                    <Building2 className="text-orange h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">Active Economies</div>
-                    <div className="text-xs opacity-90">{globalStats.countryCount} countries</div>
+                    <div className="text-body font-medium">Active Economies</div>
+                    <div className="text-footnote text-label-secondary">
+                      {globalStats.countryCount} countries
+                    </div>
                   </div>
                 </div>
               </div>
@@ -315,15 +314,15 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
               {/* Right side - Additional metrics */}
               <div className="flex items-center gap-8">
                 <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-white/70" />
+                  <MapPin className="text-label-secondary h-4 w-4" />
                   <div></div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Activity className="h-4 w-4 text-white/70" />
+                  <Activity className="text-label-secondary h-4 w-4" />
                   <div></div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Target className="h-4 w-4 text-white/70" />
+                  <Target className="text-label-secondary h-4 w-4" />
                   <div></div>
                 </div>
               </div>
@@ -333,72 +332,76 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
 
         {/* Additional Metrics Row - Mobile */}
         {globalStats && (
-          <div className="mt-3 border-t border-white/20 pt-3 lg:hidden">
+          <div className="border-separator mt-3 border-t pt-3 lg:hidden">
             <div className="grid grid-cols-2 gap-3">
               {/* Icons with stats */}
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                  <Users className="h-4 w-4 text-blue-200" />
+                <div className="rounded-control bg-blue/20 inline-flex h-8 w-8 items-center justify-center">
+                  <Users className="text-blue h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium">Population</div>
-                  <div className="text-xs opacity-90">
+                  <div className="text-body font-medium">Population</div>
+                  <div className="text-footnote text-label-secondary">
                     {formatPopulation(globalStats.totalPopulation)}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20">
-                  <DollarSign className="h-4 w-4 text-green-200" />
+                <div className="rounded-control bg-green/20 inline-flex h-8 w-8 items-center justify-center">
+                  <DollarSign className="text-green h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium">GDP</div>
-                  <div className="text-xs opacity-90">{formatCurrency(globalStats.totalGdp)}</div>
+                  <div className="text-body font-medium">GDP</div>
+                  <div className="text-footnote text-label-secondary">
+                    {formatCurrency(globalStats.totalGdp)}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20">
-                  <TrendingUp className="h-4 w-4 text-purple-200" />
+                <div className="rounded-control bg-purple/20 inline-flex h-8 w-8 items-center justify-center">
+                  <TrendingUp className="text-purple h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium">Growth</div>
-                  <div className="text-xs opacity-90">
+                  <div className="text-body font-medium">Growth</div>
+                  <div className="text-footnote text-label-secondary">
                     {formatGrowthRateFromDecimal(globalStats.globalGrowthRate)}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/20">
-                  <Building2 className="h-4 w-4 text-orange-200" />
+                <div className="rounded-control bg-orange/20 inline-flex h-8 w-8 items-center justify-center">
+                  <Building2 className="text-orange h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium">Activity</div>
-                  <div className="text-xs opacity-90">{globalStats.countryCount} countries</div>
+                  <div className="text-body font-medium">Activity</div>
+                  <div className="text-footnote text-label-secondary">
+                    {globalStats.countryCount} countries
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-white/70" />
+                <MapPin className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-sm font-medium">Avg Population Density</div>
-                  <div className="text-xs opacity-90">
+                  <div className="text-body font-medium">Avg Population Density</div>
+                  <div className="text-footnote text-label-secondary">
                     {globalStats.averagePopulationDensity.toLocaleString()}/km²
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Activity className="h-4 w-4 text-white/70" />
+                <Activity className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-sm font-medium">Avg GDP Density</div>
-                  <div className="text-xs opacity-90">
+                  <div className="text-body font-medium">Avg GDP Density</div>
+                  <div className="text-footnote text-label-secondary">
                     {formatCurrency(globalStats.averageGdpDensity)}/km²
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Target className="h-4 w-4 text-white/70" />
+                <Target className="text-label-secondary h-4 w-4" />
                 <div>
-                  <div className="text-sm font-medium">Last Updated</div>
-                  <div className="text-xs opacity-90">
+                  <div className="text-body font-medium">Last Updated</div>
+                  <div className="text-footnote text-label-secondary">
                     {new Date(globalStats.timestamp).toLocaleTimeString()}
                   </div>
                 </div>

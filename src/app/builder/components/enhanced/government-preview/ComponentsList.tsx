@@ -27,7 +27,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
       <Card>
         <CollapsibleTrigger asChild>
-          <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
+          <CardHeader className="hover:bg-fill-3 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
@@ -37,9 +37,9 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                 </Badge>
               </div>
               {isOpen ? (
-                <ChevronDown className="text-muted-foreground h-5 w-5 transition-transform" />
+                <ChevronDown className="text-label-secondary h-5 w-5 transition-transform" />
               ) : (
-                <ChevronRight className="text-muted-foreground h-5 w-5 transition-transform" />
+                <ChevronRight className="text-label-secondary h-5 w-5 transition-transform" />
               )}
             </CardTitle>
           </CardHeader>
@@ -56,20 +56,20 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                     key={componentType}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-muted/50 border-muted hover:border-primary/30 flex items-start gap-3 rounded-lg border p-4 transition-colors"
+                    className="bg-fill-3 border-muted hover:border-tint/30 rounded-control flex items-start gap-3 border p-4 transition-colors"
                   >
-                    <div className="bg-primary/10 shrink-0 rounded-lg p-2">
-                      <Crown className="text-primary h-5 w-5" />
+                    <div className="bg-tint-fill rounded-control shrink-0 p-2">
+                      <Crown className="text-tint h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center gap-2">
-                        <p className="text-sm font-semibold">{metadata.name}</p>
-                        <Badge variant="outline" className="text-xs">
+                        <p className="text-headline">{metadata.name}</p>
+                        <Badge variant="outline" className="text-footnote">
                           <Target className="mr-1 h-3 w-3" />
                           Component
                         </Badge>
                       </div>
-                      <p className="text-muted-foreground text-xs leading-relaxed">
+                      <p className="text-label-secondary text-footnote leading-relaxed">
                         {metadata.description}
                       </p>
                     </div>

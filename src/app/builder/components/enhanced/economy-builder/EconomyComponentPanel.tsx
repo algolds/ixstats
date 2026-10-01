@@ -23,14 +23,7 @@ export function EconomyComponentPanel({
   return (
     <div className="space-y-6">
       <BuilderErrorBoundary>
-        <FacetCard
-          depth="base"
-          theme="emerald"
-          className="border-emerald-500/20"
-          texture="chevron"
-          textureOpacity={0.04}
-          interactive="none"
-        >
+        <FacetCard className="border-green/20" interactive="none">
           <FacetCardContent className="space-y-6 p-6">
             <AtomicEconomicComponentSelector
               selectedComponents={selectedComponents}
@@ -46,4 +39,3 @@ export function EconomyComponentPanel({
     </div>
   );
 }
-

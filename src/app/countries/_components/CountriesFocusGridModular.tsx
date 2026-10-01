@@ -123,7 +123,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
                 <FacetCard
                   key={i}
                   depth={2}
-                  className="flex h-60 flex-col justify-end rounded-2xl p-5 md:h-96"
+                  className="rounded-card flex h-60 flex-col justify-end p-5 md:h-96"
                 >
                   <div className="space-y-3">
                     <Skeleton className="h-6 w-3/4" />
@@ -152,7 +152,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
         <div className="mt-12 text-center">
-          <p className="text-muted-foreground text-sm font-medium">
+          <p className="text-label-secondary text-body font-medium">
             You've viewed all {countries.length} countries
           </p>
         </div>
@@ -161,12 +161,10 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <FacetCard depth={2} className="mx-auto max-w-md rounded-2xl p-12">
-            <Globe aria-hidden="true" className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="text-foreground mb-2 text-xl font-semibold tracking-tight">
-              No Countries Found
-            </h3>
-            <p className="text-muted-foreground mb-6 text-sm">
+          <FacetCard depth={2} className="rounded-card mx-auto max-w-md p-12">
+            <Globe aria-hidden="true" className="text-label-secondary mx-auto mb-4 h-12 w-12" />
+            <h3 className="text-label text-title-2 mb-2">No Countries Found</h3>
+            <p className="text-label-secondary text-body mb-6">
               Try adjusting your search or filter criteria
             </p>
             <Button type="button" onClick={onClearFilters}>

@@ -3,8 +3,6 @@
 import React, { useRef, useCallback, useMemo, useState, useEffect } from "react";
 import {
   Globe,
-  Search,
-  Xmark,
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
   NavArrowDown as ChevronDown,
@@ -18,16 +16,38 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
 } from "~/components/ui/dropdown-menu";
-import { CountryFocusCardBuilder, type CountryCardData } from "../components/CountryFocusCardBuilder";
+import {
+  CountryFocusCardBuilder,
+  type CountryCardData,
+} from "../components/CountryFocusCardBuilder";
 import type { RealCountryData } from "../lib/economy-data-service";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SearchField } from "~/components/ui/search-field";
 
 export const ECONOMIC_TIERS = [
   { id: "all", label: "All Tiers", description: "Any economic level" },
-  { id: "tier-advanced", label: "Advanced", description: "GDP/cap >$50k", color: "text-emerald-400" },
-  { id: "tier-developed", label: "Developed", description: "GDP/cap $25k-$50k", color: "text-lime-400" },
-  { id: "tier-emerging", label: "Emerging", description: "GDP/cap $10k-$25k", color: "text-purple-400" },
-  { id: "tier-developing", label: "Developing", description: "GDP/cap <$10k", color: "text-orange-400" },
+  { id: "tier-advanced", label: "Advanced", description: "GDP/cap >$50k", color: "text-green" },
+  {
+    id: "tier-developed",
+    label: "Developed",
+    description: "GDP/cap $25k-$50k",
+    color: "text-green",
+  },
+  {
+    id: "tier-emerging",
+    label: "Emerging",
+    description: "GDP/cap $10k-$25k",
+    color: "text-purple",
+  },
+  {
+    id: "tier-developing",
+    label: "Developing",
+    description: "GDP/cap <$10k",
+    color: "text-orange",
+  },
 ] as const;
 
 export const FILTER_PRESETS = [
@@ -168,9 +188,7 @@ export function CountryGrid({
   }, [onScroll]);
 
   const activeEconTier = useMemo(() => {
-    return ECONOMIC_TIERS.find(
-      (t) => t.id !== "all" && selectedArchetypes.includes(t.id)
-    );
+    return ECONOMIC_TIERS.find((t) => t.id !== "all" && selectedArchetypes.includes(t.id));
   }, [selectedArchetypes]);
 
   const handleSelectEconTier = useCallback(
@@ -207,33 +225,27 @@ export function CountryGrid({
   }, []);
 
   const hasActiveFilters =
-    searchTerm.trim().length > 0 ||
-    selectedArchetypes.length > 0 ||
-    Boolean(activeEconTier);
+    searchTerm.trim().length > 0 || selectedArchetypes.length > 0 || Boolean(activeEconTier);
 
   return (
     <div className="relative w-full">
-      <div className="relative flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur-md dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.5)]">
+      <div className="rounded-card border-separator bg-surface relative flex max-h-[70vh] flex-col overflow-hidden border">
         {/* Header: Title, Live Counter, Inline Search, Econ Tier Dropdown & Filter Rail */}
-        <div className="shrink-0 border-b border-border/30 bg-card/85 p-2.5 sm:px-4 sm:py-3 backdrop-blur-xl">
+        <div className="border-separator shrink-0 border-b p-3 sm:px-4">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
             {/* Left: Title, Counter, Help Button, and Reset */}
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-sm font-semibold tracking-tight text-foreground whitespace-nowrap">
+              <span className="text-headline text-label whitespace-nowrap">
                 Benchmark Templates
               </span>
-              <span className="rounded-full border border-border/40 bg-background/60 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground shadow-xs">
-                {filteredCountries.length} {filteredCountries.length === 1 ? "country" : "countries"}
-              </span>
+              <Badge variant="neutral" className="tabular-nums">
+                {filteredCountries.length}{" "}
+                {filteredCountries.length === 1 ? "country" : "countries"}
+              </Badge>
               {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={onClearFilters}
-                  data-cuelume-press
-                  className="ml-1 text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors active:scale-95 cursor-pointer"
-                >
+                <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
                   Reset
-                </button>
+                </Button>
               )}
             </div>
 
@@ -241,34 +253,16 @@ export function CountryGrid({
             <div className="flex min-w-0 flex-1 items-center gap-2 lg:max-w-2xl xl:max-w-3xl">
               {/* Search Bar */}
               {onSearchChange && (
-                <div className="relative w-36 shrink-0 sm:w-44 lg:w-48">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        onSearchChange("");
-                      }
-                    }}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="Search countries..."
-                    className="h-8 w-full rounded-lg border border-border/40 bg-background/50 pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500/50 focus:bg-background/90 focus:outline-none focus:ring-1 focus:ring-amber-500/20"
-                  />
-                  {searchTerm.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onSearchChange("")}
-                      data-cuelume-press
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground active:scale-90 transition-transform"
-                      aria-label="Clear search"
-                    >
-                      <Xmark className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
+                <SearchField
+                  size="sm"
+                  containerClassName="w-36 shrink-0 sm:w-44 lg:w-48"
+                  value={searchTerm}
+                  onValueChange={onSearchChange}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="Search countries..."
+                  aria-label="Search countries"
+                />
               )}
 
               {/* Economic Tiers Dropdown */}
@@ -278,10 +272,10 @@ export function CountryGrid({
                     type="button"
                     data-cuelume-press
                     className={cn(
-                      "flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95 cursor-pointer",
+                      "rounded-control text-caption flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
                       activeEconTier
-                        ? "border-amber-500/40 bg-amber-500/15 text-amber-400 font-semibold shadow-xs"
-                        : "border-border/40 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
+                        ? "border-tint/40 bg-tint-fill text-tint shadow-card font-semibold"
+                        : "border-separator bg-fill-4 text-label-secondary hover:border-separator hover:bg-background hover:text-label"
                     )}
                   >
                     <Coins className="h-3.5 w-3.5" />
@@ -291,29 +285,29 @@ export function CountryGrid({
                     <ChevronDown className="h-3 w-3 opacity-60" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 p-1.5 backdrop-blur-xl">
-                  <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
+                <DropdownMenuContent align="start" className="w-56 p-1.5">
+                  <DropdownMenuLabel className="text-caption text-label-secondary px-2 py-1 font-semibold">
                     Economic Development Tier
                   </DropdownMenuLabel>
                   {ECONOMIC_TIERS.map((tier) => {
                     const isSelected =
-                      tier.id === "all"
-                        ? !activeEconTier
-                        : activeEconTier?.id === tier.id;
+                      tier.id === "all" ? !activeEconTier : activeEconTier?.id === tier.id;
                     return (
                       <DropdownMenuItem
                         key={tier.id}
                         onClick={() => handleSelectEconTier(tier.id)}
                         className={cn(
-                          "flex items-center justify-between rounded-md px-2 py-1.5 text-xs cursor-pointer",
-                          isSelected && "bg-amber-500/10 text-amber-400 font-medium"
+                          "rounded-control-sm text-footnote flex cursor-pointer items-center justify-between px-2 py-1.5",
+                          isSelected && "bg-tint-fill text-tint font-medium"
                         )}
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-medium text-foreground">{tier.label}</span>
-                          <span className="text-xs text-muted-foreground">{tier.description}</span>
+                          <span className="text-label font-medium">{tier.label}</span>
+                          <span className="text-footnote text-label-secondary">
+                            {tier.description}
+                          </span>
                         </div>
-                        {isSelected && <Check className="h-3.5 w-3.5 text-amber-400" />}
+                        {isSelected && <Check className="text-tint h-3.5 w-3.5" />}
                       </DropdownMenuItem>
                     );
                   })}
@@ -321,20 +315,20 @@ export function CountryGrid({
               </DropdownMenu>
 
               {/* Vertical Divider */}
-              <div className="hidden h-5 w-px bg-border/40 sm:block shrink-0" />
+              <div aria-hidden className="bg-separator-opaque hidden h-5 w-px shrink-0 sm:block" />
 
               {/* Inline Horizontally Scrolling Filter Rail */}
               {onToggleArchetype && (
-                <div className="relative min-w-0 flex-1 flex items-center">
+                <div className="relative flex min-w-0 flex-1 items-center">
                   {/* Left Scroll Chevron */}
                   {canScrollLeft && (
-                    <div className="absolute left-0 z-10 flex h-full items-center bg-gradient-to-r from-card via-card/90 to-transparent pr-3 pointer-events-none">
+                    <div className="bg-surface pointer-events-none absolute left-0 z-10 flex h-full items-center pr-1">
                       <button
                         type="button"
                         onClick={() => scrollRail("left")}
                         data-cuelume-press
                         aria-label="Scroll left"
-                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:text-foreground active:scale-90"
+                        className="border-separator bg-background text-label-secondary shadow-card hover:text-label pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
                       </button>
@@ -345,7 +339,7 @@ export function CountryGrid({
                   <div
                     ref={railRef}
                     onWheel={handleRailWheel}
-                    className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-0.5 scroll-smooth select-none scrollbar-none"
+                    className="flex scrollbar-none items-center gap-1.5 overflow-x-auto scroll-smooth px-0.5 py-0.5 select-none"
                     style={{ WebkitOverflowScrolling: "touch" }}
                   >
                     {FILTER_PRESETS.map((preset) => {
@@ -364,10 +358,10 @@ export function CountryGrid({
                           onClick={() => onToggleArchetype(preset.id)}
                           data-cuelume-press
                           className={cn(
-                            "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96] cursor-pointer",
+                            "text-caption shrink-0 cursor-pointer rounded-full px-3 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
                             isSelected
-                              ? "border border-amber-500/40 bg-amber-500/15 font-semibold text-amber-400 shadow-xs"
-                              : "border border-border/40 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
+                              ? "border-tint/40 bg-tint-fill text-tint shadow-card border font-semibold"
+                              : "border-separator bg-fill-4 text-label-secondary hover:border-separator hover:bg-background hover:text-label border"
                           )}
                         >
                           {preset.label}
@@ -378,13 +372,13 @@ export function CountryGrid({
 
                   {/* Right Scroll Chevron */}
                   {canScrollRight && (
-                    <div className="absolute right-0 z-10 flex h-full items-center bg-gradient-to-l from-card via-card/90 to-transparent pl-3 pointer-events-none">
+                    <div className="bg-surface pointer-events-none absolute right-0 z-10 flex h-full items-center pl-1">
                       <button
                         type="button"
                         onClick={() => scrollRail("right")}
                         data-cuelume-press
                         aria-label="Scroll right"
-                        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border border-border/50 bg-background/90 text-muted-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:text-foreground active:scale-90"
+                        className="border-separator bg-background text-label-secondary shadow-card hover:text-label pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
                       >
                         <ChevronRight className="h-3.5 w-3.5" />
                       </button>
@@ -399,25 +393,22 @@ export function CountryGrid({
         {/* Scrollable Card Container */}
         <div
           ref={scrollContainerRef}
-          className="relative flex-1 min-h-0 overflow-y-auto p-3.5 pb-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out sm:p-4"
+          className="relative min-h-0 flex-1 overflow-y-auto p-4 pb-8"
           data-country-grid="true"
           onScroll={handleScroll}
         >
           {filteredCountries.length === 0 ? (
-            <div className="rounded-xl border border-border/50 bg-card/80 p-12 text-center backdrop-blur-sm">
-              <Globe className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No countries match your criteria</p>
-              <button
-                type="button"
-                onClick={onClearFilters}
-                data-cuelume-press
-                className="mt-4 text-sm font-medium text-amber-500 transition-colors hover:text-amber-400 active:scale-95 cursor-pointer"
-              >
-                Clear filters
-              </button>
-            </div>
+            <EmptyState
+              icon={<Globe />}
+              title="No countries match your criteria"
+              action={
+                <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
+                  Clear filters
+                </Button>
+              }
+            />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-4">
               {displayCountries.map((country) => {
                 const flagUrl = flagUrls[country.name] ?? country.flagUrl ?? null;
                 return (

@@ -9,6 +9,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
@@ -81,12 +82,12 @@ export function SplashThinkPagesPeek() {
   const posts = data?.posts ?? [];
 
   if (isLoading) {
-    return <div className={`h-36 animate-pulse rounded-xl ${splashGold.subtlePanel}`} />;
+    return <Skeleton className="rounded-row h-36" />;
   }
 
   if (posts.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-label-secondary text-body leading-relaxed">
         Public ThinkPages posts appear here as soon as someone publishes — the feed is live.
       </p>
     );
@@ -106,7 +107,7 @@ export function SplashThinkPagesPeek() {
           <li key={post.id}>
             <div
               className={cn(
-                "hover:bg-muted/30 rounded-xl border p-3 transition-colors",
+                "hover:bg-fill-4 rounded-row border p-3 transition-colors",
                 splashGold.border
               )}
             >
@@ -115,7 +116,7 @@ export function SplashThinkPagesPeek() {
                   href={`/thinkpages/post/${post.id}`}
                   className="relative flex shrink-0 flex-col items-center gap-1"
                 >
-                  <div className="border-border bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md border">
+                  <div className="border-separator bg-fill-3 rounded-control-sm relative h-10 w-10 shrink-0 overflow-hidden border">
                     {flag ? (
                       <img
                         src={proxyDiscordUrl(flag)}
@@ -123,14 +124,14 @@ export function SplashThinkPagesPeek() {
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span className="text-muted-foreground flex h-full w-full items-center justify-center text-xs font-medium">
+                      <span className="text-label-secondary text-caption flex h-full w-full items-center justify-center">
                         TP
                       </span>
                     )}
                   </div>
-                  <Avatar className="border-border h-7 w-7 border">
+                  <Avatar className="border-separator h-7 w-7 border">
                     <AvatarImage src={profileUrl ?? undefined} alt="" />
-                    <AvatarFallback className="text-xs font-semibold">
+                    <AvatarFallback className="text-caption font-semibold">
                       {displayName
                         .split(/\s+/)
                         .filter(Boolean)
@@ -144,10 +145,10 @@ export function SplashThinkPagesPeek() {
 
                 <div className="min-w-0 flex-1 space-y-2">
                   <Link href={`/thinkpages/post/${post.id}`} className="block">
-                    <p className="text-foreground line-clamp-2 text-sm font-medium">
+                    <p className="text-label text-body line-clamp-2 font-medium">
                       @{post.account.username}
                       {nation ? (
-                        <span className="text-muted-foreground font-normal">
+                        <span className="text-label-secondary font-normal">
                           {" "}
                           · {nation.replace(/_/g, " ")}
                         </span>
@@ -155,14 +156,14 @@ export function SplashThinkPagesPeek() {
                     </p>
                   </Link>
 
-                  <div className="text-muted-foreground max-h-44 overflow-hidden text-sm leading-relaxed [&_a]:break-all [&_a]:text-blue-600 hover:[&_a]:underline dark:[&_a]:text-blue-400 [&_img]:my-1 [&_img]:max-h-40 [&_img]:w-auto [&_img]:max-w-full [&_img]:rounded-md [&_p]:my-1 [&_p]:first:mt-0 [&_svg]:inline-block [&_svg]:h-4 [&_svg]:w-4 [&_svg]:align-[-0.125em]">
+                  <div className="text-label-secondary text-body [&_a]:text-blue [&_img]:rounded-control-sm max-h-44 overflow-hidden leading-relaxed [&_a]:break-all hover:[&_a]:underline [&_img]:my-1 [&_img]:max-h-40 [&_img]:w-auto [&_img]:max-w-full [&_p]:my-1 [&_p]:first:mt-0 [&_svg]:inline-block [&_svg]:h-4 [&_svg]:w-4 [&_svg]:align-[-0.125em]">
                     <WikiHtmlContent html={htmlBody} className="break-words" />
                   </div>
 
                   {media.length > 0 ? (
                     <div
                       className={cn(
-                        "mt-1 overflow-hidden rounded-lg",
+                        "rounded-control mt-1 overflow-hidden",
                         media.length === 1 && "max-w-xs",
                         media.length > 1 && "grid grid-cols-2 gap-1"
                       )}
@@ -172,7 +173,7 @@ export function SplashThinkPagesPeek() {
                           key={m.id}
                           href={`/thinkpages/post/${post.id}`}
                           className={cn(
-                            "bg-muted relative block overflow-hidden rounded-md",
+                            "bg-fill-3 rounded-control-sm relative block overflow-hidden",
                             media.length === 1 ? "aspect-video max-h-32" : "aspect-square max-h-20"
                           )}
                         >
@@ -187,12 +188,12 @@ export function SplashThinkPagesPeek() {
                   ) : null}
 
                   <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <p className="text-muted-foreground text-xs tabular-nums">
+                    <p className="text-label-secondary text-footnote tabular-nums">
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </p>
                     <Link
                       href={`/thinkpages/post/${post.id}`}
-                      className={cn("text-xs font-medium", splashGold.link)}
+                      className={cn("text-caption", splashGold.link)}
                     >
                       Open post
                     </Link>

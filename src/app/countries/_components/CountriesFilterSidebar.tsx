@@ -55,7 +55,7 @@ export default function CountriesFilterSidebar({
     populationRange.max !== undefined;
 
   return (
-    <FacetCard depth={2} surface={surface} className="space-y-4 rounded-2xl p-4">
+    <FacetCard depth={2} surface={surface} className="rounded-card space-y-4 p-4">
       {hasFilters && (
         <div className="mb-2 flex flex-wrap gap-1">
           {searchTerm && <Badge variant="secondary">Search: {searchTerm}</Badge>}
@@ -75,26 +75,24 @@ export default function CountriesFilterSidebar({
         </div>
       )}
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">Search</label>
+        <label className="text-label-secondary text-caption mb-1 block">Search</label>
         <div className="relative flex items-center">
           <Search
             aria-hidden="true"
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
+            className="text-label-secondary pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
           />
           <Input
             type="text"
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="facet-refraction-none h-10 w-full pl-9"
+            className="h-10 w-full pl-9"
             autoComplete="off"
           />
         </div>
       </div>
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">
-          Economic Tier
-        </label>
+        <label className="text-label-secondary text-caption mb-1 block">Economic Tier</label>
         <Select
           value={tierFilter}
           onValueChange={(value) => {
@@ -114,7 +112,7 @@ export default function CountriesFilterSidebar({
         </Select>
       </div>
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">Continent</label>
+        <label className="text-label-secondary text-caption mb-1 block">Continent</label>
         <Select value={continentFilter} onValueChange={onContinentFilterChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select continent" />
@@ -130,7 +128,7 @@ export default function CountriesFilterSidebar({
         </Select>
       </div>
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">Region</label>
+        <label className="text-label-secondary text-caption mb-1 block">Region</label>
         <Select
           value={regionFilter}
           onValueChange={onRegionFilterChange}
@@ -150,9 +148,7 @@ export default function CountriesFilterSidebar({
         </Select>
       </div>
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">
-          Population Range
-        </label>
+        <label className="text-label-secondary text-caption mb-1 block">Population Range</label>
         <div className="flex space-x-2">
           <Input
             type="number"
@@ -164,7 +160,7 @@ export default function CountriesFilterSidebar({
                 max: populationRange.max,
               })
             }
-            className="facet-refraction-none flex-1"
+            className="flex-1"
           />
           <Input
             type="number"
@@ -176,7 +172,7 @@ export default function CountriesFilterSidebar({
                 max: e.target.value ? parseInt(e.target.value, 10) : undefined,
               })
             }
-            className="facet-refraction-none flex-1"
+            className="flex-1"
           />
         </div>
         {/*

@@ -27,7 +27,7 @@ export function EditorSectionFooter({
   return (
     <nav
       aria-label="Previous and next section"
-      className="border-border mt-8 flex flex-col-reverse gap-2 border-t pt-6 sm:flex-row sm:items-center sm:justify-between"
+      className="border-separator mt-8 flex flex-col-reverse gap-2 border-t pt-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
         {previous && (

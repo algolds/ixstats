@@ -375,8 +375,8 @@ values on hover or tap.
    margin drawer and detail panels, ThinkPages composer, forum composer, MiniPlayer, the `lg:top-20` rails).
    ✅ Phone titles: `ShellPageHeader` on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`,
    `/admin`. Flag-off rendering is unchanged (the variables keep their legacy values; hidden nodes are CSS-gated).
-   **Still before flipping the flag:** `/countries` index needs its `ShellPageHeader` (left for the countries work in
-   progress); sports keep a league's/club's section bar inside `SportsShell` — entity-scoped, not in the map, so it
+   **Still before flipping the flag:** ~~`/countries` index needs its `ShellPageHeader`~~ (✅ phone title on the
+   countries index; its in-card "Countries" title hides on phones under the flag); sports keep a league's/club's section bar inside `SportsShell` — entity-scoped, not in the map, so it
    stays (decide whether the sidebar should show contextual entity sections); ~~the admin rail still shows
    `SystemStatusWidget` beside the sidebar~~ (✅ the whole admin rail is `data-app-subnav`; its status moves to a
    `SystemStatusStrip` above the console under the flag); the WikiOS rail keeps search/create/page tools, so wiki pages still show
@@ -413,7 +413,7 @@ values on hover or tap.
    walkthrough drop their `fixed inset-0` click-catcher (outside-press listener; the tour reuses the dialog scrim) and
    section accents use system-colour variables instead of hex. **Remaining:** `x.5` spacing steps; Halo's own spring
    constants (420/38) and per-button `soundEffects` ticks; WikiOS narrator colours derived from article theme hex
-   (data); `.dynamic-island-shell` CSS still used by `MapDynamicIsland` and the WikiOS editor header; the Discord
+   (data); `.dynamic-island-shell` CSS still used by `MapDynamicIsland` (the WikiOS editor header moved off it in its own pass); the Discord
    brand button keeps `text-white`. Primitive gap: no `PopoverAnchor` export (the reaction picker anchors via an inert
    `PopoverTrigger` span because the like button's own click must not toggle it).
    **Labs (Onoma, Vexel, map pipeline) and Forum — ✅ converted 2026-09-30** (`app/labs`, `components/onoma`,
@@ -460,6 +460,68 @@ values on hover or tap.
    checkboxes/range inputs in a few forms; MapLibre fallback paint hex in `SvgPreviewMap` (map data); the lab
    templates keep their v2 demo classes. Primitive gap: `Table` (`components/ui/table.tsx`) still ships v2 classes
    (`border-border/50 bg-background/50 rounded-lg`, a gradient scroll hint, no `tabular-nums`).
+   **WikiOS — ✅ converted 2026-10-01** (`components/wiki-os`, `app/(wiki-os)`, `components/media`,
+   `styles/wiki-os`; ink `data-app="wiki"` with `PortalTintSync` on the route group, now in `facet-guards`' converted
+   areas). **Tokens:** every `--wikios-*` chrome token in `wiki-os/tokens.css` is an alias of a Facet role (opaque
+   `surface`/`surface-elevated` cards and popovers, `separator` borders, the label ramp, system status colours,
+   `shadow-card`/`shadow-floating`, the Swiss UI face); `--wikios-accent*` resolve to the tint on `:root` *and* every
+   `[data-app]` scope (a `var(--tint)` alias declared only on `:root` would pin the default tint), and article pages
+   still override them inline with the article's theme colour (data). The **Reading style** stays: `--wikios-font-reading`,
+   the MediaWiki body-link colours, the image plinth and article content CSS; only chrome selectors in
+   `content.css` (sticky TOC, recent changes, portals, cite tooltip, link preview) were converted. ~1.2k lines of
+   unreferenced `.wikios-*` rules deleted from the wiki sheets; their `backdrop-filter`s, rgba whites/blacks and blue
+   accents → roles, fills, `color-mix` of the tint/system colours; no wiki chrome text below 12px. **Presentation:**
+   every custom portal / `fixed inset-0` / `.wikios-modal-backdrop` overlay → primitives — `Dialog` (Repository and
+   Stash welcome guides, Margin help/category guides and share sheet, template-insert forms via a shared
+   `TemplateModalShell`, the visual editor's template editor, Insert Image, stash manager), an `instant` `Dialog` for
+   ⌘K wiki search, the reader `ImageLightbox` (full-screen photo viewer; Escape closes the inspector first) and a
+   shared `WikiZoomDialog`; `Sheet` for detail views and flows (Commons/Repository detail below `lg` — the inline rail
+   stays at ≥1024px —, stashed-image detail, quick history/backlinks, the Apple Books TOC drawer, Create Page wizard,
+   the media `FullPlayer`); `Popover` for the create-stash and stash-settings menus (their `fixed inset-0`
+   click-catchers are gone) with delete confirmed in an `AlertDialog`; editor dropdowns/slash menu/popovers lose their
+   `z-[10001…100055]` and glass overrides (`material-thick` defaults). **Chrome:** the editor header's mode switcher
+   is a `material-thin` `FacetMaterial` pill with the Facet `Switch` (no `.dynamic-island-shell`/`DynamicIslandEffects`),
+   the Margin drawer a non-modal `material-regular` side inspector (`z-chrome`, `springSmooth`, `SegmentedControl`
+   tabs), the selection capsule a `material-thick` toolbar, the MiniPlayer a `material-regular` bar; `CutoutCard`
+   page tools and `facet-hierarchy-*`/`facet-surface`/`facet-refraction` panels → `FacetCard`/opaque roles; hand-rolled
+   tab strips and filter pills (repository source/type/orientation, recent-changes range, media theme, Commons copy
+   format, template editor views, Margin tabs) → `SegmentedControl`; native fields → `Input`/`Textarea`/`Checkbox`/
+   `Slider`/`fieldStyles`; the featured-article "under-glow"/"crystal lens" image washes and the article hero's pointer
+   tilt and sheen removed (the hero keeps the article's own lead image, content); all wiki gradients gone (the image
+   scrims are flat); the blue accent, `bg-wiki` and `--wikios-accent` utilities → the tint; ~2.5k palette/`dark:`/
+   `text-xs`/`rounded-*` hits → roles, text styles and radius tokens; per-button `soundEffects` ticks dropped
+   (outcomes use `soundCues.success`); loading blocks → `Skeleton`. **Remaining:** `x.5` spacing steps; role-styled
+   list/option `<button>`s in rails, editors and portals; native `<select>`s (field-styled); the selection capsule,
+   global link hover card and cite tooltips still position themselves in a portal because they anchor to arbitrary
+   DOM ranges/links (primitive gap: no virtual-anchor `Popover`/`HoverCard`); the Margin drawer is portalled
+   (non-modal, so not a `Sheet`); `.dynamic-island-shell` CSS now only serves `MapDynamicIsland`.
+   **Builder, countries index and public pages — ✅ converted 2026-10-01** (`app/builder` — the whole builder, not
+   only the editor —, `app/countries/_components` + `app/countries/page.tsx`, `app/explore`, `app/leaderboards`,
+   `app/id`, `app/r`, `app/realms`, `app/feed`, `app/hashtags`, `app/changelog`, `app/stashes`, `app/setup`,
+   `app/privacy`, `app/terms`, the landing (`app/page.tsx`, `IxStatsSplashPage`, `_components/splash`, the unused
+   `LiveGameBanner`/`LeaderboardsSection`/`GlobalStatsOverview`), `lib/splash`, `lib/tier-utils.ts`; now in
+   `facet-guards`' converted areas). **Tint:** `/builder` and the landing take the MyCountry gold `data-app="mycountry"`
+   with `PortalTintSync` (the same builder components already render inside MyCountry at `/mycountry/builder` and
+   `/mycountry/editor`; the landing pitches MyCountry), so the builder's amber accent is the tint and status yellows are
+   the `caution` role. **Builder:** `FacetContainer`/`CutoutCard` panels → `FacetCard` with `surface-secondary` insets;
+   the archetype details `Dialog` → `Sheet` (detail view); era, complexity, driving side, week start, workforce view,
+   government type and Standard/Advanced pills → `SegmentedControl`; search inputs → `SearchField`; hand-rolled chips and
+   action links → `Badge` variants and `Button` styles; the save bar and archetype confirmation are `material-regular`
+   chrome on `z-sticky` (their `--shell-*` offsets kept), the builder primitives' glass depths (`theme-utils`) are opaque
+   roles; country-card flag scrims are flat `bg-black/60` bands (no gradient); the identity banner uses the corner
+   `FlagWatermark`; gradient step/section/archetype colours in `builderConfig`/`builder-theme`/archetype data → role
+   classes; the builder page texture drops to the §5 opacity (≤0.05). **Public pages:** splash `facet-hierarchy-*`
+   panels → opaque surfaces/insets, `lib/splash/mycountry-gold.ts` → tint role classes (no gradients/`dark:`), gold
+   gradient CTAs → `Button`, decorative infinite loops removed; setup → `FacetCard`, `FacetList`/`FacetRow` country
+   picker, `SearchField`, `Skeleton`; the activity feed → `FacetCard`, `Stat`, `ToggleGroup`/`SegmentedControl`
+   filters, `Switch`, `EmptyState`; changelog/stashes/board → `SearchField`, `SegmentedControl`, `EmptyState` (stashes'
+   `--wikios-*` utilities → roles); the countries header → `FacetCard` + `SearchField` + a `SegmentedControl` tier
+   radiogroup, with `ShellPageHeader` on `/countries`; ~2.4k palette/`dark:`/`text-xs`/`rounded-*`/`tracking-*` hits →
+   roles, text styles and radius tokens. `formatMembershipTier` returns a `badgeVariant` (`caution`/`neutral`);
+   `badgeClass` stays as role classes for the settings sidebar. **Remaining:** `x.5` spacing steps; `text-white` on
+   image scrims (flag cards, emblem hover actions); role-styled option `<button>`s in builder pickers (currency quick
+   select, filter rails, popover lists); tiny `rounded-sm` flag thumbnails; `font-mono` kept for ISO/currency codes and
+   coordinates. Primitive gap: `Alert` has no `caution`/`info` variants (builder alerts tint themselves with roles).
 
 ## 15. Governance
 

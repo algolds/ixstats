@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { FacetContainer } from "~/components/ui/facet-container";
 
 interface BuilderConfirmModalProps {
   isOpen: boolean;
@@ -50,15 +49,15 @@ export function BuilderConfirmModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md gap-0 p-0">
-        <DialogHeader className="border-border border-b px-6 py-4">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Shield aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+        <DialogHeader className="border-separator border-b px-6 py-4">
+          <DialogTitle className="flex items-center gap-2">
+            <Shield aria-hidden="true" className="text-label-secondary h-5 w-5" />
             {isEditMode ? "Save Changes" : "Confirm Country Creation"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-4">
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-body text-label-secondary">
             {hasWarnings
               ? "Please review the warnings below before updating your country."
               : "Review your configuration before saving."}
@@ -66,59 +65,46 @@ export function BuilderConfirmModal({
 
           <div className="space-y-2.5">
             {deltaWarning && (
-              <FacetContainer
-                depth={3}
-                surface="solid"
+              <div
                 role="note"
-                className="text-foreground flex items-start gap-2 rounded-lg border-amber-500/40 p-3 text-xs"
+                className="bg-caution/10 rounded-row text-footnote text-label flex items-start gap-2 p-3"
               >
                 <AlertTriangle
                   aria-hidden="true"
-                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+                  className="text-caution mt-0.5 h-4 w-4 shrink-0"
                 />
                 <span>{deltaWarning}</span>
-              </FacetContainer>
+              </div>
             )}
 
             {currencyChangeWarning && (
-              <FacetContainer
-                depth={3}
-                surface="solid"
+              <div
                 role="note"
-                className="text-foreground flex items-start gap-2 rounded-lg border-amber-500/40 p-3 text-xs"
+                className="bg-caution/10 rounded-row text-footnote text-label flex items-start gap-2 p-3"
               >
-                <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <Info aria-hidden="true" className="text-caution mt-0.5 h-4 w-4 shrink-0" />
                 <span>{currencyChangeWarning}</span>
-              </FacetContainer>
+              </div>
             )}
 
             {gdpCapWarning && (
-              <FacetContainer
-                depth={3}
-                surface="solid"
+              <div
                 role="alert"
-                className="text-foreground border-destructive/50 flex items-start gap-2 rounded-lg p-3 text-xs"
+                className="bg-destructive/10 rounded-row text-footnote text-label flex items-start gap-2 p-3"
               >
                 <AlertTriangle
                   aria-hidden="true"
                   className="text-destructive mt-0.5 h-4 w-4 shrink-0"
                 />
                 <span>{gdpCapWarning}</span>
-              </FacetContainer>
+              </div>
             )}
 
             {!hasWarnings && (
-              <FacetContainer
-                depth={3}
-                surface="solid"
-                className="text-foreground flex items-start gap-2 rounded-lg p-3 text-xs"
-              >
-                <CheckCircle
-                  aria-hidden="true"
-                  className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                />
+              <div className="bg-surface-secondary rounded-row text-footnote text-label flex items-start gap-2 p-3">
+                <CheckCircle aria-hidden="true" className="text-green mt-0.5 h-4 w-4 shrink-0" />
                 <span>All settings look good and are ready to save.</span>
-              </FacetContainer>
+              </div>
             )}
           </div>
 
@@ -132,7 +118,7 @@ export function BuilderConfirmModal({
               />
               <Label
                 htmlFor="confirm-verify-checkbox"
-                className="text-muted-foreground cursor-pointer text-xs leading-normal"
+                className="text-label-secondary text-footnote cursor-pointer leading-normal"
               >
                 I have reviewed these settings and want to proceed.
               </Label>
@@ -140,7 +126,7 @@ export function BuilderConfirmModal({
           )}
         </div>
 
-        <DialogFooter className="border-border border-t px-6 py-4">
+        <DialogFooter className="border-separator border-t px-6 py-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

@@ -180,9 +180,9 @@ export function scrollToField(fieldKey: string) {
   const el = document.querySelector(`[data-field="${fieldKey}"]`);
   if (el) {
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("ring-2", "ring-red-500/50", "rounded-lg");
+    el.classList.add("ring-2", "ring-red/50", "rounded-control");
     setTimeout(() => {
-      el.classList.remove("ring-2", "ring-red-500/50", "rounded-lg");
+      el.classList.remove("ring-2", "ring-red/50", "rounded-control");
     }, 2000);
   }
 }

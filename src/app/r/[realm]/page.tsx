@@ -23,13 +23,11 @@ function LoreSection({
 }) {
   const portal = `Portal:${realmName}`;
   return (
-    <section className="border-border bg-card/70 rounded-2xl border p-6">
-      <h2 className="text-foreground mb-3 text-sm font-bold">
-        Lore · {count.toLocaleString()} pages
-      </h2>
+    <section className="border-separator bg-surface rounded-card border p-6">
+      <h2 className="text-label text-headline mb-3">Lore · {count.toLocaleString()} pages</h2>
       <Link
         href={createUrl(wikiReaderPath(portal, parseWikiSource(source)))}
-        className="hover:bg-muted text-foreground inline-flex items-center gap-2 rounded-xl p-2 text-sm"
+        className="hover:bg-fill-3 text-label rounded-row text-body inline-flex items-center gap-2 p-2"
       >
         <OpenBook className="h-4 w-4" />
         Read {portal} in WikiOS
@@ -47,14 +45,14 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
 
   if (isLoading)
     return (
-      <div className="text-muted-foreground mx-auto max-w-5xl p-8 text-sm">Loading realm…</div>
+      <div className="text-label-secondary text-body mx-auto max-w-5xl p-8">Loading realm…</div>
     );
   if (!realm) notFound();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
-      <header className="border-border bg-card/70 flex items-center gap-4 rounded-2xl border p-6 backdrop-blur-xl">
-        <div className="border-border bg-accent flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border">
+      <header className="border-separator bg-surface rounded-card flex items-center gap-4 border p-6">
+        <div className="border-separator bg-fill-3 rounded-card flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border">
           {realm.thumbnail ? (
             <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -62,32 +60,32 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
           )}
         </div>
         <div>
-          <h1 className="text-foreground text-2xl font-bold tracking-tight">{realm.name}</h1>
+          <h1 className="text-label text-title-1">{realm.name}</h1>
           {realm.description && (
-            <p className="text-muted-foreground mt-1 text-sm">{realm.description}</p>
+            <p className="text-label-secondary text-body mt-1">{realm.description}</p>
           )}
         </div>
       </header>
 
-      <section className="border-border bg-card/70 rounded-2xl border p-6">
+      <section className="border-separator bg-surface rounded-card border p-6">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-foreground text-sm font-bold">Nations · {realm.countries.length}</h2>
+          <h2 className="text-label text-headline">Nations · {realm.countries.length}</h2>
           <div className="flex items-center gap-3">
             <Link
               href={createUrl(`/r/${encodeURIComponent(realm.slug)}/board`)}
-              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+              className="text-label-secondary hover:text-label text-caption"
             >
               Realm board
             </Link>
             <Link
               href={createUrl(`/maps?realm=${encodeURIComponent(realm.slug)}`)}
-              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+              className="text-label-secondary hover:text-label text-caption"
             >
               View map
             </Link>
             <Link
               href={createUrl(`/countries?realm=${encodeURIComponent(realm.slug)}`)}
-              className="text-muted-foreground hover:text-foreground text-xs font-medium"
+              className="text-label-secondary hover:text-label text-caption"
             >
               View all in the directory
             </Link>
@@ -98,12 +96,12 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
             <li key={c.id} className="flex items-center gap-2">
               <Link
                 href={createUrl(`/countries/${c.slug ?? c.id}`)}
-                className="hover:bg-muted flex min-w-0 flex-1 items-center gap-2 rounded-xl p-2 text-sm"
+                className="hover:bg-fill-3 rounded-row text-body flex min-w-0 flex-1 items-center gap-2 p-2"
               >
                 {c.flag && <img src={c.flag} alt="" className="h-4 w-6 rounded-sm object-cover" />}
-                <span className="text-foreground truncate">{c.name}</span>
+                <span className="text-label truncate">{c.name}</span>
                 {!c.claimed && (
-                  <span className="text-muted-foreground ml-auto text-xs">unclaimed</span>
+                  <span className="text-label-secondary text-footnote ml-auto">unclaimed</span>
                 )}
               </Link>
               {c.mine && (

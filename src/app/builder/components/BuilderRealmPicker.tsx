@@ -19,7 +19,7 @@ export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps)
   const selectedId = value ?? data.defaultRealmId;
   const selected = data.realms.find((realm) => realm.id === selectedId);
   const full = selected && !selected.canCreate && (
-    <p role="status" className="text-xs text-amber-600">
+    <p role="status" className="text-footnote text-caution">
       You hold {selected.held} of {selected.cap} {selected.cap === 1 ? "nation" : "nations"} allowed
       in {selected.name}.
     </p>
@@ -29,12 +29,12 @@ export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps)
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-muted-foreground flex items-center gap-2 text-xs">
+      <label className="text-label-secondary text-footnote flex items-center gap-2">
         <span>Found in</span>
         <select
           value={selectedId}
           onChange={(event) => onChange(event.target.value)}
-          className="border-border/60 bg-background text-foreground rounded-lg border px-2 py-1 text-xs"
+          className="border-separator bg-background text-label rounded-control text-footnote border px-2 py-1"
         >
           {data.realms.map((realm) => (
             <option key={realm.id} value={realm.id} disabled={!realm.canCreate}>

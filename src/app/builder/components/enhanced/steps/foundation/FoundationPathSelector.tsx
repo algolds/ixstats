@@ -42,23 +42,23 @@ export function FoundationPathSelector({
           variant="ghost"
           size="sm"
           onClick={onBackToHero}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground active:scale-[0.98]"
+          className="text-footnote text-label-secondary hover:text-label flex items-center gap-1.5 active:scale-[0.98]"
           data-cuelume-press
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to starting options
         </Button>
 
         {/* Segmented Step Indicator with Skip Button */}
-        <div className="flex items-center gap-2 rounded-full border border-border/40 bg-card/40 p-1 pl-3.5 text-xs font-semibold backdrop-blur-md select-none">
-          <span className="flex items-center gap-1.5 text-amber-400">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
+        <div className="border-separator bg-surface text-caption flex items-center gap-2 rounded-full border p-1 pl-3.5 font-semibold select-none">
+          <span className="text-tint flex items-center gap-1.5">
+            <span className="bg-tint h-2 w-2 rounded-full" />
             Step 1: Benchmark Country
           </span>
-          <span className="text-muted-foreground/30">•</span>
+          <span className="text-label-tertiary">•</span>
           <button
             type="button"
             onClick={onSkipBenchmark}
-            className="group flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-95 shadow-xs shadow-amber-500/10"
+            className="group border-tint/30 bg-tint-fill text-caption text-tint hover:bg-tint-hover hover:text-tint-hover shadow-card flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             title="Skip benchmark country and choose an archetype directly"
             data-cuelume-press
           >

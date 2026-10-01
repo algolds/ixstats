@@ -195,8 +195,8 @@ export function CountryComparisonModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-foreground flex items-center gap-2">
-            <BarChart3 aria-hidden="true" className="h-5 w-5 text-blue-500" />
+          <DialogTitle className="text-label flex items-center gap-2">
+            <BarChart3 aria-hidden="true" className="text-blue h-5 w-5" />
             Compare Countries
           </DialogTitle>
         </DialogHeader>
@@ -225,32 +225,32 @@ export function CountryComparisonModal({
                   }
                 }}
               >
-                <Command className="text-foreground bg-transparent">
+                <Command className="text-label bg-transparent">
                   <CommandInput
                     placeholder="Search countries..."
                     value={searchValue}
                     onValueChange={setSearchValue}
-                    className="bg-background text-foreground border-border focus:border-border-primary"
+                    className="bg-background text-label border-separator focus:border-border-primary"
                   />
-                  <CommandEmpty className="text-muted-foreground">No countries found.</CommandEmpty>
+                  <CommandEmpty className="text-label-secondary">No countries found.</CommandEmpty>
                   <CommandGroup className="max-h-60 overflow-auto">
                     {filteredCountries.map((country) => (
                       <CommandItem
                         key={country.id}
                         onSelect={() => void addCountry(country.id)}
-                        className="text-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer transition-colors"
+                        className="text-label hover:bg-fill-3 hover:text-label focus:bg-fill-3 focus:text-label cursor-pointer transition-colors"
                         disabled={loadingCountries.has(country.id)}
                       >
                         <div className="flex w-full items-center justify-between">
                           <span>{country.name}</span>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-footnote">
                               {country.economicTier}
                             </Badge>
                             {loadingCountries.has(country.id) && (
                               <SystemRestart
                                 aria-label="Loading"
-                                className="text-muted-foreground h-3 w-3 animate-spin"
+                                className="text-label-secondary h-3 w-3 animate-spin"
                               />
                             )}
                           </div>
@@ -282,11 +282,11 @@ export function CountryComparisonModal({
               {selectedCountries.map((country) => (
                 <div
                   key={country.id}
-                  className="bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground border-border flex items-center gap-2 rounded-md px-3 py-1 transition-colors"
+                  className="bg-fill-3 text-label-secondary hover:bg-fill-2 hover:text-label border-separator rounded-control-sm flex items-center gap-2 px-3 py-1 transition-colors"
                   style={{ borderLeft: `3px solid ${country.color}` }}
                 >
-                  <span className="text-sm font-medium">{country.name}</span>
-                  <Badge variant="outline" className="text-xs">
+                  <span className="text-body font-medium">{country.name}</span>
+                  <Badge variant="outline" className="text-footnote">
                     {country.economicTier}
                   </Badge>
                   <Button
@@ -315,31 +315,31 @@ export function CountryComparisonModal({
 
           {/* Summary Statistics */}
           {selectedCountries.length > 0 && (
-            <div className="border-border border-t pt-4">
+            <div className="border-separator border-t pt-4">
               <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
                 <div>
-                  <p className="text-muted-foreground text-sm">Countries</p>
-                  <p className="text-lg font-semibold">{selectedCountries.length}</p>
+                  <p className="text-label-secondary text-body">Countries</p>
+                  <p className="text-title-3">{selectedCountries.length}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Total Population</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-label-secondary text-body">Total Population</p>
+                  <p className="text-title-3">
                     {formatPopulation(
                       selectedCountries.reduce((sum, c) => sum + c.currentPopulation, 0)
                     )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Total GDP</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-label-secondary text-body">Total GDP</p>
+                  <p className="text-title-3">
                     {formatCurrency(
                       selectedCountries.reduce((sum, c) => sum + c.currentTotalGdp, 0)
                     )}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-label-secondary text-body">Avg GDP/Capita</p>
+                  <p className="text-title-3">
                     {formatCurrency(
                       selectedCountries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) /
                         selectedCountries.length
@@ -351,11 +351,11 @@ export function CountryComparisonModal({
           )}
 
           {/* Action Buttons */}
-          <div className="border-border flex justify-end gap-2 border-t pt-4">
+          <div className="border-separator flex justify-end gap-2 border-t pt-4">
             <Button
               variant="outline"
               onClick={onClose}
-              className="text-foreground border-border hover:bg-accent hover:text-accent-foreground"
+              className="text-label border-separator hover:bg-fill-3 hover:text-label"
             >
               Close
             </Button>
@@ -367,7 +367,7 @@ export function CountryComparisonModal({
                     handleCountrySelect(country.id);
                   }
                 }}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-tint text-on-tint hover:bg-tint/90"
               >
                 View Details
               </Button>

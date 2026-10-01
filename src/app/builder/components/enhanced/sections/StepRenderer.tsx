@@ -104,7 +104,6 @@ export const StepRenderer = memo(function StepRenderer({
     updateStep("foundation", scratchCountry);
   }, [updateStep, setBuilderState]);
 
-
   // Foundation Step
   if (builderState.step === "foundation" && mode !== "edit") {
     if (isLoadingCountries) {
@@ -116,11 +115,11 @@ export const StepRenderer = memo(function StepRenderer({
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               className="mx-auto h-16 w-16"
             >
-              <Globe className="h-16 w-16 text-amber-500" />
+              <Globe className="text-tint h-16 w-16" />
             </motion.div>
             <div className="space-y-2">
-              <p className="text-lg font-medium">Loading nations data...</p>
-              <p className="text-muted-foreground text-sm">Preparing your foundation options</p>
+              <p className="text-title-3">Loading nations data...</p>
+              <p className="text-label-secondary text-body">Preparing your foundation options</p>
             </div>
           </div>
         </div>
@@ -129,7 +128,7 @@ export const StepRenderer = memo(function StepRenderer({
 
     if (countryLoadError) {
       return (
-        <Alert className="border-red-200 bg-red-50/50">
+        <Alert className="border-red/30 bg-red/10">
           <AlertDescription>
             <strong>Error loading countries:</strong> {countryLoadError}
             <br />
@@ -157,8 +156,8 @@ export const StepRenderer = memo(function StepRenderer({
       return (
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
-            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-            <p className="text-muted-foreground">Initializing core foundation...</p>
+            <div className="border-tint mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+            <p className="text-label-secondary">Initializing core foundation...</p>
           </div>
         </div>
       );

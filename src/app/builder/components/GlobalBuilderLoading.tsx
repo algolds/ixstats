@@ -17,10 +17,10 @@ interface GlobalBuilderLoadingProps {
 /** A small spinner plus a message: the one meaningful live indicator while the builder loads. */
 function LoadingLabel({ message, size = "sm" }: { message: string; size?: "sm" | "md" }) {
   return (
-    <p className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
+    <p className="text-label-secondary text-body flex items-center justify-center gap-2">
       <SystemRestart
         aria-hidden="true"
-        className={cn("animate-spin text-amber-500", size === "md" ? "h-5 w-5" : "h-4 w-4")}
+        className={cn("text-tint animate-spin", size === "md" ? "h-5 w-5" : "h-4 w-4")}
       />
       {message}
     </p>
@@ -49,7 +49,7 @@ export function GlobalBuilderLoading({
   if (variant === "compact") {
     return (
       <div role="status" className={cn("flex items-center justify-center p-6", className)}>
-        <FacetCard depth={2} className="w-full max-w-sm space-y-3 rounded-2xl p-5">
+        <FacetCard className="rounded-card w-full max-w-sm space-y-3 p-5">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-3 w-full" />
           <LoadingLabel message={message} />
@@ -65,7 +65,7 @@ export function GlobalBuilderLoading({
       className={cn("flex min-h-screen w-full flex-col pt-24 sm:pt-28 lg:pt-32", className)}
     >
       <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8">
-        <FacetCard depth={2} className="flex items-center justify-between gap-3 rounded-2xl p-3">
+        <FacetCard className="rounded-card flex items-center justify-between gap-3 p-3">
           <Skeleton className="h-8 w-24" />
           <div className="hidden gap-2 sm:flex">
             {Array.from({ length: 5 }, (_, i) => (
@@ -74,7 +74,7 @@ export function GlobalBuilderLoading({
           </div>
           <Skeleton className="h-8 w-28" />
         </FacetCard>
-        <FacetCard depth={2} className="space-y-6 rounded-2xl p-6 sm:p-8">
+        <FacetCard className="rounded-card space-y-6 p-6 sm:p-8">
           <Skeleton className="h-6 w-56" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {Array.from({ length: 4 }, (_, i) => (
@@ -105,8 +105,8 @@ export function BuilderStepLoading({
     <div role="status" className={cn("space-y-4 p-4 sm:p-6", className)}>
       <Skeleton className="h-6 w-48" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Skeleton className="h-28 rounded-xl" />
-        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="rounded-row h-28" />
+        <Skeleton className="rounded-row h-28" />
       </div>
       <LoadingLabel message={message} />
     </div>
@@ -122,8 +122,8 @@ export function TabLoadingFallback() {
       <Skeleton className="h-8 w-1/3" />
       <Skeleton className="h-4 w-2/3" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Skeleton className="h-32 rounded-xl" />
-        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="rounded-row h-32" />
+        <Skeleton className="rounded-row h-32" />
       </div>
     </div>
   );

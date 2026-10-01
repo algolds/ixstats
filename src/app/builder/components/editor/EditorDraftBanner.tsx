@@ -21,16 +21,15 @@ export function EditorDraftBanner({
 }: EditorDraftBannerProps) {
   return (
     <FacetCard
-      depth={2}
       role="region"
       aria-label="Unsaved edits found"
-      className="flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center"
+      className="rounded-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <ClockRotateRight aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+        <ClockRotateRight aria-hidden="true" className="text-caution mt-0.5 h-5 w-5 shrink-0" />
         <div className="min-w-0">
-          <p className="text-foreground text-sm font-semibold">Unsaved edits found</p>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-label text-headline">Unsaved edits found</p>
+          <p className="text-label-secondary text-body">
             {changeCount === 1 ? "1 change" : `${changeCount} changes`} kept on this device{" "}
             {timeAgo(savedAt)} never reached the server. Restore them to pick up where you left off.
           </p>

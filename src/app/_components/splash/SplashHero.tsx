@@ -64,31 +64,31 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={`facet-hierarchy-parent mb-6 flex flex-col items-center gap-3 rounded-2xl border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-3.5 ${splashGold.border} ${splashGold.darkBorder}`}
+        className={`bg-surface border-separator shadow-card rounded-card mb-6 flex flex-col items-center gap-3 border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-3.5 ${splashGold.border} `}
       >
         <div className="flex items-center gap-2">
           <div className={splashGold.pulseDot} aria-hidden />
-          <span className="text-foreground text-sm font-semibold tabular-nums">
+          <span className="text-label text-headline tabular-nums">
             {stats ? `${stats.totalCountries.toLocaleString()} nations` : "— nations"}
           </span>
         </div>
-        <span className="text-muted-foreground hidden sm:inline" aria-hidden>
+        <span className="text-label-secondary hidden sm:inline" aria-hidden>
           ·
         </span>
         <button
           type="button"
           onClick={() => setEarthClock((e) => !e)}
-          className="text-foreground flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-center transition-colors hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:outline sm:items-start sm:text-left dark:hover:text-amber-300"
+          className="text-label rounded-control hover:text-tint focus-visible:ring-tint/40 flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 px-2 py-1 text-center transition-colors focus-visible:ring-2 focus-visible:outline sm:items-start sm:text-left"
           aria-label={
             earthClock
               ? "Showing Earth time. Switch to IxTime."
               : "Showing IxTime. Switch to Earth time."
           }
         >
-          <span className="text-sm font-semibold tracking-tight tabular-nums sm:text-base">
+          <span className="text-headline sm:text-body tabular-nums">
             {earthClock ? earthTime : realmCalendarLine}
           </span>
-          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase sm:text-xs">
+          <span className="text-label-secondary text-eyebrow sm:text-footnote">
             {earthClock ? "Earth" : "IxTime"}
           </span>
         </button>
@@ -96,46 +96,38 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
 
       <div className="mb-5 flex items-center justify-center gap-4 md:mb-6">
         <motion.div
-          className={`relative h-16 w-16 rounded-full border-2 md:h-24 md:w-24 ${splashGold.border} ${splashGold.darkBorder} shadow-md ${splashGold.activeGlow}`}
-          animate={{ rotate: [0, 1.5, -1.5, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className={`relative h-16 w-16 rounded-full border-2 md:h-24 md:w-24 ${splashGold.border} shadow-card`}
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.span
               className={`absolute top-1/2 left-1/2 block h-9 w-9 -translate-x-1/2 -translate-y-1/2 md:h-12 md:w-12 ${splashGold.text}`}
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
             >
               <TrendingUp className="h-full w-full" strokeWidth={2.5} aria-hidden />
             </motion.span>
             <motion.span
               className={`absolute top-1 right-1 block h-4 w-4 md:h-5 md:w-5 ${splashGold.text}`}
-              animate={{ y: [0, -4, 0], rotate: [0, 8, 0] }}
-              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
             >
               <Crown className="h-full w-full" strokeWidth={2} aria-hidden />
             </motion.span>
             <motion.span
               className={`absolute bottom-1 left-1 block h-4 w-4 md:h-5 md:w-5 ${splashGold.text}`}
-              animate={{ y: [0, 3, 0] }}
-              transition={{ duration: 4.1, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
             >
               <Globe className="h-full w-full" strokeWidth={2} aria-hidden />
             </motion.span>
           </div>
         </motion.div>
-        <h1 className={`text-5xl font-bold md:text-8xl ${splashGold.headline}`}>IxStats™</h1>
+        <h1 className={`text-display md:text-display ${splashGold.headline}`}>IxStats™</h1>
       </div>
 
-      <p className="text-foreground mx-auto mb-3 max-w-3xl text-xl font-semibold tracking-tight md:text-3xl">
+      <p className="text-label text-title-2 md:text-large-title mx-auto mb-3 max-w-3xl">
         Everything runs. Everything connects.
       </p>
 
-      <p className="text-muted-foreground mx-auto mb-3 max-w-2xl text-base leading-relaxed md:text-lg">
+      <p className="text-label-secondary text-body md:text-title-3 mx-auto mb-3 max-w-2xl leading-relaxed">
         Lore and live stats in one place. Your wiki, your economy, your feed—updated continuously so
         the board reflects what nations actually do.
       </p>
-      <p className="text-muted-foreground mx-auto mb-8 max-w-xl text-sm leading-relaxed">
+      <p className="text-label-secondary text-body mx-auto mb-8 max-w-xl leading-relaxed">
         Collect lore cards, earn IxCredits, and unlock achievements in the{" "}
         <Link href="/vault" className={splashGold.link}>
           MyVault
@@ -156,57 +148,42 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
         >
           <div className={splashGold.statCard}>
             <div className={splashGold.statValue}>{stats.totalCountries}</div>
-            <div className="text-muted-foreground text-xs md:text-sm">Nations</div>
+            <div className="text-label-secondary text-footnote md:text-body">Nations</div>
           </div>
           <div className={splashGold.statCard}>
             <div className={splashGold.statValue}>{formatCurrency(stats.totalGdp)}</div>
-            <div className="text-muted-foreground text-xs md:text-sm">World GDP</div>
+            <div className="text-label-secondary text-footnote md:text-body">World GDP</div>
           </div>
           <div className={splashGold.statCard}>
             <div className={splashGold.statValue}>{formatPopulation(stats.totalPopulation)}</div>
-            <div className="text-muted-foreground text-xs md:text-sm">Population</div>
+            <div className="text-label-secondary text-footnote md:text-body">Population</div>
           </div>
           <div className={splashGold.statCard}>
             <div className={splashGold.statValue}>{(stats.globalGrowthRate * 100).toFixed(3)}%</div>
-            <div className="text-muted-foreground text-xs md:text-sm">Global growth</div>
+            <div className="text-label-secondary text-footnote md:text-body">Global growth</div>
           </div>
         </motion.div>
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
         <Link href="/countries">
-          <Button
-            size="lg"
-            variant="outline"
-            className={`border-2 px-6 py-5 text-base md:px-10 md:py-6 md:text-lg ${splashGold.border} hover:bg-amber-500/10 dark:hover:bg-amber-950/40`}
-          >
+          <Button size="lg" variant="outline">
             Explore nations
-            <motion.span
-              className="ml-2 inline-block"
-              animate={{ x: [0, 3, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            >
+            <motion.span className="ml-2 inline-block">
               <ArrowRight className="h-5 w-5" />
             </motion.span>
           </Button>
         </Link>
         <Link href="/builder">
-          <Button
-            size="lg"
-            className={`bg-gradient-to-r px-6 py-5 text-base text-white shadow-lg md:px-10 md:py-6 md:text-lg ${splashGold.gradient} ${splashGold.activeGlow} hover:opacity-95`}
-          >
-            <motion.span
-              className="mr-2 inline-block"
-              animate={{ rotate: [0, -6, 6, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-            >
+          <Button size="lg" className="shadow-floating">
+            <motion.span className="mr-2 inline-block">
               <Hammer className="h-5 w-5" />
             </motion.span>
             Launch MyCountry Builder
           </Button>
         </Link>
       </div>
-      <p className="text-muted-foreground mx-auto mt-4 max-w-md text-xs leading-relaxed md:text-sm">
+      <p className="text-label-secondary text-footnote md:text-body mx-auto mt-4 max-w-md leading-relaxed">
         The builder remembers you after sign-in. Preview it anytime.
       </p>
     </motion.div>

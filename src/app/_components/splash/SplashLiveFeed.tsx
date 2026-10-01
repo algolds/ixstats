@@ -16,6 +16,7 @@ import {
 import { Marquee } from "~/components/ui/magicui/marquee";
 import { api } from "~/trpc/react";
 import { splashGold } from "~/lib/splash/mycountry-gold";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const typeIcon: Record<string, typeof Trophy> = {
   achievement: Trophy,
@@ -76,22 +77,20 @@ export function SplashLiveFeed() {
       className="mx-auto mb-14 max-w-7xl md:mb-16"
     >
       <div className="mb-5 text-center">
-        <h2 className={`text-lg font-semibold tracking-tight md:text-xl ${splashGold.headline}`}>
+        <h2 className={`text-title-3 md:text-title-2 tracking-tight ${splashGold.headline}`}>
           Happening now
         </h2>
-        <p className="text-muted-foreground mx-auto mt-1 max-w-lg text-sm leading-relaxed">
+        <p className="text-label-secondary text-body mx-auto mt-1 max-w-lg leading-relaxed">
           Real updates, same stream as your dashboard—ThinkPages, wiki edits, achievements, forum,
           and public notices.
         </p>
       </div>
 
       {isLoading || !mounted ? (
-        <div
-          className={`mx-auto h-14 max-w-4xl animate-pulse rounded-xl ${splashGold.subtlePanel}`}
-        />
+        <Skeleton className="rounded-row mx-auto h-14 max-w-4xl" />
       ) : (
         <div
-          className={`overflow-hidden rounded-xl border bg-amber-500/[0.02] dark:bg-amber-950/15 ${splashGold.border} ${splashGold.darkBorder}`}
+          className={`rounded-row bg-surface-secondary overflow-hidden border ${splashGold.border} `}
         >
           <Marquee pauseOnHover className="py-3 [--duration:220s]">
             {loopItems.map((item, idx) => {
@@ -105,15 +104,9 @@ export function SplashLiveFeed() {
                   <motion.div
                     className={`relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden md:h-10 md:w-10 ${
                       item.countryFlag
-                        ? "bg-muted rounded-md border border-amber-500/25 dark:border-amber-400/20"
+                        ? "bg-fill-3 rounded-control-sm border-tint/25 border"
                         : splashGold.iconWrapSm
                     }`}
-                    animate={{ y: [0, -2, 0] }}
-                    transition={{
-                      duration: 2.8 + (idx % 5) * 0.12,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
                   >
                     {item.countryFlag ? (
                       <img
@@ -122,17 +115,15 @@ export function SplashLiveFeed() {
                         className="absolute inset-0 h-full w-full object-cover"
                       />
                     ) : (
-                      <Icon className="relative z-[1] h-4 w-4 text-white" aria-hidden />
+                      <Icon className="relative z-[1] h-4 w-4" aria-hidden />
                     )}
                   </motion.div>
                   <div className="min-w-0 text-left">
-                    <p className="text-muted-foreground mb-0.5 text-xs font-semibold tracking-wide uppercase">
-                      {kind}
-                    </p>
-                    <p className="text-foreground line-clamp-2 text-xs leading-snug font-medium sm:text-sm">
+                    <p className="text-label-secondary text-eyebrow mb-0.5">{kind}</p>
+                    <p className="text-label text-caption sm:text-body line-clamp-2 leading-snug">
                       {item.title || "Activity"}
                     </p>
-                    <p className="text-muted-foreground mt-0.5 text-xs tabular-nums sm:text-xs">
+                    <p className="text-label-secondary text-footnote sm:text-footnote mt-0.5 tabular-nums">
                       {formatDistanceToNow(item.ts, { addSuffix: true })}
                     </p>
                   </div>
@@ -143,7 +134,7 @@ export function SplashLiveFeed() {
         </div>
       )}
 
-      <p className="text-muted-foreground mt-4 text-center text-xs">
+      <p className="text-label-secondary text-footnote mt-4 text-center">
         <Link href="/feed" className={`inline-flex items-center gap-1 ${splashGold.link}`}>
           Full feed
           <ChevronRight className="h-3 w-3" />

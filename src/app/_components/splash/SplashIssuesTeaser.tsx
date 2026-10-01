@@ -22,6 +22,9 @@ import { Badge } from "~/components/ui/badge";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Skeleton } from "~/components/ui/skeleton";
+import { springSmooth } from "~/lib/design/motion";
+import { Button } from "~/components/ui/button";
 
 const DOMAIN_ICON: Record<string, typeof Scale> = {
   economic: TrendingUp,
@@ -96,10 +99,12 @@ export function SplashIssuesTeaser() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2 className={`mb-2 text-3xl font-bold tracking-tight md:text-4xl ${splashGold.headline}`}>
+        <h2
+          className={`text-large-title md:text-large-title mb-2 tracking-tight ${splashGold.headline}`}
+        >
           Some mail won&apos;t wait
         </h2>
-        <p className="text-muted-foreground mx-auto max-w-xl text-base leading-relaxed">
+        <p className="text-label-secondary text-body mx-auto max-w-xl leading-relaxed">
           National issues are live mail from the realm — choose a path, absorb the outcome, fold it
           back into canon. One clock for every capital; when a neighbor moves, your timeline already
           knows.
@@ -107,27 +112,25 @@ export function SplashIssuesTeaser() {
       </div>
 
       <div
-        className={`facet-hierarchy-parent mb-8 rounded-2xl p-4 md:flex md:items-center md:gap-4 md:p-5 ${splashGold.subtlePanel}`}
+        className={
+          "bg-surface border-separator rounded-card shadow-card mb-8 border p-4 md:flex md:items-center md:gap-4 md:p-5"
+        }
       >
         <motion.div
           className={`mx-auto mb-3 flex h-10 w-10 shrink-0 items-center justify-center md:mx-0 md:mb-0 ${splashGold.iconWrapSm}`}
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Clock className="h-5 w-5 text-white" aria-hidden />
+          <Clock className="h-5 w-5" aria-hidden />
         </motion.div>
-        <p className="text-muted-foreground text-center text-sm leading-relaxed md:text-left md:text-base">
+        <p className="text-label-secondary text-body md:text-body text-center leading-relaxed md:text-left">
           IxTime moves faster than the everyday clock — enough runway for arcs, not enough for
           endless waiting. Deadlines respect the shared calendar.
         </p>
       </div>
 
       {isLoading ? (
-        <div
-          className={`mx-auto min-h-[220px] max-w-2xl animate-pulse rounded-xl ${splashGold.subtlePanel}`}
-        />
+        <Skeleton className="rounded-row mx-auto min-h-56 max-w-2xl" />
       ) : issues.length === 0 ? (
-        <p className="text-muted-foreground text-center text-sm leading-relaxed">
+        <p className="text-label-secondary text-body text-center leading-relaxed">
           Open issues will surface here as nations receive new mail — the realm is quiet for the
           moment.
         </p>
@@ -137,38 +140,41 @@ export function SplashIssuesTeaser() {
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          <button
+          <Button
             type="button"
+            variant="bordered"
+            size="icon"
             aria-label="Previous issue"
             onClick={() => go(-1)}
-            className="border-border bg-background/80 text-foreground hover:bg-muted absolute top-1/2 left-0 z-10 hidden h-10 w-10 -translate-x-1 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm md:flex md:-translate-x-12"
+            className="absolute top-1/2 left-0 z-10 hidden -translate-x-1 -translate-y-1/2 rounded-full md:flex md:-translate-x-12"
           >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
+            <ChevronLeft aria-hidden />
+          </Button>
+          <Button
             type="button"
+            variant="bordered"
+            size="icon"
             aria-label="Next issue"
             onClick={() => go(1)}
-            className="border-border bg-background/80 text-foreground hover:bg-muted absolute top-1/2 right-0 z-10 hidden h-10 w-10 translate-x-1 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm md:flex md:translate-x-12"
+            className="absolute top-1/2 right-0 z-10 hidden translate-x-1 -translate-y-1/2 rounded-full md:flex md:translate-x-12"
           >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+            <ChevronRight aria-hidden />
+          </Button>
 
           <div className="mb-3 flex items-center justify-center gap-3">
-            <span className="text-muted-foreground text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote tabular-nums">
               {index + 1} / {issues.length}
             </span>
-            <button
+            <Button
               type="button"
+              variant="gray"
+              size="icon-sm"
+              className="rounded-full"
               aria-label={paused ? "Resume slideshow" : "Pause slideshow"}
               onClick={() => setPaused((p) => !p)}
-              className={cn(
-                "text-muted-foreground hover:bg-muted inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
-                splashGold.border
-              )}
             >
-              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-            </button>
+              {paused ? <Play aria-hidden /> : <Pause aria-hidden />}
+            </Button>
           </div>
 
           <AnimatePresence mode="wait" initial={false}>
@@ -178,13 +184,13 @@ export function SplashIssuesTeaser() {
                 initial={{ opacity: 0, x: 28 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -28 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className={`facet-hierarchy-child bg-card/30 dark:bg-card/15 min-h-[200px] rounded-xl border p-5 ${splashGold.border} ${splashGold.darkBorder}`}
+                transition={springSmooth}
+                className="border-separator bg-surface rounded-card shadow-card min-h-52 border p-5"
               >
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     {current.country.flag ? (
-                      <span className="border-border bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md border">
+                      <span className="border-separator bg-fill-3 rounded-control-sm relative h-10 w-10 shrink-0 overflow-hidden border">
                         <img
                           src={current.country.flag}
                           alt=""
@@ -198,15 +204,13 @@ export function SplashIssuesTeaser() {
                       return <Icon className={`h-5 w-5 shrink-0 ${splashGold.text}`} aria-hidden />;
                     })()}
                   </div>
-                  <Badge className={`text-xs ${splashGold.badge}`}>
-                    {formatSeverityLabel(current.severity)}
-                  </Badge>
+                  <Badge variant="tinted">{formatSeverityLabel(current.severity)}</Badge>
                 </div>
-                <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
+                <p className="text-label-secondary text-eyebrow mb-1">
                   {current.country.name.replace(/_/g, " ")}
                 </p>
-                <h3 className="text-foreground mb-2 text-lg font-semibold">{current.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <h3 className="text-label text-title-3 mb-2">{current.title}</h3>
+                <p className="text-label-secondary text-body leading-relaxed">
                   {teaserFromDescription(current.description, 280)}
                 </p>
               </motion.div>
@@ -222,43 +226,39 @@ export function SplashIssuesTeaser() {
                 aria-current={i === index}
                 onClick={() => setIndex(i)}
                 className={cn(
-                  "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-                  i === index
-                    ? "w-7 bg-amber-500 opacity-95 dark:bg-amber-400"
-                    : "bg-muted-foreground/35 hover:bg-muted-foreground/55 w-1.5"
+                  "h-1.5 rounded-full transition-[width,background-color] duration-300",
+                  i === index ? "bg-tint w-7" : "bg-label-tertiary hover:bg-label-secondary w-1.5"
                 )}
               />
             ))}
           </div>
 
           <div className="mt-4 flex justify-center gap-2 md:hidden">
-            <button
+            <Button
               type="button"
+              variant="bordered"
+              size="icon"
+              className="rounded-full"
               aria-label="Previous issue"
               onClick={() => go(-1)}
-              className={cn(
-                "text-muted-foreground hover:bg-muted inline-flex h-10 w-10 items-center justify-center rounded-full border",
-                splashGold.border
-              )}
             >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
+              <ChevronLeft aria-hidden />
+            </Button>
+            <Button
               type="button"
+              variant="bordered"
+              size="icon"
+              className="rounded-full"
               aria-label="Next issue"
               onClick={() => go(1)}
-              className={cn(
-                "text-muted-foreground hover:bg-muted inline-flex h-10 w-10 items-center justify-center rounded-full border",
-                splashGold.border
-              )}
             >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+              <ChevronRight aria-hidden />
+            </Button>
           </div>
         </div>
       )}
 
-      <p className="text-muted-foreground mt-8 text-center text-sm">
+      <p className="text-label-secondary text-body mt-8 text-center">
         <Link href="/help/gameplay/national-issues" className={splashGold.link}>
           How issues work
         </Link>

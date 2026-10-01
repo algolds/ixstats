@@ -11,11 +11,13 @@ import {
   Crown,
   Quote,
   Group as Users,
-  Globe,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FlagWatermark } from "~/components/ui/facet";
+import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
@@ -174,9 +176,9 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+      transition={springSmooth}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-5 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+        "group border-separator bg-surface rounded-card shadow-card relative overflow-hidden border p-5",
         className
       )}
     >
@@ -198,34 +200,15 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         disabled={isUploadingCoA}
       />
 
-      {/* Cinematic Background Flag Watermark Scrim (from MyCountry National Standing) */}
-      {displayFlag && (
-        <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden opacity-[0.12] transition-opacity duration-300 select-none dark:opacity-[0.16]">
-          <img
-            src={displayFlag}
-            alt=""
-            className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
-          />
-          <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
-        </div>
-      )}
-
-      {/* Ambient warm gradient halo */}
-      <div
-        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-500/10 blur-3xl transition-opacity duration-700 group-hover:opacity-100"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-teal-500/10 blur-3xl transition-opacity duration-700 group-hover:opacity-100"
-        aria-hidden="true"
-      />
+      {/* Corner flag watermark (Facet hero identity, reference §3) */}
+      <FlagWatermark src={displayFlag} />
 
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {/* Left Side: National Symbols & Insignia */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
+        <div className="flex min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center">
           {/* Flag Preview with Overlay Actions */}
-          <div className="relative group/flag shrink-0">
-            <div className="relative h-24 w-36 overflow-hidden rounded-xl border border-border/40 bg-muted/40 shadow-md">
+          <div className="group/flag relative shrink-0">
+            <div className="rounded-row border-separator bg-fill-3 shadow-card relative h-24 w-36 overflow-hidden border">
               {displayFlag ? (
                 <img
                   src={displayFlag}
@@ -233,21 +216,21 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                   className="h-full w-full object-cover transition-transform duration-300 group-hover/flag:scale-105"
                 />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 p-2 text-center text-muted-foreground">
-                  <Flag className="h-6 w-6 text-muted-foreground/60" />
-                  <span className="text-xs font-semibold">No Flag</span>
+                <div className="text-label-secondary flex h-full w-full flex-col items-center justify-center gap-1.5 p-2 text-center">
+                  <Flag className="text-label-tertiary h-6 w-6" />
+                  <span className="text-caption">No Flag</span>
                 </div>
               )}
 
               {/* Hover Quick Action Scrim */}
-              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 backdrop-blur-xs transition-opacity duration-200 group-hover/flag:opacity-100">
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity duration-200 group-hover/flag:opacity-100">
                 <button
                   type="button"
                   onClick={() => {
                     soundEffects.press();
                     onSelectFlag();
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
+                  className="rounded-control flex size-8 items-center justify-center bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
                   title="Search IxWiki Repository"
                   data-cuelume-press
                 >
@@ -259,7 +242,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     soundEffects.press();
                     flagInputRef.current?.click();
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
+                  className="rounded-control flex size-8 items-center justify-center bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
                   title="Upload Custom Flag"
                   disabled={isUploadingFlag}
                   data-cuelume-press
@@ -270,8 +253,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             </div>
 
             {/* Coat of Arms Badge overlapping Flag corner */}
-            <div className="group/coa absolute -bottom-2 -right-2">
-              <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-card shadow-md">
+            <div className="group/coa absolute -right-2 -bottom-2">
+              <div className="border-background bg-surface shadow-card relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2">
                 {displayCoa ? (
                   <img
                     src={displayCoa}
@@ -279,11 +262,11 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     className="h-full w-full object-contain p-0.5"
                   />
                 ) : (
-                  <Shield className="h-5 w-5 text-muted-foreground/60" />
+                  <Shield className="text-label-tertiary h-5 w-5" />
                 )}
 
                 {/* Coat of Arms Hover Action Scrim */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-xs transition-opacity duration-200 group-hover/coa:opacity-100">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-200 group-hover/coa:opacity-100">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -305,31 +288,22 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
           {/* Core Text Details */}
           <div className="min-w-0 flex-1 space-y-1.5">
             {/* Meta Pill Badges */}
-            <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              <Badge
-                variant="secondary"
-                className="gap-1 border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-500 dark:text-amber-400"
-              >
-                <Crown className="h-3 w-3" />
+            <div className="text-footnote flex flex-wrap items-center gap-1.5">
+              <Badge variant="tinted">
+                <Crown aria-hidden />
                 <span>{governmentType || "Republic"}</span>
               </Badge>
 
               {demonym && (
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium text-foreground"
-                >
-                  <Users className="h-3 w-3 text-muted-foreground" />
+                <Badge variant="neutral">
+                  <Users aria-hidden />
                   <span>{demonym}</span>
                 </Badge>
               )}
 
               {capitalCity && (
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium text-foreground"
-                >
-                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                <Badge variant="neutral">
+                  <MapPin aria-hidden />
                   <span>{capitalCity}</span>
                 </Badge>
               )}
@@ -337,11 +311,11 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
             {/* Display Nation Name */}
             <div>
-              <h2 className="text-foreground truncate text-2xl sm:text-3xl font-extrabold tracking-tight">
+              <h2 className="text-title-1 sm:text-large-title text-label truncate">
                 {displayCountryName}
               </h2>
               {displayOfficialName && displayOfficialName !== displayCountryName && (
-                <p className="text-muted-foreground truncate text-xs sm:text-sm font-medium italic">
+                <p className="text-label-secondary text-caption sm:text-body truncate italic">
                   {displayOfficialName}
                 </p>
               )}
@@ -349,7 +323,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
             {/* National Motto Quote */}
             {motto && (
-              <div className="flex items-center gap-1.5 pt-0.5 text-xs text-amber-600/90 dark:text-amber-400/90 italic">
+              <div className="text-footnote text-tint flex items-center gap-1.5 pt-0.5 italic">
                 <Quote className="h-3 w-3 shrink-0 opacity-70" />
                 <span className="truncate">“{motto}”</span>
               </div>
@@ -358,32 +332,32 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         </div>
 
         {/* Right Side: Symbol Quick Action Buttons */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-start lg:self-center shrink-0">
-          <button
+        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:flex-nowrap lg:self-center">
+          <Button
             type="button"
+            variant="bordered"
+            size="sm"
             onClick={() => {
               soundEffects.press();
               onSelectFlag();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/40 hover:bg-accent active:scale-[0.98]"
-            data-cuelume-press
           >
-            <Flag className="h-3.5 w-3.5 text-amber-500" />
+            <Flag aria-hidden className="text-tint" />
             <span>Select Flag</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="bordered"
+            size="sm"
             onClick={() => {
               soundEffects.press();
               onSelectCoatOfArms();
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-teal-500/40 hover:bg-accent active:scale-[0.98]"
-            data-cuelume-press
           >
-            <Shield className="h-3.5 w-3.5 text-teal-500" />
+            <Shield aria-hidden className="text-teal" />
             <span>Select Emblem</span>
-          </button>
+          </Button>
         </div>
       </div>
     </motion.div>

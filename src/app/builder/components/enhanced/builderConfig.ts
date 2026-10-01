@@ -68,15 +68,16 @@ export const EDIT_MODE_FIELD_LOCKS: Record<string, FieldLockConfig> = {
   },
 };
 
-// Define the primary MyCountry gold theme
-export const BUILDER_GOLD = "from-amber-500 to-yellow-600";
-export const BUILDER_GOLD_HOVER = "hover:from-amber-600 hover:to-yellow-700";
+// The builder wears the MyCountry tint (gold) — see app/builder/layout.tsx `data-app`.
+export const BUILDER_GOLD = "bg-tint text-on-tint";
+export const BUILDER_GOLD_HOVER = "hover:bg-tint-hover";
 
 export interface StepConfig {
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
+  /** Background wash (a role class; no longer a gradient). */
   bgGradient: string;
   borderColor: string;
   hoverColor: string;
@@ -90,9 +91,9 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     description: "Choose your starting country",
     icon: Crown,
     color: BUILDER_GOLD,
-    bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-    borderColor: "border-amber-500/20",
-    hoverColor: "hover:border-amber-500/40",
+    bgGradient: "bg-tint-fill",
+    borderColor: "border-tint/20",
+    hoverColor: "hover:border-tint/40",
     tip: "Select a real-world country as your foundation to inherit its basic characteristics",
     help: "Choose a country that will serve as the foundation for your new country. You'll inherit its basic economic and demographic characteristics which you can then customize.",
   },
@@ -101,9 +102,9 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     description: "Define country character",
     icon: Flag,
     color: BUILDER_GOLD,
-    bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-    borderColor: "border-amber-500/20",
-    hoverColor: "hover:border-amber-500/40",
+    bgGradient: "bg-tint-fill",
+    borderColor: "border-tint/20",
+    hoverColor: "hover:border-tint/40",
     tip: "Establish your country's identity and core economic metrics",
     help: "Set up your country's fundamental identity including name, symbols, and core economic indicators that will drive all other calculations.",
   },
@@ -112,9 +113,9 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     description: "Design your structure",
     icon: Building2,
     color: BUILDER_GOLD,
-    bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-    borderColor: "border-amber-500/20",
-    hoverColor: "hover:border-amber-500/40",
+    bgGradient: "bg-tint-fill",
+    borderColor: "border-tint/20",
+    hoverColor: "hover:border-tint/40",
     tip: "Build your government using atomic components that create emergent behaviors",
     help: "Design your government structure using atomic components. Each component adds unique characteristics and behaviors to your country.",
   },
@@ -123,9 +124,9 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     description: "Configure systems",
     icon: TrendingUp,
     color: BUILDER_GOLD,
-    bgGradient: "from-amber-500/10 via-amber-500/5 to-transparent",
-    borderColor: "border-amber-500/20",
-    hoverColor: "hover:border-amber-500/40",
+    bgGradient: "bg-tint-fill",
+    borderColor: "border-tint/20",
+    hoverColor: "hover:border-tint/40",
     tip: "Fine-tune economic parameters, tax policies, and demographic settings",
     help: "Configure detailed economic systems including sectors, labor markets, fiscal policy, tax structure, and demographics.",
   },
@@ -133,10 +134,10 @@ export const stepConfig: Record<BuilderStep, StepConfig> = {
     title: "Preview",
     description: "Review & create",
     icon: CheckCircle,
-    color: "from-green-500 to-green-600",
-    bgGradient: "from-green-500/10 via-green-500/5 to-transparent",
-    borderColor: "border-green-500/20",
-    hoverColor: "hover:border-green-500/40",
+    color: "bg-green text-on-green",
+    bgGradient: "bg-green/10",
+    borderColor: "border-green/20",
+    hoverColor: "hover:border-green/40",
     tip: "Review all your configurations before creating your country",
     help: "Review all your selections and configurations. Make sure everything looks correct before finalizing your country.",
   },
@@ -159,4 +160,3 @@ export function getStepsForMode(mode: BuilderMode, isScratchOrImport?: boolean):
     ? ["core", "government", "economics", "preview"]
     : ["foundation", "core", "government", "economics", "preview"];
 }
-

@@ -120,7 +120,7 @@ export function BuilderSidebarLayout({
                 variant="ghost"
                 size="sm"
                 onClick={handleResetClick}
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive px-4 text-xs font-medium select-none"
+                className="text-label-secondary hover:bg-destructive/10 hover:text-destructive text-caption px-4 select-none"
               >
                 {mode === "edit" ? (
                   <>

@@ -44,19 +44,17 @@ export function WikiDeepScanPanel({
 
   if (isLoading) {
     return (
-      <Card className="border-2 border-emerald-500/20 bg-emerald-500/5">
+      <Card className="border-green/20 bg-green/5 border-2">
         <CardContent className="p-8 text-center">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="mx-auto mb-4 h-12 w-12 text-emerald-500"
+            className="text-green mx-auto mb-4 h-12 w-12"
           >
             <Search className="h-full w-full" />
           </motion.div>
-          <h3 className="mb-2 text-xl font-bold">
-            LoreScanner is analyzing your nation's lore ...
-          </h3>
-          <p className="text-muted-foreground mx-auto mb-4 max-w-md text-sm">
+          <h3 className="text-title-2 mb-2">LoreScanner is analyzing your nation's lore ...</h3>
+          <p className="text-label-secondary text-body mx-auto mb-4 max-w-md">
             LoreScanner is searching for related pages (Economy, Politics, Demographics) to extract
             richer data for your nation.
           </p>
@@ -67,19 +65,17 @@ export function WikiDeepScanPanel({
 
   if (error || !data) {
     return (
-      <Card className="border-2 border-amber-500/20 bg-amber-500/5">
+      <Card className="border-tint/20 bg-tint-fill border-2">
         <CardContent className="p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+          <div className="bg-tint/20 text-tint mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <Settings2 className="h-6 w-6" />
           </div>
-          <h3 className="mb-2 text-xl font-bold">LoreScanner Unavailable</h3>
-          <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+          <h3 className="text-title-2 mb-2">LoreScanner Unavailable</h3>
+          <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
             LoreScanner encountered an error! You can still proceed with the basic infobox data for
             now and we'll try again later.
           </p>
-          <Button onClick={onSkip} className="bg-amber-500 hover:bg-amber-600">
-            Proceed
-          </Button>
+          <Button onClick={onSkip}>Proceed</Button>
         </CardContent>
       </Card>
     );
@@ -94,19 +90,19 @@ export function WikiDeepScanPanel({
 
   if (!hasGov && !hasEcon && !hasDemo) {
     return (
-      <Card className="border-2 border-emerald-500/20 bg-emerald-500/5">
+      <Card className="border-green/20 bg-green/5 border-2">
         <CardContent className="p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-500">
+          <div className="bg-green/20 text-green mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <CheckCircle2 className="h-6 w-6" />
           </div>
-          <h3 className="mb-2 text-xl font-bold">Scan Complete</h3>
-          <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+          <h3 className="text-title-2 mb-2">Scan Complete</h3>
+          <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
             Scanned {foundVariants.length} pages, but didn't find any additional structured data.
             We'll proceed with the infobox data.
           </p>
           <Button
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="bg-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             Continue to Builder <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
@@ -116,15 +112,15 @@ export function WikiDeepScanPanel({
   }
 
   return (
-    <Card className="border-2 border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+    <Card className="border-green/30 shadow-floating border-2">
       <CardContent className="p-6">
         <div className="mb-6 flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-500">
+          <div className="rounded-row bg-green/20 text-green flex h-12 w-12 items-center justify-center">
             <Database className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold">Deep Scan Results</h3>
-            <p className="text-muted-foreground text-sm">
+            <h3 className="text-title-2">Deep Scan Results</h3>
+            <p className="text-label-secondary text-body">
               Analyzed {foundVariants.length} pages. We found additional data we can pre-fill!
             </p>
           </div>
@@ -132,14 +128,14 @@ export function WikiDeepScanPanel({
 
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {hasGov && (
-            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
-              <h4 className="mb-3 flex items-center gap-2 font-medium text-blue-500">
+            <div className="border-separator bg-fill-4 rounded-control border p-4">
+              <h4 className="text-blue mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Government
               </h4>
-              <ul className="space-y-2 text-sm">
+              <ul className="text-body space-y-2">
                 {extractedData.government?.governmentType && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Type</span>
+                    <span className="text-label-secondary">Type</span>
                     <span className="font-medium capitalize">
                       {extractedData.government.governmentType}
                     </span>
@@ -147,7 +143,7 @@ export function WikiDeepScanPanel({
                 )}
                 {extractedData.government?.legislature && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Legislature</span>
+                    <span className="text-label-secondary">Legislature</span>
                     <span className="font-medium">{extractedData.government.legislature}</span>
                   </li>
                 )}
@@ -156,14 +152,14 @@ export function WikiDeepScanPanel({
           )}
 
           {hasEcon && (
-            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
-              <h4 className="mb-3 flex items-center gap-2 font-medium text-green-500">
+            <div className="border-separator bg-fill-4 rounded-control border p-4">
+              <h4 className="text-green mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Economy
               </h4>
-              <ul className="space-y-2 text-sm">
+              <ul className="text-body space-y-2">
                 {extractedData.economy?.gdpNominal && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Nominal GDP</span>
+                    <span className="text-label-secondary">Nominal GDP</span>
                     <span className="font-medium">
                       {(extractedData.economy.gdpNominal / 1e9).toFixed(1)}B
                     </span>
@@ -171,7 +167,7 @@ export function WikiDeepScanPanel({
                 )}
                 {extractedData.economy?.gdpPerCapita && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Per Capita</span>
+                    <span className="text-label-secondary">Per Capita</span>
                     <span className="font-medium">
                       ${extractedData.economy.gdpPerCapita.toLocaleString()}
                     </span>
@@ -182,14 +178,14 @@ export function WikiDeepScanPanel({
           )}
 
           {hasDemo && (
-            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
-              <h4 className="mb-3 flex items-center gap-2 font-medium text-amber-500">
+            <div className="border-separator bg-fill-4 rounded-control border p-4">
+              <h4 className="text-tint mb-3 flex items-center gap-2 font-medium">
                 <FileText className="h-4 w-4" /> Demographics
               </h4>
-              <ul className="space-y-2 text-sm">
+              <ul className="text-body space-y-2">
                 {extractedData.demographics?.population && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Population</span>
+                    <span className="text-label-secondary">Population</span>
                     <span className="font-medium">
                       {(extractedData.demographics.population / 1e6).toFixed(1)}M
                     </span>
@@ -197,7 +193,7 @@ export function WikiDeepScanPanel({
                 )}
                 {extractedData.demographics?.lifeExpectancy && (
                   <li className="flex justify-between">
-                    <span className="text-muted-foreground">Life Exp.</span>
+                    <span className="text-label-secondary">Life Exp.</span>
                     <span className="font-medium">
                       {extractedData.demographics.lifeExpectancy} yrs
                     </span>
@@ -212,12 +208,12 @@ export function WikiDeepScanPanel({
           <Button
             variant="outline"
             onClick={() => onDataExtracted(undefined, data.pages)}
-            className="active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           >
             Skip Deep Data
           </Button>
           <Button
-            className="bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="bg-green text-on-green hover:bg-green transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             onClick={() => onDataExtracted(extractedData, data.pages)}
           >
             Import Enhanced Data <ChevronRight className="ml-2 h-4 w-4" />

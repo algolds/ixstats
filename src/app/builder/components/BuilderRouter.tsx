@@ -61,10 +61,10 @@ function SectionSkeleton() {
   return (
     <div className="space-y-4 p-6" role="status" aria-label="Loading section">
       <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="rounded-row h-64" />
       <div className="grid grid-cols-2 gap-4">
-        <Skeleton className="h-32 rounded-lg" />
-        <Skeleton className="h-32 rounded-lg" />
+        <Skeleton className="rounded-control h-32" />
+        <Skeleton className="rounded-control h-32" />
       </div>
     </div>
   );
@@ -493,19 +493,15 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         >
-          <FacetCard depth={2} className="mx-auto max-w-md space-y-6 rounded-2xl p-8 text-center">
-            <Lock aria-hidden="true" className="mx-auto h-10 w-10 text-amber-500" />
+          <FacetCard className="rounded-card mx-auto max-w-md space-y-6 p-8 text-center">
+            <Lock aria-hidden="true" className="text-tint mx-auto h-10 w-10" />
             <div className="space-y-2">
-              <h2 className="text-foreground text-2xl font-semibold">Authentication Required</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-label text-title-1">Authentication Required</h2>
+              <p className="text-label-secondary">
                 Sign in to access the MyCountry Builder and create your custom nation
               </p>
             </div>
-            <Button
-              onClick={() => router.push(createUrl("/sign-in"))}
-              size="lg"
-              className="w-full bg-amber-600 text-white hover:bg-amber-600/90"
-            >
+            <Button onClick={() => router.push(createUrl("/sign-in"))} size="lg" className="w-full">
               <UnlockIcon aria-hidden="true" className="h-4 w-4" />
               Sign In to Continue
             </Button>
@@ -522,15 +518,11 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   if (isEdit && countryLoadError) {
     return (
       <div className="flex w-full flex-1 items-start justify-center px-4 pt-24 sm:pt-28 lg:pt-32">
-        <FacetCard
-          depth={2}
-          role="alert"
-          className="w-full max-w-md space-y-4 rounded-2xl p-6 text-center"
-        >
+        <FacetCard role="alert" className="rounded-card w-full max-w-md space-y-4 p-6 text-center">
           <WarningTriangle aria-hidden="true" className="text-destructive mx-auto h-6 w-6" />
           <div className="space-y-1">
-            <h1 className="text-foreground text-lg font-semibold">Couldn't open your country</h1>
-            <p className="text-muted-foreground text-sm">{countryLoadError}</p>
+            <h1 className="text-label text-title-3">Couldn't open your country</h1>
+            <p className="text-label-secondary text-body">{countryLoadError}</p>
           </div>
           <div className="flex flex-col-reverse justify-center gap-2 sm:flex-row">
             <Button variant="outline" onClick={() => router.push(createUrl("/mycountry"))}>
@@ -593,7 +585,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
       <BuilderGuideSheet />
       <div className="relative flex min-h-screen w-full flex-1 flex-col">
         {/* Facet paper-grain canvas behind the builder/editor */}
-        <TextureOverlay texture="paperGrain" opacity={0.3} className="fixed z-0 select-none" />
+        <TextureOverlay texture="paperGrain" opacity={0.05} className="fixed z-0 select-none" />
         <BuilderSidebarLayout
           activeSection={activeSection}
           onNavigate={handleNavigate}

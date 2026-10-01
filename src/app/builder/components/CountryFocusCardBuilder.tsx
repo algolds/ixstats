@@ -8,7 +8,6 @@ import { formatFullWordNumber } from "~/app/builder/components/enhanced/steps/fo
 import { Globe, Check, Xmark as X } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
 
 export interface CountryCardData {
   id: string;
@@ -75,7 +74,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
       softSelectedCountryId === country.originalId || softSelectedCountryId === country.id;
 
     return (
-      <div className={cn("relative overflow-visible rounded-xl", aspectClass)}>
+      <div className={cn("rounded-row relative overflow-visible", aspectClass)}>
         <motion.div
           className="group relative h-full w-full cursor-pointer select-none"
           data-cuelume-press
@@ -88,16 +87,16 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         >
           <div
             className={cn(
-              "relative h-full w-full overflow-hidden rounded-xl border shadow-sm transition-[border-color,box-shadow] duration-200 ease-out group-hover:shadow-md",
+              "rounded-row shadow-card group-hover:shadow-floating relative h-full w-full overflow-hidden border transition-[border-color,box-shadow] duration-200 ease-out",
               isSelected
-                ? "border-amber-500 ring-2 ring-amber-500/50"
-                : "border-border hover:border-foreground/30"
+                ? "border-tint ring-tint/50 ring-2"
+                : "border-separator hover:border-label-tertiary"
             )}
           >
             {/* Selected Checkmark Badge */}
             {isSelected && (
               <Badge
-                className="absolute top-3 right-3 z-30 bg-amber-600 text-white"
+                className="bg-tint text-on-tint absolute top-3 right-3 z-30"
                 aria-hidden="true"
               >
                 <Check className="stroke-[3]" />
@@ -115,55 +114,47 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                   className="absolute inset-0 z-40"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <FacetContainer
-                    depth={3}
-                    surface="solid"
-                    className="flex h-full flex-col justify-between rounded-xl border-amber-500/60 p-3 text-center select-none sm:p-3.5"
-                  >
+                  <div className="bg-surface-elevated border-tint rounded-row shadow-floating flex h-full flex-col justify-between border p-3 text-center select-none">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="border-amber-500/40 text-amber-600">
+                      <Badge variant="tinted">
                         <Check aria-hidden="true" className="stroke-[3]" />
                         Confirm
                       </Badge>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
+                        variant="plain"
+                        size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           onCancelSelect?.();
                         }}
-                        className="text-muted-foreground h-7 w-7 rounded-full"
+                        className="text-label-secondary rounded-full"
                         aria-label="Cancel selection"
                       >
-                        <X aria-hidden="true" className="h-3.5 w-3.5" />
+                        <X aria-hidden="true" />
                       </Button>
                     </div>
 
                     <div className="my-auto space-y-2">
                       <div>
-                        <h4 className="text-foreground line-clamp-1 text-sm leading-tight font-semibold tracking-tight sm:text-base">
-                          {country.name}
-                        </h4>
-                        <p className="text-muted-foreground text-xs font-medium">
-                          Use as template?
-                        </p>
+                        <h4 className="text-headline text-label line-clamp-1">{country.name}</h4>
+                        <p className="text-label-secondary text-caption">Use as template?</p>
                       </div>
 
                       {(country.population !== undefined || country.gdpPerCapita !== undefined) && (
-                        <div className="border-border space-y-1 rounded-lg border p-2 text-left text-xs">
+                        <div className="bg-surface-secondary rounded-control text-footnote space-y-1 p-2 text-left tabular-nums">
                           {country.population !== undefined && (
                             <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">Population</span>
-                              <span className="text-foreground font-semibold">
+                              <span className="text-label-secondary">Population</span>
+                              <span className="text-label font-semibold">
                                 {formatFullWordNumber(country.population)}
                               </span>
                             </div>
                           )}
                           {country.gdpPerCapita !== undefined && (
                             <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">GDP per capita</span>
-                              <span className="text-foreground font-semibold">
+                              <span className="text-label-secondary">GDP per capita</span>
+                              <span className="text-label font-semibold">
                                 ${Math.round(country.gdpPerCapita).toLocaleString()}
                               </span>
                             </div>
@@ -175,7 +166,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                     <div className="flex items-center gap-1.5 pt-2">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="bordered"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -192,12 +183,12 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                           e.stopPropagation();
                           onConfirmSelect?.(country.id);
                         }}
-                        className="flex-1 bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
+                        className="flex-1"
                       >
                         Yes →
                       </Button>
                     </div>
-                  </FacetContainer>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -215,19 +206,14 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="bg-muted absolute inset-0 flex items-center justify-center">
-                <Globe aria-hidden="true" className="text-muted-foreground h-12 w-12" />
+              <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
+                <Globe aria-hidden="true" className="text-label-secondary h-12 w-12" />
               </div>
             )}
 
-            {/* Ambient Scrim Overlay */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 transition-opacity duration-200 group-hover:opacity-100" />
-
-            {/* Persistent Country Name Label */}
-            <div className="pointer-events-none absolute right-3.5 bottom-3.5 left-3.5 z-10 sm:right-4 sm:bottom-4 sm:left-4">
-              <span className="text-base font-semibold tracking-tight text-white antialiased [text-shadow:0_2px_8px_rgba(0,0,0,0.75)] sm:text-lg">
-                {country.name}
-              </span>
+            {/* Persistent Country Name Label — a flat image scrim band (fixed white on black) */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-black/60 px-3 py-2">
+              <span className="text-headline line-clamp-2 text-white">{country.name}</span>
             </div>
           </div>
         </motion.div>

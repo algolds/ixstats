@@ -93,7 +93,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   }, [steps, currentIndex]);
 
   return (
-    <div className="border-border mt-10 flex flex-col gap-3 border-t pt-6 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="border-separator mt-10 flex flex-col gap-3 border-t pt-6 pb-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: Previous step navigation & subtle discard link */}
       <div className="flex items-center gap-3">
         <Button type="button" variant="outline" onClick={onBack} disabled={isBackDisabled}>
@@ -106,7 +106,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
           variant="link"
           size="xs"
           onClick={handleReset}
-          className="text-muted-foreground hover:text-destructive"
+          className="text-label-secondary hover:text-destructive"
         >
           {mode === "edit" ? "Discard changes & exit" : "Restart builder"}
         </Button>
@@ -121,13 +121,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
           />
         )}
         {isOnPreview ? (
-          <Button
-            type="button"
-            onClick={onSubmit}
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
-            className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
-          >
+          <Button type="button" onClick={onSubmit} disabled={isSubmitting} aria-busy={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
@@ -141,11 +135,7 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
             )}
           </Button>
         ) : (
-          <Button
-            type="button"
-            onClick={onContinue}
-            className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
-          >
+          <Button type="button" onClick={onContinue}>
             <span>{nextStepLabel ? `Continue to ${nextStepLabel}` : "Continue"}</span>
             <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
           </Button>

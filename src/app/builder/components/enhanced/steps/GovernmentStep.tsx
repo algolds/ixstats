@@ -68,7 +68,8 @@ export function GovernmentStep({
     return {
       structure: {
         governmentName: `Government of ${selectedCountry?.name || "the Nation"}`,
-        governmentType: (economicInputs?.nationalIdentity?.governmentType || "Other") as GovernmentType,
+        governmentType: (economicInputs?.nationalIdentity?.governmentType ||
+          "Other") as GovernmentType,
         headOfState: "",
         headOfGovernment: "",
         legislatureName: "",
@@ -250,8 +251,18 @@ export function GovernmentStep({
 
       const budgetYear = currentBudgetYear();
       const defaultAllocations = [
-        { departmentId: "0", budgetYear, allocatedPercent: 15, allocatedAmount: totalBudget * 0.15 },
-        { departmentId: "1", budgetYear, allocatedPercent: 25, allocatedAmount: totalBudget * 0.25 },
+        {
+          departmentId: "0",
+          budgetYear,
+          allocatedPercent: 15,
+          allocatedAmount: totalBudget * 0.15,
+        },
+        {
+          departmentId: "1",
+          budgetYear,
+          allocatedPercent: 25,
+          allocatedAmount: totalBudget * 0.25,
+        },
         { departmentId: "2", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
         { departmentId: "3", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
         { departmentId: "4", budgetYear, allocatedPercent: 20, allocatedAmount: totalBudget * 0.2 },
@@ -337,14 +348,7 @@ export function GovernmentStep({
       >
         {activeTab === "components" && (
           <div className="space-y-6">
-            <FacetCard
-              depth="base"
-              theme="gold"
-              className="border-amber-500/20"
-              texture="chevron"
-              textureOpacity={0.04}
-              interactive="none"
-            >
+            <FacetCard className="border-tint/20" interactive="none">
               <FacetCardContent className="p-6">
                 <AtomicGovernmentComponents
                   initialComponents={governmentComponents}
@@ -362,16 +366,10 @@ export function GovernmentStep({
         {activeTab === "structure" && (
           <div className="space-y-6">
             {/* Departments list */}
-            <FacetCard
-              depth="base"
-              theme="gold"
-              className="border-amber-500/20"
-              texture="chevron"
-              textureOpacity={0.04}
-            >
-              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Users className="h-5 w-5 text-amber-400" />
+            <FacetCard>
+              <div className="border-separator border-b px-6 py-4">
+                <h3 className="text-label text-headline flex items-center gap-2">
+                  <Users className="text-tint h-5 w-5" />
                   Government Departments
                 </h3>
               </div>
@@ -427,16 +425,10 @@ export function GovernmentStep({
             </FacetCard>
 
             {/* Budget Allocations list */}
-            <FacetCard
-              depth="base"
-              theme="gold"
-              className="border-amber-500/20"
-              texture="chevron"
-              textureOpacity={0.04}
-            >
-              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <DollarSign className="h-5 w-5 text-amber-400" />
+            <FacetCard>
+              <div className="border-separator border-b px-6 py-4">
+                <h3 className="text-label text-headline flex items-center gap-2">
+                  <DollarSign className="text-tint h-5 w-5" />
                   Budget Allocations
                 </h3>
               </div>
@@ -468,15 +460,13 @@ export function GovernmentStep({
                     const numDepts = governmentStructure.departments.length;
                     if (numDepts === 0) return;
                     const evenPercent = 100 / numDepts;
-                    const fixedAllocations = governmentStructure.departments.map(
-                      (_dept, idx) => ({
-                        departmentId: idx.toString(),
-                        budgetYear: currentBudgetYear(),
-                        allocatedPercent: evenPercent,
-                        allocatedAmount: Math.round((totalBudgetVal * evenPercent) / 100),
-                        notes: "Even redistribution",
-                      })
-                    );
+                    const fixedAllocations = governmentStructure.departments.map((_dept, idx) => ({
+                      departmentId: idx.toString(),
+                      budgetYear: currentBudgetYear(),
+                      allocatedPercent: evenPercent,
+                      allocatedAmount: Math.round((totalBudgetVal * evenPercent) / 100),
+                      notes: "Even redistribution",
+                    }));
                     onGovernmentStructureChange({
                       ...governmentStructure,
                       budgetAllocations: fixedAllocations,
@@ -498,8 +488,8 @@ export function GovernmentStep({
             <div className="space-y-6">
               {/* GDP Cap Alert Banner */}
               {gdpCapWarning && (
-                <div className="flex items-start gap-2.5 rounded-lg border border-red-500/25 bg-red-500/5 p-3.5 text-xs text-red-200">
-                  <AlertTriangle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-red-400" />
+                <div className="rounded-control border-red/25 bg-red/5 text-footnote text-red flex items-start gap-2.5 border p-3.5">
+                  <AlertTriangle className="text-red mt-0.5 h-4.5 w-4.5 shrink-0" />
                   <div className="leading-relaxed">{gdpCapWarning}</div>
                 </div>
               )}
@@ -535,17 +525,14 @@ export function GovernmentStep({
                 totalRevenue={governmentStructure.structure.totalBudget}
                 currency={governmentStructure.structure.budgetCurrency || "USD"}
                 isReadOnly={false}
-                availableDepartments={governmentStructure.departments.map(
-                  (d, idx) => ({
-                    id: idx.toString(),
-                    name: d.name,
-                  })
-                )}
+                availableDepartments={governmentStructure.departments.map((d, idx) => ({
+                  id: idx.toString(),
+                  name: d.name,
+                }))}
               />
             </div>
           </div>
         )}
-
       </BuilderTabCard>
     </div>
   );

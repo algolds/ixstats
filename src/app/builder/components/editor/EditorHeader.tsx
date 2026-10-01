@@ -33,7 +33,7 @@ function CountryFlag({ url, name }: { url?: string | null; name: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = src && failedSrc !== src;
   return (
-    <div className="border-border bg-muted flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border sm:h-12 sm:w-[72px]">
+    <div className="border-separator bg-fill-3 rounded-control flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden border sm:h-12 sm:w-[72px]">
       {showImage ? (
         <img
           src={src}
@@ -42,7 +42,7 @@ function CountryFlag({ url, name }: { url?: string | null; name: string }) {
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <WhiteFlag aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+        <WhiteFlag aria-hidden="true" className="text-label-secondary h-5 w-5" />
       )}
     </div>
   );
@@ -68,9 +68,9 @@ export const EditorHeader = React.memo(function EditorHeader({
 
   return (
     <header className="mx-auto w-full max-w-6xl px-4 pb-4">
-      <FacetCard depth={2} className="flex flex-col gap-4 rounded-2xl p-4 sm:p-6">
+      <FacetCard className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button asChild variant="ghost" size="sm" className="-ml-2 gap-1 text-sm">
+          <Button asChild variant="ghost" size="sm" className="text-body -ml-2 gap-1">
             <Link href="/mycountry">
               <NavArrowLeft aria-hidden="true" className="h-4 w-4" />
               MyCountry
@@ -98,13 +98,11 @@ export const EditorHeader = React.memo(function EditorHeader({
           <CountryFlag url={flagUrl} name={displayName} />
           <div className="min-w-0">
             <Eyebrow className="block">Country Editor</Eyebrow>
-            <h1 className="text-foreground truncate text-xl font-semibold tracking-tight sm:text-2xl">
-              {displayName}
-            </h1>
+            <h1 className="text-label text-title-2 sm:text-title-1 truncate">{displayName}</h1>
             <p
               className={cn(
-                "text-sm",
-                saveStatus === "error" ? "text-destructive" : "text-muted-foreground"
+                "text-body",
+                saveStatus === "error" ? "text-destructive" : "text-label-secondary"
               )}
             >
               {describeSaveStatus(saveStatus, lastSyncedAt)}
@@ -137,26 +135,26 @@ export const EditorHeader = React.memo(function EditorHeader({
                     data-cuelume-hover="tick"
                     className={cn(
                       // Interactive row (depth 3) nested in the header card: a solid surface, no stacked blur.
-                      "flex h-full min-h-11 w-full items-start gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
-                      "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                      "rounded-row flex h-full min-h-11 w-full items-start gap-3 border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
+                      "focus-visible:ring-tint focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive
-                        ? "border-amber-500/50 bg-amber-500/10"
-                        : "border-border bg-card hover:bg-accent"
+                        ? "border-tint/50 bg-tint-fill"
+                        : "border-separator bg-surface hover:bg-fill-3"
                     )}
                   >
                     <Icon
                       aria-hidden="true"
                       className={cn(
                         "mt-0.5 h-5 w-5 shrink-0",
-                        isActive ? "text-amber-500" : "text-muted-foreground"
+                        isActive ? "text-tint" : "text-label-secondary"
                       )}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="text-foreground flex items-center gap-2 text-sm font-semibold">
+                      <span className="text-label text-headline flex items-center gap-2">
                         {item.label}
                         {status && <span className="sr-only">({status})</span>}
                       </span>
-                      <span className="text-muted-foreground hidden text-xs sm:block">
+                      <span className="text-label-secondary text-footnote hidden sm:block">
                         {item.description}
                       </span>
                     </span>
@@ -165,7 +163,7 @@ export const EditorHeader = React.memo(function EditorHeader({
                       {changes > 0 && (
                         <Badge
                           variant="outline"
-                          className="border-amber-500/40 bg-amber-500/10 tabular-nums"
+                          className="border-tint/40 bg-tint-fill tabular-nums"
                         >
                           {changes}
                         </Badge>

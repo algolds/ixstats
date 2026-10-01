@@ -98,7 +98,7 @@ export function EditorLeaveGuard({ hasUnsavedChanges, onSave }: EditorLeaveGuard
     >
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-foreground">
+          <AlertDialogTitle className="text-label">
             Save your changes before leaving?
           </AlertDialogTitle>
           <AlertDialogDescription className="leading-relaxed">

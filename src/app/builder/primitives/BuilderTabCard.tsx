@@ -42,46 +42,46 @@ export function BuilderTabCard({
     }
   > = {
     foundation: {
-      indicatorBg: "bg-amber-500/10",
-      indicatorBorder: "border-amber-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(245,158,11,0.2)]",
-      activeText: "text-amber-400 font-bold",
-      activeIcon: "text-amber-400",
+      indicatorBg: "bg-tint-fill",
+      indicatorBorder: "border-tint/20",
+      indicatorGlow: "",
+      activeText: "text-tint font-bold",
+      activeIcon: "text-tint",
     },
     identity: {
-      indicatorBg: "bg-teal-500/10",
-      indicatorBorder: "border-teal-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(20,184,166,0.2)]",
-      activeText: "text-teal-400 font-bold",
-      activeIcon: "text-teal-400",
+      indicatorBg: "bg-teal/10",
+      indicatorBorder: "border-teal/20",
+      indicatorGlow: "",
+      activeText: "text-teal font-bold",
+      activeIcon: "text-teal",
     },
     government: {
-      indicatorBg: "bg-cyan-500/10",
-      indicatorBorder: "border-cyan-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(6,182,212,0.2)]",
-      activeText: "text-cyan-400 font-bold",
-      activeIcon: "text-cyan-400",
+      indicatorBg: "bg-teal/10",
+      indicatorBorder: "border-teal/20",
+      indicatorGlow: "",
+      activeText: "text-teal font-bold",
+      activeIcon: "text-teal",
     },
     economics: {
-      indicatorBg: "bg-green-500/10",
-      indicatorBorder: "border-green-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(34,197,94,0.2)]",
-      activeText: "text-green-400 font-bold",
-      activeIcon: "text-green-400",
+      indicatorBg: "bg-green/10",
+      indicatorBorder: "border-green/20",
+      indicatorGlow: "",
+      activeText: "text-green font-bold",
+      activeIcon: "text-green",
     },
     preview: {
-      indicatorBg: "bg-amber-500/10",
-      indicatorBorder: "border-amber-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(245,158,11,0.2)]",
-      activeText: "text-amber-400 font-bold",
-      activeIcon: "text-amber-400",
+      indicatorBg: "bg-tint-fill",
+      indicatorBorder: "border-tint/20",
+      indicatorGlow: "",
+      activeText: "text-tint font-bold",
+      activeIcon: "text-tint",
     },
     import: {
-      indicatorBg: "bg-blue-500/10",
-      indicatorBorder: "border-blue-500/20",
-      indicatorGlow: "shadow-[0_0_8px_rgba(59,130,246,0.2)]",
-      activeText: "text-blue-400 font-bold",
-      activeIcon: "text-blue-400",
+      indicatorBg: "bg-blue/10",
+      indicatorBorder: "border-blue/20",
+      indicatorGlow: "",
+      activeText: "text-blue font-bold",
+      activeIcon: "text-blue",
     },
   };
 
@@ -94,13 +94,13 @@ export function BuilderTabCard({
       {!hideTabList && (
         <div
           role="tablist"
-          className="facet-surface facet-refraction bg-card/50 relative flex gap-1 rounded-xl border p-1 shadow-md"
+          className="bg-surface rounded-row shadow-card relative flex gap-1 border p-1"
         >
           {/* Sliding indicator behind active tab */}
           {activeIndex !== -1 && (
             <motion.div
               className={cn(
-                "absolute inset-y-1 z-0 rounded-lg border",
+                "rounded-control absolute inset-y-1 z-0 border",
                 currentTheme.indicatorBg,
                 currentTheme.indicatorBorder,
                 currentTheme.indicatorGlow
@@ -124,8 +124,8 @@ export function BuilderTabCard({
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors duration-200",
-                  isActive ? currentTheme.activeText : "text-muted-foreground hover:text-foreground"
+                  "rounded-control text-caption relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-3 py-2 font-semibold whitespace-nowrap transition-colors duration-200",
+                  isActive ? currentTheme.activeText : "text-label-secondary hover:text-label"
                 )}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -133,7 +133,7 @@ export function BuilderTabCard({
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 transition-colors duration-200",
-                    isActive ? currentTheme.activeIcon : "text-muted-foreground/60"
+                    isActive ? currentTheme.activeIcon : "text-label-tertiary"
                   )}
                 />
                 <span className="hidden sm:inline">{tab.label}</span>

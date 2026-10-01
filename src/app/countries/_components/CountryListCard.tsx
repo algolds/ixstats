@@ -104,7 +104,7 @@ export function CountryListCard({
     <FacetCard
       depth={2}
       className={cn(
-        "group hover:border-foreground/20 flex h-full flex-col overflow-hidden rounded-2xl",
+        "group hover:border-foreground/20 rounded-card flex h-full flex-col overflow-hidden",
         dominantColor && "border-l-2"
       )}
       // The flag's dominant colour is data, not decoration: a thin identity edge.
@@ -128,24 +128,24 @@ export function CountryListCard({
                 <img
                   src={flagUrl}
                   alt={`Flag of ${country.name}`}
-                  className="border-border h-6 w-8 rounded object-cover"
+                  className="border-separator h-6 w-8 rounded object-cover"
                 />
               )}
               {!flagLoading && !flagUrl && (
-                <div className="bg-muted flex h-6 w-8 items-center justify-center rounded border">
-                  <FlagIcon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+                <div className="bg-fill-3 flex h-6 w-8 items-center justify-center rounded border">
+                  <FlagIcon aria-hidden="true" className="text-label-secondary h-4 w-4" />
                 </div>
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="text-foreground truncate text-base font-semibold" title={country.name}>
+              <h3 className="text-label text-headline truncate" title={country.name}>
                 {country.name}
               </h3>
               {(country.continent || country.region) && (
-                <div className="text-muted-foreground mt-0.5 flex items-center truncate text-xs">
+                <div className="text-label-secondary text-footnote mt-0.5 flex items-center truncate">
                   <LocateFixed
                     aria-hidden="true"
-                    className="text-muted-foreground mr-1 h-3 w-3 shrink-0"
+                    className="text-label-secondary mr-1 h-3 w-3 shrink-0"
                   />
                   <span className="truncate">
                     {country.continent || "—"}
@@ -167,35 +167,35 @@ export function CountryListCard({
               aria-label={`View ${country.name} on IxWiki`}
               className="h-7 w-7"
             >
-              <BookOpen aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+              <BookOpen aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
             </Button>
             <ArrowRight
               aria-hidden="true"
-              className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+              className="text-label-secondary group-hover:text-label h-4 w-4 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
             />
           </div>
         </div>
 
         {/* Compact stats row */}
-        <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+        <div className="text-footnote mb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <Users aria-hidden="true" className="text-muted-foreground h-3 w-3" />
+            <Users aria-hidden="true" className="text-label-secondary h-3 w-3" />
             <span>{formatPopulation(country.currentPopulation)}</span>
           </div>
           <div className="flex items-center gap-1">
             {country.adjustedGdpGrowth != null ? (
               <GrowthArrow value={country.adjustedGdpGrowth * 100} iconOnly size={12} />
             ) : (
-              <TrendingUp aria-hidden="true" className="text-muted-foreground h-3 w-3" />
+              <TrendingUp aria-hidden="true" className="text-label-secondary h-3 w-3" />
             )}
             <span>{formatCurrency(country.currentGdpPerCapita)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <GlobeIcon aria-hidden="true" className="text-muted-foreground h-3 w-3" />
+            <GlobeIcon aria-hidden="true" className="text-label-secondary h-3 w-3" />
             <span>{formatCurrency(country.currentTotalGdp)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Scaling aria-hidden="true" className="text-muted-foreground h-3 w-3" />
+            <Scaling aria-hidden="true" className="text-label-secondary h-3 w-3" />
             <span>
               {country.populationDensity != null
                 ? `${country.populationDensity.toFixed(0)}/km²`

@@ -32,16 +32,10 @@ export function LaborVisualizations({
 
   return (
     <div className="space-y-6">
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <div className="mb-4 flex flex-col gap-2 border-b border-white/5 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <div className="border-separator mb-4 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <h4 className="text-headline text-green flex items-center gap-2">
               {activeChart === "type" ? (
                 <>
                   <PieChart className="h-5 w-5" />
@@ -54,16 +48,16 @@ export function LaborVisualizations({
                 </>
               )}
             </h4>
-            <div className="flex max-w-fit rounded-lg border border-white/10 bg-white/5 p-0.5 select-none">
+            <div className="rounded-control border-separator bg-fill-4 flex max-w-fit border p-0.5 select-none">
               <Button
                 size="sm"
                 variant={activeChart === "type" ? "default" : "ghost"}
                 onClick={() => setActiveChart("type")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "type"
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    ? "bg-green text-on-green shadow-card hover:bg-green"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
                 Employment Type
@@ -73,10 +67,10 @@ export function LaborVisualizations({
                 variant={activeChart === "sector" ? "default" : "ghost"}
                 onClick={() => setActiveChart("sector")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "sector"
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    ? "bg-green text-on-green shadow-card hover:bg-green"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
                 Employment by Sector
@@ -105,15 +99,9 @@ export function LaborVisualizations({
         </FacetCardContent>
       </FacetCard>
 
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5" />
             <span>Worker Protection Scores</span>
           </h4>
@@ -128,15 +116,9 @@ export function LaborVisualizations({
         </FacetCardContent>
       </FacetCard>
 
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Gauge className="h-5 w-5" />
             <span>Labor Market Health</span>
           </h4>
@@ -151,7 +133,7 @@ export function LaborVisualizations({
               { label: "Labor Rights Score", value: laborMarket.laborRightsScore },
             ].map(({ label, value }) => (
               <div key={label} className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="text-body flex justify-between">
                   <span>{label}</span>
                   <span className="font-medium">
                     {value.toFixed(label.includes("Score") || label.includes("Safety") ? 0 : 1)}

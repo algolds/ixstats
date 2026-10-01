@@ -402,7 +402,7 @@ export function DemographicsPopulationTab({
         />
       </div>
 
-      <div className="border-border bg-muted/30 flex space-x-1 rounded-xl border p-1 shadow-inner backdrop-blur-md">
+      <div className="border-separator bg-fill-4 rounded-row flex space-x-1 border p-1 shadow-inner">
         {(
           [
             { id: "population", label: "Population", icon: Users },
@@ -419,10 +419,10 @@ export function DemographicsPopulationTab({
               size="sm"
               onClick={() => setActiveSection(section.id)}
               className={cn(
-                "flex-1 rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
+                "rounded-control flex-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-205",
                 activeSection === section.id
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  ? "bg-green text-on-green shadow-card hover:bg-green"
+                  : "text-label-secondary hover:bg-fill-3 hover:text-label"
               )}
             >
               <Icon className="mr-2 h-4 w-4" />
@@ -433,15 +433,9 @@ export function DemographicsPopulationTab({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-        <FacetCard
-          depth="base"
-          theme="emerald"
-          className="border-emerald-500/20"
-          texture="chevron"
-          textureOpacity={0.04}
-        >
-          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+        <FacetCard>
+          <div className="border-separator border-b px-6 py-4">
+            <h3 className="text-label text-headline flex items-center gap-2">
               {activeSection === "population" && "Population Structure"}
               {activeSection === "age" && "Age Distribution"}
               {activeSection === "geographic" && "Geographic Distribution"}

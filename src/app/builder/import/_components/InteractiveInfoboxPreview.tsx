@@ -15,6 +15,7 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "iconoir-react";
+import { FlagWatermark } from "~/components/ui/facet";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -50,9 +51,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   isLoading,
   loreScanStatus,
 }) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["keyinfo"])
-  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["keyinfo"]));
 
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
@@ -194,29 +193,19 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   const fieldCount = sections.reduce((sum, s) => sum + s.fields.length, 0);
 
   return (
-    <Card className="bg-card/60 relative overflow-hidden border-blue-500/20 backdrop-blur-md">
-      {/* Cinematic Background Flag Watermark Scrim (from MyCountry National Standing) */}
-      {data.flagUrl && (
-        <div className="pointer-events-none absolute -top-10 -right-10 h-56 w-56 overflow-hidden opacity-[0.12] transition-opacity duration-300 select-none dark:opacity-[0.16]">
-          <img
-            src={data.flagUrl}
-            alt=""
-            className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
-          />
-          <div className="via-card/75 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
-        </div>
-      )}
+    <Card className="relative overflow-hidden">
+      <FlagWatermark src={data.flagUrl} />
 
       {/* Header */}
       <CardHeader className="relative z-10 pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
             {/* Back Button */}
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 active:scale-[0.97] cursor-pointer shrink-0 mt-0.5"
+                className="rounded-row border-separator bg-fill-3 text-caption text-label hover:bg-fill-3 mt-0.5 flex shrink-0 cursor-pointer items-center gap-1.5 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                 title="Back to search"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -227,11 +216,11 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
             {/* Flag + Coat of Arms */}
             <div className="shrink-0 space-y-2">
               {data.flagUrl ? (
-                <div className="border-border overflow-hidden rounded-lg border shadow-md">
+                <div className="border-separator rounded-control shadow-card overflow-hidden border">
                   <img
                     src={data.flagUrl}
                     alt={`Flag of ${data.name}`}
-                    className="h-16 w-24 sm:h-20 sm:w-32 object-cover"
+                    className="h-16 w-24 object-cover sm:h-20 sm:w-32"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = "none";
@@ -239,16 +228,16 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                   />
                 </div>
               ) : (
-                <div className="border-border bg-muted/50 flex h-16 w-24 sm:h-20 sm:w-32 items-center justify-center rounded-lg border">
-                  <Flag className="text-muted-foreground h-8 w-8" />
+                <div className="border-separator bg-fill-3 rounded-control flex h-16 w-24 items-center justify-center border sm:h-20 sm:w-32">
+                  <Flag className="text-label-secondary h-8 w-8" />
                 </div>
               )}
               {data.coatOfArmsUrl && (
-                <div className="border-border overflow-hidden rounded-lg border shadow-sm">
+                <div className="border-separator rounded-control shadow-card overflow-hidden border">
                   <img
                     src={data.coatOfArmsUrl}
                     alt={`Coat of Arms of ${data.name}`}
-                    className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                    className="h-10 w-10 object-contain sm:h-12 sm:w-12"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = "none";
@@ -260,27 +249,24 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
             {/* Name + Info */}
             <div className="min-w-0 flex-1">
-              <CardTitle className="mb-1 text-xl">{data.name}</CardTitle>
+              <CardTitle className="text-title-2 mb-1">{data.name}</CardTitle>
               {data.conventional_long_name && data.conventional_long_name !== data.name && (
-                <p className="text-muted-foreground mb-2 text-sm">{data.conventional_long_name}</p>
+                <p className="text-label-secondary text-body mb-2">{data.conventional_long_name}</p>
               )}
               {data.government_type && (
-                <Badge
-                  variant="outline"
-                  className="mb-2 border-blue-500/30 text-blue-600 dark:text-blue-400"
-                >
+                <Badge variant="info" className="mb-2">
                   {data.government_type}
                 </Badge>
               )}
-              <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+              <div className="text-label-secondary text-body flex flex-wrap items-center gap-2">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                  <CheckCircle className="text-green h-3.5 w-3.5" />
                   <span>{fieldCount} fields extracted</span>
                 </span>
                 {data.templateName && (
                   <>
                     <span>·</span>
-                    <span className="font-mono text-xs">{data.templateName}</span>
+                    <span className="text-footnote font-mono">{data.templateName}</span>
                   </>
                 )}
               </div>
@@ -289,18 +275,21 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
               {loreScanStatus && (
                 <div className="mt-2.5 flex items-center gap-2">
                   {loreScanStatus.isScanning ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 backdrop-blur-md">
-                      <div className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />
+                    <div className="border-blue/30 bg-blue/10 text-caption text-blue inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                      <div className="bg-blue h-2 w-2 animate-ping rounded-full" />
                       <span>
-                        LoreScanner: Checking Category:{loreScanStatus.categoryUsed || data.name} & subpages...
+                        LoreScanner: Checking Category:{loreScanStatus.categoryUsed || data.name} &
+                        subpages...
                       </span>
                     </div>
                   ) : loreScanStatus.hasCompleted ? (
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 backdrop-blur-md">
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                    <div className="border-green/30 bg-green/10 text-caption text-green inline-flex items-center gap-1.5 rounded-full border px-3 py-1">
+                      <CheckCircle className="text-green h-3.5 w-3.5" />
                       <span>
                         LoreScanner: Enriched {loreScanStatus.pagesFound ?? 0} subpages
-                        {loreScanStatus.categoryUsed ? ` via Category:${loreScanStatus.categoryUsed}` : ""}
+                        {loreScanStatus.categoryUsed
+                          ? ` via Category:${loreScanStatus.categoryUsed}`
+                          : ""}
                       </span>
                     </div>
                   ) : null}
@@ -310,15 +299,15 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           </div>
 
           {/* Continue Action */}
-          <div className="shrink-0 flex sm:self-start">
+          <div className="flex shrink-0 sm:self-start">
             <Button
               size="default"
-              className="group h-10 gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-md shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.96] cursor-pointer w-full sm:w-auto justify-center"
+              className="group rounded-row bg-blue text-headline text-on-blue shadow-card hover:bg-blue h-10 w-full cursor-pointer justify-center gap-2 px-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.96] sm:w-auto"
               onClick={onContinue}
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <div className="border-separator border-t-separator h-4 w-4 animate-spin rounded-full border-2" />
               ) : (
                 <>
                   <span>Continue</span>
@@ -334,12 +323,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       <CardContent className="relative z-10 space-y-3 pb-6">
         {/* Wiki Intro Description */}
         {data.wikiIntro && (
-          <div className="border-border/50 rounded-lg border p-4">
+          <div className="border-separator rounded-control border p-4">
             <div className="mb-2 flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Description</span>
+              <Globe className="text-blue h-4 w-4" />
+              <span className="text-body font-medium">Description</span>
             </div>
-            <p className="text-muted-foreground text-sm leading-relaxed">{data.wikiIntro}</p>
+            <p className="text-label-secondary text-body leading-relaxed">{data.wikiIntro}</p>
           </div>
         )}
 
@@ -348,22 +337,25 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           const isExpanded = expandedSections.has(section.id);
 
           return (
-            <div key={section.id} className="border-border/50 overflow-hidden rounded-lg border">
+            <div
+              key={section.id}
+              className="border-separator rounded-control overflow-hidden border"
+            >
               <button
                 onClick={() => toggleSection(section.id)}
-                className="hover:bg-muted/30 flex w-full items-center justify-between p-3 text-left transition-colors"
+                className="hover:bg-fill-4 flex w-full items-center justify-between p-3 text-left transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-medium">{section.title}</span>
-                  <Badge variant="secondary" className="h-5 px-1.5 py-0 text-xs">
+                  <Icon className="text-blue h-4 w-4" />
+                  <span className="text-body font-medium">{section.title}</span>
+                  <Badge variant="secondary" className="text-footnote h-5 px-1.5 py-0">
                     {section.fields.length}
                   </Badge>
                 </div>
                 {isExpanded ? (
-                  <ChevronUp className="text-muted-foreground h-4 w-4" />
+                  <ChevronUp className="text-label-secondary h-4 w-4" />
                 ) : (
-                  <ChevronDown className="text-muted-foreground h-4 w-4" />
+                  <ChevronDown className="text-label-secondary h-4 w-4" />
                 )}
               </button>
 
@@ -379,11 +371,11 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                     <div className="space-y-1.5 px-3 pb-3">
                       {section.fields.map((field, i) => (
                         <div key={i} className="flex items-start justify-between gap-3 py-1">
-                          <span className="text-muted-foreground shrink-0 text-sm">
+                          <span className="text-label-secondary text-body shrink-0">
                             {field.label}:
                           </span>
                           <span
-                            className="text-right text-sm font-medium"
+                            className="text-body text-right font-medium"
                             dangerouslySetInnerHTML={{
                               __html: sanitizeWikiContent(field.value || ""),
                             }}
@@ -399,28 +391,30 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         })}
 
         {/* Bottom Actions: Back & Continue */}
-        <div className="pt-4 flex items-center justify-between gap-4 border-t border-border/40">
+        <div className="border-separator flex items-center justify-between gap-4 border-t pt-4">
           {onBack ? (
             <Button
               type="button"
               variant="outline"
               size="lg"
-              className="h-12 gap-2 rounded-xl border-border/60 bg-muted/30 px-6 text-sm font-medium text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-accent/40 active:scale-[0.98] cursor-pointer"
+              className="rounded-row border-separator bg-fill-4 text-body text-label hover:bg-fill-3 h-12 cursor-pointer gap-2 px-6 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back</span>
             </Button>
-          ) : <div />}
+          ) : (
+            <div />
+          )}
 
           <Button
             size="lg"
-            className="group h-12 gap-2.5 rounded-xl bg-blue-600 px-8 text-base font-semibold text-white shadow-lg shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 hover:shadow-blue-600/35 active:scale-[0.98] cursor-pointer"
+            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2.5 px-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             onClick={onContinue}
             disabled={isLoading}
           >
             {isLoading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <div className="border-separator border-t-separator h-5 w-5 animate-spin rounded-full border-2" />
             ) : (
               <ArrowRight className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-0.5" />
             )}

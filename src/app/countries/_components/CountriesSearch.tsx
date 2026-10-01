@@ -122,16 +122,16 @@ export function CountriesSearch({
     sortDirection !== "asc";
 
   return (
-    <div className="bg-card text-card-foreground border-border mb-8 rounded-lg p-4 shadow-sm sm:p-6">
+    <div className="bg-surface text-label border-separator rounded-control shadow-card mb-8 p-4 sm:p-6">
       <div className="flex flex-col items-center gap-3 sm:flex-row">
         <div className="relative w-full grow sm:w-auto">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             type="text"
             placeholder="Search by country name..."
             value={searchTerm}
             onChange={(e) => onSearchChangeAction(e.target.value)}
-            className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground w-full border pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:scale-100"
+            className="bg-background text-label hover:border/80 hover:bg-fill-4 focus:bg-background focus:border-tint placeholder:text-label-secondary w-full border pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 focus:scale-100"
             autoComplete="off"
           />
           {searchTerm && (
@@ -139,7 +139,7 @@ export function CountriesSearch({
               variant="ghost"
               size="icon"
               onClick={() => onSearchChangeAction("")}
-              className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 h-full px-3"
+              className="text-label-secondary hover:text-label absolute inset-y-0 right-0 h-full px-3"
               aria-label="Clear search"
             >
               <X className="h-4 w-4" />
@@ -149,7 +149,7 @@ export function CountriesSearch({
 
         <div className="flex w-full justify-between gap-2 sm:w-auto sm:justify-start">
           <DropdownMenu>
-            <DropdownMenuTrigger className="text-foreground ring-offset-background focus-visible:ring-ring border-border bg-background hover:bg-accent hover:text-accent-foreground inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
+            <DropdownMenuTrigger className="text-label ring-offset-background focus-visible:ring-tint border-separator bg-background hover:bg-fill-3 hover:text-label rounded-control-sm text-body inline-flex h-10 items-center justify-center gap-2 px-4 py-2 font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
               {sortDirection === "asc" ? (
                 <SortAsc className="h-4 w-4" />
               ) : (
@@ -161,10 +161,10 @@ export function CountriesSearch({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
-                <DropdownMenuGroupLabel className="text-muted-foreground">
+                <DropdownMenuGroupLabel className="text-label-secondary">
                   Sort By
                 </DropdownMenuGroupLabel>
-                <DropdownMenuSeparator className="bg-border" />
+                <DropdownMenuSeparator className="bg-separator-opaque" />
                 {sortOptions.map((opt) => (
                   <DropdownMenuItem
                     key={opt.value}
@@ -172,21 +172,19 @@ export function CountriesSearch({
                   >
                     {opt.label}
                     {sortField === opt.value && (
-                      <CheckCircle className="text-primary ml-auto h-4 w-4" />
+                      <CheckCircle className="text-tint ml-auto h-4 w-4" />
                     )}
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onSortChangeAction(sortField, "asc")}>
                   Ascending
-                  {sortDirection === "asc" && (
-                    <CheckCircle className="text-primary ml-auto h-4 w-4" />
-                  )}
+                  {sortDirection === "asc" && <CheckCircle className="text-tint ml-auto h-4 w-4" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onSortChangeAction(sortField, "desc")}>
                   Descending
                   {sortDirection === "desc" && (
-                    <CheckCircle className="text-primary ml-auto h-4 w-4" />
+                    <CheckCircle className="text-tint ml-auto h-4 w-4" />
                   )}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -211,12 +209,12 @@ export function CountriesSearch({
       </div>
 
       {showAdvanced && (
-        <div className="animate-fade-in bg-card/50 mt-4 rounded-md border border-t p-4 pt-4">
+        <div className="animate-fade-in bg-surface rounded-control-sm mt-4 border border-t p-4 pt-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
               <label
                 htmlFor="tierFilter"
-                className="text-muted-foreground mb-1 block text-sm font-medium"
+                className="text-label-secondary text-body mb-1 block font-medium"
               >
                 Economic Tier
               </label>
@@ -234,7 +232,7 @@ export function CountriesSearch({
                     <SelectItem
                       key={opt.value}
                       value={opt.value}
-                      className="text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="text-label hover:bg-fill-3 hover:text-label"
                     >
                       {opt.label}
                     </SelectItem>
@@ -246,7 +244,7 @@ export function CountriesSearch({
             <div>
               <label
                 htmlFor="continentFilter"
-                className="text-muted-foreground mb-1 block text-sm font-medium"
+                className="text-label-secondary text-body mb-1 block font-medium"
               >
                 Continent
               </label>
@@ -255,17 +253,14 @@ export function CountriesSearch({
                   <SelectValue placeholder="Select continent" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    value="all"
-                    className="text-foreground hover:bg-accent hover:text-accent-foreground"
-                  >
+                  <SelectItem value="all" className="text-label hover:bg-fill-3 hover:text-label">
                     All Continents
                   </SelectItem>
                   {availableContinents.map((c) => (
                     <SelectItem
                       key={c}
                       value={c}
-                      className="text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="text-label hover:bg-fill-3 hover:text-label"
                     >
                       {c}
                     </SelectItem>
@@ -277,7 +272,7 @@ export function CountriesSearch({
             <div>
               <label
                 htmlFor="regionFilter"
-                className="text-muted-foreground mb-1 block text-sm font-medium"
+                className="text-label-secondary text-body mb-1 block font-medium"
               >
                 Region
               </label>
@@ -290,17 +285,14 @@ export function CountriesSearch({
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    value="all"
-                    className="text-foreground hover:bg-accent hover:text-accent-foreground"
-                  >
+                  <SelectItem value="all" className="text-label hover:bg-fill-3 hover:text-label">
                     All Regions
                   </SelectItem>
                   {availableRegions.map((r) => (
                     <SelectItem
                       key={r}
                       value={r}
-                      className="text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="text-label hover:bg-fill-3 hover:text-label"
                     >
                       {r}
                     </SelectItem>
@@ -310,7 +302,7 @@ export function CountriesSearch({
             </div>
 
             <div>
-              <label className="text-muted-foreground mb-1 block text-sm font-medium">
+              <label className="text-label-secondary text-body mb-1 block font-medium">
                 Population Range
               </label>
               <div className="flex space-x-2">
@@ -324,7 +316,7 @@ export function CountriesSearch({
                       max: populationRange.max,
                     })
                   }
-                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+                  className="bg-background text-label hover:border/80 hover:bg-fill-4 focus:bg-background focus:border-tint placeholder:text-label-secondary flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                 />
                 <Input
                   type="number"
@@ -336,7 +328,7 @@ export function CountriesSearch({
                       max: e.target.value ? parseInt(e.target.value, 10) : undefined,
                     })
                   }
-                  className="bg-background text-foreground hover:border/80 hover:bg-accent/20 focus:bg-background focus:border-primary placeholder:text-muted-foreground flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+                  className="bg-background text-label hover:border/80 hover:bg-fill-4 focus:bg-background focus:border-tint placeholder:text-label-secondary flex-1 border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                 />
               </div>
             </div>
@@ -344,7 +336,7 @@ export function CountriesSearch({
         </div>
       )}
 
-      <div className="text-muted-foreground mt-4 text-sm">
+      <div className="text-label-secondary text-body mt-4">
         Showing {filteredResults.toLocaleString()} of {totalResults.toLocaleString()} countries
         {hasFilters && (
           <div className="mt-2 flex flex-wrap items-center gap-1">

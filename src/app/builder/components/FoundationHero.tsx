@@ -55,35 +55,28 @@ function PathCard({
     <button
       type="button"
       onClick={onClick}
-      className="group focus-visible:ring-ring h-full w-full rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="group focus-visible:ring-tint rounded-card h-full w-full text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       data-cuelume-press
       data-cuelume-hover="tick"
     >
-      <FacetCard
-        depth={2}
-        className="h-full rounded-2xl p-6 transition-[border-color,transform] duration-150 group-hover:border-amber-500/40 group-active:scale-[0.98]"
-      >
+      <FacetCard className="rounded-card group-hover:border-tint/40 h-full p-6 transition-[border-color,transform] duration-150 group-active:scale-[0.98]">
         <FacetCardContent className="flex h-full flex-col justify-between p-0">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Icon
                 aria-hidden="true"
-                className={cn("text-muted-foreground h-6 w-6", iconClassName)}
+                className={cn("text-label-secondary h-6 w-6", iconClassName)}
               />
-              {badge && (
-                <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                  {badge}
-                </Badge>
-              )}
+              {badge && <Badge variant="tinted">{badge}</Badge>}
             </div>
 
             <div className="space-y-1.5">
-              <h3 className="text-foreground text-lg font-semibold tracking-tight">{title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+              <h3 className="text-label text-title-3">{title}</h3>
+              <p className="text-label-secondary text-body leading-relaxed">{description}</p>
             </div>
           </div>
 
-          <div className="text-muted-foreground group-hover:text-foreground mt-6 flex items-center gap-1.5 text-xs font-semibold transition-colors">
+          <div className="text-label-secondary group-hover:text-label text-caption mt-6 flex items-center gap-1.5 font-semibold transition-colors">
             <span>Continue</span>
             <ArrowRight
               aria-hidden="true"
@@ -235,10 +228,10 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
         </motion.div>
 
         <div className="space-y-2">
-          <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="text-label text-large-title sm:text-large-title lg:text-display">
             Build your country.
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-lg text-base leading-relaxed sm:text-lg">
+          <p className="text-label-secondary text-body sm:text-title-3 mx-auto max-w-lg leading-relaxed">
             Choose a starting point below. All 140+ options can be modified later.
           </p>
         </div>
@@ -270,10 +263,9 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   onClick={(e) => e.stopPropagation()}
                 >
                   <FacetCard
-                    depth={2}
                     role="alertdialog"
                     aria-labelledby="foundation-discard-title"
-                    className="border-destructive/40 flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    className="border-destructive/40 rounded-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
                     <div className="flex min-w-0 items-center gap-4">
                       <Trash aria-hidden="true" className="text-destructive h-6 w-6 shrink-0" />
@@ -281,11 +273,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         <Eyebrow className="text-destructive block">Confirmation Required</Eyebrow>
                         <h3
                           id="foundation-discard-title"
-                          className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg"
+                          className="text-label text-headline sm:text-title-3 truncate"
                         >
                           Discard draft for {inProgressData.name}?
                         </h3>
-                        <p className="text-muted-foreground text-xs sm:text-sm">
+                        <p className="text-label-secondary text-footnote sm:text-body">
                           All unsaved progress and configuration will be permanently deleted.
                         </p>
                       </div>
@@ -328,7 +320,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 >
                   <FacetCard
-                    depth={2}
                     onClick={handleResumeClick}
                     data-cuelume-press
                     onKeyDown={(e) => {
@@ -338,11 +329,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         handleResumeClick();
                       }
                     }}
-                    className="focus-visible:ring-ring flex flex-col gap-4 rounded-2xl border-amber-500/30 p-4 hover:border-amber-500/50 focus-visible:ring-2 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    className="focus-visible:ring-tint rounded-card border-tint/30 hover:border-tint/50 flex flex-col gap-4 p-4 focus-visible:ring-2 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
                     <div className="flex min-w-0 items-center gap-4">
                       {inProgressData.flag ? (
-                        <div className="border-border bg-muted h-12 w-16 shrink-0 overflow-hidden rounded-lg border">
+                        <div className="border-separator bg-fill-3 rounded-control h-12 w-16 shrink-0 overflow-hidden border">
                           <img
                             src={inProgressData.flag}
                             alt={inProgressData.name}
@@ -352,23 +343,21 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       ) : (
                         <ClockRotateRight
                           aria-hidden="true"
-                          className="h-6 w-6 shrink-0 text-amber-500"
+                          className="text-tint h-6 w-6 shrink-0"
                         />
                       )}
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                            Draft In Progress
-                          </Badge>
-                          <span className="text-muted-foreground text-xs font-medium">
+                          <Badge variant="tinted">Draft In Progress</Badge>
+                          <span className="text-label-secondary text-caption">
                             {inProgressData.stepLabel}
                           </span>
                         </div>
-                        <h3 className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg">
+                        <h3 className="text-label text-headline sm:text-title-3 truncate">
                           Resume {inProgressData.name}
                         </h3>
-                        <p className="text-muted-foreground truncate text-xs sm:text-sm">
+                        <p className="text-label-secondary text-footnote sm:text-body truncate">
                           Continue configuring your nation where you left off.
                         </p>
                       </div>
@@ -384,7 +373,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           soundEffects.press();
                           setShowDiscardConfirm(true);
                         }}
-                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        className="text-label-secondary hover:bg-destructive/10 hover:text-destructive"
                         title="Discard this draft and start fresh"
                       >
                         Discard
@@ -396,7 +385,6 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           e.stopPropagation();
                           handleResumeClick();
                         }}
-                        className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
                       >
                         Resume Building
                         <ArrowRight aria-hidden="true" className="h-4 w-4" />

@@ -42,20 +42,14 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   return (
     <div className="space-y-6">
       {/* GDP Composition */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <PieChart className="h-5 w-5" />
             <span>GDP Composition</span>
           </h4>
           {sectorChartData.length === 0 ? (
-            <div className="text-muted-foreground flex h-[300px] items-center justify-center">
+            <div className="text-label-secondary flex h-[300px] items-center justify-center">
               Add sectors to see GDP composition
             </div>
           ) : (
@@ -71,20 +65,14 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       </FacetCard>
 
       {/* Employment Distribution */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Distribution</span>
           </h4>
           {employmentChartData.length === 0 ? (
-            <div className="text-muted-foreground flex h-[250px] items-center justify-center">
+            <div className="text-label-secondary flex h-[250px] items-center justify-center">
               Add sectors to see employment distribution
             </div>
           ) : (
@@ -101,15 +89,9 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       </FacetCard>
 
       {/* Component Impact Summary */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5" />
             <span>Atomic Component Impact</span>
           </h4>
@@ -121,11 +103,11 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               return (
                 <div
                   key={sectorId}
-                  className="flex items-center justify-between rounded border border-zinc-800/40 bg-zinc-900/30 p-2 text-zinc-300"
+                  className="border-separator bg-fill-3 text-label-secondary flex items-center justify-between rounded border p-2"
                 >
                   <div className="flex items-center space-x-2">
                     <template.icon className="h-4 w-4" />
-                    <span className="text-sm">{template.name}</span>
+                    <span className="text-body">{template.name}</span>
                   </div>
                   <Badge variant={impact > 1 ? "default" : "secondary"}>
                     {impact > 1 ? "+" : ""}

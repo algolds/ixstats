@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionTemplate } from "motion/react";
+import { motion } from "motion/react";
 import {
   Minus,
   Plus,
@@ -134,7 +134,7 @@ export function EnhancedNumberInput({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
+  const { theme: resolvedTheme, cssVars } = useSectionTheme(sectionId, theme);
 
   // Safely handle all numeric parameters
   const safeMin = typeof min === "number" && !isNaN(min) ? min : 0;
@@ -159,9 +159,9 @@ export function EnhancedNumberInput({
   });
 
   const sizeClasses = {
-    sm: "text-sm px-3 py-2 h-10",
-    md: "text-base px-4 py-3 h-12",
-    lg: "text-lg px-5 py-4 h-14",
+    sm: "text-body px-3 py-2 h-10",
+    md: "text-body px-4 py-3 h-12",
+    lg: "text-title-3 px-5 py-4 h-14",
   };
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -430,9 +430,7 @@ export function EnhancedNumberInput({
         }
       : null;
 
-  const glassFocusClass = isFocused
-    ? `border-[${colors.primary}] shadow-[0_0_0_3px_${colors.primary}20]`
-    : "";
+  const glassFocusClass = isFocused ? "border-tint ring-tint/20 ring-[3px]" : "";
 
   return (
     <div className={cn("space-y-2", className)} style={cssVars as React.CSSProperties}>
@@ -440,15 +438,15 @@ export function EnhancedNumberInput({
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+            <label className="text-label text-body flex items-center gap-2 font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               <ChangedFieldDot name={label} value={value} />
-              {required && <span className="text-red-400">*</span>}
+              {required && <span className="text-red">*</span>}
               {helpContent && <FieldHelpTooltip content={helpContent} title={helpTitle || label} />}
             </label>
           )}
-          {description && <p className="text-muted-foreground text-xs">{description}</p>}
+          {description && <p className="text-label-secondary text-footnote">{description}</p>}
         </div>
       )}
 
@@ -457,26 +455,16 @@ export function EnhancedNumberInput({
         <div
           className={cn(
             "relative w-full",
-            "rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
-            "border border-white/[0.08] bg-white/[0.02] dark:border-white/[0.06] dark:bg-white/[0.015]",
-            "hover:border-white/[0.12] hover:bg-white/[0.04] dark:hover:border-white/[0.1] dark:hover:bg-white/[0.03]",
-            "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
-            "focus-within:border-[var(--primitive-primary)]/50 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
-            isEditing &&
-              "border-[var(--primitive-primary)]/50 bg-white/[0.05] shadow-[0_0_10px_rgba(var(--primitive-primary),0.15)]",
+            "rounded-control transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
+            "border-separator bg-surface border",
+            "hover:border-separator hover:bg-surface",
+            "hover:shadow-card",
+            "focus-within:border-tint/50 focus-within:bg-surface",
+            isEditing && "border-tint/50 bg-surface",
             glassFocusClass,
             disabled && "cursor-not-allowed opacity-50"
           )}
         >
-          {/* Animated Background Gradient */}
-          <motion.div
-            className="absolute inset-0 rounded-lg opacity-0 transition-opacity"
-            style={{
-              background: useMotionTemplate`linear-gradient(135deg, ${colors.background}, transparent)`,
-            }}
-            animate={{ opacity: isFocused ? 1 : 0 }}
-          />
-
           <div className="relative flex w-full items-center justify-between pr-1.5">
             <input
               ref={inputRef}
@@ -491,7 +479,7 @@ export function EnhancedNumberInput({
               className={cn(
                 "min-w-0 flex-1 border-none bg-transparent outline-none",
                 acceptText ? "font-sans" : "font-mono",
-                "text-foreground placeholder:text-muted-foreground/60",
+                "text-label placeholder:text-label-tertiary",
                 "font-medium",
                 sizeClasses[size],
                 !isEditing && "cursor-pointer"
@@ -500,14 +488,14 @@ export function EnhancedNumberInput({
 
             {/* Unit Display */}
             {unit && displayValue && !isEditing && (
-              <span className="text-muted-foreground mx-2 shrink-0 text-sm">{unit}</span>
+              <span className="text-label-secondary text-body mx-2 shrink-0">{unit}</span>
             )}
 
             {/* Action Buttons */}
             {showButtons && (
               <div className="z-10 flex shrink-0 items-center gap-0.5">
                 {/* Divider Line */}
-                <div className="mx-1 h-4 w-[1px] shrink-0 bg-white/10 dark:bg-white/5" />
+                <div className="bg-fill-3 mx-1 h-4 w-[1px] shrink-0" />
 
                 <motion.button
                   type="button"
@@ -517,10 +505,10 @@ export function EnhancedNumberInput({
                   whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                    "hover:bg-surface hover:text-tint",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
-                    "text-foreground/70 hover:text-foreground"
+                    "text-label/70 hover:text-label"
                   )}
                 >
                   <Minus className="h-3.5 w-3.5" />
@@ -534,10 +522,10 @@ export function EnhancedNumberInput({
                   whileTap={{ scale: 0.95 }}
                   className={cn(
                     "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                    "hover:bg-surface hover:text-tint",
                     "h-6 w-6",
                     "disabled:cursor-not-allowed disabled:opacity-20",
-                    "text-foreground/70 hover:text-foreground"
+                    "text-label/70 hover:text-label"
                   )}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -552,10 +540,10 @@ export function EnhancedNumberInput({
                     whileTap={{ scale: 0.95 }}
                     className={cn(
                       "flex items-center justify-center rounded transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      "hover:bg-white/[0.08] hover:text-[var(--primitive-primary)] dark:hover:bg-white/[0.05]",
+                      "hover:bg-surface hover:text-tint",
                       "h-6 w-6",
                       "disabled:cursor-not-allowed disabled:opacity-20",
-                      "text-foreground/70 hover:text-foreground"
+                      "text-label/70 hover:text-label"
                     )}
                   >
                     <RotateCcw className="h-3 w-3" />
@@ -573,20 +561,20 @@ export function EnhancedNumberInput({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+            "rounded-control text-body flex items-center gap-2 px-3 py-2",
             getGlassClasses("base", resolvedTheme, sectionId)
           )}
         >
-          {comparisonData.trend === "up" && <TrendingUp className="h-4 w-4 text-green-500" />}
-          {comparisonData.trend === "down" && <TrendingDown className="h-4 w-4 text-red-500" />}
+          {comparisonData.trend === "up" && <TrendingUp className="text-green h-4 w-4" />}
+          {comparisonData.trend === "down" && <TrendingDown className="text-red h-4 w-4" />}
 
-          <span className="text-foreground">
+          <span className="text-label">
             vs {referenceLabel}:
             <span
               className={cn(
                 "ml-1 font-bold",
-                comparisonData.trend === "up" && "text-green-500",
-                comparisonData.trend === "down" && "text-red-500"
+                comparisonData.trend === "up" && "text-green",
+                comparisonData.trend === "down" && "text-red"
               )}
             >
               {comparisonData.difference > 0 ? "+" : ""}
@@ -595,7 +583,7 @@ export function EnhancedNumberInput({
                 : comparisonData.difference.toFixed(precision)}
               {unit}
             </span>
-            <span className="text-muted-foreground ml-1">
+            <span className="text-label-secondary ml-1">
               ({comparisonData.percentage > 0 ? "+" : ""}
               {comparisonData.percentage.toFixed(1)}%)
             </span>
