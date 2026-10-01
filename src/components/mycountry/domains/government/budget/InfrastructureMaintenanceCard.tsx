@@ -77,6 +77,8 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   }
 
   const { degradation, totalOperationalKm } = profile;
+  // The maintenance budget is served to the nation's owner only.
+  if (degradation.fundingRatio == null || degradation.budgetedMaintenance == null) return null;
   const fundingPercent = Math.min(150, Math.round(degradation.fundingRatio * 100));
 
   const isCritical =

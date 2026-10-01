@@ -13,7 +13,7 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 | `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Public Factbook overview (overview tab) |
 | `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
 | `/countries/[slug]/factbook/labor` | `[slug]/(profile)/factbook/labor/page.tsx` | Factbook labor force & employment statistics |
-| `/countries/[slug]/factbook/government` | `[slug]/(profile)/factbook/government/page.tsx` | Factbook governance structure & budget spending |
+| `/countries/[slug]/factbook/government` | `[slug]/(profile)/factbook/government/page.tsx` | Factbook governance structure & macro spending (allocations are owner-only) |
 | `/countries/[slug]/factbook/geography` | `[slug]/(profile)/factbook/geography/page.tsx` | Factbook geographic compliance & terrain rollup |
 | `/countries/[slug]/dossier` | `[slug]/(profile)/dossier/page.tsx` | Wiki-synced dossier & native lore canvas reader |
 | `/countries/[slug]/activity` | `[slug]/(profile)/activity/page.tsx` | Public nation governance timeline & community posts |
@@ -58,6 +58,7 @@ The profile renders one model built by `_hooks/useCountryProfileLayer.ts`, which
 
 - `intent.getTree` returns the full tree only to the nation's owner (the user acting as it or its `ownerUserId`) and privileged roles; anyone else gets enacted directives only, with `changesJson`, `civCapCost` and `cooldownUntil` redacted.
 - `nationalIssues.getHistory` is FORBIDDEN unless the caller owns the nation or holds a privileged role (`assertCountryWriteAccess`).
+- Budgets: `government.getByCountryId` (the State structure) returns offices, leaders, branches and departments to everyone, but `totalBudget`, allocations, sub-budgets and revenue sources only to the owner and privileged roles; `countries.getByIdWithEconomicData` drops the sector spending split (`governmentBudget`, `fiscalSystem.spendingByCategory`) for visitors, so the factbook's Public Budget section shows the macro totals and hides the allocation card; `mycountry.getCanonFeed` drops entries tied to non-public directives and budget ledger rows. The full list is in [MyCountry](../../../docs/systems/mycountry.md) ("Budgets are private").
 - The rest of the owner's side is owner/privileged only too: every other `nationalIssues` player procedure (open issues, issue detail, pending count, respond/dismiss/mark viewed, recon), `intent.suggest`, `intent.getStatus`, `intent.getLinkedIssues` and `policies.getPolicyReconContext` (CivCap). `intent.getOutcome` answers for enacted directives only unless the caller owns the nation, and `policies.getPolicies` drops drafts for non-owners. Full list in [MyCountry](../../../docs/systems/mycountry.md) (Visibility); tested in `src/tests/server/api/routers/country-private-record.test.ts`.
 
 Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the signed-in viewer owns the country (`userProfile.countryId === country.id`), a tinted "Only you can see this" strip adds open-issue, draft and in-force directive counts (from the owner's own `intent.getTree` and `nationalIssues.getPendingCount`) and a link to MyCountry.
@@ -69,7 +70,7 @@ Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the
 | Vitals, pulse, condition, economy trend | `countries.getByIdWithEconomicData` (via `CountryDataProvider`) |
 | Land (map, capital, cities, regions, story pins, geo profile, neighbours) | `countryGeo.getCountryGeoBundle`; map embed `CountryMapEmbed` (+ `geoCore.getWorldMap`) |
 | Directives, issue outcomes | `countries.getPublicRecord`; owner counts `intent.getTree` + `nationalIssues.getPendingCount` (owner only) |
-| Government, parliament | `government.getByCountryId`, `elections.getElectionStatus` |
+| Government, parliament | `government.getByCountryId` (budget redacted for visitors), `elections.getElectionStatus` |
 | Country DNA, world | `mycountry.getRankings`, `diplomaticCore.getRelationships`, `diplomaticEmbassies.getEmbassies` |
 | Chronicle | Infobox establishment dates + story pins + directives + resolved issues + decisions and diplomatic events (`mycountry.getCanonFeed`), on the in-game calendar |
 | Cover | `unsplashService` (landscape), the flag, or a media-library image (`MediaSearchModal`) |

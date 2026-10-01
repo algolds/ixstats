@@ -4,6 +4,8 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import { redactMilitaryBranchBudget } from "~/lib/country/public-record";
 
 // ===========================
 // Input Validation Schemas
@@ -32,10 +34,12 @@ export const securityMilitaryRouter = createTRPCRouter({
   // Military Branch Endpoints
   // ===========================
 
+  // Public order of battle; branch budgets (`annualBudget`, `budgetPercent`) go to the
+  // nation's owner and privileged roles only.
   getMilitaryBranches: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.militaryBranch.findMany({
+      const branches = await ctx.db.militaryBranch.findMany({
         where: {
           countryId: input.countryId,
           isActive: true,
@@ -46,6 +50,8 @@ export const securityMilitaryRouter = createTRPCRouter({
         },
         orderBy: { createdAt: "asc" },
       });
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return branches;
+      return branches.map(redactMilitaryBranchBudget);
     }),
 
   // ===========================

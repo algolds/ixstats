@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { countriesWithWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter({
   // Embassy Network Operations
@@ -24,8 +25,16 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
         },
       });
 
+      // An embassy's budget belongs to the nation that runs it (the guest): only its owner and
+      // privileged roles see `budget` and `maintenanceCost`.
+      const funders = await countriesWithWriteAccess(
+        ctx,
+        embassies.map((e) => e.guestCountryId)
+      );
+
       return embassies.map((embassy) => {
         const isHost = embassy.hostCountryId === input.countryId;
+        const budgetVisible = funders.has(embassy.guestCountryId);
         const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
 
         return {
@@ -57,8 +66,8 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
           level: embassy.level,
           experience: embassy.experience,
           influence: embassy.influence,
-          budget: embassy.budget,
-          maintenanceCost: embassy.maintenanceCost,
+          budget: budgetVisible ? embassy.budget : undefined,
+          maintenanceCost: budgetVisible ? embassy.maintenanceCost : undefined,
           securityLevel: embassy.securityLevel,
           specialization: embassy.specialization,
           specializationLevel: embassy.specializationLevel,
@@ -91,8 +100,15 @@ export const diplomaticEmbassiesQueriesEmbassyListingsRouter = createTRPCRouter(
 
       if (!embassy) throw new TRPCError({ code: "NOT_FOUND", message: "Embassy not found" });
 
+      // The running nation's (guest's) budget: its owner and privileged roles only.
+      const budgetVisible = (await countriesWithWriteAccess(ctx, [embassy.guestCountryId])).has(
+        embassy.guestCountryId
+      );
+
       return {
         ...embassy,
+        budget: budgetVisible ? embassy.budget : undefined,
+        maintenanceCost: budgetVisible ? embassy.maintenanceCost : undefined,
         hostCountryName: embassy.hostCountry?.name,
         guestCountryName: embassy.guestCountry?.name,
         missions: embassy.missions,

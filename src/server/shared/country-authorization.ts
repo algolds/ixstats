@@ -180,6 +180,42 @@ export async function hasCountryWriteAccess(
 }
 
 /**
+ * Batch form of `hasCountryWriteAccess`: the subset of `countryIds` the caller owns, acts as or
+ * may write as a privileged role. At most two queries (the fresh user and one ownership
+ * lookup) whatever the number of ids; signed-out callers get an empty set without any.
+ */
+export async function countriesWithWriteAccess(
+  ctx: CountryAuthContext,
+  countryIds: readonly (string | null | undefined)[]
+): Promise<Set<string>> {
+  const ids = [...new Set(countryIds.filter((id): id is string => !!id))];
+  const authUserId = ctx.auth?.userId;
+  if (!authUserId || ids.length === 0) return new Set();
+  if (hasCachedPrivilege(ctx, authUserId)) return new Set(ids);
+
+  const granted = new Set<string>();
+  if (ctx.user?.countryId && ids.includes(ctx.user.countryId)) granted.add(ctx.user.countryId);
+  if (granted.size === ids.length) return granted;
+
+  const freshWriter = await findFreshWriter(ctx, authUserId);
+  if (freshWriter?.privileged) return new Set(ids);
+  if (freshWriter?.countryId && ids.includes(freshWriter.countryId)) {
+    granted.add(freshWriter.countryId);
+  }
+
+  const userId = freshWriter?.id ?? ctx.user?.id ?? null;
+  const rest = ids.filter((id) => !granted.has(id));
+  if (userId && rest.length > 0 && typeof ctx.db.country?.findMany === "function") {
+    const owned: Array<{ id: string }> = await ctx.db.country.findMany({
+      where: { id: { in: rest }, ownerUserId: userId },
+      select: { id: true },
+    });
+    for (const c of owned) granted.add(c.id);
+  }
+  return granted;
+}
+
+/**
  * Assert write access for a row that belongs to a country.
  * `countryId` is the row's owning country as loaded from the DB;
  * null/undefined (row missing or orphaned) → NOT_FOUND for non-privileged callers.

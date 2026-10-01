@@ -4,12 +4,20 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 import { rollBudgetForward } from "~/lib/government/budget-allocations";
+import { redactGovernmentBudget } from "~/lib/country/public-record";
 
 export const governmentCrudRouter = createTRPCRouter({
-  // Get government structure by country ID with configurable includes
-  // Phase 1 optimization: Added limits to prevent unbounded data fetching
+  /**
+   * Government structure by country ID with configurable includes (limits keep nested data
+   * bounded). Public: offices, leaders, branches and departments. The budget (`totalBudget`,
+   * allocations, sub-budgets, revenue sources) is served to the nation's owner and privileged
+   * roles only; anyone else gets it redacted (`redactGovernmentBudget`).
+   */
   getByCountryId: publicProcedure
     .input(
       z.object({
@@ -63,10 +71,12 @@ export const governmentCrudRouter = createTRPCRouter({
         return null;
       }
 
-      return governmentStructure;
+      if (await hasCountryWriteAccess(ctx, countryId)) return governmentStructure;
+      return redactGovernmentBudget(governmentStructure);
     }),
 
-  // Get full government structure without limits (admin/export use cases)
+  // Full government structure without limits (admin/export, the budget dashboard); the budget
+  // is redacted for non-owners as in getByCountryId.
   getFullByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -95,10 +105,12 @@ export const governmentCrudRouter = createTRPCRouter({
         },
       });
 
-      return governmentStructure;
+      if (!governmentStructure) return governmentStructure;
+      if (await hasCountryWriteAccess(ctx, input.countryId)) return governmentStructure;
+      return redactGovernmentBudget(governmentStructure);
     }),
 
-  // Check for conflicts before creating/updating
+  // Check for conflicts before creating/updating (the warnings quote the stored budget)
   checkConflicts: protectedProcedure
     .input(
       z.object({
@@ -107,6 +119,7 @@ export const governmentCrudRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       const warnings = await detectGovernmentConflicts(ctx.db as any, input.countryId, input.data);
       return { warnings };
     }),

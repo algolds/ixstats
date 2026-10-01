@@ -9,6 +9,14 @@
  *   package line items (`changesJson`), CivCap and cooldowns.
  * - National issues: only resolved ones (`responded`, `auto_resolved`) with the decision label
  *   and the engine's outcome summary. Open, expired and dismissed issues stay private.
+ * - Budgets: the government budget (total, department allocations, sub-budgets, revenue
+ *   sources), the sector spending split (`GovernmentBudget`, `FiscalSystem.spendingByCategory`),
+ *   military branch budgets and embassy budgets stay private. Readers that serve both audiences
+ *   strip them for non-owners with the `redact*` helpers below. Macro factbook figures on the
+ *   country row (total spending and revenue as a share of GDP, balance, debt, tax rates) stay
+ *   public.
+ * - Ledger: a visitor's canon feed leaves out entries tied to directives that are not public
+ *   (drafts, abandoned) and entries that move a budget field (`isBudgetLedgerRow`).
  */
 
 // ─── Directives ─────────────────────────────────────────────────────────────
@@ -122,4 +130,84 @@ export function toPublicIssueOutcomes(
       ixTime: i.respondedIxTime ?? i.createdIxTime ?? null,
     }))
     .sort((a, b) => (b.ixTime ?? 0) - (a.ixTime ?? 0));
+}
+
+// ─── Budgets ────────────────────────────────────────────────────────────────
+
+/**
+ * A government structure with its budget left out, for a visitor: `totalBudget` is omitted and
+ * the budget relation lists (structure and department allocations, sub-budgets, revenue sources)
+ * come back empty. Offices, leaders, branches, departments and political metrics are kept.
+ */
+export type RedactedGovernmentBudget<T> = Omit<T, "totalBudget"> & { totalBudget?: undefined };
+
+type DepartmentLike = { budgetAllocations?: unknown; subBudgets?: unknown };
+
+export function redactGovernmentBudget<
+  T extends {
+    totalBudget?: unknown;
+    budgetAllocations?: unknown;
+    revenueSources?: unknown;
+    departments?: readonly DepartmentLike[];
+  },
+>(structure: T): RedactedGovernmentBudget<T> {
+  const { totalBudget: _totalBudget, ...rest } = structure;
+  const out: Record<string, unknown> = { ...rest };
+  if ("budgetAllocations" in structure) out.budgetAllocations = [];
+  if ("revenueSources" in structure) out.revenueSources = [];
+  if (Array.isArray(structure.departments)) {
+    out.departments = structure.departments.map((d: DepartmentLike) => {
+      const dept: Record<string, unknown> = { ...d };
+      if ("budgetAllocations" in d) dept.budgetAllocations = [];
+      if ("subBudgets" in d) dept.subBudgets = [];
+      return dept;
+    });
+  }
+  return out as RedactedGovernmentBudget<T>;
+}
+
+/**
+ * A country record with its economic relations, for a visitor: the sector spending split
+ * (`governmentBudget`, `fiscalSystem.spendingByCategory`) is nulled. Tax rates and the macro
+ * fiscal figures on the row itself are public.
+ */
+export function redactEconomicBudget<T extends object>(country: T): T {
+  const out = { ...country } as Record<string, unknown>;
+  if ("governmentBudget" in country) out.governmentBudget = null;
+  const fiscal = (country as { fiscalSystem?: unknown }).fiscalSystem;
+  if (fiscal && typeof fiscal === "object" && "spendingByCategory" in fiscal) {
+    out.fiscalSystem = { ...fiscal, spendingByCategory: null };
+  }
+  return out as T;
+}
+
+/** A military branch without its budget (`annualBudget`, `budgetPercent` omitted). */
+export function redactMilitaryBranchBudget<
+  T extends { annualBudget?: unknown; budgetPercent?: unknown },
+>(
+  branch: T
+): Omit<T, "annualBudget" | "budgetPercent"> & {
+  annualBudget?: undefined;
+  budgetPercent?: undefined;
+} {
+  const { annualBudget: _annualBudget, budgetPercent: _budgetPercent, ...rest } = branch;
+  return rest;
+}
+
+/**
+ * True for a ledger entry that reveals a budget figure: one that moves a budget model or the
+ * structure's `totalBudget` (policy maintenance debits it), or a policy entry whose text cites
+ * the budget. Macro fields on the country row (`spendingGDPPercent`, `taxRevenueGDPPercent`, …)
+ * are public and do not count.
+ */
+export function isBudgetLedgerRow(row: {
+  targetModel?: string | null;
+  targetField?: string | null;
+  sourceType?: string | null;
+  description?: string | null;
+}): boolean {
+  if (row.targetModel && /budget|allocation|revenuesource/i.test(row.targetModel)) return true;
+  if (row.targetModel === "GovernmentStructure" && row.targetField === "totalBudget") return true;
+  if (row.targetField) return false;
+  return row.sourceType === "policy" && /budget/i.test(row.description ?? "");
 }

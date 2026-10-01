@@ -399,7 +399,8 @@ export function useBuilderEditMode({
             legislatureName: existingGovernment.legislatureName ?? undefined,
             executiveName: existingGovernment.executiveName ?? undefined,
             judicialName: existingGovernment.judicialName ?? undefined,
-            totalBudget: existingGovernment.totalBudget,
+            // Always present here: the builder only edits a nation the caller may write to.
+            totalBudget: existingGovernment.totalBudget ?? 0,
             fiscalYear: existingGovernment.fiscalYear,
             budgetCurrency: existingGovernment.budgetCurrency,
           },

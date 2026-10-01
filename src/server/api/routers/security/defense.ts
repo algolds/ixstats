@@ -2,7 +2,8 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 // ===========================
 // Input Validation Schemas
@@ -17,7 +18,8 @@ export const securityDefenseRouter = createTRPCRouter({
   // Defense Budget Endpoints
   // ===========================
 
-  getDefenseBudget: publicProcedure
+  // Owner/privileged only (FORBIDDEN otherwise): budgets are private.
+  getDefenseBudget: protectedProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -25,6 +27,7 @@ export const securityDefenseRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       const year = input.fiscalYear ?? new Date().getFullYear();
 
       return ctx.db.defenseBudget.findFirst({

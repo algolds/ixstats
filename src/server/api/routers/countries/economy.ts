@@ -20,7 +20,11 @@ import {
   getCountryComponentsStatsData,
   resolveCountryRefId,
 } from "./utils";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
+import { redactEconomicBudget } from "~/lib/country/public-record";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -35,6 +39,11 @@ const SOVEREIGN_OWNER_SELECT = {
 type SovereignOwner = Prisma.UserGetPayload<{ select: typeof SOVEREIGN_OWNER_SELECT }>;
 
 export const economyProcedures = {
+  /**
+   * The country record with its economic relations and projections. Public (profile, factbook,
+   * MyCountry); the sector spending split (`governmentBudget`, `fiscalSystem.spendingByCategory`)
+   * goes to the nation's owner and privileged roles only (`redactEconomicBudget`).
+   */
   getByIdWithEconomicData: rateLimitedPublicProcedure
     .input(
       z.object({
@@ -297,11 +306,11 @@ export const economyProcedures = {
       };
 
       const ownerClerkUserId = rawUser?.clerkUserId ?? null;
+      const record = { ...response, ownerClerkUserId };
 
-      return {
-        ...response,
-        ownerClerkUserId,
-      } as any;
+      return (
+        (await hasCountryWriteAccess(ctx, country.id)) ? record : redactEconomicBudget(record)
+      ) as any;
     }),
 
   getByIdAtTime: publicProcedure

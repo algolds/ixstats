@@ -23,10 +23,21 @@ import {
 } from "~/server/shared/mycountry-helpers";
 
 import type { NationalSummary } from "~/types/mycountry";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  isBudgetLedgerRow,
+  isPublicDirective,
+  redactEconomicBudget,
+} from "~/lib/country/public-record";
+
+/** `StorytellerEffect.createdBy` of a directive's GDP effect: `intent:<id>`. */
+const INTENT_EFFECT_PREFIX = "intent:";
 
 export const myCountryDashboardRouter = createTRPCRouter({
   /**
-   * Get comprehensive country data with vitality scores for MyCountry dashboard
+   * Country data with vitality scores for the MyCountry dashboard. The budget relations
+   * (`governmentBudget`, `fiscalSystem.spendingByCategory`) go to the nation's owner and
+   * privileged roles only; the cache holds the full record and visitors get it redacted.
    */
   getCountryDashboard: publicProcedure
     .input(
@@ -35,13 +46,15 @@ export const myCountryDashboardRouter = createTRPCRouter({
         includeHistory: z.boolean().default(false),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const cacheKey = `dashboard_${input.countryId}_hist_${input.includeHistory}`;
+      const forViewer = async <T extends Record<string, any>>(record: T): Promise<T> =>
+        (await hasCountryWriteAccess(ctx, input.countryId)) ? record : redactEconomicBudget(record);
       try {
         const cached = await globalCache.get<any>(cacheKey);
-        if (cached) return cached;
+        if (cached) return await forViewer(cached);
 
-        const country = await db.country.findUnique({
+        const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
             historicalData: input.includeHistory
@@ -64,7 +77,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         }
 
         // Calculate vitality scores (diplomacy + government read from their own tables)
-        const extras = await loadVitalityExtras(country.id);
+        const extras = await loadVitalityExtras(country.id, ctx.db);
         const vitalityScores = calculateVitalityScores(country as any, extras);
 
         const result = {
@@ -75,7 +88,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
         };
 
         await globalCache.set(cacheKey, result, { ttl: 15 });
-        return result;
+        return await forViewer(result);
       } catch (error) {
         console.error("[MyCountry Dashboard] Error:", error);
         throw new Error("Failed to get country dashboard data", { cause: error });
@@ -152,6 +165,10 @@ export const myCountryDashboardRouter = createTRPCRouter({
    * Get unified canon feed for a country.
    * Merges storyteller effects, diplomatic events, and resolved national issues into a
    * single chronological story. Excludes ThinkPages posts to avoid double-counting.
+   *
+   * Public, filtered for visitors: anyone but the nation's owner and privileged roles gets no
+   * effect or ledger entry tied to a directive that is not public (drafts, abandoned:
+   * `isPublicDirective`), and no ledger entry that moves a budget (`isBudgetLedgerRow`).
    */
   getCanonFeed: publicProcedure
     .input(
@@ -160,17 +177,23 @@ export const myCountryDashboardRouter = createTRPCRouter({
         limit: z.number().min(1).max(60).default(30),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
         const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const [effects, events, decisions, logs] = await Promise.all([
-          db.storytellerEffect.findMany({
+        const [rawEffects, events, decisions, rawLogs, isOwner] = await Promise.all([
+          ctx.db.storytellerEffect.findMany({
             where: { countryId: input.countryId, ixTimeTimestamp: { gte: since } },
             orderBy: { ixTimeTimestamp: "desc" },
             take: input.limit,
-            select: { id: true, description: true, inputType: true, ixTimeTimestamp: true },
+            select: {
+              id: true,
+              description: true,
+              inputType: true,
+              ixTimeTimestamp: true,
+              createdBy: true,
+            },
           }),
-          db.diplomaticEvent.findMany({
+          ctx.db.diplomaticEvent.findMany({
             where: {
               OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
             },
@@ -178,7 +201,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
             take: input.limit,
             select: { id: true, title: true, eventType: true, severity: true, createdAt: true },
           }),
-          db.nationalIssue.findMany({
+          ctx.db.nationalIssue.findMany({
             where: {
               countryId: input.countryId,
               status: { in: ["responded", "auto_resolved"] },
@@ -187,7 +210,7 @@ export const myCountryDashboardRouter = createTRPCRouter({
             take: input.limit,
             select: { id: true, title: true, domain: true, respondedAt: true, updatedAt: true },
           }),
-          db.countryChangeLog.findMany({
+          ctx.db.countryChangeLog.findMany({
             where: { countryId: input.countryId },
             orderBy: { createdAt: "desc" },
             take: input.limit,
@@ -195,12 +218,48 @@ export const myCountryDashboardRouter = createTRPCRouter({
               id: true,
               description: true,
               deltaValue: true,
+              targetModel: true,
               targetField: true,
               sourceType: true,
+              sourceId: true,
               createdAt: true,
             },
           }),
+          hasCountryWriteAccess(ctx, input.countryId),
         ]);
+
+        let effects = rawEffects;
+        let logs = rawLogs;
+        if (!isOwner) {
+          // Directives behind the feed's entries: a directive's ledger rows carry
+          // sourceType "decision" + its id, its GDP effect createdBy "intent:<id>".
+          const effectIntentId = (e: { createdBy?: string | null }) =>
+            e.createdBy?.startsWith(INTENT_EFFECT_PREFIX)
+              ? e.createdBy.slice(INTENT_EFFECT_PREFIX.length)
+              : null;
+          const logIntentId = (l: { sourceType?: string | null; sourceId?: string | null }) =>
+            l.sourceType === "decision" && l.sourceId ? l.sourceId : null;
+          const intentIds = [
+            ...new Set(
+              [...rawEffects.map(effectIntentId), ...rawLogs.map(logIntentId)].filter(
+                (id): id is string => !!id
+              )
+            ),
+          ];
+          const intents =
+            intentIds.length > 0
+              ? await ctx.db.intent.findMany({
+                  where: { id: { in: intentIds }, countryId: input.countryId },
+                  select: { id: true, status: true, tier: true },
+                })
+              : [];
+          const publicIntents = new Set(intents.filter(isPublicDirective).map((i) => i.id));
+          // A missing directive (deleted, or another country's) counts as private.
+          const isPublicSource = (intentId: string | null) =>
+            intentId === null || publicIntents.has(intentId);
+          effects = rawEffects.filter((e) => isPublicSource(effectIntentId(e)));
+          logs = rawLogs.filter((l) => isPublicSource(logIntentId(l)) && !isBudgetLedgerRow(l));
+        }
 
         type CanonFeedItem = {
           id: string;

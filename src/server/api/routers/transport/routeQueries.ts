@@ -8,13 +8,20 @@
 import { z } from "zod/v4";
 import type { Geometry } from "geojson";
 import type { Prisma } from "@prisma/client";
-import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  cachedPublicProcedure,
+  publicProcedure,
+  userCacheMiddleware,
+} from "~/server/api/trpc";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import {
   calculateTAMI,
   calculateMaintenanceDegradation,
   calculateModalBreakdown,
   estimateIntercityTravelTimes,
+  type DegradationResult,
 } from "~/lib/economy/national-mobility";
 import {
   calculateRouteTravelTime,
@@ -22,6 +29,13 @@ import {
 } from "~/lib/economy/travel-time";
 
 type JsonPrimitive = string | number | boolean | null;
+
+/** Network condition; `fundingRatio` and `budgetedMaintenance` are the owner's only. */
+type MobilityDegradation = Omit<DegradationResult, "fundingRatio"> & {
+  fundingRatio?: number;
+  budgetedMaintenance?: number;
+  requiredMaintenance: number;
+};
 type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
 
 type JsonGeometry = {
@@ -221,8 +235,12 @@ export const transportRouteQueriesRouter = createTRPCRouter({
 
   /**
    * Get comprehensive National Mobility & Transit Accessibility profile (Phase 2).
+   * Public (the factbook's geography tab), but the maintenance budget behind the network's
+   * condition (`degradation.budgetedMaintenance`, `degradation.fundingRatio`) goes to the
+   * nation's owner and privileged roles only. Cached per viewer for that reason.
    */
-  getNationalMobilityProfile: cachedPublicProcedure
+  getNationalMobilityProfile: publicProcedure
+    .use(userCacheMiddleware)
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       const [routes, hubs, cities, budget, country] = await Promise.all([
@@ -362,14 +380,25 @@ export const transportRouteQueriesRouter = createTRPCRouter({
           };
         });
 
+      const requiredMaintenance = Math.round(totalMaintenanceCost * 1000) / 1000;
+      const { fundingRatio, ...condition } = degradation;
+      // The condition is observable; the budget behind it is the owner's.
+      const degradationOut: MobilityDegradation = (await hasCountryWriteAccess(
+        ctx,
+        input.countryId
+      ))
+        ? {
+            ...condition,
+            fundingRatio,
+            budgetedMaintenance: Math.round(budgetedInfraMaintenance * 1000) / 1000,
+            requiredMaintenance,
+          }
+        : { ...condition, requiredMaintenance };
+
       return {
         countryId: input.countryId,
         tami: tamiResult,
-        degradation: {
-          ...degradation,
-          budgetedMaintenance: Math.round(budgetedInfraMaintenance * 1000) / 1000,
-          requiredMaintenance: Math.round(totalMaintenanceCost * 1000) / 1000,
-        },
+        degradation: degradationOut,
         modalSummary,
         intercityLinks,
         topCorridors,
