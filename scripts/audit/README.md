@@ -23,6 +23,7 @@ Automation under `scripts/audit` provides fast confidence in architecture bounda
 | `audit-vault-exploits.ts` | `bun run audit:vault-exploits` (`:json`, `:apply`) | Vault ledger report for the M0 exploits (store charges not matching item prices, repeat cosmetic buys, repeated one-time / NS deck-import bonuses) plus the planned corrections; `:apply` writes them as idempotent `ADMIN_ADJUSTMENT` rows (rules in `src/lib/vault/exploit-corrections.ts`; back up first) |
 | `audit-wikios-db.ts` | `bun run audit:wikios-db` | WikiOS PostgreSQL store self-audit |
 | `audit-wikios-parity.ts` | `bun run audit:wikios-parity` | MediaWiki ↔ PostgreSQL WikiOS parity audit |
+| `wikios-regex-fuzz.ts` (+ `wikios-regex-fuzz-targets.ts`) | `bun run audit:wikios-regex` | WikiOS regex-DoS fuzz: every function that reads page text on 2 MB of hostile wikitext/HTML/XML, one process each, 200 ms budget; exits 1 on a breach (`--only=`, `--family=`, `--all`, `--json=`). The Jest gate `src/tests/lib/wiki-os/regex-dos.test.ts` runs the same list on 200 KB |
 | `verify-country-links.ts` | `bun run audit:country-links` | User ↔ country linkage integrity |
 | `validate-schema-alignment.ts` | `bun run validate:schemas` | Prisma model fields vs Zod input schemas |
 | `validate-migration-safety.ts` | `bun run validate:migrations` | Migration safety and schema drift |
