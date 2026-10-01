@@ -3,11 +3,16 @@
  *
  * The revision goes out as a one-page, one-revision XML export through `action=import` with
  * `assignknownusers=1`, so MediaWiki credits it to the account that made it (the verified link of the
- * author, else the author's name; an unknown name becomes `wikios>Name`) at the time it was made. The
- * import answers with no revision id, so the result is checked: when MediaWiki's current revision is not this
- * text (someone edited there since, so the imported revision is not the current one), the text is pushed
- * once more as an ordinary `action=edit` by the mirror account. Either way the WikiOS revision is stamped with
- * its MediaWiki revision id, and the inbound sync (plan 406) knows the revision as WikiOS's own.
+ * author, else the author's name; an unknown name becomes `wikios>Name`) at the time it was made.
+ *
+ * What MediaWiki does with an import (seen against a real MediaWiki 1.45): the imported revision becomes the
+ * page's current one only when it is newer than the current revision; either way MediaWiki then adds a null
+ * revision by the importing account ("1 revision imported: <summary>") that copies the page's CURRENT text.
+ * The import answers with no revision id, so the result is checked: when MediaWiki's current revision (that null
+ * revision, normally) has this revision's text, it is stamped on the WikiOS revision and the article (a MediaWiki
+ * edit on top of it has it as its parent, and the inbound sync knows it as the bot's own); when it does not
+ * (someone edited in MediaWiki since, or the import is older than the bot's last null revision), the text is
+ * pushed once more as an ordinary `action=edit` by the mirror account, and that edit is stamped.
  *
  * Import errors (no import right, a bad prefix) are failures: the job is retried and ends up dead for an
  * operator; there is no fallback for them.
