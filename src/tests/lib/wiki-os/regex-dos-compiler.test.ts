@@ -9,6 +9,17 @@
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import {
+  hasReferencesTag,
+  hasReflist,
+  replaceDelimited,
+  replaceHeadings,
+  replaceReferencesTags,
+  replaceReflists,
+  replaceRefs,
+  replaceWikitables,
+  stripNamespacedBrackets,
+} from "~/lib/wiki-os/transformers/compile-passes";
+import {
   replaceInlineTemplates,
   replacePipedLinks,
   replaceSimpleLinks,
@@ -699,6 +710,17 @@ const COMPILER_TOKENS = [
   "<references group=x />",
   "{{reflist}}",
   "{{Reflist|2}}",
+  // closers that are not: a `/` that is not `/>`, a single `}`, a name that runs into a `/`
+  "<ref/x>",
+  "<ref/x>y</ref>",
+  "<ref name=a/x>",
+  "<ref name=a/ >",
+  "<ref\n/>",
+  "{{reflist}",
+  "{{reflist}x}}",
+  "{{reflist|a}b}}",
+  "<references/x>",
+  "<references x>",
   "{|",
   "|}",
   "|-",
@@ -925,5 +947,147 @@ describe("unified-parser: infobox values are cleaned by scanning", () => {
       "Urcea"
     );
     expect(parsed?.conventional_long_name).toContain("{{a|");
+  });
+});
+
+// ---- transformers/compile-passes: each pass against its expression ----------------------------------------------
+
+describe("compile-passes: every pass answers what its regular expression answered", () => {
+  const TOKENS = [
+    "<ref",
+    "<REF",
+    "<ref>",
+    "</ref>",
+    "</REF>",
+    "<ref name=a>",
+    '<ref name="b">',
+    "<ref name='c' />",
+    "<ref name=a/>",
+    "<ref/>",
+    "<ref />",
+    "<ref/x>",
+    "<ref name=a/x>",
+    "name=",
+    "/",
+    "/>",
+    ">",
+    '"',
+    "'",
+    " ",
+    "\n",
+    "\r",
+    "\u2028",
+    "\t",
+    "{|",
+    "|}",
+    "{{reflist",
+    "{{Reflist|2}}",
+    "{{reflist}",
+    "}",
+    "}}",
+    "|",
+    "<references",
+    "<references/>",
+    "<references x>",
+    "<referencesx>",
+    "<s>",
+    "</s>",
+    "<del>",
+    "</del>",
+    "~~",
+    "~",
+    "<S>",
+    "====",
+    "=",
+    "== a ==",
+    "==== a ====",
+    "[category:",
+    "[Category:x]",
+    "[template:",
+    "[Template:y]",
+    "[",
+    "]",
+    "a",
+    "b c",
+  ];
+  const texts = [...randomTexts(TOKENS, 40_000, 141, 12), ...fixtures];
+  const compare = (
+    actual: (text: string) => string | boolean,
+    expected: (text: string) => string | boolean
+  ) => expect(disagreements(texts, actual, expected)).toEqual([]);
+
+  it("replaceRefs", () => {
+    const show = (name: string | undefined, content: string | undefined) => `[${name}|${content}]`;
+    compare(
+      (text) => replaceRefs(text, ({ name, content }) => show(name, content)),
+      (text) =>
+        text.replace(
+          /<ref(?:\s+name=["']?([^"'>\s]+)["']?)?(?:\s*\/>|>(.*?)<\/ref>)/gis,
+          (_match, name: string | undefined, content: string | undefined) => show(name, content)
+        )
+    );
+  });
+
+  it("replaceWikitables", () => {
+    compare(
+      (text) => replaceWikitables(text, (inside) => `<T:${inside}>`),
+      (text) => text.replace(/\{\|([\s\S]*?)\|\}/g, (_match, inside: string) => `<T:${inside}>`)
+    );
+  });
+
+  it("replaceDelimited", () => {
+    const render = (inside: string) => `<d>${inside}</d>`;
+    compare(
+      (text) =>
+        replaceDelimited(text, [
+          { open: "<s>", close: "</s>", render },
+          { open: "<del>", close: "</del>", render },
+          { open: "~~", close: "~~", render },
+        ]),
+      (text) =>
+        text.replace(
+          /<s>([\s\S]*?)<\/s>|<del>([\s\S]*?)<\/del>|~~([\s\S]*?)~~/gi,
+          (_match, one: string | undefined, two: string | undefined, three: string | undefined) =>
+            render(one || two || three || "")
+        )
+    );
+  });
+
+  it("replaceHeadings", () => {
+    for (const level of [4, 3, 2]) {
+      const marks = "=".repeat(level);
+      compare(
+        (text) => replaceHeadings(text, level, (title) => `<h>${title}</h>`),
+        (text) =>
+          text.replace(
+            new RegExp(`^${marks}\\s*(.*?)\\s*${marks}`, "gm"),
+            (_match, title: string) => `<h>${title}</h>`
+          )
+      );
+    }
+  });
+
+  it("stripNamespacedBrackets", () => {
+    compare(
+      (text) => stripNamespacedBrackets(text, "category:"),
+      (text) => text.replace(/\[(?:category|Category):[^\]]+\]/gi, "")
+    );
+    compare(
+      (text) => stripNamespacedBrackets(text, "template:"),
+      (text) => text.replace(/\[(?:Template|template):[^\]]+\]/gi, "")
+    );
+  });
+
+  it("the references tag and the reflist", () => {
+    compare(hasReferencesTag, (text) => /<references\b[^>]*\/?>/i.test(text));
+    compare(
+      (text) => replaceReferencesTags(text, "$&R"),
+      (text) => text.replace(/<references\b[^>]*\/?>/gi, () => "$&R")
+    );
+    compare(hasReflist, (text) => /\{\{[Rr]eflist[^}]*\}\}/i.test(text));
+    compare(
+      (text) => replaceReflists(text, "$&R"),
+      (text) => text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, () => "$&R")
+    );
   });
 });
