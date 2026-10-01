@@ -16,6 +16,9 @@ export const MAX_COMPARE_TEXT_CHARS = 200_000;
 /** The diff table's size limit: a comparison of two big texts answers `toobig` instead of building a huge page. */
 export const MAX_DIFF_CHARS = 2 * 1024 * 1024;
 
+/** Unchanged lines shown on each side of a change, as MediaWiki's diff table shows. */
+const MAX_CONTEXT_LINES = 2;
+
 const COMPARE_PROPS = ["diff", "diffsize", "rel", "ids", "title", "user", "comment", "parsedcomment", "size", "timestamp"] as const;
 type CompareProp = (typeof COMPARE_PROPS)[number];
 const RELATIVE = ["prev", "next", "cur"] as const;
@@ -111,7 +114,7 @@ function revisionFields(label: "from" | "to", side: Side, props: ReadonlySet<Com
 
 function boundedDiff(rc: ApiContext, from: string, to: string): string {
   try {
-    return rc.deps.services.diff(from, to, { maxOutputChars: MAX_DIFF_CHARS });
+    return rc.deps.services.diff(from, to, { maxOutputChars: MAX_DIFF_CHARS, contextLines: MAX_CONTEXT_LINES });
   } catch (error) {
     if (error instanceof DiffTooLarge) throw new ApiError("toobig", "The diff is larger than 2 MB.");
     throw error;

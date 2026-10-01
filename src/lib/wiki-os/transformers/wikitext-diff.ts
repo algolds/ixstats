@@ -16,6 +16,11 @@ export class DiffTooLarge extends Error {
 export interface DiffOptions {
   /** Stop with `DiffTooLarge` once the rows come to more than this many characters (default: no limit). */
   maxOutputChars?: number;
+  /**
+   * Show at most this many unchanged lines on each side of a change, as MediaWiki's diff table does
+   * (2). Default: the whole unchanged block beside a change, and the first and last block in full.
+   */
+  contextLines?: number;
 }
 
 /**
@@ -26,7 +31,7 @@ export interface DiffOptions {
 export function computeWikitextDiff(
   oldText: string,
   newText: string,
-  { maxOutputChars = Number.POSITIVE_INFINITY }: DiffOptions = {}
+  { maxOutputChars = Number.POSITIVE_INFINITY, contextLines }: DiffOptions = {}
 ): string {
   const oldLines = oldText.split("\n");
   const newLines = newText.split("\n");
@@ -34,7 +39,7 @@ export function computeWikitextDiff(
   // Compute LCS-based diff using Myers algorithm (simplified)
   const changes = diffLines(oldLines, newLines);
 
-  if (changes.length === 0) {
+  if (changes.length === 0 || (contextLines !== undefined && changes.every((change) => change.type === "equal"))) {
     return '<tr><td colspan="4" class="diff-empty">No changes</td></tr>';
   }
 
@@ -47,22 +52,17 @@ export function computeWikitextDiff(
   };
 
   for (const [changeIndex, change] of changes.entries()) {
-    // Decided once per change, not once per line (it looks at the neighbouring changes).
-    const showContext = change.type === "equal" && isNearChange(changes, changeIndex, 3);
     switch (change.type) {
       case "equal":
-        for (const line of change.lines) {
-          // Context line (show a few around changes)
-          if (showContext) {
-            addRow(
-              `<tr>` +
-                `<td class="diff-marker" data-marker=" "></td>` +
-                `<td class="diff-context">${escapeHtml(line)}</td>` +
-                `<td class="diff-marker" data-marker=" "></td>` +
-                `<td class="diff-context">${escapeHtml(line)}</td>` +
-                `</tr>`
-            );
-          }
+        for (const line of contextLinesOf(changes, changeIndex, change.lines, contextLines)) {
+          addRow(
+            `<tr>` +
+              `<td class="diff-marker" data-marker=" "></td>` +
+              `<td class="diff-context">${escapeHtml(line)}</td>` +
+              `<td class="diff-marker" data-marker=" "></td>` +
+              `<td class="diff-context">${escapeHtml(line)}</td>` +
+              `</tr>`
+          );
         }
         break;
 
@@ -246,6 +246,26 @@ function simpleLCS(a: string[], b: string[]): [number, number][] {
   }
 
   return result;
+}
+
+/**
+ * The lines of the unchanged block `changes[idx]` that the diff shows. With `contextLines` that is the
+ * given number beside each change (a block between two changes keeps both ends, or all of it when it
+ * is short; the first block keeps its end, the last its start). Without it, a block beside a change,
+ * the first and the last are shown in full.
+ */
+function contextLinesOf(changes: DiffChange[], idx: number, lines: string[], contextLines: number | undefined): string[] {
+  const hasPrev = idx > 0;
+  const hasNext = idx < changes.length - 1;
+  if (contextLines === undefined) {
+    // Decided once per block, not once per line (it looks at the neighbouring changes).
+    return isNearChange(changes, idx, 3) ? lines : [];
+  }
+  if (!hasPrev && !hasNext) return [];
+  if (!hasPrev) return lines.slice(Math.max(0, lines.length - contextLines));
+  if (!hasNext) return lines.slice(0, contextLines);
+  if (lines.length <= 2 * contextLines) return lines;
+  return [...lines.slice(0, contextLines), ...lines.slice(lines.length - contextLines)];
 }
 
 /** Whether the equal block `changes[idx]` is shown in full: the first and last block, or one beside a change, or a short one. */

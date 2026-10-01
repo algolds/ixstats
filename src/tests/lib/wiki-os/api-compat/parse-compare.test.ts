@@ -222,7 +222,7 @@ describe("action=compare", () => {
       totitle: "Alpha",
       body: "<tr><td>old text</td><td>" + PAGE_TEXT + "</td></tr>",
     });
-    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT, { maxOutputChars: 2 * 1024 * 1024 }]);
+    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT, { maxOutputChars: 2 * 1024 * 1024, contextLines: 2 }]);
     const v1 = await run("action=compare&fromrev=11&torev=21", "format=json");
     expect(v1.body.compare["*"]).toBe("<tr><td>old text</td><td>beta</td></tr>");
     expect(v1.body.compare.body).toBeUndefined();
