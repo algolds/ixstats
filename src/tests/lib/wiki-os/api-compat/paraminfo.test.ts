@@ -153,6 +153,61 @@ describe("action=purge", () => {
     expect(followed.purge[0]).toMatchObject({ title: "Alpha", purged: true });
   });
 
+  it("takes one render from the wiki_api_render bucket per purged page, and refuses past the account's minute", async () => {
+    const pages = Array.from({ length: 60 }, (_, i) => ({ pageId: i + 1, title: `P${i}` }));
+    // a limiter that behaves like the real one: it counts per bucket and key, and says no past maxRequests
+    const counts = new Map<string, number>();
+    const seen: Array<{ key: string; bucket: string; max: number }> = [];
+    const rateLimit = async (key: string, bucket: string, limits: { maxRequests: number }) => {
+      seen.push({ key, bucket, max: limits.maxRequests });
+      const id = `${bucket}|${key}`;
+      const used = (counts.get(id) ?? 0) + 1;
+      counts.set(id, used);
+      return { success: used <= limits.maxRequests, resetAt: new Date(0) };
+    };
+    const wiki = await makeWikiDeps({ pages, revisions: [] }, { extra: { rateLimit } });
+    await loggedIn(wiki.bot);
+    const purge = (names: string[]) => wiki.bot.post({ action: "purge", titles: names.join("|"), formatversion: "2" }) as Promise<Body>;
+    const render = () => seen.filter((entry) => entry.bucket === "wiki_api_render");
+
+    const first = await purge(pages.slice(0, 50).map((p) => p.title));
+    expect(first.purge).toHaveLength(50);
+    expect(render()).toHaveLength(50);
+    expect(render().every((entry) => entry.key.startsWith("user:") && entry.max === 60)).toBe(true);
+
+    // 10 more are within the minute, the 11th is not: the whole request is refused before anything is purged
+    const before = purged(wiki.calls).length;
+    const second = await purge(pages.slice(0, 20).map((p) => p.title));
+    expect(second.error.code).toBe("ratelimited");
+    expect(purged(wiki.calls)).toHaveLength(before);
+
+    // missing and invalid titles cost nothing
+    counts.clear();
+    seen.length = 0;
+    await purge(["Nope", "Bad[title"]);
+    expect(render()).toHaveLength(0);
+  });
+
+  it("does not charge an account that has the noratelimit right (the bot group, with the highvolume grant)", async () => {
+    const pages = Array.from({ length: 50 }, (_, i) => ({ pageId: i + 1, title: `P${i}` }));
+    const buckets: string[] = [];
+    const run = async (grants: string[]) => {
+      buckets.length = 0;
+      const wiki = await makeWikiDeps({ pages, revisions: [] }, {
+        groups: ["*", "user", "bot"],
+        grants,
+        extra: { rateLimit: async (_key, bucket) => (buckets.push(bucket), { success: bucket !== "wiki_api_render", resetAt: new Date(0) }) },
+      });
+      await loggedIn(wiki.bot);
+      return (await wiki.bot.post({ action: "purge", titles: pages.map((p) => p.title).join("|"), formatversion: "2" })) as Body;
+    };
+    const limited = await run(["basic"]);
+    expect(limited.error.code).toBe("ratelimited");
+    const unlimited = await run(["basic", "highvolume"]);
+    expect(unlimited.purge).toHaveLength(50);
+    expect(buckets).not.toContain("wiki_api_render");
+  });
+
   it("caps the pages of one request", async () => {
     const wiki = await makeWikiDeps(DATA());
     await loggedIn(wiki.bot);

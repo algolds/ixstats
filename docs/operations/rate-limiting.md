@@ -112,7 +112,7 @@ never `X-Forwarded-For`); the login bucket adds a hash of the account name. They
 | `wiki_api` | every request to `/w/api.php` (`src/lib/wiki-os/api-compat/dispatch.ts`) | 120 per minute anonymous, 600 signed in (bot session or browser user); callers with the `noratelimit` right are skipped | client |
 | `wiki_api_write` | the POST actions of `/w/api.php` (edit, move, delete, undelete, protect, rollback, purge, login, logout), on top of `wiki_api` | 120 per minute | client |
 | `wiki_api_login` | `action=login`, counted once the login token is valid | 10 per 5 minutes; over it the answer is MediaWiki's `Throttled` with a `wait` | client + sha256 of the lower-cased account name (so a name of any length is a fixed-size key) |
-| `wiki_api_render` | `action=parse` of text or an old revision, which MediaWiki renders, for callers without a bot session (a bot's own `text=` is not counted here) | 20 per minute | client |
+| `wiki_api_render` | the renders api.php causes: `action=parse` of text or an old revision (MediaWiki renders it) for callers without a bot session, 20 per minute; and each page `action=purge` queues for a render, 60 per minute (a request that would pass it is refused whole, `ratelimited`, before any page is purged; accounts with the `noratelimit` right are not counted) | 20 per minute for parse, 60 for purge, one count | client (a signed-in account: `user:<id>`) |
 | `wiki_media` | the two media proxies under `/api/mediawiki/` (a page loads dozens of images) | 600 per minute | client |
 | `wiki_export` | `/api/wiki/export` (Special:Export) | 10 per minute | client or signed-in user |
 | `wiki_raw` | `/api/wiki/raw` (`/wiki/<title>?action=raw`, for bots reading wikitext in bulk) | 300 per minute | client |
