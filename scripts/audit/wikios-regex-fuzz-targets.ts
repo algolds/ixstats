@@ -550,8 +550,8 @@ export const TARGETS: readonly Target[] = [
     {
       // A page of more than 500,000 characters is left as it is (the target above); this is the most it tidies.
       maxChars: 500_000,
-      slowFactor: 12,
-      why: "jsdom builds a DOM at a few microseconds an element, so a page this long of one-character elements (`<br>`) takes a second: the DOM is the work",
+      slowFactor: 20,
+      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
     }
   ),
   wikitext("transformers/url-compat#titleToWikiOSPath", async () => {
@@ -789,8 +789,8 @@ export const TARGETS: readonly Target[] = [
     {
       // Not bounded by size in production (an article is sanitized whole, once per render); this is the most the run feeds it.
       maxChars: 200_000,
-      slowFactor: 12,
-      why: 'DOMPurify builds a DOM, about 2.6 microseconds a character on a page of one-character elements: the DOM is the work. Elements that share an id are quadratic (jsdom\'s named properties: 29,000 `<h2 id="a">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)',
+      slowFactor: 20,
+      why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (a second at the run's 200,000, two under contention): the DOM is the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
     }
   ),
 
@@ -814,8 +814,8 @@ export const TARGETS: readonly Target[] = [
     {
       // the 15 characters the driver adds keep it within DOM_SIZE_CEILING (500,000): a run over it is left alone, at once
       maxChars: 499_900,
-      slowFactor: 12,
-      why: "jsdom builds a DOM at a few microseconds an element, so a page this long of one-character elements (`<br>`) takes a second: the DOM is the work",
+      slowFactor: 20,
+      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
     }
   ),
   html("templates/chip-markers#chipKeysIn", async () => {
