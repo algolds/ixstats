@@ -13,7 +13,6 @@ import {
   OpenNewWindow as ExternalLink,
   Refresh as RefreshCw,
   Search,
-  SoundHigh as Volume2,
   Star,
   Shop,
   Xmark as X,
@@ -22,11 +21,19 @@ import { LanguagePackCard, type LanguagePack } from "../shared/LanguagePackCard"
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const FAMILIES = [
   { value: "any", label: "All Language Families" },
@@ -134,7 +141,7 @@ export function LanguagePacksSection({
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/marketplace?tab=store"
-          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-3.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
         >
           <Shop className="text-yellow h-4 w-4" />
           <span className="text-label">Browse on IxVault</span>
@@ -145,7 +152,7 @@ export function LanguagePacksSection({
       {/* Toolbar: Search, Filters & Refresh */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+          <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
           <Input
             type="text"
             value={searchQuery}
@@ -155,17 +162,18 @@ export function LanguagePacksSection({
           />
         </div>
 
-        <select
-          value={familyFilter}
-          onChange={(e) => setFamilyFilter(e.target.value)}
-          className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer border px-2 font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          {FAMILIES.map((fam) => (
-            <option key={fam.value} value={fam.value}>
-              {fam.label}
-            </option>
-          ))}
-        </select>
+        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v)}>
+          <SelectTrigger size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FAMILIES.map((fam) => (
+              <SelectItem key={fam.value} value={fam.value}>
+                {fam.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Button
           variant="bordered"
@@ -198,7 +206,7 @@ export function LanguagePacksSection({
           ) : (
             <div
               className={cn(
-                "grid gap-4.5",
+                "grid gap-5",
                 activePack
                   ? "grid-cols-1 sm:grid-cols-2"
                   : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -255,55 +263,37 @@ export function LanguagePacksSection({
                   </div>
                   <p className="text-label-secondary text-footnote mt-0.5">by @Community Creator</p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setSelectedPackId(null)}
-                  className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-control cursor-pointer p-1 transition-colors"
                   title="Close Inspector"
+                  aria-label="Close Inspector"
+                  className="text-label-secondary hover:text-label"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
 
               {/* Sub-tabs Segmented Switcher */}
-              <div className="bg-fill-4 border-separator rounded-row text-footnote grid grid-cols-3 gap-1 border p-1 text-center font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("rules")}
-                  className={cn(
-                    "rounded-control cursor-pointer py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    activeSubTab === "rules"
-                      ? "bg-background text-label border-separator shadow-card border font-semibold"
-                      : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  Rules
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("lexicon")}
-                  className={cn(
-                    "rounded-control cursor-pointer py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    activeSubTab === "lexicon"
-                      ? "bg-background text-label border-separator shadow-card border font-semibold"
-                      : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  Lexicon
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("reviews")}
-                  className={cn(
-                    "rounded-control cursor-pointer py-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    activeSubTab === "reviews"
-                      ? "bg-background text-label border-separator shadow-card border font-semibold"
-                      : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  Reviews ({activePack.ratingCount})
-                </button>
-              </div>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                asTabs
+                aria-label="Pack inspector section"
+                value={activeSubTab}
+                onValueChange={setActiveSubTab}
+                options={[
+                  { value: "rules", label: "Rules" },
+                  { value: "lexicon", label: "Lexicon" },
+                  {
+                    value: "reviews",
+                    label: "Reviews",
+                    badge: activePack.ratingCount,
+                    badgeLabel: `${activePack.ratingCount} reviews`,
+                  },
+                ]}
+              />
 
               {/* Tab 1: Rules & Phonology */}
               {activeSubTab === "rules" && (
@@ -332,7 +322,7 @@ export function LanguagePacksSection({
                     disabled={forkMutation.isPending}
                     className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                   >
-                    <GitFork className="mr-1.5 h-4 w-4" />
+                    <GitFork className="mr-2 h-4 w-4" />
                     <span>Fork Pack to My Studio</span>
                   </Button>
                 </div>
@@ -357,19 +347,22 @@ export function LanguagePacksSection({
 
               {/* Tab 3: Reviews */}
               {activeSubTab === "reviews" && (
-                <div className="text-footnote space-y-3.5">
+                <div className="text-footnote space-y-4">
                   {/* Rating input */}
-                  <div className="bg-surface border-separator rounded-row space-y-2.5 border p-3">
+                  <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
                     <label className="text-label block font-semibold">
                       Leave a Community Rating
                     </label>
-                    <div className="flex items-center gap-1.5">
+                    <div role="radiogroup" aria-label="Rating" className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <button
+                        <Button
                           key={star}
-                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          role="radio"
+                          aria-checked={reviewRating === star}
+                          aria-label={`${star} star${star === 1 ? "" : "s"}`}
                           onClick={() => setReviewRating(star)}
-                          className="text-body cursor-pointer transition-transform active:scale-110"
                         >
                           <Star
                             className={cn(
@@ -379,7 +372,7 @@ export function LanguagePacksSection({
                                 : "text-label-quaternary"
                             )}
                           />
-                        </button>
+                        </Button>
                       ))}
                       <span className="text-yellow ml-2 font-mono font-semibold">
                         {reviewRating}.0 / 5.0

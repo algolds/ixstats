@@ -16,6 +16,14 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 const WEIGHT_SLIDERS = [
   { key: "lorewardWeight_bytesAdded", label: "Bytes Added Weight" },
@@ -210,7 +218,7 @@ export function LorewardWeightsCard() {
         </div>
         <div className="space-y-4">
           <div className="flex items-end gap-2">
-            <div className="flex-1 space-y-1.5">
+            <div className="flex-1 space-y-2">
               <label className="text-label text-caption">Scoring Date</label>
               <Input
                 type="date"
@@ -221,9 +229,9 @@ export function LorewardWeightsCard() {
             </div>
             <Button onClick={handleRunPreview} disabled={isPreviewLoading || !tempWeights}>
               {isPreviewLoading ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+                <SlidersHorizontal className="mr-2 h-3.5 w-3.5" />
               )}
               Preview Ranks
             </Button>
@@ -236,61 +244,57 @@ export function LorewardWeightsCard() {
               <Skeleton className="rounded-control h-8 w-full" />
             </div>
           ) : rankDeltas.length > 0 ? (
-            <div className="border-separator rounded-row text-footnote max-h-80 overflow-y-auto border">
-              <table className="w-full tabular-nums">
-                <thead className="bg-fill-4 border-separator text-label-secondary sticky top-0 border-b font-medium">
-                  <tr>
-                    <th className="w-16 px-3 py-2 text-left">Rank</th>
-                    <th className="px-3 py-2 text-left">Candidate</th>
-                    <th className="px-3 py-2 text-right">Curr Score</th>
-                    <th className="px-3 py-2 text-right font-semibold">Sim Score</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
-                  {rankDeltas.map((item: any, idx: number) => {
-                    const delta = item.rankDelta;
-                    return (
-                      <tr key={idx} className="hover:bg-fill-4">
-                        <td className="px-3 py-2 font-mono">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold">{item.simulatedRank}</span>
-                            {delta > 0 && (
-                              <span className="text-green font-semibold">▲{delta}</span>
-                            )}
-                            {delta < 0 && (
-                              <span className="text-red font-semibold">▼{Math.abs(delta)}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className="text-label font-semibold">{item.user}</span>
-                          <span className="text-label-secondary text-footnote block">
-                            {item.page}
-                          </span>
-                        </td>
-                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
-                          {item.currentScore.toFixed(2)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono">
-                          <span className="font-semibold">{item.simulatedScore.toFixed(2)}</span>
-                          {item.scoreDelta !== 0 && (
-                            <span
-                              className={cn(
-                                "text-caption block",
-                                item.scoreDelta > 0 ? "text-green" : "text-red"
-                              )}
-                            >
-                              {item.scoreDelta > 0 ? "+" : ""}
-                              {item.scoreDelta.toFixed(2)}
-                            </span>
+            <Table containerClassName="max-h-80">
+              <TableHeader sticky>
+                <TableRow>
+                  <TableHead className="w-16 px-3">Rank</TableHead>
+                  <TableHead className="px-3">Candidate</TableHead>
+                  <TableHead className="px-3 text-right">Curr Score</TableHead>
+                  <TableHead className="px-3 text-right">Sim Score</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rankDeltas.map((item: any, idx: number) => {
+                  const delta = item.rankDelta;
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell className="px-3 font-mono">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{item.simulatedRank}</span>
+                          {delta > 0 && <span className="text-green font-semibold">▲{delta}</span>}
+                          {delta < 0 && (
+                            <span className="text-red font-semibold">▼{Math.abs(delta)}</span>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3">
+                        <span className="text-label font-semibold">{item.user}</span>
+                        <span className="text-label-secondary text-footnote block">
+                          {item.page}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-3 text-right">
+                        {item.currentScore.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="px-3 text-right font-mono">
+                        <span className="font-semibold">{item.simulatedScore.toFixed(2)}</span>
+                        {item.scoreDelta !== 0 && (
+                          <span
+                            className={cn(
+                              "text-caption block",
+                              item.scoreDelta > 0 ? "text-green" : "text-red"
+                            )}
+                          >
+                            {item.scoreDelta > 0 ? "+" : ""}
+                            {item.scoreDelta.toFixed(2)}
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           ) : currentPreviewData ? (
             <div className="text-label-secondary text-footnote py-8 text-center italic">
               No edits or candidates qualified on {previewDate}.

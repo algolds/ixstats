@@ -185,7 +185,7 @@ export function CountryFormulaFlow({
         />
         <Panel
           position="top-left"
-          className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-1.5 select-none"
+          className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-2 select-none"
         >
           <span className="text-indigo mr-1 font-semibold">💡 Formula Map:</span>
           Click nodes to inspect formulas and values in the details panel below.

@@ -92,7 +92,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
       </div>
       <div className="space-y-4">
         {/* Country Selector */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label className="text-label text-caption">Country</label>
           <div className="relative">
             <Input
@@ -135,7 +135,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
 
         {/* Wiki Source & Page Title */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-label text-caption">Wiki Source</label>
             <SegmentedControl
               size="sm"
@@ -150,7 +150,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             />
           </div>
 
-          <div className="space-y-1.5 sm:col-span-2">
+          <div className="space-y-2 sm:col-span-2">
             <label className="text-label text-caption">Wiki Page Title</label>
             <Input
               placeholder="e.g. United_States or Grand_Duchy_of_..."
@@ -171,9 +171,9 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             disabled={isTesting || !wikiPageTitle.trim()}
           >
             {isTesting ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              <ExternalLink className="mr-2 h-3.5 w-3.5" />
             )}
             Test Link
           </Button>
@@ -184,7 +184,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             onClick={handleSave}
             disabled={!selectedCountryId || !wikiPageTitle.trim()}
           >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+            <Save className="mr-2 h-3.5 w-3.5" />
             Save Link
           </Button>
         </div>
@@ -200,8 +200,8 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
             )}
           >
             {testResult.success ? (
-              <div className="space-y-1.5">
-                <div className="text-green flex items-center gap-1.5 font-semibold">
+              <div className="space-y-2">
+                <div className="text-green flex items-center gap-2 font-semibold">
                   <CheckCircle className="h-4 w-4" />
                   Article found
                 </div>
@@ -212,7 +212,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4" />
                 Article not found. Check the title and source.
               </div>

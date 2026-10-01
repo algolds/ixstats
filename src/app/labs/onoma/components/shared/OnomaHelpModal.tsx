@@ -173,7 +173,7 @@ export function OnomaHelpModal({
                 {currentWalkthrough.description}
               </p>
 
-              <div className="bg-surface-secondary rounded-row space-y-2 p-3.5">
+              <div className="bg-surface-secondary rounded-row space-y-2 p-4">
                 {currentWalkthrough.features.map((feat, idx) => (
                   <div key={idx} className="text-footnote flex items-start gap-2">
                     <span className="text-tint shrink-0 font-semibold">›</span>
@@ -190,19 +190,27 @@ export function OnomaHelpModal({
               </Button>
 
               {/* Step Dots */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {WALKTHROUGH_STEPS.map((_, idx) => (
-                  <button
+                  <Button
                     key={idx}
-                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setActiveWalkthroughStep(idx)}
-                    className={cn(
-                      "h-1.5 cursor-pointer rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-                      idx === activeWalkthroughStep
-                        ? "bg-tint w-5"
-                        : "bg-separator-opaque hover:bg-label-secondary w-1.5"
-                    )}
-                  />
+                    aria-label={`Step ${idx + 1} of ${WALKTHROUGH_STEPS.length}`}
+                    aria-current={idx === activeWalkthroughStep ? "step" : undefined}
+                    className="group w-auto px-1 hover:bg-transparent"
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "h-1.5 rounded-full transition-[width,background-color] duration-300",
+                        idx === activeWalkthroughStep
+                          ? "bg-tint w-5"
+                          : "bg-separator-opaque group-hover:bg-label-secondary w-1.5"
+                      )}
+                    />
+                  </Button>
                 ))}
               </div>
 
@@ -242,16 +250,14 @@ export function OnomaHelpModal({
           <div className="grid flex-1 grid-cols-1 overflow-hidden sm:grid-cols-12">
             {/* Left System Switcher Column (4 cols) */}
             <div className="border-separator bg-surface-secondary flex scrollbar-thin flex-row gap-1 overflow-x-auto border-b p-2 sm:col-span-4 sm:flex-col sm:overflow-y-auto sm:border-r sm:border-b-0">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => setSelectedGuideId("walkthrough")}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-row text-footnote mb-1 flex shrink-0 cursor-pointer items-center justify-between gap-2 px-2.5 py-2 text-left transition-colors select-none sm:shrink"
+                className="text-label-secondary hover:text-label rounded-row text-caption mb-1 shrink-0 justify-start gap-2 px-3 text-left sm:shrink"
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  <BookOpen className="text-tint h-3.5 w-3.5 shrink-0" />
-                  <span className="text-caption truncate font-medium">Welcome to Onoma</span>
-                </div>
-              </button>
+                <BookOpen className="text-tint h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Welcome to Onoma</span>
+              </Button>
 
               <span className="text-label-secondary text-subhead mt-1 hidden px-2 py-1 sm:block">
                 Module references
@@ -261,23 +267,21 @@ export function OnomaHelpModal({
                 const isSelected = g.id === selectedGuideId;
 
                 return (
-                  <button
+                  <Button
                     key={g.id}
-                    type="button"
+                    variant="ghost"
                     onClick={() => setSelectedGuideId(g.id)}
                     aria-current={isSelected ? "true" : undefined}
                     className={cn(
-                      "rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-between gap-2 px-2.5 py-2 text-left transition-colors select-none sm:shrink",
+                      "rounded-row text-caption shrink-0 justify-start gap-2 px-3 text-left sm:shrink",
                       isSelected
-                        ? "bg-tint-fill text-tint font-medium"
-                        : "text-label-secondary hover:text-label hover:bg-fill-4"
+                        ? "bg-tint-fill text-tint hover:bg-tint/20"
+                        : "text-label-secondary hover:text-label"
                     )}
                   >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="text-caption truncate font-medium">{g.title}</span>
-                    </div>
-                  </button>
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{g.title}</span>
+                  </Button>
                 );
               })}
             </div>
@@ -299,7 +303,7 @@ export function OnomaHelpModal({
                 </div>
 
                 {currentGuide.formula && (
-                  <div className="border-tint/20 bg-tint/5 rounded-row border p-2.5 text-center">
+                  <div className="border-tint/20 bg-tint/5 rounded-row border p-3 text-center">
                     <span className="text-tint text-caption font-mono font-semibold">
                       {currentGuide.formula}
                     </span>
@@ -331,7 +335,7 @@ export function OnomaHelpModal({
                       {currentGuide.proTips.map((tip, idx) => (
                         <div
                           key={idx}
-                          className="border-separator bg-fill-4 rounded-row text-footnote flex items-start gap-2.5 border p-2.5"
+                          className="border-separator bg-fill-4 rounded-row text-footnote flex items-start gap-2 border p-3"
                         >
                           <span className="text-tint mt-0.5 shrink-0 font-semibold">›</span>
                           <span className="text-label text-caption leading-relaxed">{tip}</span>
@@ -342,7 +346,7 @@ export function OnomaHelpModal({
                 )}
               </div>
 
-              <div className="border-separator mt-6 flex items-center justify-end border-t pt-3.5">
+              <div className="border-separator mt-6 flex items-center justify-end border-t pt-4">
                 <Button size="sm" onClick={onClose}>
                   Got it
                 </Button>

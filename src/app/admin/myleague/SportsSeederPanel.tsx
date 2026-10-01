@@ -198,7 +198,7 @@ export default function SportsSeederPanel() {
                 <div className="max-w-[80%] space-y-0.5">
                   <Label
                     htmlFor="wipe-db"
-                    className="text-headline text-red flex cursor-pointer items-center gap-1.5"
+                    className="text-headline text-red flex cursor-pointer items-center gap-2"
                   >
                     <Trash2 className="h-4 w-4" />
                     Wipe Existing Canonical Records First
@@ -239,9 +239,9 @@ export default function SportsSeederPanel() {
                           className="data-[state=checked]:border-indigo data-[state=checked]:bg-indigo"
                         />
                       </div>
-                      <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="min-w-0 flex-1 space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-label text-headline flex items-center gap-1.5 truncate">
+                          <span className="text-label text-headline flex items-center gap-2 truncate">
                             <span className="text-title-3">{preset.icon}</span>
                             {preset.name}
                           </span>
@@ -288,7 +288,7 @@ export default function SportsSeederPanel() {
           {/* Cache Controls */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-headline flex items-center gap-1.5">
+              <CardTitle className="text-headline flex items-center gap-2">
                 <Layers className="text-yellow h-4 w-4" />
                 Cache Optimization
               </CardTitle>
@@ -326,7 +326,7 @@ export default function SportsSeederPanel() {
           {/* System Diagnostics */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-headline flex items-center gap-1.5">
+              <CardTitle className="text-headline flex items-center gap-2">
                 <Activity className="text-green h-4 w-4" />
                 Simulation Diagnostics
               </CardTitle>
@@ -334,7 +334,7 @@ export default function SportsSeederPanel() {
             </CardHeader>
             <CardContent className="space-y-3 pt-2">
               <div className="border-separator text-footnote flex items-center justify-between border-b pb-2">
-                <span className="text-label-secondary flex items-center gap-1.5">
+                <span className="text-label-secondary flex items-center gap-2">
                   <Cpu className="text-green h-3.5 w-3.5" />
                   Sports Presets Engine
                 </span>
@@ -343,7 +343,7 @@ export default function SportsSeederPanel() {
                 </Badge>
               </div>
               <div className="border-separator text-footnote flex items-center justify-between border-b pb-2">
-                <span className="text-label-secondary flex items-center gap-1.5">
+                <span className="text-label-secondary flex items-center gap-2">
                   <Sparkles className="text-green h-3.5 w-3.5" />
                   AI Commentary Narrator
                 </span>
@@ -352,7 +352,7 @@ export default function SportsSeederPanel() {
                 </Badge>
               </div>
               <div className="border-separator text-footnote flex items-center justify-between border-b pb-2">
-                <span className="text-label-secondary flex items-center gap-1.5">
+                <span className="text-label-secondary flex items-center gap-2">
                   <Database className="text-green h-3.5 w-3.5" />
                   Redis Cache Connection
                 </span>
@@ -361,7 +361,7 @@ export default function SportsSeederPanel() {
                 </Badge>
               </div>
               <div className="text-footnote flex items-center justify-between">
-                <span className="text-label-secondary flex items-center gap-1.5">
+                <span className="text-label-secondary flex items-center gap-2">
                   <Trophy className="text-green h-3.5 w-3.5" />
                   Simulation Kernel Status
                 </span>

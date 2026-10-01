@@ -549,62 +549,6 @@
     border-top: 1px solid var(--color-separator);
   }
 
-  .forum-reaction-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    height: var(--control-height-sm, 28px);
-    padding: 0 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-label-secondary);
-    background-color: var(--color-fill-3);
-    cursor: pointer;
-    transition:
-      color 150ms ease-out,
-      background-color 150ms ease-out;
-  }
-
-  .forum-reaction-btn:hover {
-    color: var(--tint);
-    background-color: var(--tint-fill);
-  }
-
-  .forum-reaction-btn-active {
-    color: var(--tint);
-    background-color: var(--tint-fill);
-  }
-
-  .forum-action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    height: var(--control-height-sm, 28px);
-    padding: 0 0.625rem;
-    border-radius: var(--radius-control-sm);
-    font-size: 0.75rem;
-    color: var(--color-label-secondary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition:
-      color 150ms ease-out,
-      background-color 150ms ease-out;
-  }
-
-  .forum-action-btn:hover {
-    color: var(--tint);
-    background-color: var(--color-fill-4);
-  }
-
-  .forum-reaction-btn:focus-visible,
-  .forum-action-btn:focus-visible,
-  .forum-pagination-btn:focus-visible {
-    outline: 2px solid var(--tint);
-    outline-offset: 2px;
-  }
-
   /* ---------------------------------------------------------------------------
      Breadcrumbs
      --------------------------------------------------------------------------- */
@@ -654,40 +598,6 @@
     justify-content: center;
     gap: 0.375rem;
     padding: 1.5rem 0;
-  }
-
-  .forum-pagination-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--control-height, 36px);
-    height: var(--control-height, 36px);
-    padding: 0 0.625rem;
-    border-radius: var(--radius-control);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-label);
-    background-color: var(--color-fill-3);
-    cursor: pointer;
-    transition:
-      color 150ms ease-out,
-      background-color 150ms ease-out;
-  }
-
-  .forum-pagination-btn:hover {
-    background-color: var(--color-fill-2);
-  }
-
-  .forum-pagination-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .forum-pagination-btn-active,
-  .forum-pagination-btn-active:hover {
-    background-color: var(--tint);
-    color: var(--on-tint);
   }
 
   /* ---------------------------------------------------------------------------

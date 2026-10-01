@@ -107,14 +107,14 @@ export function SavedDictionaryCard({
     <FacetCard
       variant="inset"
       padding="none"
-      className="p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+      className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
     >
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {/* Header & Meta Row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h4 className="text-label text-footnote truncate font-semibold">{dict.title}</h4>
-            <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-1.5">
+            <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-2">
               <span>{wordsCount} words</span>
               {dict.category && (
                 <>
@@ -125,7 +125,7 @@ export function SavedDictionaryCard({
             </div>
           </div>
 
-          <div className="text-caption flex flex-wrap items-center gap-1.5">
+          <div className="text-caption flex flex-wrap items-center gap-2">
             <Badge variant={dict.isPublic ? "success" : "neutral"}>
               {dict.isPublic ? (
                 <>
@@ -156,7 +156,7 @@ export function SavedDictionaryCard({
               <>
                 <span>•</span>
                 <span
-                  className="rounded-control-sm text-caption inline-flex items-center gap-1 px-1.5 py-0.5 font-semibold select-none"
+                  className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
                   style={{
                     backgroundColor: `${dict.stashColor || "#3b82f6"}20`,
                     color: dict.stashColor || "#3b82f6",
@@ -170,9 +170,9 @@ export function SavedDictionaryCard({
         </div>
 
         {/* Actions Bar */}
-        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
           {/* Primary Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Expand Button */}
             <Button
               variant="gray"
@@ -253,32 +253,33 @@ export function SavedDictionaryCard({
                   <span>Move</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-1.5">
-                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-1.5">
+              <PopoverContent align="start" className="w-56 p-2">
+                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-2">
                   <span className="text-subhead text-label-secondary">Stash folders</span>
                   <Badge variant="tinted">Global</Badge>
                 </div>
                 {stashesQuery.isLoading && (
-                  <div className="text-label-secondary text-footnote flex items-center gap-1.5 px-2 py-1.5">
+                  <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">
                     <Loader2 className="size-3.5 animate-spin" />
                     <span>Loading stashes...</span>
                   </div>
                 )}
                 {stashesQuery.data && stashesQuery.data.length === 0 && (
-                  <div className="text-label-secondary text-footnote px-2 py-1.5">
+                  <div className="text-label-secondary text-footnote px-2 py-2">
                     No stash folders found.
                   </div>
                 )}
                 <div className="max-h-36 space-y-0.5 overflow-y-auto">
                   {stashesQuery.data?.map((s) => (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       key={s.id}
-                      type="button"
                       disabled={stashingFolderId !== null}
                       onClick={() => handleMoveFolder(s.id, s.name)}
-                      className="text-label text-footnote hover:bg-fill-3 rounded-control-sm flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-colors disabled:opacity-50"
+                      className="text-label w-full justify-between px-2 text-left font-normal"
                     >
-                      <span className="flex items-center gap-1.5 truncate">
+                      <span className="flex items-center gap-2 truncate">
                         <span
                           className="size-2 shrink-0 rounded-full"
                           style={{ backgroundColor: s.color }}
@@ -288,11 +289,11 @@ export function SavedDictionaryCard({
                       {stashingFolderId === s.id && (
                         <Loader2 className="text-label-secondary size-3.5 animate-spin" />
                       )}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 {stashFeedback && (
-                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-1.5 px-2 py-1 text-center">
+                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-2 px-2 py-1 text-center">
                     {stashFeedback}
                   </div>
                 )}
@@ -301,7 +302,7 @@ export function SavedDictionaryCard({
           </div>
 
           {/* Secondary Utilities */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Edit (rename / re-tag) */}
             <Button
               variant="gray"
@@ -347,7 +348,7 @@ export function SavedDictionaryCard({
 
       {/* Expanded list of words */}
       {isExpanded && (
-        <div className="border-separator text-footnote border-t pt-2.5">
+        <div className="border-separator text-footnote border-t pt-2">
           <p className="text-label-secondary line-clamp-3 font-mono leading-normal">
             {previewWords || "No words inside."}
             {wordsCount > 12 && " ..."}

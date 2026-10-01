@@ -41,6 +41,14 @@ import {
 import { AdminHeader } from "../_components/AdminHeader";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 type DiplomaticOptionType = "strategic_priority" | "partnership_goal" | "key_achievement";
 
@@ -249,21 +257,21 @@ export function DiplomaticOptionsPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Options</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{options?.length || 0}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {options?.filter((o) => o.isActive).length || 0}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Filtered Results</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredOptions.length}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Selected</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedIds.size}</p>
         </FacetCard>
@@ -273,14 +281,14 @@ export function DiplomaticOptionsPanel() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="catalog"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <Flag className="h-3.5 w-3.5" />
             Options Catalog
           </TabsTrigger>
           <TabsTrigger
             value="analytics"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <BarChart3 className="h-3.5 w-3.5" />
             Usage Analytics
@@ -289,10 +297,10 @@ export function DiplomaticOptionsPanel() {
 
         <TabsContent value="catalog" className="mt-4 space-y-4 focus-visible:outline-none">
           {/* Filters & Actions */}
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-wrap items-center gap-2">
               <div className="relative max-w-xs min-w-[180px] flex-1">
-                <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
                   placeholder="Search options..."
                   value={searchQuery}
@@ -337,7 +345,7 @@ export function DiplomaticOptionsPanel() {
                 </SelectContent>
               </Select>
 
-              <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+              <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
                 <Checkbox
                   checked={showInactive}
                   onCheckedChange={(checked) => setShowInactive(checked === true)}
@@ -347,14 +355,14 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <Plus className="mr-2 h-3.5 w-3.5" />
               Add Option
             </Button>
           </div>
 
           {/* Bulk actions */}
           {selectedIds.size > 0 && (
-            <div className="border-tint/30 bg-tint-fill rounded-row text-footnote flex items-center gap-3 border p-2.5">
+            <div className="border-tint/30 bg-tint-fill rounded-row text-footnote flex items-center gap-3 border p-3">
               <span className="text-label font-semibold">{selectedIds.size} selected</span>
               <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)}>
                 <Check className="mr-1 h-3.5 w-3.5" />
@@ -384,16 +392,16 @@ export function DiplomaticOptionsPanel() {
                 No diplomatic options matching criteria.
               </p>
               <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                <Plus className="mr-2 h-3.5 w-3.5" />
                 Add First Option
               </Button>
             </FacetCard>
           ) : (
-            <FacetCard className="overflow-x-auto">
-              <table className="text-footnote w-full tabular-nums">
-                <thead>
-                  <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                    <th className="w-10 px-3 py-2.5">
+            <FacetCard>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 px-3">
                       <Checkbox
                         aria-label="Select all options"
                         checked={
@@ -401,39 +409,39 @@ export function DiplomaticOptionsPanel() {
                         }
                         onCheckedChange={toggleSelectAll}
                       />
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium">Type</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Value & Description</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Category</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Order</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
+                    </TableHead>
+                    <TableHead className="px-4">Type</TableHead>
+                    <TableHead className="px-4">Value & Description</TableHead>
+                    <TableHead className="px-4">Category</TableHead>
+                    <TableHead className="px-4">Order</TableHead>
+                    <TableHead className="px-4">Status</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredOptions.map((option) => (
-                    <tr key={option.id} className="hover:bg-fill-4 transition-colors">
-                      <td className="px-3 py-2.5">
+                    <TableRow key={option.id}>
+                      <TableCell className="px-3">
                         <Checkbox
                           aria-label={`Select ${option.value}`}
                           checked={selectedIds.has(option.id)}
                           onCheckedChange={() => toggleSelection(option.id)}
                         />
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <Badge variant="teal">
                           {TYPE_LABELS[option.type as DiplomaticOptionType]}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <div className="text-label font-semibold">{option.value}</div>
                         {option.description && (
                           <div className="text-label-secondary text-footnote max-w-sm truncate">
                             {option.description}
                           </div>
                         )}
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         {option.category ? (
                           <span className="text-label-secondary text-footnote">
                             {option.category}
@@ -441,18 +449,18 @@ export function DiplomaticOptionsPanel() {
                         ) : (
                           <span className="text-label-secondary text-footnote italic">None</span>
                         )}
-                      </td>
-                      <td className="text-label-secondary px-4 py-2.5 tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-4">
                         {option.sortOrder}
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         {option.isActive ? (
                           <Badge variant="green">Active</Badge>
                         ) : (
                           <Badge variant="neutral">Inactive</Badge>
                         )}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Switch
                             checked={option.isActive}
@@ -473,11 +481,11 @@ export function DiplomaticOptionsPanel() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </FacetCard>
           )}
         </TabsContent>
@@ -497,7 +505,7 @@ export function DiplomaticOptionsPanel() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-label text-caption mb-1.5 block">Type</label>
+              <label className="text-label text-caption mb-2 block">Type</label>
               <Select
                 value={formData.type}
                 onValueChange={(value) =>
@@ -516,7 +524,7 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Value *</label>
+              <label className="text-label text-caption mb-2 block">Value *</label>
               <Input
                 value={formData.value}
                 onChange={(e) => setFormData({ ...formData, value: e.target.value })}
@@ -526,7 +534,7 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Category</label>
+              <label className="text-label text-caption mb-2 block">Category</label>
               <Select
                 value={formData.category || "none"}
                 onValueChange={(value) =>
@@ -548,7 +556,7 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Description</label>
+              <label className="text-label text-caption mb-2 block">Description</label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -558,7 +566,7 @@ export function DiplomaticOptionsPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Sort Order</label>
+              <label className="text-label text-caption mb-2 block">Sort Order</label>
               <Input
                 type="number"
                 value={formData.sortOrder}

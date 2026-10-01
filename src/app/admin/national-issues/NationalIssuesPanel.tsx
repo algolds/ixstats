@@ -27,6 +27,14 @@ import { TemplateEditorSheet } from "./TemplateEditorSheet";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 const DOMAIN_COLORS: Record<string, string> = {
   economic: "bg-green/20 text-green border-green/20",
@@ -157,25 +165,25 @@ export function NationalIssuesPanel() {
 
       {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Evaluations</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">
             {stats?.totalEvaluations ?? "—"}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Generated (7d)</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {stats?.totalIssuesGenerated ?? "—"}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Avg Exec Time</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {stats?.avgExecutionTime ? `${stats.avgExecutionTime}ms` : "—"}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Top Domain</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.domainStats?.[0]?.domain
@@ -194,21 +202,21 @@ export function NationalIssuesPanel() {
           <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
             <TabsTrigger
               value="templates"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
             >
               <Newspaper className="h-3.5 w-3.5" />
               Templates ({templatesData?.templates?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="issues"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
             >
               <Play className="text-teal h-3.5 w-3.5" />
               Active Instances ({issuesData?.issues?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="engine"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
             >
               <Sliders className="text-yellow h-3.5 w-3.5" />
               Engine Configuration
@@ -217,7 +225,7 @@ export function NationalIssuesPanel() {
 
           {activeTab === "templates" && (
             <Button size="sm" onClick={() => setEditorSheet({ isOpen: true, templateId: null })}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <Plus className="mr-2 h-3.5 w-3.5" />
               New Template
             </Button>
           )}
@@ -225,7 +233,7 @@ export function NationalIssuesPanel() {
 
         {/* Templates Tab */}
         <TabsContent value="templates" className="mt-4 space-y-4 focus-visible:outline-none">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative max-w-sm min-w-[200px] flex-1">
               <Input
                 placeholder="Search templates..."
@@ -278,41 +286,41 @@ export function NationalIssuesPanel() {
               </p>
             </FacetCard>
           ) : (
-            <FacetCard className="overflow-x-auto">
-              <table className="text-footnote w-full tabular-nums">
-                <thead>
-                  <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                    <th className="px-4 py-2.5 text-left font-medium">Issue Title & Description</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Domain</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Severity</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Active</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
+            <FacetCard>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-4">Issue Title & Description</TableHead>
+                    <TableHead className="px-4">Domain</TableHead>
+                    <TableHead className="px-4">Severity</TableHead>
+                    <TableHead className="px-4">Active</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {templatesData?.templates?.map((t: any) => (
-                    <tr key={t.id} className="hover:bg-fill-4 transition-colors">
-                      <td className="px-4 py-2.5">
+                    <TableRow key={t.id}>
+                      <TableCell className="px-4">
                         <div className="text-label font-semibold">{t.title}</div>
                         <div className="text-label-secondary text-footnote max-w-sm truncate">
                           {t.description}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <span
                           className={`rounded-control-sm text-eyebrow inline-block border px-2 py-0.5 ${DOMAIN_COLORS[t.domain] || ""}`}
                         >
                           {t.domain}
                         </span>
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <span
                           className={`rounded-control-sm text-eyebrow inline-block border px-2 py-0.5 ${SEVERITY_COLORS[t.severity] || ""}`}
                         >
                           {t.severity}
                         </span>
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <Switch
                           checked={t.isActive}
                           onCheckedChange={(isActive) =>
@@ -321,8 +329,8 @@ export function NationalIssuesPanel() {
                           aria-label={`Active: ${t.title}`}
                           title="Toggle Status"
                         />
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 text-right">
                         <div className="inline-flex items-center gap-1">
                           <Button
                             size="sm"
@@ -344,11 +352,11 @@ export function NationalIssuesPanel() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </FacetCard>
           )}
         </TabsContent>
@@ -366,38 +374,38 @@ export function NationalIssuesPanel() {
               </p>
             </FacetCard>
           ) : (
-            <FacetCard className="overflow-x-auto">
-              <table className="text-footnote w-full tabular-nums">
-                <thead>
-                  <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                    <th className="px-4 py-2.5 text-left font-medium">Issue Title & Description</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Nation</th>
-                    <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
+            <FacetCard>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-4">Issue Title & Description</TableHead>
+                    <TableHead className="px-4">Nation</TableHead>
+                    <TableHead className="px-4">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {issuesData?.issues?.map((issue: any) => (
-                    <tr key={issue.id} className="hover:bg-fill-4 transition-colors">
-                      <td className="px-4 py-2.5">
+                    <TableRow key={issue.id}>
+                      <TableCell className="px-4">
                         <div className="text-label font-semibold">{issue.title}</div>
                         <div className="text-label-secondary text-footnote max-w-sm truncate">
                           {issue.description}
                         </div>
-                      </td>
-                      <td className="text-label-secondary px-4 py-2.5 font-mono">
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-4 font-mono">
                         {issue.country?.name || issue.countryId}
-                      </td>
-                      <td className="px-4 py-2.5">
+                      </TableCell>
+                      <TableCell className="px-4">
                         <span
                           className={`rounded-control-sm text-eyebrow inline-block border px-2 py-0.5 ${STATUS_COLORS[issue.status] || ""}`}
                         >
                           {issue.status}
                         </span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </FacetCard>
           )}
         </TabsContent>

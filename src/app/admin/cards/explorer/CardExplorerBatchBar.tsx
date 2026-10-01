@@ -16,9 +16,14 @@ import {
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface CardExplorerBatchBarProps {
   total: number;
@@ -61,7 +66,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="border-tint/30 bg-tint-fill rounded-row border p-2.5">
+          <div className="border-tint/30 bg-tint-fill rounded-row border p-3">
             <SlidersHorizontal className="text-tint h-5 w-5" />
           </div>
           <div>
@@ -70,10 +75,10 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
         </div>
         <div className="flex items-center gap-2">
           <Button variant="tinted" size="sm" onClick={() => setIsBulkModalOpen(true)}>
-            <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+            <EyeOff className="mr-2 h-3.5 w-3.5" />
             Bulk Visibility Controls
           </Button>
-          <Badge variant="neutral" className="gap-1.5">
+          <Badge variant="neutral" className="gap-2">
             <Layers className="text-tint h-3.5 w-3.5" />
             Showing <strong className="text-label">{loadedCount}</strong> of{" "}
             <strong className="text-label">{total.toLocaleString()}</strong>
@@ -96,39 +101,38 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 <label className="text-label-secondary text-caption mb-1 block">
                   Target Category
                 </label>
-                <select
+                <Select
                   value={bulkCategoryFilter}
-                  onChange={(e) => setBulkCategoryFilter(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                  onValueChange={(v) => setBulkCategoryFilter(v as any)}
                 >
-                  <option value="all">All Categories</option>
-                  {Object.values(LoreCategory).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat} — {getCategoryLabel(cat)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {Object.values(LoreCategory).map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat} — {getCategoryLabel(cat)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">Source Type</label>
-                <select
-                  value={bulkTargetType}
-                  onChange={(e) => setBulkTargetType(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="all">All Sources</option>
-                  <option value="LORE">Lore Cards Only</option>
-                  <option value="NS_IMPORT">NS Imports Only</option>
-                  <option value="USER_CUSTOM">User Custom Only</option>
-                  <option value="COMMONS_IMPORT">Commons Imports</option>
-                </select>
+                <Select value={bulkTargetType} onValueChange={(v) => setBulkTargetType(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="LORE">Lore Cards Only</SelectItem>
+                    <SelectItem value="NS_IMPORT">NS Imports Only</SelectItem>
+                    <SelectItem value="USER_CUSTOM">User Custom Only</SelectItem>
+                    <SelectItem value="COMMONS_IMPORT">Commons Imports</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -137,55 +141,49 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 <label className="text-label-secondary text-caption mb-1 block">
                   Nation Status
                 </label>
-                <select
-                  value={bulkCteFilter}
-                  onChange={(e) => setBulkCteFilter(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="cte">CTE</option>
-                </select>
+                <Select value={bulkCteFilter} onValueChange={(v) => setBulkCteFilter(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="cte">CTE</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">Season</label>
-                <select
-                  value={bulkSeason}
-                  onChange={(e) => setBulkSeason(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="all">All</option>
-                  <option value="1">Season 1</option>
-                  <option value="2">Season 2</option>
-                  <option value="3">Season 3</option>
-                </select>
+                <Select value={bulkSeason} onValueChange={(v) => setBulkSeason(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="1">Season 1</SelectItem>
+                    <SelectItem value="2">Season 2</SelectItem>
+                    <SelectItem value="3">Season 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="text-label-secondary text-caption mb-1 block">Rarity</label>
-                <select
-                  value={bulkRarity}
-                  onChange={(e) => setBulkRarity(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="all">All</option>
-                  <option value="COMMON">Common</option>
-                  <option value="UNCOMMON">Uncommon</option>
-                  <option value="RARE">Rare</option>
-                  <option value="ULTRA_RARE">Ultra Rare</option>
-                  <option value="EPIC">Epic</option>
-                  <option value="LEGENDARY">Legendary</option>
-                </select>
+                <Select value={bulkRarity} onValueChange={(v) => setBulkRarity(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="COMMON">Common</SelectItem>
+                    <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+                    <SelectItem value="RARE">Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="EPIC">Epic</SelectItem>
+                    <SelectItem value="LEGENDARY">Legendary</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

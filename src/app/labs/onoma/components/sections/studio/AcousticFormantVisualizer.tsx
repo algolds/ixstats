@@ -5,11 +5,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
-import {
-  SoundHigh as AudioWaveform,
-  InfoCircle as Info,
-  AntennaSignal as Radio,
-} from "iconoir-react";
+import { AntennaSignal as Radio } from "iconoir-react";
 import {
   CARDINAL_VOWEL_GRID,
   extractVowelsFromIpa,
@@ -18,7 +14,7 @@ import {
   calculateAcousticCenter,
   type VowelFormant,
 } from "~/lib/onoma/vowel-formants";
-import { cn } from "~/lib/utils";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface AcousticFormantVisualizerProps {
   currentIpa: string;
@@ -235,32 +231,17 @@ export function AcousticFormantVisualizer({
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="border-separator bg-fill-4 rounded-control flex items-center gap-1 border p-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("quadrilateral")}
-            className={cn(
-              "rounded-control-sm text-footnote cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              activeTab === "quadrilateral"
-                ? "bg-background text-label shadow-card"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            IPA Vowel Quadrilateral
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("spectrogram")}
-            className={cn(
-              "rounded-control-sm text-footnote cursor-pointer px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              activeTab === "spectrogram"
-                ? "bg-background text-label shadow-card"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Acoustic FFT Spectrum
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          asTabs
+          aria-label="Acoustic view"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            { value: "quadrilateral", label: "IPA Vowel Quadrilateral" },
+            { value: "spectrogram", label: "Acoustic FFT Spectrum" },
+          ]}
+        />
       </div>
 
       {/* Main Visualizer Container */}

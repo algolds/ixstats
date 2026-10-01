@@ -43,10 +43,15 @@ import {
 import { RarityBadge } from "~/components/cards/display/RarityBadge";
 import type { CardRarity } from "@prisma/client";
 import { formatDurationMs as formatDuration } from "~/lib/admin/admin-formatters";
-import { fieldStyles } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 /** Badge variant for a sync job status (colour paired with the status text). */
 function statusBadgeVariant(status: string) {
@@ -356,7 +361,7 @@ export function NSImportSuiteAdmin() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Region Fetch Card */}
         <FacetCard className="space-y-4 p-6">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="rounded-row border-green/30 bg-green/20 border p-2">
               <MapPin className="text-green h-5 w-5" />
             </div>
@@ -381,9 +386,9 @@ export function NSImportSuiteAdmin() {
                 disabled={!regionNames.trim() || fetchRegionMutation.isPending}
               >
                 {fetchRegionMutation.isPending ? (
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Globe className="mr-1.5 h-3.5 w-3.5" />
+                  <Globe className="mr-2 h-3.5 w-3.5" />
                 )}
                 Fetch Region(s)
               </Button>
@@ -393,7 +398,7 @@ export function NSImportSuiteAdmin() {
 
         {/* Discover Top Regions Card */}
         <FacetCard className="space-y-4 p-6">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="rounded-row border-purple/30 bg-purple/20 border p-2">
               <Search className="text-purple h-5 w-5" />
             </div>
@@ -405,32 +410,30 @@ export function NSImportSuiteAdmin() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select
-              value={discoveryTag}
-              onChange={(e) => setDiscoveryTag(e.target.value)}
-              className={cn(
-                fieldStyles,
-                "rounded-control-sm text-footnote h-(--control-height-sm) flex-1 cursor-pointer px-2.5"
-              )}
-            >
-              <option value="gargantuan">Largest Regions</option>
-              <option value="Role Player">Roleplay Communities</option>
-              <option value="Democratic">Democratic / Legislative</option>
-              <option value="Totalitarian">Totalitarian / Dictatorships</option>
-              <option value="Communist">Communist / Leftist</option>
-              <option value="Capitalist">Capitalist / Trade</option>
-              <option value="Monarchist">Monarchy / Feudalist</option>
-              <option value="Anarchist">Anarchist / Lawless</option>
-            </select>
+            <Select value={discoveryTag} onValueChange={(v) => setDiscoveryTag(v)}>
+              <SelectTrigger size="sm" className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gargantuan">Largest Regions</SelectItem>
+                <SelectItem value="Role Player">Roleplay Communities</SelectItem>
+                <SelectItem value="Democratic">Democratic / Legislative</SelectItem>
+                <SelectItem value="Totalitarian">Totalitarian / Dictatorships</SelectItem>
+                <SelectItem value="Communist">Communist / Leftist</SelectItem>
+                <SelectItem value="Capitalist">Capitalist / Trade</SelectItem>
+                <SelectItem value="Monarchist">Monarchy / Feudalist</SelectItem>
+                <SelectItem value="Anarchist">Anarchist / Lawless</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="tinted"
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
               disabled={discoverRegionsMutation.isPending}
             >
               {discoverRegionsMutation.isPending ? (
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Search className="mr-1.5 h-3.5 w-3.5" />
+                <Search className="mr-2 h-3.5 w-3.5" />
               )}
               Scan Regions
             </Button>
@@ -481,7 +484,7 @@ export function NSImportSuiteAdmin() {
 
       {/* ─── Filter CTE Nations Section ────────────────────────── */}
       <FacetCard className="border-yellow/20 bg-yellow/5 space-y-4 p-6">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row border-yellow/30 bg-yellow/20 border p-2">
             <RefreshCw className="text-yellow h-5 w-5" />
           </div>
@@ -499,9 +502,9 @@ export function NSImportSuiteAdmin() {
           disabled={filterCTENationsMutation.isPending}
         >
           {filterCTENationsMutation.isPending ? (
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
           ) : (
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
           )}
           {filterCTENationsMutation.isPending ? "Filtering..." : "Run CTE Filter"}
         </Button>
@@ -527,56 +530,58 @@ export function NSImportSuiteAdmin() {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Import run selector dropdown */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <label className="text-label-secondary text-caption flex items-center gap-1">
                 <Layers className="text-tint h-3 w-3" /> Import:
               </label>
-              <select
+              <Select
                 value={selectedSyncLogId || "ALL"}
-                onChange={(e) => {
-                  const val = e.target.value === "ALL" ? null : e.target.value;
+                onValueChange={(v) => {
+                  const val = v === "ALL" ? null : v;
                   setSelectedSyncLogId(val);
                   if (val) setActiveLogTab("cards");
                   else setActiveLogTab("logs");
                 }}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) max-w-[240px] cursor-pointer truncate px-2.5"
-                )}
               >
-                <option value="ALL">All Imports ({rawLogsData?.length ?? 0} runs)</option>
-                {(rawLogsData ?? []).map((log) => {
-                  const label = log.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ");
-                  const dateStr = new Date(log.startedAt).toLocaleDateString([], {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  return (
-                    <option key={log.id} value={log.id}>
-                      [{log.status}] {label} — {dateStr} (+{log.cardsCreated})
-                    </option>
-                  );
-                })}
-              </select>
+                <SelectTrigger size="sm" className="max-w-[240px] truncate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Imports ({rawLogsData?.length ?? 0} runs)</SelectItem>
+                  {(rawLogsData ?? []).map((log) => {
+                    const label = log.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ");
+                    const dateStr = new Date(log.startedAt).toLocaleDateString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                    return (
+                      <SelectItem key={log.id} value={log.id}>
+                        [{log.status}] {label} — {dateStr} (+{log.cardsCreated})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Sync type filter */}
-            <select
+            <Select
               value={syncTypeFilter}
-              onChange={(e) => setSyncTypeFilter(e.target.value as "all" | "region")}
-              className={cn(
-                fieldStyles,
-                "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-              )}
+              onValueChange={(v) => setSyncTypeFilter(v as "all" | "region")}
             >
-              <option value="all">All Types</option>
-              <option value="region">Region Only</option>
-            </select>
+              <SelectTrigger size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="region">Region Only</SelectItem>
+              </SelectContent>
+            </Select>
 
             <Button variant="outline" size="sm" onClick={handleRefreshAll}>
-              <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
+              <RefreshCw className="mr-2 h-3 w-3" /> Refresh
             </Button>
           </div>
         </div>
@@ -586,7 +591,7 @@ export function NSImportSuiteAdmin() {
           <FacetCard className="rounded-row border-blue/30 bg-blue/5 space-y-3 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-label text-headline flex items-center gap-1.5">
+                <span className="text-label text-headline flex items-center gap-2">
                   <Database className="text-blue h-4 w-4" />
                   {selectedSyncLog.syncType.replace("NS_REGION_", "Region: ").replace(/_/g, " ")}
                 </span>
@@ -712,7 +717,7 @@ export function NSImportSuiteAdmin() {
                 </p>
 
                 {showErrorDetails && (
-                  <div className="rounded-control border-red/20 bg-fill-4 flex max-h-40 flex-wrap gap-1.5 overflow-y-auto border p-2">
+                  <div className="rounded-control border-red/20 bg-fill-4 flex max-h-40 flex-wrap gap-2 overflow-y-auto border p-2">
                     {parsedErrors.nations.map((n, i) => (
                       <Badge key={i} variant="red" className="tabular-nums">
                         {n.nation}
@@ -730,7 +735,7 @@ export function NSImportSuiteAdmin() {
           rawLogsData.length > 0 && (
             <div className="space-y-2">
               <div className="text-label-secondary text-caption flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <Clock className="text-blue h-3.5 w-3.5" /> Recent Import Runs (Click to inspect
                   cards & logs)
                 </span>
@@ -749,7 +754,7 @@ export function NSImportSuiteAdmin() {
                           setSelectedSyncLogId(log.id);
                           setActiveLogTab("cards");
                         }}
-                        className="hover:bg-fill-4 flex cursor-pointer items-center justify-between px-4 py-2.5 transition-colors"
+                        className="hover:bg-fill-4 flex cursor-pointer items-center justify-between px-4 py-3 transition-colors"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <Badge variant={statusBadgeVariant(log.status)}>{log.status}</Badge>
@@ -805,7 +810,7 @@ export function NSImportSuiteAdmin() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative w-64">
-                  <Search className="text-label-secondary absolute top-2.5 left-2.5 h-3.5 w-3.5" />
+                  <Search className="text-label-secondary absolute top-2 left-2 h-3.5 w-3.5" />
                   <Input
                     value={cardSearchQuery}
                     onChange={(e) => setCardSearchQuery(e.target.value)}
@@ -846,12 +851,12 @@ export function NSImportSuiteAdmin() {
                                 "/images/cards/lore-placeholder.svg";
                             }}
                           />
-                          <div className="absolute top-1.5 right-1.5">
+                          <div className="absolute top-2 right-2">
                             <RarityBadge rarity={card.rarity as CardRarity} size="small" />
                           </div>
 
                           {card.season && (
-                            <div className="rounded-control-sm text-caption absolute bottom-1.5 left-1.5 bg-black/70 px-1.5 py-0.5 text-white tabular-nums">
+                            <div className="rounded-control-sm text-caption absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 text-white tabular-nums">
                               S{card.season}
                             </div>
                           )}

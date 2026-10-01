@@ -133,18 +133,19 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
           <div className="flex items-center justify-between">
             <label className="text-label-secondary text-subhead">IPA Sound Transcribe</label>
             {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-              <button
-                type="button"
+              <Button
+                variant="link"
+                size="sm"
                 onClick={handleSuggestSandboxIpa}
                 disabled={suggestMutation.isPending}
-                className="text-tint text-caption flex cursor-pointer items-center gap-1 font-semibold select-none hover:underline disabled:opacity-50"
+                className="text-tint h-auto px-0"
               >
                 {suggestMutation.isPending ? (
                   <Loader2 className="h-2 w-2 animate-spin" />
                 ) : (
                   "Suggest IPA"
                 )}
-              </button>
+              </Button>
             )}
           </div>
           <Input

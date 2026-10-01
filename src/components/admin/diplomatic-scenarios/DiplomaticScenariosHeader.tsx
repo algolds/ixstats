@@ -53,10 +53,10 @@ export function DiplomaticScenariosHeader({
 }: DiplomaticScenariosHeaderProps) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search scenarios..."
               value={searchQuery}
@@ -81,7 +81,7 @@ export function DiplomaticScenariosHeader({
             </SelectContent>
           </Select>
 
-          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Checkbox
               id="showInactive"
               checked={showInactive}
@@ -93,13 +93,13 @@ export function DiplomaticScenariosHeader({
         </div>
 
         <Button onClick={onOpenAddDialog}>
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Create Scenario
         </Button>
       </div>
 
       {/* Advanced Tag Filter Pills */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         <span className="text-label-secondary text-caption mr-1">Filter by:</span>
 
         {/* Relationship filters */}
@@ -110,7 +110,7 @@ export function DiplomaticScenariosHeader({
           aria-label="Relationship"
           value={relationshipFilter}
           onValueChange={setRelationshipFilter}
-          className="flex flex-wrap gap-1.5"
+          className="flex flex-wrap gap-2"
         >
           {RELATIONSHIP_LEVELS.map((item) => (
             <ToggleGroupItem
@@ -131,7 +131,7 @@ export function DiplomaticScenariosHeader({
           aria-label="Difficulty"
           value={difficultyFilter}
           onValueChange={setDifficultyFilter}
-          className="flex flex-wrap gap-1.5"
+          className="flex flex-wrap gap-2"
         >
           {DIFFICULTY_LEVELS.map((item) => (
             <ToggleGroupItem
@@ -152,7 +152,7 @@ export function DiplomaticScenariosHeader({
           aria-label="Time frame"
           value={timeFrameFilter}
           onValueChange={setTimeFrameFilter}
-          className="flex flex-wrap gap-1.5"
+          className="flex flex-wrap gap-2"
         >
           {TIME_FRAMES.map((item) => (
             <ToggleGroupItem

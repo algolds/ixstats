@@ -35,7 +35,13 @@ import {
   CommandItem,
   CommandGroup,
 } from "~/components/ui/command";
-import { fieldStyles } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -332,7 +338,7 @@ export function LorewardsBotSection() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <Button
                       size="icon"
                       variant="ghost"
@@ -402,28 +408,24 @@ export function LorewardsBotSection() {
               <CardDescription>Auditing output stream of Discord bot processes</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <select
-                value={selectedProcess}
-                onChange={(e) => setSelectedProcess(e.target.value as any)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                )}
-              >
-                <option value="ixwiki-discord-bot">Discord Bot</option>
-                <option value="ixstats-ixtwitter">IxTwitter Feed</option>
-              </select>
-              <select
-                value={logType}
-                onChange={(e) => setLogType(e.target.value as any)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                )}
-              >
-                <option value="out">Stdout (info)</option>
-                <option value="err">Stderr (errors)</option>
-              </select>
+              <Select value={selectedProcess} onValueChange={(v) => setSelectedProcess(v as any)}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ixwiki-discord-bot">Discord Bot</SelectItem>
+                  <SelectItem value="ixstats-ixtwitter">IxTwitter Feed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={logType} onValueChange={(v) => setLogType(v as any)}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="out">Stdout (info)</SelectItem>
+                  <SelectItem value="err">Stderr (errors)</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 size="icon"
                 variant="ghost"
@@ -493,7 +495,7 @@ export function LorewardsBotSection() {
             <div className="border-separator rounded-row mt-6 space-y-4 border p-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <h4 className="text-headline text-green flex items-center gap-1.5">
+                  <h4 className="text-headline text-green flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     Winner Picked
                   </h4>
@@ -510,7 +512,7 @@ export function LorewardsBotSection() {
                 </div>
 
                 <div>
-                  <h4 className="text-headline text-blue flex items-center gap-1.5">
+                  <h4 className="text-headline text-blue flex items-center gap-2">
                     <CheckCircle className="h-4 w-4" />
                     Runner-up Picked
                   </h4>
@@ -534,7 +536,7 @@ export function LorewardsBotSection() {
                   <h4 className="text-label-secondary text-subhead mb-2">
                     Scoring Candidate Queue
                   </h4>
-                  <div className="text-label-secondary text-footnote space-y-1.5">
+                  <div className="text-label-secondary text-footnote space-y-2">
                     {scoringResult.candidates.map((c: any, index: number) => (
                       <div
                         key={index}
@@ -637,7 +639,7 @@ export function LorewardsBotSection() {
           {validationResult && (
             <div className="rounded-row border-blue/20 bg-blue/5 space-y-3 border p-4">
               <div className="border-blue/20 flex items-center justify-between border-b pb-2">
-                <span className="text-eyebrow text-blue flex items-center gap-1.5">
+                <span className="text-eyebrow text-blue flex items-center gap-2">
                   <Info className="h-4 w-4" />
                   Cross-Validation Report for {validationResult.date}
                 </span>
@@ -697,7 +699,7 @@ export function LorewardsBotSection() {
                       </span>
                       <span
                         className={cn(
-                          "py-0.2 rounded-control-sm text-caption px-1.5",
+                          "py-0.2 rounded-control-sm text-caption px-2",
                           r.winnersAgree
                             ? "bg-green/10 text-green"
                             : "bg-destructive/10 text-destructive"
@@ -821,19 +823,17 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Duration</label>
-              <select
-                value={blacklistDuration}
-                onChange={(e) => setBlacklistDuration(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                )}
-              >
-                <option value="permanent">Permanent</option>
-                <option value="7days">7 Days</option>
-                <option value="30days">30 Days</option>
-                <option value="custom">Custom Date</option>
-              </select>
+              <Select value={blacklistDuration} onValueChange={(v) => setBlacklistDuration(v)}>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="permanent">Permanent</SelectItem>
+                  <SelectItem value="7days">7 Days</SelectItem>
+                  <SelectItem value="30days">30 Days</SelectItem>
+                  <SelectItem value="custom">Custom Date</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {blacklistDuration === "custom" && (
               <div className="space-y-1">
@@ -924,18 +924,16 @@ export function LorewardsBotSection() {
             </div>
             <div className="space-y-1">
               <label className="text-label-secondary text-subhead">Type</label>
-              <select
-                value={overrideType}
-                onChange={(e) => setOverrideType(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                )}
-              >
-                <option value="daily">Daily Loreward</option>
-                <option value="weekly">Weekly Loreward</option>
-                <option value="monthly">Monthly Loreward</option>
-              </select>
+              <Select value={overrideType} onValueChange={(v) => setOverrideType(v)}>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily Loreward</SelectItem>
+                  <SelectItem value="weekly">Weekly Loreward</SelectItem>
+                  <SelectItem value="monthly">Monthly Loreward</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

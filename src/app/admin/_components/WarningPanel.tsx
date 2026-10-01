@@ -31,7 +31,7 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
   if (!hasIsPaused(ixTime) || !ixTime.isPaused) return null;
 
   return (
-    <div className="rounded-row border-red/25 bg-red/5 mt-6 p-4.5">
+    <div className="rounded-row border-red/25 bg-red/5 mt-6 p-5">
       <div className="flex">
         <AlertTriangle className="text-red h-5 w-5 shrink-0" />
         <div className="ml-3">

@@ -10,6 +10,14 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Search, Link as Link2, CheckCircle, XmarkCircle as XCircle } from "iconoir-react";
 import type { FilterTab } from "./types";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function WikiLinkStatusSection({
   countriesData,
@@ -84,7 +92,7 @@ export function WikiLinkStatusSection({
 
       {/* Search */}
       <div className="relative max-w-sm">
-        <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+        <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
           placeholder="Search countries..."
           value={searchQuery}
@@ -105,50 +113,46 @@ export function WikiLinkStatusSection({
           No countries match your filters.
         </div>
       ) : (
-        <div className="border-separator rounded-row max-h-[28rem] overflow-x-auto overflow-y-auto border">
-          <table className="text-footnote w-full tabular-nums">
-            <thead className="bg-fill-4 border-separator text-label-secondary sticky top-0 border-b font-semibold">
-              <tr>
-                <th className="px-4 py-2.5 text-left font-medium">Country</th>
-                <th className="px-4 py-2.5 text-left font-medium">Wiki Page</th>
-                <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">Source</th>
-                <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">
-                  Last Synced
-                </th>
-                <th className="px-4 py-2.5 text-right font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-separator divide-y">
-              {filtered.map((country) => (
-                <tr key={country.id} className="hover:bg-fill-4 transition-colors">
-                  <td className="text-label px-4 py-2.5 font-semibold">{country.name}</td>
-                  <td className="text-label-secondary max-w-[12rem] truncate px-4 py-2.5">
-                    {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
-                  </td>
-                  <td className="hidden px-4 py-2.5 sm:table-cell">
-                    {country.wikiSource ? (
-                      <Badge variant="outline">{country.wikiSource}</Badge>
-                    ) : (
-                      <span className="text-label-secondary opacity-50">—</span>
-                    )}
-                  </td>
-                  <td className="text-label-secondary text-footnote hidden px-4 py-2.5 tabular-nums md:table-cell">
-                    {country.wikiLastSynced
-                      ? new Date(country.wikiLastSynced).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {country.wikiPageTitle ? (
-                      <CheckCircle className="text-green ml-auto h-4 w-4" />
-                    ) : (
-                      <XCircle className="text-red ml-auto h-4 w-4" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table containerClassName="max-h-[28rem]">
+          <TableHeader sticky>
+            <TableRow>
+              <TableHead className="px-4">Country</TableHead>
+              <TableHead className="px-4">Wiki Page</TableHead>
+              <TableHead className="hidden px-4 sm:table-cell">Source</TableHead>
+              <TableHead className="hidden px-4 md:table-cell">Last Synced</TableHead>
+              <TableHead className="px-4 text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((country) => (
+              <TableRow key={country.id}>
+                <TableCell className="text-label px-4 font-semibold">{country.name}</TableCell>
+                <TableCell className="text-label-secondary max-w-[12rem] truncate px-4">
+                  {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
+                </TableCell>
+                <TableCell className="hidden px-4 sm:table-cell">
+                  {country.wikiSource ? (
+                    <Badge variant="outline">{country.wikiSource}</Badge>
+                  ) : (
+                    <span className="text-label-secondary opacity-50">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-label-secondary text-footnote hidden px-4 md:table-cell">
+                  {country.wikiLastSynced
+                    ? new Date(country.wikiLastSynced).toLocaleDateString()
+                    : "—"}
+                </TableCell>
+                <TableCell className="px-4 text-right">
+                  {country.wikiPageTitle ? (
+                    <CheckCircle className="text-green ml-auto h-4 w-4" />
+                  ) : (
+                    <XCircle className="text-red ml-auto h-4 w-4" />
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       <p className="text-label-secondary text-footnote">

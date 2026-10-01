@@ -111,7 +111,7 @@ export function LanguagePackCard({
               {pack.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="bg-fill-3 text-label-secondary rounded-control-sm text-caption px-1.5 font-mono"
+                  className="bg-fill-3 text-label-secondary rounded-control-sm text-caption px-2 font-mono"
                 >
                   #{tag}
                 </span>

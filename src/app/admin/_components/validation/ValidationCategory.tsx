@@ -38,7 +38,7 @@ export const ValidationCategory = React.memo(function ValidationCategory({
             )}
             <CardTitle className="text-body">{category.category}</CardTitle>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {passed > 0 && <Badge variant="green">{passed} passed</Badge>}
             {warnings > 0 && <Badge variant="yellow">{warnings} warn</Badge>}
             {failures > 0 && <Badge variant="red">{failures} fail</Badge>}

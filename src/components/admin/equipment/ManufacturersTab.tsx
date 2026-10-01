@@ -5,6 +5,7 @@
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { cn } from "~/lib/utils/cn";
 import {
   Select,
   SelectContent,
@@ -31,6 +32,8 @@ import {
   SwitchOff as ToggleLeft,
   SwitchOn as ToggleRight,
   ArrowSeparateVertical as ArrowUpDown,
+  ArrowDown,
+  ArrowUp,
   Package,
 } from "iconoir-react";
 import {
@@ -38,7 +41,51 @@ import {
   type Manufacturer,
   type ManufacturerWithCount,
   type SortField,
+  type SortDirection,
 } from "~/lib/military/manufacturer-utils";
+
+/** A sortable column header: the label is a `ghost` button and the cell carries `aria-sort`. */
+function SortableHead({
+  field,
+  label,
+  sortField,
+  sortDirection,
+  onSort,
+}: {
+  field: SortField;
+  label: string;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  onSort: (field: SortField) => void;
+}) {
+  const active = sortField === field;
+  return (
+    <TableHead
+      aria-sort={active ? (sortDirection === "desc" ? "descending" : "ascending") : "none"}
+    >
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onSort(field)}
+        className={cn(
+          "text-footnote -ml-2 gap-1 px-2",
+          active ? "text-tint" : "text-label-secondary hover:text-label"
+        )}
+      >
+        {label}
+        {active ? (
+          sortDirection === "desc" ? (
+            <ArrowDown aria-hidden className="size-3" />
+          ) : (
+            <ArrowUp aria-hidden className="size-3" />
+          )
+        ) : (
+          <ArrowUpDown aria-hidden className="size-3" />
+        )}
+      </Button>
+    </TableHead>
+  );
+}
 
 interface ManufacturersTabProps {
   manufacturerSearchQuery: string;
@@ -53,6 +100,9 @@ interface ManufacturersTabProps {
   manufacturersLoading: boolean;
   onAddManufacturer: () => void;
   handleSort: (field: SortField) => void;
+  /** Current sort, for the headers' `aria-sort`. */
+  sortField?: SortField;
+  sortDirection?: SortDirection;
   handleEditManufacturer: (manufacturer: Manufacturer) => void;
   handleToggleActive: (manufacturer: Manufacturer) => void;
 }
@@ -70,6 +120,8 @@ export function ManufacturersTab({
   manufacturersLoading,
   onAddManufacturer,
   handleSort,
+  sortField,
+  sortDirection,
   handleEditManufacturer,
   handleToggleActive,
 }: ManufacturersTabProps) {
@@ -157,43 +209,35 @@ export function ManufacturersTab({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>
-                  <button
-                    onClick={() => handleSort("name")}
-                    className="hover:text-tint flex items-center gap-1 transition-colors"
-                  >
-                    Name
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
-                <TableHead>
-                  <button
-                    onClick={() => handleSort("country")}
-                    className="hover:text-tint flex items-center gap-1 transition-colors"
-                  >
-                    Country
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
+                <SortableHead
+                  field="name"
+                  label="Name"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableHead
+                  field="country"
+                  label="Country"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
                 <TableHead>Specialties</TableHead>
-                <TableHead>
-                  <button
-                    onClick={() => handleSort("founded")}
-                    className="hover:text-tint flex items-center gap-1 transition-colors"
-                  >
-                    Founded
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
-                <TableHead>
-                  <button
-                    onClick={() => handleSort("equipmentCount")}
-                    className="hover:text-tint flex items-center gap-1 transition-colors"
-                  >
-                    Equipment
-                    <ArrowUpDown className="h-3 w-3" />
-                  </button>
-                </TableHead>
+                <SortableHead
+                  field="founded"
+                  label="Founded"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
+                <SortableHead
+                  field="equipmentCount"
+                  label="Equipment"
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                />
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>

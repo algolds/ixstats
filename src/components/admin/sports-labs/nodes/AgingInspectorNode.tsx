@@ -93,7 +93,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
             />
           </div>
 
-          <Button className="w-full gap-1.5" size="sm" onClick={handleSimulateAging}>
+          <Button className="w-full gap-2" size="sm" onClick={handleSimulateAging}>
             <Sliders className="h-4 w-4" /> Simulate 1-Year Aging Cycle
           </Button>
         </div>
@@ -143,7 +143,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -160,7 +160,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
@@ -178,7 +178,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
       )}
 
       {dbSeason && (
-        <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote space-y-1.5 border p-3">
+        <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote space-y-2 border p-3">
           <h5 className="text-yellow flex items-center gap-1 font-semibold">
             🏆 Quadrennial World Cup Cycle
           </h5>

@@ -19,6 +19,7 @@ import {
   EditPencil as PenSquare,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
@@ -189,14 +190,15 @@ export function ForumLayout({ children }: ForumLayoutProps) {
           {NAV_GROUP_2.map((item) => (
             <MobilePill key={item.id} item={item} isActive={activeId === item.id} />
           ))}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setSearchOpen(true)}
             className={pillClassName(false)}
           >
             <Search className="size-3.5 shrink-0" />
             <span className="whitespace-nowrap">Search</span>
-          </button>
+          </Button>
           {contextualItems.map((item) => (
             <MobilePill key={item.id} item={item} isActive={false} />
           ))}
@@ -212,26 +214,27 @@ export function ForumLayout({ children }: ForumLayoutProps) {
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="bg-separator mx-auto my-1.5 h-px w-6" />
+            <div className="bg-separator mx-auto my-2 h-px w-6" />
 
             {/* Community */}
             {NAV_GROUP_2.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="bg-separator mx-auto my-1.5 h-px w-6" />
+            <div className="bg-separator mx-auto my-2 h-px w-6" />
 
             {/* Search */}
             <RailTooltip label="Search (⌘K)">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setSearchOpen(true)}
                 aria-label="Search"
                 aria-keyshortcuts="Meta+K"
                 className={railClassName(false)}
               >
                 <Search className="size-[18px]" />
-              </button>
+              </Button>
             </RailTooltip>
 
             {/* New Thread */}
@@ -248,7 +251,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
             {/* Contextual (reply/share when in thread) */}
             {contextualItems.length > 0 && (
               <>
-                <div className="bg-separator mx-auto my-1.5 h-px w-6" />
+                <div className="bg-separator mx-auto my-2 h-px w-6" />
                 {contextualItems.map((item) => (
                   <RailIcon key={item.id} item={item} isActive={false} />
                 ))}
@@ -277,17 +280,20 @@ export function ForumLayout({ children }: ForumLayoutProps) {
 // Rail icon (desktop)
 // ---------------------------------------------------------------------------
 
+// Rail icons and mobile pills are `ghost` Buttons (links share the classes via `buttonVariants`)
+// with tint selection for the current destination.
 const railClassName = (isActive: boolean) =>
   cn(
-    "flex size-10 items-center justify-center rounded-control transition-colors duration-150 outline-none",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tint",
-    isActive ? "bg-tint-fill text-tint" : "text-label-secondary hover:bg-fill-4 hover:text-label"
+    buttonVariants({ variant: "ghost", size: "icon" }),
+    "size-10",
+    isActive ? "bg-tint-fill text-tint hover:bg-tint/20" : "text-label-secondary hover:text-label"
   );
 
 const pillClassName = (isActive: boolean) =>
   cn(
-    "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-footnote font-medium transition-colors",
-    isActive ? "bg-tint-fill text-tint" : "text-label-secondary hover:bg-fill-4 hover:text-label"
+    buttonVariants({ variant: "ghost", size: "sm" }),
+    "shrink-0 gap-2 rounded-full px-3",
+    isActive ? "bg-tint-fill text-tint hover:bg-tint/20" : "text-label-secondary hover:text-label"
   );
 
 function RailTooltip({ label, children }: { label: string; children: React.ReactElement }) {

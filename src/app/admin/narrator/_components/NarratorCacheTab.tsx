@@ -44,7 +44,7 @@ export function NarratorCacheTab() {
     <div className="space-y-5">
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Cached Cards</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -55,7 +55,7 @@ export function NarratorCacheTab() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Cache Hits</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -66,7 +66,7 @@ export function NarratorCacheTab() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Avg Hits per Card</p>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-16" />
@@ -94,7 +94,7 @@ export function NarratorCacheTab() {
 
         <div className="rounded-row border-red/20 bg-red/5 flex flex-col items-start justify-between gap-4 border p-4 sm:flex-row sm:items-center">
           <div>
-            <h4 className="text-caption text-red flex items-center gap-1.5">
+            <h4 className="text-caption text-red flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Flush AI Narrator Cache
             </h4>
@@ -112,12 +112,12 @@ export function NarratorCacheTab() {
           >
             {clearCacheMutation.isPending ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Flushing...
               </>
             ) : (
               <>
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
                 Flush Flavor Cache
               </>
             )}

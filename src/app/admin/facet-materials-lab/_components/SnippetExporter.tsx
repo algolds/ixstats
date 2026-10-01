@@ -66,7 +66,7 @@ export default function CustomFacetWidget() {
           <Code className="text-tint h-4 w-4" />
           <h3 className="text-headline">TSX code exporter</h3>
         </div>
-        <Button variant="outline" size="sm" onClick={copyCodeToClipboard} className="gap-1.5">
+        <Button variant="outline" size="sm" onClick={copyCodeToClipboard} className="gap-2">
           {copied ? <Check className="text-green h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           <span>{copied ? "Copied" : "Copy Code"}</span>
         </Button>

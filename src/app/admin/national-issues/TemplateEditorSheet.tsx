@@ -462,7 +462,7 @@ export function TemplateEditorSheet({
             {/* JSON Code Blocks */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-subhead text-label-secondary flex items-center gap-1.5">
+                <label className="text-subhead text-label-secondary flex items-center gap-2">
                   <FileCode className="text-label-secondary h-3.5 w-3.5" />
                   Trigger Conditions (JSON Expression Tree)
                 </label>
@@ -484,7 +484,7 @@ export function TemplateEditorSheet({
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-subhead text-label-secondary flex items-center gap-1.5">
+                <label className="text-subhead text-label-secondary flex items-center gap-2">
                   <FileCode className="text-label-secondary h-3.5 w-3.5" />
                   Response Options (JSON Option Array)
                 </label>

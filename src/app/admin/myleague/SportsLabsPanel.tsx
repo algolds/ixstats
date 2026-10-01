@@ -375,7 +375,7 @@ export default function SportsLabsPanel() {
         </div>
 
         {/* Toggle Mode */}
-        <div className="bg-fill-4 rounded-control flex shrink-0 items-center gap-1.5 self-start border p-1 md:self-auto">
+        <div className="bg-fill-4 rounded-control flex shrink-0 items-center gap-2 self-start border p-1 md:self-auto">
           <Button
             size="sm"
             variant={isSandbox ? "default" : "ghost"}
@@ -425,7 +425,7 @@ export default function SportsLabsPanel() {
               />
               <Panel
                 position="top-left"
-                className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-1.5 select-none"
+                className="bg-background border-separator text-label-secondary rounded-control text-footnote border px-3 py-2 select-none"
               >
                 <span className="text-yellow mr-1 font-semibold">💡 Pipeline Loop:</span> Click
                 nodes to select and configure settings in the inspector.

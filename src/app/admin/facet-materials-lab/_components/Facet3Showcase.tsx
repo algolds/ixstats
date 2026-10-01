@@ -269,7 +269,7 @@ export function Facet3Showcase() {
               containerClassName="w-48"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="neutral">Neutral</Badge>
             <Badge variant="tinted">Tinted</Badge>
             <Badge variant="success">Success</Badge>

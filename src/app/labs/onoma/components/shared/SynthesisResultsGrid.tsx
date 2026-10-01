@@ -28,6 +28,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface SynthesisResultsGridProps {
   generatedNames: string[];
@@ -214,43 +215,23 @@ export function SynthesisResultsGrid({
   return (
     <div className="w-full space-y-4">
       {generatedNames.length > 0 ? (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           {/* Horizontal Line & Unified Toolbar (View Switcher + Batch Actions) */}
           <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
             {/* Left: [ Grid ⊞ | Table ☰ ] Segmented View Toggle */}
-            <div className="border-separator bg-fill-4 rounded-control flex items-center gap-1 border p-0.5 select-none">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "rounded-control-sm text-footnote flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  viewMode === "grid"
-                    ? "bg-background text-label shadow-card font-semibold"
-                    : "text-label-secondary hover:text-label"
-                )}
-                title="Card Grid View"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span>Grid</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={cn(
-                  "rounded-control-sm text-footnote flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  viewMode === "table"
-                    ? "bg-background text-label shadow-card font-semibold"
-                    : "text-label-secondary hover:text-label"
-                )}
-                title="Data Table View"
-              >
-                <Table className="h-3.5 w-3.5" />
-                <span>Table</span>
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Results view"
+              value={viewMode}
+              onValueChange={setViewMode}
+              options={[
+                { value: "grid", label: "Grid", icon: <LayoutGrid /> },
+                { value: "table", label: "Table", icon: <Table /> },
+              ]}
+            />
 
             {/* Right: Copy All and Save to Stash Actions */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="bordered"
                 size="sm"
@@ -330,7 +311,7 @@ export function SynthesisResultsGrid({
             /* Results Grid with Apple spring entrance and generous card proportions */
             <div
               className={cn(
-                "grid grid-cols-1 gap-3.5 transition-opacity duration-200 sm:grid-cols-2 2xl:grid-cols-3",
+                "grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 2xl:grid-cols-3",
                 isGenerating && "opacity-50"
               )}
             >

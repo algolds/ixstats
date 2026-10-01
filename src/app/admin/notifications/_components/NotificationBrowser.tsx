@@ -140,7 +140,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
       <SwipeableRow.Content>
         <div
           className={cn(
-            "rounded-row border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 duration-fast relative flex cursor-grab items-center justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:cursor-grabbing",
+            "rounded-row border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 duration-fast relative flex cursor-grab items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:cursor-grabbing",
             !n.read && "border-blue/30 bg-blue/5"
           )}
         >
@@ -152,7 +152,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             )}
           />
 
-          <div className="flex min-w-0 flex-1 items-center gap-3 pl-1.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 pl-2">
             <div
               className={cn(
                 "rounded-control border-separator flex h-8 w-8 shrink-0 items-center justify-center border",
@@ -167,13 +167,13 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                 {!n.read && <span className="bg-blue h-1.5 w-1.5 animate-pulse rounded-full" />}
                 <Badge
                   variant="outline"
-                  className="text-label-secondary border-separator text-eyebrow h-4 px-1.5 py-0"
+                  className="text-label-secondary border-separator text-eyebrow h-4 px-2 py-0"
                 >
                   {n.category || n.type || "system"}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className="text-label-secondary border-separator flex h-4 items-center gap-1 px-1.5 py-0"
+                  className="text-label-secondary border-separator flex h-4 items-center gap-1 px-2 py-0"
                 >
                   {scope.icon}
                   <span>{scope.label}</span>
@@ -186,7 +186,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                         ? "default"
                         : "secondary"
                   }
-                  className="h-4 px-1.5 py-0 leading-none"
+                  className="h-4 px-2 py-0 leading-none"
                 >
                   {n.priority}
                 </Badge>
@@ -199,11 +199,11 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
+          <div className="flex shrink-0 flex-col items-end gap-2 pl-3">
             <span className="text-label-secondary text-caption whitespace-nowrap">
               {formattedTime}
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               {n.read ? (
                 <span title="Read">
                   <Eye className="text-label-secondary h-3.5 w-3.5" />
@@ -280,7 +280,7 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
               onClick={() => handleDelete(n.id)}
               disabled={deleteMutation.isPending}
             >
-              <Trash2 className="mr-1.5 h-3 w-3" />
+              <Trash2 className="mr-2 h-3 w-3" />
               Delete Notification
             </Button>
           </div>
@@ -343,7 +343,7 @@ export function NotificationBrowser() {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="text-label-secondary absolute top-2.5 left-2.5 h-4 w-4" />
+          <Search className="text-label-secondary absolute top-2 left-2 h-4 w-4" />
           <Input
             placeholder="Search title, description, message..."
             value={search}

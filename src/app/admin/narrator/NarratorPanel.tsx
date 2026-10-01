@@ -184,14 +184,14 @@ export function NarratorPanel() {
                 disabled={saveSettingsMutation.isPending}
                 size="sm"
               >
-                <Save className="mr-1.5 h-3.5 w-3.5" />
+                <Save className="mr-2 h-3.5 w-3.5" />
                 {saveSettingsMutation.isPending ? "Saving..." : "Save Settings"}
               </Button>
             </div>
 
             <div className="space-y-4">
               {/* Enable Switch */}
-              <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+              <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
                 <div>
                   <Label className="text-label text-caption">Enable Flavor Cards Globally</Label>
                   <p className="text-label-secondary text-footnote">
@@ -203,7 +203,7 @@ export function NarratorPanel() {
 
               {/* Grid Configs */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-label-secondary text-subhead">LLM Provider</Label>
                   <Select value={provider} onValueChange={setProvider}>
                     <SelectTrigger size="sm">
@@ -237,7 +237,7 @@ export function NarratorPanel() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-label-secondary text-subhead">API Endpoint URL</Label>
                   <Input
                     type="text"
@@ -248,7 +248,7 @@ export function NarratorPanel() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-label-secondary text-subhead">Model Name</Label>
                   <Input
                     type="text"
@@ -260,7 +260,7 @@ export function NarratorPanel() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-label-secondary text-subhead">API Key / Token</Label>
                 <Input
                   type="password"
@@ -294,7 +294,7 @@ export function NarratorPanel() {
               </div>
 
               {/* System Prompt Editor */}
-              <div className="space-y-1.5 pt-2">
+              <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-label-secondary text-subhead">Global System Prompt</Label>
                   <Button

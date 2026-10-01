@@ -89,13 +89,13 @@ export function OnomaFooter({
         <div className="border-separator relative flex flex-col justify-between gap-4 border-b pb-4 lg:flex-row lg:items-center">
           <div className="max-w-2xl space-y-2">
             <div className="flex items-center gap-3">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => {
                   onNavigate("overview");
                   scrollToTop();
                 }}
-                className="group/brand focus-visible:outline-tint rounded-control-sm inline-flex cursor-pointer items-center gap-2 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="group/brand h-auto gap-2 px-1 py-1 hover:bg-transparent"
                 title="Onoma — Overview"
                 aria-label="Onoma overview"
               >
@@ -103,7 +103,7 @@ export function OnomaFooter({
                   variant="wordmark"
                   className="text-label group-hover/brand:text-tint h-7 w-auto transition-colors"
                 />
-              </button>
+              </Button>
               <span className="text-label-secondary text-footnote font-mono">/ˈɒnəmə/</span>
             </div>
 

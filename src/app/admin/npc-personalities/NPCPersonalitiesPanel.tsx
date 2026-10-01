@@ -35,6 +35,14 @@ import {
 import { NPCPersonalityAssignDialog } from "./_components/NPCPersonalityAssignDialog";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function NPCPersonalitiesPanel() {
   usePageTitle({ title: "Admin - NPC Personalities" });
@@ -276,25 +284,25 @@ export function NPCPersonalitiesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">
             {personalities?.length ?? 0}
           </div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Active Profiles</div>
           <div className="text-title-2 text-green mt-1 tabular-nums">
             {personalities?.filter((p: any) => p.isActive).length ?? 0}
           </div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Assignments</div>
           <div className="text-title-2 text-teal mt-1 tabular-nums">
             {personalities?.reduce((acc: number, p: any) => acc + (p.usageCount || 0), 0) ?? 0}
           </div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredPersonalities.length}
@@ -306,7 +314,7 @@ export function NPCPersonalitiesPanel() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Filter personalities..."
               value={searchTerm}
@@ -329,7 +337,7 @@ export function NPCPersonalitiesPanel() {
             </SelectContent>
           </Select>
 
-          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Checkbox
               id="npc-active-only"
               checked={showActiveOnly}
@@ -346,7 +354,7 @@ export function NPCPersonalitiesPanel() {
             setIsAddDialogOpen(true);
           }}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Add Personality
         </Button>
       </div>
@@ -363,35 +371,35 @@ export function NPCPersonalitiesPanel() {
           <p className="text-label-secondary text-footnote">No personalities matching criteria.</p>
         </FacetCard>
       ) : (
-        <FacetCard className="overflow-x-auto">
-          <table className="text-footnote w-full tabular-nums">
-            <thead>
-              <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                <th className="px-4 py-2.5 text-left font-medium">Personality & Basis</th>
-                <th className="px-4 py-2.5 text-left font-medium">Archetype</th>
-                <th className="px-4 py-2.5 text-left font-medium">Core Traits</th>
-                <th className="px-4 py-2.5 text-left font-medium">Usage</th>
-                <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-separator divide-y">
+        <FacetCard>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Personality & Basis</TableHead>
+                <TableHead className="px-4">Archetype</TableHead>
+                <TableHead className="px-4">Core Traits</TableHead>
+                <TableHead className="px-4">Usage</TableHead>
+                <TableHead className="px-4">Status</TableHead>
+                <TableHead className="px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredPersonalities.map((p: any) => (
-                <tr key={p.id} className="hover:bg-fill-4 transition-colors">
-                  <td className="px-4 py-2.5">
+                <TableRow key={p.id}>
+                  <TableCell className="px-4">
                     <div className="text-label font-semibold">{p.name}</div>
                     {p.historicalBasis && (
                       <div className="text-label-secondary text-footnote max-w-xs truncate">
                         {p.historicalBasis}
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <Badge variant="teal" className="capitalize">
                       {p.archetype.replace(/_/g, " ")}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <div className="text-label-secondary text-footnote flex items-center gap-3 font-mono">
                       <span>
                         Mil: <strong className="text-label">{p.traits?.militarism ?? 50}%</strong>
@@ -405,11 +413,11 @@ export function NPCPersonalitiesPanel() {
                         <strong className="text-label">{p.traits?.riskTolerance ?? 50}%</strong>
                       </span>
                     </div>
-                  </td>
-                  <td className="text-label px-4 py-2.5 font-medium tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-label px-4 font-medium">
                     {p.usageCount || 0}×
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     {p.isActive ? (
                       <Badge variant="green">Active</Badge>
                     ) : (
@@ -417,8 +425,8 @@ export function NPCPersonalitiesPanel() {
                         Inactive
                       </Badge>
                     )}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
                     <div className="inline-flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -464,11 +472,11 @@ export function NPCPersonalitiesPanel() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </FacetCard>
       )}
 

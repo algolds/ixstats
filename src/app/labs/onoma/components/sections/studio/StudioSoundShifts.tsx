@@ -40,6 +40,9 @@ import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { Checkbox } from "~/components/ui/checkbox";
 
 const QUICK_SYMBOLS = [
   { label: "#_ (Initial)", value: "#_" },
@@ -301,21 +304,24 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
               {/* Preset Selector */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-label-secondary text-eyebrow">Presets:</span>
-                {SOUND_SHIFT_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset.id)}
-                    className={cn(
-                      "rounded-control text-footnote cursor-pointer border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                      selectedPresetId === preset.id
-                        ? "border-tint/40 bg-tint/10 text-tint shadow-card"
-                        : "border-separator bg-surface text-label-secondary hover:text-label hover:border-tint/30 hover:bg-tint/5"
-                    )}
-                  >
-                    {preset.name.split(" ")[0]}
-                  </button>
-                ))}
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  disallowEmpty
+                  aria-label="Sound shift preset"
+                  value={selectedPresetId}
+                >
+                  {SOUND_SHIFT_PRESETS.map((preset) => (
+                    <ToggleGroupItem
+                      key={preset.id}
+                      value={preset.id}
+                      onClick={() => handleSelectPreset(preset.id)}
+                    >
+                      {preset.name.split(" ")[0]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
               </div>
             </div>
           </div>
@@ -330,28 +336,25 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     Chronological Epochs & Rules
                   </h4>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAddEpoch}
-                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint/10 hover:text-tint rounded-control text-footnote flex cursor-pointer items-center gap-1.5 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-                >
+                <Button variant="bordered" size="sm" onClick={handleAddEpoch}>
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Epoch</span>
-                </button>
+                </Button>
               </div>
 
               {/* Quick Insert Symbols Palette */}
-              <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-1.5 border p-2.5">
+              <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-2 border p-3">
                 <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
                 {QUICK_SYMBOLS.map((sym) => (
-                  <button
+                  <Button
+                    variant="bordered"
+                    size="sm"
                     key={sym.label}
-                    type="button"
                     onClick={() => handleInsertSymbol(sym.value)}
-                    className="border-separator bg-surface hover:border-tint/40 hover:bg-tint/10 hover:text-tint rounded-control-sm text-caption cursor-pointer border px-2 py-0.5 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
+                    className="h-7 px-2 font-mono"
                   >
                     {sym.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -363,7 +366,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     className="border-separator bg-surface rounded-row shadow-card relative space-y-3 border p-4"
                   >
                     {/* Epoch Header */}
-                    <div className="border-separator flex items-center justify-between gap-2 border-b pb-2.5">
+                    <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
                       <div className="flex flex-1 items-center gap-2">
                         <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-semibold">
                           {epochIdx + 1}
@@ -380,15 +383,17 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                           placeholder="Epoch Title (e.g. Phase 1: High Vowel Raising)"
                         />
                       </div>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleRemoveEpoch(epochIdx)}
                         disabled={epochs.length <= 1}
                         title="Delete Epoch"
-                        className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors disabled:opacity-30"
+                        aria-label="Delete Epoch"
+                        className="text-label-secondary hover:text-red"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Rules Table / Rows */}
@@ -402,13 +407,11 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                           )}
                         >
                           {/* Checkbox Enable */}
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={rule.enabled !== false}
-                            onChange={(e) =>
-                              handleUpdateRule(epochIdx, ruleIdx, "enabled", e.target.checked)
+                            onCheckedChange={(checked) =>
+                              handleUpdateRule(epochIdx, ruleIdx, "enabled", checked === true)
                             }
-                            className="accent-tint rounded-control-sm h-3.5 w-3.5 cursor-pointer"
                             title="Toggle Rule"
                           />
 
@@ -468,41 +471,48 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
                           {/* Move Up / Down / Delete */}
                           <div className="flex items-center gap-1">
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleMoveRule(epochIdx, ruleIdx, "up")}
                               disabled={ruleIdx === 0}
-                              className="text-label-secondary hover:text-label cursor-pointer p-1 transition-colors disabled:opacity-25"
+                              aria-label="Move rule up"
+                              className="text-label-secondary hover:text-label"
                             >
                               <ArrowUp className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleMoveRule(epochIdx, ruleIdx, "down")}
                               disabled={ruleIdx === epoch.rules.length - 1}
-                              className="text-label-secondary hover:text-label cursor-pointer p-1 transition-colors disabled:opacity-25"
+                              aria-label="Move rule down"
+                              className="text-label-secondary hover:text-label"
                             >
                               <ArrowDown className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleRemoveRule(epochIdx, ruleIdx)}
-                              className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors"
+                              aria-label="Remove rule"
+                              className="text-label-secondary hover:text-red"
                             >
                               <Trash2 className="h-3 w-3" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ))}
 
-                      <button
-                        type="button"
+                      <Button
+                        variant="plain"
+                        size="sm"
                         onClick={() => handleAddRule(epochIdx)}
-                        className="text-label-secondary hover:text-tint text-caption flex cursor-pointer items-center gap-1 pt-1 font-semibold transition-colors"
+                        className="text-label-secondary hover:text-tint text-label-secondary hover:text-tint px-2"
                       >
                         <Plus className="h-3 w-3" />
                         <span>Add Shift Rule</span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -512,7 +522,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
             {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
             <div className="space-y-5 lg:col-span-5">
               {/* Proto-Lexicon Input */}
-              <div className="border-separator bg-surface rounded-row shadow-card space-y-2.5 border p-4">
+              <div className="border-separator bg-surface rounded-row shadow-card space-y-2 border p-4">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                   <label className="text-label text-footnote font-semibold">
                     Proto-Language Lexicon Input
@@ -557,8 +567,9 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       {evolutionResults.length} simulated
                     </span>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="tinted"
+                    size="sm"
                     onClick={async () => {
                       const words = evolutionResults.map((r) => r.final);
                       if (words.length === 0) return;
@@ -569,11 +580,10 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       });
                       notify.success(`Saved ${words.length} evolved words to Stash!`);
                     }}
-                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption shadow-card flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   >
                     <FolderDown className="h-3.5 w-3.5" />
                     <span>Save to Stash</span>
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
@@ -585,7 +595,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       <div
                         key={`${res.original}-${idx}`}
                         className={cn(
-                          "border-separator bg-surface rounded-control border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                          "border-separator bg-surface rounded-control border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                           hasChanged && "border-tint/30 bg-tint/5"
                         )}
                       >
@@ -596,14 +606,16 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               <span className="text-label-secondary text-footnote font-mono">
                                 *{res.original}
                               </span>
-                              <button
-                                type="button"
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
                                 onClick={() => handlePlay(res.original)}
                                 title="Pronounce Proto Word"
-                                className="text-label-secondary hover:text-label cursor-pointer p-0.5"
+                                aria-label="Pronounce Proto Word"
+                                className="text-label-secondary hover:text-label"
                               >
                                 <Volume2 className="h-3 w-3" />
-                              </button>
+                              </Button>
                             </div>
 
                             <ArrowRight className="text-label-tertiary h-3 w-3 flex-shrink-0" />
@@ -613,64 +625,72 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               <span className="text-label text-footnote font-mono font-semibold">
                                 {res.final}
                               </span>
-                              <button
-                                type="button"
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
                                 onClick={() => handlePlay(res.final)}
                                 title="Pronounce Evolved Word"
-                                className="text-tint hover:text-tint/80 cursor-pointer p-0.5"
+                                aria-label="Pronounce Evolved Word"
+                                className="text-tint hover:text-tint/80"
                               >
                                 <Volume2 className="h-3 w-3" />
-                              </button>
+                              </Button>
                             </div>
                           </div>
 
                           {/* Actions */}
                           <div className="flex items-center gap-1">
                             {/* Save to Stash */}
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleSaveToStash(res)}
                               title="Save to Stash"
-                              className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-1 transition-colors"
+                              aria-label="Save to Stash"
+                              className="text-label-secondary hover:text-tint"
                             >
                               <Bookmark className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
 
                             {/* Copy */}
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => handleCopy(res.final, idx)}
                               title="Copy Evolved Word"
-                              className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-1 transition-colors"
+                              aria-label="Copy Evolved Word"
+                              className="text-label-secondary hover:text-label"
                             >
                               {copiedIdx === idx ? (
                                 <Check className="text-green h-3.5 w-3.5" />
                               ) : (
                                 <Copy className="h-3.5 w-3.5" />
                               )}
-                            </button>
+                            </Button>
 
                             {/* Trace Step toggle */}
                             {res.steps.length > 0 && (
-                              <button
-                                type="button"
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
                                 onClick={() => setExpandedWordIdx(isExpanded ? null : idx)}
                                 title="Inspect derivation steps"
-                                className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-1 transition-colors"
+                                aria-label="Inspect derivation steps"
+                                className="text-label-secondary hover:text-tint"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="h-3.5 w-3.5" />
                                 ) : (
                                   <ChevronRight className="h-3.5 w-3.5" />
                                 )}
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </div>
 
                         {/* Step-by-Step Derivation Inspector */}
                         {isExpanded && res.steps.length > 0 && (
-                          <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-1.5 border p-2">
+                          <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-2 border p-2">
                             <div className="text-label-secondary font-semibold uppercase">
                               Derivation Trace:
                             </div>

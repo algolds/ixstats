@@ -55,7 +55,7 @@ export function VaultPurchaseLogs() {
         accessor: (log: PurchaseLog) => log.source,
         render: (_val: unknown, log: PurchaseLog) => (
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <ShoppingCart className="text-label-secondary h-3.5 w-3.5" />
               <span className="text-label font-medium">
                 {log.source.replace("Purchase item: ", "")}
@@ -76,7 +76,7 @@ export function VaultPurchaseLogs() {
           return (
             <Badge
               variant="outline"
-              className={`text-eyebrow px-1.5 py-0 ${
+              className={`text-eyebrow px-2 py-0 ${
                 isUpgrade
                   ? "border-green/20 bg-green/5 text-green"
                   : "border-purple/20 bg-purple/5 text-purple"

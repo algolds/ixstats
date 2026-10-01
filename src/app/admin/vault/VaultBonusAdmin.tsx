@@ -128,7 +128,7 @@ export function VaultBonusAdmin() {
       <FacetCard className="border-green/30 bg-green/10 p-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="rounded-row border-green/40 bg-green/20 border p-2.5">
+            <div className="rounded-row border-green/40 bg-green/20 border p-3">
               <Gift className="text-green h-6 w-6" />
             </div>
             <div>
@@ -140,7 +140,7 @@ export function VaultBonusAdmin() {
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="bg-surface border-separator rounded-row flex cursor-pointer items-center gap-2 border px-3 py-1.5">
+            <label className="bg-surface border-separator rounded-row flex cursor-pointer items-center gap-2 border px-3 py-2">
               <Checkbox
                 checked={enabled}
                 onCheckedChange={(checked) =>
@@ -161,7 +161,7 @@ export function VaultBonusAdmin() {
           const GroupIcon = group.icon;
           return (
             <FacetCard key={group.title} className="space-y-4 p-5">
-              <div className="border-separator flex items-center gap-2.5 border-b pb-2">
+              <div className="border-separator flex items-center gap-2 border-b pb-2">
                 <GroupIcon className={`h-4 w-4 ${group.accentColor}`} />
                 <div>
                   <h3 className="text-label text-headline">{group.title}</h3>

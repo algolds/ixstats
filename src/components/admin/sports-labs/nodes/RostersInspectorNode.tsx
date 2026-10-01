@@ -88,7 +88,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
               onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
             />
           </div>
-          <Button className="mt-6 gap-1.5" onClick={handleGenerateRoster}>
+          <Button className="mt-6 gap-2" onClick={handleGenerateRoster}>
             <RotateCcw className="h-4 w-4" />
             Generate
           </Button>
@@ -102,7 +102,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             <p className="text-label-secondary text-footnote capitalize">
               {mockCoach.role} &middot; Age {mockCoach.age} &middot; {mockCoach.careerStage}
             </p>
-            <div className="text-footnote mt-2 grid grid-cols-2 gap-1.5 tabular-nums">
+            <div className="text-footnote mt-2 grid grid-cols-2 gap-2 tabular-nums">
               <div>Strat: {mockCoach.ratings.strategy}</div>
               <div>Dev: {mockCoach.ratings.development}</div>
             </div>
@@ -153,7 +153,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -170,7 +170,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
       </div>
 
       {dbLeague && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Team</Label>
           <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
             <SelectTrigger>
@@ -200,7 +200,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
               </p>
             )}
             {(dbTeam as any).patronSaint && (
-              <p className="text-yellow mt-1.5 flex items-center gap-1 font-semibold">
+              <p className="text-yellow mt-2 flex items-center gap-1 font-semibold">
                 🙏 Patron Saint: <Badge variant="yellow">{(dbTeam as any).patronSaint}</Badge>
               </p>
             )}
@@ -241,7 +241,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             </Card>
           )}
 
-          <div className="thin-scrollbar max-h-[300px] space-y-1.5 overflow-y-auto">
+          <div className="thin-scrollbar max-h-[300px] space-y-2 overflow-y-auto">
             <h6 className="text-label-secondary text-subhead">
               Active Roster ({dbTeam.players.length})
             </h6>

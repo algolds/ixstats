@@ -18,7 +18,8 @@ import { getCategoryLabel } from "~/lib/cards/category-theme";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Input } from "~/components/ui/input";
-import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Badge } from "~/components/ui/badge";
+import { ActionPill } from "~/components/ui/action-pill";
 
 interface CardExplorerTableProps {
   cards: any[];
@@ -102,11 +103,13 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           const rawUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
           const proxiedUrl = rawUrl ? proxyCardArtwork(rawUrl) : null;
           return (
-            <button
-              type="button"
+            <Button
+              variant="gray"
+              size="sm"
               onClick={() => onOpen3DViewer(card)}
               title="Click to view interactive 3D card"
-              className="border-separator bg-fill-3 hover:border-tint/60 group/thumb rounded-control-sm hover:shadow-card relative flex h-11 w-8 cursor-pointer items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 active:scale-95"
+              aria-label={`View ${card.title ?? "card"} as an interactive 3D card`}
+              className="border-separator hover:border-tint/60 group/thumb hover:shadow-card h-11 w-8 overflow-hidden border p-0 hover:scale-110"
             >
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
                 <CategoryIcon category={card.category || "SPECIAL"} treatment="seal" />
@@ -114,14 +117,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               {proxiedUrl && (
                 <img
                   src={proxiedUrl}
-                  alt={card.title}
+                  alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = "none";
                   }}
                 />
               )}
-            </button>
+            </Button>
           );
         },
       },
@@ -134,7 +137,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           const isEditingTitle = editingTitleId === card.id;
           if (isEditingTitle) {
             return (
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <Input
                   value={editingTitleValue}
                   onChange={(e) => setEditingTitleValue(e.target.value)}
@@ -209,7 +212,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         header: "Season & Rarity",
         mobileRole: "badge",
         render: (_val: unknown, card: any) => (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Badge variant="purple">S{card.season}</Badge>
             <Badge variant="yellow">{card.rarity}</Badge>
           </div>
@@ -226,7 +229,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           const isEditingValue = editingValueId === card.id;
           if (isEditingValue) {
             return (
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <Input
                   type="number"
                   value={editingValueNum}
@@ -319,7 +322,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
 
           if (isLoreCard) {
             return (
-              <div className="bg-tint-fill border-tint/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5">
+              <div className="bg-tint-fill border-tint/20 inline-flex items-center gap-2 rounded-full border px-3 py-0.5">
                 <CategoryIcon category={resolvedCategory || "SPECIAL"} treatment="seal" size="xs" />
                 <span className="text-tint text-caption">
                   {resolvedCategory ? getCategoryLabel(resolvedCategory) : "Lore"}
@@ -350,16 +353,15 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         render: (_val: unknown, card: any) => {
           const isRetired = card.isRetired === true;
           return (
-            <button
+            <ActionPill
+              pressed={isRetired}
+              tone="orange"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleTakedown(card.id, isRetired);
               }}
               disabled={isPending}
-              className={cn(
-                badgeVariants({ variant: isRetired ? "caution" : "neutral" }),
-                "cursor-pointer active:scale-95"
-              )}
+              className={cn(!isRetired && "border-separator border")}
               title="Click to toggle visibility / takedown state"
             >
               {isRetired ? (
@@ -373,7 +375,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
                   Visible (Click to Hide)
                 </>
               )}
-            </button>
+            </ActionPill>
           );
         },
       },

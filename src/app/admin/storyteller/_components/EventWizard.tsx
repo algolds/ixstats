@@ -11,7 +11,6 @@ import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Textarea } from "~/components/ui/textarea";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { StepIndicator } from "~/components/ui/step-indicator";
@@ -33,6 +32,14 @@ import {
   Globe,
   Sparks as Sparkles,
 } from "iconoir-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 // ── Event Types ──────────────────────────────────────────────────────────────
 
@@ -589,47 +596,45 @@ function Step4Preview({
       </div>
 
       {/* Country breakdown */}
-      <ScrollArea className="border-separator rounded-control h-[260px] border">
-        <table className="text-body w-full tabular-nums">
-          <thead>
-            <tr className="border-separator bg-fill-4 border-b">
-              <th className="px-3 py-2 text-left font-medium">Country</th>
-              <th className="px-3 py-2 text-left font-medium">Tier</th>
-              <th className="px-3 py-2 text-right font-medium">GDP Change</th>
-              <th className="px-3 py-2 text-right font-medium">Pop Change</th>
-              <th className="px-3 py-2 text-right font-medium">Stability</th>
-            </tr>
-          </thead>
-          <tbody>
-            {simulation.projectedImpacts.map((p) => (
-              <tr key={p.countryId} className="border-separator border-b">
-                <td className="px-3 py-2 font-medium">{p.countryName}</td>
-                <td className="px-3 py-2">
-                  <Badge variant="outline">{p.economicTier}</Badge>
-                </td>
-                <td
-                  className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.gdpChange < 0 ? "text-red" : "text-green"}`}
-                >
-                  {p.projected.gdpChange >= 0 ? "+" : ""}
-                  {(p.projected.gdpChange * 100).toFixed(1)}%
-                </td>
-                <td
-                  className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.populationChange < 0 ? "text-red" : "text-green"}`}
-                >
-                  {p.projected.populationChange >= 0 ? "+" : ""}
-                  {(p.projected.populationChange * 100).toFixed(2)}%
-                </td>
-                <td
-                  className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.stabilityChange < 0 ? "text-red" : "text-green"}`}
-                >
-                  {p.projected.stabilityChange >= 0 ? "+" : ""}
-                  {p.projected.stabilityChange.toFixed(0)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </ScrollArea>
+      <Table containerClassName="h-[260px]">
+        <TableHeader sticky>
+          <TableRow>
+            <TableHead className="px-3">Country</TableHead>
+            <TableHead className="px-3">Tier</TableHead>
+            <TableHead className="px-3 text-right">GDP Change</TableHead>
+            <TableHead className="px-3 text-right">Pop Change</TableHead>
+            <TableHead className="px-3 text-right">Stability</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {simulation.projectedImpacts.map((p) => (
+            <TableRow key={p.countryId}>
+              <TableCell className="px-3 font-medium">{p.countryName}</TableCell>
+              <TableCell className="px-3">
+                <Badge variant="outline">{p.economicTier}</Badge>
+              </TableCell>
+              <TableCell
+                className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.gdpChange < 0 ? "text-red" : "text-green"}`}
+              >
+                {p.projected.gdpChange >= 0 ? "+" : ""}
+                {(p.projected.gdpChange * 100).toFixed(1)}%
+              </TableCell>
+              <TableCell
+                className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.populationChange < 0 ? "text-red" : "text-green"}`}
+              >
+                {p.projected.populationChange >= 0 ? "+" : ""}
+                {(p.projected.populationChange * 100).toFixed(2)}%
+              </TableCell>
+              <TableCell
+                className={`text-footnote px-3 py-2 text-right tabular-nums ${p.projected.stabilityChange < 0 ? "text-red" : "text-green"}`}
+              >
+                {p.projected.stabilityChange >= 0 ? "+" : ""}
+                {p.projected.stabilityChange.toFixed(0)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

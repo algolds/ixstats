@@ -55,7 +55,7 @@ export function AtomicComponentsHeader({
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div className="flex items-center gap-3">
-          <div className="border-separator bg-surface rounded-row border p-2.5">
+          <div className="border-separator bg-surface rounded-row border p-3">
             <Icon className="text-tint h-5 w-5" />
           </div>
           <div>
@@ -66,7 +66,7 @@ export function AtomicComponentsHeader({
         <div className="flex flex-wrap items-center gap-2">
           {onOpenTemplates && (
             <Button variant="outline" size="sm" onClick={onOpenTemplates}>
-              <FileText className="text-label-secondary mr-1.5 h-3.5 w-3.5" />
+              <FileText className="text-label-secondary mr-2 h-3.5 w-3.5" />
               Templates
             </Button>
           )}
@@ -83,9 +83,9 @@ export function AtomicComponentsHeader({
       </p>
 
       {/* Filter Rail */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
-          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search components..."
             value={searchTerm}

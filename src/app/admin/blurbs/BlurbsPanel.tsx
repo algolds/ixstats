@@ -101,7 +101,7 @@ function BlurbStatsSummary() {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <FacetCard className="p-3.5">
+      <FacetCard className="p-4">
         <p className="text-label-secondary text-eyebrow">Total Responses</p>
         {countLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
@@ -112,7 +112,7 @@ function BlurbStatsSummary() {
         )}
       </FacetCard>
 
-      <FacetCard className="p-3.5">
+      <FacetCard className="p-4">
         <p className="text-label-secondary text-eyebrow">Active Prompts</p>
         {activeLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
@@ -121,7 +121,7 @@ function BlurbStatsSummary() {
         )}
       </FacetCard>
 
-      <FacetCard className="p-3.5">
+      <FacetCard className="p-4">
         <p className="text-label-secondary text-eyebrow">All Prompts Catalog</p>
         {allLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
@@ -210,7 +210,7 @@ function PromptManagementSection() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative max-w-sm flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search prompts..."
               value={searchQuery}
@@ -239,7 +239,7 @@ function PromptManagementSection() {
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <Plus className="mr-2 h-3.5 w-3.5" />
               New Prompt
             </Button>
           </DialogTrigger>
@@ -248,7 +248,7 @@ function PromptManagementSection() {
               <DialogTitle>Create Community Topic Prompt</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-label text-caption">Title</Label>
                 <Input
                   value={form.title}
@@ -269,7 +269,7 @@ function PromptManagementSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-label text-caption">Question / Description</Label>
                 <Textarea
                   value={form.question}
@@ -281,7 +281,7 @@ function PromptManagementSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-label text-caption">URL Slug</Label>
                 <Input
                   value={form.slug}
@@ -334,7 +334,7 @@ function PromptManagementSection() {
         </Dialog>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -352,7 +352,7 @@ function PromptManagementSection() {
             return (
               <FacetCard
                 key={prompt.id}
-                className="hover:border-separator flex flex-col justify-between gap-3 p-3.5 transition-colors sm:flex-row sm:items-center"
+                className="hover:border-separator flex flex-col justify-between gap-3 p-4 transition-colors sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="bg-tint-fill text-tint rounded-row p-2">
@@ -478,7 +478,7 @@ function ResponseModerationSection() {
 
   return (
     <FacetCard className="space-y-4 p-5">
-      <div className="border-separator max-w-md space-y-1.5 border-b pb-4">
+      <div className="border-separator max-w-md space-y-2 border-b pb-4">
         <Label className="text-label-secondary text-subhead">Select Discussion Prompt</Label>
         <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
           <SelectTrigger size="sm">
@@ -509,15 +509,15 @@ function ResponseModerationSection() {
           No responses posted for this topic yet.
         </p>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-row border p-3.5 ${
+              className={`rounded-row border p-4 ${
                 r.featured ? "border-yellow/30 bg-yellow/5" : "border-separator bg-fill-3"
               }`}
             >
-              <div className="mb-1.5 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="bg-tint-fill text-tint rounded-control p-1">
                     <User className="h-3.5 w-3.5" />

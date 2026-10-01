@@ -244,7 +244,7 @@ export function EventsRegistryPanel() {
                 <div className="min-w-[200px] flex-1">
                   <label className="text-label-secondary text-caption mb-1 block">Search</label>
                   <div className="relative">
-                    <Search className="text-label-secondary absolute top-2.5 left-2.5 h-4 w-4" />
+                    <Search className="text-label-secondary absolute top-2 left-2 h-4 w-4" />
                     <Input
                       placeholder="Search events..."
                       value={search}
@@ -393,7 +393,7 @@ export function EventsRegistryPanel() {
                           />
                         </div>
 
-                        <div className="mt-3 flex flex-wrap gap-1.5">
+                        <div className="mt-3 flex flex-wrap gap-2">
                           <Badge variant="outline">
                             <Bell className="mr-1 h-3 w-3" />
                             {event.category}

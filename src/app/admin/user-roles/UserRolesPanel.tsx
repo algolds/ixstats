@@ -157,7 +157,7 @@ export function UserRolesPanel() {
                 <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
                   <DialogTrigger asChild>
                     <Button size="sm">
-                      <Mail className="mr-1.5 h-3.5 w-3.5" />
+                      <Mail className="mr-2 h-3.5 w-3.5" />
                       Invite VIP / Role
                     </Button>
                   </DialogTrigger>
@@ -166,7 +166,7 @@ export function UserRolesPanel() {
                       <DialogTitle>Send Waitlist Bypass Invitation</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-3">
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <label className="text-label text-caption">Email Address</label>
                         <Input
                           type="email"
@@ -178,7 +178,7 @@ export function UserRolesPanel() {
                           className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                         />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <label className="text-label text-caption">Reserved Nation Name</label>
                         <Input
                           value={inviteForm.reservedNationName}
@@ -189,7 +189,7 @@ export function UserRolesPanel() {
                           className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                         />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <label className="text-label text-caption">Initial Role</label>
                         <Select
                           value={inviteForm.role}
@@ -233,11 +233,11 @@ export function UserRolesPanel() {
               </Can>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {SYSTEM_ROLES.map((role) => (
                 <div
                   key={role.name}
-                  className="border-separator bg-fill-3 hover:border-separator rounded-row flex flex-col justify-between gap-2 border p-3.5 transition-colors sm:flex-row sm:items-center"
+                  className="border-separator bg-fill-3 hover:border-separator rounded-row flex flex-col justify-between gap-2 border p-4 transition-colors sm:flex-row sm:items-center"
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export function UserRolesPanel() {
         <TabsContent value="memberships" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex items-center justify-between">
             <div className="relative max-w-sm flex-1">
-              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 placeholder="Search accounts..."
                 value={searchTerm}
@@ -279,7 +279,7 @@ export function UserRolesPanel() {
             </div>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {usersLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -294,7 +294,7 @@ export function UserRolesPanel() {
               filteredUsers?.map((user) => (
                 <FacetCard
                   key={user.id}
-                  className="hover:border-separator flex items-center justify-between p-3.5 transition-colors"
+                  className="hover:border-separator flex items-center justify-between p-4 transition-colors"
                 >
                   <div>
                     <div className="flex items-center gap-2">

@@ -104,7 +104,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
           Create a choice poll, feature priority poll, or upvoting dashboard to gather citizen
           feedback.
         </CardDescription>
-        <Button onClick={onCreateNew} className="cursor-pointer gap-1.5">
+        <Button onClick={onCreateNew} className="cursor-pointer gap-2">
           <Plus className="h-4 w-4" /> Create First Poll
         </Button>
       </Card>
@@ -115,17 +115,17 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Ballots Configured</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{polls.length}</p>
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Ballots</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{activePollsCount}</p>
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Responses Collected</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{totalVotesCast}</p>
         </FacetCard>
@@ -178,7 +178,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   </div>
 
                   {/* Actions Panel */}
-                  <div className="bg-fill-4 border-separator rounded-row flex shrink-0 items-center gap-3.5 self-start border p-2 md:self-auto">
+                  <div className="bg-fill-4 border-separator rounded-row flex shrink-0 items-center gap-4 self-start border p-2 md:self-auto">
                     <div className="flex items-center gap-2">
                       <span className="text-label-secondary text-eyebrow">Active:</span>
                       <Switch
@@ -221,7 +221,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                   </div>
                 </div>
 
-                <div className="text-label-secondary text-caption flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2.5">
+                <div className="text-label-secondary text-caption flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
                   <div className="flex items-center gap-1">
                     {poll.countryId ? (
                       <>
@@ -266,13 +266,13 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                 <h4 className="text-label-secondary text-subhead mb-3">
                   Option-by-Option Breakdown
                 </h4>
-                <div className="space-y-3.5">
+                <div className="space-y-4">
                   {poll.options.map((opt: any) => {
                     const optVotes = opt._count?.votes ?? 0;
                     const percentage = votesCount > 0 ? (optVotes / votesCount) * 100 : 0;
 
                     return (
-                      <div key={opt.id} className="group/opt space-y-1.5">
+                      <div key={opt.id} className="group/opt space-y-2">
                         <div className="text-caption flex justify-between">
                           <span className="text-label group-hover/opt:text-poll transition-colors">
                             {opt.label}

@@ -573,9 +573,9 @@ export function NotificationComposer() {
           </CardHeader>
           <CardContent className="space-y-3">
             {form.mode === "platform_alert" && (
-              <div className="rounded-row border-red/30 bg-red/[0.06] border p-3.5">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="text-eyebrow text-red flex items-center gap-1.5">
+              <div className="rounded-row border-red/30 bg-red/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-red flex items-center gap-2">
                     <Shield className="h-3 w-3" />
                     {form.level} Priority Alert
                   </span>
@@ -589,9 +589,9 @@ export function NotificationComposer() {
             )}
 
             {form.mode === "system_message" && (
-              <div className="rounded-row border-yellow/30 bg-yellow/[0.06] border p-3.5">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="text-eyebrow text-yellow flex items-center gap-1.5">
+              <div className="rounded-row border-yellow/30 bg-yellow/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-yellow flex items-center gap-2">
                     <Crown className="h-3 w-3" />
                     System Dispatch • {form.category}
                   </span>
@@ -602,7 +602,7 @@ export function NotificationComposer() {
                   {form.description || "Event summary and dispatch details."}
                 </p>
                 {form.actionable && (
-                  <div className="mt-2.5 flex items-center gap-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <div className="rounded-control-sm border-yellow/40 bg-yellow/15 text-caption text-yellow border px-2 py-0.5">
                       Open Action →
                     </div>
@@ -612,9 +612,9 @@ export function NotificationComposer() {
             )}
 
             {form.mode === "direct_message" && (
-              <div className="rounded-row border-indigo/30 bg-indigo/[0.06] border p-3.5">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="text-eyebrow text-indigo flex items-center gap-1.5">
+              <div className="rounded-row border-indigo/30 bg-indigo/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-indigo flex items-center gap-2">
                     <Globe className="h-3 w-3" />
                     {form.classification}
                     {" // "}

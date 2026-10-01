@@ -42,7 +42,7 @@ export function LexiconDefinitionForm({
       <h4 className="text-label-secondary text-subhead mb-3">Define Lexicon Meaning</h4>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-label-secondary text-subhead">Part of Speech</label>
             <Select value={lexEditPos} onValueChange={setLexEditPos}>
               <SelectTrigger className="text-footnote w-full">
@@ -68,7 +68,7 @@ export function LexiconDefinitionForm({
             </Select>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-label-secondary text-subhead">Etymological Root</label>
             <Input
               type="text"
@@ -80,7 +80,7 @@ export function LexiconDefinitionForm({
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label className="text-label-secondary text-subhead">Meaning / Translation</label>
           <Input
             type="text"
@@ -92,7 +92,7 @@ export function LexiconDefinitionForm({
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label className="text-label-secondary text-subhead">Historical Origin & Notes</label>
           <Textarea
             value={lexEditOrigin}

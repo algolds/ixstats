@@ -62,7 +62,7 @@ function SeedDemoAuctionsButton() {
         className="border-yellow/20 bg-yellow/5 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="rounded-row border-yellow/30 bg-yellow/20 border p-2.5">
+          <div className="rounded-row border-yellow/30 bg-yellow/20 border p-3">
             <Gavel className="text-yellow h-5 w-5" />
           </div>
           <div>

@@ -35,7 +35,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-label text-caption mb-1.5 block">Key *</label>
+          <label className="text-label text-caption mb-2 block">Key *</label>
           <Input
             value={formData.key}
             onChange={(e) => setFormData((prev) => ({ ...prev, key: e.target.value }))}
@@ -44,7 +44,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
           />
         </div>
         <div>
-          <label className="text-label text-caption mb-1.5 block">Name *</label>
+          <label className="text-label text-caption mb-2 block">Name *</label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -55,7 +55,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-1.5 block">Description *</label>
+        <label className="text-label text-caption mb-2 block">Description *</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
@@ -67,7 +67,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-label text-caption mb-1.5 block">Region *</label>
+          <label className="text-label text-caption mb-2 block">Region *</label>
           <Input
             value={formData.region}
             onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value }))}
@@ -76,7 +76,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
           />
         </div>
         <div>
-          <label className="text-label text-caption mb-1.5 block">Era *</label>
+          <label className="text-label text-caption mb-2 block">Era *</label>
           <Select
             value={formData.era}
             onValueChange={(v: ArchetypeEra) => setFormData((prev) => ({ ...prev, era: v }))}
@@ -93,7 +93,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-1.5 block">Implementation Complexity</label>
+        <label className="text-label text-caption mb-2 block">Implementation Complexity</label>
         <Select
           value={formData.implementationComplexity}
           onValueChange={(v) => setFormData((prev) => ({ ...prev, implementationComplexity: v }))}
@@ -112,7 +112,7 @@ export function GeneralTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-1.5 block">Historical Context</label>
+        <label className="text-label text-caption mb-2 block">Historical Context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData((prev) => ({ ...prev, historicalContext: e.target.value }))}
@@ -129,7 +129,7 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-label text-caption mb-1.5 block">Economic Components</label>
+        <label className="text-label text-caption mb-2 block">Economic Components</label>
         <MultiSelect
           options={ECONOMIC_COMPONENTS as readonly string[]}
           value={formData.economicComponents}
@@ -139,7 +139,7 @@ export function EconomicsTab({ formData, setFormData }: TabProps) {
       </div>
 
       <div>
-        <label className="text-label text-caption mb-1.5 block">Sector Focus (%)</label>
+        <label className="text-label text-caption mb-2 block">Sector Focus (%)</label>
         <div className="space-y-3">
           {SECTOR_TYPES.map((sector) => (
             <div key={sector} className="space-y-1">
@@ -170,7 +170,7 @@ export function GovernmentTab({ formData, setFormData }: TabProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-label text-caption mb-1.5 block">Government Components</label>
+        <label className="text-label text-caption mb-2 block">Government Components</label>
         <MultiSelect
           options={GOVERNMENT_COMPONENTS as readonly string[]}
           value={formData.governmentComponents}
@@ -267,7 +267,7 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
     <div className="space-y-4">
       <div className="space-y-3">
         <div>
-          <label className="text-label text-caption mb-1.5 block">Unemployment Rate (%)</label>
+          <label className="text-label text-caption mb-2 block">Unemployment Rate (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -286,7 +286,7 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div>
-          <label className="text-label text-caption mb-1.5 block">Labor Participation (%)</label>
+          <label className="text-label text-caption mb-2 block">Labor Participation (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -305,7 +305,7 @@ export function EmploymentTab({ formData, setFormData }: TabProps) {
         </div>
 
         <div>
-          <label className="text-label text-caption mb-1.5 block">Wage Growth (%)</label>
+          <label className="text-label text-caption mb-2 block">Wage Growth (%)</label>
           <Input
             type="number"
             step="0.1"
@@ -433,7 +433,7 @@ export function CharacteristicsTab({ formData, setFormData }: TabProps) {
     const items = (formData[field] as string[]) || [];
     return (
       <div>
-        <label className="text-label text-caption mb-1.5 block">{label}</label>
+        <label className="text-label text-caption mb-2 block">{label}</label>
         <div className="space-y-2">
           {items.map((item, index) => (
             <div key={index} className="flex gap-2">
@@ -454,7 +454,7 @@ export function CharacteristicsTab({ formData, setFormData }: TabProps) {
             </div>
           ))}
           <Button size="sm" variant="outline" onClick={() => addArrayItem(field)}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Plus className="mr-2 h-3.5 w-3.5" />
             Add {label.slice(0, -1)}
           </Button>
         </div>

@@ -329,7 +329,7 @@ export function CardPacksAdmin() {
                   </p>
                 )}
 
-                <div className="mb-4 space-y-1.5">
+                <div className="mb-4 space-y-2">
                   <div className="text-footnote flex items-center justify-between">
                     <span className="text-label-secondary">Price</span>
                     <span className="text-yellow font-semibold">
@@ -409,7 +409,7 @@ export function CardPacksAdmin() {
 
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-label text-body mb-1.5 block font-medium">Name *</label>
+              <label className="text-label text-body mb-2 block font-medium">Name *</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -418,7 +418,7 @@ export function CardPacksAdmin() {
             </div>
 
             <div>
-              <label className="text-label text-body mb-1.5 block font-medium">Description</label>
+              <label className="text-label text-body mb-2 block font-medium">Description</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -428,7 +428,7 @@ export function CardPacksAdmin() {
             </div>
 
             <div>
-              <label className="text-label text-body mb-1.5 block font-medium">
+              <label className="text-label text-body mb-2 block font-medium">
                 <ImageIcon className="mr-1 inline h-3.5 w-3.5" />
                 Artwork URL
               </label>
@@ -454,7 +454,7 @@ export function CardPacksAdmin() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-label text-body mb-1.5 block font-medium">Pack Type *</label>
+                <label className="text-label text-body mb-2 block font-medium">Pack Type *</label>
                 <Select
                   value={formData.packType}
                   onValueChange={(v) => setFormData({ ...formData, packType: v })}
@@ -472,9 +472,7 @@ export function CardPacksAdmin() {
                 </Select>
               </div>
               <div>
-                <label className="text-label text-body mb-1.5 block font-medium">
-                  Price (IxC) *
-                </label>
+                <label className="text-label text-body mb-2 block font-medium">Price (IxC) *</label>
                 <Input
                   type="number"
                   min={1}
@@ -488,7 +486,7 @@ export function CardPacksAdmin() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-label text-body mb-1.5 block font-medium">Card Count</label>
+                <label className="text-label text-body mb-2 block font-medium">Card Count</label>
                 <Input
                   type="number"
                   min={1}
@@ -499,7 +497,7 @@ export function CardPacksAdmin() {
                 />
               </div>
               <div>
-                <label className="text-label text-body mb-1.5 block font-medium">
+                <label className="text-label text-body mb-2 block font-medium">
                   Guaranteed Rarity
                 </label>
                 <Select

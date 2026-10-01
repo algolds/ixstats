@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import { GitFork, ControlSlider as SlidersHorizontal } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
-import { cn } from "~/lib/utils";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import EtymologySection from "./EtymologySection";
 import SyntaxSection from "./SyntaxSection";
 
@@ -34,35 +34,17 @@ export function GrammarRootsSection() {
         </div>
 
         {/* Apple Segmented Switcher */}
-        <div className="border-separator bg-fill-4 rounded-row shadow-card flex shrink-0 items-center gap-1 self-start border p-1 select-none sm:self-center">
-          <button
-            type="button"
-            onClick={() => setMode("roots")}
-            className={cn(
-              "rounded-control text-footnote flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              mode === "roots"
-                ? "bg-background text-label shadow-card font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            <GitFork className="text-indigo h-3.5 w-3.5" />
-            <span>Root Derivations</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMode("syntax")}
-            className={cn(
-              "rounded-control text-footnote flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              mode === "syntax"
-                ? "bg-background text-label shadow-card font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            <SlidersHorizontal className="text-tint h-3.5 w-3.5" />
-            <span>Sentence Grammar</span>
-          </button>
-        </div>
+        <SegmentedControl
+          asTabs
+          aria-label="Grammar workspace"
+          className="shrink-0 self-start sm:self-center"
+          value={mode}
+          onValueChange={setMode}
+          options={[
+            { value: "roots", label: "Root Derivations", icon: <GitFork /> },
+            { value: "syntax", label: "Sentence Grammar", icon: <SlidersHorizontal /> },
+          ]}
+        />
       </div>
 
       {/* Content Canvas */}

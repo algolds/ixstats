@@ -44,7 +44,14 @@ import {
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
-import { Input, fieldStyles } from "~/components/ui/input";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   active: {
@@ -188,22 +195,18 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
           <form onSubmit={handleOverrideScore} className="space-y-4">
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead block">Select Match</label>
-              <select
-                value={selectedMatchId}
-                onChange={(e) => setSelectedMatchId(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                )}
-                required
-              >
-                <option value="">-- Choose Match --</option>
-                {schedule?.matches?.map((m: any) => (
-                  <option key={m.id} value={m.id}>
-                    Matchday {m.matchDay}: {m.homeTeam.name} vs {m.awayTeam.name} ({m.status})
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedMatchId} onValueChange={setSelectedMatchId} required>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue placeholder="-- Choose Match --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {schedule?.matches?.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      Matchday {m.matchDay}: {m.homeTeam.name} vs {m.awayTeam.name} ({m.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -476,22 +479,20 @@ function AINarratorLab() {
           <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead block">Sport Preset</label>
-              <select
-                value={sport}
-                onChange={(e) => handleLoadTemplate(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                )}
-              >
-                <option value="soccer">Soccer ⚽</option>
-                <option value="f1">Formula 1 🏎️</option>
-                <option value="boxing">Boxing 🥊</option>
-                <option value="basketball">Basketball 🏀</option>
-                <option value="football">Football 🏈</option>
-                <option value="hockey">Hockey 🏒</option>
-                <option value="baseball">Baseball ⚾</option>
-              </select>
+              <Select value={sport} onValueChange={(v) => handleLoadTemplate(v)}>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="soccer">Soccer ⚽</SelectItem>
+                  <SelectItem value="f1">Formula 1 🏎️</SelectItem>
+                  <SelectItem value="boxing">Boxing 🥊</SelectItem>
+                  <SelectItem value="basketball">Basketball 🏀</SelectItem>
+                  <SelectItem value="football">Football 🏈</SelectItem>
+                  <SelectItem value="hockey">Hockey 🏒</SelectItem>
+                  <SelectItem value="baseball">Baseball ⚾</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Advanced Settings Toggle */}
@@ -511,8 +512,8 @@ function AINarratorLab() {
 
             {/* Config Fields */}
             {showConfig && (
-              <div className="border-separator rounded-row space-y-3.5 border p-4">
-                <div className="border-separator flex items-center gap-2 border-b pb-2.5 select-none">
+              <div className="border-separator rounded-row space-y-4 border p-4">
+                <div className="border-separator flex items-center gap-2 border-b pb-2 select-none">
                   <Switch
                     id="applyGlobally"
                     checked={applyGlobally}
@@ -527,26 +528,27 @@ function AINarratorLab() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-label-secondary text-subhead block">Provider</label>
-                    <select
+                    <Select
                       value={provider}
-                      onChange={(e) => {
-                        setProvider(e.target.value);
-                        saveConfig("provider", e.target.value);
+                      onValueChange={(v) => {
+                        setProvider(v);
+                        saveConfig("provider", v);
                       }}
-                      className={cn(
-                        fieldStyles,
-                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                      )}
                     >
-                      <option value="nvidia">Nvidia</option>
-                      <option value="openrouter">OpenRouter</option>
-                      <option value="openai">OpenAI</option>
-                      <option value="custom">Custom (OpenAI-like)</option>
-                    </select>
+                      <SelectTrigger size="sm" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nvidia">Nvidia</SelectItem>
+                        <SelectItem value="openrouter">OpenRouter</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="custom">Custom (OpenAI-like)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label
                       id="sports-ai-temperature"
                       className="text-label-secondary text-subhead block tabular-nums"
@@ -585,7 +587,7 @@ function AINarratorLab() {
                   />
                 </label>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label-secondary text-subhead block">API Key</label>
                   <Input
                     type="password"
@@ -599,7 +601,7 @@ function AINarratorLab() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label-secondary text-subhead block">Model Name</label>
                   <Input
                     type="text"
@@ -613,7 +615,7 @@ function AINarratorLab() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label-secondary text-subhead block">Base API URL</label>
                   <Input
                     type="text"
@@ -631,7 +633,7 @@ function AINarratorLab() {
                   <span className="text-label-secondary text-footnote">
                     {applyGlobally ? "Settings will be written globally." : "Local storage only."}
                   </span>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-2">
                     <Button type="button" variant="destructive" onClick={handleResetConfig}>
                       Reset Defaults
                     </Button>
@@ -674,7 +676,7 @@ function AINarratorLab() {
               </div>
             )}
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-subhead">Play-by-Play Events</label>
                 <Button type="button" variant="outline" size="sm" onClick={handleAddEvent}>
@@ -764,7 +766,7 @@ function AINarratorLab() {
                       key={idx}
                       className="border-separator text-footnote border-b pb-3 leading-relaxed last:border-b-0 last:pb-0"
                     >
-                      <div className="mb-1.5 flex items-center gap-2">
+                      <div className="mb-2 flex items-center gap-2">
                         <Badge variant="yellow" className="tabular-nums">
                           {idx * 10}' Event
                         </Badge>
@@ -1139,7 +1141,7 @@ export default function SportsOversightPanel() {
             onClick={() => setManagedLeagueId(null)}
             className="absolute top-4 right-4"
           >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to List
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to List
           </Button>
 
           <div className="space-y-6">
@@ -1164,7 +1166,7 @@ export default function SportsOversightPanel() {
                   onClick={() => handleToggleFeatured(managedLeague.id)}
                   disabled={setFeaturedMutation.isPending}
                   className={cn(
-                    "text-caption gap-1.5",
+                    "text-caption gap-2",
                     managedLeague.id === featuredId && "bg-yellow text-label hover:bg-yellow"
                   )}
                 >
@@ -1178,7 +1180,7 @@ export default function SportsOversightPanel() {
                     ? "Featured on Lobby — Unset"
                     : "Set as Featured League"}
                 </Button>
-                <p className="text-label-secondary text-footnote mt-1.5">
+                <p className="text-label-secondary text-footnote mt-2">
                   The featured league is shown as the hero on the MyLeague lobby. Only one at a
                   time.
                 </p>
@@ -1266,7 +1268,7 @@ export default function SportsOversightPanel() {
             <TabsTrigger value="all">All Leagues</TabsTrigger>
             <TabsTrigger value="canonical">Canonical Leagues</TabsTrigger>
             <TabsTrigger value="create">Create Canonical</TabsTrigger>
-            <TabsTrigger value="narrator" className="text-yellow gap-1.5">
+            <TabsTrigger value="narrator" className="text-yellow gap-2">
               <Sparkles className="h-3.5 w-3.5" />
               AI Narrator Lab
             </TabsTrigger>

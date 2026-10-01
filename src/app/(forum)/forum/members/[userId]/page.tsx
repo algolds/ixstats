@@ -51,7 +51,7 @@ export default function MemberProfilePage() {
       ) : member ? (
         <div>
           {/* Unified IxnayID Profile Banner */}
-          <div className="bg-tint-fill text-footnote rounded-row mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+          <div className="bg-tint-fill text-footnote rounded-row mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2">
             <div className="flex items-center gap-2">
               <span className="text-label font-semibold">IxnayID account:</span>
               <span className="text-label-secondary">
@@ -164,7 +164,7 @@ function StatCard({
     <FacetCard padding="md">
       <Stat
         label={
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <Icon className="text-tint size-3.5" aria-hidden="true" />
             {label}
           </span>

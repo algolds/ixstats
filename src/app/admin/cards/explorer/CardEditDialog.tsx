@@ -15,8 +15,13 @@ import type { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardInstance } from "~/types/cards-display";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface CardEditDialogProps {
   isOpen: boolean;
@@ -103,19 +108,17 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Card Origin / Type</label>
-                <select
-                  value={editCardType}
-                  onChange={(e) => setEditCardType(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="LORE">Wiki Lore Card (Wiki)</option>
-                  <option value="NS_IMPORT">NationStates Import (NS Import)</option>
-                  <option value="COMMONS_IMPORT">Commons Flag Import (Commons)</option>
-                  <option value="USER_CUSTOM">User Custom Import (Custom)</option>
-                </select>
+                <Select value={editCardType} onValueChange={(v) => setEditCardType(v)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LORE">Wiki Lore Card (Wiki)</SelectItem>
+                    <SelectItem value="NS_IMPORT">NationStates Import (NS Import)</SelectItem>
+                    <SelectItem value="COMMONS_IMPORT">Commons Flag Import (Commons)</SelectItem>
+                    <SelectItem value="USER_CUSTOM">User Custom Import (Custom)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -137,42 +140,41 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                   Sets background theme & icon watermark
                 </span>
               </label>
-              <select
-                value={editCategory === "NS_IMPORT" ? "" : editCategory}
-                onChange={(e) => setEditCategory(e.target.value as LoreCategory)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                )}
+              <Select
+                value={(editCategory === "NS_IMPORT" ? "" : editCategory) || "__none__"}
+                onValueChange={(v) => setEditCategory((v === "__none__" ? "" : v) as LoreCategory)}
               >
-                <option value="">(Default / Unassigned)</option>
-                {BROWSABLE_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat} — {getCategoryLabel(cat)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">(Default / Unassigned)</SelectItem>
+                  {BROWSABLE_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat} — {getCategoryLabel(cat)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Rarity & Market Value */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-label text-caption mb-1 block">Rarity Tier</label>
-                <select
-                  value={editRarity}
-                  onChange={(e) => setEditRarity(e.target.value as CardRarity)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="COMMON">COMMON</option>
-                  <option value="UNCOMMON">UNCOMMON</option>
-                  <option value="RARE">RARE</option>
-                  <option value="ULTRA_RARE">ULTRA RARE</option>
-                  <option value="EPIC">EPIC</option>
-                  <option value="LEGENDARY">LEGENDARY</option>
-                </select>
+                <Select value={editRarity} onValueChange={(v) => setEditRarity(v as CardRarity)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COMMON">COMMON</SelectItem>
+                    <SelectItem value="UNCOMMON">UNCOMMON</SelectItem>
+                    <SelectItem value="RARE">RARE</SelectItem>
+                    <SelectItem value="ULTRA_RARE">ULTRA RARE</SelectItem>
+                    <SelectItem value="EPIC">EPIC</SelectItem>
+                    <SelectItem value="LEGENDARY">LEGENDARY</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -192,19 +194,22 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             <div className="space-y-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Artwork Source Tier</label>
-                <select
+                <Select
                   value={editArtworkSource}
-                  onChange={(e) => setEditArtworkSource(e.target.value as ArtworkSource)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                  onValueChange={(v) => setEditArtworkSource(v as ArtworkSource)}
                 >
-                  <option value="PROCEDURAL">Tier 1-2: Procedural Icon Emblem (No Image)</option>
-                  <option value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</option>
-                  <option value="FLAG">Tier 3: National Flag Artwork</option>
-                  <option value="UPLOADED">Tier 3: Admin Custom Upload</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PROCEDURAL">
+                      Tier 1-2: Procedural Icon Emblem (No Image)
+                    </SelectItem>
+                    <SelectItem value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</SelectItem>
+                    <SelectItem value="FLAG">Tier 3: National Flag Artwork</SelectItem>
+                    <SelectItem value="UPLOADED">Tier 3: Admin Custom Upload</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

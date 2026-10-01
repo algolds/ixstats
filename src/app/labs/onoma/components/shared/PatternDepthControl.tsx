@@ -16,6 +16,7 @@ import { HelpCircle, Xmark as X } from "iconoir-react";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
 
 export interface PatternDepthLevel {
   depth: number;
@@ -112,7 +113,7 @@ export function PatternDepthControl({
       return {
         id: String(level.depth),
         label: (
-          <span className="flex items-center justify-center gap-1.5 leading-none">
+          <span className="flex items-center justify-center gap-2 leading-none">
             <span
               className={cn(
                 "h-1.5 w-1.5 rounded-full transition-colors duration-200",
@@ -136,14 +137,16 @@ export function PatternDepthControl({
         {showLabels && (
           <div className="flex items-center gap-1">
             <label className="text-footnote text-label block font-semibold">Pattern Depth</label>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setShowHelp(!showHelp)}
-              className="text-label-tertiary hover:text-label cursor-pointer"
               title="What is Pattern Depth?"
+              aria-label="What is Pattern Depth?"
+              className="text-label-tertiary hover:text-label"
             >
               <HelpCircle className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         )}
         <div className="rounded-row border-separator bg-fill-4 shadow-card flex h-9 w-full items-center justify-between border p-1 select-none">
@@ -158,7 +161,7 @@ export function PatternDepthControl({
           >
             -
           </Button>
-          <div className="flex items-center gap-1.5 leading-none">
+          <div className="flex items-center gap-2 leading-none">
             <span
               className={cn("text-footnote font-mono font-semibold", currentLevel.textClassName)}
             >
@@ -188,26 +191,22 @@ export function PatternDepthControl({
 
   // PRIMARY FACET TABS CONTROL (For segmented & inspector views)
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {showLabels && (
-        <div className="flex items-center gap-1.5 pb-0.5">
+        <div className="flex items-center gap-2 pb-0.5">
           <label className="text-footnote text-label font-semibold">Pattern Depth</label>
 
           {/* Help / Info Trigger Icon */}
-          <button
-            type="button"
-            onClick={() => setShowHelp(!showHelp)}
-            className={cn(
-              "flex h-4 w-4 cursor-pointer items-center justify-center rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              showHelp
-                ? "bg-fill-2 text-label font-semibold"
-                : "text-label-tertiary hover:text-label hover:bg-fill-3"
-            )}
+          <Toggle
+            size="sm"
+            pressed={showHelp}
+            onPressedChange={setShowHelp}
+            className="text-label-tertiary min-w-0 rounded-full px-1"
             title="What is Pattern Depth?"
             aria-label="What is Pattern Depth?"
           >
             <HelpCircle className="h-3 w-3" />
-          </button>
+          </Toggle>
         </div>
       )}
 
@@ -232,39 +231,41 @@ export function PatternDepthControl({
             transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-caption space-y-1.5 border p-2.5">
+            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-caption space-y-2 border p-3">
               <div className="text-label flex items-center justify-between font-semibold">
                 <span className="text-label">About Pattern Depth</span>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setShowHelp(false)}
-                  className="text-label-secondary hover:text-label cursor-pointer p-0.5"
+                  aria-label="Close help"
+                  className="text-label-secondary hover:text-label"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </Button>
               </div>
               <p className="leading-relaxed font-normal">
                 Controls the depth of preceding linguistic context used to model and generate forms.
                 Higher depth creates tighter fidelity to the seed language, while lower depth
                 introduces abstract phonetic variation.
               </p>
-              <div className="border-separator text-caption grid grid-cols-2 gap-1.5 border-t pt-1.5">
-                <div className="flex items-center gap-1.5">
+              <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
+                <div className="flex items-center gap-2">
                   <span className="bg-teal h-1.5 w-1.5 rounded-full" />
                   <span className="text-teal font-semibold">1 Fluid:</span>
                   <span>High variation</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <span className="bg-tint h-1.5 w-1.5 rounded-full" />
                   <span className="text-tint font-semibold">2 Organic:</span>
                   <span>Natural flow (★)</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <span className="bg-indigo h-1.5 w-1.5 rounded-full" />
                   <span className="text-indigo font-semibold">3 Faithful:</span>
                   <span>Strong resonance</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <span className="bg-yellow h-1.5 w-1.5 rounded-full" />
                   <span className="text-yellow font-semibold">4 Strict:</span>
                   <span>Corpus lock</span>

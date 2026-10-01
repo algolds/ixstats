@@ -2,6 +2,14 @@
 
 import { api } from "~/trpc/react";
 import { SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function RealmUsersTab() {
   const { data: users, isLoading } = api.realms.adminListUsers.useQuery();
@@ -37,70 +45,64 @@ export function RealmUsersTab() {
       </div>
 
       {/* Users table */}
-      <div className="border-separator rounded-row overflow-x-auto border">
-        <table className="text-body w-full tabular-nums">
-          <thead>
-            <tr className="border-separator bg-fill-4 border-b">
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">
-                Clerk User ID
-              </th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Membership</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Country</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Realm</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Status</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Joined</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-separator hover:bg-fill-4 border-b">
-                <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
-                  {user.clerkUserId.slice(0, 20)}...
-                </td>
-                <td className="px-4 py-3">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="px-4">Clerk User ID</TableHead>
+            <TableHead className="px-4">Membership</TableHead>
+            <TableHead className="px-4">Country</TableHead>
+            <TableHead className="px-4">Realm</TableHead>
+            <TableHead className="px-4">Status</TableHead>
+            <TableHead className="px-4">Joined</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell className="text-label-secondary text-footnote px-4 font-mono">
+                {user.clerkUserId.slice(0, 20)}...
+              </TableCell>
+              <TableCell className="px-4">
+                <span
+                  className={`text-caption rounded-full border px-2 py-0.5 ${
+                    user.membershipTier === "basic"
+                      ? "border-separator bg-fill-3 text-label-secondary"
+                      : "border-purple/20 bg-purple/10 text-purple"
+                  }`}
+                >
+                  {user.membershipTier}
+                </span>
+              </TableCell>
+              <TableCell className="px-4">
+                {user.country ? (
+                  <span className="font-medium">{user.country.name}</span>
+                ) : (
+                  <span className="text-label-tertiary text-footnote">No country</span>
+                )}
+              </TableCell>
+              <TableCell className="px-4">
+                {user.country?.realmId ? (
                   <span
-                    className={`text-caption rounded-full border px-2 py-0.5 ${
-                      user.membershipTier === "basic"
-                        ? "border-separator bg-fill-3 text-label-secondary"
-                        : "border-purple/20 bg-purple/10 text-purple"
-                    }`}
+                    className={`text-footnote ${user.country.realmId === "default" ? "text-green" : "text-purple"}`}
                   >
-                    {user.membershipTier}
+                    {user.country.realmId === "default"
+                      ? "IxWorld"
+                      : user.country.realmId.slice(0, 12)}
                   </span>
-                </td>
-                <td className="px-4 py-3">
-                  {user.country ? (
-                    <span className="font-medium">{user.country.name}</span>
-                  ) : (
-                    <span className="text-label-tertiary text-footnote">No country</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {user.country?.realmId ? (
-                    <span
-                      className={`text-footnote ${user.country.realmId === "default" ? "text-green" : "text-purple"}`}
-                    >
-                      {user.country.realmId === "default"
-                        ? "IxWorld"
-                        : user.country.realmId.slice(0, 12)}
-                    </span>
-                  ) : (
-                    <span className="text-label-tertiary text-footnote">N/A</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <div
-                    className={`h-2 w-2 rounded-full ${user.isActive ? "bg-green" : "bg-red"}`}
-                  />
-                </td>
-                <td className="text-label-secondary text-footnote px-4 py-3">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                ) : (
+                  <span className="text-label-tertiary text-footnote">N/A</span>
+                )}
+              </TableCell>
+              <TableCell className="px-4">
+                <div className={`h-2 w-2 rounded-full ${user.isActive ? "bg-green" : "bg-red"}`} />
+              </TableCell>
+              <TableCell className="text-label-secondary text-footnote px-4">
+                {new Date(user.createdAt).toLocaleDateString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -28,6 +28,14 @@ import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Shield, Search } from
 import { AdminHeader } from "../_components/AdminHeader";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 interface IntelligenceTemplate {
   id: string;
@@ -181,23 +189,23 @@ export function IntelligenceTemplatesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Templates</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{templates?.length || 0}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Restricted Clearance</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "RESTRICTED").length || 0}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Public Briefings</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "PUBLIC").length || 0}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {templates?.filter((t: any) => t.isActive).length || 0}
@@ -209,7 +217,7 @@ export function IntelligenceTemplatesPanel() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search templates..."
               value={searchQuery}
@@ -262,7 +270,7 @@ export function IntelligenceTemplatesPanel() {
             setIsAddDialogOpen(true);
           }}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Add Template
         </Button>
       </div>
@@ -281,22 +289,22 @@ export function IntelligenceTemplatesPanel() {
           </p>
         </FacetCard>
       ) : (
-        <FacetCard className="overflow-x-auto">
-          <table className="text-footnote w-full tabular-nums">
-            <thead>
-              <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                <th className="px-4 py-2.5 text-left font-medium">Report Type & Summary</th>
-                <th className="px-4 py-2.5 text-left font-medium">Classification</th>
-                <th className="px-4 py-2.5 text-left font-medium">Clearance</th>
-                <th className="px-4 py-2.5 text-left font-medium">Confidence</th>
-                <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-separator divide-y">
+        <FacetCard>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Report Type & Summary</TableHead>
+                <TableHead className="px-4">Classification</TableHead>
+                <TableHead className="px-4">Clearance</TableHead>
+                <TableHead className="px-4">Confidence</TableHead>
+                <TableHead className="px-4">Status</TableHead>
+                <TableHead className="px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredTemplates.map((template: any) => (
-                <tr key={template.id} className="hover:bg-fill-4 transition-colors">
-                  <td className="px-4 py-2.5">
+                <TableRow key={template.id}>
+                  <TableCell className="px-4">
                     <div className="text-label font-semibold">
                       {REPORT_TYPE_LABELS[template.reportType] || template.reportType}
                     </div>
@@ -305,8 +313,8 @@ export function IntelligenceTemplatesPanel() {
                         {template.summaryTemplate}
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <span
                       className={`rounded-control-sm text-eyebrow inline-block border px-2 py-0.5 ${
                         template.classification === "RESTRICTED"
@@ -316,14 +324,14 @@ export function IntelligenceTemplatesPanel() {
                     >
                       {template.classification}
                     </span>
-                  </td>
-                  <td className="text-label-secondary px-4 py-2.5 tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-label-secondary px-4">
                     Level {template.minimumLevel}+
-                  </td>
-                  <td className="text-label px-4 py-2.5 font-medium tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-label px-4 font-medium">
                     {template.confidenceBase}%
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <span
                       className={`rounded-control-sm text-caption inline-block px-2 py-0.5 ${
                         template.isActive
@@ -333,8 +341,8 @@ export function IntelligenceTemplatesPanel() {
                     >
                       {template.isActive ? "Active" : "Inactive"}
                     </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
                     <div className="inline-flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -367,11 +375,11 @@ export function IntelligenceTemplatesPanel() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </FacetCard>
       )}
 
@@ -399,7 +407,7 @@ export function IntelligenceTemplatesPanel() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-label text-caption mb-1.5 block">Report Type</label>
+                <label className="text-label text-caption mb-2 block">Report Type</label>
                 <Select
                   value={formData.reportType}
                   onValueChange={(val: any) =>
@@ -418,7 +426,7 @@ export function IntelligenceTemplatesPanel() {
               </div>
 
               <div>
-                <label className="text-label text-caption mb-1.5 block">Classification</label>
+                <label className="text-label text-caption mb-2 block">Classification</label>
                 <Select
                   value={formData.classification}
                   onValueChange={(val: any) =>
@@ -437,7 +445,7 @@ export function IntelligenceTemplatesPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Summary Template</label>
+              <label className="text-label text-caption mb-2 block">Summary Template</label>
               <Textarea
                 value={formData.summaryTemplate}
                 onChange={(e) =>
@@ -450,7 +458,7 @@ export function IntelligenceTemplatesPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Findings Template</label>
+              <label className="text-label text-caption mb-2 block">Findings Template</label>
               <Textarea
                 value={formData.findingsTemplate}
                 onChange={(e) =>
@@ -464,9 +472,7 @@ export function IntelligenceTemplatesPanel() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-label text-caption mb-1.5 block">
-                  Minimum Level Required
-                </label>
+                <label className="text-label text-caption mb-2 block">Minimum Level Required</label>
                 <Input
                   type="number"
                   min={1}
@@ -483,7 +489,7 @@ export function IntelligenceTemplatesPanel() {
               </div>
 
               <div>
-                <label className="text-label text-caption mb-1.5 block">Confidence Base (%)</label>
+                <label className="text-label text-caption mb-2 block">Confidence Base (%)</label>
                 <Input
                   type="number"
                   min={1}

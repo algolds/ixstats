@@ -41,6 +41,14 @@ import {
 } from "./_components/archetype-form-types";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 const COMPLEXITY_COLORS: Record<string, string> = {
   low: "text-green",
@@ -195,23 +203,23 @@ export function EconomicArchetypesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Total Archetypes</div>
           <div className="text-label text-title-2 mt-1 tabular-nums">{archetypes?.length ?? 0}</div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Modern Policy</div>
           <div className="text-title-2 text-blue mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "modern").length ?? 0}
           </div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Historical Models</div>
           <div className="text-title-2 text-yellow mt-1 tabular-nums">
             {archetypes?.filter((a: any) => a.era === "historical").length ?? 0}
           </div>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <div className="text-label-secondary text-eyebrow">Filtered Roster</div>
           <div className="text-title-2 text-purple mt-1 tabular-nums">
             {filteredArchetypes.length}
@@ -223,7 +231,7 @@ export function EconomicArchetypesPanel() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search archetypes..."
               value={searchQuery}
@@ -288,7 +296,7 @@ export function EconomicArchetypesPanel() {
             setIsAddDialogOpen(true);
           }}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Add Archetype
         </Button>
       </div>
@@ -307,30 +315,30 @@ export function EconomicArchetypesPanel() {
           </p>
         </FacetCard>
       ) : (
-        <FacetCard className="overflow-x-auto">
-          <table className="text-footnote w-full tabular-nums">
-            <thead>
-              <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
-                <th className="px-4 py-2.5 text-left font-medium">Model & Focus</th>
-                <th className="px-4 py-2.5 text-left font-medium">Era & Region</th>
-                <th className="px-4 py-2.5 text-left font-medium">Complexity</th>
-                <th className="px-4 py-2.5 text-left font-medium">Usage</th>
-                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-separator divide-y">
+        <FacetCard>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Model & Focus</TableHead>
+                <TableHead className="px-4">Era & Region</TableHead>
+                <TableHead className="px-4">Complexity</TableHead>
+                <TableHead className="px-4">Usage</TableHead>
+                <TableHead className="px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredArchetypes.map((archetype: any) => (
-                <tr key={archetype.id} className="hover:bg-fill-4 transition-colors">
-                  <td className="px-4 py-2.5">
+                <TableRow key={archetype.id}>
+                  <TableCell className="px-4">
                     <div className="text-label font-semibold">{archetype.name}</div>
                     <div className="text-label-secondary text-footnote max-w-sm truncate">
                       {archetype.description}
                     </div>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-1.5">
+                  </TableCell>
+                  <TableCell className="px-4">
+                    <div className="flex items-center gap-2">
                       <span
-                        className={`rounded-control-sm text-eyebrow px-1.5 py-0.5 ${
+                        className={`rounded-control-sm text-eyebrow px-2 py-0.5 ${
                           archetype.era === "modern"
                             ? "border-blue/20 bg-blue/10 text-blue border"
                             : "border-yellow/20 bg-yellow/10 text-yellow border"
@@ -340,8 +348,8 @@ export function EconomicArchetypesPanel() {
                       </span>
                       <span className="text-label-secondary text-footnote">{archetype.region}</span>
                     </div>
-                  </td>
-                  <td className="px-4 py-2.5 font-medium">
+                  </TableCell>
+                  <TableCell className="px-4 font-medium">
                     <span
                       className={
                         COMPLEXITY_COLORS[archetype.implementationComplexity] ||
@@ -350,11 +358,11 @@ export function EconomicArchetypesPanel() {
                     >
                       {complexityLabel(archetype.implementationComplexity)}
                     </span>
-                  </td>
-                  <td className="text-label px-4 py-2.5 font-medium tabular-nums">
+                  </TableCell>
+                  <TableCell className="text-label px-4 font-medium">
                     {archetype.usageCount || 0}×
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
                     <div className="inline-flex items-center gap-1">
                       <Button
                         variant="ghost"
@@ -387,11 +395,11 @@ export function EconomicArchetypesPanel() {
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </FacetCard>
       )}
 

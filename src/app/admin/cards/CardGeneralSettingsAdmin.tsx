@@ -56,11 +56,11 @@ export function CardGeneralSettingsAdmin() {
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isLoading}>
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+            <RefreshCw className="mr-2 h-3.5 w-3.5" />
             Reload
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+            <Save className="mr-2 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Policies"}
           </Button>
         </div>
@@ -69,7 +69,7 @@ export function CardGeneralSettingsAdmin() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Marketplace & Trading Policies */}
         <FacetCard className="space-y-4 p-6">
-          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
             <ShoppingBag className="text-green h-4 w-4" />
             <h3 className="text-label text-headline">Marketplace & Trading</h3>
           </div>
@@ -119,7 +119,7 @@ export function CardGeneralSettingsAdmin() {
 
         {/* Daily Claims & Allowance */}
         <FacetCard className="space-y-4 p-6">
-          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Gift className="text-purple h-4 w-4" />
             <h3 className="text-label text-headline">Daily Free Packs & Cooldowns</h3>
           </div>
@@ -171,7 +171,7 @@ export function CardGeneralSettingsAdmin() {
 
         {/* Player Minting & Lore Permissions */}
         <FacetCard className="space-y-4 p-6">
-          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sparkles className="text-yellow h-4 w-4" />
             <h3 className="text-label text-headline">Lore Creation & Permissions</h3>
           </div>
@@ -215,7 +215,7 @@ export function CardGeneralSettingsAdmin() {
 
         {/* Binder & Recycler Limits */}
         <FacetCard className="space-y-4 p-6">
-          <div className="border-separator flex items-center gap-2.5 border-b pb-3">
+          <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Layers className="text-teal h-4 w-4" />
             <h3 className="text-label text-headline">Inventory & Recycler Limits</h3>
           </div>

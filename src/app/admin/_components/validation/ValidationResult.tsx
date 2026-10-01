@@ -35,7 +35,7 @@ export const ValidationResult = React.memo(function ValidationResult({
 }) {
   return (
     <div className="rounded-control-sm hover:bg-fill-4 flex items-center justify-between gap-3 px-3 py-2 transition-colors">
-      <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2">
         <StatusIcon status={check.status} />
         <span className="text-label text-body truncate font-medium">{check.name}</span>
       </div>

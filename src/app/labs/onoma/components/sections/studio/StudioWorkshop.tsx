@@ -27,6 +27,8 @@ import { PatternDepthControl } from "../../shared/PatternDepthControl";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Slider } from "~/components/ui/slider";
 
 interface StudioWorkshopProps {
   state: StudioState;
@@ -77,7 +79,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
         <div className="space-y-4 lg:col-span-5">
           <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
             {/* Seeds text area */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-footnote font-semibold">
                   Training Seeds
@@ -98,7 +100,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                     {trainingWords.length} words loaded
                   </span>
                   {classifiedCulture !== "any" && (
-                    <span className="animate-in fade-in border-tint/20 bg-tint/10 text-tint rounded-control-sm text-eyebrow border px-1.5 py-0.5 duration-200">
+                    <span className="animate-in fade-in border-tint/20 bg-tint/10 text-tint rounded-control-sm text-eyebrow border px-2 py-0.5 duration-200">
                       Classified: {classifiedCulture}
                     </span>
                   )}
@@ -137,7 +139,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             </div>
 
             {uploadStatus && (
-              <div className="animate-in fade-in slide-in-from-top-1 border-tint/20 bg-tint/10 text-tint rounded-control text-footnote flex items-center gap-1.5 border px-3.5 py-2 font-medium duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 border-tint/20 bg-tint/10 text-tint rounded-control text-footnote flex items-center gap-2 border px-4 py-2 font-medium duration-200">
                 <Info className="h-3.5 w-3.5 shrink-0" />
                 <span>{uploadStatus}</span>
               </div>
@@ -147,7 +149,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
-                className="animate-in slide-in-from-top-2 border-tint/25 bg-tint/5 rounded-row flex items-center gap-2 border p-3.5 duration-300"
+                className="animate-in slide-in-from-top-2 border-tint/25 bg-tint/5 rounded-row flex items-center gap-2 border p-4 duration-300"
               >
                 <Input
                   type="text"
@@ -169,13 +171,13 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             )}
 
             {successMsg && (
-              <div className="animate-in fade-in rounded-control border-green/20 bg-green/10 text-footnote text-green border px-3.5 py-2 duration-300">
+              <div className="animate-in fade-in rounded-control border-green/20 bg-green/10 text-footnote text-green border px-4 py-2 duration-300">
                 {successMsg}
               </div>
             )}
 
             {/* Parameters Accordion/Content */}
-            <div className="border-separator space-y-3.5 border-t pt-4">
+            <div className="border-separator space-y-4 border-t pt-4">
               <h3 className="text-label-secondary text-subhead flex items-center gap-1 pb-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Parameters
@@ -245,7 +247,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 </h4>
 
                 {/* Vowel Harmony */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label-secondary text-subhead">Vowel Harmony</label>
                   <Select
                     value={options.vowelHarmony || "none"}
@@ -281,16 +283,14 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                         {options.maxConsonantCluster ?? 3}
                       </span>
                     </div>
-                    <input
-                      type="range"
+                    <Slider
                       min={1}
                       max={5}
                       step={1}
-                      value={options.maxConsonantCluster ?? 3}
-                      onChange={(e) =>
-                        setOptions({ ...options, maxConsonantCluster: parseInt(e.target.value) })
+                      value={[Number(options.maxConsonantCluster ?? 3)]}
+                      onValueChange={([v = 1]) =>
+                        setOptions({ ...options, maxConsonantCluster: v })
                       }
-                      className="bg-fill-2 accent-tint rounded-control h-1 w-full cursor-pointer"
                     />
                   </div>
                   <div className="space-y-1">
@@ -300,22 +300,18 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                         {options.maxVowelCluster ?? 3}
                       </span>
                     </div>
-                    <input
-                      type="range"
+                    <Slider
                       min={1}
                       max={5}
                       step={1}
-                      value={options.maxVowelCluster ?? 3}
-                      onChange={(e) =>
-                        setOptions({ ...options, maxVowelCluster: parseInt(e.target.value) })
-                      }
-                      className="bg-fill-2 accent-tint rounded-control h-1 w-full cursor-pointer"
+                      value={[Number(options.maxVowelCluster ?? 3)]}
+                      onValueChange={([v = 1]) => setOptions({ ...options, maxVowelCluster: v })}
                     />
                   </div>
                 </div>
 
                 {/* Allow Double Letters Toggle */}
-                <div className="border-separator flex items-center justify-between border-t pt-2.5">
+                <div className="border-separator flex items-center justify-between border-t pt-2">
                   <div className="space-y-0.5">
                     <label className="text-label-secondary text-subhead">
                       Allow Double Letters
@@ -324,31 +320,30 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       Permit repeating vowels/consonants (e.g. aa, ss)
                     </p>
                   </div>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={options.allowDoubleLetters ?? true}
-                    onChange={(e) =>
-                      setOptions({ ...options, allowDoubleLetters: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      setOptions({ ...options, allowDoubleLetters: checked === true })
                     }
-                    className="border-separator bg-background text-tint focus:ring-tint rounded-control-sm h-3.5 w-3.5"
                   />
                 </div>
 
                 {/* Advanced toggler */}
-                <div className="border-separator border-t pt-2.5">
-                  <button
-                    type="button"
+                <div className="border-separator border-t pt-2">
+                  <Button
+                    variant="plain"
+                    size="sm"
                     onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="text-tint text-footnote flex items-center gap-1.5 font-semibold transition-opacity hover:opacity-85"
+                    className="text-tint px-0 hover:bg-transparent"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     <span>
                       {showAdvanced ? "Hide Advanced Phonotactics" : "Show Advanced Phonotactics"}
                     </span>
-                  </button>
+                  </Button>
 
                   {showAdvanced && (
-                    <div className="animate-in fade-in mt-3.5 space-y-3.5 duration-200">
+                    <div className="animate-in fade-in mt-4 space-y-4 duration-200">
                       {/* Syllable Counts */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
@@ -493,26 +488,30 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
             {/* Assemble control */}
             <div className="border-separator mt-2 flex items-center gap-2 border-t pt-4">
               <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
                   disabled={batchCount <= 5}
-                  className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
+                  aria-label="Decrease count"
+                  className="text-label-secondary hover:text-label"
                 >
                   -
-                </button>
+                </Button>
                 <NumberFlowDisplay
                   value={batchCount}
                   className="text-label text-body min-w-[20px] px-1 text-center font-semibold"
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
                   disabled={batchCount >= 50}
-                  className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
+                  aria-label="Increase count"
+                  className="text-label-secondary hover:text-label"
                 >
                   +
-                </button>
+                </Button>
               </div>
 
               <Button

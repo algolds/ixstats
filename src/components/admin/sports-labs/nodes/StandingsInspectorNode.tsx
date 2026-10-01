@@ -65,7 +65,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -82,7 +82,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
@@ -102,7 +102,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
       {dbSeason && dbSeason.standings && (
         <div className="space-y-3">
           {dbLeague && (
-            <div className="bg-fill-4 rounded-control-sm text-footnote space-y-1 border p-2.5">
+            <div className="bg-fill-4 rounded-control-sm text-footnote space-y-1 border p-3">
               <p className="text-label-secondary flex items-center justify-between font-semibold">
                 <span>League Division Tier: {(dbLeague as any).tier ?? 1}</span>
                 <Badge variant="outline" className="border-tint/20 text-tint">

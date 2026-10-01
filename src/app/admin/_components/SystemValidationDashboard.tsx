@@ -53,7 +53,7 @@ export function SystemValidationDashboard() {
               <div className="flex items-center gap-3">
                 <Badge
                   variant="outline"
-                  className={`text-body gap-1.5 px-3 py-1.5 ${getStatusBgColor(summary.overallStatus)} ${getStatusColor(summary.overallStatus)}`}
+                  className={`text-body gap-2 px-3 py-2 ${getStatusBgColor(summary.overallStatus)} ${getStatusColor(summary.overallStatus)}`}
                 >
                   {summary.overallStatus === "pass" && <CheckCircle className="h-3.5 w-3.5" />}
                   {summary.overallStatus === "warn" && <AlertTriangle className="h-3.5 w-3.5" />}

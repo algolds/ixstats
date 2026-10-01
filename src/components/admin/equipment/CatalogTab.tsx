@@ -90,7 +90,7 @@ export function CatalogTab({
               <TabsTrigger
                 key={key}
                 value={key}
-                className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+                className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
@@ -101,9 +101,9 @@ export function CatalogTab({
       </Tabs>
 
       {/* Advanced Filters */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
-          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search equipment..."
             value={searchQuery}
@@ -145,7 +145,7 @@ export function CatalogTab({
           </SelectContent>
         </Select>
 
-        <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+        <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
           <Checkbox
             id="showInactive"
             checked={showInactive}
@@ -192,7 +192,7 @@ export function CatalogTab({
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <div className="rounded-row border-red/30 bg-red/10 text-footnote flex items-center gap-3 border p-2.5">
+        <div className="rounded-row border-red/30 bg-red/10 text-footnote flex items-center gap-3 border p-3">
           <span className="text-label font-medium">{selectedIds.size} selected</span>
           <Button size="sm" variant="outline" onClick={() => handleBulkToggle(true)}>
             <Check className="mr-1 h-3.5 w-3.5" />
@@ -210,21 +210,21 @@ export function CatalogTab({
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Systems</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{equipmentData?.length || 0}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Filtered Results</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredEquipment.length}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Manufacturers</p>
           <p className="text-title-2 text-indigo mt-1 tabular-nums">{manufacturers?.length || 0}</p>
         </FacetCard>
@@ -243,7 +243,7 @@ export function CatalogTab({
             No defense equipment matching current filters.
           </p>
           <Button size="sm" className="mt-4" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Plus className="mr-2 h-3.5 w-3.5" />
             Add First Equipment
           </Button>
         </FacetCard>

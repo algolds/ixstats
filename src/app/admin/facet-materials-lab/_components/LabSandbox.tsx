@@ -407,7 +407,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
       {/* Debug panel */}
       {showDebug && (
         <div className="bg-surface-secondary rounded-row text-footnote space-y-2 p-4 font-mono leading-relaxed">
-          <div className="text-label-secondary text-subhead border-separator mb-1.5 flex items-center gap-2 border-b pb-1.5 font-sans">
+          <div className="text-label-secondary text-subhead border-separator mb-2 flex items-center gap-2 border-b pb-2 font-sans">
             <Bug className="h-3 w-3" />
             Computed CSS
             <span className="text-label-tertiary ml-auto font-normal normal-case">live</span>
@@ -426,7 +426,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
               </React.Fragment>
             ))}
           </div>
-          <div className="border-separator border-t pt-1.5">
+          <div className="border-separator border-t pt-2">
             <div className="text-label-secondary text-subhead mb-1 font-sans">Computed styles</div>
             <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
               {Object.entries(computed).map(([prop, val]) => (

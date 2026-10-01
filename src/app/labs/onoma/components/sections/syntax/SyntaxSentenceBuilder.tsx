@@ -7,6 +7,14 @@ import React from "react";
 import { Cpu, ArrowRight } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
 
 interface SyntaxSentenceBuilderProps {
   wordOrder: string;
@@ -185,20 +193,16 @@ export function SyntaxSentenceBuilder({
           />
           <div className="text-label-secondary text-caption flex justify-between">
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={subjectPlural}
-                onChange={(e) => setSubjectPlural(e.target.checked)}
-                className="accent-indigo"
+                onCheckedChange={(checked) => setSubjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={subjectDefinite}
-                onChange={(e) => setSubjectDefinite(e.target.checked)}
-                className="accent-indigo"
+                onCheckedChange={(checked) => setSubjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>
@@ -215,15 +219,16 @@ export function SyntaxSentenceBuilder({
             className="w-full"
             placeholder="e.g. eat"
           />
-          <select
-            value={verbTense}
-            onChange={(e) => setVerbTense(e.target.value)}
-            className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            <option value="present">Present Tense</option>
-            <option value="past">Past Tense</option>
-            <option value="future">Future Tense</option>
-          </select>
+          <Select value={verbTense} onValueChange={(v) => setVerbTense(v)}>
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="present">Present Tense</SelectItem>
+              <SelectItem value="past">Past Tense</SelectItem>
+              <SelectItem value="future">Future Tense</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Object */}
@@ -245,20 +250,16 @@ export function SyntaxSentenceBuilder({
           />
           <div className="text-label-secondary text-caption flex justify-between">
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={objectPlural}
-                onChange={(e) => setObjectPlural(e.target.checked)}
-                className="accent-indigo"
+                onCheckedChange={(checked) => setObjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={objectDefinite}
-                onChange={(e) => setObjectDefinite(e.target.checked)}
-                className="accent-indigo"
+                onCheckedChange={(checked) => setObjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>

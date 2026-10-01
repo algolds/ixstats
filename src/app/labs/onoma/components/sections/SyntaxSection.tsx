@@ -13,6 +13,13 @@ import { SyntaxDictionaryEditor } from "./syntax/SyntaxDictionaryEditor";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const INITIAL_DICTIONARY = {
   dog: "koba",
@@ -183,29 +190,35 @@ export default function SyntaxSection() {
               className="text-footnote w-64"
             />
             {profiles && profiles.length > 0 && (
-              <select
-                value={selectedProfileId || ""}
-                onChange={(e) => setSelectedProfileId(e.target.value || null)}
-                className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+              <Select
+                value={selectedProfileId || "" || "__none__"}
+                onValueChange={(v) => setSelectedProfileId((v === "__none__" ? "" : v) || null)}
               >
-                <option value="">Load Existing Profile...</option>
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.wordOrder})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Load Existing Profile...</SelectItem>
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} ({p.wordOrder})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
           <div className="flex items-center gap-2">
             {selectedProfileId && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => deleteProfileMutation.mutate({ id: selectedProfileId })}
-                className="rounded-control-sm border-red/30 bg-red/10 text-footnote text-red hover:bg-red/20 flex cursor-pointer items-center gap-1 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                className="text-red text-red hover:bg-red/10"
               >
                 <Trash2 className="h-3 w-3" /> Delete
-              </button>
+              </Button>
             )}
             <Button size="sm" onClick={handleSave} disabled={saveProfileMutation.isPending}>
               {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
@@ -218,31 +231,33 @@ export default function SyntaxSection() {
           {/* Word Order */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Word Order</label>
-            <select
-              value={wordOrder}
-              onChange={(e) => setWordOrder(e.target.value)}
-              className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              <option value="SVO">SVO (English, Romance)</option>
-              <option value="SOV">SOV (Japanese, Latin, Turkish)</option>
-              <option value="VSO">VSO (Irish, Arabic)</option>
-              <option value="VOS">VOS (Malagasy)</option>
-              <option value="OVS">OVS (Hixkaryana)</option>
-              <option value="OSV">OSV (Xavante)</option>
-            </select>
+            <Select value={wordOrder} onValueChange={(v) => setWordOrder(v)}>
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SVO">SVO (English, Romance)</SelectItem>
+                <SelectItem value="SOV">SOV (Japanese, Latin, Turkish)</SelectItem>
+                <SelectItem value="VSO">VSO (Irish, Arabic)</SelectItem>
+                <SelectItem value="VOS">VOS (Malagasy)</SelectItem>
+                <SelectItem value="OVS">OVS (Hixkaryana)</SelectItem>
+                <SelectItem value="OSV">OSV (Xavante)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Adjective Placement */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Adjective Order</label>
-            <select
-              value={adjectiveOrder}
-              onChange={(e) => setAdjectiveOrder(e.target.value)}
-              className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              <option value="before">Before Noun (Red apple)</option>
-              <option value="after">After Noun (Apple red)</option>
-            </select>
+            <Select value={adjectiveOrder} onValueChange={(v) => setAdjectiveOrder(v)}>
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="before">Before Noun (Red apple)</SelectItem>
+                <SelectItem value="after">After Noun (Apple red)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Accusative Suffix */}

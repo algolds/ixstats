@@ -36,6 +36,7 @@ import {
 } from "~/components/ui/select";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 
 interface TaggedDict {
   values: string[];
@@ -244,7 +245,7 @@ export function StudioNameSets() {
       {/* Left: set + template config */}
       <div className="space-y-4 lg:col-span-5">
         <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
               <Users className="h-3.5 w-3.5" /> Name Set
             </label>
@@ -263,7 +264,7 @@ export function StudioNameSets() {
                   </SelectContent>
                 </Select>
 
-                <div className="border-separator space-y-1.5 border-t pt-3">
+                <div className="border-separator space-y-2 border-t pt-3">
                   <label className="text-label-secondary text-subhead flex items-center gap-1">
                     Naming Convention Preset
                   </label>
@@ -353,11 +354,11 @@ export function StudioNameSets() {
 
           {selectedSet && (
             <>
-              <div className="text-label-secondary text-caption flex flex-wrap gap-1.5">
+              <div className="text-label-secondary text-caption flex flex-wrap gap-2">
                 {activeDicts.map((d, i) => (
                   <span
                     key={i}
-                    className="bg-tint/10 text-tint rounded-control-sm px-1.5 py-0.5 font-semibold capitalize"
+                    className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-semibold capitalize"
                   >
                     {d.role}
                     {d.gender !== "any" ? ` · ${d.gender}` : ""} ({d.values.length})
@@ -373,9 +374,9 @@ export function StudioNameSets() {
                   return (
                     <div
                       key={idx}
-                      className="border-separator bg-surface rounded-row space-y-2 border p-2.5"
+                      className="border-separator bg-surface rounded-row space-y-2 border p-3"
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span className="text-label-secondary text-caption font-semibold">
                           #{idx + 1}
                         </span>
@@ -411,13 +412,16 @@ export function StudioNameSets() {
                           </SelectContent>
                         </Select>
 
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           onClick={() => removeSlot(idx)}
-                          className="text-label-secondary rounded-control-sm hover:text-red cursor-pointer p-1"
                           title="Remove slot"
+                          aria-label="Remove slot"
+                          className="text-label-secondary hover:text-red"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Advanced Options Sub-Grid */}
@@ -488,15 +492,13 @@ export function StudioNameSets() {
                         {/* Gender Mode checkbox */}
                         <div className="col-span-2 flex flex-col gap-0.5 pt-0.5">
                           <label className="flex cursor-pointer items-center gap-1">
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={slot.genderMode === "aligned"}
-                              onChange={(e) =>
+                              onCheckedChange={(checked) =>
                                 updateSlot(idx, {
-                                  genderMode: e.target.checked ? "aligned" : "fixed",
+                                  genderMode: checked === true ? "aligned" : "fixed",
                                 })
                               }
-                              className="border-separator rounded-control-sm text-indigo focus:ring-indigo"
                             />
                             <span className="text-label-secondary font-semibold uppercase">
                               Align with unified full-name gender
@@ -524,26 +526,30 @@ export function StudioNameSets() {
               {/* Generate */}
               <div className="border-separator flex items-center gap-2 border-t pt-3">
                 <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
                     disabled={batchCount <= 5}
-                    className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
+                    aria-label="Decrease count"
+                    className="text-label-secondary hover:text-label"
                   >
                     -
-                  </button>
+                  </Button>
                   <NumberFlowDisplay
                     value={batchCount}
                     className="text-label text-footnote min-w-[20px] px-1 text-center font-mono font-semibold"
                   />
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
                     disabled={batchCount >= 50}
-                    className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
+                    aria-label="Increase count"
+                    className="text-label-secondary hover:text-label"
                   >
                     +
-                  </button>
+                  </Button>
                 </div>
                 <Button
                   size="md"

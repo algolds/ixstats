@@ -49,7 +49,7 @@ interface AdvancedConlangSettingsProps {
 
 export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettingsProps) {
   return (
-    <div className="animate-in fade-in mt-3.5 space-y-3.5 duration-200">
+    <div className="animate-in fade-in mt-4 space-y-4 duration-200">
       {/* Include Live World Data Toggle */}
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="space-y-0.5 pr-2">
@@ -67,7 +67,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       {/* Category-aware Prefix Title Select (Person Category only) */}
       {category === "person" && (
-        <div className="border-separator space-y-1.5 border-b pb-3">
+        <div className="border-separator space-y-2 border-b pb-3">
           <label className="text-label-secondary text-subhead">Title Prefix</label>
           <Select
             value={gen.selectedPrefix || "none"}
@@ -136,7 +136,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
 
       {/* Category-aware Suffix Select (Organization, Country, Province categories only) */}
       {(category === "organization" || category === "country" || category === "province") && (
-        <div className="border-separator space-y-1.5 border-b pb-3">
+        <div className="border-separator space-y-2 border-b pb-3">
           <label className="text-caption text-label block font-medium">Name Suffix</label>
           <Select
             value={gen.selectedSuffix || "none"}
@@ -266,7 +266,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
       />
 
       {/* Advanced conlang & phonotactics */}
-      <div className="border-separator space-y-3.5 border-t pt-3.5">
+      <div className="border-separator space-y-4 border-t pt-4">
         <h5 className="text-subhead text-label">Advanced Conlang & Phonotactics</h5>
 
         {/* Syllable Counts */}

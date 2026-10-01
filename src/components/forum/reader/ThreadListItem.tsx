@@ -75,7 +75,7 @@ export function ThreadListItem({
 
       {/* Title + Author */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {isSticky && <Pin className="text-tint h-3 w-3 shrink-0" />}
           {!isOpen && <Lock className="text-label-secondary h-3 w-3 shrink-0" />}
           <Link

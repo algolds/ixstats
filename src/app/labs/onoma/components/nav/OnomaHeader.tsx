@@ -22,6 +22,7 @@ import type {
 } from "~/lib/onoma/types";
 import { ONOMA_TABS, ONOMA_PILLAR_TABS, getStudioTabs, getExploreTabs } from "./onoma-tabs";
 import { cn } from "~/lib/utils";
+import { ActionPill } from "~/components/ui/action-pill";
 
 interface OnomaHeaderProps {
   activeSection: OnomaSection;
@@ -114,10 +115,10 @@ export function OnomaHeader({
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => onNavigate("overview")}
-              className="group/brand focus-visible:outline-tint rounded-control-sm inline-flex cursor-pointer items-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="group/brand h-auto px-1 py-1 hover:bg-transparent"
               title="Onoma — Overview"
               aria-label="Onoma overview"
             >
@@ -125,17 +126,16 @@ export function OnomaHeader({
                 variant="wordmark"
                 className="text-label group-hover/brand:text-tint h-6 w-auto transition-colors duration-150"
               />
-            </button>
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
+                <ActionPill
                   onClick={(e) => {
                     e.stopPropagation();
                     playPronunciation();
                   }}
                   aria-label="Play the pronunciation of Onoma"
-                  className="group/audio text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 focus-visible:outline-tint text-caption inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 font-mono transition-colors duration-150 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="group/audio bg-fill-3 hover:bg-fill-2 gap-1 px-2 font-mono"
                 >
                   <span>/ˈɒnəmə/</span>
                   <span className="relative inline-flex items-center justify-center">
@@ -156,7 +156,7 @@ export function OnomaHeader({
                       )}
                     />
                   </span>
-                </button>
+                </ActionPill>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="start">
                 Listen to the Greek pronunciation (“name”)
@@ -164,7 +164,7 @@ export function OnomaHeader({
             </Tooltip>
           </div>
 
-          <p className="text-footnote flex min-w-0 items-center gap-1.5 select-none">
+          <p className="text-footnote flex min-w-0 items-center gap-2 select-none">
             <span className="text-label font-medium whitespace-nowrap">Linguistic engine</span>
             <span className="text-label-tertiary" aria-hidden="true">
               ·
@@ -222,7 +222,7 @@ export function OnomaHeader({
       </div>
 
       {/* Console: the return bar for Stash/Settings, or the pillar + section tabs */}
-      <FacetMaterial material="thin" className="rounded-card p-1.5">
+      <FacetMaterial material="thin" className="rounded-card p-2">
         <AnimatePresence mode="wait" initial={false}>
           {isUtilitySection ? (
             <motion.div
@@ -244,7 +244,7 @@ export function OnomaHeader({
 
                 <div className="border-separator flex min-w-0 flex-col border-l py-0.5 pl-3 select-none">
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <h2 className="text-headline text-label flex shrink-0 items-center gap-1.5">
+                    <h2 className="text-headline text-label flex shrink-0 items-center gap-2">
                       {activeSection === "bank" ? (
                         <Bookmark className="text-tint size-4" aria-hidden="true" />
                       ) : (
@@ -273,7 +273,7 @@ export function OnomaHeader({
             <motion.div
               key="pillar-console"
               {...consoleMotion(shouldReduceMotion)}
-              className="space-y-1.5"
+              className="space-y-2"
             >
               {/* 1. Pillar tabs (Create · Studio · Explore) */}
               <FacetTabs
@@ -295,7 +295,7 @@ export function OnomaHeader({
                 <motion.div
                   key={activePillar}
                   {...consoleMotion(shouldReduceMotion)}
-                  className="flex items-center gap-1.5"
+                  className="flex items-center gap-2"
                 >
                   <div className="min-w-0 flex-1">
                     <FacetTabs

@@ -107,24 +107,24 @@ export function UnifiedMediaServiceAdmin() {
     <div className="space-y-5">
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Cached Items</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? 0}</p>
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Hit Rate</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{hitRate}%</p>
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Flag Requests</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {stats?.serviceStats?.flagRequests ?? 0}
           </p>
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Requests</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.serviceStats?.totalRequests ?? 0}
@@ -145,7 +145,7 @@ export function UnifiedMediaServiceAdmin() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2">
             <span
               className={cn(
                 "rounded-control-sm text-caption inline-block border px-2 py-0.5",
@@ -191,18 +191,18 @@ export function UnifiedMediaServiceAdmin() {
         <div className="flex flex-wrap gap-2">
           <Button onClick={fetchStats} disabled={isLoading} variant="outline" size="sm">
             {isLoading ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
             )}
             Refresh Stats
           </Button>
 
           <Button onClick={initializeCache} disabled={isInitializing} size="sm">
             {isInitializing ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Zap className="mr-1.5 h-3.5 w-3.5" />
+              <Zap className="mr-2 h-3.5 w-3.5" />
             )}
             Initialize Cache
           </Button>
@@ -217,7 +217,7 @@ export function UnifiedMediaServiceAdmin() {
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
             <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
               <h4 className="text-label text-caption">Request Statistics</h4>
-              <div className="text-footnote space-y-1.5">
+              <div className="text-footnote space-y-2">
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Cache Hits:</span>
                   <span className="text-label font-semibold tabular-nums">{stats.cacheHits}</span>
@@ -235,7 +235,7 @@ export function UnifiedMediaServiceAdmin() {
 
             <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
               <h4 className="text-label text-caption">Service Breakdown</h4>
-              <div className="text-footnote space-y-1.5">
+              <div className="text-footnote space-y-2">
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Flag Requests:</span>
                   <span className="text-label font-semibold tabular-nums">

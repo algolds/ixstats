@@ -63,7 +63,7 @@ export function OnomaGlyph({
           size === "sm" && "text-caption gap-0.5",
           size === "md" && "text-footnote gap-1",
           size === "lg" && "text-body gap-1",
-          size === "xl" && "text-body gap-1.5",
+          size === "xl" && "text-body gap-2",
           size === "display" && "text-title-2 gap-2",
           state === "active" ? "text-label font-semibold" : "text-label-secondary",
           className
@@ -86,9 +86,9 @@ export function OnomaGlyph({
           "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
           size === "xs" && "text-caption gap-1",
           size === "sm" && "text-caption gap-1",
-          size === "md" && "text-footnote gap-1.5",
+          size === "md" && "text-footnote gap-2",
           size === "lg" && "text-body gap-2",
-          size === "xl" && "text-body gap-2.5",
+          size === "xl" && "text-body gap-2",
           size === "display" && "text-title-3 gap-3",
           state === "active" ? "text-label font-semibold" : "text-label-secondary",
           className

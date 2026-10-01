@@ -54,17 +54,20 @@ export function PronunciationEditor({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2.5 border p-3 text-left duration-200"
+      className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2 border p-3 text-left duration-200"
     >
       <div className="flex items-center justify-between">
         <h4 className="text-label text-subhead">Customize Pronunciation</h4>
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onCancel}
           title="Close"
-          className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-0.5"
+          aria-label="Close"
+          className="text-label-secondary hover:text-tint"
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-0.5">
@@ -73,8 +76,9 @@ export function PronunciationEditor({
             IPA (drives Read Naturally phonemes)
           </label>
           {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-            <button
-              type="button"
+            <Button
+              variant="link"
+              size="sm"
               onClick={async () => {
                 try {
                   const res = await suggestMutation.mutateAsync({ text: name });
@@ -89,10 +93,10 @@ export function PronunciationEditor({
                 }
               }}
               disabled={suggestMutation.isPending}
-              className="text-tint text-caption flex cursor-pointer items-center gap-1 font-semibold select-none hover:underline disabled:opacity-50"
+              className="text-tint h-auto px-0"
             >
               {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-            </button>
+            </Button>
           )}
         </div>
         <Input
@@ -140,11 +144,11 @@ export function PronunciationEditor({
         </Select>
       </div>
 
-      <div className="flex items-center justify-between gap-1.5 pt-0.5">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
         <Button variant="bordered" size="sm" onClick={onReset} title="Reset to defaults">
           <RotateCcw className="h-3 w-3" /> Reset
         </Button>
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           <Button variant="bordered" size="sm" onClick={onPreview}>
             <Volume2 className="h-3 w-3" /> Preview
           </Button>

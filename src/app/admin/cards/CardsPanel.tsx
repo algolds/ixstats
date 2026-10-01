@@ -35,8 +35,13 @@ import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";
 import { CardSettingsAdmin, type SettingsSubtab } from "./CardSettingsAdmin";
 import { CardDesignerStudio } from "~/components/cards/designer";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 type AdminTab = "overview" | "designer" | "explorer" | "imports" | "settings";
 
@@ -157,7 +162,7 @@ export default function CardAdminDashboardPage() {
 
             if (isNSTab) {
               return (
-                <div className="border-separator space-y-2.5 border-t pt-2">
+                <div className="border-separator space-y-2 border-t pt-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Total Sync Operations */}
                     <FacetCard padding="sm">
@@ -228,7 +233,7 @@ export default function CardAdminDashboardPage() {
             }
 
             return (
-              <div className="border-separator space-y-2.5 border-t pt-2">
+              <div className="border-separator space-y-2 border-t pt-2">
                 {/* 4 Hero Stat Cards */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Active Cards */}
@@ -308,7 +313,7 @@ export default function CardAdminDashboardPage() {
             {/* Operations Log & Audit Trail Card inside Overview */}
             <FacetCard className="space-y-4 p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <div className="border-tint/20 bg-tint-fill text-tint rounded-row border p-2">
                     <FileText className="text-tint h-5 w-5" />
                   </div>
@@ -322,40 +327,43 @@ export default function CardAdminDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
+                  <Select
                     value={logCategoryFilter}
-                    onChange={(e) => setLogCategoryFilter(e.target.value as any)}
-                    className={cn(
-                      fieldStyles,
-                      "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                    )}
+                    onValueChange={(v) => setLogCategoryFilter(v as any)}
                   >
-                    <option value="all">All Logs ({unifiedLogsData?.stats.all ?? 0})</option>
-                    <option value="imports">
-                      Imports & Syncs ({unifiedLogsData?.stats.imports ?? 0})
-                    </option>
-                    <option value="designer">
-                      Card Designer ({unifiedLogsData?.stats.designer ?? 0})
-                    </option>
-                    <option value="lore_batch">
-                      Lore Batch Studio ({unifiedLogsData?.stats.lore_batch ?? 0})
-                    </option>
-                    <option value="explorer">
-                      Card Explorer & Takedowns ({unifiedLogsData?.stats.explorer ?? 0})
-                    </option>
-                    <option value="settings">
-                      Settings & Valuations ({unifiedLogsData?.stats.settings ?? 0})
-                    </option>
-                    <option value="duplicates">
-                      Duplicate Purges ({unifiedLogsData?.stats.duplicates ?? 0})
-                    </option>
-                    <option value="admin">
-                      Admin Audit Trail ({unifiedLogsData?.stats.admin ?? 0})
-                    </option>
-                  </select>
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        All Logs ({unifiedLogsData?.stats.all ?? 0})
+                      </SelectItem>
+                      <SelectItem value="imports">
+                        Imports & Syncs ({unifiedLogsData?.stats.imports ?? 0})
+                      </SelectItem>
+                      <SelectItem value="designer">
+                        Card Designer ({unifiedLogsData?.stats.designer ?? 0})
+                      </SelectItem>
+                      <SelectItem value="lore_batch">
+                        Lore Batch Studio ({unifiedLogsData?.stats.lore_batch ?? 0})
+                      </SelectItem>
+                      <SelectItem value="explorer">
+                        Card Explorer & Takedowns ({unifiedLogsData?.stats.explorer ?? 0})
+                      </SelectItem>
+                      <SelectItem value="settings">
+                        Settings & Valuations ({unifiedLogsData?.stats.settings ?? 0})
+                      </SelectItem>
+                      <SelectItem value="duplicates">
+                        Duplicate Purges ({unifiedLogsData?.stats.duplicates ?? 0})
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        Admin Audit Trail ({unifiedLogsData?.stats.admin ?? 0})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
 
                   <Button size="sm" variant="outline" onClick={() => void refetchUnifiedLogs()}>
-                    <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
+                    <RefreshCw className="mr-2 h-3 w-3" /> Refresh
                   </Button>
                 </div>
               </div>

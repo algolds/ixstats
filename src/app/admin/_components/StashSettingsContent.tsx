@@ -68,7 +68,7 @@ export function StashSettingsContent() {
 
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Stashed Articles</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -79,7 +79,7 @@ export function StashSettingsContent() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Text Highlight Marks</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -90,7 +90,7 @@ export function StashSettingsContent() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Cache Quota per User</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -112,14 +112,14 @@ export function StashSettingsContent() {
             </p>
           </div>
           <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+            <Save className="mr-2 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
           </Button>
         </div>
 
         <div className="space-y-3">
           {/* Max Items */}
-          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Max Stash Limit per Account</Label>
               <p className="text-label-secondary text-footnote">
@@ -137,7 +137,7 @@ export function StashSettingsContent() {
           </div>
 
           {/* Offline Sync */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Offline Storage Syncing</Label>
               <p className="text-label-secondary text-footnote">
@@ -152,7 +152,7 @@ export function StashSettingsContent() {
           </div>
 
           {/* Auto Category */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Automatic Image Categorization</Label>
               <p className="text-label-secondary text-footnote">
@@ -167,7 +167,7 @@ export function StashSettingsContent() {
           </div>
 
           {/* Highlight Tracker */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Text Highlight Tracking</Label>
               <p className="text-label-secondary text-footnote">

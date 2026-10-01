@@ -95,7 +95,7 @@ export function DiplomaticChoiceEditor({
                         <summary className="text-label-secondary hover:text-label text-subhead mb-1 cursor-pointer select-none">
                           View Effects & Outcomes
                         </summary>
-                        <div className="mt-1.5 grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
                           {choice.effects && Object.keys(choice.effects).length > 0 && (
                             <div>
                               <span className="text-label-secondary text-eyebrow mb-1 block">

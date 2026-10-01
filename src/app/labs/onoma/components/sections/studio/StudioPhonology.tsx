@@ -254,7 +254,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                   (() => {
                     const result = ipaToKokoroPhonemes(previewIpa);
                     return (
-                      <span className="text-label-secondary text-footnote flex items-center gap-1.5">
+                      <span className="text-label-secondary text-footnote flex items-center gap-2">
                         <span>→ {result.phonemes || "(empty)"}</span>
                         {result.dropped.length > 0 && (
                           <span className="text-caption text-yellow font-semibold">
@@ -265,18 +265,20 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                     );
                   })()}
               </div>
-              <button
+              <Button
+                variant="filled"
+                size="sm"
                 onClick={() => play(previewText, previewIpa)}
                 title="Play preview"
-                className="rounded-control text-footnote text-on-tint bg-tint hover:bg-tint-hover ml-auto flex cursor-pointer items-center gap-1 px-3 py-1.5 font-semibold transition-colors"
+                className="ml-auto"
               >
                 <Volume2 className="h-3.5 w-3.5" /> Play
-              </button>
+              </Button>
             </div>
 
             {/* Interactive Grapheme Mapper Timeline */}
             {previewText.trim().length > 0 && (
-              <div className="border-separator animate-in fade-in mt-3 space-y-2.5 border-t pt-3.5 duration-200">
+              <div className="border-separator animate-in fade-in mt-3 space-y-2 border-t pt-4 duration-200">
                 <h4 className="text-label-secondary text-subhead">
                   Interactive Grapheme Mapper (click segment to customize sound)
                 </h4>
@@ -297,8 +299,8 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                         }}
                       >
                         <PopoverTrigger asChild>
-                          <button
-                            type="button"
+                          <Button
+                            variant={isOverridden ? "tinted" : "bordered"}
                             onClick={() => {
                               if (isActive) {
                                 setActiveSegmentIndex(null);
@@ -309,10 +311,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               }
                             }}
                             className={cn(
-                              "rounded-row flex h-14 min-w-10 cursor-pointer flex-col items-center justify-center border px-3 py-1.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
-                              isOverridden
-                                ? "text-label border-tint/40 bg-tint-fill hover:bg-tint/20"
-                                : "border-separator bg-background text-label hover:bg-fill-3",
+                              "rounded-row text-label h-14 min-w-10 flex-col gap-0 px-3",
                               isActive && "ring-tint border-transparent ring-2"
                             )}
                           >
@@ -322,11 +321,11 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                             <span className="text-label-secondary text-caption mt-0.5 font-mono">
                               /{seg.ipa || "∅"}/
                             </span>
-                          </button>
+                          </Button>
                         </PopoverTrigger>
 
-                        <PopoverContent align="start" className="w-72 p-3.5">
-                          <div className="border-separator mb-2.5 flex items-center justify-between border-b pb-2">
+                        <PopoverContent align="start" className="w-72 p-4">
+                          <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
                             <span className="text-label text-eyebrow">
                               Map segment:{" "}
                               <span className="text-tint font-mono font-semibold">
@@ -360,7 +359,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                           />
 
                           {/* Tab Content (IPA Grid) */}
-                          <div className="grid max-h-36 grid-cols-5 gap-1.5 overflow-y-auto pr-0.5">
+                          <div className="grid max-h-36 grid-cols-5 gap-2 overflow-y-auto pr-0.5">
                             {(soundboardTab === "vowels"
                               ? IPA_VOWELS
                               : soundboardTab === "consonants"
@@ -370,8 +369,11 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               const isSelected = selectedSound === sym;
                               const isKokoro = KOKORO_VALID_TOKENS.has(sym);
                               return (
-                                <button
+                                <Button
                                   key={sym}
+                                  variant="bordered"
+                                  size="sm"
+                                  aria-pressed={isSelected}
                                   onClick={async () => {
                                     setSelectedSound(sym);
                                     await playPhoneme(sym);
@@ -382,26 +384,25 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                                       : `${sym} (fallback/synthesized)`
                                   }
                                   className={cn(
-                                    "rounded-control text-footnote relative flex h-8 cursor-pointer items-center justify-center border font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95",
+                                    "h-8 px-0 font-mono",
                                     isSelected
-                                      ? "text-label border-tint bg-tint/20 ring-tint ring-1"
-                                      : isKokoro
-                                        ? "border-tint/30 bg-tint/5 text-tint hover:bg-tint/15"
-                                        : "border-separator bg-background hover:bg-fill-3 text-label"
+                                      ? "border-tint bg-tint/20 ring-tint ring-1"
+                                      : isKokoro &&
+                                          "border-tint/30 bg-tint/5 text-tint hover:bg-tint/15"
                                   )}
                                 >
                                   {sym}
                                   {isKokoro && (
                                     <span className="bg-tint absolute top-1 right-1 h-1 w-1 rounded-full" />
                                   )}
-                                </button>
+                                </Button>
                               );
                             })}
                           </div>
 
                           {/* Popover Footer (Preview & Confirm) */}
                           {selectedSound && (
-                            <div className="animate-in fade-in border-separator mt-3.5 flex items-center justify-between gap-2 border-t pt-2.5 duration-200">
+                            <div className="animate-in fade-in border-separator mt-4 flex items-center justify-between gap-2 border-t pt-2 duration-200">
                               <Button
                                 variant="plain"
                                 size="sm"
@@ -438,16 +439,13 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
           <div className="border-separator rounded-row space-y-3 border p-4">
             <div className="flex items-center justify-between">
               <h4 className="text-label text-subhead">{culture} grapheme → IPA overrides</h4>
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 <Button variant="bordered" size="sm" onClick={resetRules}>
                   <RotateCcw className="h-3 w-3" /> Reset
                 </Button>
-                <button
-                  onClick={saveRules}
-                  className="rounded-control-sm text-caption text-on-tint bg-tint hover:bg-tint-hover flex items-center gap-1 px-2.5 py-1 font-semibold transition-colors"
-                >
+                <Button variant="filled" size="sm" onClick={saveRules}>
                   <Save className="h-3 w-3" /> Save rules
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -456,7 +454,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
               <span className="font-mono">sch</span>) are matched before single letters.
             </p>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {rows.length === 0 && (
                 <p className="text-label-secondary text-footnote py-2 text-center italic">
                   No overrides — built-in {culture} rules apply. Add one below.
@@ -477,21 +475,26 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                     placeholder="IPA"
                     className="text-footnote w-28 font-mono"
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => removeRow(i)}
                     title="Remove rule"
-                    className="text-label-secondary rounded-control-sm hover:text-red cursor-pointer p-1"
+                    aria-label="Remove rule"
+                    className="text-label-secondary hover:text-red"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               ))}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={addRow}
-                className="text-label-secondary hover:text-label text-caption flex items-center gap-1 pt-1 font-semibold"
+                className="text-label-secondary hover:text-label text-label-secondary hover:text-label px-2"
               >
                 <Plus className="h-3.5 w-3.5" /> Add rule
-              </button>
+              </Button>
             </div>
 
             {/* Built-in reference */}
@@ -499,11 +502,11 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
               <summary className="text-label-secondary text-subhead cursor-pointer">
                 Built-in {culture} rules (reference)
               </summary>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {baseRules.map(([g, ipa], i) => (
                   <span
                     key={i}
-                    className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption border px-1.5 py-0.5 font-mono"
+                    className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption border px-2 py-0.5 font-mono"
                   >
                     {g} → {ipa || "∅"}
                   </span>
@@ -524,30 +527,36 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 {overrideNames.map((name) => {
                   const ov = nameOverrides[name];
                   return (
-                    <div key={name} className="text-footnote flex items-center gap-2 py-1.5">
+                    <div key={name} className="text-footnote flex items-center gap-2 py-2">
                       <span className="text-label font-semibold">{name}</span>
                       {ov.ipa && <span className="text-label-secondary font-mono">{ov.ipa}</span>}
                       {ov.voice && (
-                        <span className="text-label-secondary bg-fill-4 rounded-control-sm text-caption px-1.5 py-0.5 font-mono">
+                        <span className="text-label-secondary bg-fill-4 rounded-control-sm text-caption px-2 py-0.5 font-mono">
                           {ov.voice}
                         </span>
                       )}
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() =>
                           play(name, ov.ipa ?? translateToIPA(name, culture), ov.voice)
                         }
                         title="Play"
-                        className="text-label-secondary rounded-control-sm hover:text-tint ml-auto cursor-pointer p-1"
+                        aria-label="Play"
+                        className="text-label-secondary hover:text-tint ml-auto"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => setNameOverride(name, { ipa: undefined, voice: undefined })}
                         title="Clear override"
-                        className="text-label-secondary rounded-control-sm hover:text-red cursor-pointer p-1"
+                        aria-label="Clear override"
+                        className="text-label-secondary hover:text-red"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}

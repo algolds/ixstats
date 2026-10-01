@@ -180,7 +180,7 @@ export function SvgProcessingDialog({
                   {processResult.features.map((f) => (
                     <div
                       key={f.featureId}
-                      className="hover:bg-fill-4 rounded-control-sm text-body flex items-center justify-between px-3 py-1.5"
+                      className="hover:bg-fill-4 rounded-control-sm text-body flex items-center justify-between px-3 py-2"
                     >
                       <div className="flex items-center gap-2">
                         {f.countryMatch ? (

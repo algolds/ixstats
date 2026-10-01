@@ -84,19 +84,19 @@ export function DiplomaticScenariosAnalyticsTab() {
     <div className="space-y-5">
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Generations</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{usageStats.totalGenerations}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Scenarios</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{completionStats.active}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Completion Rate</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{usageStats.completionRate}%</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Scenario Types</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{usageStats.byType.length}</p>
         </FacetCard>

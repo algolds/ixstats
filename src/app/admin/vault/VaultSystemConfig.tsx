@@ -101,7 +101,7 @@ export function VaultSystemConfig() {
           ) : (
             <form onSubmit={handleSaveConfig} className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="cfg-active-cap" className="text-label">
                     Daily Cap (Active)
                   </Label>
@@ -122,7 +122,7 @@ export function VaultSystemConfig() {
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="cfg-social-cap" className="text-label">
                     Daily Cap (Social)
                   </Label>
@@ -143,7 +143,7 @@ export function VaultSystemConfig() {
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="cfg-xp" className="text-label">
                     XP per Level
                   </Label>
@@ -164,7 +164,7 @@ export function VaultSystemConfig() {
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="cfg-streak" className="text-label">
                     Max Streak Bonus
                   </Label>
@@ -185,7 +185,7 @@ export function VaultSystemConfig() {
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="cfg-premium" className="text-label">
                     Premium Multiplier
                   </Label>
@@ -213,7 +213,7 @@ export function VaultSystemConfig() {
               <div className="border-separator border-t pt-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {/* Enable Earning */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable Earning</span>
                       <span className="text-label-secondary text-footnote">
@@ -228,7 +228,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Store Purchases */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable Store</span>
                       <span className="text-label-secondary text-footnote">
@@ -243,7 +243,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Card Crafting */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable Crafting</span>
                       <span className="text-label-secondary text-footnote">
@@ -258,7 +258,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Card Packs */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable Card Packs</span>
                       <span className="text-label-secondary text-footnote">
@@ -273,7 +273,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable P2P Trading */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable P2P Trading</span>
                       <span className="text-label-secondary text-footnote">
@@ -288,7 +288,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Auctions */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Enable P2P Auctions</span>
                       <span className="text-label-secondary text-footnote">
@@ -303,7 +303,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Maintenance Mode */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-destructive text-caption">Maintenance Mode</span>
                       <span className="text-label-secondary text-footnote">
@@ -318,7 +318,7 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Exempt Staff from Card Limits */}
-                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-label text-caption">Exempt Staff</span>
                       <span className="text-label-secondary text-footnote">

@@ -76,7 +76,7 @@ function MapStyleSettingsPanel() {
         </div>
         <Link
           href="/admin/maps/style-editor"
-          className="bg-tint text-on-tint rounded-row text-caption inline-flex h-8 items-center gap-1.5 px-3.5 transition-transform active:scale-[0.98]"
+          className="bg-tint text-on-tint rounded-row text-caption inline-flex h-8 items-center gap-2 px-4 transition-transform active:scale-[0.98]"
         >
           <span>Open Style Editor</span>
           <ExternalLink className="h-3.5 w-3.5" />

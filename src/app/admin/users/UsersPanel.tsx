@@ -44,6 +44,14 @@ import { useNotify } from "~/hooks/useNotify";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
@@ -266,7 +274,7 @@ export function UsersPanel() {
               onClick={() => {
                 window.location.href = "/dashboard";
               }}
-              className="gap-1.5"
+              className="gap-2"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               Open Dashboard
@@ -277,12 +285,12 @@ export function UsersPanel() {
               onClick={() => {
                 window.location.href = "/mycountry";
               }}
-              className="gap-1.5"
+              className="gap-2"
             >
               <Globe className="h-3.5 w-3.5" />
               Open MyCountry
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleStopPlayAs} className="gap-1.5">
+            <Button variant="destructive" size="sm" onClick={handleStopPlayAs} className="gap-2">
               <LogOut className="h-3.5 w-3.5" />
               Stop Impersonation
             </Button>
@@ -294,26 +302,26 @@ export function UsersPanel() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <TabsList className="bg-fill-3 border-separator h-9 p-1">
             <TabsTrigger value="identities" className="text-footnote">
-              <Shield className="mr-1.5 h-3.5 w-3.5" />
+              <Shield className="mr-2 h-3.5 w-3.5" />
               Master Identity Matrix
             </TabsTrigger>
             <TabsTrigger value="wiki-reconciliation" className="text-footnote">
-              <WikiIcon className="mr-1.5 h-3.5 w-3.5" />
+              <WikiIcon className="mr-2 h-3.5 w-3.5" />
               Wiki Reconciliation & Alts
             </TabsTrigger>
             <TabsTrigger value="discord-sync" className="text-footnote">
-              <DiscordIcon className="mr-1.5 h-3.5 w-3.5" />
+              <DiscordIcon className="mr-2 h-3.5 w-3.5" />
               Discord Bot Member Sync
             </TabsTrigger>
             <TabsTrigger value="country-claims" className="text-footnote">
-              <Crown className="mr-1.5 h-3.5 w-3.5" />
+              <Crown className="mr-2 h-3.5 w-3.5" />
               Country Claims & Tiers
             </TabsTrigger>
           </TabsList>
 
           <div className="flex items-center gap-2">
             <div className="relative w-64">
-              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 placeholder="Search across all identities..."
                 value={searchTerm}
@@ -359,165 +367,159 @@ export function UsersPanel() {
                 ))}
               </div>
             ) : (
-              <div className="divide-separator divide-y overflow-x-auto">
-                <table className="text-footnote w-full text-left tabular-nums">
-                  <thead>
-                    <tr className="text-label-secondary border-separator border-b pb-2">
-                      <th className="py-2.5 font-medium">User / Clerk ID</th>
-                      <th className="py-2.5 font-medium">Claimed Nation</th>
-                      <th className="py-2.5 font-medium">MediaWiki Account</th>
-                      <th className="py-2.5 font-medium">Discord Identity</th>
-                      <th className="py-2.5 font-medium">Role & Tier</th>
-                      <th className="py-2.5 text-right font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {filteredIdentities?.map((u) => (
-                      <tr key={u.id} className="hover:bg-fill-4 transition-colors">
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="bg-tint-fill text-tint rounded-control text-caption flex h-7 w-7 items-center justify-center font-mono">
-                              {u.country?.name
-                                ? u.country.name.substring(0, 2).toUpperCase()
-                                : "US"}
-                            </div>
-                            <div>
-                              <div className="text-label text-caption font-mono">
-                                {u.clerkUserId}
-                              </div>
-                              <div className="text-label-secondary text-footnote">
-                                ID: {u.id.substring(0, 10)}...
-                              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User / Clerk ID</TableHead>
+                    <TableHead>Claimed Nation</TableHead>
+                    <TableHead>MediaWiki Account</TableHead>
+                    <TableHead>Discord Identity</TableHead>
+                    <TableHead>Role & Tier</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredIdentities?.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="bg-tint-fill text-tint rounded-control text-caption flex h-7 w-7 items-center justify-center font-mono">
+                            {u.country?.name ? u.country.name.substring(0, 2).toUpperCase() : "US"}
+                          </div>
+                          <div>
+                            <div className="text-label text-caption font-mono">{u.clerkUserId}</div>
+                            <div className="text-label-secondary text-footnote">
+                              ID: {u.id.substring(0, 10)}...
                             </div>
                           </div>
-                        </td>
+                        </div>
+                      </TableCell>
 
-                        <td className="py-3">
-                          {u.country ? (
-                            <Badge
-                              variant="outline"
-                              className="border-separator bg-fill-3 font-medium"
-                            >
-                              {u.country.name}
-                            </Badge>
-                          ) : (
-                            <span className="text-label-secondary text-footnote italic">
-                              No nation claimed
-                            </span>
-                          )}
-                        </td>
+                      <TableCell>
+                        {u.country ? (
+                          <Badge
+                            variant="outline"
+                            className="border-separator bg-fill-3 font-medium"
+                          >
+                            {u.country.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-label-secondary text-footnote italic">
+                            No nation claimed
+                          </span>
+                        )}
+                      </TableCell>
 
-                        <td className="py-3">
-                          {u.wikiUsername ? (
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-wiki/15 text-wiki border-wiki/30 font-semibold"
-                                >
-                                  {u.wikiUsername}
-                                </Badge>
-                                {u.wikiUserId && (
-                                  <span className="text-label-secondary text-footnote">
-                                    #{u.wikiUserId}
-                                  </span>
-                                )}
-                              </div>
-                              {u.wikiAlts && u.wikiAlts.length > 0 && (
-                                <div className="text-label-secondary text-footnote">
-                                  Alts: <span className="text-label">{u.wikiAlts.join(", ")}</span>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-label-secondary text-footnote">Unlinked</span>
-                          )}
-                        </td>
-
-                        <td className="py-3">
-                          {u.discordUsername ? (
-                            <div className="space-y-0.5">
+                      <TableCell>
+                        {u.wikiUsername ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
                               <Badge
                                 variant="secondary"
-                                className="bg-discord/15 text-discord border-discord/30 font-medium"
+                                className="bg-wiki/15 text-wiki border-wiki/30 font-semibold"
                               >
-                                @{u.discordUsername}
+                                {u.wikiUsername}
                               </Badge>
-                              {u.discordUserId && (
-                                <div className="text-label-secondary text-footnote font-mono">
-                                  ID: {u.discordUserId}
-                                </div>
+                              {u.wikiUserId && (
+                                <span className="text-label-secondary text-footnote">
+                                  #{u.wikiUserId}
+                                </span>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-label-secondary text-footnote">Unlinked</span>
-                          )}
-                        </td>
+                            {u.wikiAlts && u.wikiAlts.length > 0 && (
+                              <div className="text-label-secondary text-footnote">
+                                Alts: <span className="text-label">{u.wikiAlts.join(", ")}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-label-secondary text-footnote">Unlinked</span>
+                        )}
+                      </TableCell>
 
-                        <td className="py-3">
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="capitalize">
-                              {u.role?.name || "Member"}
+                      <TableCell>
+                        {u.discordUsername ? (
+                          <div className="space-y-0.5">
+                            <Badge
+                              variant="secondary"
+                              className="bg-discord/15 text-discord border-discord/30 font-medium"
+                            >
+                              @{u.discordUsername}
                             </Badge>
-                            {u.membershipTier === "mycountry_premium" && (
-                              <Badge variant="yellow">VIP</Badge>
+                            {u.discordUserId && (
+                              <div className="text-label-secondary text-footnote font-mono">
+                                ID: {u.discordUserId}
+                              </div>
                             )}
                           </div>
-                        </td>
+                        ) : (
+                          <span className="text-label-secondary text-footnote">Unlinked</span>
+                        )}
+                      </TableCell>
 
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {activePlayAs === u.clerkUserId ? (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={handleStopPlayAs}
-                                className="gap-1"
-                              >
-                                <span className="bg-red h-1.5 w-1.5 rounded-full" />
-                                Active (Stop)
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStartPlayAs(u.clerkUserId, u.country?.name)}
-                                className="gap-1"
-                              >
-                                <Play className="text-tint h-3 w-3 fill-current" />
-                                Play As
-                              </Button>
-                            )}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="capitalize">
+                            {u.role?.name || "Member"}
+                          </Badge>
+                          {u.membershipTier === "mycountry_premium" && (
+                            <Badge variant="yellow">VIP</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {activePlayAs === u.clerkUserId ? (
                             <Button
-                              variant="ghost"
+                              variant="destructive"
                               size="sm"
-                              onClick={() => {
-                                setSelectedUser(u.id);
-                                setWikiUsernameInput(u.wikiUsername || "");
-                                setIsWikiDialogOpen(true);
-                              }}
+                              onClick={handleStopPlayAs}
+                              className="gap-1"
                             >
-                              Wiki Link
+                              <span className="bg-red h-1.5 w-1.5 rounded-full" />
+                              Active (Stop)
                             </Button>
+                          ) : (
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => {
-                                setSelectedUser(u.id);
-                                setDiscordUsernameInput(u.discordUsername || "");
-                                setDiscordUserIdInput(u.discordUserId || "");
-                                setIsDiscordDialogOpen(true);
-                              }}
+                              onClick={() => handleStartPlayAs(u.clerkUserId, u.country?.name)}
+                              className="gap-1"
                             >
-                              Discord
+                              <Play className="text-tint h-3 w-3 fill-current" />
+                              Play As
                             </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(u.id);
+                              setWikiUsernameInput(u.wikiUsername || "");
+                              setIsWikiDialogOpen(true);
+                            }}
+                          >
+                            Wiki Link
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(u.id);
+                              setDiscordUsernameInput(u.discordUsername || "");
+                              setDiscordUserIdInput(u.discordUserId || "");
+                              setIsDiscordDialogOpen(true);
+                            }}
+                          >
+                            Discord
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </FacetCard>
         </TabsContent>
@@ -544,126 +546,124 @@ export function UsersPanel() {
                 ))}
               </div>
             ) : (
-              <div className="divide-separator divide-y overflow-x-auto">
-                <table className="text-footnote w-full text-left tabular-nums">
-                  <thead>
-                    <tr className="text-label-secondary border-separator border-b pb-2">
-                      <th className="py-2.5 font-medium">MediaWiki Account</th>
-                      <th className="py-2.5 font-medium">Target Nation</th>
-                      <th className="py-2.5 font-medium">Status & Confidence</th>
-                      <th className="py-2.5 font-medium">Matched IxStates User</th>
-                      <th className="py-2.5 font-medium">Notes / Aliases</th>
-                      <th className="py-2.5 text-right font-medium">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {wikiMatrix?.entries?.map((e) => (
-                      <tr key={e.wikiUsername} className="hover:bg-fill-4 transition-colors">
-                        <td className="text-label py-3 font-semibold">{e.wikiUsername}</td>
-                        <td className="py-3">
-                          <Badge variant="outline" className="border-separator font-medium">
-                            {e.targetCountry}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>MediaWiki Account</TableHead>
+                    <TableHead>Target Nation</TableHead>
+                    <TableHead>Status & Confidence</TableHead>
+                    <TableHead>Matched IxStates User</TableHead>
+                    <TableHead>Notes / Aliases</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {wikiMatrix?.entries?.map((e) => (
+                    <TableRow key={e.wikiUsername}>
+                      <TableCell className="text-label font-semibold">{e.wikiUsername}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="border-separator font-medium">
+                          {e.targetCountry}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {e.status === "ALREADY_LINKED" && (
+                          <Badge variant="green" className="gap-1">
+                            <CheckCircle className="h-3 w-3" /> Linked & Verified
                           </Badge>
-                        </td>
-                        <td className="py-3">
-                          {e.status === "ALREADY_LINKED" && (
-                            <Badge variant="green" className="gap-1">
-                              <CheckCircle className="h-3 w-3" /> Linked & Verified
-                            </Badge>
-                          )}
-                          {e.status === "ALT_MERGED" && (
-                            <Badge variant="blue" className="gap-1">
-                              <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
-                            </Badge>
-                          )}
-                          {e.status === "READY_TO_LINK" && (
-                            <Badge variant="yellow" className="gap-1">
-                              <WarningCircle className="h-3 w-3" /> Ready to Link
-                            </Badge>
-                          )}
-                          {e.status === "UNMATCHED_USER" && (
-                            <Badge variant="outline" className="text-label-secondary">
-                              Awaiting User Claim
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-3">
-                          {e.matchedUser ? (
-                            <div>
-                              <div className="text-caption font-mono">
-                                {e.matchedUser.clerkUserId}
-                              </div>
-                              <div className="text-label-secondary text-footnote">
-                                {e.matchedUser.countryName}
-                              </div>
+                        )}
+                        {e.status === "ALT_MERGED" && (
+                          <Badge variant="blue" className="gap-1">
+                            <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
+                          </Badge>
+                        )}
+                        {e.status === "READY_TO_LINK" && (
+                          <Badge variant="yellow" className="gap-1">
+                            <WarningCircle className="h-3 w-3" /> Ready to Link
+                          </Badge>
+                        )}
+                        {e.status === "UNMATCHED_USER" && (
+                          <Badge variant="outline" className="text-label-secondary">
+                            Awaiting User Claim
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {e.matchedUser ? (
+                          <div>
+                            <div className="text-caption font-mono">
+                              {e.matchedUser.clerkUserId}
                             </div>
-                          ) : (
-                            <span className="text-label-secondary text-footnote italic">—</span>
-                          )}
-                        </td>
-                        <td className="text-label-secondary text-footnote py-3">
-                          {e.notes || "—"}
-                        </td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {e.matchedUser &&
-                              (activePlayAs === e.matchedUser.clerkUserId ? (
-                                <Button variant="destructive" size="sm" onClick={handleStopPlayAs}>
-                                  Active (Stop)
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleStartPlayAs(
-                                      e.matchedUser!.clerkUserId,
-                                      e.matchedUser!.countryName
-                                    )
-                                  }
-                                  className="gap-1"
-                                  title={`Play as ${e.matchedUser.clerkUserId}`}
-                                >
-                                  <Play className="text-tint h-2.5 w-2.5 fill-current" />
-                                  Play As
-                                </Button>
-                              ))}
-                            {e.matchedUser && e.status === "READY_TO_LINK" && (
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  linkWikiMutation.mutate({
-                                    userId: e.matchedUser!.id,
-                                    wikiUsername: e.wikiUsername,
-                                  });
-                                }}
-                                disabled={linkWikiMutation.isPending}
-                              >
-                                1-Click Link
-                              </Button>
-                            )}
-                            {e.status === "ALREADY_LINKED" && e.matchedUser && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  unlinkWikiMutation.mutate({
-                                    userId: e.matchedUser!.id,
-                                    source: "ixwiki",
-                                  });
-                                }}
-                                className="text-destructive"
-                              >
-                                Unlink
-                              </Button>
-                            )}
+                            <div className="text-label-secondary text-footnote">
+                              {e.matchedUser.countryName}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        ) : (
+                          <span className="text-label-secondary text-footnote italic">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-footnote min-w-48 whitespace-normal">
+                        {e.notes || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {e.matchedUser &&
+                            (activePlayAs === e.matchedUser.clerkUserId ? (
+                              <Button variant="destructive" size="sm" onClick={handleStopPlayAs}>
+                                Active (Stop)
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleStartPlayAs(
+                                    e.matchedUser!.clerkUserId,
+                                    e.matchedUser!.countryName
+                                  )
+                                }
+                                className="gap-1"
+                                title={`Play as ${e.matchedUser.clerkUserId}`}
+                              >
+                                <Play className="text-tint h-2.5 w-2.5 fill-current" />
+                                Play As
+                              </Button>
+                            ))}
+                          {e.matchedUser && e.status === "READY_TO_LINK" && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                linkWikiMutation.mutate({
+                                  userId: e.matchedUser!.id,
+                                  wikiUsername: e.wikiUsername,
+                                });
+                              }}
+                              disabled={linkWikiMutation.isPending}
+                            >
+                              1-Click Link
+                            </Button>
+                          )}
+                          {e.status === "ALREADY_LINKED" && e.matchedUser && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                unlinkWikiMutation.mutate({
+                                  userId: e.matchedUser!.id,
+                                  source: "ixwiki",
+                                });
+                              }}
+                              className="text-destructive"
+                            >
+                              Unlink
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </FacetCard>
         </TabsContent>
@@ -694,7 +694,7 @@ export function UsersPanel() {
                     applyDiscordAutoAssignments.mutate({ assignments });
                   }}
                   disabled={applyDiscordAutoAssignments.isPending}
-                  className="gap-1.5"
+                  className="gap-2"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Auto-Assign All ({discordSyncData.suggestions.length})
@@ -728,7 +728,7 @@ export function UsersPanel() {
                       {discordSyncData?.suggestions.map((s) => (
                         <div
                           key={s.discordUserId}
-                          className="flex items-center justify-between px-2 py-2.5"
+                          className="flex items-center justify-between px-2 py-2"
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
@@ -775,78 +775,74 @@ export function UsersPanel() {
                   Manage direct country assignments and VIP executive privileges.
                 </p>
               </div>
-              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="gap-1.5">
+              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="gap-2">
                 <LinkIcon className="h-3.5 w-3.5" />
                 Assign User to Nation
               </Button>
             </div>
 
-            <div className="divide-separator divide-y overflow-x-auto">
-              <table className="text-footnote w-full text-left tabular-nums">
-                <thead>
-                  <tr className="text-label-secondary border-separator border-b pb-2">
-                    <th className="py-2.5 font-medium">Nation</th>
-                    <th className="py-2.5 font-medium">Assigned User</th>
-                    <th className="py-2.5 text-right font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
-                  {countriesWithUsers?.map((c) => (
-                    <tr key={c.id} className="hover:bg-fill-4 transition-colors">
-                      <td className="text-label py-2.5 font-semibold">{c.name}</td>
-                      <td className="py-2.5">
-                        {c.user ? (
-                          <span className="text-footnote font-mono">{c.user.clerkUserId}</span>
-                        ) : (
-                          <span className="text-label-secondary text-footnote italic">
-                            Unclaimed
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 text-right">
-                        {c.user && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {activePlayAs === c.user.clerkUserId ? (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={handleStopPlayAs}
-                                className="gap-1"
-                              >
-                                Active (Stop)
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleStartPlayAs(c.user!.clerkUserId, c.name)}
-                                className="gap-1"
-                              >
-                                <Play className="text-tint h-2.5 w-2.5 fill-current" />
-                                Play As
-                              </Button>
-                            )}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nation</TableHead>
+                  <TableHead>Assigned User</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {countriesWithUsers?.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="text-label font-semibold">{c.name}</TableCell>
+                    <TableCell>
+                      {c.user ? (
+                        <span className="text-footnote font-mono">{c.user.clerkUserId}</span>
+                      ) : (
+                        <span className="text-label-secondary text-footnote italic">Unclaimed</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {c.user && (
+                        <div className="flex items-center justify-end gap-2">
+                          {activePlayAs === c.user.clerkUserId ? (
                             <Button
-                              variant="ghost"
+                              variant="destructive"
                               size="sm"
-                              onClick={() => {
-                                unassignCountryMutation.mutate({
-                                  userId: c.user!.clerkUserId,
-                                  countryId: c.id,
-                                });
-                              }}
-                              className="text-destructive"
+                              onClick={handleStopPlayAs}
+                              className="gap-1"
                             >
-                              Unassign
+                              Active (Stop)
                             </Button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleStartPlayAs(c.user!.clerkUserId, c.name)}
+                              className="gap-1"
+                            >
+                              <Play className="text-tint h-2.5 w-2.5 fill-current" />
+                              Play As
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              unassignCountryMutation.mutate({
+                                userId: c.user!.clerkUserId,
+                                countryId: c.id,
+                              });
+                            }}
+                            className="text-destructive"
+                          >
+                            Unassign
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </FacetCard>
         </TabsContent>
       </Tabs>

@@ -157,9 +157,9 @@ export function CalculationEditor() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
       {/* Sidebar List */}
-      <FacetCard className="space-y-3 p-3.5 lg:col-span-1">
+      <FacetCard className="space-y-3 p-4 lg:col-span-1">
         <div className="relative">
-          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search formulas..."
             value={sidebarSearch}
@@ -221,13 +221,13 @@ export function CalculationEditor() {
                         onClick={handleSaveModule}
                         disabled={updateFormulaMutation.isPending}
                       >
-                        <Save className="mr-1.5 h-3.5 w-3.5" />
+                        <Save className="mr-2 h-3.5 w-3.5" />
                         {updateFormulaMutation.isPending ? "Saving..." : "Save"}
                       </Button>
                     </>
                   ) : (
                     <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      <Pencil className="mr-2 h-3.5 w-3.5" />
                       Edit Formula
                     </Button>
                   )}
@@ -251,7 +251,7 @@ export function CalculationEditor() {
                     className="md:text-footnote font-mono"
                   />
                 ) : (
-                  <div className="border-separator bg-fill-3 rounded-row text-footnote text-teal border p-3.5 font-mono">
+                  <div className="border-separator bg-fill-3 rounded-row text-footnote text-teal border p-4 font-mono">
                     <code>{selectedModule.formula}</code>
                   </div>
                 )}

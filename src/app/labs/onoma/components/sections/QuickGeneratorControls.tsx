@@ -42,6 +42,8 @@ import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
+import { Checkbox } from "~/components/ui/checkbox";
 
 export const getDictionaryCategoryIcon = getOnomaDomainIcon;
 
@@ -244,24 +246,21 @@ export function QuickGeneratorControls({
   );
 
   return (
-    <div className="rounded-row bg-surface-secondary relative space-y-4 overflow-hidden p-4.5">
+    <div className="rounded-row bg-surface-secondary relative space-y-4 overflow-hidden p-5">
       {/* 1. Dictionary Selector & Actions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-footnote text-label font-semibold">Dictionary</label>
 
           {/* Dictionary Action Controls & Rules toggle */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Rules / Constraints toggle */}
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className={cn(
-                "rounded-control text-footnote shadow-card flex cursor-pointer items-center gap-1 border px-2.5 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                showAdvanced
-                  ? "border-tint/40 bg-tint/10 text-tint"
-                  : "border-separator bg-surface-secondary text-label-secondary hover:text-label"
-              )}
+            <Toggle
+              variant="outline"
+              size="sm"
+              pressed={showAdvanced}
+              onPressedChange={setShowAdvanced}
+              aria-expanded={showAdvanced}
               title="Toggle phonotactic rules"
             >
               <SlidersHorizontal className="h-3 w-3" />
@@ -272,20 +271,21 @@ export function QuickGeneratorControls({
                   showAdvanced && "rotate-180"
                 )}
               />
-            </button>
+            </Toggle>
             {isCustomDict && (
               <>
                 {/* Update changes to this custom lexicon */}
                 {isWordsModified && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="tinted"
+                    size="sm"
                     onClick={handleUpdateCurrentDict}
-                    className="rounded-control border-green/25 bg-green/10 text-caption text-green shadow-card hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                     title="Save changes to this dictionary"
+                    className="bg-green/15 text-green-ink hover:bg-green/25"
                   >
                     <Save className="h-2.5 w-2.5" />
                     <span>Save</span>
-                  </button>
+                  </Button>
                 )}
 
                 {/* Rename custom dictionary */}
@@ -305,38 +305,40 @@ export function QuickGeneratorControls({
                 </Button>
 
                 {/* Delete custom dictionary */}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={handleDeleteCurrentDict}
-                  className="rounded-control border-red/20 bg-red/10 text-caption text-red shadow-card hover:bg-red/20 flex cursor-pointer items-center border p-1.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   title="Delete this custom dictionary"
+                  aria-label="Delete this custom dictionary"
+                  className="text-red text-red bg-red/10 hover:bg-red/20"
                 >
                   <Trash2 className="h-2.5 w-2.5" />
-                </button>
+                </Button>
               </>
             )}
 
             {/* New Dictionary / Save As — visible only when seed words are modified */}
             {isWordsModified && (
-              <button
-                type="button"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => {
                   setIsCreatingNew(true);
                   setNewDictTitle(`${selectedDict?.title || "Custom"} (Edited)`);
                 }}
-                className="text-tint bg-tint/10 hover:bg-tint/15 border-tint/25 animate-in fade-in rounded-control text-caption shadow-card flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
                 title="Save current modified words as a new custom dictionary"
               >
                 <Plus className="h-2.5 w-2.5" />
                 <span>Save As New</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Inline Rename Form */}
         {isRenaming && (
-          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-1.5 border p-1.5 duration-150">
+          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
             <Input
               type="text"
               value={renameTitle}
@@ -371,7 +373,7 @@ export function QuickGeneratorControls({
 
         {/* Inline Create New Lexicon Form */}
         {isCreatingNew && (
-          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-1.5 border p-1.5 duration-150">
+          <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
             <Input
               type="text"
               value={newDictTitle}
@@ -445,30 +447,32 @@ export function QuickGeneratorControls({
       </div>
 
       {/* 2. Expanded Words Editor (Clean Apple Design) */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {(hasDuplicates || isWordsModified) && (
-          <div className="flex items-center justify-end gap-1.5 pb-0.5">
+          <div className="flex items-center justify-end gap-2 pb-0.5">
             {hasDuplicates && (
-              <button
-                type="button"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={handleCleanWords}
-                className="animate-in fade-in zoom-in-95 rounded-control border-yellow/25 bg-yellow/10 text-caption text-yellow shadow-card hover:bg-yellow/20 flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
                 title={`Remove ${duplicateCount} duplicate word${duplicateCount === 1 ? "" : "s"}`}
+                className="bg-yellow/15 text-yellow-ink hover:bg-yellow/25"
               >
                 <span>Dedupe</span>
                 <span className="text-caption font-mono opacity-85">({duplicateCount})</span>
-              </button>
+              </Button>
             )}
             {isWordsModified && (
-              <button
-                type="button"
+              <Button
+                variant="plain"
+                size="sm"
                 onClick={handleResetToDefault}
-                className="text-tint text-caption flex cursor-pointer items-center gap-1 px-1.5 py-0.5 font-medium hover:underline"
                 title="Revert to original dictionary"
+                className="text-tint"
               >
                 <RotateCcw className="h-2.5 w-2.5" />
                 <span>Revert</span>
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -483,7 +487,7 @@ export function QuickGeneratorControls({
 
         <div className="text-caption text-label-secondary flex items-center justify-between px-0.5">
           <span className="font-normal">Comma or newline separated</span>
-          <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm text-caption px-1.5 font-mono font-medium">
+          <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm text-caption px-2 font-mono font-medium">
             {activeWords.length} active words
           </span>
         </div>
@@ -501,11 +505,11 @@ export function QuickGeneratorControls({
       {/* 4. Unified Generate Action & Quantity Pill */}
       <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
-        <button
-          type="button"
+        <Button
+          variant="plain"
           onClick={handleGenerate}
           disabled={isGenerating || !selectedDictId}
-          className="text-footnote text-on-tint flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pr-3 pl-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98] disabled:opacity-40"
+          className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"
         >
           {isGenerating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -517,15 +521,16 @@ export function QuickGeneratorControls({
             />
           )}
           <span className="text-body font-semibold">Generate</span>
-        </button>
+        </Button>
 
         {/* Subtle Vertical Divider */}
         <div className="bg-fill-3 h-5 w-[1px] shrink-0" />
 
         {/* Right: Quantity Stepper Pill */}
-        <div className="text-on-tint flex h-full shrink-0 items-center pr-1.5 pl-1">
-          <button
-            type="button"
+        <div className="text-on-tint flex h-full shrink-0 items-center pr-2 pl-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={(e) => {
               e.stopPropagation();
               setBatchCount((c) =>
@@ -533,20 +538,21 @@ export function QuickGeneratorControls({
               );
             }}
             disabled={batchCount <= 5 || isGenerating}
-            className="rounded-control text-footnote text-on-tint/80 hover:bg-fill-4 hover:text-on-tint flex h-7 w-7 cursor-pointer items-center justify-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Decrease count"
             aria-label="Decrease count"
+            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
           >
             -
-          </button>
+          </Button>
           <div className="text-body text-on-tint flex min-w-[28px] items-center justify-center px-1 leading-none font-semibold">
             <NumberFlowDisplay
               value={batchCount}
               className="text-body text-on-tint font-semibold"
             />
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={(e) => {
               e.stopPropagation();
               setBatchCount((c) =>
@@ -554,19 +560,19 @@ export function QuickGeneratorControls({
               );
             }}
             disabled={batchCount >= 500 || isGenerating}
-            className="rounded-control text-footnote text-on-tint/80 hover:bg-fill-4 hover:text-on-tint flex h-7 w-7 cursor-pointer items-center justify-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Increase count"
             aria-label="Increase count"
+            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
           >
             +
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Collapsible Phonotactics & Constraints */}
       {showAdvanced && (
-        <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-3.5 duration-200">
-          <div className="space-y-2.5">
+        <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-4 duration-200">
+          <div className="space-y-2">
             {/* Length Range */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
@@ -651,13 +657,13 @@ export function QuickGeneratorControls({
             </div>
 
             {/* Permit Seed Duplicates */}
-            <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-2.5 py-2">
+            <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-3 py-2">
               <label className="text-caption text-label font-medium">Allow Seed Duplicates</label>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={options.allowDuplicates}
-                onChange={(e) => setOptions({ ...options, allowDuplicates: e.target.checked })}
-                className="border-separator text-tint focus:ring-tint/50 rounded-control-sm h-3.5 w-3.5 cursor-pointer"
+                onCheckedChange={(checked) =>
+                  setOptions({ ...options, allowDuplicates: checked === true })
+                }
               />
             </div>
           </div>

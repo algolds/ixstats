@@ -202,7 +202,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
         {/* Spiritual Blessings & Storyteller Modifiers */}
         <div className="border-separator grid grid-cols-2 gap-3 border-t pt-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-subhead text-yellow">Home Saint Blessing</Label>
             <Select value={homeSaint} onValueChange={setHomeSaint}>
               <SelectTrigger size="sm">
@@ -215,7 +215,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
               </SelectContent>
             </Select>
-            <div className="mt-1 flex items-center gap-1.5">
+            <div className="mt-1 flex items-center gap-2">
               <Checkbox
                 id="homeScandal"
                 checked={homeScandal}
@@ -230,7 +230,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-subhead text-yellow">Away Saint Blessing</Label>
             <Select value={awaySaint} onValueChange={setAwaySaint}>
               <SelectTrigger size="sm">
@@ -243,7 +243,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
               </SelectContent>
             </Select>
-            <div className="mt-1 flex items-center gap-1.5">
+            <div className="mt-1 flex items-center gap-2">
               <Checkbox
                 id="awayScandal"
                 checked={awayScandal}
@@ -293,11 +293,11 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
             {singleResult.trace && singleResult.trace.length > 0 && (
               <div className="space-y-2">
                 <h6 className="text-label-secondary text-subhead">Match Events Ticker</h6>
-                <div className="thin-scrollbar bg-fill-4 rounded-control-sm text-footnote max-h-[160px] space-y-1.5 overflow-y-auto border p-2 pr-1 text-left font-mono">
+                <div className="thin-scrollbar bg-fill-4 rounded-control-sm text-footnote max-h-[160px] space-y-2 overflow-y-auto border p-2 pr-1 text-left font-mono">
                   {singleResult.trace.map((step: any, idx: number) => (
                     <div
                       key={idx}
-                      className="border-separator flex gap-1.5 border-b py-0.5 font-mono leading-relaxed last:border-0"
+                      className="border-separator flex gap-2 border-b py-0.5 font-mono leading-relaxed last:border-0"
                     >
                       <span className="text-yellow min-w-[28px] font-semibold">{step.t}'</span>
                       <span
@@ -361,7 +361,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -378,7 +378,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>

@@ -32,9 +32,14 @@ export function LabTemplates({
 }: TemplateRendererProps) {
   const { template, customAccent } = config;
 
+  // The lab accent drives the lab materials (`--facet-lab-accent`) and, as a scoped tint, the
+  // Facet 3 primitives inside each template — the way an app's `data-app` tint scopes them.
   const accentVars = {
     "--facet-lab-accent": customAccent,
     "--accent": customAccent,
+    "--tint": customAccent,
+    "--tint-hover": `color-mix(in srgb, ${customAccent} 85%, var(--color-label))`,
+    "--tint-fill": `color-mix(in srgb, ${customAccent} 16%, transparent)`,
   } as React.CSSProperties;
 
   // Live component states for previews

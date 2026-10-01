@@ -112,7 +112,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       {/* Header */}
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div>
-          <h3 className="text-tint text-body flex items-center gap-1.5 font-semibold">
+          <h3 className="text-tint text-body flex items-center gap-2 font-semibold">
             <Activity className="h-4 w-4" />
             <span>Lexicon Explorer & Health</span>
           </h3>
@@ -125,15 +125,13 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       {/* Main Grid: Health Indicator vs Phonetic Diversity */}
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Health Score Panel */}
-        <div
-          className={`rounded-row border p-3.5 ${healthTheme.border} ${healthTheme.bg} space-y-3`}
-        >
+        <div className={`rounded-row border p-4 ${healthTheme.border} ${healthTheme.bg} space-y-3`}>
           <div className="flex items-center justify-between">
             <span className="text-label-secondary text-eyebrow">Lexicon Health</span>
             <HealthIcon className={`h-4.5 w-4.5 ${healthTheme.text}`} />
           </div>
 
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-2">
             <span className={`text-large-title font-bold ${healthTheme.text}`}>
               {healthReport.score}
             </span>
@@ -149,18 +147,18 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
           </div>
 
           {/* Issues list */}
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-2 pt-1">
             {healthReport.issues.length === 0 ? (
-              <div className="text-caption text-green flex items-center gap-1.5 font-semibold">
+              <div className="text-caption text-green flex items-center gap-2 font-semibold">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span>All health parameters check out perfectly!</span>
               </div>
             ) : (
-              <div className="max-h-[110px] space-y-1.5 overflow-y-auto pr-1">
+              <div className="max-h-[110px] space-y-2 overflow-y-auto pr-1">
                 {healthReport.issues.map((issue, idx) => (
                   <div
                     key={idx}
-                    className="text-label-secondary text-caption flex items-start gap-1.5 leading-tight"
+                    className="text-label-secondary text-caption flex items-start gap-2 leading-tight"
                   >
                     <span className="text-yellow mt-0.5 shrink-0 font-semibold">•</span>
                     <span>{issue}</span>
@@ -173,15 +171,15 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
         {/* Phonetic Diversity / Shannon Entropy Panel */}
         <div
-          className={`rounded-row border p-3.5 ${diversityInfo.color} flex flex-col justify-between space-y-3`}
+          className={`rounded-row border p-4 ${diversityInfo.color} flex flex-col justify-between space-y-3`}
         >
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-label-secondary text-eyebrow">Phonetic Diversity</span>
               <Award className="text-label-secondary h-4.5 w-4.5" />
             </div>
 
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-2">
               <span className="text-large-title font-bold">{entropy.toFixed(2)}</span>
               <span className="text-label-secondary text-footnote">bits / letter</span>
             </div>
@@ -209,8 +207,8 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
       {/* Stats Section: Letters vs Bigrams/Trigrams */}
       <div className="grid gap-4 pt-2 sm:grid-cols-2">
         {/* Letter Frequencies */}
-        <div className="space-y-2.5">
-          <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-1.5 border-b pb-1.5">
+        <div className="space-y-2">
+          <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-2 border-b pb-2">
             <BarChart3 className="text-tint h-3.5 w-3.5" />
             <span>Top Letter Densities</span>
           </h4>
@@ -240,13 +238,13 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
         </div>
 
         {/* N-Gram Frequencies (Bigrams/Trigrams Side-by-side or combined list) */}
-        <div className="space-y-2.5">
-          <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-1.5 border-b pb-1.5">
+        <div className="space-y-2">
+          <h4 className="text-label-secondary border-separator text-subhead flex items-center gap-2 border-b pb-2">
             <Layers className="text-tint h-3.5 w-3.5" />
             <span>Frequent Substrings</span>
           </h4>
 
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 gap-4">
             {/* Bigrams */}
             <div className="space-y-2">
               <span className="text-label-secondary border-separator text-eyebrow block border-b pb-0.5">

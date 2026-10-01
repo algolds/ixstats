@@ -103,7 +103,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
       <div className="mb-4">
         <label
           htmlFor="forum-thread-forum"
-          className="text-subhead text-label-secondary mb-1.5 block"
+          className="text-subhead text-label-secondary mb-2 block"
         >
           Forum
         </label>
@@ -128,7 +128,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
       <div className="mb-4">
         <label
           htmlFor="forum-thread-title"
-          className="text-subhead text-label-secondary mb-1.5 block"
+          className="text-subhead text-label-secondary mb-2 block"
         >
           Thread title
         </label>
@@ -145,7 +145,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
       {/* Message Editor */}
       <div className="mb-4">
-        <span className="text-subhead text-label-secondary mb-1.5 block">Message</span>
+        <span className="text-subhead text-label-secondary mb-2 block">Message</span>
         <GlassPlateEditor
           ref={editorRef}
           value={content}

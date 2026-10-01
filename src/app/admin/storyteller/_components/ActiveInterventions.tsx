@@ -4,6 +4,7 @@
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -91,11 +92,11 @@ function CountryInterventionRow({
 
   return (
     <div className="border-separator hover:border-separator rounded-row duration-fast border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between p-3 text-left"
+        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal active:scale-100"
       >
         <div className="flex items-center gap-3">
           <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="sm" />
@@ -108,11 +109,11 @@ function CountryInterventionRow({
           <AlertTriangle className="mr-1 h-3 w-3" />
           {country.activeInterventions} active
         </Badge>
-      </button>
+      </Button>
 
       {expanded && effects.length > 0 && (
         <div className="border-separator border-t px-3 pb-3">
-          <div className="mt-2 space-y-1.5">
+          <div className="mt-2 space-y-2">
             {effects.map(
               (dm: {
                 id: string;

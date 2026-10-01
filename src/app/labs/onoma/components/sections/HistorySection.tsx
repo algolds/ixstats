@@ -21,6 +21,14 @@ import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 type HistoryEvent = {
   id: string;
@@ -198,9 +206,9 @@ export default function HistorySection({
       </AnimatePresence>
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="relative w-full sm:w-64">
-          <Search className="text-label-secondary absolute top-2.5 left-3 h-3.5 w-3.5" />
+          <Search className="text-label-secondary absolute top-2 left-3 h-3.5 w-3.5" />
           <Input
             type="text"
             placeholder="Search run hash or name..."
@@ -211,35 +219,38 @@ export default function HistorySection({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={category ?? ""}
-            onChange={(e) => setCategory(e.target.value || undefined)}
-            className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+          <Select
+            value={(category ?? "") || "__none__"}
+            onValueChange={(v) => setCategory((v === "__none__" ? "" : v) || undefined)}
           >
-            <option value="">All Categories</option>
-            <option value="country">Country</option>
-            <option value="city">City</option>
-            <option value="province">Province</option>
-            <option value="person">Person</option>
-            <option value="dynasty">Dynasty</option>
-            <option value="military">Military</option>
-            <option value="organization">Organization</option>
-            <option value="geography">Geography</option>
-            <option value="culture">Culture</option>
-            <option value="ship">Ship</option>
-            <option value="sandbox">Sandbox</option>
-          </select>
-          <button
-            onClick={() => setFavoritesOnly(!favoritesOnly)}
-            className={`rounded-control text-footnote flex cursor-pointer items-center gap-1 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
-              favoritesOnly
-                ? "border-yellow/30 bg-yellow/10 text-yellow"
-                : "border-separator bg-fill-4 text-label-secondary hover:border-yellow/30 hover:text-yellow"
-            }`}
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">All Categories</SelectItem>
+              <SelectItem value="country">Country</SelectItem>
+              <SelectItem value="city">City</SelectItem>
+              <SelectItem value="province">Province</SelectItem>
+              <SelectItem value="person">Person</SelectItem>
+              <SelectItem value="dynasty">Dynasty</SelectItem>
+              <SelectItem value="military">Military</SelectItem>
+              <SelectItem value="organization">Organization</SelectItem>
+              <SelectItem value="geography">Geography</SelectItem>
+              <SelectItem value="culture">Culture</SelectItem>
+              <SelectItem value="ship">Ship</SelectItem>
+              <SelectItem value="sandbox">Sandbox</SelectItem>
+            </SelectContent>
+          </Select>
+          <Toggle
+            variant="outline"
+            size="sm"
+            pressed={favoritesOnly}
+            onPressedChange={setFavoritesOnly}
+            className="hover:text-yellow-ink data-[state=on]:bg-yellow/15 data-[state=on]:text-yellow-ink data-[state=on]:hover:bg-yellow/25 px-3"
           >
             <Star className={`h-3 w-3 ${favoritesOnly ? "fill-yellow" : ""}`} />
             Favorites
-          </button>
+          </Toggle>
         </div>
       </div>
 
@@ -276,9 +287,11 @@ export default function HistorySection({
                       className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       {/* Event Header */}
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => toggleExpanded(event.id)}
-                        className="flex w-full cursor-pointer items-center justify-between p-3 text-left"
+                        aria-expanded={isExpanded}
+                        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal whitespace-normal active:scale-100"
                       >
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <div className="bg-fill-3 rounded-control-sm text-footnote px-2 py-0.5 font-semibold capitalize">
@@ -330,7 +343,7 @@ export default function HistorySection({
                             className={`text-label-secondary h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
                           />
                         </div>
-                      </button>
+                      </Button>
 
                       {/* Expanded Names List & Batch Actions */}
                       <AnimatePresence>
@@ -341,13 +354,13 @@ export default function HistorySection({
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-separator space-y-3 border-t px-3 pt-2.5 pb-3.5">
+                            <div className="border-separator space-y-3 border-t px-3 pt-2 pb-4">
                               {/* Batch Actions Bar */}
                               <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                                 <div className="text-label-secondary text-caption">
                                   Run payload ({names.length} names)
                                 </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
+                                <div className="flex flex-wrap items-center gap-2">
                                   {onLoadToStudio && (
                                     <Button
                                       variant="tinted"
@@ -368,8 +381,9 @@ export default function HistorySection({
                                       <span>Load to Studio</span>
                                     </Button>
                                   )}
-                                  <button
-                                    type="button"
+                                  <Button
+                                    variant="tinted"
+                                    size="sm"
                                     onClick={async () => {
                                       const title = event.sessionId
                                         ? `Run ${event.sessionId}`
@@ -382,12 +396,11 @@ export default function HistorySection({
                                       });
                                       notify.success(`Saved run as dictionary "${title}"!`);
                                     }}
-                                    className="rounded-control-sm bg-indigo/10 text-caption text-indigo hover:bg-indigo/20 flex cursor-pointer items-center gap-1 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                                     title="Save entire run as custom Stash Dictionary"
                                   >
                                     <BookmarkPlus className="h-3 w-3" />
                                     <span>Save as Dictionary</span>
-                                  </button>
+                                  </Button>
                                   <Button
                                     variant="gray"
                                     size="sm"
@@ -406,42 +419,48 @@ export default function HistorySection({
                               </div>
 
                               {/* Badges Grid */}
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap gap-2">
                                 {names.map((name, idx) => {
                                   const isFav = favoriteNames.has(name);
                                   return (
                                     <div
                                       key={`${name}-${idx}`}
-                                      className="bg-fill-3 group rounded-control-sm text-body flex items-center gap-1 px-2.5 py-1"
+                                      className="bg-fill-3 group rounded-control-sm text-body flex items-center gap-1 px-3 py-1"
                                     >
                                       <span className="text-label">{name}</span>
-                                      <button
+                                      <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           void toggleFavorite(event.id, name);
                                         }}
                                         disabled={isTogglingFavorite}
-                                        className="cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
                                         title={isFav ? "Unfavorite" : "Favorite"}
+                                        aria-label={isFav ? "Unfavorite" : "Favorite"}
+                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                                       >
                                         <Star
                                           className={`h-3 w-3 ${isFav ? "fill-yellow text-yellow" : "text-label-secondary hover:text-yellow"}`}
                                         />
-                                      </button>
-                                      <button
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleCopy(name);
                                         }}
-                                        className="cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
                                         title="Copy"
+                                        aria-label="Copy"
+                                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                                       >
                                         {copiedName === name ? (
                                           <Check className="text-green h-3 w-3" />
                                         ) : (
                                           <Copy className="text-label-secondary hover:text-green h-3 w-3" />
                                         )}
-                                      </button>
+                                      </Button>
                                     </div>
                                   );
                                 })}

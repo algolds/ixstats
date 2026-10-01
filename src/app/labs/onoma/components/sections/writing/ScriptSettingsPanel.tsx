@@ -9,13 +9,15 @@ import {
   FloppyDisk as Save,
   Plus,
   Compass,
-  Check,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import type { ScriptTypology, ScriptDirection, Glyph } from "./types";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface ScriptSettingsPanelProps {
   systems: any[] | undefined;
@@ -66,8 +68,8 @@ export function ScriptSettingsPanel({
     <div className="space-y-4">
       {/* Script Directory */}
       <FacetCard variant="inset" padding="none" className="space-y-3 p-4">
-        <div className="border-separator flex items-center justify-between border-b pb-2.5">
-          <div className="flex items-center gap-2.5">
+        <div className="border-separator flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
             <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
               <Feather className="h-4 w-4" />
             </div>
@@ -76,14 +78,10 @@ export function ScriptSettingsPanel({
               <p className="text-label-secondary text-caption">Active & saved conlang scripts</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => onSelectSystem(null)}
-            className="hover:border-tint/40 hover:bg-tint/10 border-separator bg-fill-4 text-tint rounded-row text-caption flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
-          >
+          <Button variant="tinted" size="sm" onClick={() => onSelectSystem(null)}>
             <Plus className="h-3 w-3" />
             <span>New Script</span>
-          </button>
+          </Button>
         </div>
 
         {listLoading ? (
@@ -93,43 +91,37 @@ export function ScriptSettingsPanel({
             No writing systems saved yet. Create your first script below!
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
+          <FacetListSection variant="plain" aria-label="Script systems">
             {systems.map((s: any) => {
-              const isSelected = selectedSystemId === s.id;
               const glyphCount = Array.isArray(s.glyphs) ? s.glyphs.length : 0;
-
               return (
-                <button
+                <FacetRow
                   key={s.id}
-                  type="button"
                   onClick={() => onSelectSystem(s.id)}
-                  className={cn(
-                    "rounded-row text-footnote flex cursor-pointer items-center justify-between border px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                    isSelected
-                      ? "border-tint/50 bg-tint/10 text-tint shadow-card font-semibold"
-                      : "border-separator bg-surface hover:bg-fill-4 text-label"
-                  )}
-                >
-                  <span className="truncate font-medium">{s.name}</span>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-label-secondary bg-fill-3 rounded-control-sm text-caption px-1.5 py-0.5 font-mono capitalize">
-                      {s.scriptType}
+                  selected={selectedSystemId === s.id}
+                  selectionStyle="tint"
+                  title={<span className="text-footnote truncate">{s.name}</span>}
+                  trailing={
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Badge variant="neutral" className="font-mono capitalize">
+                        {s.scriptType}
+                      </Badge>
+                      <Badge variant="neutral" className="font-mono">
+                        {glyphCount} glyphs
+                      </Badge>
                     </span>
-                    <span className="text-label-secondary bg-fill-3 rounded-control-sm text-caption px-1.5 py-0.5 font-mono">
-                      {glyphCount} glyphs
-                    </span>
-                  </div>
-                </button>
+                  }
+                />
               );
             })}
-          </div>
+          </FacetListSection>
         )}
       </FacetCard>
 
       {/* Script Typology & Configuration Form */}
       <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
-        <div className="border-separator flex items-center justify-between border-b pb-2.5">
-          <div className="flex items-center gap-2.5">
+        <div className="border-separator flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
             <div className="bg-fill-3 text-label rounded-row flex h-7 w-7 items-center justify-center">
               <Compass className="h-4 w-4" />
             </div>
@@ -142,19 +134,20 @@ export function ScriptSettingsPanel({
           </div>
 
           {selectedSystemId && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onDeleteSystem}
               disabled={isDeleting}
-              className="text-label-secondary rounded-control text-caption hover:bg-red/10 hover:text-red flex cursor-pointer items-center gap-1 px-2 py-1 font-semibold transition-colors active:scale-[0.97]"
+              className="text-label-secondary hover:text-red text-label-secondary hover:text-red hover:bg-red/10"
             >
               <Trash2 className="h-3 w-3" />
               <span>Delete</span>
-            </button>
+            </Button>
           )}
         </div>
 
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           {/* Script Name */}
           <div>
             <label className="text-label-secondary text-subhead mb-1 block">Script Name</label>
@@ -170,78 +163,50 @@ export function ScriptSettingsPanel({
 
           {/* Typology Segmented Cards */}
           <div>
-            <label className="text-label-secondary text-subhead mb-1.5 block">
+            <label
+              id="script-typology-label"
+              className="text-label-secondary text-subhead mb-2 block"
+            >
               Typological Model
             </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {TYPOLOGY_OPTIONS.map((opt) => {
-                const isSelected = scriptType === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => onScriptTypeChange(opt.value)}
-                    className={cn(
-                      "rounded-row flex cursor-pointer flex-col border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                      isSelected
-                        ? "border-tint/60 bg-tint/10 text-label shadow-card font-semibold"
-                        : "border-separator bg-surface hover:bg-fill-4 text-label-secondary"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-label text-footnote font-semibold">{opt.label}</span>
-                      {isSelected && <Check className="text-tint h-3 w-3" />}
-                    </div>
-                    <span className="text-caption mt-0.5 opacity-75">{opt.desc}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <RadioCardGroup
+              aria-labelledby="script-typology-label"
+              columns={2}
+              value={scriptType}
+              onValueChange={(v) => onScriptTypeChange(v as ScriptTypology)}
+              className="gap-2"
+            >
+              {TYPOLOGY_OPTIONS.map((opt) => (
+                <RadioCard
+                  key={opt.value}
+                  value={opt.value}
+                  title={opt.label}
+                  description={opt.desc}
+                />
+              ))}
+            </RadioCardGroup>
           </div>
 
           {/* Direction Segmented Control */}
           <div>
-            <label className="text-label-secondary text-subhead mb-1.5 block">
+            <label
+              id="script-direction-label"
+              className="text-label-secondary text-subhead mb-2 block"
+            >
               Writing Direction
             </label>
-            <div className="border-separator bg-fill-4 rounded-row grid grid-cols-3 gap-1 border p-1">
-              <button
-                type="button"
-                onClick={() => onDirectionChange("ltr")}
-                className={cn(
-                  "rounded-control text-caption cursor-pointer py-1.5 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                  direction === "ltr"
-                    ? "bg-background text-label shadow-card font-semibold"
-                    : "text-label-secondary hover:text-label"
-                )}
-              >
-                Left → Right
-              </button>
-              <button
-                type="button"
-                onClick={() => onDirectionChange("rtl")}
-                className={cn(
-                  "rounded-control text-caption cursor-pointer py-1.5 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                  direction === "rtl"
-                    ? "bg-background text-label shadow-card font-semibold"
-                    : "text-label-secondary hover:text-label"
-                )}
-              >
-                Right → Left
-              </button>
-              <button
-                type="button"
-                onClick={() => onDirectionChange("ttb")}
-                className={cn(
-                  "rounded-control text-caption cursor-pointer py-1.5 text-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                  direction === "ttb"
-                    ? "bg-background text-label shadow-card font-semibold"
-                    : "text-label-secondary hover:text-label"
-                )}
-              >
-                Top → Bottom
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              fullWidth
+              aria-labelledby="script-direction-label"
+              value={direction}
+              onValueChange={onDirectionChange}
+              options={[
+                { value: "ltr", label: "Left → Right" },
+                { value: "rtl", label: "Right → Left" },
+                { value: "ttb", label: "Top → Bottom" },
+              ]}
+            />
           </div>
 
           {/* Save Script System Action */}

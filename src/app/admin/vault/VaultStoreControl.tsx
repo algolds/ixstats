@@ -41,10 +41,6 @@ import {
   EditPencil as Edit2,
   ClockRotateRight as History,
   Sparks as Sparkles,
-  Database,
-  Shield,
-  Coins,
-  Dashboard as Gauge,
   SystemRestart as Loader2,
   SwitchOff as ToggleLeft,
   SwitchOn as ToggleRight,
@@ -264,7 +260,7 @@ export function VaultStoreControl() {
           </p>
         </div>
         <Button onClick={handleOpenCreate} size="sm">
-          <Plus className="mr-1.5 h-4 w-4" /> Create Item
+          <Plus className="mr-2 h-4 w-4" /> Create Item
         </Button>
       </div>
 
@@ -313,17 +309,17 @@ export function VaultStoreControl() {
                     </Badge>
                   </TableCell>
                   <TableCell className="space-y-1">
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-2">
                       <Badge
                         variant="outline"
-                        className={`text-eyebrow px-1.5 py-0 ${getQualityBadge(item.quality)}`}
+                        className={`text-eyebrow px-2 py-0 ${getQualityBadge(item.quality)}`}
                       >
                         {item.quality}
                       </Badge>
                       {item.badgeText && (
                         <Badge
                           variant="outline"
-                          className="bg-fill-3 text-label-secondary border-separator px-1.5 py-0"
+                          className="bg-fill-3 text-label-secondary border-separator px-2 py-0"
                         >
                           {item.badgeText}
                         </Badge>
@@ -346,7 +342,7 @@ export function VaultStoreControl() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1.5">
+                    <div className="flex items-center justify-center gap-2">
                       <Button
                         size="icon"
                         variant="outline"
@@ -402,7 +398,7 @@ export function VaultStoreControl() {
 
           <form onSubmit={handleSave} className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-name">Item Name</Label>
                 <Input
                   id="item-name"
@@ -413,7 +409,7 @@ export function VaultStoreControl() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-category">Category</Label>
                 <Select
                   value={formData.category}
@@ -430,7 +426,7 @@ export function VaultStoreControl() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label htmlFor="item-desc">Description</Label>
               <Textarea
                 id="item-desc"
@@ -442,7 +438,7 @@ export function VaultStoreControl() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-price">Price (IxC)</Label>
                 <Input
                   id="item-price"
@@ -455,7 +451,7 @@ export function VaultStoreControl() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-quality">Quality</Label>
                 <Select
                   value={formData.quality}
@@ -473,7 +469,7 @@ export function VaultStoreControl() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-badge">Badge Label</Label>
                 <Input
                   id="item-badge"
@@ -485,7 +481,7 @@ export function VaultStoreControl() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-icon">Icon Select</Label>
                 <Popover open={isIconPopoverOpen} onOpenChange={setIsIconPopoverOpen}>
                   <PopoverTrigger
@@ -510,7 +506,7 @@ export function VaultStoreControl() {
                         className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                         autoFocus
                       />
-                      <div className="thin-scrollbar grid max-h-48 [scrollbar-width:thin] grid-cols-5 gap-1.5 overflow-y-auto pr-1">
+                      <div className="thin-scrollbar grid max-h-48 [scrollbar-width:thin] grid-cols-5 gap-2 overflow-y-auto pr-1">
                         {Object.keys(ICON_MAP)
                           .filter((name) => name.toLowerCase().includes(iconSearch.toLowerCase()))
                           .map((iconName) => {
@@ -546,7 +542,7 @@ export function VaultStoreControl() {
                 </Popover>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="item-glow">Glow Color CSS</Label>
                 <ColorPickerInput
                   value={formData.glowColor}
@@ -563,7 +559,7 @@ export function VaultStoreControl() {
 
               {formData.category === "upgrades" ? (
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="fx-yield">Yield Boost (%)</Label>
                     <Input
                       id="fx-yield"
@@ -577,7 +573,7 @@ export function VaultStoreControl() {
                       className="font-mono"
                     />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="fx-cards">Card Capacity (+)</Label>
                     <Input
                       id="fx-cards"
@@ -590,7 +586,7 @@ export function VaultStoreControl() {
                       className="font-mono"
                     />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="fx-lore">Lore Tokens (+)</Label>
                     <Input
                       id="fx-lore"
@@ -606,7 +602,7 @@ export function VaultStoreControl() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="fx-kind">Effect Type</Label>
                     <Select
                       value={formData.cosmeticKind}
@@ -627,7 +623,7 @@ export function VaultStoreControl() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="fx-color">Effect Color</Label>
                     <ColorPickerInput
                       value={formData.effectColor}
@@ -635,7 +631,7 @@ export function VaultStoreControl() {
                     />
                   </div>
                   {formData.cosmeticKind === "chatBadge" && (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <Label htmlFor="fx-badge-icon">Badge Icon</Label>
                       <Input
                         id="fx-badge-icon"
@@ -656,7 +652,7 @@ export function VaultStoreControl() {
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {createMutation.isPending || updateMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
                   </>
                 ) : (
                   "Save Item"

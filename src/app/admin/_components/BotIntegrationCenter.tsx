@@ -62,14 +62,14 @@ export function BotIntegrationCenter() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="general"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <Cpu className="h-3.5 w-3.5" />
             General Controls & Crons
           </TabsTrigger>
           <TabsTrigger
             value="lorewards"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             Lorewards Bot
           </TabsTrigger>

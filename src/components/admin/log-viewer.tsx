@@ -36,6 +36,7 @@ import {
 import { cn } from "~/lib/utils/cn";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { ActionPill, type ActionPillTone } from "~/components/ui/action-pill";
 
 // Types
 
@@ -91,6 +92,15 @@ const DEFAULT_LEVEL_COLORS: Record<LogLevel, LevelColors> = {
     dot: "bg-fill",
     badge: "bg-fill-3 text-label-secondary",
   },
+};
+
+/** Pressed-filter tone per level (the system colour behind each default `badge`). */
+const LEVEL_TONES: Record<LogLevel, ActionPillTone> = {
+  error: "red",
+  warn: "yellow",
+  info: "blue",
+  debug: "purple",
+  verbose: "gray",
 };
 
 const LEVEL_LABELS: Record<LogLevel, string> = {
@@ -355,7 +365,7 @@ function LogViewerTerminal({
 
       {/* Search bar */}
       {searchOpen && (
-        <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-1.5">
+        <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-2">
           <Search className="text-label-secondary size-3.5 shrink-0" />
           <Input
             type="text"
@@ -430,15 +440,15 @@ function LogViewerTerminal({
 
       {/* Scroll-to-bottom indicator */}
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label text-caption flex w-full items-center justify-center gap-1.5 border-t py-1.5 transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
           New logs below
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -499,7 +509,7 @@ function LogViewerMinimal({
           entries.map((entry, i) => {
             const colors = resolveLevelColors(entry.level, colorScale);
             return (
-              <div key={i} className="border-separator flex items-start gap-2 border-b px-3 py-1.5">
+              <div key={i} className="border-separator flex items-start gap-2 border-b px-3 py-2">
                 <Circle
                   className={cn("mt-[3px] size-2 shrink-0 fill-current", colors.text)}
                   aria-label={entry.level}
@@ -519,14 +529,14 @@ function LogViewerMinimal({
       </div>
 
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label text-caption flex w-full items-center justify-center gap-1.5 border-t py-1 transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-1 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -647,40 +657,34 @@ function LogViewerFilterable({
       {/* Filter bar */}
       <div className="border-separator bg-fill-4 flex flex-wrap items-center gap-2 border-b px-3 py-2">
         {/* Level toggles */}
-        <div className="flex items-center gap-1">
+        <div role="group" aria-label="Log levels" className="flex items-center gap-1">
           {levels.map((level) => {
-            const colors = resolveLevelColors(level, colorScale);
+            const customBadge = colorScale?.[level]?.badge;
             const isActive = activeLevels.has(level);
             const count = levelCounts[level] ?? 0;
+            // Pressed pills take the level's system colour (or a caller's `colorScale` badge).
             return (
-              <button
+              <ActionPill
                 key={level}
-                type="button"
+                pressed={isActive}
+                tone={LEVEL_TONES[level]}
                 onClick={() => toggleLevel(level)}
-                role="checkbox"
-                aria-checked={isActive}
-                aria-label={`${isActive ? "Hide" : "Show"} ${level} logs`}
+                aria-label={`${level} logs`}
+                title={`${isActive ? "Hide" : "Show"} ${level} logs`}
+                icon={<Circle className="size-1.5 fill-current" />}
+                count={count > 0 ? count : null}
                 className={cn(
-                  "rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-1 transition-colors outline-none",
-                  "focus-visible:ring-tint focus-visible:ring-2 focus-visible:ring-offset-1",
-                  isActive ? colors.badge : "bg-fill-3 text-label-tertiary line-through"
+                  isActive ? customBadge : "bg-fill-3 text-label-tertiary line-through"
                 )}
               >
-                <Circle
-                  className={cn(
-                    "size-1.5 fill-current",
-                    isActive ? colors.text : "text-label-tertiary"
-                  )}
-                />
                 {LEVEL_LABELS[level]}
-                {count > 0 && <span className="tabular-nums">{count}</span>}
-              </button>
+              </ActionPill>
             );
           })}
         </div>
 
         {/* Inline search */}
-        <div className="border-separator bg-background rounded-control-sm ml-auto flex items-center gap-1.5 border px-2 py-1">
+        <div className="border-separator bg-background rounded-control-sm ml-auto flex items-center gap-2 border px-2 py-1">
           <Search className="text-label-secondary size-3" />
           <Input
             type="text"
@@ -738,7 +742,7 @@ function LogViewerFilterable({
             return (
               <div
                 key={i}
-                className="border-separator hover:bg-fill-4 flex items-start gap-3 border-b px-3 py-1.5 transition-colors"
+                className="border-separator hover:bg-fill-4 flex items-start gap-3 border-b px-3 py-2 transition-colors"
               >
                 <Circle
                   className={cn("mt-[5px] size-2 shrink-0 fill-current", colors.text)}
@@ -763,15 +767,15 @@ function LogViewerFilterable({
 
       {/* Scroll-to-bottom indicator */}
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label text-caption flex w-full items-center justify-center gap-1.5 border-t py-1.5 transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
           New logs below
-        </button>
+        </Button>
       )}
     </div>
   );

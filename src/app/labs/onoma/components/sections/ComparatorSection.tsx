@@ -17,6 +17,7 @@ import {
   type DynamicComparisonResult,
 } from "~/lib/onoma/data-bridge";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface ComparatorSectionProps {
   hideHeader?: boolean;
@@ -220,11 +221,11 @@ export default function ComparatorSection({
         <h3 className="text-label-secondary text-subhead">Phoneme Inventory Overlap Analysis</h3>
         <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
           {/* Shared sounds */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <span className="text-caption text-green font-semibold">
               Shared Phonemes ({comparison.sharedPhonemes.length})
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {comparison.sharedPhonemes.map((ph) => (
                 <span
                   key={ph}
@@ -241,11 +242,11 @@ export default function ComparatorSection({
 
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
             {/* Unique to A */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <span className="text-tint text-caption font-semibold capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {comparison.uniqueToA.map((ph) => (
                   <span
                     key={ph}
@@ -261,11 +262,11 @@ export default function ComparatorSection({
             </div>
 
             {/* Unique to B */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <span className="text-caption text-indigo font-semibold capitalize">
                 Unique to {corpusB.label} ({comparison.uniqueToB.length})
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {comparison.uniqueToB.map((ph) => (
                   <span
                     key={ph}
@@ -340,18 +341,21 @@ export default function ComparatorSection({
             {samplesA.map((item, idx) => (
               <div
                 key={idx}
-                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-2.5 transition-colors"
+                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
                   <span className="text-label font-semibold">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => playName(item.name, item.ipa, corpusA.fallbackCulture)}
-                  className="hover:bg-fill-3 text-label-secondary rounded-control-sm hover:text-yellow cursor-pointer p-1 transition-colors"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -365,18 +369,21 @@ export default function ComparatorSection({
             {samplesB.map((item, idx) => (
               <div
                 key={idx}
-                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-2.5 transition-colors"
+                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
                   <span className="text-label font-semibold">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => playName(item.name, item.ipa, corpusB.fallbackCulture)}
-                  className="hover:bg-fill-3 text-label-secondary rounded-control-sm hover:text-yellow cursor-pointer p-1 transition-colors"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -389,12 +396,14 @@ export default function ComparatorSection({
           <h3 className="text-label-secondary text-subhead">
             Linguistic Hybridization (Blend Preview)
           </h3>
-          <button
+          <Button
+            variant="filled"
+            size="md"
             onClick={handleBlendPreview}
-            className="rounded-control bg-yellow text-footnote text-on-yellow shadow-card hover:bg-yellow flex cursor-pointer items-center justify-center px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+            className="justify-center"
           >
             Blend Profiles
-          </button>
+          </Button>
         </div>
 
         {hybridNames.length > 0 ? (
@@ -402,13 +411,15 @@ export default function ComparatorSection({
             {hybridNames.map((item, idx) => (
               <div
                 key={idx}
-                className="border-separator bg-fill-4 rounded-control text-footnote flex items-center justify-between border p-2.5"
+                className="border-separator bg-fill-4 rounded-control text-footnote flex items-center justify-between border p-3"
               >
                 <div>
                   <span className="text-label font-semibold">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() =>
                     playName(
                       item.name,
@@ -416,10 +427,11 @@ export default function ComparatorSection({
                       `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`
                     )
                   }
-                  className="hover:bg-fill-3 text-label-secondary rounded-control-sm hover:text-yellow cursor-pointer p-1 transition-colors"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>

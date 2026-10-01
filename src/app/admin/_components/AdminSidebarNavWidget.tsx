@@ -37,6 +37,7 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils/cn";
 import { SearchField } from "~/components/ui/search-field";
+import { buttonVariants } from "~/components/ui/button";
 
 export interface NavItem {
   label: string;
@@ -552,12 +553,15 @@ export function AdminSidebarNavWidget({
     }).filter((group) => group.subgroups.length > 0);
   }, [searchQuery]);
 
+  // Sidebar-style nav row: the `ghost` Button at the 36px control height (follows Compact
+  // density), left-aligned, with tint selection for the current section.
   const rowClass = (active: boolean) =>
     cn(
-      "group flex w-full items-center gap-2.5 rounded-control px-2 py-1.5 text-left text-callout transition-[color,background-color,transform] duration-fast active:scale-[0.98] motion-reduce:active:scale-100",
+      buttonVariants({ variant: "ghost", size: "md" }),
+      "group text-callout flex w-full justify-start gap-2 px-2 text-left font-normal",
       active
-        ? "bg-tint-fill text-tint font-medium"
-        : "text-label-secondary hover:bg-fill-4 hover:text-label"
+        ? "bg-tint-fill text-tint hover:bg-tint/20 font-medium"
+        : "text-label-secondary hover:text-label"
     );
 
   const rowBody = (item: NavItem) => {
@@ -599,7 +603,7 @@ export function AdminSidebarNavWidget({
 
       <nav className="space-y-5">
         {filteredGroups.map((group) => (
-          <div key={group.title} className="space-y-1.5">
+          <div key={group.title} className="space-y-2">
             <h3 className="text-subhead text-label-secondary px-2">{group.title}</h3>
 
             {/* Inset-grouped surface */}

@@ -39,7 +39,7 @@ export function CardTakedownsAdmin() {
   return (
     <div className="space-y-6">
       <FacetCard className="border-red/30 bg-red/5 space-y-4 p-6">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="rounded-row border-red/30 bg-red/20 border p-2">
             <ShieldAlert className="text-red h-5 w-5" />
           </div>
@@ -84,9 +84,9 @@ export function CardTakedownsAdmin() {
             }
           >
             {hideNSCardMutation.isPending ? (
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
+              <ShieldAlert className="mr-2 h-3.5 w-3.5" />
             )}
             Hide Card
           </Button>

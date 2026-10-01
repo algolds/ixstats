@@ -265,7 +265,7 @@ function CronSchedule({
           {title && <h3 className="text-label text-headline">{title}</h3>}
           <p className="text-label-secondary text-body">{summary}</p>
         </div>
-        <code className="bg-fill-3 text-label rounded-control-sm text-footnote shrink-0 px-2.5 py-1 font-mono">
+        <code className="bg-fill-3 text-label rounded-control-sm text-footnote shrink-0 px-3 py-1 font-mono">
           {expression}
         </code>
       </div>
@@ -277,7 +277,7 @@ function CronSchedule({
           const description = describeField(field, i, min, max);
 
           return (
-            <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-1.5 px-2 py-3">
+            <div key={FIELD_NAMES[i]} className="flex flex-col items-center gap-2 px-2 py-3">
               <Eyebrow>{FIELD_NAMES[i]}</Eyebrow>
               <span className="text-label text-headline tabular-nums">{field}</span>
               <span className="text-label-secondary text-footnote text-center">{description}</span>

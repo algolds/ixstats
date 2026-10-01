@@ -229,7 +229,7 @@ export function WorldTimeline() {
                 {isExpanded && (
                   <div className="border-separator mt-3 space-y-2 border-t pt-3">
                     <h5 className="text-label text-subhead">Affected Countries</h5>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {event.affectedCountries.map((ac) => (
                         <Badge key={ac.country.id} variant="outline">
                           {ac.country.name}

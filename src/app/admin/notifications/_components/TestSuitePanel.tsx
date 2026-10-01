@@ -26,8 +26,13 @@ import {
   Bell,
   Flask as FlaskConical,
 } from "iconoir-react";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -302,19 +307,19 @@ export function TestSuitePanel() {
         <CardContent>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Button variant="destructive" onClick={() => triggerPreset("crisis")}>
-              <ShieldAlert className="mr-1.5 h-4 w-4" />
+              <ShieldAlert className="mr-2 h-4 w-4" />
               Crisis Alert
             </Button>
             <Button variant="tinted" onClick={() => triggerPreset("achievement")}>
-              <Award className="mr-1.5 h-4 w-4" />
+              <Award className="mr-2 h-4 w-4" />
               Achievement
             </Button>
             <Button variant="tinted" onClick={() => triggerPreset("security")}>
-              <AlertTriangle className="mr-1.5 h-4 w-4" />
+              <AlertTriangle className="mr-2 h-4 w-4" />
               Security Intel
             </Button>
             <Button variant="tinted" onClick={() => triggerPreset("trade")}>
-              <Sparkles className="mr-1.5 h-4 w-4" />
+              <Sparkles className="mr-2 h-4 w-4" />
               Trade Pact
             </Button>
           </div>
@@ -390,11 +395,11 @@ export function TestSuitePanel() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Title</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Message</Label>
                 <Textarea
                   value={message}
@@ -403,57 +408,54 @@ export function TestSuitePanel() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-footnote">Type</Label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as ToastType)}
-                    className={cn(
-                      fieldStyles,
-                      "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                    )}
-                  >
-                    {TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={type} onValueChange={(v) => setType(v as ToastType)}>
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-footnote">Priority</Label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                    className={cn(
-                      fieldStyles,
-                      "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                    )}
-                  >
-                    {PRIORITIES.map((p) => (
-                      <option key={p.value} value={p.value}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as ToastPriority)}>
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-footnote">Category</Label>
-                <select
+                <Select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                  onValueChange={(v) => setCategory(v as NotificationCategory)}
                 >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -505,7 +507,7 @@ export function TestSuitePanel() {
                 No test results yet. Run some tests above.
               </p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {testResults.map((result, i) => {
                   let color = "bg-blue/10 text-blue";
                   if (result.includes("✅")) color = "bg-green/10 text-green";
@@ -520,7 +522,7 @@ export function TestSuitePanel() {
                   return (
                     <div
                       key={i}
-                      className={`rounded-control-sm text-footnote px-3 py-1.5 tabular-nums ${color}`}
+                      className={`rounded-control-sm text-footnote px-3 py-2 tabular-nums ${color}`}
                     >
                       {result}
                     </div>

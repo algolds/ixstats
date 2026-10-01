@@ -18,6 +18,14 @@ import {
 import { cn } from "~/lib/utils";
 import type { ScanResult } from "./types";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function BulkScannerSection({ countriesData }: { countriesData: any }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -153,9 +161,9 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
         <div className="flex items-center gap-2">
           <Button onClick={handleScan} disabled={isScanning || unlinkedCountries.length === 0}>
             {isScanning ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Search className="mr-1.5 h-3.5 w-3.5" />
+              <Search className="mr-2 h-3.5 w-3.5" />
             )}
             {isScanning ? "Scanning..." : "Scan Unlinked Countries"}
           </Button>
@@ -167,9 +175,9 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
               disabled={selectedCount === 0 || isLinking}
             >
               {isLinking ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                <Link2 className="mr-2 h-3.5 w-3.5" />
               )}
               {isLinking ? "Linking..." : `Link Selected (${selectedCount})`}
             </Button>
@@ -178,7 +186,7 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
 
         {/* Progress */}
         {isScanning && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>
                 Scanning {scanProgress.current} of {scanProgress.total}...
@@ -207,57 +215,57 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
         )}
 
         {scanResults.length > 0 && (
-          <div className="border-separator rounded-row max-h-[24rem] overflow-x-auto overflow-y-auto border">
-            <table className="text-footnote w-full tabular-nums">
-              <thead className="bg-fill-4 border-separator text-label-secondary sticky top-0 border-b font-semibold">
-                <tr>
-                  <th className="w-10 px-3 py-2.5 text-center" />
-                  <th className="px-3 py-2.5 text-left font-medium">Country</th>
-                  <th className="px-3 py-2.5 text-left font-medium">Matched Page</th>
-                  <th className="hidden px-3 py-2.5 text-left font-medium sm:table-cell">Source</th>
-                  <th className="px-3 py-2.5 text-right font-medium">Confidence</th>
-                </tr>
-              </thead>
-              <tbody className="divide-separator divide-y">
-                {scanResults.map((result) => (
-                  <tr
-                    key={result.countryId}
-                    className={cn(
-                      "transition-colors",
-                      result.selected ? "bg-tint-fill" : "hover:bg-fill-4"
-                    )}
-                  >
-                    <td className="px-3 py-2.5 text-center">
-                      <Checkbox
-                        aria-label={`Select ${result.countryName}`}
-                        checked={result.selected}
-                        onCheckedChange={() => toggleResult(result.countryId)}
-                      />
-                    </td>
-                    <td className="text-label px-3 py-2.5 font-semibold">{result.countryName}</td>
-                    <td className="text-label-secondary max-w-[10rem] truncate px-3 py-2.5 tabular-nums">
-                      {result.matchedTitle}
-                    </td>
-                    <td className="hidden px-3 py-2.5 sm:table-cell">
-                      <Badge variant="outline">{result.source}</Badge>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span
-                        className={cn(
-                          "rounded-control-sm text-caption inline-block border px-2 py-0.5",
-                          result.confidence === "exact"
-                            ? "border-green/30 bg-green/10 text-green"
-                            : "border-yellow/30 bg-yellow/10 text-yellow"
-                        )}
-                      >
-                        {result.confidence === "exact" ? "Exact" : "Partial"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table containerClassName="max-h-[24rem]">
+            <TableHeader sticky>
+              <TableRow>
+                <TableHead className="w-10 px-3 text-center" />
+                <TableHead className="px-3">Country</TableHead>
+                <TableHead className="px-3">Matched Page</TableHead>
+                <TableHead className="hidden px-3 sm:table-cell">Source</TableHead>
+                <TableHead className="px-3 text-right">Confidence</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scanResults.map((result) => (
+                <TableRow
+                  key={result.countryId}
+                  className={cn(
+                    "transition-colors",
+                    result.selected ? "bg-tint-fill" : "hover:bg-fill-4"
+                  )}
+                >
+                  <TableCell className="px-3 text-center">
+                    <Checkbox
+                      aria-label={`Select ${result.countryName}`}
+                      checked={result.selected}
+                      onCheckedChange={() => toggleResult(result.countryId)}
+                    />
+                  </TableCell>
+                  <TableCell className="text-label px-3 font-semibold">
+                    {result.countryName}
+                  </TableCell>
+                  <TableCell className="text-label-secondary max-w-[10rem] truncate px-3">
+                    {result.matchedTitle}
+                  </TableCell>
+                  <TableCell className="hidden px-3 sm:table-cell">
+                    <Badge variant="outline">{result.source}</Badge>
+                  </TableCell>
+                  <TableCell className="px-3 text-right">
+                    <span
+                      className={cn(
+                        "rounded-control-sm text-caption inline-block border px-2 py-0.5",
+                        result.confidence === "exact"
+                          ? "border-green/30 bg-green/10 text-green"
+                          : "border-yellow/30 bg-yellow/10 text-yellow"
+                      )}
+                    >
+                      {result.confidence === "exact" ? "Exact" : "Partial"}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
     </FacetCard>

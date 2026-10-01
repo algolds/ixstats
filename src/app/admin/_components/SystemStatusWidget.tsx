@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 
 /** The console's live status: IxTime, bot connection and system health. */
 function useSystemStatus() {
@@ -84,7 +85,7 @@ export function SystemStatusStrip({ className }: { className?: string }) {
       role="status"
       aria-label="System console"
       className={cn(
-        "text-footnote flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 tabular-nums",
+        "text-footnote flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 tabular-nums",
         className
       )}
     >
@@ -92,7 +93,7 @@ export function SystemStatusStrip({ className }: { className?: string }) {
         <Shield aria-hidden className="text-tint size-4" />
         System console
       </span>
-      <span className="flex items-center gap-1.5" title="Current IxTime">
+      <span className="flex items-center gap-2" title="Current IxTime">
         <Clock aria-hidden className="text-label-secondary size-3.5" />
         <span className="text-label font-medium">
           {s.liveFormattedTime || s.systemStatus?.ixTime?.formattedIxTime || "N/A"}
@@ -101,22 +102,22 @@ export function SystemStatusStrip({ className }: { className?: string }) {
           <span className="text-label-secondary">({s.configData.timeMultiplier.toFixed(1)}x)</span>
         )}
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         <StatusDot tone={s.botAvailable ? "green" : "red"} />
         <span className="text-label-secondary">Discord bot</span>
         <span className="text-label">{s.botAvailable ? "Connected" : "Disconnected"}</span>
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         <span className="text-label-secondary">Countries</span>
         <span className="text-label font-medium">{s.systemStatus?.countryCount ?? 0}</span>
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         <span className="text-label-secondary">Storyteller events</span>
         <span className="text-label font-medium">
           {s.systemStatus?.activeStorytellerEffects ?? 0}
         </span>
       </span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-2">
         <span className="text-label-secondary">Last recalc</span>
         <span className="text-label font-medium">
           {formatLastRecalc(s.systemStatus?.lastCalculation?.timestamp)}
@@ -161,11 +162,11 @@ export function SystemStatusWidget() {
   return (
     <FacetCard className="w-full overflow-hidden">
       {/* Header (toggles collapse) */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         onClick={toggleCollapsed}
         aria-expanded={!isCollapsed}
-        className="hover:bg-fill-4 duration-fast flex w-full items-center justify-between px-4 py-3 text-left transition-colors select-none"
+        className="h-auto w-full justify-between rounded-none px-4 py-3 text-left active:scale-100"
       >
         <span className="flex items-center gap-2">
           <span className="bg-tint-fill text-tint rounded-control-sm p-1">
@@ -181,10 +182,10 @@ export function SystemStatusWidget() {
           )}
           <span className="sr-only">{isCollapsed ? "Expand" : "Collapse"}</span>
         </span>
-      </button>
+      </Button>
 
       {isCollapsed ? (
-        <div className="border-separator text-footnote flex items-center justify-between gap-1.5 overflow-hidden border-t px-3 py-2 tabular-nums">
+        <div className="border-separator text-footnote flex items-center justify-between gap-2 overflow-hidden border-t px-3 py-2 tabular-nums">
           {/* IxTime */}
           <span
             className="text-label max-w-[100px] shrink-0 truncate font-medium whitespace-nowrap"
@@ -215,7 +216,7 @@ export function SystemStatusWidget() {
         <div className="border-separator space-y-3 border-t p-4 tabular-nums">
           {/* Live IxTime Display */}
           <div className="space-y-1">
-            <div className="text-eyebrow text-label-secondary flex items-center gap-1.5">
+            <div className="text-eyebrow text-label-secondary flex items-center gap-2">
               <Clock aria-hidden className="size-3.5" />
               IxTime
             </div>
@@ -225,7 +226,7 @@ export function SystemStatusWidget() {
               <div className="text-headline text-label">
                 {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "N/A"}
                 {configData?.timeMultiplier !== undefined && (
-                  <span className="text-footnote text-label-secondary ml-1.5 font-normal">
+                  <span className="text-footnote text-label-secondary ml-2 font-normal">
                     ({configData.timeMultiplier.toFixed(1)}x)
                   </span>
                 )}
@@ -235,7 +236,7 @@ export function SystemStatusWidget() {
 
           {/* Discord Bot Status */}
           <div className="space-y-1">
-            <div className="text-eyebrow text-label-secondary flex items-center gap-1.5">
+            <div className="text-eyebrow text-label-secondary flex items-center gap-2">
               <Bot aria-hidden className="size-3.5" />
               Discord Bot
             </div>
@@ -252,9 +253,9 @@ export function SystemStatusWidget() {
           </div>
 
           {/* Quick System Indicators */}
-          <dl className="border-separator text-footnote space-y-1.5 border-t pt-3">
+          <dl className="border-separator text-footnote space-y-2 border-t pt-3">
             <div className="flex items-center justify-between">
-              <dt className="text-label-secondary flex items-center gap-1.5">
+              <dt className="text-label-secondary flex items-center gap-2">
                 <Activity aria-hidden className="size-3.5" />
                 Countries
               </dt>
@@ -291,7 +292,7 @@ export function SystemStatusWidget() {
 
             {warningCount > 0 && (
               <div className="bg-warning/10 rounded-control-sm mt-1 flex items-center justify-between px-2 py-1">
-                <dt className="text-warning flex items-center gap-1.5">
+                <dt className="text-warning flex items-center gap-2">
                   <AlertTriangle aria-hidden className="size-3.5" />
                   Warnings
                 </dt>

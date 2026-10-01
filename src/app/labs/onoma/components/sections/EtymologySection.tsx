@@ -18,6 +18,15 @@ import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface DerivationNode {
   id: string;
@@ -187,29 +196,32 @@ export default function EtymologySection() {
         <div className="group flex items-start gap-2">
           <div className="mt-1 flex items-center justify-center">
             {hasChildren ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-label-secondary hover:text-label cursor-pointer"
+                aria-label="Toggle children"
+                className="text-label-secondary hover:text-label"
               >
                 {isOpen ? (
                   <ChevronDown className="h-3.5 w-3.5" />
                 ) : (
                   <ChevronRight className="h-3.5 w-3.5" />
                 )}
-              </button>
+              </Button>
             ) : (
               <CornerDownRight className="text-label-secondary h-3.5 w-3.5 opacity-55" />
             )}
           </div>
 
-          <div className="bg-fill-4 border-separator hover:bg-fill-4 rounded-control-sm hover:border-indigo/20 flex-1 border p-2.5 transition-colors">
+          <div className="bg-fill-4 border-separator hover:bg-fill-4 rounded-control-sm hover:border-indigo/20 flex-1 border p-3 transition-colors">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-label font-semibold">{node.word}</span>
                 {node.ipa && (
                   <span className="text-label-secondary text-caption ml-2">/{node.ipa}/</span>
                 )}
-                <span className="rounded-control-sm bg-indigo/10 text-footnote text-indigo ml-2 px-1.5 py-0.5 font-medium capitalize">
+                <span className="rounded-control-sm bg-indigo/10 text-footnote text-indigo ml-2 px-2 py-0.5 font-medium capitalize">
                   {node.derivationType}
                 </span>
                 {node.morphemeAdded && (
@@ -218,21 +230,27 @@ export default function EtymologySection() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
+              <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setAddingToParentId(node.id)}
                   title="Add child derivation"
-                  className="rounded-control-sm text-indigo hover:bg-indigo/20 cursor-pointer p-1"
+                  aria-label="Add child derivation"
+                  className="text-indigo"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => deleteDerivMutation.mutate({ id: node.id })}
                   title="Delete derivation"
-                  className="rounded-control-sm text-red hover:bg-red/20 cursor-pointer p-1"
+                  aria-label="Delete derivation"
+                  className="text-red"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
             <p className="text-label-secondary text-footnote mt-0.5">{node.meaning}</p>
@@ -283,32 +301,36 @@ export default function EtymologySection() {
                 </div>
               </div>
             ) : (
-              <div className="max-h-60 scrollbar-thin space-y-1.5 overflow-y-auto pr-1">
+              <FacetListSection
+                variant="plain"
+                aria-label="Proto-roots"
+                groupClassName="max-h-60 overflow-y-auto"
+              >
                 {roots?.map((r: any) => (
-                  <button
+                  <FacetRow
                     key={r.id}
                     onClick={() => {
                       setSelectedRootId(r.id);
                       setAddingToParentId(null);
                     }}
-                    className={`rounded-control-sm text-footnote flex w-full items-center justify-between px-3 py-2 text-left transition-colors ${
-                      selectedRootId === r.id
-                        ? "border-indigo/30 bg-indigo/10 text-indigo border"
-                        : "hover:bg-fill-4 text-label border border-transparent"
-                    }`}
-                  >
-                    <div>
-                      <span className="font-semibold">{r.root}</span>
-                      {r.ipa && (
-                        <span className="text-label-secondary text-caption ml-2">/{r.ipa}/</span>
-                      )}
-                    </div>
-                    <span className="text-label-secondary text-caption max-w-[120px] truncate italic">
-                      {r.meaning}
-                    </span>
-                  </button>
+                    selected={selectedRootId === r.id}
+                    selectionStyle="tint"
+                    title={
+                      <span className="text-footnote">
+                        <span className="font-semibold">{r.root}</span>
+                        {r.ipa && (
+                          <span className="text-label-secondary text-caption ml-2">/{r.ipa}/</span>
+                        )}
+                      </span>
+                    }
+                    trailing={
+                      <span className="text-label-secondary text-caption max-w-[120px] truncate italic">
+                        {r.meaning}
+                      </span>
+                    }
+                  />
                 ))}
-              </div>
+              </FacetListSection>
             )}
           </FacetCard>
 
@@ -367,14 +389,16 @@ export default function EtymologySection() {
                   className="text-footnote h-12 w-full"
                 />
               </div>
-              <button
+              <Button
+                variant="filled"
+                size="sm"
                 type="submit"
                 disabled={createRootMutation.isPending}
-                className="rounded-control-sm bg-indigo text-footnote text-on-indigo hover:bg-indigo flex w-full cursor-pointer items-center justify-center gap-1.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+                className="w-full justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Root Word
-              </button>
+              </Button>
             </form>
           </FacetCard>
         </div>
@@ -402,17 +426,19 @@ export default function EtymologySection() {
                       </p>
                     )}
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       if (confirm("Delete this root and all its derivations?")) {
                         deleteRootMutation.mutate({ id: activeRoot.id });
                       }
                     }}
-                    className="rounded-control-sm border-red/20 bg-red/5 text-footnote text-red hover:bg-red/10 hover:text-red flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold"
+                    className="text-red hover:text-red text-red hover:bg-red/10"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete Root
-                  </button>
+                  </Button>
                 </div>
               </FacetCard>
 
@@ -423,17 +449,14 @@ export default function EtymologySection() {
                 className="relative min-h-[300px] space-y-4 p-4"
               >
                 <div className="border-separator flex items-center justify-between border-b pb-2">
-                  <h4 className="text-label text-subhead flex items-center gap-1.5">
+                  <h4 className="text-label text-subhead flex items-center gap-2">
                     <GitFork className="text-indigo h-4 w-4" />
                     Derivation Tree Graph
                   </h4>
-                  <button
-                    onClick={() => setAddingToParentId(null)}
-                    className="rounded-control-sm border-indigo/20 bg-indigo/5 text-caption text-indigo hover:text-indigo flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold"
-                  >
+                  <Button variant="tinted" size="sm" onClick={() => setAddingToParentId(null)}>
                     <Plus className="h-3.5 w-3.5" />
                     Add Direct Derivation
-                  </button>
+                  </Button>
                 </div>
 
                 {derivLoading ? (
@@ -509,17 +532,18 @@ export default function EtymologySection() {
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
                         Derivation Type
                       </label>
-                      <select
-                        value={newDerivType}
-                        onChange={(e) => setNewDerivType(e.target.value)}
-                        className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
-                      >
-                        <option value="prefix">Prefixation (Affix)</option>
-                        <option value="suffix">Suffixation (Affix)</option>
-                        <option value="compound">Compounding</option>
-                        <option value="semantic-shift">Semantic Shift</option>
-                        <option value="reduplication">Reduplication</option>
-                      </select>
+                      <Select value={newDerivType} onValueChange={(v) => setNewDerivType(v)}>
+                        <SelectTrigger size="sm" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="prefix">Prefixation (Affix)</SelectItem>
+                          <SelectItem value="suffix">Suffixation (Affix)</SelectItem>
+                          <SelectItem value="compound">Compounding</SelectItem>
+                          <SelectItem value="semantic-shift">Semantic Shift</SelectItem>
+                          <SelectItem value="reduplication">Reduplication</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className="text-label-secondary text-caption mb-1 block font-medium">
@@ -565,21 +589,22 @@ export default function EtymologySection() {
 
                   <div className="flex justify-end gap-2">
                     {addingToParentId && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="bordered"
+                        size="sm"
                         onClick={() => setAddingToParentId(null)}
-                        className="border-separator hover:bg-fill-4 text-label rounded-control-sm text-footnote cursor-pointer border px-4 py-1.5 font-semibold"
                       >
                         Cancel Parent Link
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
+                      variant="filled"
+                      size="sm"
                       type="submit"
                       disabled={addDerivMutation.isPending}
-                      className="rounded-control-sm bg-indigo text-footnote text-on-indigo hover:bg-indigo cursor-pointer px-6 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                     >
                       Create Derivation
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </FacetCard>
@@ -599,13 +624,14 @@ export default function EtymologySection() {
                   </p>
                 </div>
                 {roots && roots.length > 0 && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="tinted"
+                    size="sm"
                     onClick={() => setSelectedRootId(roots[0].id)}
-                    className="rounded-control border-indigo/30 bg-indigo/10 text-footnote text-indigo hover:bg-indigo/20 mt-2 flex cursor-pointer items-center gap-1.5 border px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+                    className="mt-2"
                   >
                     <span>Open &quot;{roots[0].root}&quot; Tree</span>
-                  </button>
+                  </Button>
                 )}
               </div>
             </FacetCard>

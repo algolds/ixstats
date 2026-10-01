@@ -114,7 +114,7 @@ export function TimeControlCard({
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="text-headline flex items-center gap-2">
-              <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-1.5">
+              <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-2">
                 <Clock className="h-4 w-4" />
               </div>
               Time Flow Controller
@@ -123,7 +123,7 @@ export function TimeControlCard({
               Manage system simulation speed, time progression multipliers, and jump benchmarks
             </CardDescription>
           </div>
-          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
+          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-3 py-2">
             <Label
               htmlFor="time-advanced-mode"
               className="text-label-secondary text-subhead cursor-pointer select-none"
@@ -141,8 +141,8 @@ export function TimeControlCard({
 
       <CardContent className="space-y-4">
         {/* Live IxTime Display */}
-        <div className="rounded-control border-blue/20 bg-blue/5 space-y-2 border p-3.5">
-          <div className="text-eyebrow text-blue flex items-center gap-1.5">
+        <div className="rounded-control border-blue/20 bg-blue/5 space-y-2 border p-4">
+          <div className="text-eyebrow text-blue flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="bg-blue absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
               <span className="bg-blue relative inline-flex h-2 w-2 rounded-full"></span>
@@ -173,7 +173,7 @@ export function TimeControlCard({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Speed Multiplier</Label>
-            <Badge variant="blue" className="rounded-full px-2.5 py-0.5 tabular-nums">
+            <Badge variant="blue" className="rounded-full px-3 py-0.5 tabular-nums">
               {timeMultiplier}x
             </Badge>
           </div>
@@ -207,7 +207,7 @@ export function TimeControlCard({
                 onClick={() => onTimeMultiplierChange(preset.value)}
                 aria-pressed={isSelected}
                 className={cn(
-                  "text-caption duration-fast flex h-9 items-center justify-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "text-caption duration-fast flex h-9 items-center justify-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   isSelected ? "bg-tint-fill border-tint/30 text-tint" : preset.color
                 )}
               >
@@ -220,7 +220,7 @@ export function TimeControlCard({
             variant="outline"
             size="sm"
             onClick={onResetToRealTime}
-            className="col-span-2 flex items-center justify-center gap-1.5 sm:col-span-1"
+            className="col-span-2 flex items-center justify-center gap-2 sm:col-span-1"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Reset Flow</span>

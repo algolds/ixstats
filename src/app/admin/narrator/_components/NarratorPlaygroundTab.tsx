@@ -131,7 +131,7 @@ export function NarratorPlaygroundTab() {
           </div>
 
           {/* Mode Switcher */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-subhead">Sandbox Snapshot Mode</Label>
               <p className="text-label-secondary text-footnote">
@@ -152,7 +152,7 @@ export function NarratorPlaygroundTab() {
 
           {/* Database Select Controls */}
           {!sandboxMode && (
-            <div className="border-separator bg-fill-3 rounded-row grid grid-cols-1 gap-3 border p-3.5 sm:grid-cols-3">
+            <div className="border-separator bg-fill-3 rounded-row grid grid-cols-1 gap-3 border p-4 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label className="text-label-secondary text-subhead">1. Country</Label>
                 <Select
@@ -277,12 +277,12 @@ export function NarratorPlaygroundTab() {
           >
             {testFlavorizeMutation.isPending ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Consulting LLM Chronicle...
               </>
             ) : (
               <>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                <Sparkles className="mr-2 h-3.5 w-3.5" />
                 Draft Flavor Card
               </>
             )}
@@ -304,7 +304,7 @@ export function NarratorPlaygroundTab() {
         {testFlavorizeMutation.isPending ? (
           <div className="rounded-card border-yellow/20 bg-yellow/5 relative flex min-h-[160px] flex-col justify-center overflow-hidden border p-5">
             <div className="bg-yellow/40 absolute top-0 left-0 h-full w-[3px]" />
-            <div className="text-eyebrow text-yellow mb-2 flex items-center gap-1.5">
+            <div className="text-eyebrow text-yellow mb-2 flex items-center gap-2">
               <ScrollText className="h-4 w-4" />
               <span>The Chronicle</span>
             </div>
@@ -316,7 +316,7 @@ export function NarratorPlaygroundTab() {
           <div className="rounded-card border-yellow/30 bg-yellow/5 relative min-h-[160px] overflow-hidden border p-5">
             <div className="bg-yellow/80 absolute top-0 left-0 h-full w-[3px]" />
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-eyebrow text-yellow flex items-center gap-1.5">
+              <div className="text-eyebrow text-yellow flex items-center gap-2">
                 <ScrollText className="h-4 w-4" />
                 <span>The Chronicle</span>
               </div>
@@ -336,7 +336,7 @@ export function NarratorPlaygroundTab() {
           </FacetCard>
         )}
 
-        <FacetCard className="text-footnote space-y-1.5 p-4">
+        <FacetCard className="text-footnote space-y-2 p-4">
           <h4 className="text-label text-subhead">Immersion Snapshots</h4>
           <p className="text-label-secondary text-footnote leading-relaxed">
             During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a

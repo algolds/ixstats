@@ -86,7 +86,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
               </SelectContent>
             </Select>
           </div>
-          <Button className="mt-6 gap-1.5" onClick={handleGenerateSchedule}>
+          <Button className="mt-6 gap-2" onClick={handleGenerateSchedule}>
             <Calendar className="h-4 w-4" />
             Generate
           </Button>
@@ -121,7 +121,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -138,7 +138,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
@@ -156,14 +156,14 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
       )}
 
       {dbSeason && (
-        <div className="border-separator text-footnote flex items-center justify-between border-b py-1.5">
+        <div className="border-separator text-footnote flex items-center justify-between border-b py-2">
           <span className="text-label-secondary">Active Stage:</span>
           <Badge variant="yellow">Stage {(dbSeason as any).activeStage ?? 1}</Badge>
         </div>
       )}
 
       {dbLeague && (dbLeague as any).settings?.stages && (
-        <div className="border-tint/20 bg-tint-fill rounded-control text-footnote space-y-1 border p-2.5">
+        <div className="border-tint/20 bg-tint-fill rounded-control text-footnote space-y-1 border p-3">
           <p className="text-tint font-semibold">Tournament Stages Configured:</p>
           {((dbLeague as any).settings.stages as any[]).map((stg: any, sIdx: number) => (
             <div
@@ -199,7 +199,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
                 {m.homeTeam.shortName ?? m.homeTeam.name} vs{" "}
                 {m.awayTeam.shortName ?? m.awayTeam.name}
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {(m as any).stage && (
                   <Badge variant="secondary" className="px-1 tabular-nums">
                     S{(m as any).stage}

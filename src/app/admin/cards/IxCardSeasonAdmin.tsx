@@ -7,9 +7,14 @@ import { Component as Layers, Refresh as RefreshCw, FloppyDisk as Save } from "i
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export function IxCardSeasonAdmin() {
   const notify = useNotify();
@@ -59,20 +64,21 @@ export function IxCardSeasonAdmin() {
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <label className="text-label text-body font-medium">Current IxCard Season:</label>
-            <select
-              value={selectedSeason}
-              onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-              className={cn(
-                fieldStyles,
-                "rounded-control text-body h-(--control-height) cursor-pointer px-3"
-              )}
+            <Select
+              value={String(selectedSeason)}
+              onValueChange={(v) => setSelectedSeason(parseInt(v))}
             >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((s) => (
-                <option key={s} value={s}>
-                  Season {s}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    Season {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               onClick={() => setSeasonMutation.mutate({ season: selectedSeason })}
               disabled={setSeasonMutation.isPending || selectedSeason === currentSeason}

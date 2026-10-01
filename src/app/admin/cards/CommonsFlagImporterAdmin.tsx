@@ -22,8 +22,13 @@ import {
   Check,
 } from "iconoir-react";
 import type { CardRarity } from "@prisma/client";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 function cleanCategoryTitle(input: string): string {
   let cleaned = input.trim();
@@ -139,7 +144,7 @@ export function CommonsFlagImporterAdmin() {
       {/* Header */}
       <div className="border-separator flex flex-col gap-2 border-b pb-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-row border-teal/30 bg-teal/10 border p-2.5">
+          <div className="rounded-row border-teal/30 bg-teal/10 border p-3">
             <Globe className="text-teal h-5 w-5" />
           </div>
           <div>
@@ -181,11 +186,11 @@ export function CommonsFlagImporterAdmin() {
             >
               {commonsQuery.isFetching ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Parsing...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing...
                 </>
               ) : (
                 <>
-                  Parse Category <ArrowRight className="ml-1.5 h-4 w-4" />
+                  Parse Category <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
@@ -248,21 +253,19 @@ export function CommonsFlagImporterAdmin() {
             <label className="text-label-secondary text-caption mb-1 block">
               Target Card Rarity
             </label>
-            <select
-              value={defaultRarity}
-              onChange={(e) => setDefaultRarity(e.target.value as CardRarity)}
-              className={cn(
-                fieldStyles,
-                "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-              )}
-            >
-              <option value="COMMON">Common</option>
-              <option value="UNCOMMON">Uncommon</option>
-              <option value="RARE">Rare</option>
-              <option value="ULTRA_RARE">Ultra Rare</option>
-              <option value="EPIC">Epic</option>
-              <option value="LEGENDARY">Legendary</option>
-            </select>
+            <Select value={defaultRarity} onValueChange={(v) => setDefaultRarity(v as CardRarity)}>
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="COMMON">Common</SelectItem>
+                <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+                <SelectItem value="RARE">Rare</SelectItem>
+                <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                <SelectItem value="EPIC">Epic</SelectItem>
+                <SelectItem value="LEGENDARY">Legendary</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Season */}
@@ -270,18 +273,16 @@ export function CommonsFlagImporterAdmin() {
             <label className="text-label-secondary text-caption mb-1 block">
               Target Card Season
             </label>
-            <select
-              value={season}
-              onChange={(e) => setSeason(parseInt(e.target.value, 10))}
-              className={cn(
-                fieldStyles,
-                "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-              )}
-            >
-              <option value={1}>Season 1</option>
-              <option value={2}>Season 2</option>
-              <option value={3}>Season 3</option>
-            </select>
+            <Select value={String(season)} onValueChange={(v) => setSeason(parseInt(v, 10))}>
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={String(1)}>Season 1</SelectItem>
+                <SelectItem value={String(2)}>Season 2</SelectItem>
+                <SelectItem value={String(3)}>Season 3</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </FacetCard>
@@ -324,11 +325,11 @@ export function CommonsFlagImporterAdmin() {
                 {selectedItemUrls.size > 0 &&
                 unmintedItems.every((i) => selectedItemUrls.has(i.fileUrl)) ? (
                   <>
-                    <CheckSquare className="text-teal mr-1.5 h-3.5 w-3.5" /> Deselect All
+                    <CheckSquare className="text-teal mr-2 h-3.5 w-3.5" /> Deselect All
                   </>
                 ) : (
                   <>
-                    <Square className="text-label-secondary mr-1.5 h-3.5 w-3.5" /> Select Unminted (
+                    <Square className="text-label-secondary mr-2 h-3.5 w-3.5" /> Select Unminted (
                     {unmintedItems.length})
                   </>
                 )}
@@ -359,11 +360,11 @@ export function CommonsFlagImporterAdmin() {
               >
                 {importMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Minting Cards...
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Minting Cards...
                   </>
                 ) : (
                   <>
-                    <Download className="mr-1.5 h-3.5 w-3.5" /> Mint Selected Flags (
+                    <Download className="mr-2 h-3.5 w-3.5" /> Mint Selected Flags (
                     {selectedItemUrls.size})
                   </>
                 )}
@@ -381,7 +382,7 @@ export function CommonsFlagImporterAdmin() {
                 <div
                   key={item.fileUrl}
                   onClick={() => handleToggleItem(item.fileUrl)}
-                  className={`group rounded-row relative flex cursor-pointer flex-col justify-between border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                  className={`group rounded-row relative flex cursor-pointer flex-col justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                     isMinted
                       ? "border-separator bg-surface opacity-55 grayscale hover:opacity-100 hover:grayscale-0"
                       : isSelected
@@ -399,7 +400,7 @@ export function CommonsFlagImporterAdmin() {
 
                     {/* Already Minted Badge */}
                     {isMinted && (
-                      <div className="rounded-control-sm bg-green/90 text-caption text-label absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5">
+                      <div className="rounded-control-sm bg-green/90 text-caption text-label absolute top-1 left-1 flex items-center gap-1 px-2 py-0.5">
                         <Check className="h-2.5 w-2.5" /> Minted
                       </div>
                     )}

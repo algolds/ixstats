@@ -67,14 +67,14 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
       >
         <Link
           href="/admin/maps/editor"
-          className="bg-tint text-on-tint hover:bg-tint-hover rounded-control text-caption flex items-center gap-1.5 px-3 py-1.5 transition-[background-color,transform] active:scale-[0.98]"
+          className="bg-tint text-on-tint hover:bg-tint-hover rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-[background-color,transform] active:scale-[0.98]"
         >
           <EditPencil className="h-3.5 w-3.5" />
           Open World Editor
         </Link>
         <Link
           href="/admin/maps/style-editor"
-          className="border-separator text-label-secondary hover:bg-fill-4 hover:text-label rounded-control text-caption flex items-center gap-1.5 border px-3 py-1.5 transition-[background-color,color,transform] active:scale-[0.98]"
+          className="border-separator text-label-secondary hover:bg-fill-4 hover:text-label rounded-control text-caption flex items-center gap-2 border px-3 py-2 transition-[background-color,color,transform] active:scale-[0.98]"
         >
           <Palette className="h-3.5 w-3.5" />
           Style Editor
@@ -83,7 +83,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <Eyebrow className="block">Total Features</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -94,7 +94,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <Eyebrow className="block">Political Regions</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -105,7 +105,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <Eyebrow className="block">Linked Countries</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -116,7 +116,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <Eyebrow className="block">Linkage Rate</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />

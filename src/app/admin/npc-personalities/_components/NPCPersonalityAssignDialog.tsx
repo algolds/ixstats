@@ -49,7 +49,7 @@ export function NPCPersonalityAssignDialog({
 
         <div className="space-y-4">
           <div>
-            <label className="text-label text-caption mb-1.5 block">Country ID *</label>
+            <label className="text-label text-caption mb-2 block">Country ID *</label>
             <Input
               value={countryId}
               onChange={(e) => setCountryId(e.target.value)}
@@ -59,7 +59,7 @@ export function NPCPersonalityAssignDialog({
           </div>
 
           <div>
-            <label className="text-label text-caption mb-1.5 block">Assignment Reason</label>
+            <label className="text-label text-caption mb-2 block">Assignment Reason</label>
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}

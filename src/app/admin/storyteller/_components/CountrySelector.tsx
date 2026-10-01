@@ -88,7 +88,7 @@ export function CountrySelector({
 
       {/* Selected badges */}
       {selectedIds.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {selectedIds.slice(0, 10).map((id) => {
             // oxlint-disable-next-line eslint/no-shadow -- shadowed 'c' is intentional in this scope
             const c = countries.find((c) => c.id === id);
@@ -99,7 +99,7 @@ export function CountrySelector({
                 size="sm"
                 variant="bordered"
                 aria-label={`Remove ${c.name}`}
-                className="hover:bg-destructive/10 gap-1 rounded-full pr-2 pl-1.5"
+                className="hover:bg-destructive/10 gap-1 rounded-full pr-2 pl-2"
                 onClick={() => toggle(id)}
               >
                 <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />

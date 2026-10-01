@@ -31,21 +31,21 @@ export function NotificationsAdmin() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
           <TabsTrigger
             value="rules"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <ListTree className="h-3.5 w-3.5" />
             Rules & Event Hooks
           </TabsTrigger>
           <TabsTrigger
             value="log"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <ScanEye className="h-3.5 w-3.5" />
             Logs & Inbox
           </TabsTrigger>
           <TabsTrigger
             value="testing"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-1.5 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
           >
             <Send className="h-3.5 w-3.5" />
             Testing & Composition

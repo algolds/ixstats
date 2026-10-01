@@ -301,7 +301,7 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="group border-separator bg-surface hover:border-separator rounded-card shadow-card block border p-3.5 transition-colors transition-transform active:scale-[0.98]"
+                      className="group border-separator bg-surface hover:border-separator rounded-card shadow-card block border p-4 transition-colors transition-transform active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">

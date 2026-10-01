@@ -139,11 +139,11 @@ export default function DedicatedLogsPage() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Fetched Logs</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{entries.length}</p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Errors / Warnings</p>
           <p
             className={`text-title-2 mt-1 tabular-nums ${errorCount > 0 ? "text-red" : "text-green"}`}
@@ -151,23 +151,23 @@ export default function DedicatedLogsPage() {
             {errorCount}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Auto-Refresh</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {autoRefresh ? "8s Live" : "Paused"}
           </p>
         </FacetCard>
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Level Scope</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedLevel}</p>
         </FacetCard>
       </div>
 
       {/* Single-line Filter Rail */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-xs min-w-[180px] flex-1">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search log messages..."
               value={searchTerm}
@@ -237,7 +237,7 @@ export default function DedicatedLogsPage() {
             </SelectContent>
           </Select>
 
-          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch
               id="nextjs-errors"
               checked={nextJsErrors}
@@ -247,7 +247,7 @@ export default function DedicatedLogsPage() {
             <span>Errors only</span>
           </label>
 
-          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch
               id="auto-refresh"
               checked={autoRefresh}
@@ -265,7 +265,7 @@ export default function DedicatedLogsPage() {
             onClick={() => void refetch()}
             disabled={isLoading || isFetching}
           >
-            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             Reload
           </Button>
           <Button
@@ -274,7 +274,7 @@ export default function DedicatedLogsPage() {
             onClick={handleClearLogs}
             disabled={clearLogsMutation.isPending}
           >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
             Purge Logs
           </Button>
         </div>

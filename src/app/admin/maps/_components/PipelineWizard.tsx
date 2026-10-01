@@ -56,6 +56,14 @@ import {
   Flash as Zap,
   Settings as Settings2,
 } from "iconoir-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 // ─── Quick Update Types & Helpers ───────────────────────────────────────────
 
@@ -356,7 +364,7 @@ function QuickUpdatePanel() {
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={reset}>
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Start Over
+              <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start Over
             </Button>
           </div>
 
@@ -423,74 +431,72 @@ function QuickUpdatePanel() {
           </Button>
 
           {detailsExpanded && result.diff && (
-            <FacetCard className="rounded-control max-h-64 overflow-y-auto">
-              <table className="text-body w-full tabular-nums">
-                <thead className="bg-fill-3 text-label-secondary text-footnote sticky top-0 text-left">
-                  <tr>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Feature ID</th>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Country Link</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
-                  {result.diff.added.map((f) => (
+            <Table containerClassName="max-h-64">
+              <TableHeader sticky>
+                <TableRow>
+                  <TableHead className="px-3">Status</TableHead>
+                  <TableHead className="px-3">Feature ID</TableHead>
+                  <TableHead className="px-3">Name</TableHead>
+                  <TableHead className="px-3">Country Link</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {result.diff.added.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="added"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                  />
+                ))}
+                {result.diff.modified.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="modified"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                  />
+                ))}
+                {result.diff.removed.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="removed"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                    countryName={f.countryName}
+                  />
+                ))}
+                {result.diff.unchanged.slice(0, 20).map((f) => {
+                  const link = result.diff!.preservedLinkages.find(
+                    (l) => l.featureId === f.featureId
+                  );
+                  return (
                     <DiffRow
                       key={f.featureId}
-                      status="added"
+                      status="unchanged"
                       featureId={f.featureId}
                       displayName={f.displayName}
+                      countryName={link?.countryName}
                     />
-                  ))}
-                  {result.diff.modified.map((f) => (
-                    <DiffRow
-                      key={f.featureId}
-                      status="modified"
-                      featureId={f.featureId}
-                      displayName={f.displayName}
-                    />
-                  ))}
-                  {result.diff.removed.map((f) => (
-                    <DiffRow
-                      key={f.featureId}
-                      status="removed"
-                      featureId={f.featureId}
-                      displayName={f.displayName}
-                      countryName={f.countryName}
-                    />
-                  ))}
-                  {result.diff.unchanged.slice(0, 20).map((f) => {
-                    const link = result.diff!.preservedLinkages.find(
-                      (l) => l.featureId === f.featureId
-                    );
-                    return (
-                      <DiffRow
-                        key={f.featureId}
-                        status="unchanged"
-                        featureId={f.featureId}
-                        displayName={f.displayName}
-                        countryName={link?.countryName}
-                      />
-                    );
-                  })}
-                  {result.diff.unchanged.length > 20 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="text-label-secondary text-footnote px-3 py-2 text-center"
-                      >
-                        ...and {result.diff.unchanged.length - 20} more unchanged features
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </FacetCard>
+                  );
+                })}
+                {result.diff.unchanged.length > 20 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-label-secondary text-footnote px-3 text-center"
+                    >
+                      ...and {result.diff.unchanged.length - 20} more unchanged features
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           )}
 
           <div className="flex gap-3 pt-2">
             <Button onClick={handleCommit}>
-              <Upload className="mr-1.5 h-4 w-4" />
+              <Upload className="mr-2 h-4 w-4" />
               Apply Update
             </Button>
             <Button variant="outline" onClick={reset}>
@@ -1096,15 +1102,17 @@ function DiffRow({
   const cfg = statusConfig[status];
 
   return (
-    <tr className="text-label">
-      <td className="px-3 py-1.5">
+    <TableRow className="text-label">
+      <TableCell className="px-3 py-2">
         <Badge variant="outline" className={cfg.className}>
           {cfg.label}
         </Badge>
-      </td>
-      <td className="text-label-secondary text-footnote px-3 py-1.5 font-mono">{featureId}</td>
-      <td className="text-body px-3 py-1.5">{displayName}</td>
-      <td className="px-3 py-1.5">
+      </TableCell>
+      <TableCell className="text-label-secondary text-footnote px-3 py-2 font-mono">
+        {featureId}
+      </TableCell>
+      <TableCell className="text-body px-3 py-2">{displayName}</TableCell>
+      <TableCell className="px-3 py-2">
         {countryName ? (
           <span className="text-footnote text-yellow inline-flex items-center gap-1">
             <Link2 className="h-3 w-3" />
@@ -1113,7 +1121,7 @@ function DiffRow({
         ) : (
           <span className="text-label-secondary text-footnote">—</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

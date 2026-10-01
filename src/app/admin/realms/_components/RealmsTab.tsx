@@ -26,9 +26,15 @@ import {
   Eye,
   Plus,
 } from "iconoir-react";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green/10 text-green border-green/20",
@@ -62,9 +68,9 @@ function NationCapCell({
   draft: string | undefined;
   onChange: (value: string) => void;
 }) {
-  if (!editing) return <td className="px-4 py-3 text-center font-medium">{current}</td>;
+  if (!editing) return <TableCell className="px-4 text-center font-medium">{current}</TableCell>;
   return (
-    <td className="px-4 py-3">
+    <TableCell className="px-4">
       <Input
         type="number"
         min={1}
@@ -75,7 +81,7 @@ function NationCapCell({
         value={draft ?? String(current)}
         onChange={(e) => onChange(e.target.value)}
       />
-    </td>
+    </TableCell>
   );
 }
 
@@ -120,7 +126,7 @@ function NewRealmForm() {
         });
       }}
     >
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="new-realm-name">Name</Label>
         <Input
           id="new-realm-name"
@@ -130,7 +136,7 @@ function NewRealmForm() {
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         />
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="new-realm-slug">Slug</Label>
         <Input
           id="new-realm-slug"
@@ -144,7 +150,7 @@ function NewRealmForm() {
           2–40 lower-case letters, digits or hyphens. Not editable after creation.
         </p>
       </div>
-      <div className="space-y-1.5 sm:col-span-2">
+      <div className="space-y-2 sm:col-span-2">
         <Label htmlFor="new-realm-description">Description</Label>
         <Textarea
           id="new-realm-description"
@@ -154,7 +160,7 @@ function NewRealmForm() {
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
         />
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="new-realm-visibility">Visibility</Label>
         <Select
           value={form.visibility}
@@ -253,34 +259,29 @@ export function RealmsTab() {
   return (
     <div className="space-y-4">
       <NewRealmForm />
-      <FacetCard className="overflow-x-auto">
-        <table className="text-body w-full tabular-nums">
-          <thead>
-            <tr className="border-separator bg-fill-4 border-b">
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Name</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Slug</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Status</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Visibility</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Countries</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">
-                Nations per player
-              </th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Owner</th>
-              <th className="text-label-secondary px-4 py-3 text-left font-medium">Updated</th>
-              <th className="text-label-secondary px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <FacetCard>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-4">Name</TableHead>
+              <TableHead className="px-4">Slug</TableHead>
+              <TableHead className="px-4">Status</TableHead>
+              <TableHead className="px-4">Visibility</TableHead>
+              <TableHead className="px-4">Countries</TableHead>
+              <TableHead className="px-4">Nations per player</TableHead>
+              <TableHead className="px-4">Owner</TableHead>
+              <TableHead className="px-4">Updated</TableHead>
+              <TableHead className="px-4 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {realms.map((realm) => {
               const isEditing = editingId === realm.id;
               const VisIcon = VISIBILITY_ICONS[realm.visibility] ?? Globe;
 
               return (
-                <tr
-                  key={realm.id}
-                  className="border-separator hover:bg-fill-4 border-b transition-colors"
-                >
-                  <td className="px-4 py-3">
+                <TableRow key={realm.id}>
+                  <TableCell className="px-4">
                     {isEditing ? (
                       <Input
                         className="w-full"
@@ -290,25 +291,26 @@ export function RealmsTab() {
                     ) : (
                       <span className="font-medium">{realm.name}</span>
                     )}
-                  </td>
-                  <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
+                  </TableCell>
+                  <TableCell className="text-label-secondary text-footnote px-4 font-mono">
                     {realm.slug}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4">
                     {isEditing ? (
-                      <select
-                        className={cn(
-                          fieldStyles,
-                          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                        )}
+                      <Select
                         value={editForm.status}
-                        onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                        onValueChange={(v) => setEditForm((f) => ({ ...f, status: v }))}
                       >
-                        <option value="draft">Draft</option>
-                        <option value="generating">Generating</option>
-                        <option value="active">Active</option>
-                        <option value="archived">Archived</option>
-                      </select>
+                        <SelectTrigger size="sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="generating">Generating</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <span
                         className={`text-caption inline-flex rounded-full border px-2 py-0.5 ${STATUS_COLORS[realm.status] ?? STATUS_COLORS.draft}`}
@@ -316,41 +318,44 @@ export function RealmsTab() {
                         {realm.status}
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4">
                     {isEditing ? (
-                      <select
-                        className={cn(
-                          fieldStyles,
-                          "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                        )}
+                      <Select
                         value={editForm.visibility}
-                        onChange={(e) => setEditForm((f) => ({ ...f, visibility: e.target.value }))}
+                        onValueChange={(v) => setEditForm((f) => ({ ...f, visibility: v }))}
                       >
-                        <option value="public">Public</option>
-                        <option value="unlisted">Unlisted</option>
-                      </select>
+                        <SelectTrigger size="sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="public">Public</SelectItem>
+                          <SelectItem value="unlisted">Unlisted</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
                         <VisIcon className="h-3 w-3" />
                         {realm.visibility}
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-center font-medium">{realm._count.countries}</td>
+                  </TableCell>
+                  <TableCell className="px-4 text-center font-medium">
+                    {realm._count.countries}
+                  </TableCell>
                   <NationCapCell
                     editing={isEditing}
                     current={realm.maxNationsPerUser}
                     draft={editForm.maxNationsPerUser}
                     onChange={(v) => setEditForm((f) => ({ ...f, maxNationsPerUser: v }))}
                   />
-                  <td className="text-label-secondary text-footnote px-4 py-3 font-mono">
+                  <TableCell className="text-label-secondary text-footnote px-4 font-mono">
                     {realm.ownerId === "system" ? "system" : realm.ownerId.slice(0, 12) + "..."}
-                  </td>
-                  <td className="text-label-secondary text-footnote px-4 py-3">
+                  </TableCell>
+                  <TableCell className="text-label-secondary text-footnote px-4">
                     {new Date(realm.updatedAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
                     {isEditing ? (
                       <span className="inline-flex gap-1">
                         <Button
@@ -386,12 +391,12 @@ export function RealmsTab() {
                         <Pencil className="h-4 w-4" />
                       </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </FacetCard>
     </div>
   );

@@ -11,11 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import type { MorphologyDetails } from "~/lib/onoma/morphology";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface LinguisticProfileProps {
   name: string;
@@ -123,40 +123,29 @@ export function LinguisticProfile({
           </span>
         </div>
 
-        {/* Apple Segmented Switcher */}
-        <div className="border-separator bg-fill-3 rounded-control flex items-center border p-0.5 select-none">
-          <button
-            type="button"
-            onClick={() => setActiveTab("declensions")}
-            className={cn(
-              "rounded-control-sm text-caption cursor-pointer px-2.5 py-0.5 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              activeTab === "declensions"
-                ? "bg-background text-label shadow-card"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Declensions ({Object.keys(morphology.declensionTable).length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("lexicon")}
-            className={cn(
-              "rounded-control-sm text-caption cursor-pointer px-2.5 py-0.5 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              activeTab === "lexicon"
-                ? "bg-background text-label shadow-card"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Lexicon {definition ? "✓" : ""}
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          asTabs
+          aria-label="Linguistic profile view"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            {
+              value: "declensions",
+              label: "Declensions",
+              badge: Object.keys(morphology.declensionTable).length,
+              badgeLabel: `${Object.keys(morphology.declensionTable).length} forms`,
+            },
+            { value: "lexicon", label: `Lexicon${definition ? " ✓" : ""}` },
+          ]}
+        />
       </div>
 
       {/* Stash metadata — word kind + date stashed */}
       {(originLabel || savedAt) && (
         <div className="text-label-secondary text-caption flex flex-wrap items-center gap-2">
           {originLabel && (
-            <span className="bg-tint/10 text-tint rounded-control-sm px-1.5 py-0.5 font-semibold capitalize">
+            <span className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-semibold capitalize">
               {originLabel}
             </span>
           )}
@@ -178,7 +167,7 @@ export function LinguisticProfile({
       {/* Tab 1: Case Declension Table */}
       {activeTab === "declensions" && (
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-12 border-b px-3 py-1.5 font-mono">
+          <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-12 border-b px-3 py-2 font-mono">
             <span className="col-span-4">Grammatical Case</span>
             <span className="col-span-4">Singular</span>
             <span className="col-span-4">Plural</span>
@@ -188,7 +177,7 @@ export function LinguisticProfile({
             {Object.entries(morphology.declensionTable).map(([caseName, declCase]) => (
               <div
                 key={caseName}
-                className="hover:bg-fill-4 text-footnote grid grid-cols-12 items-center px-3 py-1.5 transition-colors"
+                className="hover:bg-fill-4 text-footnote grid grid-cols-12 items-center px-3 py-2 transition-colors"
               >
                 <div className="col-span-4 flex flex-col pr-1">
                   <span className="text-label text-caption font-semibold capitalize">
@@ -212,16 +201,18 @@ export function LinguisticProfile({
 
       {/* Tab 2: Lexicon Dictionary Entry */}
       {activeTab === "lexicon" && (
-        <div className="border-separator bg-surface rounded-row space-y-2.5 border p-3.5">
+        <div className="border-separator bg-surface rounded-row space-y-2 border p-4">
           <div className="border-separator flex items-center justify-between border-b pb-2">
             <h4 className="text-label text-subhead font-mono">Conlang Lexicon Entry</h4>
             {!isEditingDef && definition && (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => setIsEditingDef(true)}
-                className="text-tint text-caption cursor-pointer font-semibold hover:underline"
+                className="text-tint h-auto px-0"
               >
                 Edit Definition
-              </button>
+              </Button>
             )}
           </div>
 
@@ -231,8 +222,8 @@ export function LinguisticProfile({
               meaning.
             </p>
           ) : isEditingDef || !definition ? (
-            <form onSubmit={handleSaveDefinition} className="text-footnote space-y-2.5">
-              <div className="grid grid-cols-2 gap-2.5">
+            <form onSubmit={handleSaveDefinition} className="text-footnote space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <label className="text-label-secondary text-subhead font-mono">
                     Part of Speech
@@ -315,7 +306,7 @@ export function LinguisticProfile({
                   </span>
                 )}
               </div>
-              <p className="text-label bg-fill-4 border-separator rounded-control text-footnote border p-2.5 leading-relaxed italic">
+              <p className="text-label bg-fill-4 border-separator rounded-control text-footnote border p-3 leading-relaxed italic">
                 "{definition.meaning}"
               </p>
               {definition.origin && (

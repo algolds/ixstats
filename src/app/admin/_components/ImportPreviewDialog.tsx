@@ -182,19 +182,20 @@ export function ImportPreviewDialog({
                     key={change.country.country}
                     className="rounded-control border-green/20 bg-green/10 border p-3"
                   >
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => toggleExpandCountry(change.country.country)}
                       aria-expanded={expandedCountry === change.country.country}
-                      className="flex w-full items-center justify-between text-left"
+                      className="text-green w-full justify-between px-2 text-left"
                     >
-                      <span className="text-green font-medium">{change.country.country}</span>
+                      {change.country.country}
                       {expandedCountry === change.country.country ? (
-                        <ChevronUp className="text-label-secondary h-4 w-4" />
+                        <ChevronUp aria-hidden className="text-label-secondary h-4 w-4" />
                       ) : (
-                        <ChevronDown className="text-label-secondary h-4 w-4" />
+                        <ChevronDown aria-hidden className="text-label-secondary h-4 w-4" />
                       )}
-                    </button>
+                    </Button>
                     {expandedCountry === change.country.country &&
                       renderCountryDetails(change.country)}
                   </div>
@@ -216,19 +217,20 @@ export function ImportPreviewDialog({
                     key={change.country.country}
                     className="rounded-control border-blue/20 bg-blue/10 border p-4"
                   >
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => toggleExpandCountry(change.country.country)}
                       aria-expanded={expandedCountry === change.country.country}
-                      className="mb-2 flex w-full items-center justify-between text-left"
+                      className="text-blue mb-2 w-full justify-between px-2 text-left"
                     >
-                      <span className="text-blue font-medium">{change.country.country}</span>
+                      {change.country.country}
                       {expandedCountry === change.country.country ? (
-                        <ChevronUp className="text-label-secondary h-4 w-4" />
+                        <ChevronUp aria-hidden className="text-label-secondary h-4 w-4" />
                       ) : (
-                        <ChevronDown className="text-label-secondary h-4 w-4" />
+                        <ChevronDown aria-hidden className="text-label-secondary h-4 w-4" />
                       )}
-                    </button>
+                    </Button>
                     {expandedCountry === change.country.country && (
                       <>
                         {change.changes && change.changes.length > 0 ? (

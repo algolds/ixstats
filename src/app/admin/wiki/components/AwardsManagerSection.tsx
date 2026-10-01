@@ -23,8 +23,22 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { getIconComponent, getColorClass, getColorHex } from "./types";
-import { fieldStyles } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function AwardsManagerSection() {
   const notify = useNotify();
@@ -209,7 +223,7 @@ export function AwardsManagerSection() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateAward} className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">
                   Page Title(s) (comma-separated)
                 </label>
@@ -221,25 +235,23 @@ export function AwardsManagerSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control text-body h-(--control-height) w-full cursor-pointer px-3"
-                  )}
-                >
-                  <option value="FEATURED">🏆 Featured Article</option>
-                  <option value="COLLABORATION">👥 Collaboration Milestone</option>
-                  <option value="PEER_REVIEW">✔️ Peer Reviewed</option>
-                  <option value="SPECIAL">⭐ Special Recognition</option>
-                  <option value="EDITOR_MILESTONE">✨ Editor Milestone</option>
-                </select>
+                <Select value={category} onValueChange={(v) => setCategory(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FEATURED">🏆 Featured Article</SelectItem>
+                    <SelectItem value="COLLABORATION">👥 Collaboration Milestone</SelectItem>
+                    <SelectItem value="PEER_REVIEW">✔️ Peer Reviewed</SelectItem>
+                    <SelectItem value="SPECIAL">⭐ Special Recognition</SelectItem>
+                    <SelectItem value="EDITOR_MILESTONE">✨ Editor Milestone</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">Award Title / Badge</label>
                 <Input
                   placeholder="e.g. Winner, Gold Star, 10k prose"
@@ -249,7 +261,7 @@ export function AwardsManagerSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">
                   Recipients (Comma-separated)
                 </label>
@@ -265,52 +277,48 @@ export function AwardsManagerSection() {
                 <span className="text-eyebrow text-yellow">Medal Icon Builder</span>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-label text-caption">Shape</label>
-                    <select
-                      value={iconShape}
-                      onChange={(e) => setIconShape(e.target.value)}
-                      className={cn(
-                        fieldStyles,
-                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                      )}
-                    >
-                      <option value="trophy">🏆 Trophy</option>
-                      <option value="medal">🏅 Medal</option>
-                      <option value="star">⭐ Star</option>
-                      <option value="crown">👑 Crown</option>
-                      <option value="shield">🛡️ Shield</option>
-                      <option value="award">🎖️ Award</option>
-                      <option value="users">👥 Users</option>
-                      <option value="check">✔️ Check</option>
-                      <option value="sparkles">✨ Sparkles</option>
-                    </select>
+                    <Select value={iconShape} onValueChange={(v) => setIconShape(v)}>
+                      <SelectTrigger size="sm" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="trophy">🏆 Trophy</SelectItem>
+                        <SelectItem value="medal">🏅 Medal</SelectItem>
+                        <SelectItem value="star">⭐ Star</SelectItem>
+                        <SelectItem value="crown">👑 Crown</SelectItem>
+                        <SelectItem value="shield">🛡️ Shield</SelectItem>
+                        <SelectItem value="award">🎖️ Award</SelectItem>
+                        <SelectItem value="users">👥 Users</SelectItem>
+                        <SelectItem value="check">✔️ Check</SelectItem>
+                        <SelectItem value="sparkles">✨ Sparkles</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-label text-caption">Color Type</label>
-                    <select
-                      value={iconColor}
-                      onChange={(e) => setIconColor(e.target.value)}
-                      className={cn(
-                        fieldStyles,
-                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                      )}
-                    >
-                      <option value="amber">Amber (Gold)</option>
-                      <option value="slate">Slate (Silver)</option>
-                      <option value="cyan">Cyan</option>
-                      <option value="green">Green</option>
-                      <option value="purple">Purple</option>
-                      <option value="pink">Pink</option>
-                      <option value="red">Red</option>
-                      <option value="custom">Custom HEX</option>
-                    </select>
+                    <Select value={iconColor} onValueChange={(v) => setIconColor(v)}>
+                      <SelectTrigger size="sm" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="amber">Amber (Gold)</SelectItem>
+                        <SelectItem value="slate">Slate (Silver)</SelectItem>
+                        <SelectItem value="cyan">Cyan</SelectItem>
+                        <SelectItem value="green">Green</SelectItem>
+                        <SelectItem value="purple">Purple</SelectItem>
+                        <SelectItem value="pink">Pink</SelectItem>
+                        <SelectItem value="red">Red</SelectItem>
+                        <SelectItem value="custom">Custom HEX</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 {iconColor === "custom" && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-label text-caption">Custom Color (HEX)</label>
                     <div className="flex gap-2">
                       <Input
@@ -335,7 +343,7 @@ export function AwardsManagerSection() {
                 )}
 
                 {/* Ambient Glass Medal Preview */}
-                <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border p-3.5">
+                <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border p-4">
                   <span className="text-label-secondary text-eyebrow mb-2 select-none">
                     Live Medal Preview
                   </span>
@@ -372,7 +380,7 @@ export function AwardsManagerSection() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">Citation / Description</label>
                 <Textarea
                   placeholder="Enter citation details..."
@@ -421,7 +429,7 @@ export function AwardsManagerSection() {
             </div>
 
             <form onSubmit={handleScanMilestones} className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-body font-medium">
                   Specific Pages to Scan (Optional)
                 </label>
@@ -487,95 +495,83 @@ export function AwardsManagerSection() {
                 No recent winners recorded in the database.
               </div>
             ) : (
-              <div className="border-separator rounded-control max-h-[16rem] overflow-y-auto border">
-                <table className="text-body w-full tabular-nums">
-                  <thead className="bg-fill-3 sticky top-0">
-                    <tr className="border-separator border-b">
-                      <th className="text-label-secondary text-caption px-4 py-2 text-left">
-                        Date
-                      </th>
-                      <th className="text-label-secondary text-caption px-4 py-2 text-left">
-                        Type
-                      </th>
-                      <th className="text-label-secondary text-caption px-4 py-2 text-left">
-                        Winner
-                      </th>
-                      <th className="text-label-secondary text-caption px-4 py-2 text-left">
-                        Article Page
-                      </th>
-                      <th className="text-label-secondary text-caption px-4 py-2 text-right">
-                        Metrics
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {recentWinners.map((winner, idx) => {
-                      const typeColors: Record<string, string> = {
-                        daily: "bg-yellow/10 text-yellow border-yellow/25",
-                        weekly: "bg-blue/10 text-blue border-blue/25",
-                        monthly: "bg-purple/10 text-purple border-purple/25",
-                      };
+              <Table containerClassName="max-h-[16rem]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="px-4">Date</TableHead>
+                    <TableHead className="px-4">Type</TableHead>
+                    <TableHead className="px-4">Winner</TableHead>
+                    <TableHead className="px-4">Article Page</TableHead>
+                    <TableHead className="px-4 text-right">Metrics</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentWinners.map((winner, idx) => {
+                    const typeColors: Record<string, string> = {
+                      daily: "bg-yellow/10 text-yellow border-yellow/25",
+                      weekly: "bg-blue/10 text-blue border-blue/25",
+                      monthly: "bg-purple/10 text-purple border-purple/25",
+                    };
 
-                      return (
-                        <tr key={idx} className="hover:bg-fill-4 transition-colors">
-                          <td className="text-caption px-4 py-2 tabular-nums">{winner.date}</td>
-                          <td className="px-4 py-2">
-                            <span
-                              className={cn(
-                                "rounded-control-sm text-eyebrow border px-1.5 py-0.5",
-                                typeColors[winner.type] || "bg-fill-3 text-label-secondary"
-                              )}
-                            >
-                              {winner.type}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <div className="text-caption flex items-center gap-1.5">
-                              {winner.winnerUser && (
-                                <>
-                                  <UnifiedCountryFlag
-                                    countryName={winner.winnerUser}
-                                    size="xs"
-                                    showTooltip={false}
-                                  />
-                                  {winner.winnerUser}
-                                </>
-                              )}
-                            </div>
-                          </td>
-                          <td className="text-footnote px-4 py-2">
-                            {winner.winnerPage ? (
-                              <a
-                                href={`/wiki/${winner.winnerPage}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-yellow flex items-center gap-1 font-semibold hover:underline"
-                              >
-                                {winner.winnerPage}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ) : (
-                              <span className="text-label-secondary text-footnote italic">
-                                No page
-                              </span>
+                    return (
+                      <TableRow key={idx}>
+                        <TableCell className="text-caption px-4">{winner.date}</TableCell>
+                        <TableCell className="px-4">
+                          <span
+                            className={cn(
+                              "rounded-control-sm text-eyebrow border px-2 py-0.5",
+                              typeColors[winner.type] || "bg-fill-3 text-label-secondary"
                             )}
-                          </td>
-                          <td className="text-footnote px-4 py-2 text-right font-mono">
-                            <span className="text-label font-semibold">
-                              {winner.winnerScore ? `${winner.winnerScore} pts` : "—"}
+                          >
+                            {winner.type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <div className="text-caption flex items-center gap-2">
+                            {winner.winnerUser && (
+                              <>
+                                <UnifiedCountryFlag
+                                  countryName={winner.winnerUser}
+                                  size="xs"
+                                  showTooltip={false}
+                                />
+                                {winner.winnerUser}
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-footnote px-4">
+                          {winner.winnerPage ? (
+                            <a
+                              href={`/wiki/${winner.winnerPage}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-yellow flex items-center gap-1 font-semibold hover:underline"
+                            >
+                              {winner.winnerPage}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : (
+                            <span className="text-label-secondary text-footnote italic">
+                              No page
                             </span>
-                            {winner.winnerBytes ? (
-                              <span className="text-label-secondary text-footnote ml-1.5">
-                                (+{(winner.winnerBytes / 1000).toFixed(1)}k bytes)
-                              </span>
-                            ) : null}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-footnote px-4 text-right font-mono">
+                          <span className="text-label font-semibold">
+                            {winner.winnerScore ? `${winner.winnerScore} pts` : "—"}
+                          </span>
+                          {winner.winnerBytes ? (
+                            <span className="text-label-secondary text-footnote ml-2">
+                              (+{(winner.winnerBytes / 1000).toFixed(1)}k bytes)
+                            </span>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -589,21 +585,19 @@ export function AwardsManagerSection() {
                 <CardDescription>Chronological list of all manual wiki rewards</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <select
-                  value={awardCategory}
-                  onChange={(e) => setAwardCategory(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                  )}
-                >
-                  <option value="all">All Categories</option>
-                  <option value="FEATURED">Featured</option>
-                  <option value="COLLABORATION">Collaboration</option>
-                  <option value="PEER_REVIEW">Peer Review</option>
-                  <option value="SPECIAL">Special</option>
-                  <option value="EDITOR_MILESTONE">Milestones</option>
-                </select>
+                <Select value={awardCategory} onValueChange={(v) => setAwardCategory(v)}>
+                  <SelectTrigger size="sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="FEATURED">Featured</SelectItem>
+                    <SelectItem value="COLLABORATION">Collaboration</SelectItem>
+                    <SelectItem value="PEER_REVIEW">Peer Review</SelectItem>
+                    <SelectItem value="SPECIAL">Special</SelectItem>
+                    <SelectItem value="EDITOR_MILESTONE">Milestones</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardHeader>
@@ -629,79 +623,71 @@ export function AwardsManagerSection() {
                 No awards match your filter criteria.
               </div>
             ) : (
-              <div className="border-separator rounded-control max-h-[30rem] overflow-y-auto border">
-                <table className="text-body w-full tabular-nums">
-                  <thead className="bg-fill-3 sticky top-0">
-                    <tr className="border-separator border-b">
-                      <th className="text-label-secondary px-4 py-2.5 text-left font-medium">
-                        Article
-                      </th>
-                      <th className="text-label-secondary px-4 py-2.5 text-left font-medium">
-                        Award & Badge
-                      </th>
-                      <th className="text-label-secondary hidden px-4 py-2.5 text-left font-medium sm:table-cell">
-                        Recipients
-                      </th>
-                      <th className="text-label-secondary hidden px-4 py-2.5 text-left font-medium md:table-cell">
-                        Awarded At
-                      </th>
-                      <th className="w-12 px-4 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {awards.map((award) => {
-                      const recipients = Array.isArray(award.recipientUsers)
-                        ? (award.recipientUsers as string[])
-                        : typeof award.recipientUsers === "string"
-                          ? (JSON.parse(award.recipientUsers) as string[])
-                          : [];
+              <Table containerClassName="max-h-[30rem]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="px-4">Article</TableHead>
+                    <TableHead className="px-4">Award & Badge</TableHead>
+                    <TableHead className="hidden px-4 sm:table-cell">Recipients</TableHead>
+                    <TableHead className="hidden px-4 md:table-cell">Awarded At</TableHead>
+                    <TableHead className="w-12 px-4" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {awards.map((award) => {
+                    const recipients = Array.isArray(award.recipientUsers)
+                      ? (award.recipientUsers as string[])
+                      : typeof award.recipientUsers === "string"
+                        ? (JSON.parse(award.recipientUsers) as string[])
+                        : [];
 
-                      return (
-                        <tr key={award.id} className="hover:bg-fill-4 transition-colors">
-                          <td className="text-label px-4 py-2.5 font-medium">{award.pageTitle}</td>
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-1.5">
-                              {renderAwardBadgeIcon(award)}
-                              <span className="font-medium">{award.name}</span>
+                    return (
+                      <TableRow key={award.id}>
+                        <TableCell className="text-label px-4 font-medium">
+                          {award.pageTitle}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <div className="flex items-center gap-2">
+                            {renderAwardBadgeIcon(award)}
+                            <span className="font-medium">{award.name}</span>
+                          </div>
+                          {award.description && (
+                            <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">
+                              {award.description}
+                            </p>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-footnote hidden px-4 sm:table-cell">
+                          {recipients.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {recipients.map((user) => (
+                                <Badge key={user} variant="secondary" className="px-2 py-0">
+                                  {user}
+                                </Badge>
+                              ))}
                             </div>
-                            {award.description && (
-                              <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">
-                                {award.description}
-                              </p>
-                            )}
-                          </td>
-                          <td className="text-footnote hidden px-4 py-2.5 sm:table-cell">
-                            {recipients.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {recipients.map((user) => (
-                                  <Badge key={user} variant="secondary" className="px-1.5 py-0">
-                                    {user}
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-label-secondary opacity-50">—</span>
-                            )}
-                          </td>
-                          <td className="text-label-secondary text-footnote hidden px-4 py-2.5 md:table-cell">
-                            {new Date(award.awardedAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDeleteAward(award.id)}
-                              className="text-destructive w-8"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          ) : (
+                            <span className="text-label-secondary opacity-50">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-label-secondary text-footnote hidden px-4 md:table-cell">
+                          {new Date(award.awardedAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteAward(award.id)}
+                            className="text-destructive w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

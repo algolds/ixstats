@@ -158,7 +158,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
             variant="ghost"
             size="sm"
             onClick={() => setQuickActionsCollapsed(!quickActionsCollapsed)}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-2"
           >
             {quickActionsCollapsed ? (
               <>
@@ -176,19 +176,19 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
         <TooltipProvider delayDuration={150}>
           {quickActionsCollapsed ? (
-            <FacetCard className="flex flex-wrap items-center gap-2.5 p-3">
+            <FacetCard className="flex flex-wrap items-center gap-2 p-3">
               {QUICK_ACTIONS.map((action) => (
                 <Tooltip key={action.label}>
                   <TooltipTrigger asChild>
                     <Link
                       href={action.href}
                       onClick={(e) => handleActionClick(e, action.href, action.section)}
-                      className="bg-tint-fill border-separator hover:border-tint/30 hover:bg-tint-fill text-tint group rounded-row duration-fast block border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95]"
+                      className="bg-tint-fill border-separator hover:border-tint/30 hover:bg-tint-fill text-tint group rounded-row duration-fast block border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95]"
                     >
                       <action.icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                     </Link>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs p-2.5 text-left">
+                  <TooltipContent side="bottom" className="max-w-xs p-3 text-left">
                     <p className="text-label text-caption">{action.label}</p>
                     <p className="text-label-secondary text-footnote mt-0.5">
                       {action.description}
@@ -204,7 +204,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   key={action.label}
                   href={action.href}
                   onClick={(e) => handleActionClick(e, action.href, action.section)}
-                  className="border-separator bg-surface hover:border-tint/40 group rounded-card shadow-card flex items-center justify-between border p-3.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                  className="border-separator bg-surface hover:border-tint/40 group rounded-card shadow-card flex items-center justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="bg-tint-fill border-separator group-hover:bg-tint-fill text-tint rounded-row border p-2 transition-colors">

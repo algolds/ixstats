@@ -16,6 +16,7 @@ import {
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { ActionPill } from "~/components/ui/action-pill";
 import { api } from "~/trpc/react";
 import * as IconoirIcons from "iconoir-react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -333,7 +334,7 @@ export function PostCard({
                 <a
                   key={att.id}
                   href={att.directUrl ?? "#"}
-                  className="rounded-control border-separator text-footnote text-label-secondary hover:border-tint/30 hover:text-tint flex items-center gap-1.5 border px-3 py-1.5"
+                  className="rounded-control border-separator text-footnote text-label-secondary hover:border-tint/30 hover:text-tint flex items-center gap-2 border px-3 py-2"
                   download
                 >
                   {att.filename}
@@ -348,17 +349,20 @@ export function PostCard({
 
         {/* Reaction bar + actions */}
         <div className="forum-reactions">
-          <button
+          <ActionPill
+            size="md"
+            pressed={hasReacted}
             onClick={handleReact}
-            className={cn("forum-reaction-btn", hasReacted && "forum-reaction-btn-active")}
+            icon={<Heart className={cn(hasReacted && "fill-current")} />}
+            count={localReactionScore > 0 ? localReactionScore : null}
+            aria-label="Like"
             title="Like"
-          >
-            <Heart className={cn("h-3.5 w-3.5", hasReacted && "fill-current")} />
-            {localReactionScore > 0 && <span>{localReactionScore}</span>}
-          </button>
+          />
 
           <div className="ml-auto flex items-center gap-1">
-            <button
+            <ActionPill
+              size="md"
+              pressed={isStashed}
               onClick={() => {
                 if (isStashed) {
                   unstashMutation.mutate({ threadId });
@@ -366,41 +370,50 @@ export function PostCard({
                   stashMutation.mutate({ threadId, title: threadTitle ?? `Thread #${threadId}` });
                 }
               }}
-              className={cn("forum-action-btn", isStashed && "text-tint")}
+              icon={<Bookmark className={cn(isStashed && "fill-current")} />}
               aria-label={isStashed ? "Remove from stash" : "Stash thread"}
               title={isStashed ? "Remove from stash" : "Stash thread"}
+            />
+            <ActionPill
+              size="md"
+              onClick={handleQuote}
+              icon={<Quote />}
+              aria-label="Quote"
+              title="Quote"
             >
-              <Bookmark className={cn("h-3.5 w-3.5", isStashed && "fill-current")} />
-            </button>
-            <button onClick={handleQuote} className="forum-action-btn" title="Quote">
-              <Quote className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Quote</span>
-            </button>
-            <button onClick={onReply} className="forum-action-btn" title="Reply">
-              <Reply className="h-3.5 w-3.5" />
+            </ActionPill>
+            <ActionPill
+              size="md"
+              onClick={onReply}
+              icon={<Reply />}
+              aria-label="Reply"
+              title="Reply"
+            >
               <span className="hidden sm:inline">Reply</span>
-            </button>
+            </ActionPill>
             {isOwnPost && (
               <>
-                <button
+                <ActionPill
+                  size="md"
                   onClick={() => {
                     setEditMessage("");
                     setIsEditing(true);
                   }}
-                  className="forum-action-btn"
+                  icon={<Pencil />}
+                  aria-label="Edit"
                   title="Edit"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Edit</span>
-                </button>
-                <button
+                </ActionPill>
+                <ActionPill
+                  size="md"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="forum-action-btn hover:text-destructive"
+                  icon={<Trash2 />}
+                  className="hover:text-destructive"
                   aria-label="Delete"
                   title="Delete"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                />
               </>
             )}
           </div>

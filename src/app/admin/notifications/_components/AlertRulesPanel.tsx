@@ -265,31 +265,31 @@ export function AlertRulesPanel() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Metric Name *</Label>
                 <Input placeholder="e.g. GDP Growth Rate" {...field("metricName")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Alert Type</Label>
                 <Input placeholder="numeric" {...field("alertType")} />
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Country ID</Label>
               <Input placeholder="Country ID" {...field("countryId")} />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-red">Critical Min</Label>
                 <Input type="number" placeholder="Min" {...field("criticalMin")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-red">Critical Max</Label>
                 <Input type="number" placeholder="Max" {...field("criticalMax")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Notify</Label>
                 <div className="pt-2">
                   <Switch
@@ -301,15 +301,15 @@ export function AlertRulesPanel() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-orange">High Min</Label>
                 <Input type="number" placeholder="Min" {...field("highMin")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-orange">High Max</Label>
                 <Input type="number" placeholder="Max" {...field("highMax")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Notify</Label>
                 <div className="pt-2">
                   <Switch
@@ -321,15 +321,15 @@ export function AlertRulesPanel() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-yellow">Medium Min</Label>
                 <Input type="number" placeholder="Min" {...field("mediumMin")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-yellow">Medium Max</Label>
                 <Input type="number" placeholder="Max" {...field("mediumMax")} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Notify</Label>
                 <div className="pt-2">
                   <Switch

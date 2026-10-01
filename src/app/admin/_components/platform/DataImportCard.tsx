@@ -29,7 +29,7 @@ export function DataImportCard({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-headline flex items-center gap-2">
-          <div className="rounded-control border-teal/20 bg-teal/10 text-teal border p-1.5">
+          <div className="rounded-control border-teal/20 bg-teal/10 text-teal border p-2">
             <Database className="h-4 w-4" />
           </div>
           Country Data Import
@@ -49,7 +49,7 @@ export function DataImportCard({
             />
 
             {analyzeError && (
-              <Alert variant="destructive" className="py-2.5">
+              <Alert variant="destructive" className="py-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-footnote">
                   Error analyzing file: {analyzeError}
@@ -58,7 +58,7 @@ export function DataImportCard({
             )}
 
             {importError && (
-              <Alert variant="destructive" className="py-2.5">
+              <Alert variant="destructive" className="py-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-footnote">
                   Error importing file: {importError}
@@ -70,7 +70,7 @@ export function DataImportCard({
           <div className="space-y-3">
             <p className="text-label text-label-secondary text-eyebrow">Import Guidelines</p>
             <div className="border-separator bg-surface rounded-control border p-4">
-              <ul className="text-label-secondary text-footnote space-y-2.5">
+              <ul className="text-label-secondary text-footnote space-y-2">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="text-teal mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>

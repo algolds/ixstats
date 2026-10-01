@@ -32,6 +32,14 @@ import { IxTime } from "~/lib/ixtime";
 import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime";
 import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 interface TimeVisualizationData {
   currentIxTime: number;
@@ -251,13 +259,13 @@ export function IxTimeVisualizer() {
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <CardTitle className="text-headline flex items-center gap-2">
-            <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-1.5">
+            <div className="rounded-control border-blue/20 bg-blue/10 text-blue border p-2">
               <Clock className="h-4 w-4" />
             </div>
             IxTime Visualization
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
+            <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-3 py-2">
               <Label
                 htmlFor="visualizer-advanced-mode"
                 className="text-label-secondary text-subhead cursor-pointer select-none"
@@ -319,7 +327,7 @@ export function IxTimeVisualizer() {
             <div className="flex items-center gap-2">
               <span className="text-headline text-green">{timeData.multiplier}x</span>
               {timeData.isPaused && (
-                <Badge variant="destructive" className="px-1.5 py-0">
+                <Badge variant="destructive" className="px-2 py-0">
                   PAUSED
                 </Badge>
               )}
@@ -342,7 +350,7 @@ export function IxTimeVisualizer() {
               ) : (
                 <AlertTriangle className="text-yellow h-4 w-4" />
               )}
-              <Badge variant={getStatusBadgeVariant(accuracyStatus.status)} className="px-1.5 py-0">
+              <Badge variant={getStatusBadgeVariant(accuracyStatus.status)} className="px-2 py-0">
                 {accuracyStatus.status.toUpperCase()}
               </Badge>
               <span className="text-caption tabular-nums">
@@ -356,7 +364,7 @@ export function IxTimeVisualizer() {
         </div>
 
         {/* Prediction row */}
-        <div className="border-separator bg-surface rounded-control text-caption flex flex-wrap items-center gap-x-6 gap-y-2 border px-4 py-2.5">
+        <div className="border-separator bg-surface rounded-control text-caption flex flex-wrap items-center gap-x-6 gap-y-2 border px-4 py-2">
           <div className="text-label-secondary">
             <span className="text-label font-semibold">In 24 real hours:</span>{" "}
             <span className="tabular-nums">{timeData.predictedIxTime24h}</span>
@@ -383,7 +391,7 @@ export function IxTimeVisualizer() {
               <div className="border-separator bg-surface rounded-control border p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   {/* Mode toggle */}
-                  <div className="shrink-0 space-y-1.5">
+                  <div className="shrink-0 space-y-2">
                     <Label className="text-label-secondary text-subhead">Direction</Label>
                     <div className="flex gap-1">
                       <Button
@@ -412,7 +420,7 @@ export function IxTimeVisualizer() {
                   </div>
 
                   {/* Date input */}
-                  <div className="flex-1 space-y-1.5">
+                  <div className="flex-1 space-y-2">
                     <Label className="text-label-secondary text-subhead">
                       {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
                     </Label>
@@ -431,7 +439,7 @@ export function IxTimeVisualizer() {
                     size="sm"
                     className="shrink-0"
                   >
-                    <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
+                    <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
                     Convert
                   </Button>
                 </div>
@@ -447,40 +455,32 @@ export function IxTimeVisualizer() {
               </div>
 
               {/* Reference Milestone Table */}
-              <div className="border-separator bg-surface rounded-control overflow-x-auto border">
-                <table className="text-footnote w-full tabular-nums">
-                  <thead>
-                    <tr className="border-separator bg-fill-4 border-b">
-                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
-                        Milestone
-                      </th>
-                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
-                        IxTime Date
-                      </th>
-                      <th className="text-label-secondary text-eyebrow px-3 py-2 text-left">
-                        IRL Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dynamicMilestones.map((m, i) => (
-                      <tr
-                        key={i}
-                        className={`border-separator hover:bg-fill-4 border-b transition-colors last:border-b-0 ${m.label === "Current" ? "bg-blue/5 text-blue font-semibold" : ""}`}
-                      >
-                        <td className="px-3 py-2">
-                          {m.label === "Current" && (
-                            <span className="bg-blue mr-1.5 inline-block h-1.5 w-1.5 rounded-full" />
-                          )}
-                          {m.label}
-                        </td>
-                        <td className="px-3 py-2 tabular-nums">{m.ixDate}</td>
-                        <td className="px-3 py-2 tabular-nums">{m.realDate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-3">Milestone</TableHead>
+                    <TableHead className="px-3">IxTime Date</TableHead>
+                    <TableHead className="px-3">IRL Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dynamicMilestones.map((m, i) => (
+                    <TableRow
+                      key={i}
+                      className={`border-separator hover:bg-fill-4 border-b transition-colors last:border-b-0 ${m.label === "Current" ? "bg-blue/5 text-blue font-semibold" : ""}`}
+                    >
+                      <TableCell className="px-3">
+                        {m.label === "Current" && (
+                          <span className="bg-blue mr-2 inline-block h-1.5 w-1.5 rounded-full" />
+                        )}
+                        {m.label}
+                      </TableCell>
+                      <TableCell className="px-3">{m.ixDate}</TableCell>
+                      <TableCell className="px-3">{m.realDate}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
 
             <Separator className="border-separator my-1" />
@@ -488,16 +488,16 @@ export function IxTimeVisualizer() {
             {/* === VISUAL TIMELINE === */}
             <div className="space-y-3">
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-blue/10 bg-blue/5 hover:border-blue/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                   <div className="text-blue font-semibold">Real World Epoch</div>
                   <div className="text-label-secondary mt-0.5 tabular-nums">Oct 4, 2020</div>
                 </div>
-                <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-green/10 bg-green/5 hover:border-green/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                   <div className="text-green font-semibold">4x → 2x Transition</div>
                   <div className="text-label-secondary mt-0.5 tabular-nums">Jul 27, 2025 IRL</div>
                   <div className="text-label-secondary tabular-nums">Jan 1, 2040 IX</div>
                 </div>
-                <div className="rounded-control-sm border-purple/10 bg-purple/5 hover:border-purple/20 border px-2.5 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+                <div className="rounded-control-sm border-purple/10 bg-purple/5 hover:border-purple/20 border px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                   <div className="text-purple font-semibold">Now</div>
                   <div className="text-label-secondary mt-0.5 font-semibold">
                     Year {timeData.currentGameYear}
@@ -537,21 +537,20 @@ export function IxTimeVisualizer() {
 
             {/* === BOTTOM SECTION: Collapsible Diagnostics === */}
             <div className="space-y-4">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowDiagnostics(!showDiagnostics)}
                 aria-expanded={showDiagnostics}
-                className="hover:text-label group flex w-full items-center justify-between text-left transition-colors"
+                className="text-label-secondary hover:text-label w-full justify-between px-2 text-left"
               >
-                <span className="text-label-secondary group-hover:text-label text-eyebrow">
-                  Diagnostics & Testing
-                </span>
+                <span className="text-eyebrow">Diagnostics & Testing</span>
                 {showDiagnostics ? (
-                  <ChevronUp className="text-label-secondary h-4 w-4" />
+                  <ChevronUp aria-hidden className="h-4 w-4" />
                 ) : (
-                  <ChevronDown className="text-label-secondary h-4 w-4" />
+                  <ChevronDown aria-hidden className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
 
               {showDiagnostics && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-fast mt-2 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -571,7 +570,7 @@ export function IxTimeVisualizer() {
                         <div className="text-right">
                           <Badge
                             variant={getStatusBadgeVariant(accuracyStatus.status)}
-                            className="px-1.5 py-0"
+                            className="px-2 py-0"
                           >
                             {accuracyStatus.status.toUpperCase()}
                           </Badge>
@@ -597,7 +596,7 @@ export function IxTimeVisualizer() {
                       </div>
                       {syncStatuses.length === 0 ? (
                         <div className="text-label-secondary text-footnote flex flex-col items-center justify-center py-6 text-center">
-                          <Timer className="mb-1.5 h-5 w-5 opacity-40" />
+                          <Timer className="mb-2 h-5 w-5 opacity-40" />
                           <span>No sync targets configured</span>
                         </div>
                       ) : (
@@ -605,9 +604,9 @@ export function IxTimeVisualizer() {
                           {syncStatuses.map((status) => (
                             <div
                               key={status.target}
-                              className="border-separator bg-fill-4 rounded-control-sm text-footnote flex items-center justify-between border px-2.5 py-1.5"
+                              className="border-separator bg-fill-4 rounded-control-sm text-footnote flex items-center justify-between border px-3 py-2"
                             >
-                              <div className="flex min-w-0 items-center gap-1.5">
+                              <div className="flex min-w-0 items-center gap-2">
                                 {status.status === "synced" ? (
                                   <CheckCircle className="text-green h-3.5 w-3.5 shrink-0" />
                                 ) : status.status === "drift" ? (
@@ -626,7 +625,7 @@ export function IxTimeVisualizer() {
                                   {status.drift > 0 ? "+" : ""}
                                   {status.drift}ms
                                 </span>
-                                <span className="text-blue ml-1.5">
+                                <span className="text-blue ml-2">
                                   {status.accuracy.toFixed(1)}%
                                 </span>
                               </div>
@@ -642,7 +641,7 @@ export function IxTimeVisualizer() {
                         size="sm"
                         className="w-full"
                       >
-                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
                         Force Sync All
                       </Button>
                     </div>
@@ -662,9 +661,9 @@ export function IxTimeVisualizer() {
                           size="sm"
                         >
                           {isRunningSimulation ? (
-                            <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <Zap className="mr-1.5 h-3.5 w-3.5" />
+                            <Zap className="mr-2 h-3.5 w-3.5" />
                           )}
                           Accuracy
                         </Button>
@@ -673,13 +672,13 @@ export function IxTimeVisualizer() {
                           variant="outline"
                           size="sm"
                         >
-                          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                          <RefreshCw className="mr-2 h-3.5 w-3.5" />
                           Sync Verify
                         </Button>
                       </div>
 
                       {simulationResults && (
-                        <div className="border-separator bg-surface animate-in fade-in slide-in-from-top-1 rounded-control border p-2.5 duration-150">
+                        <div className="border-separator bg-surface animate-in fade-in slide-in-from-top-1 rounded-control border p-3 duration-150">
                           <div className="text-caption grid grid-cols-4 gap-1 text-center">
                             <div>
                               <div className="text-headline text-green">
@@ -707,7 +706,7 @@ export function IxTimeVisualizer() {
                             </div>
                           </div>
                           {simulationResults.criticalIssues.length > 0 && (
-                            <div className="rounded-control-sm border-red/10 bg-red/5 text-caption text-red mt-2 max-h-[60px] overflow-y-auto border p-1.5">
+                            <div className="rounded-control-sm border-red/10 bg-red/5 text-caption text-red mt-2 max-h-[60px] overflow-y-auto border p-2">
                               {simulationResults.criticalIssues.map((issue, idx) => (
                                 <div key={idx} className="flex items-start gap-1">
                                   <XCircle className="mt-0.5 h-3 w-3 shrink-0" />

@@ -19,8 +19,13 @@ import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import type { ToastType, ToastPriority } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const CATEGORIES: { label: string; value: NotificationCategory }[] = [
   { label: "System", value: "system" },
@@ -171,7 +176,7 @@ export function NotificationTestCard() {
               critical pulse) and Sonner toast rendering.
             </CardDescription>
           </div>
-          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
+          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-3 py-2">
             <Label
               htmlFor="notif-advanced-mode"
               className="text-label-secondary text-subhead cursor-pointer select-none"
@@ -231,7 +236,7 @@ export function NotificationTestCard() {
             <div className="border-separator animate-in fade-in duration-fast grid grid-cols-1 gap-6 border-t pt-4 md:grid-cols-2">
               {/* Custom Notification Config */}
               <div className="space-y-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="notif-title" className="text-label-secondary text-subhead">
                     Title
                   </Label>
@@ -243,7 +248,7 @@ export function NotificationTestCard() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="notif-message" className="text-label-secondary text-subhead">
                     Message
                   </Label>
@@ -257,68 +262,62 @@ export function NotificationTestCard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="notif-type" className="text-label-secondary text-subhead">
                       Type
                     </Label>
-                    <select
-                      id="notif-type"
-                      value={type}
-                      onChange={(e) => setType(e.target.value as ToastType)}
-                      className={cn(
-                        fieldStyles,
-                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                      )}
-                    >
-                      {TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={type} onValueChange={(v) => setType(v as ToastType)}>
+                      <SelectTrigger size="sm" id="notif-type" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="notif-priority" className="text-label-secondary text-subhead">
                       Priority
                     </Label>
-                    <select
-                      id="notif-priority"
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                      className={cn(
-                        fieldStyles,
-                        "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                      )}
-                    >
-                      {PRIORITIES.map((p) => (
-                        <option key={p.value} value={p.value}>
-                          {p.label}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={priority} onValueChange={(v) => setPriority(v as ToastPriority)}>
+                      <SelectTrigger size="sm" id="notif-priority" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PRIORITIES.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="notif-category" className="text-label-secondary text-subhead">
                     Category
                   </Label>
-                  <select
-                    id="notif-category"
+                  <Select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                    className={cn(
-                      fieldStyles,
-                      "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                    )}
+                    onValueChange={(v) => setCategory(v as NotificationCategory)}
                   >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger size="sm" id="notif-category" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -354,7 +353,7 @@ export function NotificationTestCard() {
                   <Switch checked={hasAction} onCheckedChange={setHasAction} />
                 </div>
 
-                <div className="space-y-1.5 pt-2">
+                <div className="space-y-2 pt-2">
                   <Label htmlFor="notif-duration" className="text-label-secondary text-subhead">
                     Auto-dismiss Duration (ms)
                   </Label>

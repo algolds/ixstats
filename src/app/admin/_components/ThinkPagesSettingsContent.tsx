@@ -108,7 +108,7 @@ function PlatformSettingsTab() {
     <div className="space-y-6">
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Social Posts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -119,7 +119,7 @@ function PlatformSettingsTab() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Registered Accounts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -130,7 +130,7 @@ function PlatformSettingsTab() {
           )}
         </FacetCard>
 
-        <FacetCard className="p-3.5">
+        <FacetCard className="p-4">
           <p className="text-label-secondary text-eyebrow">Weekly Growth</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -153,14 +153,14 @@ function PlatformSettingsTab() {
             </p>
           </div>
           <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+            <Save className="mr-2 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
           </Button>
         </div>
 
         <div className="space-y-3">
           {/* Max Accounts */}
-          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Max Accounts Limit per User</Label>
               <p className="text-label-secondary text-footnote">
@@ -178,7 +178,7 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Character Cap */}
-          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Post Character Length Cap</Label>
               <p className="text-label-secondary text-footnote">
@@ -196,7 +196,7 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Auto News Elections */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Election Results Auto-News</Label>
               <p className="text-label-secondary text-footnote">
@@ -211,7 +211,7 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Auto News Policies */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Passed Directives Auto-News</Label>
               <p className="text-label-secondary text-footnote">
@@ -226,7 +226,7 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Comment Attachments */}
-          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Media & Card Attachments</Label>
               <p className="text-label-secondary text-footnote">
@@ -279,7 +279,7 @@ function DiscordMirrorTab() {
 
       <div className="space-y-4">
         <div>
-          <Label className="text-label text-caption mb-1.5 block">Discord Webhook URL</Label>
+          <Label className="text-label text-caption mb-2 block">Discord Webhook URL</Label>
           <Input
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
@@ -294,7 +294,7 @@ function DiscordMirrorTab() {
           onClick={handleTestWebhook}
           disabled={isSending || !webhookUrl}
         >
-          <Send className="mr-1.5 h-3.5 w-3.5" />
+          <Send className="mr-2 h-3.5 w-3.5" />
           {isSending ? "Sending Test..." : "Send Test Broadcast"}
         </Button>
       </div>

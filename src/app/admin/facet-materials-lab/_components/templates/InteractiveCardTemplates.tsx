@@ -9,10 +9,20 @@ import {
   Hexagon,
   Package as Box,
   Code,
-  NavArrowRight as ChevronRight,
-  Check,
 } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { Switch } from "~/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { type LabConfig } from "../types";
+
+/*
+ * Lab-only *frames*: each template's outer element carries the configurator's lab materials
+ * (`facet-material-*`, `styles/facet/lab.css`). Everything inside is Facet 3 — real primitives
+ * coloured by the tint, which `LabTemplates` scopes to the lab's accent colour.
+ */
 
 interface CardTemplateProps {
   config: LabConfig;
@@ -51,7 +61,7 @@ export function InteractiveCardTemplates({
   glassClickStates,
   setGlassClickStates,
 }: CardTemplateProps) {
-  const { template, material, texture, textureOpacity, depth, variant, customAccent } = config;
+  const { template, material, texture, textureOpacity, depth, variant } = config;
 
   switch (template) {
     case "material-block":
@@ -99,21 +109,19 @@ export function InteractiveCardTemplates({
                 Integrity & Threat Profile Validation
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setSecureStatus(!secureStatus)}
-              className="rounded-control-sm text-eyebrow cursor-pointer border px-2 py-0.5 transition-colors"
-              style={{
-                borderColor: secureStatus ? `${customAccent}4D` : "#ef44444D",
-                backgroundColor: secureStatus ? `${customAccent}33` : "#ef444433",
-                color: secureStatus ? customAccent : "var(--color-error)",
-              }}
-              title="Click to toggle security status"
-            >
-              {secureStatus ? "Secure" : "Breached"}
-            </button>
+            <div className="flex items-center gap-2">
+              <Badge variant={secureStatus ? "success" : "destructive"}>
+                {secureStatus ? "Secure" : "Breached"}
+              </Badge>
+              <Switch
+                checked={secureStatus}
+                onCheckedChange={setSecureStatus}
+                aria-label="Security status"
+                title="Toggle security status"
+              />
+            </div>
           </div>
-          <div className="border-separator pointer-events-none relative z-10 space-y-2 border-t pt-3.5">
+          <div className="border-separator pointer-events-none relative z-10 space-y-2 border-t pt-4">
             <div className="text-footnote flex justify-between">
               <span className="text-label-secondary">Active Nodes:</span>
               <span className="font-semibold tabular-nums">
@@ -126,28 +134,21 @@ export function InteractiveCardTemplates({
             </div>
             <div className="text-footnote flex justify-between">
               <span className="text-label-secondary">Material Status:</span>
-              <span className="font-semibold capitalize" style={{ color: customAccent }}>
-                {material}
-              </span>
+              <span className="text-tint font-semibold capitalize">{material}</span>
             </div>
           </div>
           <div className="relative z-10 mt-2 flex gap-2">
-            <button
-              type="button"
+            <Button
+              size="sm"
               onClick={handleLinkClick}
               disabled={linking || !secureStatus}
-              className="rounded-control text-caption text-label flex-1 cursor-pointer px-3 py-1.5 transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
-              style={{ backgroundColor: customAccent }}
+              className="flex-1"
             >
               {linking ? "Establishing..." : linkEstablished ? "Disconnect Link" : "Establish Link"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setButtonClickCount((c) => c + 1)}
-              className="bg-fill-3 hover:bg-fill-4 text-label-secondary border-separator rounded-control text-caption cursor-pointer border px-3 py-1.5 transition-colors"
-            >
+            </Button>
+            <Button variant="gray" size="sm" onClick={() => setButtonClickCount((c) => c + 1)}>
               Details {buttonClickCount > 0 && `(${buttonClickCount})`}
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -158,7 +159,7 @@ export function InteractiveCardTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "facet-hierarchy-parent rounded-card flex w-full flex-col gap-4 p-5 text-left"
+            "rounded-card flex w-full flex-col gap-4 p-5 text-left"
           )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
@@ -169,57 +170,35 @@ export function InteractiveCardTemplates({
           />
           <div className="pointer-events-none relative z-10">
             <span className="text-label-secondary text-eyebrow mb-0.5 block">
-              Parent Block (Depth 1)
+              Lab material (chrome)
             </span>
             <h4 className="text-headline leading-tight">System Core Hub</h4>
           </div>
 
-          <div className="facet-hierarchy-child relative z-10 flex flex-col gap-3 p-4">
+          <FacetCard variant="inset" className="relative z-10 flex flex-col gap-3">
             <div className="pointer-events-none">
               <span className="text-label-secondary text-eyebrow mb-0.5 block">
-                Nested Child (Depth 2)
+                Opaque inset (content)
               </span>
               <p className="text-label-secondary text-footnote leading-relaxed">
-                This element compounds the backdrop filter blurs recursively when placed inside a
-                Parent.
+                Materials never nest: inside a material, panels use the opaque surface-secondary
+                role instead of a second blur.
               </p>
             </div>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                aria-pressed={activeNode === 1}
-                onClick={() => setActiveNode(activeNode === 1 ? null : 1)}
-                className={cn(
-                  "facet-hierarchy-interactive text-caption relative z-20 flex-1 cursor-pointer px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  activeNode === 1 ? "text-label border-2 font-semibold" : "text-label-secondary"
-                )}
-                style={{
-                  borderColor: activeNode === 1 ? customAccent : `${customAccent}4D`,
-                  boxShadow: activeNode === 1 ? `0 0 12px ${customAccent}40` : undefined,
-                }}
-              >
-                Node Admin 1
-                {activeNode === 1 && <Check aria-hidden className="ml-1 inline size-3.5" />}
-              </button>
-              <button
-                type="button"
-                aria-pressed={activeNode === 2}
-                onClick={() => setActiveNode(activeNode === 2 ? null : 2)}
-                className={cn(
-                  "facet-hierarchy-interactive text-caption relative z-20 flex-1 cursor-pointer px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  activeNode === 2 ? "text-label border-2 font-semibold" : "text-label-secondary"
-                )}
-                style={{
-                  borderColor: activeNode === 2 ? customAccent : `${customAccent}4D`,
-                  boxShadow: activeNode === 2 ? `0 0 12px ${customAccent}40` : undefined,
-                }}
-              >
-                Node Admin 2
-                {activeNode === 2 && <Check aria-hidden className="ml-1 inline size-3.5" />}
-              </button>
-            </div>
-          </div>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              size="sm"
+              aria-label="Admin node"
+              value={activeNode === null ? "" : String(activeNode)}
+              onValueChange={(v) => setActiveNode(v ? Number(v) : null)}
+              className="flex-nowrap gap-2 *:flex-1"
+            >
+              <ToggleGroupItem value="1">Node Admin 1</ToggleGroupItem>
+              <ToggleGroupItem value="2">Node Admin 2</ToggleGroupItem>
+            </ToggleGroup>
+          </FacetCard>
         </div>
       );
 
@@ -236,22 +215,16 @@ export function InteractiveCardTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10 flex items-center gap-3">
-            <div
-              className="rounded-control flex h-9 w-9 items-center justify-center"
-              style={{ backgroundColor: `${customAccent}20` }}
-            >
-              <Activity className="h-4 w-4" style={{ color: customAccent }} />
+            <div className="rounded-control bg-tint-fill text-tint flex h-9 w-9 items-center justify-center">
+              <Activity aria-hidden className="h-4 w-4" />
             </div>
             <div>
               <h4 className="text-headline leading-tight">System Overview</h4>
               <p className="text-label-secondary text-footnote">Real-time performance metrics</p>
             </div>
           </div>
-          <div className="relative z-10 flex items-center justify-between border-t pt-2.5">
-            <span className="text-label-secondary text-footnote">Efficiency Index</span>
-            <span className="text-headline" style={{ color: customAccent }}>
-              94.2%
-            </span>
+          <div className="border-separator relative z-10 border-t pt-3">
+            <Stat label="Efficiency index" value="94.2%" size="sm" />
           </div>
         </div>
       );
@@ -272,7 +245,7 @@ export function InteractiveCardTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
-            <Globe className="h-5 w-5" style={{ color: customAccent }} />
+            <Globe aria-hidden className="text-tint h-5 w-5" />
             <span className="text-label-secondary text-footnote tabular-nums">v1.4.0</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
@@ -300,7 +273,7 @@ export function InteractiveCardTemplates({
             <span className="text-label-secondary text-eyebrow">Progressive Diffusion</span>
             <h4 className="text-headline">Stepped Layer Refraction</h4>
           </div>
-          <div className="rounded-control border-separator bg-fill-4 text-footnote relative z-10 border p-3">
+          <div className="rounded-control border-separator bg-surface-secondary text-footnote relative z-10 border p-3">
             Multi-stop gradient mask applied seamlessly across card surface.
           </div>
         </div>
@@ -318,10 +291,10 @@ export function InteractiveCardTemplates({
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
-            <Star className="h-5 w-5" style={{ color: customAccent }} />
+            <Star aria-hidden className="text-tint h-5 w-5" />
             <span className="text-label-secondary text-eyebrow tabular-nums">Specular Glare</span>
           </div>
-          <div className="pointer-events-none relative z-10 space-y-1.5">
+          <div className="pointer-events-none relative z-10 space-y-2">
             <h4 className="text-headline leading-tight">Refractive Edge</h4>
             <p className="text-label-secondary text-footnote leading-relaxed">
               Dynamic light specular tracking layer.
@@ -346,7 +319,7 @@ export function InteractiveCardTemplates({
               <span className="text-label-secondary text-eyebrow block">Masked Chamfer</span>
               <h4 className="text-headline">Cutout Specimen</h4>
             </div>
-            <Hexagon className="h-6 w-6" style={{ color: customAccent }} />
+            <Hexagon aria-hidden className="text-tint h-6 w-6" />
           </div>
         </div>
       );
@@ -364,9 +337,7 @@ export function InteractiveCardTemplates({
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center justify-between">
             <span className="text-eyebrow">Active Particle</span>
-            <span className="text-footnote tabular-nums" style={{ color: customAccent }}>
-              Orbit Trajectory
-            </span>
+            <span className="text-footnote text-tint tabular-nums">Orbit Trajectory</span>
           </div>
           <div className="pointer-events-none relative z-10 space-y-1">
             <h4 className="text-headline">Comet Particle Motion</h4>
@@ -389,7 +360,7 @@ export function InteractiveCardTemplates({
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
           <div className="pointer-events-none relative z-10 flex items-center gap-3">
-            <Box className="h-5 w-5" style={{ color: customAccent }} />
+            <Box aria-hidden className="text-tint h-5 w-5" />
             <div>
               <h4 className="text-headline capitalize">{texture} Tactile</h4>
               <p className="text-label-secondary text-footnote">Embedded SVG Noise Filter</p>
@@ -409,12 +380,9 @@ export function InteractiveCardTemplates({
           style={{ ...dynamicStyles, ...accentVars }}
         >
           <TextureOverlay texture={texture} opacity={textureOpacity} className="z-0" />
-          <div
-            className="pointer-events-none relative z-10 flex items-center justify-between gap-3 border-b px-4 py-3"
-            style={{ borderColor: `${customAccent}15` }}
-          >
+          <div className="border-separator pointer-events-none relative z-10 flex items-center justify-between gap-3 border-b px-4 py-3">
             <div className="flex items-center gap-2">
-              <Code className="h-3.5 w-3.5" style={{ color: customAccent }} />
+              <Code aria-hidden className="text-tint h-3.5 w-3.5" />
               <span className="text-eyebrow">Exported Code</span>
             </div>
             <span className="text-label-secondary text-footnote tabular-nums">
@@ -422,11 +390,8 @@ export function InteractiveCardTemplates({
             </span>
           </div>
           <pre
-            className="bg-fill-3 text-label text-footnote max-h-[260px] overflow-x-auto px-4 pt-1 pb-4 font-mono leading-relaxed"
-            style={{
-              borderColor: `${customAccent}10`,
-              tabSize: 2,
-            }}
+            className="bg-surface-secondary text-label text-footnote relative z-10 max-h-[260px] overflow-x-auto px-4 pt-1 pb-4 font-mono leading-relaxed"
+            style={{ tabSize: 2 }}
           >
             <code>{`<div className="${generatedClassNames}">\n  <TextureOverlay texture="${texture}" />\n</div>`}</code>
           </pre>

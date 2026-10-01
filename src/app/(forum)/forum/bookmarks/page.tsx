@@ -77,7 +77,7 @@ export default function ForumStashesPage() {
                 }
                 title={thread.title}
                 subtitle={
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-2">
                     <Clock className="size-3.5" />
                     Saved {formatTimeAgo(thread.savedAt)}
                   </span>

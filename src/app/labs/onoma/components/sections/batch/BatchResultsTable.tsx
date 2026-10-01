@@ -16,6 +16,61 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import type { BatchNameResult } from "./batch-constants";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import { Slider } from "~/components/ui/slider";
+import { Checkbox } from "~/components/ui/checkbox";
+import { cn } from "~/lib/utils";
+
+type Sorting = BatchResultsTableProps["sorting"];
+
+function ariaSort(sorting: Sorting, column: keyof BatchNameResult) {
+  if (sorting.column !== column) return "none" as const;
+  return sorting.direction === "asc" ? ("ascending" as const) : ("descending" as const);
+}
+
+/** A sort toggle for a column header: a `ghost` button; the header cell carries `aria-sort`. */
+function SortButton({
+  column,
+  label,
+  sorting,
+  onSort,
+}: {
+  column: keyof BatchNameResult;
+  label: string;
+  sorting: Sorting;
+  onSort: (col: keyof BatchNameResult) => void;
+}) {
+  const active = sorting.column === column;
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => onSort(column)}
+      className={cn(
+        "text-footnote -ml-2 gap-1 px-2",
+        active ? "text-tint" : "text-label hover:text-tint"
+      )}
+    >
+      {label}
+      {active && <span aria-hidden>{sorting.direction === "asc" ? "↑" : "↓"}</span>}
+    </Button>
+  );
+}
+
+function SortableHead(props: React.ComponentProps<typeof SortButton>) {
+  return (
+    <TableHead aria-sort={ariaSort(props.sorting, props.column)}>
+      <SortButton {...props} />
+    </TableHead>
+  );
+}
 
 interface BatchResultsTableProps {
   results: BatchNameResult[];
@@ -75,26 +130,27 @@ export function BatchResultsTable({
             onChange={(e) => onSearchChange(e.target.value)}
             className="text-footnote"
           />
-          <div className="text-label-secondary text-footnote flex items-center gap-1.5">
+          <div className="text-label-secondary text-footnote flex items-center gap-2">
             <div className="flex items-center gap-1">
               <span>Max Perplexity:</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="text-label-secondary hover:text-label inline-flex cursor-help items-center transition-colors focus:outline-none"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     aria-label="What is Perplexity?"
+                    className="text-label-secondary hover:text-label cursor-help"
                   >
                     <HelpCircle className="h-3 w-3" />
-                  </button>
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-footnote max-w-xs space-y-1.5 p-3">
+                <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
                   <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
                   <p className="text-label-secondary text-caption leading-relaxed">
                     Measures how unexpected or unusual a word&apos;s letter transitions are relative
                     to the training phonology model.
                   </p>
-                  <div className="border-separator text-caption grid grid-cols-2 gap-1.5 border-t pt-1 font-mono">
+                  <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-1 font-mono">
                     <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
                     <span className="text-yellow font-medium">25–50: Balanced</span>
                     <span className="text-red col-span-2 font-medium">
@@ -104,13 +160,13 @@ export function BatchResultsTable({
                 </TooltipContent>
               </Tooltip>
             </div>
-            <input
-              type="range"
+            <Slider
               min={0}
               max={100}
-              value={perplexityFilter}
-              onChange={(e) => onPerplexityChange(Number(e.target.value))}
-              className="accent-tint w-20"
+              value={[Number(perplexityFilter)]}
+              onValueChange={([v = 0]) => onPerplexityChange(v)}
+              aria-label="Maximum perplexity"
+              className="w-20"
             />
             <span className="text-tint text-caption font-mono font-semibold">
               {perplexityFilter > 0 ? `< ${perplexityFilter}` : "All"}
@@ -120,12 +176,9 @@ export function BatchResultsTable({
 
         <div className="flex items-center gap-2">
           {selectedNames.size > 0 && (
-            <button
-              onClick={onBulkSave}
-              className="rounded-control border-indigo/30 bg-indigo/10 text-footnote text-indigo hover:bg-indigo/20 flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 font-semibold"
-            >
+            <Button variant="tinted" size="sm" onClick={onBulkSave}>
               <Bookmark className="h-3.5 w-3.5" /> Save Selected ({selectedNames.size})
-            </button>
+            </Button>
           )}
           <Button variant="bordered" size="sm" onClick={onExportCSV}>
             <FileDown className="h-3.5 w-3.5" /> CSV
@@ -137,131 +190,122 @@ export function BatchResultsTable({
       </div>
 
       {/* Results table */}
-      <div className="border-separator rounded-control max-h-[500px] overflow-y-auto border">
-        <table className="text-footnote w-full text-left">
-          <thead className="bg-surface border-separator sticky top-0 border-b">
-            <tr>
-              <th className="w-8 p-2 text-center">
-                <input
-                  type="checkbox"
-                  checked={results.length > 0 && selectedNames.size === results.length}
-                  onChange={onSelectAll}
-                  className="border-separator accent-tint rounded-control-sm cursor-pointer"
+      <Table containerClassName="max-h-[500px]">
+        <TableHeader sticky>
+          <TableRow>
+            <TableHead className="w-8 text-center">
+              <Checkbox
+                checked={results.length > 0 && selectedNames.size === results.length}
+                onCheckedChange={() => onSelectAll()}
+                aria-label="Select all names"
+              />
+            </TableHead>
+            <SortableHead column="name" label="Name" sorting={sorting} onSort={onSort} />
+            <TableHead className="text-label">IPA Transcription</TableHead>
+            <SortableHead column="syllables" label="Syllables" sorting={sorting} onSort={onSort} />
+            <TableHead aria-sort={ariaSort(sorting, "perplexity")}>
+              <div className="flex items-center gap-1">
+                <SortButton
+                  column="perplexity"
+                  label="Perplexity"
+                  sorting={sorting}
+                  onSort={onSort}
                 />
-              </th>
-              <th
-                onClick={() => onSort("name")}
-                className="text-label hover:text-tint cursor-pointer p-2 font-semibold"
-              >
-                Name {sorting.column === "name" && (sorting.direction === "asc" ? "↑" : "↓")}
-              </th>
-              <th className="text-label p-2 font-semibold">IPA Transcription</th>
-              <th
-                onClick={() => onSort("syllables")}
-                className="text-label hover:text-tint cursor-pointer p-2 font-semibold"
-              >
-                Syllables{" "}
-                {sorting.column === "syllables" && (sorting.direction === "asc" ? "↑" : "↓")}
-              </th>
-              <th className="text-label p-2 font-semibold">
-                <div className="flex items-center gap-1">
-                  <span
-                    onClick={() => onSort("perplexity")}
-                    className="hover:text-tint cursor-pointer"
-                  >
-                    Perplexity{" "}
-                    {sorting.column === "perplexity" && (sorting.direction === "asc" ? "↑" : "↓")}
-                  </span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="text-label-secondary hover:text-label inline-flex cursor-help items-center transition-colors focus:outline-none"
-                        aria-label="What is Perplexity?"
-                      >
-                        <HelpCircle className="h-3 w-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-footnote max-w-xs space-y-1.5 p-3">
-                      <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
-                      <p className="text-label-secondary text-caption leading-relaxed">
-                        Measures how unexpected or unusual a word&apos;s letter transitions are
-                        relative to the training phonology model.
-                      </p>
-                      <div className="border-separator text-caption grid grid-cols-2 gap-1.5 border-t pt-1 font-mono">
-                        <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
-                        <span className="text-yellow font-medium">25–50: Balanced</span>
-                        <span className="text-red col-span-2 font-medium">
-                          &gt; 50: Exotic & unusual transitions
-                        </span>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </th>
-              <th className="p-2 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-separator divide-y">
-            {results.map((r, i) => {
-              const isSelected = selectedNames.has(r.name);
-              return (
-                <tr
-                  key={r.name + i}
-                  className={`hover:bg-fill-4 transition-colors ${isSelected ? "bg-tint/5" : ""}`}
-                >
-                  <td className="p-2 text-center">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => onSelectName(r.name)}
-                      className="border-separator accent-tint rounded-control-sm cursor-pointer"
-                    />
-                  </td>
-                  <td className="text-label p-2 font-semibold">{r.name}</td>
-                  <td className="text-label-secondary p-2 font-mono">{r.ipa || "—"}</td>
-                  <td className="text-label-secondary p-2">{r.syllables}</td>
-                  <td className="p-2">
-                    <span
-                      className={`text-caption font-mono font-semibold ${
-                        r.perplexity < 25
-                          ? "text-green"
-                          : r.perplexity < 50
-                            ? "text-yellow"
-                            : "text-red"
-                      }`}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="What is Perplexity?"
+                      className="text-label-secondary hover:text-label cursor-help"
                     >
-                      {r.perplexity.toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="p-2 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => onPlayName(r.name, r.ipa)}
-                        title="Listen to pronunciation"
-                        className="text-label-secondary hover:bg-fill-2 hover:text-tint rounded-control-sm cursor-pointer p-1 transition-colors"
-                      >
-                        <Volume2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleCopy(r.name)}
-                        title="Copy to clipboard"
-                        className="text-label-secondary hover:bg-fill-2 hover:text-label rounded-control-sm cursor-pointer p-1 transition-colors"
-                      >
-                        {copiedName === r.name ? (
-                          <Check className="text-green h-3.5 w-3.5" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </button>
+                      <HelpCircle className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
+                    <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
+                    <p className="text-label-secondary text-caption leading-relaxed">
+                      Measures how unexpected or unusual a word&apos;s letter transitions are
+                      relative to the training phonology model.
+                    </p>
+                    <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-1 font-mono">
+                      <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
+                      <span className="text-yellow font-medium">25–50: Balanced</span>
+                      <span className="text-red col-span-2 font-medium">
+                        &gt; 50: Exotic & unusual transitions
+                      </span>
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {results.map((r, i) => {
+            const isSelected = selectedNames.has(r.name);
+            return (
+              <TableRow
+                key={r.name + i}
+                className={`hover:bg-fill-4 transition-colors ${isSelected ? "bg-tint/5" : ""}`}
+              >
+                <TableCell className="p-2 text-center">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onSelectName(r.name)}
+                    aria-label={`Select ${r.name}`}
+                  />
+                </TableCell>
+                <TableCell className="text-label p-2 font-semibold">{r.name}</TableCell>
+                <TableCell className="text-label-secondary p-2 font-mono">{r.ipa || "—"}</TableCell>
+                <TableCell className="text-label-secondary p-2">{r.syllables}</TableCell>
+                <TableCell className="p-2">
+                  <span
+                    className={`text-caption font-mono font-semibold ${
+                      r.perplexity < 25
+                        ? "text-green"
+                        : r.perplexity < 50
+                          ? "text-yellow"
+                          : "text-red"
+                    }`}
+                  >
+                    {r.perplexity.toFixed(1)}
+                  </span>
+                </TableCell>
+                <TableCell className="p-2 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onPlayName(r.name, r.ipa)}
+                      title="Listen to pronunciation"
+                      aria-label="Listen to pronunciation"
+                      className="text-label-secondary hover:text-tint"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleCopy(r.name)}
+                      title="Copy to clipboard"
+                      aria-label="Copy to clipboard"
+                      className="text-label-secondary hover:text-label"
+                    >
+                      {copiedName === r.name ? (
+                        <Check className="text-green h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

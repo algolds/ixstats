@@ -87,7 +87,7 @@ export function EconomicControlCard({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="text-headline flex items-center gap-2">
-              <div className="rounded-control border-indigo/20 bg-indigo/10 text-indigo border p-1.5">
+              <div className="rounded-control border-indigo/20 bg-indigo/10 text-indigo border p-2">
                 <Globe className="h-4 w-4" />
               </div>
               Global Economic Controls
@@ -97,7 +97,7 @@ export function EconomicControlCard({
               next calculation cycle.
             </CardDescription>
           </div>
-          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-2.5 py-1.5">
+          <div className="border-separator bg-surface rounded-control flex shrink-0 items-center gap-2 border px-3 py-2">
             <Label
               htmlFor="econ-advanced-mode"
               className="text-label-secondary text-subhead cursor-pointer select-none"
@@ -117,7 +117,7 @@ export function EconomicControlCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Global Growth Factor</Label>
-            <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
+            <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
           </div>
@@ -158,7 +158,7 @@ export function EconomicControlCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Base Inflation Rate</Label>
-            <Badge variant="blue" className="rounded-full px-2.5 py-0.5 tabular-nums">
+            <Badge variant="blue" className="rounded-full px-3 py-0.5 tabular-nums">
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
           </div>
@@ -195,7 +195,7 @@ export function EconomicControlCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-label text-caption">Threshold</Label>
-                  <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
+                  <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
                     ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
                   </Badge>
                 </div>
@@ -212,7 +212,7 @@ export function EconomicControlCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-label text-caption">Factor (strength)</Label>
-                  <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
+                  <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
                     {diminishingReturnsFactor.toFixed(2)}
                   </Badge>
                 </div>
@@ -238,7 +238,7 @@ export function EconomicControlCard({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-label text-caption">Minimum Growth Floor</Label>
-                <Badge variant="indigo" className="rounded-full px-2.5 py-0.5 tabular-nums">
+                <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
                   {(minGrowthFloor * 100).toFixed(1)}%
                 </Badge>
               </div>
@@ -261,21 +261,20 @@ export function EconomicControlCard({
 
             {/* Tier Growth Modifiers (Collapsible) */}
             <div className="space-y-3">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowTierModifiers(!showTierModifiers)}
                 aria-expanded={showTierModifiers}
-                className="group hover:text-label flex w-full items-center justify-between text-left transition-colors"
+                className="group text-label-secondary hover:text-label text-subhead w-full justify-between px-2 text-left"
               >
-                <Label className="text-label-secondary group-hover:text-label text-subhead cursor-pointer">
-                  Tier Growth Modifiers
-                </Label>
+                Tier Growth Modifiers
                 {showTierModifiers ? (
-                  <ChevronUp className="text-label-secondary h-4 w-4" />
+                  <ChevronUp aria-hidden className="h-4 w-4" />
                 ) : (
-                  <ChevronDown className="text-label-secondary h-4 w-4" />
+                  <ChevronDown aria-hidden className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
               <p className="text-label-secondary text-footnote leading-relaxed">
                 Per-tier multipliers applied to base growth rates. 1.0x = no change.
               </p>

@@ -278,7 +278,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     <div className="space-y-2">
                       <Label
                         htmlFor="endDate"
-                        className="text-label text-caption flex items-center gap-1.5"
+                        className="text-label text-caption flex items-center gap-2"
                       >
                         <Calendar className="text-label-secondary h-4 w-4" />
                         Expiry Date (optional)
@@ -322,7 +322,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                     </Button>
                   </div>
 
-                  <div className="max-h-[260px] space-y-2.5 overflow-y-auto pr-1">
+                  <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
                     {options.map((option, idx) => (
                       <div
                         key={idx}
@@ -370,20 +370,20 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   variant="outline"
                   onClick={prevStep}
                   disabled={step === 1}
-                  className="cursor-pointer gap-1.5"
+                  className="cursor-pointer gap-2"
                 >
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
 
                 {step < 3 ? (
-                  <Button type="button" onClick={nextStep} className="cursor-pointer gap-1.5">
+                  <Button type="button" onClick={nextStep} className="cursor-pointer gap-2">
                     Next <ChevronRight className="h-4 w-4" />
                   </Button>
                 ) : (
                   <Button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="cursor-pointer gap-1.5"
+                    className="cursor-pointer gap-2"
                   >
                     {createMutation.isPending ? (
                       "Creating..."
@@ -408,9 +408,9 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
               🗳️ Poll Creation Guide
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-label-secondary text-footnote space-y-3.5 leading-relaxed">
+          <CardContent className="text-label-secondary text-footnote space-y-4 leading-relaxed">
             <div>
-              <h5 className="text-label mb-1 flex items-center gap-1.5 font-semibold">
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
                 <CheckCircle className="text-green h-3.5 w-3.5" /> Standard Choice Poll
               </h5>
               <p>
@@ -420,7 +420,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             </div>
 
             <div>
-              <h5 className="text-label mb-1 flex items-center gap-1.5 font-semibold">
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
                 <CheckCircle className="text-green h-3.5 w-3.5" /> Feature Priority Poll
               </h5>
               <p>
@@ -429,7 +429,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             </div>
 
             <div>
-              <h5 className="text-label mb-1 flex items-center gap-1.5 font-semibold">
+              <h5 className="text-label mb-1 flex items-center gap-2 font-semibold">
                 <CheckCircle className="text-green h-3.5 w-3.5" /> Feature Upvoting Board
               </h5>
               <p>
@@ -438,7 +438,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
               </p>
             </div>
 
-            <div className="border-separator border-t pt-3.5">
+            <div className="border-separator border-t pt-4">
               <p>
                 <strong>Targeting Note:</strong> Restricting the scope to a country restricts ballot
                 cast actions only to validated residents of that nation.

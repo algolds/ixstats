@@ -35,9 +35,9 @@ export function CalculationSimulator({
         <h4 className="text-label text-caption">Interactive Sandbox</h4>
         <Button onClick={onRunSimulation} disabled={isSimulating} size="sm">
           {isSimulating ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Play className="mr-1.5 h-3.5 w-3.5" />
+            <Play className="mr-2 h-3.5 w-3.5" />
           )}
           Run Calculation
         </Button>

@@ -22,10 +22,10 @@ import { SavedDictionaryCard } from "../stash/SavedDictionaryCard";
 import { StudioLexicon } from "./studio/StudioLexicon";
 import { useStudioState } from "../../hooks/useStudioState";
 import HistorySection from "./HistorySection";
-import { cn } from "~/lib/utils";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Badge } from "~/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
@@ -193,41 +193,18 @@ export function StashSection({
       {/* Tab Switcher & Filters/Import */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         {/* Sub-tab Toggle buttons */}
-        <div className="bg-fill-4 border-separator rounded-control flex gap-1 border p-1 select-none">
-          <button
-            onClick={() => setStashTab("saved")}
-            className={cn(
-              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              stashTab === "saved"
-                ? "bg-tint/10 text-tint font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Saved Items
-          </button>
-          <button
-            onClick={() => setStashTab("lexicon")}
-            className={cn(
-              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              stashTab === "lexicon"
-                ? "bg-green/10 text-green font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Lexicon Dictionary
-          </button>
-          <button
-            onClick={() => setStashTab("history")}
-            className={cn(
-              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              stashTab === "history"
-                ? "bg-tint/10 text-tint font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            Generation History
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          asTabs
+          aria-label="Stash view"
+          value={stashTab}
+          onValueChange={setStashTab}
+          options={[
+            { value: "saved", label: "Saved Items" },
+            { value: "lexicon", label: "Lexicon Dictionary" },
+            { value: "history", label: "Generation History" },
+          ]}
+        />
 
         {stashTab === "saved" && (
           <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
@@ -255,7 +232,7 @@ export function StashSection({
 
             {/* Search Input */}
             <div className="relative w-full sm:w-56">
-              <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+              <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
               <Input
                 type="text"
                 placeholder="Search saved items..."
@@ -298,7 +275,7 @@ export function StashSection({
               </div>
 
               {savedNames.length > 0 ? (
-                <div className="grid max-h-[600px] gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2">
+                <div className="grid max-h-[600px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
                   {savedNames.map((entry) => {
                     const nameValue = entry.values[0] || entry.title;
                     const isStashingThis = stashNameId === entry.id;
@@ -340,38 +317,39 @@ export function StashSection({
                               </PopoverTrigger>
                               <PopoverContent
                                 align="end"
-                                className="w-56 p-1.5"
+                                className="w-56 p-2"
                                 onClick={(ev) => ev.stopPropagation()}
                               >
-                                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-1.5">
+                                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-2">
                                   <span className="text-subhead text-label-secondary">
                                     Stash folders
                                   </span>
                                   <Badge variant="tinted">Global</Badge>
                                 </div>
                                 {stashesQuery.isLoading && (
-                                  <div className="text-label-secondary text-footnote flex items-center gap-1.5 px-2 py-1.5">
+                                  <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">
                                     <Loader2 className="size-3.5 animate-spin" />
                                     <span>Loading stashes...</span>
                                   </div>
                                 )}
                                 {stashesQuery.data && stashesQuery.data.length === 0 && (
-                                  <div className="text-label-secondary text-footnote px-2 py-1.5">
+                                  <div className="text-label-secondary text-footnote px-2 py-2">
                                     No stash folders found.
                                   </div>
                                 )}
                                 <div className="max-h-36 space-y-0.5 overflow-y-auto">
                                   {stashesQuery.data?.map((s) => (
-                                    <button
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
                                       key={s.id}
-                                      type="button"
                                       disabled={stashingFolderId !== null}
                                       onClick={() =>
                                         handleStashName(entry.id, nameValue, s.id, s.name)
                                       }
-                                      className="text-label text-footnote hover:bg-fill-3 rounded-control-sm flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-colors disabled:opacity-50"
+                                      className="text-label w-full justify-between px-2 text-left font-normal"
                                     >
-                                      <span className="flex items-center gap-1.5 truncate">
+                                      <span className="flex items-center gap-2 truncate">
                                         <span
                                           className="size-2 shrink-0 rounded-full"
                                           style={{ backgroundColor: s.color }}
@@ -381,11 +359,11 @@ export function StashSection({
                                       {stashingFolderId === s.id && (
                                         <Loader2 className="text-label-secondary size-3.5 animate-spin" />
                                       )}
-                                    </button>
+                                    </Button>
                                   ))}
                                 </div>
                                 {stashFeedback && (
-                                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-1.5 px-2 py-1 text-center">
+                                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-2 px-2 py-1 text-center">
                                     {stashFeedback}
                                   </div>
                                 )}

@@ -20,6 +20,14 @@ import {
 } from "iconoir-react";
 import { LorewardWeightsCard } from "./LorewardWeightsCard";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function SystemTuningSection() {
   const notify = useNotify();
@@ -215,7 +223,7 @@ export function SystemTuningSection() {
           </div>
           <div className="space-y-4">
             <div className="border-separator grid gap-3 border-b pb-3 md:grid-cols-2">
-              <form onSubmit={handleSyncTemplate} className="space-y-1.5">
+              <form onSubmit={handleSyncTemplate} className="space-y-2">
                 <label className="text-label text-caption block">Sync by Name</label>
                 <div className="relative flex gap-2">
                   <div className="relative flex-1">
@@ -265,7 +273,7 @@ export function SystemTuningSection() {
                 </div>
               </form>
 
-              <form onSubmit={handleSyncCategory} className="space-y-1.5">
+              <form onSubmit={handleSyncCategory} className="space-y-2">
                 <label className="text-label text-caption block">Sync by Category</label>
                 <div className="flex gap-2">
                   <Input
@@ -301,32 +309,34 @@ export function SystemTuningSection() {
                 No templates synchronized yet.
               </div>
             ) : (
-              <div className="border-separator rounded-row text-footnote max-h-[12rem] overflow-y-auto border">
-                <table className="w-full tabular-nums">
-                  <thead className="bg-fill-4 sticky top-0 font-medium">
-                    <tr className="border-separator border-b">
-                      <th className="text-label-secondary px-3 py-2 text-left">Template Name</th>
-                      <th className="text-label-secondary px-3 py-2 text-left">Category</th>
-                      <th className="text-label-secondary px-3 py-2 text-right">Usage</th>
-                      <th className="text-label-secondary px-3 py-2 text-right">Params</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {templates.map((tpl) => (
-                      <tr key={tpl.id} className="hover:bg-fill-4">
-                        <td className="text-label px-3 py-2 font-mono font-medium">{tpl.name}</td>
-                        <td className="text-label-secondary px-3 py-2">{tpl.category || "—"}</td>
-                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
-                          {tpl.usageCount}
-                        </td>
-                        <td className="text-label-secondary px-3 py-2 text-right tabular-nums">
-                          {tpl.paramCount}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table containerClassName="max-h-[12rem]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="px-3">Template Name</TableHead>
+                    <TableHead className="px-3">Category</TableHead>
+                    <TableHead className="px-3 text-right">Usage</TableHead>
+                    <TableHead className="px-3 text-right">Params</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {templates.map((tpl) => (
+                    <TableRow key={tpl.id}>
+                      <TableCell className="text-label px-3 font-mono font-medium">
+                        {tpl.name}
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-3">
+                        {tpl.category || "—"}
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-3 text-right">
+                        {tpl.usageCount}
+                      </TableCell>
+                      <TableCell className="text-label-secondary px-3 text-right">
+                        {tpl.paramCount}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
         </FacetCard>
@@ -344,7 +354,7 @@ export function SystemTuningSection() {
           </div>
           <div className="space-y-4">
             <form onSubmit={handleSaveCron} className="space-y-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption">Lorewards Scoring Schedule</label>
                 <Input
                   placeholder="e.g. 0 6 * * *"
@@ -355,7 +365,7 @@ export function SystemTuningSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption">Passive Income Schedule</label>
                 <Input
                   placeholder="e.g. 0 0 * * *"
@@ -366,7 +376,7 @@ export function SystemTuningSection() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption">Card Value Tracking Schedule</label>
                 <Input
                   placeholder="e.g. 0 */6 * * *"

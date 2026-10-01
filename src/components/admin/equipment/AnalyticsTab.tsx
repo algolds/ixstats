@@ -26,6 +26,14 @@ import {
   WarningTriangle as AlertTriangle,
   Industry as Factory,
 } from "iconoir-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 interface AnalyticsTabProps {
   usageStats: any;
@@ -388,60 +396,58 @@ export function AnalyticsTab({
         </CardHeader>
         <CardContent>
           {deprecationCandidates.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full tabular-nums">
-                <thead>
-                  <tr className="border-red/30 border-b">
-                    <th className="text-body px-4 py-2 text-left font-medium">Equipment Name</th>
-                    <th className="text-body px-4 py-2 text-left font-medium">Category</th>
-                    <th className="text-body px-4 py-2 text-left font-medium">Era</th>
-                    <th className="text-body px-4 py-2 text-left font-medium">Manufacturer</th>
-                    <th className="text-body px-4 py-2 text-center font-medium">Tech Level</th>
-                    <th className="text-body px-4 py-2 text-right font-medium">Usage Count</th>
-                    <th className="text-body px-4 py-2 text-left font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deprecationCandidates.map((equipment: any, index: number) => {
-                    const manufacturerName = (equipment as any).manufacturer ?? "N/A";
-                    const techLevel =
-                      (equipment as any).technologyLevel ??
-                      (equipment as any & { technologyTier?: number }).technologyTier ??
-                      null;
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4">Equipment Name</TableHead>
+                  <TableHead className="px-4">Category</TableHead>
+                  <TableHead className="px-4">Era</TableHead>
+                  <TableHead className="px-4">Manufacturer</TableHead>
+                  <TableHead className="px-4 text-center">Tech Level</TableHead>
+                  <TableHead className="px-4 text-right">Usage Count</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deprecationCandidates.map((equipment: any, index: number) => {
+                  const manufacturerName = (equipment as any).manufacturer ?? "N/A";
+                  const techLevel =
+                    (equipment as any).technologyLevel ??
+                    (equipment as any & { technologyTier?: number }).technologyTier ??
+                    null;
 
-                    return (
-                      <tr key={equipment.id} className={index % 2 === 0 ? "bg-red/50" : ""}>
-                        <td className="text-body px-4 py-3 font-medium">{equipment.name}</td>
-                        <td className="text-body px-4 py-3">
-                          {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
-                        </td>
-                        <td className="text-body px-4 py-3">
-                          {equipment.era.toUpperCase().replace("-", " ")}
-                        </td>
-                        <td className="text-body px-4 py-3">{manufacturerName}</td>
-                        <td className="text-body px-4 py-3 text-center tabular-nums">
-                          {techLevel ?? "N/A"}
-                        </td>
-                        <td className="text-headline text-orange px-4 py-3 text-right tabular-nums">
-                          {equipment.usageCount}
-                        </td>
-                        <td className="text-body px-4 py-3">
-                          <span
-                            className={`text-caption inline-flex rounded-full px-2 py-1 ${
-                              equipment.isActive
-                                ? "bg-green/10 text-green"
-                                : "bg-surface-secondary text-label"
-                            }`}
-                          >
-                            {equipment.isActive ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  return (
+                    <TableRow key={equipment.id} className={index % 2 === 0 ? "bg-red/50" : ""}>
+                      <TableCell className="text-body px-4 font-medium">{equipment.name}</TableCell>
+                      <TableCell className="text-body px-4">
+                        {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
+                      </TableCell>
+                      <TableCell className="text-body px-4">
+                        {equipment.era.toUpperCase().replace("-", " ")}
+                      </TableCell>
+                      <TableCell className="text-body px-4">{manufacturerName}</TableCell>
+                      <TableCell className="text-body px-4 text-center">
+                        {techLevel ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="text-headline text-orange px-4 text-right">
+                        {equipment.usageCount}
+                      </TableCell>
+                      <TableCell className="text-body px-4">
+                        <span
+                          className={`text-caption inline-flex rounded-full px-2 py-1 ${
+                            equipment.isActive
+                              ? "bg-green/10 text-green"
+                              : "bg-surface-secondary text-label"
+                          }`}
+                        >
+                          {equipment.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <TrendingUp className="text-green mb-4 h-12 w-12" />

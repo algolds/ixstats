@@ -31,6 +31,9 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { PronunciationEditor } from "./PronunciationEditor";
 import { LinguisticProfile } from "./LinguisticProfile";
+import { Button } from "~/components/ui/button";
+import { ActionPill } from "~/components/ui/action-pill";
+import { Toggle } from "~/components/ui/toggle";
 
 interface NameResultCardProps {
   name: string;
@@ -231,7 +234,7 @@ export function NameResultCard({
       depth={showDetailsModal ? 2 : 1}
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
-        "group rounded-card relative flex flex-col justify-start gap-3.5 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
+        "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
         fitColor === "emerald" && "border-green/20 bg-emerald-500/[0.015]",
@@ -259,7 +262,7 @@ export function NameResultCard({
       {/* Main Top Row */}
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
         {/* Name Display Stack */}
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
           <span
             className="text-label group-hover:text-tint w-full leading-none font-semibold whitespace-nowrap transition-colors duration-300"
             style={{ fontSize: dynamicFontSize }}
@@ -267,35 +270,32 @@ export function NameResultCard({
           >
             {name}
           </span>
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
             {/* IPA badge — click to hear the exact phonetic pronunciation */}
             {ipa && (
               <span className="flex min-w-0 flex-shrink-0 items-center">
-                <button
-                  type="button"
+                <ActionPill
                   onClick={handlePlayPronunciation}
                   title="Click to hear phonetic pronunciation"
+                  aria-label={`Play pronunciation /${ipa}/`}
+                  icon={<Volume2 className="text-tint" />}
                   className={cn(
-                    "text-label-secondary border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint text-caption flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono tracking-[0.02em] whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.94]",
-                    allowCustomize ? "rounded-l-full" : "rounded-full",
+                    "border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint border font-mono tracking-[0.02em]",
+                    allowCustomize && "rounded-r-none",
                     hasOverride && "border-tint/40 text-tint"
                   )}
                   style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="text-tint h-3 w-3 flex-shrink-0" />
-                  <span className="whitespace-nowrap">{ipa}</span>
-                </button>
+                  {ipa}
+                </ActionPill>
                 {allowCustomize && (
-                  <button
-                    type="button"
+                  <ActionPill
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
-                    className={cn(
-                      "text-label-secondary border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.94]"
-                    )}
-                  >
-                    <Pencil className="h-2.5 w-2.5" />
-                  </button>
+                    aria-label={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                    icon={<Pencil />}
+                    className="border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint rounded-l-none border border-l-0 px-2"
+                  />
                 )}
               </span>
             )}
@@ -312,41 +312,42 @@ export function NameResultCard({
           )}
         >
           {/* Linguistic Details Button (Toggles expand/shrink) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetailsModal(!showDetailsModal);
-            }}
+          <Toggle
+            size="sm"
+            pressed={showDetailsModal}
+            onClick={(e) => e.stopPropagation()}
+            onPressedChange={setShowDetailsModal}
             title={showDetailsModal ? "Hide linguistic details" : "Show linguistic details"}
-            className={cn(
-              "rounded-control-sm cursor-pointer p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.92]",
-              showDetailsModal
-                ? "bg-tint/20 text-tint ring-tint/30 ring-1"
-                : "text-label-secondary hover:bg-tint/10 hover:text-tint"
-            )}
+            aria-label="Linguistic details"
+            className="text-label-secondary hover:text-tint px-0"
           >
             <Languages className="h-4 w-4" />
-          </button>
+          </Toggle>
 
           {/* Copy Button */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleCopy}
             title="Copy name to clipboard"
-            className="text-label-secondary rounded-control-sm hover:bg-green/10 hover:text-green cursor-pointer p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.92]"
+            aria-label="Copy name to clipboard"
+            className="text-label-secondary hover:text-green hover:bg-green/10"
           >
             {copied ? <Check className="text-green h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </button>
+          </Button>
 
           {/* Save/Bookmark Button (Onoma Local Stash) */}
           {onSave && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={handleSave}
               disabled={localSaved || saving}
               title={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
+              aria-label={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
               className={cn(
-                "rounded-control-sm cursor-pointer p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.92] disabled:opacity-50",
                 localSaved
-                  ? "bg-tint/20 text-tint ring-tint/30 scale-105 ring-1"
+                  ? "bg-tint-fill text-tint"
                   : "text-label-secondary hover:bg-tint/10 hover:text-tint"
               )}
             >
@@ -355,21 +356,24 @@ export function NameResultCard({
               ) : (
                 <Bookmark className={cn("h-4 w-4", localSaved && "fill-tint text-tint")} />
               )}
-            </button>
+            </Button>
           )}
 
           {/* Use/Redirect Button */}
           {onUse && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onUse(name);
               }}
               title="Deploy name in game"
-              className="text-label-secondary rounded-control-sm hover:bg-yellow/10 hover:text-yellow cursor-pointer p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out active:scale-[0.92]"
+              aria-label="Deploy name in game"
+              className="text-label-secondary hover:text-yellow hover:bg-yellow/10"
             >
               <ArrowUpRight className="h-4 w-4" />
-            </button>
+            </Button>
           )}
 
           {/* Consumer-supplied actions (e.g. move-to-folder, delete) */}

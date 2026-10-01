@@ -27,7 +27,7 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
       : "bg-teal/10 text-teal border-teal/20";
 
   return (
-    <FacetCard className="group hover:border-separator relative p-3.5 transition-colors">
+    <FacetCard className="group hover:border-separator relative p-4 transition-colors">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1 pr-2">

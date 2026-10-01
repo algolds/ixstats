@@ -16,7 +16,7 @@ export function DatabaseExplorer() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="rounded-control bg-green/10 text-green p-2.5">
+              <div className="rounded-control bg-green/10 text-green p-3">
                 <Database className="h-6 w-6" />
               </div>
               <div>

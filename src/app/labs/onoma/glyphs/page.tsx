@@ -25,6 +25,18 @@ import {
 import { type OnomaGlyphName } from "../components/glyphs/onoma-glyphs-catalog";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Slider } from "~/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface GlyphMeta {
   name: OnomaGlyphName;
@@ -303,7 +315,7 @@ export default function OnomaGlyphsDevPage() {
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Navigation & Header */}
         <div className="border-separator flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="text-label-secondary text-footnote flex items-center gap-2 font-mono">
               <Link
                 href="/labs/onoma"
@@ -338,7 +350,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Link
               href="/labs/onoma"
-              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-3.5 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Onoma Workspace</span>
@@ -373,111 +385,112 @@ export default function OnomaGlyphsDevPage() {
             </div>
 
             {/* Domain Pills */}
-            <div className="flex scrollbar-none items-center gap-1.5 overflow-x-auto pb-1 md:col-span-2">
+            <ToggleGroup
+              type="single"
+              variant="pill"
+              size="sm"
+              disallowEmpty
+              aria-label="Glyph domain"
+              value={selectedDomain}
+              onValueChange={setSelectedDomain}
+              className="scrollbar-none flex-nowrap gap-2 overflow-x-auto pb-1 md:col-span-2"
+            >
               {DOMAINS.map((domain) => (
-                <button
-                  key={domain}
-                  onClick={() => setSelectedDomain(domain)}
-                  className={cn(
-                    "rounded-control text-caption shrink-0 cursor-pointer px-2.5 py-1.5 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                    selectedDomain === domain
-                      ? "bg-label text-surface shadow-card"
-                      : "bg-surface border-separator text-label-secondary hover:text-label hover:bg-background border"
-                  )}
-                >
+                <ToggleGroupItem key={domain} value={domain} className="shrink-0 font-mono">
                   {domain}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
 
           {/* Sizing, States, Stroke & Palette Control Row */}
           <div className="border-separator grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2 lg:grid-cols-4">
             {/* Sizing Switcher */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">
                 Scale: <span className="text-label">{selectedSize}</span>
               </label>
-              <div className="bg-surface border-separator rounded-row flex items-center gap-1 border p-1">
-                {(["xs", "sm", "md", "lg", "xl", "display"] as OnomaGlyphSize[]).map((sz) => (
-                  <button
-                    key={sz}
-                    onClick={() => setSelectedSize(sz)}
-                    className={cn(
-                      "rounded-control text-caption flex-1 cursor-pointer py-1 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      selectedSize === sz
-                        ? "bg-tint text-on-tint shadow-card"
-                        : "text-label-secondary hover:text-label"
-                    )}
-                  >
-                    {sz}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                scrollable={false}
+                aria-label="Glyph scale"
+                itemClassName="font-mono"
+                value={selectedSize}
+                onValueChange={setSelectedSize}
+                options={(["xs", "sm", "md", "lg", "xl", "display"] as OnomaGlyphSize[]).map(
+                  (sz) => ({ value: sz, label: sz })
+                )}
+              />
             </div>
 
             {/* State Switcher */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">
                 State: <span className="text-label">{selectedState}</span>
               </label>
-              <div className="bg-surface border-separator rounded-row flex items-center gap-1 border p-1">
-                {(["idle", "active", "generating", "disabled"] as OnomaGlyphState[]).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setSelectedState(st)}
-                    className={cn(
-                      "rounded-control text-caption flex-1 cursor-pointer py-1 font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      selectedState === st
-                        ? "bg-label text-surface shadow-card"
-                        : "text-label-secondary hover:text-label"
-                    )}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                aria-label="Glyph state"
+                itemClassName="font-mono"
+                value={selectedState}
+                onValueChange={setSelectedState}
+                options={(["idle", "active", "generating", "disabled"] as OnomaGlyphState[]).map(
+                  (st) => ({ value: st, label: st })
+                )}
+              />
             </div>
 
             {/* Stroke Weight */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-label-secondary text-subhead flex items-center justify-between font-mono">
                 <span>Stroke:</span>
                 <span className="text-label font-mono">{selectedStroke.toFixed(2)}px</span>
               </label>
               <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="range"
-                  min="1.0"
-                  max="3.0"
-                  step="0.25"
-                  value={selectedStroke}
-                  onChange={(e) => setSelectedStroke(parseFloat(e.target.value))}
-                  className="accent-tint w-full cursor-pointer"
+                <Slider
+                  min={1}
+                  max={3}
+                  step={0.25}
+                  value={[selectedStroke]}
+                  onValueChange={([v]) => setSelectedStroke(v ?? selectedStroke)}
+                  aria-label="Stroke weight"
                 />
               </div>
             </div>
 
             {/* Accent Color Palette */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">Accent Color</label>
-              <div className="bg-surface border-separator rounded-row flex items-center gap-1.5 border p-1.5">
-                {PALETTES.map((p, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedColor(p.value)}
+              <ToggleGroup
+                type="single"
+                size="sm"
+                disallowEmpty
+                aria-label="Accent colour"
+                value={selectedColor ?? "default"}
+                onValueChange={(v) => setSelectedColor(v === "default" ? undefined : v)}
+                className="bg-surface border-separator rounded-row flex-nowrap gap-0.5 border p-1"
+              >
+                {PALETTES.map((p) => (
+                  <ToggleGroupItem
+                    key={p.label}
+                    value={p.value ?? "default"}
                     title={p.label}
-                    className={cn(
-                      "rounded-control h-6 w-6 cursor-pointer border transition-transform duration-150 active:scale-90",
-                      selectedColor === p.value
-                        ? "ring-separator scale-110 ring-2"
-                        : "opacity-75 hover:opacity-100",
-                      p.value ? "" : "bg-label"
-                    )}
-                    style={p.value ? { backgroundColor: p.value } : undefined}
-                  />
+                    aria-label={p.label}
+                    className="group min-w-0 px-1"
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "rounded-control-sm border-separator size-5 border opacity-75 transition-opacity group-hover:opacity-100 group-data-[state=on]:opacity-100",
+                        !p.value && "bg-label"
+                      )}
+                      style={p.value ? { backgroundColor: p.value } : undefined}
+                    />
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
           </div>
         </div>
@@ -491,7 +504,7 @@ export default function OnomaGlyphsDevPage() {
             return (
               <div
                 key={glyph.name}
-                className="group border-separator bg-fill-4 hover:border-separator hover:bg-fill-3 rounded-card shadow-card relative flex flex-col justify-between border p-4.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+                className="group border-separator bg-fill-4 hover:border-separator hover:bg-fill-3 rounded-card shadow-card relative flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
               >
                 {/* Top Badge Row */}
                 <div className="flex items-center justify-between gap-2">
@@ -505,7 +518,7 @@ export default function OnomaGlyphsDevPage() {
                   >
                     {glyph.domain}
                   </span>
-                  <span className="text-label-secondary bg-surface border-separator rounded-control-sm text-caption border px-1.5 py-0.5 font-mono">
+                  <span className="text-label-secondary bg-surface border-separator rounded-control-sm text-caption border px-2 py-0.5 font-mono">
                     {glyph.linguisticNotation}
                   </span>
                 </div>
@@ -534,13 +547,13 @@ export default function OnomaGlyphsDevPage() {
                     {glyph.description}
                   </p>
 
-                  <button
+                  <Button
+                    variant="bordered"
+                    size="sm"
                     onClick={() => copyCode(glyph.name, jsxCode)}
                     className={cn(
-                      "rounded-row text-caption flex w-full cursor-pointer items-center justify-between border px-2.5 py-1.5 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.97]",
-                      isCopied
-                        ? "border-green/30 bg-green/10 text-green font-semibold"
-                        : "bg-surface border-separator text-label-secondary hover:text-label hover:bg-background"
+                      "rounded-row w-full justify-between px-3 font-mono font-normal",
+                      isCopied && "border-green/30 bg-green/10 text-green-ink hover:bg-green/15"
                     )}
                   >
                     <span className="truncate">{isCopied ? "Copied to Clipboard!" : jsxCode}</span>
@@ -549,7 +562,7 @@ export default function OnomaGlyphsDevPage() {
                     ) : (
                       <Copy className="ml-1 h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -647,40 +660,38 @@ export default function OnomaGlyphsDevPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto pb-2">
-            <table className="text-footnote w-full text-left font-mono">
-              <thead>
-                <tr className="border-separator text-label-secondary border-b">
-                  <th className="py-2.5 pr-4">Glyph Name</th>
-                  <th className="px-4 py-2.5 text-center">Micro (16px)</th>
-                  <th className="px-4 py-2.5 text-center">Standard (24px)</th>
-                  <th className="px-4 py-2.5 text-center">Display (48px)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-separator divide-y">
-                {GLYPH_METADATA.map((glyph) => (
-                  <tr key={glyph.name} className="hover:bg-fill-3 transition-colors">
-                    <td className="text-label py-3 pr-4 font-semibold">{glyph.name}</td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-1">
-                        <OnomaGlyph name={glyph.name} size="sm" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-1.5">
-                        <OnomaGlyph name={glyph.name} size="lg" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-2">
-                        <OnomaGlyph name={glyph.name} size="display" />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table className="font-mono">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pr-4">Glyph Name</TableHead>
+                <TableHead className="px-4 text-center">Micro (16px)</TableHead>
+                <TableHead className="px-4 text-center">Standard (24px)</TableHead>
+                <TableHead className="px-4 text-center">Display (48px)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {GLYPH_METADATA.map((glyph) => (
+                <TableRow key={glyph.name} className="hover:bg-fill-3">
+                  <TableCell className="text-label pr-4 font-semibold">{glyph.name}</TableCell>
+                  <TableCell className="px-4 text-center">
+                    <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-1">
+                      <OnomaGlyph name={glyph.name} size="sm" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 text-center">
+                    <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-2">
+                      <OnomaGlyph name={glyph.name} size="lg" />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 text-center">
+                    <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-2">
+                      <OnomaGlyph name={glyph.name} size="display" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

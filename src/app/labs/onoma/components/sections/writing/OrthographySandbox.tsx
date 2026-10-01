@@ -13,6 +13,8 @@ import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 import { Input } from "~/components/ui/input";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Slider } from "~/components/ui/slider";
 
 interface OrthographySandboxProps {
   glyphs: Glyph[];
@@ -199,7 +201,7 @@ export function OrthographySandbox({
     <FacetCard variant="inset" padding="none" className="flex flex-col space-y-4 p-4">
       {/* Header Bar with Direction Segmented Control */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
             <Eye className="h-4 w-4" />
           </div>
@@ -212,52 +214,32 @@ export function OrthographySandbox({
         </div>
 
         {/* Direction Segmented Switcher (Apple Style) */}
-        <div className="border-separator bg-fill-4 rounded-row flex items-center gap-0.5 border p-0.5">
-          <button
-            type="button"
-            onClick={() => onDirectionChange("ltr")}
-            title="Left-to-Right script layout"
-            className={cn(
-              "rounded-control text-caption flex h-7 cursor-pointer items-center gap-1.5 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              direction === "ltr"
-                ? "bg-background text-label shadow-card font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            <AlignLeft className="h-3 w-3" />
-            <span>LTR</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDirectionChange("rtl")}
-            title="Right-to-Left script layout"
-            className={cn(
-              "rounded-control text-caption flex h-7 cursor-pointer items-center gap-1.5 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              direction === "rtl"
-                ? "bg-background text-label shadow-card font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            <AlignRight className="h-3 w-3" />
-            <span>RTL</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDirectionChange("ttb")}
-            title="Top-to-Bottom vertical script layout"
-            className={cn(
-              "rounded-control text-caption flex h-7 cursor-pointer items-center gap-1.5 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-              direction === "ttb"
-                ? "bg-background text-label shadow-card font-semibold"
-                : "text-label-secondary hover:text-label"
-            )}
-          >
-            <ArrowDown className="h-3 w-3" />
-            <span>Vertical</span>
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Script layout"
+          value={direction}
+          onValueChange={onDirectionChange}
+          options={[
+            {
+              value: "ltr",
+              label: "LTR",
+              icon: <AlignLeft />,
+              "aria-label": "Left-to-right script layout",
+            },
+            {
+              value: "rtl",
+              label: "RTL",
+              icon: <AlignRight />,
+              "aria-label": "Right-to-left script layout",
+            },
+            {
+              value: "ttb",
+              label: "Vertical",
+              icon: <ArrowDown />,
+              "aria-label": "Top-to-bottom vertical script layout",
+            },
+          ]}
+        />
       </div>
 
       {/* Input Field & Preset Phrases */}
@@ -303,7 +285,7 @@ export function OrthographySandbox({
 
         {/* Quick Sample Presets & Cross-System Corpus Ingestion */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-label-secondary text-caption font-medium">Quick Phrases:</span>
             {SAMPLE_PHRASES.map((sample) => (
               <Button
@@ -438,13 +420,14 @@ export function OrthographySandbox({
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {tokens.map((tok) => {
             if (tok.isSpace || tok.isNewline) return null;
             return (
-              <button
+              <Button
                 key={`chip-${tok.id}`}
-                type="button"
+                variant="tinted"
+                size="sm"
                 onClick={() => {
                   setSelectedToken(tok);
                   if (tok.glyph && onSelectGlyphToEdit) {
@@ -454,95 +437,85 @@ export function OrthographySandbox({
                   }
                 }}
                 className={cn(
-                  "rounded-control text-caption flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.96]",
-                  tok.glyph
-                    ? "border-tint/30 bg-tint/10 text-tint shadow-card font-semibold"
-                    : "border-tint/40 bg-tint/5 text-tint hover:bg-tint/15 border-dashed font-semibold"
+                  "gap-2 font-mono",
+                  !tok.glyph && "border-tint/40 bg-tint/5 border border-dashed"
                 )}
               >
                 <span>{tok.charOrPhoneme}</span>
                 <span className="text-caption opacity-70">{tok.glyph ? "✓" : "+ Add"}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
       </div>
 
       {/* Typesetting Sliders with Tactile Numerical Badges */}
-      <div className="bg-surface-secondary rounded-row grid grid-cols-2 gap-3 p-3.5 sm:grid-cols-4">
+      <div className="bg-surface-secondary rounded-row grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
         {/* Glyph Size Slider */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Glyph Size</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {glyphSize}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={24}
             max={96}
             step={2}
-            value={glyphSize}
-            onChange={(e) => onGlyphSizeChange(Number(e.target.value))}
-            className="accent-tint bg-fill-3 rounded-control h-1.5 w-full cursor-pointer"
+            value={[Number(glyphSize)]}
+            onValueChange={([v = 24]) => onGlyphSizeChange(v)}
           />
         </div>
 
         {/* Letter Spacing Slider */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Tracking</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {letterSpacing}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={-4}
             max={24}
             step={1}
-            value={letterSpacing}
-            onChange={(e) => setLetterSpacing(Number(e.target.value))}
-            className="accent-tint bg-fill-3 rounded-control h-1.5 w-full cursor-pointer"
+            value={[Number(letterSpacing)]}
+            onValueChange={([v = -4]) => setLetterSpacing(v)}
           />
         </div>
 
         {/* Word Spacing Slider */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Word Gap</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {wordSpacing}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={4}
             max={36}
             step={2}
-            value={wordSpacing}
-            onChange={(e) => setWordSpacing(Number(e.target.value))}
-            className="accent-tint bg-fill-3 rounded-control h-1.5 w-full cursor-pointer"
+            value={[Number(wordSpacing)]}
+            onValueChange={([v = 4]) => setWordSpacing(v)}
           />
         </div>
 
         {/* Baseline Shift Slider */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Baseline Shift</span>
             <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {baselineOffset > 0 ? `+${baselineOffset}` : baselineOffset}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={-20}
             max={20}
             step={1}
-            value={baselineOffset}
-            onChange={(e) => onBaselineOffsetChange(Number(e.target.value))}
-            className="accent-tint bg-fill-3 rounded-control h-1.5 w-full cursor-pointer"
+            value={[Number(baselineOffset)]}
+            onValueChange={([v = -20]) => onBaselineOffsetChange(v)}
           />
         </div>
       </div>

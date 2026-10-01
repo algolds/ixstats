@@ -76,7 +76,7 @@ export function SystemCronScheduleWidget() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3.5 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-label text-headline flex items-center gap-2">
           <Clock className="text-tint h-4.5 w-4.5" />
           System Cron Schedules
@@ -101,7 +101,7 @@ export function SystemCronScheduleWidget() {
                   selected={job.id === selectedId}
                   selectionStyle="tint"
                   leading={
-                    <span className={cn("rounded-control shrink-0 border p-1.5", job.color)}>
+                    <span className={cn("rounded-control shrink-0 border p-2", job.color)}>
                       <JobIcon aria-hidden className="size-4" />
                     </span>
                   }
@@ -141,7 +141,7 @@ export function SystemCronScheduleWidget() {
             />
           </div>
 
-          <div className="text-label-secondary bg-fill-4 border-separator rounded-control text-footnote mt-4 flex items-center gap-2 border p-2.5">
+          <div className="text-label-secondary bg-fill-4 border-separator rounded-control text-footnote mt-4 flex items-center gap-2 border p-3">
             <span className="relative flex h-2 w-2">
               <span className="bg-green absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
               <span className="bg-green relative inline-flex h-2 w-2 rounded-full"></span>

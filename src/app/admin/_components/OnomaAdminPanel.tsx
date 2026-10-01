@@ -23,9 +23,14 @@ import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 import { withBasePath } from "~/lib/base-path";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const CULTURES = [
   "latin",
@@ -256,7 +261,7 @@ export function OnomaAdminPanel() {
           </div>
 
           <div className="space-y-4">
-            <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3.5">
+            <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
               <div className="space-y-0.5">
                 <Label className="text-label text-caption">Enable Kokoro Voice</Label>
                 <p className="text-label-secondary text-footnote">
@@ -270,7 +275,7 @@ export function OnomaAdminPanel() {
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-label text-caption">Engine & Status</Label>
                 <div className="flex items-center gap-2">
@@ -335,17 +340,18 @@ export function OnomaAdminPanel() {
                   <span>{wakeStatusMessage}</span>
                 </p>
               )}
-              <select
+              <Select
                 value={kokoroEngine}
-                onChange={(e) => setKokoroEngine(e.target.value as "kokoro-fastapi" | "kokoro-web")}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                )}
+                onValueChange={(v) => setKokoroEngine(v as "kokoro-fastapi" | "kokoro-web")}
               >
-                <option value="kokoro-fastapi">Phoneme-native (kokoro-fastapi)</option>
-                <option value="kokoro-web">Re-spelling (kokoro-web)</option>
-              </select>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kokoro-fastapi">Phoneme-native (kokoro-fastapi)</SelectItem>
+                  <SelectItem value="kokoro-web">Re-spelling (kokoro-web)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {kokoroEngine === "kokoro-fastapi" && (
@@ -412,20 +418,18 @@ export function OnomaAdminPanel() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-label text-caption">Default Voice</Label>
-                <select
-                  value={kokoroVoice}
-                  onChange={(e) => setKokoroVoice(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
-                >
-                  {voiceOptions.map((id) => (
-                    <option key={id} value={id}>
-                      {voiceLabel(id)}
-                    </option>
-                  ))}
-                </select>
+                <Select value={kokoroVoice} onValueChange={(v) => setKokoroVoice(v)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {voiceOptions.map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {voiceLabel(id)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-label-secondary text-footnote">
                   {voicesData?.source === "server"
                     ? `${voiceOptions.length} voices loaded from Kokoro server.`
@@ -471,12 +475,12 @@ export function OnomaAdminPanel() {
                       className="border-separator bg-fill-3 rounded-row space-y-1 border p-2"
                     >
                       <Label className="text-label text-caption capitalize">{c}</Label>
-                      <select
-                        value={isCustomBlend ? "custom_blend" : val}
-                        onChange={(e) =>
+                      <Select
+                        value={(isCustomBlend ? "custom_blend" : val) || "__none__"}
+                        onValueChange={(picked) =>
                           setVoiceMap((prev) => {
                             const next = { ...prev };
-                            const v = e.target.value;
+                            const v = picked === "__none__" ? "" : picked;
                             if (v === "custom_blend") {
                               next[c] = "af_heart*0.5+am_adam*0.5";
                             } else if (v) {
@@ -487,19 +491,20 @@ export function OnomaAdminPanel() {
                             return next;
                           })
                         }
-                        className={cn(
-                          fieldStyles,
-                          "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                        )}
                       >
-                        <option value="">Use default</option>
-                        <option value="custom_blend">Custom Blend...</option>
-                        {voiceOptions.map((id) => (
-                          <option key={id} value={id}>
-                            {voiceLabel(id)}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger size="sm" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Use default</SelectItem>
+                          <SelectItem value="custom_blend">Custom Blend...</SelectItem>
+                          {voiceOptions.map((id) => (
+                            <SelectItem key={id} value={id}>
+                              {voiceLabel(id)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {isCustomBlend && (
                         <Input
                           value={val}
@@ -529,20 +534,18 @@ export function OnomaAdminPanel() {
               </div>
               <div className="space-y-1">
                 <Label className="text-label text-caption">As culture</Label>
-                <select
-                  value={testCulture}
-                  onChange={(e) => setTestCulture(e.target.value)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                  )}
-                >
-                  {CULTURES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <Select value={testCulture} onValueChange={(v) => setTestCulture(v)}>
+                  <SelectTrigger size="sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CULTURES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <span className="text-label-secondary text-footnote self-center font-mono">
                 {translateToIPA(testWord, testCulture)}
@@ -582,7 +585,7 @@ export function OnomaAdminPanel() {
                   })
                 }
                 disabled={saveKokoro.isPending}
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-2"
               >
                 <Save className="h-3.5 w-3.5" />
                 {saveKokoro.isPending ? "Saving..." : "Save Configuration"}
@@ -592,7 +595,7 @@ export function OnomaAdminPanel() {
                 variant="outline"
                 onClick={handleTestKokoro}
                 disabled={isTestingKokoro}
-                className="flex-1 gap-1.5"
+                className="flex-1 gap-2"
               >
                 {isTestingKokoro ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />

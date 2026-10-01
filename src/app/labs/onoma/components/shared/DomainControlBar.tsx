@@ -24,6 +24,9 @@ import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { NameCategory } from "~/lib/onoma/types";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface DomainControlBarProps {
   category: NameCategory;
@@ -51,22 +54,19 @@ export function DomainControlBar({
   handleGenerate,
 }: DomainControlBarProps) {
   return (
-    <FacetCard variant="inset" padding="none" className="space-y-3.5 p-4">
+    <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
       {/* 1. Category / Type Selector (if categories are provided) */}
       {categories.length > 1 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-footnote text-label font-semibold">Category</label>
             {/* Rules trigger */}
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className={cn(
-                "rounded-control text-footnote shadow-card flex cursor-pointer items-center gap-1 border px-2.5 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                showAdvanced
-                  ? "border-tint/40 bg-tint/10 text-tint"
-                  : "border-separator bg-surface text-label-secondary hover:text-label"
-              )}
+            <Toggle
+              variant="outline"
+              size="sm"
+              pressed={showAdvanced}
+              onPressedChange={setShowAdvanced}
+              aria-expanded={showAdvanced}
               title="Toggle advanced conlang constraints"
             >
               <SlidersHorizontal className="h-3 w-3" />
@@ -77,7 +77,7 @@ export function DomainControlBar({
                   showAdvanced && "rotate-180"
                 )}
               />
-            </button>
+            </Toggle>
           </div>
           <Select value={category} onValueChange={(val) => onCategoryChange?.(val as NameCategory)}>
             <SelectTrigger className="text-footnote h-9 w-full">
@@ -96,19 +96,16 @@ export function DomainControlBar({
 
       {/* 2. SubType Variant Selector (if available) */}
       {subTypes.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-footnote text-label font-semibold">Variant</label>
             {categories.length <= 1 && (
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className={cn(
-                  "rounded-control text-footnote shadow-card flex cursor-pointer items-center gap-1 border px-2.5 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  showAdvanced
-                    ? "border-tint/40 bg-tint/10 text-tint"
-                    : "border-separator bg-surface text-label-secondary hover:text-label"
-                )}
+              <Toggle
+                variant="outline"
+                size="sm"
+                pressed={showAdvanced}
+                onPressedChange={setShowAdvanced}
+                aria-expanded={showAdvanced}
                 title="Toggle advanced conlang constraints"
               >
                 <SlidersHorizontal className="h-3 w-3" />
@@ -119,7 +116,7 @@ export function DomainControlBar({
                     showAdvanced && "rotate-180"
                   )}
                 />
-              </button>
+              </Toggle>
             )}
           </div>
           <Select value={gen.subType} onValueChange={(val) => gen.setSubType(val)}>
@@ -141,7 +138,7 @@ export function DomainControlBar({
       )}
 
       {/* 3. Cultural Profile / Seed Selector */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <label className="text-label text-footnote font-semibold">Cultural Seed</label>
         <Select value={gen.culture} onValueChange={gen.setCulture}>
           <SelectTrigger className="text-footnote h-9 w-full">
@@ -201,34 +198,26 @@ export function DomainControlBar({
       {category === "person" && gen.subType !== "generic" && (
         <div className="space-y-1">
           <label className="text-footnote text-label block font-semibold">Gender Modifier</label>
-          <div className="grid grid-cols-3 gap-1">
-            {(["male", "female", "neutral"] as const).map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => gen.setGender(g)}
-                className={cn(
-                  "rounded-control text-footnote cursor-pointer border py-1 text-center font-semibold capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  gen.gender === g
-                    ? "border-tint/40 bg-tint/15 text-tint font-semibold"
-                    : "border-separator bg-surface text-label-secondary hover:bg-fill-3 hover:text-label"
-                )}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            size="sm"
+            fullWidth
+            aria-label="Gender modifier"
+            itemClassName="capitalize"
+            value={gen.gender}
+            onValueChange={gen.setGender}
+            options={(["male", "female", "neutral"] as const).map((g) => ({ value: g, label: g }))}
+          />
         </div>
       )}
 
       {/* 4. Unified Generate Action & Quantity Pill */}
       <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
-        <button
-          type="button"
+        <Button
+          variant="plain"
           onClick={handleGenerate}
           disabled={gen.isGenerating}
-          className="text-footnote text-on-tint flex h-full flex-1 cursor-pointer items-center justify-center gap-2 pr-3 pl-4 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98] disabled:opacity-40"
+          className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"
         >
           {gen.isGenerating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -240,15 +229,16 @@ export function DomainControlBar({
             />
           )}
           <span className="text-body font-semibold">Generate</span>
-        </button>
+        </Button>
 
         {/* Subtle Vertical Divider */}
         <div className="bg-fill-3 h-5 w-[1px] shrink-0" />
 
         {/* Right: Quantity Stepper Pill */}
-        <div className="text-on-tint flex h-full shrink-0 items-center pr-1.5 pl-1">
-          <button
-            type="button"
+        <div className="text-on-tint flex h-full shrink-0 items-center pr-2 pl-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={(e) => {
               e.stopPropagation();
               setBatchCount((c) =>
@@ -256,20 +246,21 @@ export function DomainControlBar({
               );
             }}
             disabled={batchCount <= 5 || gen.isGenerating}
-            className="rounded-control text-footnote text-on-tint/80 hover:bg-fill-4 hover:text-on-tint flex h-7 w-7 cursor-pointer items-center justify-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Decrease count"
             aria-label="Decrease count"
+            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
           >
             -
-          </button>
+          </Button>
           <div className="text-body text-on-tint flex min-w-[28px] items-center justify-center px-1 leading-none font-semibold">
             <NumberFlowDisplay
               value={batchCount}
               className="text-body text-on-tint font-semibold"
             />
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={(e) => {
               e.stopPropagation();
               setBatchCount((c) =>
@@ -277,18 +268,18 @@ export function DomainControlBar({
               );
             }}
             disabled={batchCount >= 500 || gen.isGenerating}
-            className="rounded-control text-footnote text-on-tint/80 hover:bg-fill-4 hover:text-on-tint flex h-7 w-7 cursor-pointer items-center justify-center font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90 disabled:opacity-30 disabled:hover:bg-transparent"
             title="Increase count"
             aria-label="Increase count"
+            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
           >
             +
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Collapsible Advanced Conlang Settings */}
       {showAdvanced && (
-        <div className="animate-in fade-in slide-in-from-top-1 border-separator border-t pt-3.5 duration-200">
+        <div className="animate-in fade-in slide-in-from-top-1 border-separator border-t pt-4 duration-200">
           <AdvancedConlangSettings gen={gen} category={category} />
         </div>
       )}

@@ -89,7 +89,7 @@ export function NPCPersonalityFormDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-label text-caption mb-1.5 block">Name *</label>
+              <label className="text-label text-caption mb-2 block">Name *</label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -99,7 +99,7 @@ export function NPCPersonalityFormDialog({
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Archetype *</label>
+              <label className="text-label text-caption mb-2 block">Archetype *</label>
               <Select
                 value={formData.archetype}
                 onValueChange={(val) => setFormData((prev) => ({ ...prev, archetype: val }))}
@@ -120,7 +120,7 @@ export function NPCPersonalityFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-label text-caption mb-1.5 block">Historical Basis</label>
+              <label className="text-label text-caption mb-2 block">Historical Basis</label>
               <Input
                 value={formData.historicalBasis || ""}
                 onChange={(e) =>
@@ -146,7 +146,7 @@ export function NPCPersonalityFormDialog({
           </div>
 
           <div>
-            <label className="text-label text-caption mb-1.5 block">Historical Context</label>
+            <label className="text-label text-caption mb-2 block">Historical Context</label>
             <Textarea
               value={formData.historicalContext || ""}
               onChange={(e) =>
@@ -177,7 +177,7 @@ export function NPCPersonalityFormDialog({
                 return (
                   <div
                     key={key}
-                    className="bg-surface border-separator rounded-row space-y-1 border p-2.5"
+                    className="bg-surface border-separator rounded-row space-y-1 border p-3"
                   >
                     <div className="text-footnote flex items-center justify-between">
                       <span className="text-label font-medium">{label}</span>

@@ -64,13 +64,14 @@ export function AdminSidebarLayout({
           </SheetContent>
         </Sheet>
         {onNavigate ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onNavigate("dashboard")}
-            className="text-headline text-label-secondary hover:text-label ml-3 cursor-pointer transition-colors"
+            className="text-headline text-label-secondary hover:text-label ml-1 px-2"
           >
             Admin Console
-          </button>
+          </Button>
         ) : (
           <Link
             href="/admin"

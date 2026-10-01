@@ -67,7 +67,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         {/* ── Template Selection ── */}
         <div className="space-y-2">
           <label className="text-label-secondary text-subhead">Template Selection</label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-2">
             {[
               { id: "material-block", label: "Material Block" },
               { id: "facet-card", label: "Facet Card" },
@@ -93,7 +93,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
                 variant={config.template === t.id ? "tinted" : "gray"}
                 aria-pressed={config.template === t.id}
                 onClick={() => onChange({ template: t.id as TemplateType })}
-                className="h-auto min-h-(--control-height-sm) px-2 py-1.5 whitespace-normal"
+                className="h-auto min-h-(--control-height-sm) px-2 py-2 whitespace-normal"
               >
                 {t.label}
               </Button>
@@ -103,7 +103,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Material & Depth ── */}
         <div className="border-separator space-y-4 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <GlassWater className="text-tint h-3 w-3" />
             <h4 className="text-label-secondary text-subhead">Material & Depth</h4>
           </div>
@@ -200,7 +200,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Texture ── */}
         <div className="border-separator space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Palette className="text-tint h-3 w-3" />
             <h4 className="text-label-secondary text-subhead">Texture</h4>
           </div>
@@ -287,7 +287,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Glass & Refraction ── */}
         <div className="border-separator space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <GlassWater className="h-3 w-3" style={{ color: config.customAccent }} />
             <h4 className="text-label-secondary text-subhead">Glass & Refraction</h4>
           </div>
@@ -338,7 +338,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Glow & Shadow ── */}
         <div className="border-separator space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Sun className="h-3 w-3" style={{ color: config.customAccent }} />
             <h4 className="text-label-secondary text-subhead">Glow & Shadow</h4>
           </div>
@@ -361,7 +361,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Depth of Field ── */}
         <div className="border-separator space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span className="text-eyebrow" style={{ color: config.customAccent }}>
               Depth of Field
             </span>
@@ -388,7 +388,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
         {/* ── Background ── */}
         <div className="border-separator space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Palette className="h-3 w-3" style={{ color: config.customAccent }} />
             <h4 className="text-label-secondary text-subhead">Sandbox Background</h4>
           </div>

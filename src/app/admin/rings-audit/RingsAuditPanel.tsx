@@ -89,7 +89,7 @@ function CountryRingsCard({
                 key={ep.id}
                 className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-separator md:border-r" : ""}`}
               >
-                <div className="mb-3 flex items-center gap-1.5">
+                <div className="mb-3 flex items-center gap-2">
                   <Badge variant="blue" className="font-mono">
                     {ep.endpoint}
                   </Badge>
@@ -107,7 +107,7 @@ function CountryRingsCard({
                         />
                       ))}
                     </div>
-                    <div className="text-footnote grid grid-cols-1 gap-y-1.5">
+                    <div className="text-footnote grid grid-cols-1 gap-y-2">
                       {RING_META.map(({ key, label, color }) => (
                         <div key={key} className="flex items-center gap-2">
                           <span

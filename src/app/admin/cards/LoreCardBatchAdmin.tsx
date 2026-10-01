@@ -39,7 +39,6 @@ import {
   Page as FileText,
   Trash as Trash2,
   Play,
-  Page as Scroll,
   Sparks as Sparkles,
   MediaImage as ImageIcon,
   Eye,
@@ -53,10 +52,23 @@ import type { CardAuthorInfo } from "~/types/cards-display";
 import { IIWikiBadge } from "~/components/cards/display/IIWikiLogo";
 
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
-import { fieldStyles } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
-import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Badge } from "~/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export { CATEGORY_PRESETS };
 
@@ -803,7 +815,7 @@ export function LoreCardBatchAdmin() {
       {/* ─── Header & Sub-Tab Navigation Bar ────────────────────────── */}
       <div className="border-separator flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-row border-purple/30 bg-purple/10 border p-2.5">
+          <div className="rounded-row border-purple/30 bg-purple/10 border p-3">
             <BookOpen className="text-purple h-5 w-5" />
           </div>
           <div>
@@ -852,17 +864,18 @@ export function LoreCardBatchAdmin() {
                 <label className="text-label-secondary text-caption mb-1 block">
                   Default Wiki Source
                 </label>
-                <select
+                <Select
                   value={globalWikiSource}
-                  onChange={(e) => setGlobalWikiSource(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                  onValueChange={(v) => setGlobalWikiSource(v as any)}
                 >
-                  <option value="ixwiki">IxWiki (Primary)</option>
-                  <option value="iiwiki">IIWiki (Secondary)</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ixwiki">IxWiki (Primary)</SelectItem>
+                    <SelectItem value="iiwiki">IIWiki (Secondary)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Target Rarity */}
@@ -870,22 +883,23 @@ export function LoreCardBatchAdmin() {
                 <label className="text-label-secondary text-caption mb-1 block">
                   Target Rarity Strategy
                 </label>
-                <select
+                <Select
                   value={globalTargetRarity}
-                  onChange={(e) => setGlobalTargetRarity(e.target.value as any)}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                  onValueChange={(v) => setGlobalTargetRarity(v as any)}
                 >
-                  <option value="AUTO">Auto (AI-determined)</option>
-                  <option value="COMMON">Common</option>
-                  <option value="UNCOMMON">Uncommon</option>
-                  <option value="RARE">Rare</option>
-                  <option value="ULTRA_RARE">Ultra Rare</option>
-                  <option value="EPIC">Epic</option>
-                  <option value="LEGENDARY">Legendary</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AUTO">Auto (AI-determined)</SelectItem>
+                    <SelectItem value="COMMON">Common</SelectItem>
+                    <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+                    <SelectItem value="RARE">Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="EPIC">Epic</SelectItem>
+                    <SelectItem value="LEGENDARY">Legendary</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Card Season */}
@@ -893,18 +907,19 @@ export function LoreCardBatchAdmin() {
                 <label className="text-label-secondary text-caption mb-1 block">
                   Target Card Season
                 </label>
-                <select
-                  value={globalSeason}
-                  onChange={(e) => setGlobalSeason(parseInt(e.target.value, 10))}
-                  className={cn(
-                    fieldStyles,
-                    "rounded-control-sm text-footnote h-(--control-height-sm) w-full cursor-pointer px-2.5"
-                  )}
+                <Select
+                  value={String(globalSeason)}
+                  onValueChange={(v) => setGlobalSeason(parseInt(v, 10))}
                 >
-                  <option value={1}>Season 1</option>
-                  <option value={2}>Season 2</option>
-                  <option value={3}>Season 3</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={String(1)}>Season 1</SelectItem>
+                    <SelectItem value={String(2)}>Season 2</SelectItem>
+                    <SelectItem value={String(3)}>Season 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </FacetCard>
@@ -963,18 +978,18 @@ export function LoreCardBatchAdmin() {
                 className="hidden"
               />
               <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="mr-1.5 h-3.5 w-3.5" /> Import CSV/JSON
+                <Upload className="mr-2 h-3.5 w-3.5" /> Import CSV/JSON
               </Button>
               {candidates.length > 0 && (
                 <Button size="sm" variant="outline" onClick={handleExportJSON}>
-                  <Download className="mr-1.5 h-3.5 w-3.5" /> Export JSON
+                  <Download className="mr-2 h-3.5 w-3.5" /> Export JSON
                 </Button>
               )}
             </div>
           </div>
 
           {/* Live Wiki Category Search & Namespace 0 Crawlers */}
-          <FacetCard className="space-y-3 p-3.5">
+          <FacetCard className="space-y-3 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               {/* Category Search Input with Autocomplete Dropdown */}
               <div className="relative flex-1">
@@ -988,7 +1003,7 @@ export function LoreCardBatchAdmin() {
                     }}
                     onFocus={() => setIsCategoryDropdownOpen(true)}
                     placeholder={`Search ${globalWikiSource.toUpperCase()} categories (e.g. IXWB, Countries, Wars, Treaties)...`}
-                    className="rounded-control-sm md:text-footnote h-(--control-height-sm) pr-24 pl-8.5"
+                    className="rounded-control-sm md:text-footnote h-(--control-height-sm) pr-24 pl-9"
                   />
                   {categorySearchQuery.trim() && (
                     <Button
@@ -1012,7 +1027,7 @@ export function LoreCardBatchAdmin() {
                 {isCategoryDropdownOpen &&
                   categorySearchData?.categories &&
                   categorySearchData.categories.length > 0 && (
-                    <div className="border-separator bg-surface-elevated rounded-row shadow-floating absolute top-10 right-0 left-0 z-50 max-h-48 overflow-y-auto border p-1.5">
+                    <div className="border-separator bg-surface-elevated rounded-row shadow-floating absolute top-10 right-0 left-0 z-50 max-h-48 overflow-y-auto border p-2">
                       <div className="text-label-secondary border-separator text-caption flex items-center justify-between border-b px-2 pb-1">
                         <span>Matching {globalWikiSource.toUpperCase()} Categories</span>
                         <Button
@@ -1055,9 +1070,9 @@ export function LoreCardBatchAdmin() {
                 className="shrink-0"
               >
                 {isCrawlingAllPages ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Globe className="text-purple mr-1.5 h-3.5 w-3.5" />
+                  <Globe className="text-purple mr-2 h-3.5 w-3.5" />
                 )}
                 Parse All {globalWikiSource.toUpperCase()} Main Pages (Namespace 0)
               </Button>
@@ -1067,7 +1082,7 @@ export function LoreCardBatchAdmin() {
           {/* Manual Input Box */}
           <FacetCard className="space-y-3 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-label text-caption flex items-center gap-1.5">
+              <label className="text-label text-caption flex items-center gap-2">
                 <FileText className="text-tint h-4 w-4" />
                 Add Articles & Categories to Queue (Comma or Newline Separated)
               </label>
@@ -1098,7 +1113,7 @@ export function LoreCardBatchAdmin() {
           {/* Batch Candidate Queue Table */}
           {candidates.length > 0 && (
             <FacetCard className="space-y-3 overflow-hidden p-4">
-              <div className="border-separator flex flex-col gap-2.5 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="border-separator flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="text-purple h-4 w-4" />
                   <span className="text-label text-caption">
@@ -1173,12 +1188,12 @@ export function LoreCardBatchAdmin() {
                   >
                     {isProcessingBatch ? (
                       <>
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                         Generating Batch...
                       </>
                     ) : (
                       <>
-                        <Play className="mr-1.5 h-3.5 w-3.5" />
+                        <Play className="mr-2 h-3.5 w-3.5" />
                         Mint Batch Lore Cards (
                         {candidates.filter((c) => c.status === "idle").length})
                       </>
@@ -1208,7 +1223,7 @@ export function LoreCardBatchAdmin() {
               {/* Failed Imports Diagnostic Alert Banner */}
               {errorCount > 0 && (
                 <div className="rounded-row border-red/30 bg-red/10 text-footnote flex flex-col justify-between gap-3 border p-3 sm:flex-row sm:items-center">
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start gap-2">
                     <AlertTriangle className="text-red mt-0.5 h-4 w-4 shrink-0" />
                     <div>
                       <div className="text-red font-semibold">
@@ -1244,28 +1259,176 @@ export function LoreCardBatchAdmin() {
                 </div>
               )}
 
-              <div className="max-h-[440px] overflow-x-auto overflow-y-auto">
-                <table className="text-footnote w-full text-left tabular-nums">
-                  <thead className="border-separator bg-surface text-label-secondary text-eyebrow sticky top-0 z-10 border-b">
-                    <tr>
-                      <th className="w-14 px-3 py-2.5 text-center">Artwork</th>
-                      <th className="px-4 py-2.5">Article Title</th>
-                      <th className="px-4 py-2.5">Source</th>
-                      <th className="px-4 py-2.5">Target Rarity</th>
-                      <th className="px-4 py-2.5">Season</th>
-                      <th className="px-4 py-2.5">Status & Error Diagnostics</th>
-                      <th className="px-4 py-2.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {filteredCandidates.map((c) => {
-                      const artworkToShow = c.mintedArtwork || c.imageUrl;
-                      return (
-                        <tr key={c.id} className="hover:bg-fill-4 transition-colors">
-                          {/* Artwork Thumbnail / Clickable Image */}
-                          <td className="px-3 py-2 text-center">
-                            {artworkToShow ? (
-                              <button
+              <Table containerClassName="max-h-[440px]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="w-14 px-3 text-center">Artwork</TableHead>
+                    <TableHead className="px-4">Article Title</TableHead>
+                    <TableHead className="px-4">Source</TableHead>
+                    <TableHead className="px-4">Target Rarity</TableHead>
+                    <TableHead className="px-4">Season</TableHead>
+                    <TableHead className="px-4">Status & Error Diagnostics</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCandidates.map((c) => {
+                    const artworkToShow = c.mintedArtwork || c.imageUrl;
+                    return (
+                      <TableRow key={c.id}>
+                        {/* Artwork Thumbnail / Clickable Image */}
+                        <TableCell className="px-3 text-center">
+                          {artworkToShow ? (
+                            <Button
+                              variant="gray"
+                              size="icon-lg"
+                              aria-label={`Inspect artwork for ${c.articleTitle}`}
+                              onClick={() =>
+                                setPreviewImage({
+                                  title: c.articleTitle,
+                                  imageUrl: artworkToShow,
+                                  extract: c.extract,
+                                  wikiSource: c.wikiSource,
+                                  category: c.category,
+                                  rarity: c.targetRarity,
+                                  season: c.season,
+                                })
+                              }
+                              className="group border-separator mx-auto size-10 overflow-hidden border bg-black/40 p-0"
+                              title="Click to inspect full image"
+                            >
+                              <img
+                                src={artworkToShow}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                              <span
+                                aria-hidden
+                                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+                              >
+                                <Eye className="size-3.5 text-white" />
+                              </span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="gray"
+                              size="icon-lg"
+                              aria-label={`Inspect details for ${c.articleTitle} (no image)`}
+                              onClick={() =>
+                                setPreviewImage({
+                                  title: c.articleTitle,
+                                  imageUrl: "",
+                                  extract: c.extract,
+                                  wikiSource: c.wikiSource,
+                                  category: c.category,
+                                  rarity: c.targetRarity,
+                                  season: c.season,
+                                })
+                              }
+                              className="border-separator text-label-secondary hover:text-label mx-auto size-10 border"
+                              title="No primary image parsed. Click to inspect details"
+                            >
+                              <ImageIcon aria-hidden className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="text-label min-w-64 px-4 font-semibold whitespace-normal">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span>{c.articleTitle}</span>
+                              {c.category && <Badge variant="tinted">{c.category}</Badge>}
+                            </div>
+                            {c.author &&
+                              c.author !== "Unknown" &&
+                              !c.author.toLowerCase().includes("community") && (
+                                <span className="text-caption text-yellow line-clamp-1">
+                                  ✍️ {c.author}
+                                </span>
+                              )}
+                            {c.extract &&
+                              (!c.author ||
+                                c.author === "Unknown" ||
+                                c.author.toLowerCase().includes("community")) && (
+                                <span className="text-label-secondary text-footnote line-clamp-1 font-normal">
+                                  {c.extract}
+                                </span>
+                              )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {c.wikiSource === "iiwiki" ? (
+                            <IIWikiBadge size="xs" />
+                          ) : (
+                            <Badge variant="neutral">{c.wikiSource}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <Badge variant="purple">{c.targetRarity}</Badge>
+                        </TableCell>
+                        <TableCell className="text-label-secondary px-4">S{c.season}</TableCell>
+                        <TableCell className="px-4 whitespace-normal">
+                          {c.status === "generating" && (
+                            <span className="text-caption text-blue inline-flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" /> Generating...
+                            </span>
+                          )}
+                          {c.status === "success" && (
+                            <span className="text-caption text-green inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> Minted (
+                              {c.generatedCardId?.slice(0, 8)})
+                            </span>
+                          )}
+                          {c.status === "error" && (
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                onClick={() => setSelectedErrorCandidate(c)}
+                                className="bg-red/15 text-red-ink hover:bg-red/25 self-start rounded-full px-2"
+                                title="Click to view full failure diagnostic"
+                              >
+                                <XCircle aria-hidden />
+                                Failed
+                              </Button>
+                              {c.errorMessage && (
+                                <span
+                                  onClick={() => setSelectedErrorCandidate(c)}
+                                  className="text-caption text-red line-clamp-1 max-w-[240px] cursor-pointer hover:underline"
+                                  title={c.errorMessage}
+                                >
+                                  {c.errorMessage}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {c.status === "idle" && (
+                            <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Queued
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {c.status === "error" && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Retry Import"
+                                type="button"
+                                onClick={() => handleRetryCandidate(c.id)}
+                                disabled={isProcessingBatch}
+
+                                title="Retry Import"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {artworkToShow && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Inspect Artwork"
                                 type="button"
                                 onClick={() =>
                                   setPreviewImage({
@@ -1278,177 +1441,32 @@ export function LoreCardBatchAdmin() {
                                     season: c.season,
                                   })
                                 }
-                                className="group border-separator rounded-control relative mx-auto h-10 w-10 cursor-pointer overflow-hidden border bg-black/40 transition-transform active:scale-95"
-                                title="Click to inspect full image"
+
+                                title="Inspect Artwork"
                               >
-                                <img
-                                  src={artworkToShow}
-                                  alt={c.articleTitle}
-                                  className="h-full w-full object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                  <Eye className="text-label h-3.5 w-3.5" />
-                                </div>
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: c.articleTitle,
-                                    imageUrl: "",
-                                    extract: c.extract,
-                                    wikiSource: c.wikiSource,
-                                    category: c.category,
-                                    rarity: c.targetRarity,
-                                    season: c.season,
-                                  })
-                                }
-                                className="border-separator bg-fill-3 text-label-secondary hover:text-label rounded-control mx-auto flex h-10 w-10 cursor-pointer items-center justify-center border transition-colors"
-                                title="No primary image parsed. Click to inspect details"
-                              >
-                                <ImageIcon className="h-4 w-4" />
-                              </button>
-                            )}
-                          </td>
-
-                          <td className="text-label px-4 py-2.5 font-semibold">
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-1.5">
-                                <span>{c.articleTitle}</span>
-                                {c.category && <Badge variant="tinted">{c.category}</Badge>}
-                              </div>
-                              {c.author &&
-                                c.author !== "Unknown" &&
-                                !c.author.toLowerCase().includes("community") && (
-                                  <span className="text-caption text-yellow line-clamp-1">
-                                    ✍️ {c.author}
-                                  </span>
-                                )}
-                              {c.extract &&
-                                (!c.author ||
-                                  c.author === "Unknown" ||
-                                  c.author.toLowerCase().includes("community")) && (
-                                  <span className="text-label-secondary text-footnote line-clamp-1 font-normal">
-                                    {c.extract}
-                                  </span>
-                                )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            {c.wikiSource === "iiwiki" ? (
-                              <IIWikiBadge size="xs" />
-                            ) : (
-                              <Badge variant="neutral">{c.wikiSource}</Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <Badge variant="purple">{c.targetRarity}</Badge>
-                          </td>
-                          <td className="text-label-secondary px-4 py-2.5">S{c.season}</td>
-                          <td className="px-4 py-2.5">
-                            {c.status === "generating" && (
-                              <span className="text-caption text-blue inline-flex items-center gap-1">
-                                <Loader2 className="h-3 w-3 animate-spin" /> Generating...
-                              </span>
-                            )}
-                            {c.status === "success" && (
-                              <span className="text-caption text-green inline-flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3" /> Minted (
-                                {c.generatedCardId?.slice(0, 8)})
-                              </span>
-                            )}
-                            {c.status === "error" && (
-                              <div className="flex flex-col gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedErrorCandidate(c)}
-                                  className={cn(
-                                    badgeVariants({ variant: "destructive" }),
-                                    "cursor-pointer"
-                                  )}
-                                  title="Click to view full failure diagnostic"
-                                >
-                                  <XCircle aria-hidden />
-                                  Failed
-                                </button>
-                                {c.errorMessage && (
-                                  <span
-                                    onClick={() => setSelectedErrorCandidate(c)}
-                                    className="text-caption text-red line-clamp-1 max-w-[240px] cursor-pointer hover:underline"
-                                    title={c.errorMessage}
-                                  >
-                                    {c.errorMessage}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {c.status === "idle" && (
-                              <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> Queued
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {c.status === "error" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  aria-label="Retry Import"
-                                  type="button"
-                                  onClick={() => handleRetryCandidate(c.id)}
-                                  disabled={isProcessingBatch}
-
-                                  title="Retry Import"
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              {artworkToShow && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  aria-label="Inspect Artwork"
-                                  type="button"
-                                  onClick={() =>
-                                    setPreviewImage({
-                                      title: c.articleTitle,
-                                      imageUrl: artworkToShow,
-                                      extract: c.extract,
-                                      wikiSource: c.wikiSource,
-                                      category: c.category,
-                                      rarity: c.targetRarity,
-                                      season: c.season,
-                                    })
-                                  }
-
-                                  title="Inspect Artwork"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label="Remove Candidate"
-                                type="button"
-                                onClick={() =>
-                                  setCandidates((prev) => prev.filter((item) => item.id !== c.id))
-                                }
-
-                                title="Remove Candidate"
-                              >
-                                <X className="h-3.5 w-3.5" />
+                                <Eye className="h-3.5 w-3.5" />
                               </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Remove Candidate"
+                              type="button"
+                              onClick={() =>
+                                setCandidates((prev) => prev.filter((item) => item.id !== c.id))
+                              }
+
+                              title="Remove Candidate"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </FacetCard>
           )}
         </div>
@@ -1489,20 +1507,18 @@ export function LoreCardBatchAdmin() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-label-secondary text-caption">Filter Queue:</span>
-              <select
-                value={requestStatusFilter}
-                onChange={(e) => setRequestStatusFilter(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control-sm text-footnote h-(--control-height-sm) cursor-pointer px-2.5"
-                )}
-              >
-                <option value="ALL">All Requests</option>
-                <option value="PENDING">Pending Only</option>
-                <option value="APPROVED">Approved Only</option>
-                <option value="GENERATED">Generated Only</option>
-                <option value="REJECTED">Rejected Only</option>
-              </select>
+              <Select value={requestStatusFilter} onValueChange={(v) => setRequestStatusFilter(v)}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Requests</SelectItem>
+                  <SelectItem value="PENDING">Pending Only</SelectItem>
+                  <SelectItem value="APPROVED">Approved Only</SelectItem>
+                  <SelectItem value="GENERATED">Generated Only</SelectItem>
+                  <SelectItem value="REJECTED">Rejected Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -1513,100 +1529,96 @@ export function LoreCardBatchAdmin() {
             </div>
           ) : !requestQueue.data || requestQueue.data.requests.length === 0 ? (
             <div className="border-separator bg-surface rounded-row flex h-40 flex-col items-center justify-center border border-dashed">
-              <BookOpen className="text-label-tertiary mb-1.5 h-8 w-8" />
+              <BookOpen className="text-label-tertiary mb-2 h-8 w-8" />
               <p className="text-label text-headline">No requests found in queue</p>
             </div>
           ) : (
             <FacetCard className="overflow-hidden">
-              <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
-                <table className="text-footnote w-full text-left tabular-nums">
-                  <thead className="border-separator bg-surface text-label-secondary text-eyebrow sticky top-0 z-10 border-b">
-                    <tr>
-                      <th className="px-4 py-3">Article Title</th>
-                      <th className="px-4 py-3">Wiki Source</th>
-                      <th className="px-4 py-3">Requester (Nation / User)</th>
-                      <th className="px-4 py-3">Requested Date</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-separator divide-y">
-                    {requestQueue.data.requests.map((request: any) => {
-                      const isPending = request.status === "PENDING";
-                      const isApproved = request.status === "APPROVED";
-                      const isGenerated = request.status === "GENERATED";
-                      const isRejected = request.status === "REJECTED";
+              <Table containerClassName="max-h-[500px]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="px-4">Article Title</TableHead>
+                    <TableHead className="px-4">Wiki Source</TableHead>
+                    <TableHead className="px-4">Requester (Nation / User)</TableHead>
+                    <TableHead className="px-4">Requested Date</TableHead>
+                    <TableHead className="px-4">Status</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requestQueue.data.requests.map((request: any) => {
+                    const isPending = request.status === "PENDING";
+                    const isApproved = request.status === "APPROVED";
+                    const isGenerated = request.status === "GENERATED";
+                    const isRejected = request.status === "REJECTED";
 
-                      return (
-                        <tr key={request.id} className="hover:bg-fill-4 transition-colors">
-                          <td className="text-label px-4 py-3 font-semibold">
-                            {request.articleTitle}
-                          </td>
-                          <td className="px-4 py-3">
-                            {request.wikiSource === "iiwiki" ? (
-                              <IIWikiBadge size="xs" />
-                            ) : (
-                              <Badge variant="neutral">{request.wikiSource}</Badge>
-                            )}
-                          </td>
-                          <td className="text-label px-4 py-3 font-medium">
-                            <Badge variant="tinted" className="gap-1.5">
-                              <UserCheck className="h-3 w-3" />
-                              {request.requesterName || request.userId}
-                            </Badge>
-                          </td>
-                          <td className="text-label-secondary px-4 py-3">
-                            {new Date(request.requestedAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            {isPending && <Badge variant="yellow">Pending</Badge>}
-                            {isApproved && <Badge variant="blue">Approved</Badge>}
-                            {isGenerated && <Badge variant="green">Generated</Badge>}
-                            {isRejected && <Badge variant="red">Rejected</Badge>}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1.5">
-                              {isPending && (
-                                <>
-                                  <Button
-                                    variant="tinted"
-                                    size="sm"
-                                    onClick={() =>
-                                      approveMutation.mutate({ requestId: request.id })
-                                    }
-                                    disabled={approveMutation.isPending}
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => setRejectionRequestId(request.id)}
-                                  >
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
-                              {(isPending || isApproved) && (
+                    return (
+                      <TableRow key={request.id}>
+                        <TableCell className="text-label px-4 font-semibold">
+                          {request.articleTitle}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {request.wikiSource === "iiwiki" ? (
+                            <IIWikiBadge size="xs" />
+                          ) : (
+                            <Badge variant="neutral">{request.wikiSource}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-label px-4 font-medium">
+                          <Badge variant="tinted" className="gap-2">
+                            <UserCheck className="h-3 w-3" />
+                            {request.requesterName || request.userId}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-label-secondary px-4">
+                          {new Date(request.requestedAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {isPending && <Badge variant="yellow">Pending</Badge>}
+                          {isApproved && <Badge variant="blue">Approved</Badge>}
+                          {isGenerated && <Badge variant="green">Generated</Badge>}
+                          {isRejected && <Badge variant="red">Rejected</Badge>}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            {isPending && (
+                              <>
                                 <Button
                                   variant="tinted"
                                   size="sm"
-                                  onClick={() =>
-                                    generateRequestedMutation.mutate({ requestId: request.id })
-                                  }
-                                  disabled={generateRequestedMutation.isPending}
+                                  onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                  disabled={approveMutation.isPending}
                                 >
-                                  Mint Card
+                                  Approve
                                 </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => setRejectionRequestId(request.id)}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                            {(isPending || isApproved) && (
+                              <Button
+                                variant="tinted"
+                                size="sm"
+                                onClick={() =>
+                                  generateRequestedMutation.mutate({ requestId: request.id })
+                                }
+                                disabled={generateRequestedMutation.isPending}
+                              >
+                                Mint Card
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </FacetCard>
           )}
         </div>
@@ -1663,7 +1675,7 @@ export function LoreCardBatchAdmin() {
             <div>
               {/* Header */}
               <div className="border-separator flex items-center justify-between border-b px-6 py-4">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <div className="rounded-row border-purple/30 bg-purple/10 border p-2">
                     <Sparkles className="text-purple h-4 w-4" />
                   </div>
@@ -1703,7 +1715,7 @@ export function LoreCardBatchAdmin() {
                 {previewImage.author &&
                   previewImage.author !== "Unknown" &&
                   !previewImage.author.toLowerCase().includes("community") && (
-                    <div className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow flex items-center justify-between border p-2.5">
+                    <div className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow flex items-center justify-between border p-3">
                       <span className="text-label-secondary text-eyebrow">Wiki Author:</span>
                       <span className="font-semibold">{previewImage.author}</span>
                     </div>
@@ -1738,7 +1750,7 @@ export function LoreCardBatchAdmin() {
               </div>
 
               {/* Footer */}
-              <div className="border-separator bg-surface flex items-center justify-between border-t px-6 py-3.5">
+              <div className="border-separator bg-surface flex items-center justify-between border-t px-6 py-4">
                 {previewImage.wikiSource ? (
                   <a
                     href={
@@ -1748,7 +1760,7 @@ export function LoreCardBatchAdmin() {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="text-tint text-caption inline-flex items-center gap-1.5 hover:underline"
+                    className="text-tint text-caption inline-flex items-center gap-2 hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View Wiki Article
                   </a>
@@ -1769,7 +1781,7 @@ export function LoreCardBatchAdmin() {
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-row border-red/30 bg-red/10 border p-2.5">
+              <div className="rounded-row border-red/30 bg-red/10 border p-3">
                 <Trash2 className="text-red h-5 w-5" />
               </div>
               <div>
@@ -1784,8 +1796,8 @@ export function LoreCardBatchAdmin() {
           </DialogHeader>
 
           <div className="text-footnote space-y-4 py-2">
-            <div className="rounded-row border-yellow/30 bg-yellow/10 text-yellow space-y-1 border p-3.5">
-              <p className="flex items-center gap-1.5 font-semibold">
+            <div className="rounded-row border-yellow/30 bg-yellow/10 text-yellow space-y-1 border p-4">
+              <p className="flex items-center gap-2 font-semibold">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 How Duplicate Purging Works:
               </p>
@@ -1812,7 +1824,7 @@ export function LoreCardBatchAdmin() {
                       },
                       idx: number
                     ) => (
-                      <div key={idx} className="flex items-center justify-between p-2.5">
+                      <div key={idx} className="flex items-center justify-between p-3">
                         <div className="min-w-0">
                           <p className="text-label truncate font-semibold">{g.title}</p>
                           <span className="text-label-secondary text-eyebrow tabular-nums">
@@ -1829,7 +1841,7 @@ export function LoreCardBatchAdmin() {
               </div>
             ) : (
               <div className="text-label-secondary py-4 text-center">
-                <CheckCircle2 className="text-green mx-auto mb-1.5 h-8 w-8 opacity-80" />
+                <CheckCircle2 className="text-green mx-auto mb-2 h-8 w-8 opacity-80" />
                 <p className="text-label font-semibold">No Duplicate Lore Cards Found</p>
                 <p className="text-footnote">
                   Your database is clean with no redundant lore card records.
@@ -1852,7 +1864,7 @@ export function LoreCardBatchAdmin() {
             >
               {purgeDuplicatesMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Purging...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Purging...
                 </>
               ) : (
                 <>
@@ -1870,7 +1882,7 @@ export function LoreCardBatchAdmin() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-row border-yellow/30 bg-yellow/10 border p-2.5">
+              <div className="rounded-row border-yellow/30 bg-yellow/10 border p-3">
                 <Sparkles className="text-yellow h-5 w-5" />
               </div>
               <div>
@@ -1943,11 +1955,11 @@ export function LoreCardBatchAdmin() {
             >
               {backfillAuthorsMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Backfilling...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Backfilling...
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Start Backfill ({backfillLimit})
+                  <Sparkles className="mr-2 h-3.5 w-3.5" /> Start Backfill ({backfillLimit})
                 </>
               )}
             </Button>
@@ -1960,7 +1972,7 @@ export function LoreCardBatchAdmin() {
         <DialogContent className="max-w-md space-y-4 p-6">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-row border-purple/30 bg-purple/10 border p-2.5">
+              <div className="rounded-row border-purple/30 bg-purple/10 border p-3">
                 <Layers className="text-purple h-5 w-5" />
               </div>
               <div>
@@ -2051,11 +2063,11 @@ export function LoreCardBatchAdmin() {
             >
               {reclassifyCategoriesMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Classifying...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Classifying...
                 </>
               ) : (
                 <>
-                  <Layers className="mr-1.5 h-3.5 w-3.5" /> Start Re-Catalog ({reclassifyLimit})
+                  <Layers className="mr-2 h-3.5 w-3.5" /> Start Re-Catalog ({reclassifyLimit})
                 </>
               )}
             </Button>
@@ -2071,7 +2083,7 @@ export function LoreCardBatchAdmin() {
         <DialogContent className="max-w-md space-y-4 p-6">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-row border-red/30 bg-red/10 border p-2.5">
+              <div className="rounded-row border-red/30 bg-red/10 border p-3">
                 <AlertTriangle className="text-red h-5 w-5" />
               </div>
               <div>
@@ -2106,8 +2118,8 @@ export function LoreCardBatchAdmin() {
                 </div>
               </div>
 
-              <div className="rounded-row border-red/30 bg-red/10 space-y-1.5 border p-3">
-                <div className="text-caption text-red flex items-center gap-1.5">
+              <div className="rounded-row border-red/30 bg-red/10 space-y-2 border p-3">
+                <div className="text-caption text-red flex items-center gap-2">
                   <XCircle className="text-red h-4 w-4" /> Error Reason
                 </div>
                 <div className="text-footnote text-red leading-relaxed break-words whitespace-pre-wrap tabular-nums">
@@ -2148,7 +2160,7 @@ export function LoreCardBatchAdmin() {
                 }}
                 disabled={isProcessingBatch}
               >
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Retry Import Now
+                <RotateCcw className="mr-2 h-3.5 w-3.5" /> Retry Import Now
               </Button>
             )}
           </DialogFooter>

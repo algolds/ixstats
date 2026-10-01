@@ -184,13 +184,15 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
         </Button>
 
         {/* Restore / Import */}
-        <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-1.5 border px-3 py-2 font-semibold transition-colors select-none">
+        <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
           <Upload className="text-green h-3.5 w-3.5" /> Import Backup File
           <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
 
         {/* Clear Actions */}
-        <button
+        <Button
+          variant="bordered"
+          size="md"
           onClick={() => {
             if (
               confirm(
@@ -200,10 +202,10 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
               handleClearData("all");
             }
           }}
-          className="rounded-control border-red/20 bg-red/5 text-footnote text-red hover:bg-red/10 flex cursor-pointer items-center justify-center gap-1.5 border px-3 py-2 font-semibold transition-colors"
+          className="text-red hover:bg-red/10 justify-center"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear All Data
-        </button>
+        </Button>
       </div>
     </div>
   );

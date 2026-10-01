@@ -85,7 +85,7 @@ export function StorytellerHistory() {
                     {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                   </span>
                 </div>
-                <div className="text-footnote mt-1.5 flex items-center gap-2">
+                <div className="text-footnote mt-2 flex items-center gap-2">
                   <User className="text-label-secondary h-3 w-3" />
                   <span className="text-label-secondary">{log.adminName}</span>
                 </div>

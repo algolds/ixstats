@@ -29,7 +29,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
   if (isSandbox) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Sport Preset</Label>
           <Select
             value={selectedSport}

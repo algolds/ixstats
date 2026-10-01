@@ -75,7 +75,7 @@ export function ValuationAdmin() {
         <p className="text-label-secondary text-footnote py-8 text-center">Loading config…</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
                 <span className="text-label-secondary text-eyebrow">{f.label}</span>
@@ -96,12 +96,12 @@ export function ValuationAdmin() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2.5 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={() => saveMutation.mutate(form)} disabled={busy} size="sm">
               {saveMutation.isPending ? (
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Save className="mr-1.5 h-3.5 w-3.5" />
+                <Save className="mr-2 h-3.5 w-3.5" />
               )}
               Save &amp; Revalue All
             </Button>
@@ -112,9 +112,9 @@ export function ValuationAdmin() {
               disabled={busy}
             >
               {recomputeMutation.isPending ? (
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
               ) : (
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
               )}
               Recompute Only
             </Button>

@@ -807,7 +807,7 @@ export function CountryInspector() {
               country's starting parameters.
             </p>
             <div className="text-footnote grid grid-cols-2 gap-2">
-              <div className="border-separator bg-fill-4 rounded-control p-2.5">
+              <div className="border-separator bg-fill-4 rounded-control p-3">
                 <span className="text-label-secondary text-footnote block">
                   Baseline Population
                 </span>
@@ -815,13 +815,13 @@ export function CountryInspector() {
                   {calculation.baseline.pop.toLocaleString()}
                 </span>
               </div>
-              <div className="border-separator bg-fill-4 rounded-control p-2.5">
+              <div className="border-separator bg-fill-4 rounded-control p-3">
                 <span className="text-label-secondary text-footnote block">Baseline GDP PC</span>
                 <span className="text-label font-semibold tabular-nums">
                   ${calculation.baseline.gdppc.toLocaleString()}
                 </span>
               </div>
-              <div className="border-separator bg-fill-4 rounded-control col-span-2 p-2.5">
+              <div className="border-separator bg-fill-4 rounded-control col-span-2 p-3">
                 <span className="text-label-secondary text-footnote block">Baseline Total GDP</span>
                 <span className="text-label font-semibold tabular-nums">
                   ${calculation.baseline.gdp.toLocaleString()}
@@ -847,14 +847,14 @@ export function CountryInspector() {
               multipliers.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Global Growth Factor</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.settings.globalGrowthFactor.toFixed(4)} (
                   {((calculation.settings.globalGrowthFactor - 1) * 100).toFixed(2)}%)
                 </span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Local Multiplier Slider</span>
                 <span className="text-yellow font-semibold tabular-nums">
                   {calculation.settings.localGrowthFactor.toFixed(2)}x
@@ -891,7 +891,7 @@ export function CountryInspector() {
                 No active storyteller modifiers.
               </p>
             ) : (
-              <div className="text-footnote max-h-[160px] space-y-1.5 overflow-y-auto pr-1">
+              <div className="text-footnote max-h-[160px] space-y-2 overflow-y-auto pr-1">
                 {calculation.effects.active.map((eff, index) => (
                   <div
                     key={index}
@@ -928,13 +928,13 @@ export function CountryInspector() {
               Computes the annual growth rate used to project future populations.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Baseline Pop Growth Rate</span>
                 <span className="font-semibold tabular-nums">
                   {(calculation.popGrowth.baseRate * 100).toFixed(2)}%
                 </span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Storyteller Adjustments</span>
                 <span className="text-indigo font-semibold tabular-nums">
                   {calculation.popGrowth.storytellerAdjust >= 0 ? "+" : ""}
@@ -1101,11 +1101,11 @@ export function CountryInspector() {
               prevent hyper-growth at high wealth.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Current Tier</span>
                 <span className="text-label font-semibold">{calculation.baseline.tier}</span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Max Tier Growth Cap</span>
                 <span className="text-pink font-semibold tabular-nums">
                   {(calculation.gdpGrowth.tierMax * 100).toFixed(2)}%
@@ -1138,7 +1138,7 @@ export function CountryInspector() {
               Compounds growth rates over the target timeline. Also applies one-time special
               modifiers (like natural disaster reductions).
             </p>
-            <div className="text-footnote space-y-2.5">
+            <div className="text-footnote space-y-2">
               <div className="border-separator flex justify-between border-b pb-1">
                 <span className="text-label-secondary">Years Projected</span>
                 <span className="text-orange font-semibold tabular-nums">
@@ -1269,13 +1269,13 @@ export function CountryInspector() {
               Calculates index reflecting GDP wealth and growth rate.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">GDP Score Component</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.gdpScore.toFixed(1)} / 100
                 </span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Growth Bonus</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.growthBonus.toFixed(1)}
@@ -1320,13 +1320,13 @@ export function CountryInspector() {
               Combines growth health status and population density factors.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Growth Health</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.growthHealth}
                 </span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Density Factor</span>
                 <span className="font-semibold tabular-nums">
                   {calculation.secondary.details.densityFactor.toFixed(1)}
@@ -1369,11 +1369,11 @@ export function CountryInspector() {
               Computed based on the economic tier category score multiplier.
             </p>
             <div className="text-footnote space-y-2">
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Economic Tier</span>
                 <span className="font-semibold">{calculation.output.tier}</span>
               </div>
-              <div className="border-separator flex justify-between border-b pb-1.5">
+              <div className="border-separator flex justify-between border-b pb-2">
                 <span className="text-label-secondary">Tier Base Score</span>
                 <span className="font-semibold tabular-nums">
                   {Math.round(calculation.secondary.efficiency / 0.8)}
@@ -1493,7 +1493,7 @@ export function CountryInspector() {
             </div>
 
             {showDropdown && (
-              <div className="border-separator bg-surface-elevated text-label rounded-control absolute right-0 left-0 z-50 mt-1.5 border">
+              <div className="border-separator bg-surface-elevated text-label rounded-control absolute right-0 left-0 z-50 mt-2 border">
                 <ScrollArea className="h-[220px]">
                   <div className="p-1">
                     <FacetListSection variant="plain" aria-label="Countries">
@@ -1576,7 +1576,7 @@ export function CountryInspector() {
 
             {/* Slider controls */}
             <div className="border-separator bg-fill-4 rounded-row space-y-5 border p-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="text-caption flex items-center justify-between">
                   <Label className="text-label">Target Projection Timeline</Label>
                   <span className="text-orange tabular-nums">+{yearsElapsed.toFixed(1)} yrs</span>
@@ -1597,7 +1597,7 @@ export function CountryInspector() {
                 </div>
               </div>
 
-              <div className="border-separator space-y-1.5 border-t pt-4">
+              <div className="border-separator space-y-2 border-t pt-4">
                 <div className="text-caption flex items-center justify-between">
                   <Label className="text-label">Local Growth Multiplier</Label>
                   <span className="text-yellow tabular-nums">{localMultiplier.toFixed(2)}x</span>

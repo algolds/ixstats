@@ -85,13 +85,13 @@ export function MilitaryEquipmentPanel() {
           <div className="flex items-center gap-2">
             {activeMainTab === "catalog" && (
               <Button onClick={() => catalog.setIsAddDialogOpen(true)} size="sm">
-                <Plus className="mr-1.5 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Equipment
               </Button>
             )}
             {activeMainTab === "manufacturers" && (
               <Button onClick={() => manufacturers.setIsManufacturerDialogOpen(true)} size="sm">
-                <Plus className="mr-1.5 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Manufacturer
               </Button>
             )}

@@ -135,7 +135,7 @@ const ColourRow = memo(function ColourRow({
           placeholder="Nation…"
         />
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <Checkbox
           id={ignoreId}
           aria-label={`Ignore ${colour.hex}`}

@@ -82,7 +82,7 @@ export function MembershipPanel() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-label text-caption mb-1.5 block">User ID *</label>
+              <label className="text-label text-caption mb-2 block">User ID *</label>
               <Input
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
@@ -92,7 +92,7 @@ export function MembershipPanel() {
             </div>
 
             <div>
-              <label className="text-label text-caption mb-1.5 block">Target Membership Tier</label>
+              <label className="text-label text-caption mb-2 block">Target Membership Tier</label>
               <Select value={tier} onValueChange={(val: any) => setTier(val)}>
                 <SelectTrigger size="sm">
                   <SelectValue />

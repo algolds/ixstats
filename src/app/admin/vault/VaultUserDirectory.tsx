@@ -33,7 +33,6 @@ import {
 } from "~/components/ui/select";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  NavArrowRight as ChevronRight,
   SystemRestart as Loader2,
   Gift,
   ArrowSeparateVertical as ArrowUpDown,
@@ -44,6 +43,14 @@ import {
 } from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function VaultUserDirectory() {
   const notify = useNotify();
@@ -387,7 +394,7 @@ export function VaultUserDirectory() {
         render: (_val: unknown, user: any) => (
           <div className="flex items-center justify-center">
             <DropdownMenu>
-              <DropdownMenuTrigger className="border-separator bg-background text-label hover:bg-fill-4 rounded-control text-caption inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 border px-3 py-1.5 select-none">
+              <DropdownMenuTrigger className="border-separator bg-background text-label hover:bg-fill-4 rounded-control text-caption inline-flex h-8 cursor-pointer items-center justify-center gap-2 border px-3 py-2 select-none">
                 <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span>Actions</span>
               </DropdownMenuTrigger>
@@ -512,7 +519,7 @@ export function VaultUserDirectory() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="adjust-amount">Adjustment Amount</Label>
                   <Input
                     id="adjust-amount"
@@ -529,7 +536,7 @@ export function VaultUserDirectory() {
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="adjust-type">Transaction Type</Label>
                   <Select value={adjustType} onValueChange={setAdjustType}>
                     <SelectTrigger id="adjust-type">
@@ -546,7 +553,7 @@ export function VaultUserDirectory() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="adjust-source">System Source</Label>
                 <Input
                   id="adjust-source"
@@ -557,7 +564,7 @@ export function VaultUserDirectory() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="adjust-reason">Audit Reason</Label>
                 <Input
                   id="adjust-reason"
@@ -634,7 +641,7 @@ export function VaultUserDirectory() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="streak-delta">Streak Delta (positive or negative)</Label>
                 <Input
                   id="streak-delta"
@@ -671,41 +678,39 @@ export function VaultUserDirectory() {
                 ))}
               </div>
             ) : (
-              <div className="border-separator bg-fill-4 rounded-control max-h-80 overflow-x-auto overflow-y-auto border">
-                <table className="text-body w-full tabular-nums">
-                  <thead>
-                    <tr className="text-label-secondary bg-fill-4 text-footnote">
-                      <th className="px-3 py-2 text-left">Time</th>
-                      <th className="px-3 py-2 text-right">Amount</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Source</th>
-                      <th className="px-3 py-2 text-right">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listTransactionsQuery.data?.transactions?.map((tx: any) => (
-                      <tr key={tx.id} className="border-separator hover:bg-fill-4 border-t">
-                        <td className="text-label-secondary text-footnote px-3 py-2">
-                          {new Date(tx.createdAt).toLocaleString()}
-                        </td>
-                        <td
-                          className={`px-3 py-2 text-right font-semibold tabular-nums ${tx.credits >= 0 ? "text-green" : "text-red"}`}
-                        >
-                          {tx.credits >= 0 ? "+" : ""}
-                          {tx.credits}
-                        </td>
-                        <td className="text-footnote px-3 py-2">{tx.type}</td>
-                        <td className="text-label-secondary text-footnote max-w-[200px] truncate px-3 py-2">
-                          {tx.source}
-                        </td>
-                        <td className="text-footnote px-3 py-2 text-right tabular-nums">
-                          {tx.balanceAfter}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table containerClassName="max-h-80">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-3">Time</TableHead>
+                    <TableHead className="px-3 text-right">Amount</TableHead>
+                    <TableHead className="px-3">Type</TableHead>
+                    <TableHead className="px-3">Source</TableHead>
+                    <TableHead className="px-3 text-right">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listTransactionsQuery.data?.transactions?.map((tx: any) => (
+                    <TableRow key={tx.id} className="border-t">
+                      <TableCell className="text-label-secondary text-footnote px-3">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell
+                        className={`px-3 py-2 text-right font-semibold tabular-nums ${tx.credits >= 0 ? "text-green" : "text-red"}`}
+                      >
+                        {tx.credits >= 0 ? "+" : ""}
+                        {tx.credits}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3">{tx.type}</TableCell>
+                      <TableCell className="text-label-secondary text-footnote max-w-[200px] truncate px-3">
+                        {tx.source}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3 text-right">
+                        {tx.balanceAfter}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
 
@@ -742,7 +747,7 @@ export function VaultUserDirectory() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="pack-select">Select Card Pack Template</Label>
                 <Select value={selectedPackId} onValueChange={setSelectedPackId}>
                   <SelectTrigger id="pack-select">
@@ -764,7 +769,7 @@ export function VaultUserDirectory() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="pack-method">Acquired Method</Label>
                 <Input
                   id="pack-method"
@@ -853,7 +858,7 @@ export function VaultUserDirectory() {
                       key={item.id}
                       className="border-separator bg-surface rounded-control flex items-center justify-between border p-2"
                     >
-                      <div className="flex items-start gap-2.5">
+                      <div className="flex items-start gap-2">
                         <div className="rounded-control-sm bg-purple/10 text-purple mt-0.5 flex h-7 w-7 items-center justify-center">
                           <Gem className="h-4 w-4" />
                         </div>
@@ -862,7 +867,7 @@ export function VaultUserDirectory() {
                           <div className="text-label-secondary text-footnote line-clamp-1 max-w-[280px]">
                             {item.description}
                           </div>
-                          <div className="mt-1 flex items-center gap-1.5">
+                          <div className="mt-1 flex items-center gap-2">
                             <Badge variant="outline" className="px-1 py-0 capitalize">
                               {item.category}
                             </Badge>
@@ -885,7 +890,7 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className={`text-caption h-7 px-2.5 ${
+                            className={`text-caption h-7 px-3 ${
                               isEquipped
                                 ? "bg-purple text-on-purple hover:bg-purple"
                                 : "border-purple/30 bg-purple/5 text-purple hover:bg-purple/10 hover:text-purple"

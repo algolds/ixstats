@@ -69,7 +69,7 @@ export function CorpusSelector({
   }, []);
 
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {label && (
         <label className="text-label-secondary text-footnote font-semibold select-none">
           {label}
@@ -83,7 +83,7 @@ export function CorpusSelector({
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
             <div className="border-separator border-b pb-1">
-              <div className="text-tint text-eyebrow px-2.5 py-1">Active Studio Session</div>
+              <div className="text-tint text-eyebrow px-3 py-1">Active Studio Session</div>
               <SelectItem value="studio-active" className="text-footnote">
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#0091ff" />
@@ -99,7 +99,7 @@ export function CorpusSelector({
           {/* User's Stashed Custom Dictionaries */}
           {stashDictionaries.length > 0 && (
             <div className="border-separator border-b pb-1">
-              <div className="text-eyebrow text-indigo px-2.5 py-1">
+              <div className="text-eyebrow text-indigo px-3 py-1">
                 Custom Stash Dictionaries ({stashDictionaries.length})
               </div>
               {stashDictionaries.map((dict) => (
@@ -118,7 +118,7 @@ export function CorpusSelector({
 
           {/* Natural Language Profiles */}
           <div>
-            <div className="text-tint text-eyebrow px-2.5 py-1">
+            <div className="text-tint text-eyebrow px-3 py-1">
               Natural Language Profiles ({NATURAL_PROFILES.length})
             </div>
             {NATURAL_PROFILES.map((p) => (
@@ -133,7 +133,7 @@ export function CorpusSelector({
 
           {/* Fantasy & Lineage Templates */}
           <div className="border-separator border-t pt-1">
-            <div className="text-eyebrow text-indigo px-2.5 py-1">
+            <div className="text-eyebrow text-indigo px-3 py-1">
               Fantasy & Lineage Templates ({templateProfiles.length})
             </div>
             {templateProfiles.map((t) => (

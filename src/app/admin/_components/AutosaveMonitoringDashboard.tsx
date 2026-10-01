@@ -42,6 +42,14 @@ import {
 } from "recharts";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 type TimeRange = "1h" | "24h" | "7d" | "30d";
 type Granularity = "minute" | "hour" | "day";
@@ -487,33 +495,31 @@ function ActiveUsersTable({ users }: ActiveUsersTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="text-body w-full text-left tabular-nums">
-        <thead className="bg-surface-secondary text-eyebrow text-label border-b">
-          <tr>
-            <th className="px-4 py-3">User</th>
-            <th className="px-4 py-3">Last Autosave</th>
-            <th className="px-4 py-3">Section</th>
-            <th className="px-4 py-3 text-right">Count</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.userId} className="hover:bg-fill-4 border-b">
-              <td className="px-4 py-3 font-medium">
-                {user.userName || <span className="text-label-secondary">Unknown</span>}
-              </td>
-              <td className="text-label-secondary px-4 py-3">
-                {new Date(user.lastAutosave).toLocaleString()}
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant="blue">{user.section || "N/A"}</Badge>
-              </td>
-              <td className="px-4 py-3 text-right font-semibold">{user.autosaveCount}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="px-4">User</TableHead>
+          <TableHead className="px-4">Last Autosave</TableHead>
+          <TableHead className="px-4">Section</TableHead>
+          <TableHead className="px-4 text-right">Count</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.map((user) => (
+          <TableRow key={user.userId}>
+            <TableCell className="px-4 font-medium">
+              {user.userName || <span className="text-label-secondary">Unknown</span>}
+            </TableCell>
+            <TableCell className="text-label-secondary px-4">
+              {new Date(user.lastAutosave).toLocaleString()}
+            </TableCell>
+            <TableCell className="px-4">
+              <Badge variant="blue">{user.section || "N/A"}</Badge>
+            </TableCell>
+            <TableCell className="px-4 text-right font-semibold">{user.autosaveCount}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
