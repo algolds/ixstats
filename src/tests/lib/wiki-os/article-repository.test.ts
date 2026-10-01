@@ -275,6 +275,18 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml", "");
   });
 
+  it("a save that blanks the page leaves the stored HTML alone (the render replaces it: renderArticle shows nothing for a page whose current revision is empty), marks it stale and queues the render", async () => {
+    await save("");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.update).toMatchObject({ wikitext: "", htmlSyncedAt: null });
+    expect(args.update).not.toHaveProperty("contentHtml");
+    // the new current revision IS the blank text: 0 bytes, not hidden, not parked
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ wikitext: "", byteSize: 0 });
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("textDeleted", true);
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+  });
+
   it("compares the text in the database: a count on the title and the new wikitext, nothing read back", async () => {
     await save("new text");
 

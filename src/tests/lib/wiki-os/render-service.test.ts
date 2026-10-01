@@ -88,9 +88,15 @@ const freshId = () => `art-${++ids}`;
 /** The article rows `findUnique` answers with, by id. */
 function stubArticle(
   id: string,
-  row: { title?: string; wikitext?: string; contentHtml?: string | null } = {}
+  row: {
+    title?: string;
+    wikitext?: string;
+    contentHtml?: string | null;
+    /** The page's current live revision, newest first (the render reads one): its size and whether its text is hidden. */
+    revisions?: Array<{ byteSize: number; textDeleted: boolean }>;
+  } = {}
 ) {
-  const article = { title: "Foo", wikitext: "the wikitext", contentHtml: null, ...row };
+  const article = { title: "Foo", wikitext: "the wikitext", contentHtml: null, revisions: [], ...row };
   mockFindUnique.mockImplementation(async (args: { where: { id: string } }) =>
     args.where.id === id ? article : null
   );
@@ -214,6 +220,70 @@ describe("renderArticle", () => {
 
     expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
     expect(mockUpdateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("renderArticle of a page its last edit blanked", () => {
+  const OLD = "<p>Old content that must not come back.</p>";
+  const BLANK_REVISION = [{ byteSize: 0, textDeleted: false }];
+
+  it("renders nothing for it, whatever HTML was stored for its earlier text, without calling MediaWiki", async () => {
+    const id = freshId();
+    stubArticle(id, { wikitext: "", contentHtml: OLD, revisions: BLANK_REVISION });
+
+    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
+
+    expect(mockRenderViaMediaWiki).not.toHaveBeenCalled();
+    const { where, data } = mockUpdateMany.mock.calls[0]?.[0];
+    expect(where).toEqual({ id, wikitext: "" });
+    expect(data.contentHtml).toBe("");
+    expect(data.renderedView).toEqual(buildViewBundle(""));
+    expect(data.renderedView.bodyHtml).not.toContain("Old content");
+    expect(data.htmlSyncedAt).toBeInstanceOf(Date);
+  });
+
+  it("does the same for a text that is only whitespace (the editor does not trim it)", async () => {
+    const id = freshId();
+    stubArticle(id, { wikitext: "  \n", contentHtml: OLD, revisions: [{ byteSize: 3, textDeleted: false }] });
+
+    await renderArticle(id);
+
+    expect(mockUpdateMany.mock.calls[0]?.[0].data.contentHtml).toBe("");
+  });
+
+  it("still builds an HTML-only row from the HTML it has (no revision), and a stub whose text was never imported (a revision with a size but no text, or a hidden one)", async () => {
+    for (const revisions of [[], [{ byteSize: 480, textDeleted: false }], [{ byteSize: 0, textDeleted: true }]]) {
+      mockUpdateMany.mockClear();
+      const id = freshId();
+      stubArticle(id, { wikitext: "", contentHtml: OLD, revisions });
+
+      await expect(renderArticle(id)).resolves.toEqual({ ok: true });
+
+      expect(mockUpdateMany.mock.calls[0]?.[0].data.contentHtml).toBe(OLD);
+    }
+  });
+
+  it("stores nothing for a page with no revision and no HTML, as before", async () => {
+    const id = freshId();
+    stubArticle(id, { wikitext: "", contentHtml: null, revisions: [] });
+
+    await expect(renderArticle(id)).resolves.toEqual({ ok: false });
+
+    expect(mockUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("reads the newest live revision only (a parked MediaWiki edit is not the page)", async () => {
+    const id = freshId();
+    stubArticle(id, { wikitext: "", contentHtml: OLD, revisions: BLANK_REVISION });
+
+    await renderArticle(id);
+
+    expect(mockFindUnique.mock.calls[0]?.[0].select.revisions).toEqual({
+      where: { parked: false },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 1,
+      select: { byteSize: true, textDeleted: true },
+    });
   });
 });
 

@@ -778,6 +778,22 @@ describe("fast-forward", () => {
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
   });
 
+  it("imports a MediaWiki edit that blanks the page as a real, empty revision and an empty head: the state the render reads as a blanked page", async () => {
+    article = storedArticle();
+    head = storedHead(90);
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([[91, { title: "Foo", revid: 91, parentid: 90, text: "" }]]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    const input = importPageRevisions.mock.calls[0]![0];
+    // not parked, not hidden, 0 bytes: renderArticle shows nothing for this page, whatever HTML its old text left behind
+    expect(input.revisions[0]).toMatchObject({ mwRevId: 91, wikitext: "", byteSize: 0, textDeleted: false });
+    expect(input.head).toMatchObject({ mwRevId: 91, wikitext: "" });
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled(); // not parked
+  });
+
   it("never lets a revision sort before the head it builds on (MediaWiki's clock is behind)", async () => {
     article = storedArticle();
     head = storedHead(90, { createdAt: new Date("2026-09-27T10:00:05.500Z") });

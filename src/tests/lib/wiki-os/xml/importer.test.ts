@@ -320,6 +320,50 @@ describe("parent revisions (F5)", () => {
   });
 });
 
+describe("a dump whose newest revision blanks the page (the inbound sync's write is this one)", () => {
+  it("leaves the page stale with an empty text and an empty, live, unhidden newest revision, and keeps the HTML its old text rendered (the render replaces it)", async () => {
+    const seeded = seedArticle({ wikitext: "Old text.", contentHtml: "<p>Old text.</p>", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "Old text.", createdAt: new Date("2025-12-01T00:00:00Z") });
+    const xml = (() => {
+      const chunks: string[] = [];
+      const writer = createExportWriter((chunk) => void chunks.push(chunk));
+      const blank: XmlRevision = {
+        id: 7001,
+        parentId: null,
+        timestamp: "2026-02-03T04:05:06Z",
+        contributor: { username: "Blanker", id: null },
+        minor: false,
+        comment: "blank",
+        commentDeleted: false,
+        model: "wikitext",
+        format: "text/x-wiki",
+        text: "",
+        textDeleted: false,
+      };
+      return writer
+        .start()
+        .then(() =>
+          writer.page({ title: "Kingdom of Testia", ns: 0, pageId: 101, revisions: [blank] })
+        )
+        .then(() => writer.end())
+        .then(() => chunks.join(""));
+    })();
+
+    const summary = await importXml(await xml);
+
+    expect(summary.revisionsImported).toBe(1);
+    expect(article("Kingdom of Testia")).toMatchObject({
+      wikitext: "",
+      htmlSyncedAt: null,
+      contentHtml: "<p>Old text.</p>",
+    });
+    const newest = revisionsOf("Kingdom of Testia").at(-1)!;
+    expect(newest).toMatchObject({ mwRevId: 7001, wikitext: "", byteSize: 0, textDeleted: false });
+    expect(newest.parked ?? false).toBe(false);
+    expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
+  });
+});
+
 describe("re-import", () => {
   it("is a no-op: everything is skipped and nothing changes", async () => {
     await importFixture();
