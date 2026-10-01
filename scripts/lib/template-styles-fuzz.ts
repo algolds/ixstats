@@ -5,8 +5,9 @@
  * (`scripts/audit/fuzz-template-styles.ts`, hundreds of thousands of cases).
  *
  * Every generator is deterministic for its seed. Each sheet it makes is run through the scoper with the wiki's
- * origin; a non-empty output must have no violation (`violations()` of the oracle) and must be a fixed point:
- * scoping it again gives the same text (stored renders are sanitized once more on every read path).
+ * origin; a non-empty output must have no violation in either of two independent oracles (`violations()`, built on
+ * lightningcss, and `tokenViolations()`, built on the @csstools tokenizer) and must be a fixed point: scoping it
+ * again gives the same text (stored renders are sanitized once more on every read path).
  *
  * The generators:
  *  - `general`: rules built from selector, property and value pieces with fragments of every hostile kind spliced in;
@@ -20,6 +21,7 @@
  */
 import { scopeTemplateStyles } from "../../src/lib/utils/scope-template-styles";
 import { OWN_ORIGIN, violations } from "./template-styles-oracle";
+import { tokenViolations } from "./template-styles-oracle-tokens";
 
 type Rng = () => number;
 
@@ -201,7 +203,10 @@ export interface FuzzReport {
   ran: number;
   /** Sheets the scoper kept something of (only these are judged). */
   nonEmpty: number;
+  /** Outputs the lightningcss oracle faulted. */
   violationCount: number;
+  /** Outputs the token oracle faulted. */
+  tokenViolationCount: number;
   nonIdempotentCount: number;
   /** The first few failures, with their input and output. */
   samples: string[];
@@ -214,7 +219,7 @@ export function runGenerator(name: string, iterations: number, seed?: number): F
   const generator = GENERATORS[name];
   if (!generator) throw new Error(`unknown generator "${name}"`);
   const rnd = makeRng(seed ?? generator.seed);
-  const report: FuzzReport = { generator: name, ran: 0, nonEmpty: 0, violationCount: 0, nonIdempotentCount: 0, samples: [] };
+  const report: FuzzReport = { generator: name, ran: 0, nonEmpty: 0, violationCount: 0, tokenViolationCount: 0, nonIdempotentCount: 0, samples: [] };
   const note = (text: string): void => {
     if (report.samples.length < MAX_SAMPLES) report.samples.push(text);
   };
@@ -227,7 +232,12 @@ export function runGenerator(name: string, iterations: number, seed?: number): F
     const found = violations(out);
     if (found.length > 0) {
       report.violationCount++;
-      note(`VIOLATION ${JSON.stringify(found.slice(0, 3))}\n  in : ${JSON.stringify(css)}\n  out: ${JSON.stringify(out)}`);
+      note(`VIOLATION (lightningcss) ${JSON.stringify(found.slice(0, 3))}\n  in : ${JSON.stringify(css)}\n  out: ${JSON.stringify(out)}`);
+    }
+    const tokenFound = tokenViolations(out);
+    if (tokenFound.length > 0) {
+      report.tokenViolationCount++;
+      note(`VIOLATION (tokens) ${JSON.stringify(tokenFound.slice(0, 3))}\n  in : ${JSON.stringify(css)}\n  out: ${JSON.stringify(out)}`);
     }
     const again = scopeTemplateStyles(out, OWN_ORIGIN);
     if (again !== out) {

@@ -11,7 +11,10 @@
  *  - no at-rule other than `@media` is left;
  *  - every `url()` resolves, the way a browser resolves it, to the page itself or to the wiki's own origin over
  *    https, and never to another host (`//host`, `\\host` and `https:/host` included);
- *  - no declaration holds `javascript:`, `expression(`, an image function that loads a URL without `url(`, or `attr(`.
+ *  - no declaration holds `javascript:`, `expression(`, an image function that loads a URL without `url(`, or `attr(`;
+ *  - the output has no `<`, which could end the `<style>` element.
+ *
+ * `template-styles-oracle-tokens.ts` is the second judge, built on a different tokenizer; both must report nothing.
  */
 import { transform, type Selector } from "lightningcss";
 import { parse as parseCss } from "postcss";
@@ -60,6 +63,7 @@ const URL_FUNCTION = /(?:^|[^\w-])(?:-webkit-)?(?:image-set|paint|element|cross-
 /** Everything about `css` (the scoper's output) that breaks a promise of the scoper; empty when it keeps them all. */
 export function violations(css: string): string[] {
   const found: string[] = [];
+  if (css.includes("<")) found.push("output holds <"); // it could end the <style> element
   let normalized: string;
   try {
     normalized = transform({

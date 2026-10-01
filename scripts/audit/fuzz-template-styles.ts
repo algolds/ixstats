@@ -3,10 +3,11 @@
  *
  * The Jest gate (`src/tests/security/scope-template-styles-oracle.test.ts`) runs ~20k sheets per generator with fixed
  * seeds. This is the same code with the counts up, for a manual pass after any change to
- * `src/lib/utils/scope-template-styles.ts` or when a CSS bypass is reported. Lightningcss (a spec CSS parser) parses
- * what the scoper emits; a selector that can match outside `.mw-parser-output`, an at-rule other than `@media`, a
- * `url()` to a host other than the wiki's, a script hook or an `attr()` is a violation; an output that scoping again
- * changes is non-idempotent. Both must be 0. Exit code 1 otherwise.
+ * `src/lib/utils/scope-template-styles.ts` or when a CSS bypass is reported. Two independent oracles read what the
+ * scoper emits, lightningcss (a spec CSS parser) and the @csstools tokenizer. A selector that can match outside
+ * `.mw-parser-output`, an at-rule other than `@media`, a `url()` to a host other than the wiki's, a script hook, an
+ * `attr()` or a `<` is a violation; an output that scoping again changes is non-idempotent. All counts must be 0.
+ * Exit code 1 otherwise.
  *
  * Usage:
  *   bun scripts/audit/fuzz-template-styles.ts                         # 300000 per generator, the generators' own seeds
@@ -34,9 +35,9 @@ for (const name of names) {
   const report = runGenerator(name, iterations, seedOption === undefined ? undefined : Number(seedOption));
   for (const sample of report.samples) console.log(sample);
   console.log(
-    `${name.padEnd(12)} ran=${report.ran} nonEmpty=${report.nonEmpty} violations=${report.violationCount} ` +
+    `${name.padEnd(12)} ran=${report.ran} nonEmpty=${report.nonEmpty} violations=${report.violationCount} tokenViolations=${report.tokenViolationCount} ` +
       `nonIdempotent=${report.nonIdempotentCount} (${((Date.now() - started) / 1000).toFixed(1)} s)`
   );
-  failed ||= report.violationCount > 0 || report.nonIdempotentCount > 0;
+  failed ||= report.violationCount > 0 || report.tokenViolationCount > 0 || report.nonIdempotentCount > 0;
 }
 process.exit(failed ? 1 : 0);
