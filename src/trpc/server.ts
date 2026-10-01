@@ -41,3 +41,19 @@ export function prefetchedState<TData>(
 ): QueryState<TData, Error> | undefined {
   return getQueryClient().getQueryState<TData, Error>([path, { input, type: "query" }]);
 }
+
+/**
+ * Replaces what `api.<path>.prefetch(input)` left in this request's query cache with
+ * `replace(current)`, before `HydrateClient` dehydrates it into the page. Does nothing when nothing
+ * was prefetched.
+ */
+export function replacePrefetched<TData>(
+  path: readonly string[],
+  input: object,
+  replace: (current: TData) => TData
+): void {
+  const queryClient = getQueryClient();
+  const key = [path, { input, type: "query" }];
+  const current = queryClient.getQueryData<TData>(key);
+  if (current !== undefined) queryClient.setQueryData(key, replace(current));
+}

@@ -15,6 +15,7 @@ import {
 } from "~/lib/wiki-os/wiki-path";
 import { HydrateClient, api } from "~/trpc/server";
 import ArticlePageClient from "../ArticlePageClient";
+import { leanTheFlight } from "../_lib/lean-flight";
 import { loadArticle, type ArticleHtml } from "../_lib/load-article";
 import { userExists } from "../_lib/load-user";
 import { orNotFound } from "../_lib/or-not-found";
@@ -53,14 +54,15 @@ interface Extras {
  * cache, so the article is in the first HTML and the client does not fetch it again. A redirect page
  * sends its reader to the target instead (308).
  */
-function articleReader(
+async function articleReader(
   canon: CanonicalTitle,
   view: ReadView,
   query: SearchParamsLike,
   found: Found | null,
   { aside, children }: Extras = {}
-): ReactElement {
+): Promise<ReactElement> {
   if (found?.data.resolvedFrom) permanentRedirect(redirectHref(found.data, query));
+  if (found) await leanTheFlight(canon.title, view.followRedirect, found.data);
   return (
     <HydrateClient>
       <ArticlePageClient
@@ -154,12 +156,26 @@ async function fileView(canon: CanonicalTitle, view: ReadView, query: SearchPara
 }
 
 /**
+ * The Main Page: its data (featured article, almanac, recent changes, counts, prompt) is read here in
+ * one query, so the page is in the first HTML and the client does not fetch it again. The read never
+ * fails the page: what it could not get, the client asks for.
+ */
+async function mainPageView() {
+  await api.wikios.getMainPage.prefetch();
+  return (
+    <HydrateClient>
+      <ArticlePageClient title={MAIN_PAGE} wikiSource="ixwiki" />
+    </HydrateClient>
+  );
+}
+
+/**
  * The read view of an IxWiki page: the Main Page, a `Category:`, `User:` or `File:` page, or an
  * ordinary article. A page that does not exist is a 404 (a category, user or file page that has
  * members, a profile or a file to show is not missing).
  */
 export function readView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
-  if (canon.title === MAIN_PAGE) return <ArticlePageClient title={MAIN_PAGE} wikiSource="ixwiki" />;
+  if (canon.title === MAIN_PAGE) return mainPageView();
   switch (canon.namespaceId) {
     case CATEGORY_NAMESPACE:
       return categoryView(canon, view, query);

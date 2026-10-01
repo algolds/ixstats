@@ -21,9 +21,11 @@ const CountryMapEmbed = dynamic(
 interface InfoboxWithMapProps {
   infoboxHtml: string;
   articleTitle: string;
+  /** The id of the element holding the infobox's HTML (lean mode reads it back from there). */
+  markupId?: string;
 }
 
-export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProps) {
+export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxWithMapProps) {
   const { data: countries } = api.countries.getSelectList.useQuery(
     { search: articleTitle, limit: 5 },
     { staleTime: 10 * 60 * 1000 }
@@ -47,10 +49,12 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
   );
 
   const blurbs = blurbData?.pages.flatMap((p) => p.responses) ?? [];
+  // a stable object: a new one each render would write the infobox's HTML (and reload its picture) again
+  const infoboxMarkup = useMemo(() => ({ __html: infoboxHtml }), [infoboxHtml]);
 
   return (
     <aside className="wikios-infobox facet-hierarchy-child">
-      <div dangerouslySetInnerHTML={{ __html: infoboxHtml }} />
+      <div id={markupId} dangerouslySetInnerHTML={infoboxMarkup} />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">
           <CountryMapEmbed

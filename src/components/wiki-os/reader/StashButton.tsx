@@ -18,7 +18,13 @@ import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { StashManagerModal } from "./StashManagerModal";
+import dynamic from "next/dynamic";
+
+// The full stash manager is opened on demand: its chunk is fetched then.
+const StashManagerModal = dynamic(
+  () => import("./StashManagerModal").then((m) => m.StashManagerModal),
+  { ssr: false }
+);
 
 interface StashButtonProps {
   title: string;

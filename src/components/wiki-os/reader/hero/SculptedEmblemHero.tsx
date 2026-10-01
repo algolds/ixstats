@@ -166,13 +166,13 @@ export function SculptedEmblemHero({
   // oxlint-disable-next-line eslint/no-unused-vars
   const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
 
-  const articleCountStr = siteStats?.articles
-    ? `${siteStats.articles.toLocaleString()}+`
-    : "1,400+";
-
+  // The count is what the database holds; without it the placeholder simply says "articles"
+  const articleCount = siteStats?.articles;
   const searchPlaceholders = useMemo(
-    () => [`Search ${articleCountStr} articles...`],
-    [articleCountStr]
+    () => [
+      articleCount ? `Search ${articleCount.toLocaleString()}+ articles...` : "Search articles...",
+    ],
+    [articleCount]
   );
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -270,10 +270,10 @@ export function SculptedEmblemHero({
             "bg-white/65 backdrop-blur-md dark:bg-zinc-900/65",
             "shadow-[inset_0_1px_1px_rgba(255,255,255,0.5),0_2px_6px_rgba(0,0,0,0.02)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.2)]",
             "hover:border-wiki/40 hover:bg-wiki/[0.06] dark:hover:bg-wiki/[0.1]",
-            "text-muted-foreground hover:text-foreground group transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-wiki focus-visible:outline-none active:scale-95"
+            "text-muted-foreground hover:text-foreground group focus-visible:ring-wiki transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-95"
           )}
         >
-          <IconoirOpenBook className="h-3.5 w-3.5 text-wiki transition-transform group-hover:scale-110" />
+          <IconoirOpenBook className="text-wiki h-3.5 w-3.5 transition-transform group-hover:scale-110" />
           <span>Getting Started</span>
         </Link>
 

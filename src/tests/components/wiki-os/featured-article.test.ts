@@ -4,7 +4,7 @@
  * `</div>` ended the cut inside the attribute and published the rest as markup (the card goes into
  * the hero's dangerouslySetInnerHTML). They work on the DOM now, and the result is sanitized again.
  */
-import { extractFeaturedArticle } from "~/components/wiki-os/reader/featured-article";
+import { extractFeaturedArticle } from "~/lib/wiki-os/main-page/featured-article";
 
 function mount(html: string | null): HTMLElement {
   const container = document.createElement("div");

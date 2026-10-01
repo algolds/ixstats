@@ -52,10 +52,19 @@ afterAll(() => {
 });
 
 describe("recent changes", () => {
-  it("lists a parked revision, flagged, and the others unflagged", async () => {
-    findMany.mockResolvedValue([row({ parked: true, mwRevId: 101 }), row({ id: "r2" })]);
+  it("leaves a parked revision out by default: it never went live, so it is no recent change of the wiki", async () => {
+    findMany.mockResolvedValue([row({ id: "r2" })]);
 
     const changes = await ixwikiRecentChanges(10);
+
+    expect(changes.map((c) => c.parked)).toEqual([false]);
+    expect(findMany.mock.calls[0]?.[0].where).toMatchObject({ parked: false });
+  });
+
+  it("lists it, flagged, for the page that asks for it, and the others unflagged", async () => {
+    findMany.mockResolvedValue([row({ parked: true, mwRevId: 101 }), row({ id: "r2" })]);
+
+    const changes = await ixwikiRecentChanges(10, { includeParked: true });
 
     expect(changes.map((c) => c.parked)).toEqual([true, false]);
     // No `parked` filter: the row stays in the list.

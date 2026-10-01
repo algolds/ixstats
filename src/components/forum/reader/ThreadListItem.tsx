@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Pin, Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { timeAgo } from "~/lib/format/compact";
 
@@ -50,7 +50,7 @@ export function ThreadListItem({
     currentForumUserId != null && authorId != null && currentForumUserId === authorId;
 
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
 
   return (
     <div

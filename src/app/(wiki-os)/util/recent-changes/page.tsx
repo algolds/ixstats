@@ -130,7 +130,7 @@ export default function RecentChangesPage() {
   const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set());
 
   const { data: changes, isLoading } = api.wikios.getRecentChanges.useQuery(
-    { limit: 100 },
+    { limit: 100, includeParked: true }, // this page lists a parked edit too, flagged
     { staleTime: 30_000, refetchInterval: 60_000 }
   );
 
