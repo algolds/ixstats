@@ -207,11 +207,6 @@ function factsOf(title: string, name: string, asset: MediaAssetRecord, sha1: str
 // The upload
 // ---------------------------------------------------------------------------
 
-interface StoredUpload {
-  asset: MediaAssetRecord;
-  replaced: boolean;
-}
-
 /** The asset row, the log entry and the mirror job, in one transaction. */
 function recordUpload(
   request: UploadRequest,
@@ -224,7 +219,7 @@ function recordUpload(
     replaced: boolean;
     comment: string;
   }
-): Promise<StoredUpload> {
+): Promise<MediaAssetRecord> {
   const { ctx, bytes } = request;
   const { title, name, file, sha1, articleId, replaced, comment } = upload;
   return db.$transaction(async (tx) => {
@@ -258,7 +253,7 @@ function recordUpload(
       select: { id: true },
     });
     await enqueueUploadJob(tx, { title, articleId, logId: log.id, sha1, comment });
-    return { asset, replaced };
+    return asset;
   });
 }
 
@@ -299,11 +294,11 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   if (replaced) await requireRight(ctx, "reupload");
 
   const warnings = await warningsOf(current, name, sha1);
-  const sameBytes = warnings.nochange === true;
   if (!request.ignoreWarnings && Object.keys(warnings).length > 0) {
     return { result: "Warning", filename: name, title, warnings };
   }
-  if (sameBytes && current.asset) {
+  // The same bytes under the same name change nothing: whatever the uploader says, nothing is stored, logged or queued.
+  if (warnings.nochange && current.asset) {
     return {
       result: "Success",
       replaced,
@@ -315,7 +310,7 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   await stageBytes(sha1, request.bytes);
   const comment = (request.comment?.trim() || DEFAULT_COMMENT).slice(0, COMMENT_LIMIT);
   const articleId = await descriptionPageId(request, title, current.page, comment);
-  const stored = await recordUpload(request, {
+  const asset = await recordUpload(request, {
     title,
     name,
     file,
@@ -331,6 +326,6 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
     result: "Success",
     replaced,
     noChange: false,
-    ...factsOf(title, name, stored.asset, sha1),
+    ...factsOf(title, name, asset, sha1),
   };
 }
