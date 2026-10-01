@@ -526,6 +526,51 @@ describe("nothing is left staged when an upload fails (review M1)", () => {
   });
 });
 
+describe("the pixel area limit (review minor 3)", () => {
+  afterEach(() => delete process.env.WIKIOS_MAX_IMAGE_AREA);
+
+  it("refuses a raster above 12.5 megapixels as too large, and takes one just below it", async () => {
+    const failure = await uploadFile(request({ bytes: png(5000, 5000) })).catch(
+      (error: unknown) => error
+    );
+
+    expect(failure).toBeInstanceOf(UploadError);
+    expect(failure).toMatchObject({ code: "file-too-large" });
+    expect((failure as UploadError).message).toContain(
+      "25 megapixels (5000 × 5000); the limit is 12.5"
+    );
+    expect(staged()).toEqual([]);
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+
+    await expect(uploadFile(request({ bytes: png(3535, 3535) }))).resolves.toMatchObject({
+      result: "Success",
+    });
+  });
+
+  it("follows WIKIOS_MAX_IMAGE_AREA for a wiki that raised $wgMaxImageArea, and ignores a bad value", async () => {
+    process.env.WIKIOS_MAX_IMAGE_AREA = "30000000";
+    await expect(uploadFile(request({ bytes: png(5000, 5000) }))).resolves.toMatchObject({
+      result: "Success",
+    });
+
+    process.env.WIKIOS_MAX_IMAGE_AREA = "lots";
+    await expect(
+      uploadFile(request({ bytes: png(5000, 5001), filename: "Other.png" }))
+    ).rejects.toMatchObject({ code: "file-too-large" });
+  });
+
+  it("does not hold a drawing to it: an SVG may state any size", async () => {
+    const bytes = new TextEncoder().encode(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="90000" height="90000"/>`
+    );
+
+    await expect(uploadFile(request({ bytes, filename: "Map.svg" }))).resolves.toMatchObject({
+      result: "Success",
+      width: 90000,
+    });
+  });
+});
+
 describe("descriptionWikitext", () => {
   it("writes the two sections and a link for each valid category", () => {
     expect(

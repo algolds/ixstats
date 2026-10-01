@@ -22,7 +22,7 @@
 
 import { db } from "~/server/db";
 import { getWikiActorLabel, type WikiAuthContext } from "../auth";
-import { MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "../config";
+import { getMaxImageArea, MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS } from "../config";
 import { extensionMatches, fileExtension, sniffFile, type SniffedFile } from "../core/file-sniff";
 import { hashFile, sha1Base36ToHex } from "../core/file-hash";
 import { MediaAssetService, type MediaAssetRecord } from "../core/media-asset-service";
@@ -99,12 +99,25 @@ const DEFAULT_COMMENT = "Uploaded via WikiOS";
 /** `wiki_logs.comment` holds 1000 characters and MediaWiki's summary limit is 500. */
 const COMMENT_LIMIT = 500;
 const MEGABYTE = 1_000_000;
+const MEGAPIXEL = 1_000_000;
 /** MediaWiki's page size limit, in characters: what `saveWikitext` and api.php's `action=edit` take too. */
 const MAX_PAGE_CHARS = 2_000_000;
 
 // ---------------------------------------------------------------------------
 // The file
 // ---------------------------------------------------------------------------
+
+/** A raster with more pixels than MediaWiki can thumbnail (`$wgMaxImageArea`) is refused, as it would be of no use there. */
+function checkImageArea({ kind, width, height }: SniffedFile): void {
+  if (kind === "svg" || width === null || height === null) return;
+  const limit = getMaxImageArea();
+  if (width * height > limit) {
+    throw new UploadError(
+      "file-too-large",
+      `The image is ${(width * height) / MEGAPIXEL} megapixels (${width} × ${height}); the limit is ${limit / MEGAPIXEL}.`
+    );
+  }
+}
 
 /** What the bytes are, or the `UploadError` that says why they may not be uploaded under `name`. */
 function checkedFile(bytes: Uint8Array, name: string): SniffedFile {
@@ -116,6 +129,7 @@ function checkedFile(bytes: Uint8Array, name: string): SniffedFile {
   }
   const sniffed = sniffFile(bytes);
   if (!sniffed.ok) throw new UploadError(sniffed.code, sniffed.reason);
+  checkImageArea(sniffed.file);
   const extension = fileExtension(name);
   if (!extension) throw new UploadError("filetype-missing", "The file name has no extension.");
   if (!(UPLOAD_EXTENSIONS as readonly string[]).includes(extension)) {

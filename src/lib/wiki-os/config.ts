@@ -175,6 +175,19 @@ export const MAX_UPLOAD_BYTES = 10_000_000;
 /** The file types an upload may be, by extension. The bytes are what decide: see core/file-sniff.ts. */
 export const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "pdf"] as const;
 
+/**
+ * The most pixels (width times height) a raster upload may have: MediaWiki's `$wgMaxImageArea` default, 12.5 megapixels,
+ * above which it cannot make a thumbnail of the file. WikiOS refuses such an upload as MediaWiki's own would end up useless.
+ * A wiki that raised `$wgMaxImageArea` sets WIKIOS_MAX_IMAGE_AREA to the same number. An SVG is a drawing and is not held to it
+ * (it is held to the byte limit like every file). Server only.
+ */
+export const DEFAULT_MAX_IMAGE_AREA = 12_500_000;
+
+export function getMaxImageArea(): number {
+  const configured = Number(process.env.WIKIOS_MAX_IMAGE_AREA);
+  return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_IMAGE_AREA;
+}
+
 /** Where WikiOS keeps an upload until MediaWiki holds it too: WIKIOS_UPLOAD_DIR, else `.wikios-uploads` under the app. Server only. */
 export function getUploadDir(): string {
   return process.env.WIKIOS_UPLOAD_DIR || `${process.cwd()}/.wikios-uploads`;

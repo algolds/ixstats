@@ -444,7 +444,9 @@ streams. **Raising the limit means raising these, in this order, before the code
 truncates the clone at that size, which no route can tell from a cut-off file); (2) nginx `client_max_body_size` for
 `/api/wiki/upload` and `/w/` (`wikios-takeover.conf`: 11m now) and for MediaWiki's own `api.php` (the mirror sends the same
 bytes); (3) PHP `upload_max_filesize` and `post_max_size` (16M now) and MediaWiki's `$wgMaxUploadSize`; only then the
-constant. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
+constant. A raster of more than 12.5 megapixels is refused as too large (MediaWiki's `$wgMaxImageArea` default: it cannot thumbnail
+a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in the same
+env file to the same number, or WikiOS refuses what MediaWiki would take. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
 files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them.
 
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
