@@ -11,7 +11,14 @@ import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueRender } from "../services/render-service";
 import { evictWikiTitleCaches } from "../services/title-cache-eviction";
-import { notifyWatchers } from "../services/watchlist-notify";
+import { notifyWatchers, type HeadChange } from "../services/watchlist-notify";
+
+/** Tell the page's watchers without making the operation wait for them (or fail on them). */
+function notifyWatchersInBackground(change: HeadChange): void {
+  void notifyWatchers(change).catch((error) => {
+    console.warn("[PageManagement] Could not notify watchers:", error);
+  });
+}
 
 /** Who performed an operation: the WikiOS user row (for the foreign keys) and the name the log shows. */
 export interface PageActor {
@@ -143,7 +150,7 @@ export class PageManagementService {
       await evictWikiTitleCaches(moved.oldTitle, realm, moved.movedArticleId);
       await evictWikiTitleCaches(moved.newTitle, realm, moved.movedArticleId);
       // watchlist: the page's watchers stay with its row: tell them it moved (the mover is left out).
-      await notifyWatchers({
+      notifyWatchersInBackground({
         kind: "moved",
         articleId: moved.movedArticleId,
         title: moved.newTitle,
@@ -395,7 +402,7 @@ export class PageManagementService {
     // A deleted page must not be read out of a cache.
     await evictWikiTitleCaches(title, realm, articleId);
     // watchlist: tell the page's watchers it is gone (the deleter is left out).
-    await notifyWatchers({
+    notifyWatchersInBackground({
       kind: "deleted",
       articleId,
       title,
@@ -445,6 +452,15 @@ export class PageManagementService {
     });
     // The page was "missing" while deleted: forget that, and anything cached from before.
     await evictWikiTitleCaches(title, realm, articleId);
+    // watchlist: the page's watchers stayed with its row: tell them it is back (the restorer is left out).
+    notifyWatchersInBackground({
+      kind: "restored",
+      articleId,
+      title,
+      editor: actor.name,
+      editorUserId: actor.userId,
+      summary: reason,
+    });
     return { success: true, articleId };
   }
 

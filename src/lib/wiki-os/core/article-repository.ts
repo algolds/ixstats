@@ -840,6 +840,20 @@ export class ArticleRepository {
       // The new head is stale until rendered: render it off the read path, as a backlog (an editor's
       // save renders before it).
       enqueueRender(articleId, { background: true });
+      // watchlist: a head that moved on an existing page is a change its watchers hear of (once each
+      // until they visit); a page the import just created has none yet. The author is left out.
+      const headRevision = input.revisions.filter((revision) => revision.wikitext !== null).at(-1);
+      if (!result.created && headRevision) {
+        void notifyWatchers({
+          kind: "edited",
+          articleId,
+          title: input.title,
+          editor: headRevision.author,
+          editorUserId: headRevision.authorId,
+          summary: headRevision.summary,
+          currentRef: head.mwRevId === null ? null : String(head.mwRevId),
+        });
+      }
       // Link graph outside the transaction, best effort, exactly as saveArticle does it.
       try {
         await LinkGraphService.syncArticleLinks(articleId, head.wikitext, "", input.source);

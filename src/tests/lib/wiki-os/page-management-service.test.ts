@@ -730,11 +730,61 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
     expect(notifyWatchers).not.toHaveBeenCalled();
   });
 
-  it("does not notify anyone of a restore", async () => {
+  it("notifies the watchers of a restored page, leaving the restorer out", async () => {
     pages({ old_name: { ...original, status: "ARCHIVED" } });
 
-    await PageManagementService.restoreArticle("Old name", actor);
+    await PageManagementService.restoreArticle("Old name", actor, "ixwiki", "Wrongly deleted");
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+    expect(notifyWatchers).toHaveBeenCalledWith({
+      kind: "restored",
+      articleId: "orig",
+      title: "Old name",
+      editor: "Tester",
+      editorUserId: "u1",
+      summary: "Wrongly deleted",
+    });
+  });
+
+  it("notifies nobody when the restore was refused", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
 
     expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["move", () => PageManagementService.movePage("old_name", "new_name", "tidy", actor)],
+    ["delete", () => PageManagementService.archiveArticle("Old name", "spam", actor)],
+    [
+      "restore",
+      () => {
+        pages({ old_name: { ...original, status: "ARCHIVED" } });
+        return PageManagementService.restoreArticle("Old name", actor);
+      },
+    ],
+  ])("a %s does not wait for the watchers to be told", async (_operation, run) => {
+    jest.mocked(notifyWatchers).mockReturnValueOnce(new Promise<number>(() => undefined));
+
+    await expect(run()).resolves.toMatchObject({ success: true });
+
+    expect(notifyWatchers).toHaveBeenCalledTimes(1);
+  });
+
+  it("a watcher notification that fails costs the operation nothing", async () => {
+    jest.mocked(notifyWatchers).mockRejectedValueOnce(new Error("notifications down"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(
+      PageManagementService.archiveArticle("Old name", "spam", actor)
+    ).resolves.toMatchObject({ success: true });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(warn).toHaveBeenCalledWith(
+      "[PageManagement] Could not notify watchers:",
+      expect.any(Error)
+    );
+    warn.mockRestore();
   });
 });

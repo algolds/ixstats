@@ -8,7 +8,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
-import { requireNotBlocked } from "~/lib/wiki-os/permissions";
+import { assertPageVisible, requireNotBlocked } from "~/lib/wiki-os/permissions";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 import { markWatchedVisited } from "~/lib/wiki-os/services/watchlist-notify";
 
@@ -141,8 +141,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           source: "ixwiki",
           OR: [{ title: input.pageTitle }, { title: input.pageTitle.replace(/_/g, " ") }],
         },
-        select: { id: true },
+        select: { id: true, status: true },
       });
+      // A deleted page does not exist to someone who may not browse deleted pages: they cannot watch it.
+      await assertPageVisible(ctx, article, input.pageTitle);
 
       if (article) {
         await ctx.db.wikiWatchlist.upsert({
