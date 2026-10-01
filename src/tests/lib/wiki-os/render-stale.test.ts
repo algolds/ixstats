@@ -6,10 +6,10 @@
  * version built is also stale, but is found once per process (a scan), not by the per-minute query.
  */
 import {
+  ensureRendered,
   invalidateDependents,
   invalidateTemplateDependents,
   renderStaleBatch,
-  RENDERER_VERSION,
 } from "~/lib/wiki-os/services/render-service";
 
 const mockFindUnique = jest.fn();
@@ -57,10 +57,14 @@ interface FindManyArgs {
   take?: number;
 }
 
-/** The articles the fake database holds as stale: never rendered or edited since, and outdated bundles. */
+/**
+ * The articles the fake database holds as stale: never rendered or edited since, and outdated bundles.
+ * `scanGate` holds the scan for outdated bundles until it resolves.
+ */
 interface StaleArticles {
   unsynced: string[];
   outdated: string[];
+  scanGate?: Promise<void>;
 }
 
 /**
@@ -75,8 +79,9 @@ function database(stale: StaleArticles) {
       const leftOut = new Set(where.id?.notIn);
       return list(stale.unsynced.filter((id) => !leftOut.has(id)));
     }
-    const asked = where.id?.in;
-    return list(stale.outdated.filter((id) => !asked || asked.includes(id)));
+    if (!where.id) await stale.scanGate;
+    const asked = where.id?.in && new Set(where.id.in);
+    return list(stale.outdated.filter((id) => !asked || asked.has(id)));
   });
   mockUpdateMany.mockImplementation(async ({ where }: { where: { id: string } }) => {
     stale.unsynced = stale.unsynced.filter((id) => id !== where.id);
@@ -93,6 +98,23 @@ function database(stale: StaleArticles) {
 
 /** `findUnique` answers for the given articles; `findMany` lists them as unsynced. */
 const staleArticles = (articleIds: string[]) => database({ unsynced: articleIds, outdated: [] });
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+/** A scan that stays pending until `open()`: a batch that runs meanwhile is known not to have its result. */
+function heldScan() {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return {
+    gate,
+    open: async () => {
+      release();
+      await flush();
+    },
+  };
+}
 
 const queries = () => mockFindMany.mock.calls.map(([args]) => args as FindManyArgs);
 const unsyncedQueries = () => queries().filter((query) => query.where.htmlSyncedAt === null);
@@ -242,8 +264,29 @@ describe("renderStaleBatch", () => {
   });
 });
 
+describe("a reader and a render that is running for an article that failed a moment ago", () => {
+  it("joins the render the stale batch started, instead of being told it failed", async () => {
+    const [x] = freshIds(1);
+    staleArticles([x!]);
+    mockRender.mockResolvedValueOnce(null);
+    await expect(ensureRendered(x!, { waitMs: 1000 })).resolves.toEqual({ ok: false }); // the cool-down starts
+
+    // the batch keeps its own failure memory, so it renders the article now
+    let finish!: (html: string) => void;
+    mockRender.mockReturnValueOnce(new Promise<string>((resolve) => (finish = resolve)));
+    const batch = renderStaleBatch();
+    await flush();
+    const reader = ensureRendered(x!, { waitMs: 5000 });
+    finish(HTML);
+
+    await expect(reader).resolves.toEqual({ ok: true });
+    await expect(batch).resolves.toEqual({ rendered: 1, failed: 0 });
+    expect(mockRender).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("renderStaleBatch: bundles an earlier renderer version built", () => {
-  /** A fresh copy of the service: the backlog of outdated articles is per process and scanned once. */
+  /** A fresh copy of the service: the backlog of outdated articles is per process. */
   async function freshService() {
     let service!: typeof import("~/lib/wiki-os/services/render-service");
     await jest.isolateModulesAsync(async () => {
@@ -252,31 +295,39 @@ describe("renderStaleBatch: bundles an earlier renderer version built", () => {
     return service;
   }
   const renderedIds = () => mockUpdateMany.mock.calls.map(([args]) => args.where.id);
+  const checkSizes = () => checkQueries().map((query) => query.where.id?.in?.length);
 
   it("finds them with one scan, never with the per-minute query, and renders them oldest first", async () => {
     const { renderStaleBatch: batch, RENDERER_VERSION: version } = await freshService();
     const [o1, o2, o3] = freshIds(3);
-    database({ unsynced: [], outdated: [o1!, o2!, o3!] });
+    const scan = heldScan();
+    database({ unsynced: [], outdated: [o1!, o2!, o3!], scanGate: scan.gate });
 
-    // one article per batch: the backlog outlives three batches and is read from the scan only once
-    for (let round = 0; round < 3; round++) {
-      await expect(batch(1)).resolves.toEqual({ rendered: 1, failed: 0 });
-    }
+    await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 }); // the scan is still running
+    await scan.open();
+    await expect(batch()).resolves.toEqual({ rendered: 3, failed: 0 });
+    await batch();
+    await batch();
 
     expect(renderedIds()).toEqual([o1, o2, o3]);
+    const outdatedBundle = {
+      status: "PUBLISHED",
+      wikitext: { not: "" },
+      renderedView: { path: ["rendererVersion"], not: version },
+    };
     expect(scanQueries()).toEqual([
       {
-        where: {
-          status: "PUBLISHED",
-          wikitext: { not: "" },
-          renderedView: { path: ["rendererVersion"], not: version },
-        },
+        where: outdatedBundle,
         orderBy: { updatedAt: "asc" },
         take: 100_000,
         select: { id: true },
       },
     ]);
-    expect(unsyncedQueries()).toHaveLength(3);
+    // the check keeps the outdated condition: a row that was brought up to date is not rendered again
+    expect(checkQueries()).toEqual([
+      { where: { ...outdatedBundle, id: { in: [o1, o2, o3] } }, select: { id: true } },
+    ]);
+    expect(unsyncedQueries()).toHaveLength(4);
     for (const query of unsyncedQueries()) {
       expect(query.where).toEqual({
         status: "PUBLISHED",
@@ -286,27 +337,44 @@ describe("renderStaleBatch: bundles an earlier renderer version built", () => {
     }
   });
 
+  it("renders unsynced articles at once, whatever the scan is doing", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [u1, u2, o1] = freshIds(3);
+    const scan = heldScan();
+    database({ unsynced: [u1!, u2!], outdated: [o1!], scanGate: scan.gate });
+
+    await expect(batch()).resolves.toEqual({ rendered: 2, failed: 0 }); // returns with the scan pending
+    expect(renderedIds()).toEqual([u1, u2]);
+    expect(scanQueries()).toHaveLength(1);
+
+    await scan.open();
+    await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
+    expect(renderedIds()).toEqual([u1, u2, o1]);
+  });
+
   it("renders unsynced articles first, and the outdated ones in the room they leave", async () => {
     const { renderStaleBatch: batch } = await freshService();
     const [u1, u2, o1, o2, o3] = freshIds(5);
     database({ unsynced: [u1!, u2!], outdated: [o1!, o2!, o3!] });
 
+    // the scan resolved while the unsynced articles rendered, so this batch already uses it
     await expect(batch(4)).resolves.toEqual({ rendered: 4, failed: 0 });
 
     expect(renderedIds()).toEqual([u1, u2, o1, o2]);
   });
 
-  it("does not even look at the backlog while unsynced articles fill the batch", async () => {
+  it("does not look at the backlog while unsynced articles fill the batch", async () => {
     const { renderStaleBatch: batch } = await freshService();
     const [u1, u2, o1] = freshIds(3);
-    const stale = { unsynced: [u1!, u2!], outdated: [o1!] };
-    database(stale);
+    database({ unsynced: [u1!, u2!], outdated: [o1!] });
 
     await batch(2);
     expect(scanQueries()).toHaveLength(0);
     expect(renderedIds()).toEqual([u1, u2]);
 
-    await batch(2); // the unsynced are done: now there is room
+    await batch(2); // the unsynced are done: now there is room, and the scan starts
+    await flush();
+    await batch(2);
     expect(scanQueries()).toHaveLength(1);
     expect(renderedIds()).toEqual([u1, u2, o1]);
   });
@@ -316,9 +384,44 @@ describe("renderStaleBatch: bundles an earlier renderer version built", () => {
     const [both, o1] = freshIds(2);
     database({ unsynced: [both!], outdated: [both!, o1!] });
 
-    await expect(batch()).resolves.toEqual({ rendered: 2, failed: 0 });
+    await batch();
+    await flush();
+    await batch();
 
     expect(renderedIds()).toEqual([both, o1]);
+  });
+
+  it("takes up to 60 from the backlog when there is no unsynced work, and the batch limit otherwise", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const scan = heldScan();
+    database({ unsynced: [], outdated: freshIds(100), scanGate: scan.gate });
+    await batch();
+    await scan.open();
+
+    await expect(batch()).resolves.toEqual({ rendered: 60, failed: 0 });
+    await expect(batch()).resolves.toEqual({ rendered: 40, failed: 0 });
+
+    const other = await freshService();
+    database({ unsynced: freshIds(5), outdated: freshIds(100) });
+    await expect(other.renderStaleBatch()).resolves.toEqual({ rendered: 20, failed: 0 });
+  });
+
+  it("starts no render of the backlog once the time budget is spent", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const scan = heldScan();
+    database({ unsynced: [], outdated: freshIds(10), scanGate: scan.gate });
+    await batch();
+    await scan.open();
+    const now = jest.spyOn(Date, "now");
+    let tick = 0;
+    // Every call to Date.now() moves the clock on by 20 s: the budget (45 s) is gone after two renders.
+    now.mockImplementation(() => 1_000_000 + 20_000 * tick++);
+
+    const result = await batch();
+
+    expect(result.rendered).toBeGreaterThan(0);
+    expect(result.rendered).toBeLessThan(10);
+    now.mockRestore();
   });
 
   it("never scans again once the backlog is empty", async () => {
@@ -326,56 +429,125 @@ describe("renderStaleBatch: bundles an earlier renderer version built", () => {
     const [o1] = freshIds(1);
     database({ unsynced: [], outdated: [o1!] });
 
-    await batch();
-    expect(scanQueries()).toHaveLength(1);
-    expect(checkQueries()).toHaveLength(1);
-
     for (let round = 0; round < 3; round++) {
-      await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 });
+      await batch();
+      await flush();
     }
 
+    expect(renderedIds()).toEqual([o1]);
     expect(scanQueries()).toHaveLength(1);
     expect(checkQueries()).toHaveLength(1);
-    expect(unsyncedQueries()).toHaveLength(4);
   });
 
   it("scans once and never checks anything when nothing is outdated", async () => {
     const { renderStaleBatch: batch } = await freshService();
     database({ unsynced: [], outdated: [] });
 
-    for (let round = 0; round < 3; round++) await batch();
+    for (let round = 0; round < 3; round++) {
+      await batch();
+      await flush();
+    }
 
     expect(scanQueries()).toHaveLength(1);
     expect(checkQueries()).toHaveLength(0);
     expect(mockRender).not.toHaveBeenCalled();
   });
 
+  it("scans once more when a scan that came back full has drained, and no more than once", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const [late] = freshIds(1);
+    const full = Array.from({ length: 100_000 }, (_, index) => `full-${index}`);
+    const scan = heldScan();
+    const stale = { unsynced: [], outdated: full, scanGate: scan.gate };
+    database(stale);
+    await batch();
+    await scan.open();
+    stale.outdated = [late!]; // all of the 100,000 are up to date by now; this one has turned outdated
+
+    // each batch checks (and drops) three chunks of 200, until the backlog is empty and the rescan starts
+    for (let round = 0; round < 400 && scanQueries().length < 2; round++) await batch();
+    await flush();
+    await batch();
+
+    expect(scanQueries()).toHaveLength(2);
+    expect(renderedIds()).toEqual([late]);
+    for (let round = 0; round < 3; round++) {
+      await batch();
+      await flush();
+    }
+    expect(scanQueries()).toHaveLength(2);
+  });
+
+  it("does not rescan a second time, however full the rescan came back", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const ids100k = (prefix: string) =>
+      Array.from({ length: 100_000 }, (_, index) => `${prefix}-${index}`);
+    const scan = heldScan();
+    const stale = { unsynced: [], outdated: ids100k("first"), scanGate: scan.gate };
+    database(stale);
+    await batch();
+    await scan.open();
+    stale.outdated = ids100k("second"); // the first backlog is up to date; the rescan will be full again
+
+    for (let round = 0; round < 400 && scanQueries().length < 2; round++) await batch();
+    await flush();
+    stale.outdated = []; // and now all of the second one is up to date too
+    for (let round = 0; round < 400; round++) await batch(); // drains it, and could rescan again
+
+    expect(scanQueries()).toHaveLength(2);
+    expect(mockRender).not.toHaveBeenCalled();
+  });
+
   it("drops an article that was brought up to date meanwhile, without rendering it", async () => {
     const { renderStaleBatch: batch } = await freshService();
     const [o1, o2, o3] = freshIds(3);
-    const stale = { unsynced: [], outdated: [o1!, o2!, o3!] };
+    const scan = heldScan();
+    const stale = { unsynced: [], outdated: [o1!, o2!, o3!], scanGate: scan.gate };
     database(stale);
+    await batch();
+    await scan.open();
+    stale.outdated = [o1!, o3!]; // a reader's render got o2
 
-    await batch(1); // scans, renders o1
-    stale.outdated = stale.outdated.filter((id) => id !== o2); // a reader's render got o2
-    await batch(1); // o2 is dropped, o3 takes its place
-    await batch(1);
+    await expect(batch()).resolves.toEqual({ rendered: 2, failed: 0 });
+    await batch();
 
     expect(renderedIds()).toEqual([o1, o3]);
-    expect(checkQueries().map((query) => query.where.id?.in)).toEqual([[o1], [o2], [o3]]);
+    expect(checkQueries().map((query) => query.where.id?.in)).toEqual([[o1, o2, o3]]);
+  });
+
+  it("checks at most three chunks of 200 ids per batch, and leaves the rest for the next", async () => {
+    const { renderStaleBatch: batch } = await freshService();
+    const scan = heldScan();
+    const stale = { unsynced: [], outdated: freshIds(700), scanGate: scan.gate };
+    database(stale);
+    await batch();
+    await scan.open();
+    stale.outdated = []; // every candidate is already up to date: nothing to render, all dropped
+
+    await batch();
+    expect(checkSizes()).toEqual([200, 200, 200]);
+    await batch();
+    expect(checkSizes()).toEqual([200, 200, 200, 100]);
+    await batch();
+    expect(checkSizes()).toHaveLength(4);
+    expect(mockRender).not.toHaveBeenCalled();
   });
 
   it("keeps a failed article in the backlog, behind the usual backoff", async () => {
     const { renderStaleBatch: batch } = await freshService();
     const [broken, fine] = freshIds(2);
-    database({ unsynced: [], outdated: [broken!, fine!] });
+    const scan = heldScan();
+    database({ unsynced: [], outdated: [broken!, fine!], scanGate: scan.gate });
     mockRender.mockImplementation(async (_text: string, title: string) =>
       title === `Title of ${broken}` ? null : HTML
     );
+    await batch();
+    await scan.open();
+    const attempts = () => mockFindUnique.mock.calls.filter(([a]) => a.where.id === broken).length;
 
     await expect(batch()).resolves.toEqual({ rendered: 1, failed: 1 });
     await expect(batch()).resolves.toEqual({ rendered: 0, failed: 0 }); // backing off: left alone
-    expect(mockFindUnique.mock.calls.filter(([args]) => args.where.id === broken)).toHaveLength(1);
+    expect(attempts()).toBe(1);
     expect(scanQueries()).toHaveLength(1);
 
     const later = jest.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * 60_000);
@@ -384,24 +556,26 @@ describe("renderStaleBatch: bundles an earlier renderer version built", () => {
     } finally {
       later.mockRestore();
     }
-    expect(mockFindUnique.mock.calls.filter(([args]) => args.where.id === broken)).toHaveLength(2);
+    expect(attempts()).toBe(2);
     expect(scanQueries()).toHaveLength(1);
   });
 
   it("logs a failed scan, still renders the unsynced articles, and scans again next time", async () => {
     const { renderStaleBatch: batch } = await freshService();
     const [u1, o1] = freshIds(2);
-    const stale = { unsynced: [u1!], outdated: [o1!] };
-    database(stale);
+    database({ unsynced: [u1!], outdated: [o1!] });
     const answer = mockFindMany.getMockImplementation()!;
     mockFindMany.mockImplementationOnce(answer); // the unsynced query
     mockFindMany.mockRejectedValueOnce(new Error("db down")); // the scan
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
+    await flush();
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("outdated"), expect.any(Error));
     expect(renderedIds()).toEqual([u1]);
 
+    await batch(); // starts the scan again
+    await flush();
     await expect(batch()).resolves.toEqual({ rendered: 1, failed: 0 });
     expect(renderedIds()).toEqual([u1, o1]);
     expect(scanQueries()).toHaveLength(2);
