@@ -195,6 +195,21 @@ describe("an article is read on the server (plan 412 step 2)", () => {
     expect(signal).toBe("permanent:/wiki/New_name?margin=threads&rdfrom=Old+name");
   });
 
+  it("a redirect page whose target does not exist is rendered where it is: no 404, no redirect to a missing page", async () => {
+    // getArticleHtml answers the redirect page itself (resolvedFrom null) when the target is missing.
+    succeeds(
+      article({
+        title: "Old name",
+        resolvedFrom: null,
+        contentHtml: '<div class="redirectMsg"></div>',
+      })
+    );
+    const { tree, signal } = await outcome(["Old_name"]);
+
+    expect(signal).toBeNull();
+    expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "Old name" });
+  });
+
   it("?redirect=no reads the redirect page itself, and says so to the client", async () => {
     succeeds(article({ title: "Old name" }));
     const { tree, signal } = await outcome(["Old_name"], { redirect: "no" });

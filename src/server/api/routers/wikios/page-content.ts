@@ -7,6 +7,7 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
@@ -36,6 +37,23 @@ import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
+
+/**
+ * The reader's view of the IxWiki page `title` (canonical, redirects already followed), or null when
+ * there is none. Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+ */
+async function readIxWikiView(ctx: WikiAuthContext, title: string) {
+  return getArticleView(
+    title,
+    () => resolveActiveCountryId(ctx),
+    () => canSeeDeletedPages(ctx)
+  ).catch((error: Error) => {
+    if (error instanceof ThrottledError) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+    }
+    throw error;
+  });
+}
 
 export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -145,22 +163,19 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
       // other, and the old slugs redirect to their tool in the route, not in this query.
-      const { title: resolvedTitle, fragment: redirectFragment } =
+      const followed =
         input.redirect === "no"
           ? { title: rawTitle, fragment: null }
           : await resolveRedirect(rawTitle);
 
-      const view = await getArticleView(
-        resolvedTitle,
-        () => resolveActiveCountryId(ctx),
-        () => canSeeDeletedPages(ctx)
-      ).catch((error: Error) => {
-        // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
-        if (error instanceof ThrottledError) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
-        }
-        throw error;
-      });
+      let shown = followed;
+      let view = await readIxWikiView(ctx, followed.title);
+      if (!view && followed.title !== rawTitle) {
+        // The redirect's target does not exist: show the redirect page itself, as MediaWiki does
+        // (its "Redirect to: Target" with a red link), not "no such page" for a page that exists.
+        shown = { title: rawTitle, fragment: null };
+        view = await readIxWikiView(ctx, rawTitle);
+      }
       if (!view) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -173,8 +188,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
         isRedirect: false,
         redirectTarget: null,
         /** The section the redirect points to, or null. */
-        redirectFragment,
-        resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
+        redirectFragment: shown.fragment,
+        resolvedFrom: shown.title !== rawTitle ? rawTitle : null,
         wikiSource: "ixwiki" as const,
         // The reader fetches authorship lazily (getArticleAuthors) so it never holds the article back.
         authorInfo: null,

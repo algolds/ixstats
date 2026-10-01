@@ -76,7 +76,7 @@ jest.mock("~/server/shared/ixstats-template-provider", () => ({
   },
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -87,6 +87,7 @@ import { getArticleAuthors } from "~/lib/wiki-os/adapters/mediawiki/article-stor
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
@@ -540,12 +541,26 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
 });
 
 describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
+  // The import budget is module state that earlier tests in this file spent: a later minute has it full.
+  let minutesLater = 0;
+  let clock: jest.SpyInstance;
+  beforeEach(() => {
+    const realNow = Date.now.bind(Date);
+    const offset = ++minutesLater * 600_000;
+    clock = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+  });
+  afterEach(() => clock.mockRestore());
+
   beforeEach(() => {
     findArticleForView.mockImplementation(async (title: string) => head({ title }));
     setRow(freshBundleRow("<p>The Republic.</p>"));
-    jest.mocked(resolveRedirect).mockImplementation(async (title: string) =>
-      title === "Old name" ? { title: "New name", fragment: "History" } : { title, fragment: null }
-    );
+    jest
+      .mocked(resolveRedirect)
+      .mockImplementation(async (title: string) =>
+        title === "Old name"
+          ? { title: "New name", fragment: "History" }
+          : { title, fragment: null }
+      );
   });
 
   it("follows a redirect and says where it came from and which section it points to", async () => {
@@ -565,6 +580,48 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
     expect(resolveRedirect).not.toHaveBeenCalled();
     expect(findArticleForView).toHaveBeenCalledWith("Old name");
     expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
+  });
+
+  it("a redirect to a page that does not exist shows the redirect page itself, not 'no such page'", async () => {
+    // "Old name" redirects to "New name", which has no article; "Old name" itself does.
+    findArticleForView.mockImplementation(async (title: string) =>
+      title === "New name" ? null : head({ title })
+    );
+    setRow(
+      freshBundleRow('<div class="redirectMsg"><p>Redirect to:</p><ul><li>New name</li></ul></div>')
+    );
+
+    const result = await caller().getArticleHtml({ title: "Old name" });
+
+    expect(findArticleForView.mock.calls.map((call) => call[0])).toEqual(["New name", "Old name"]);
+    expect(result).toMatchObject({
+      title: "Old name",
+      resolvedFrom: null, // the route renders it where it is: no redirect to a missing page
+      redirectFragment: null,
+    });
+    expect(result.contentHtml).toContain("redirectMsg");
+  });
+
+  it("is still 'no such page' when neither the target nor the redirect page exists", async () => {
+    findArticleForView.mockResolvedValue(null);
+    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("a busy lookup of the target is busy, not a reason to show the redirect page", async () => {
+    findArticleForView.mockImplementation(async (title: string) => {
+      if (title === "New name") return null;
+      return head({ title });
+    });
+    jest.mocked(syncSinglePage).mockImplementation(async () => {
+      throw new ThrottledError("Importing pages from MediaWiki");
+    });
+
+    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+    expect(findArticleForView).toHaveBeenCalledTimes(1);
   });
 
   it("a page that is not a redirect has neither", async () => {
