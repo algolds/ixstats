@@ -30,13 +30,13 @@ const toggleVariants = cva(
       },
       size: {
         sm: "h-(--control-height-sm) min-w-(--control-height-sm) rounded-control-sm px-2 text-footnote",
-        default: "h-(--control-height) min-w-(--control-height) rounded-control px-2.5 text-body",
+        default: "h-(--control-height) min-w-(--control-height) rounded-control px-3 text-body",
         lg: "h-(--control-height-lg) min-w-(--control-height-lg) rounded-control-lg px-3 text-body",
       },
     },
     compoundVariants: [
       { variant: "pill", size: "sm", className: "rounded-full px-3" },
-      { variant: "pill", size: "default", className: "rounded-full px-3.5" },
+      { variant: "pill", size: "default", className: "rounded-full px-4" },
       { variant: "pill", size: "lg", className: "rounded-full px-4" },
     ],
     defaultVariants: {

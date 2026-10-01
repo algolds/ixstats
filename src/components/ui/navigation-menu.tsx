@@ -125,7 +125,7 @@ function NavigationMenuViewport({
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
-          "relative mt-1.5 h-(--radix-navigation-menu-viewport-height) w-full origin-top overflow-hidden rounded-card border border-separator bg-surface-elevated text-label shadow-floating md:w-(--radix-navigation-menu-viewport-width)",
+          "relative mt-2 h-(--radix-navigation-menu-viewport-height) w-full origin-top overflow-hidden rounded-card border border-separator bg-surface-elevated text-label shadow-floating md:w-(--radix-navigation-menu-viewport-width)",
           "data-[state=open]:animate-facet-in data-[state=closed]:animate-facet-out",
           className
         )}

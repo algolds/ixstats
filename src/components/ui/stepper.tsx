@@ -60,7 +60,7 @@ const sizes = {
   md: {
     root: "h-(--control-height) rounded-control text-body",
     button: "w-(--control-height) rounded-control [:where(&)_svg]:size-4",
-    value: "min-w-10 px-1.5",
+    value: "min-w-10 px-2",
   },
 } as const;
 

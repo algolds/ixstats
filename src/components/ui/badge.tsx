@@ -33,7 +33,7 @@ export type SystemTintedColor = keyof typeof SYSTEM_TINTED;
  * Facet 3 Badge (spec §7.1): status and count chips in `text-caption`, fully rounded.
  *
  * Variants: `neutral` (fill-3) · `tinted` (tint @ fill) · one per status role — `success`,
- * `warning`, `caution`, `destructive`, `info` — as the system colour on a 15% fill of itself ·
+ * `warning`, `caution`, `destructive`, `info` — as the status colour's `-ink` on a 15% fill of itself ·
  * `outline` (hairline, no fill) · one per system colour — `red`, `orange`, `yellow`, `green`,
  * `mint`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`, `brown`, `gray` — as the colour's
  * `-ink` on a 15% fill (AA for 12px text; use these for categories, rarities and tags).
@@ -52,11 +52,11 @@ const badgeVariants = cva(
       variant: {
         neutral,
         tinted,
-        success: "bg-success/15 text-success [a&]:hover:bg-success/25",
-        warning: "bg-warning/15 text-warning [a&]:hover:bg-warning/25",
-        caution: "bg-caution/15 text-caution [a&]:hover:bg-caution/25",
-        destructive: "bg-destructive/15 text-destructive [a&]:hover:bg-destructive/25",
-        info: "bg-info/15 text-info [a&]:hover:bg-info/25",
+        success: "bg-success/15 text-success-ink [a&]:hover:bg-success/25",
+        warning: "bg-warning/15 text-warning-ink [a&]:hover:bg-warning/25",
+        caution: "bg-caution/15 text-caution-ink [a&]:hover:bg-caution/25",
+        destructive: "bg-destructive/15 text-destructive-ink [a&]:hover:bg-destructive/25",
+        info: "bg-info/15 text-info-ink [a&]:hover:bg-info/25",
         outline: "border-separator bg-transparent text-label-secondary [a&]:hover:bg-fill-4",
         ...SYSTEM_TINTED,
         // Legacy aliases

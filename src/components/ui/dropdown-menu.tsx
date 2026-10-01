@@ -13,7 +13,7 @@ const menuSurface =
 
 /** Menu rows: nested radius (12 − 4 padding = 8), fill-3 highlight, body text. */
 const menuRow =
-  "relative flex cursor-default items-center gap-2 rounded-control-sm px-2 py-1.5 text-body outline-none select-none transition-colors duration-fast ease-out-facet data-[highlighted]:bg-fill-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4";
+  "relative flex cursor-default items-center gap-2 rounded-control-sm min-h-8 px-2 py-1 text-body outline-none select-none transition-colors duration-fast ease-out-facet data-[highlighted]:bg-fill-3 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4";
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -146,7 +146,7 @@ function DropdownMenuGroupLabel({ className, inset, ...props }: DropdownMenuGrou
       data-slot="dropdown-menu-group-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 text-footnote text-label-secondary data-[inset]:pl-8",
+        "px-2 py-1 text-footnote text-label-secondary data-[inset]:pl-8",
         className
       )}
       {...props}

@@ -51,7 +51,7 @@ function Tooltip({
             <div className="flex items-center gap-2">
               <span>{content}</span>
               {shortcut && (
-                <kbd className="pointer-events-none inline-flex h-4 items-center gap-0.5 rounded-control-sm bg-fill-3 px-1.5 text-caption text-label-secondary select-none">
+                <kbd className="pointer-events-none inline-flex h-4 items-center gap-0.5 rounded-control-sm bg-fill-3 px-1 text-caption text-label-secondary select-none">
                   {shortcut}
                 </kbd>
               )}
@@ -89,7 +89,7 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-tooltip w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-row px-3 py-1.5 text-footnote text-balance",
+          "z-tooltip w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-row px-3 py-1 text-footnote text-balance",
           "border border-separator bg-surface-elevated text-label shadow-floating",
           // Radix tooltips open with data-state="delayed-open" / "instant-open".
           "animate-facet-in data-[state=closed]:animate-facet-out",

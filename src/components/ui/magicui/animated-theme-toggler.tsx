@@ -52,7 +52,7 @@ export const AnimatedThemeToggler = ({ className }: props) => {
     <button
       ref={buttonRef}
       onClick={changeTheme}
-      className={cn("rounded-lg p-2 transition-colors hover:bg-white/10", className)}
+      className={cn("rounded-control hover:bg-fill-3 p-2 transition-colors", className)}
     >
       {effectiveTheme === "dark" ? <SunDim className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </button>

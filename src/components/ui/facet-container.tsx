@@ -125,8 +125,8 @@ const PRESSABLE =
 
 interface SurfaceBehaviour {
   interactive?: FacetInteractivity;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
-  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  onClick?: React.MouseEventHandler<HTMLElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
 }
 
 /** Shared pressable behaviour: classes plus a11y props for a clickable `<div>` surface. */
@@ -134,7 +134,7 @@ function surfaceBehaviour({ interactive = "none", onClick, onKeyDown }: SurfaceB
   const isClickable = Boolean(onClick);
   const hasHover = isClickable || interactive !== "none";
 
-  const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> | undefined = isClickable
+  const handleKeyDown: React.KeyboardEventHandler<HTMLElement> | undefined = isClickable
     ? (event) => {
         onKeyDown?.(event);
         if (event.defaultPrevented || event.target !== event.currentTarget) return;
@@ -154,7 +154,20 @@ function surfaceBehaviour({ interactive = "none", onClick, onKeyDown }: SurfaceB
 
 // ─── FacetCard ──────────────────────────────────────────────────────────────
 
-export interface FacetCardProps extends React.HTMLAttributes<HTMLDivElement> {
+/**
+ * Elements a `FacetCard` can render as (`as`). Pick the one the content is: a `section` with a
+ * heading, an `article` (a post, a self-contained item), an `li` in a list of cards, an `aside`, a
+ * `header`/`footer`, a `nav` or a `figure`. Default `div`.
+ */
+export type FacetCardElement =
+  "div" | "section" | "article" | "aside" | "header" | "footer" | "li" | "nav" | "figure";
+
+export interface FacetCardProps extends React.HTMLAttributes<HTMLElement> {
+  /**
+   * The element to render (default `div`). The ref receives that element (typed `HTMLElement`;
+   * narrow with `instanceof` if you need element-specific API).
+   */
+  as?: FacetCardElement;
   /**
    * Card padding. Default card: `"none"` (pad with `FacetCardHeader/Content/Footer` or
    * `className`). Inset: `"md"` (16px).
@@ -182,9 +195,10 @@ export interface FacetCardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 /** The opaque content card (§7.1), or with `variant="inset"` a panel inside one. */
-export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
+export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
   (
     {
+      as = "div",
       padding,
       interactive,
       texture,
@@ -204,9 +218,12 @@ export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
   ) => {
     const behaviour = surfaceBehaviour({ interactive, onClick, onKeyDown });
     const inset = variant === "inset";
+    // Every `as` element takes the same HTML attributes; type the tag as one so JSX does not
+    // intersect nine ref types.
+    const Element = as as "div";
     return (
-      <div
-        ref={ref}
+      <Element
+        ref={ref as React.Ref<HTMLDivElement>}
         data-slot="facet-card"
         data-variant={inset ? "inset" : undefined}
         {...behaviour.a11y}
@@ -229,7 +246,7 @@ export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
           />
         )}
         {children}
-      </div>
+      </Element>
     );
   }
 );

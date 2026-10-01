@@ -39,19 +39,18 @@ export function HelpIcon({
         <button
           type="button"
           className={cn(
-            "inline-flex items-center justify-center",
-            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-            "hover:scale-110 active:scale-95",
-            "rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
+            "inline-flex items-center justify-center rounded-full",
+            "duration-fast ease-out-facet transition-[color,transform] active:scale-95",
+            "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
             className
           )}
           aria-label={title ?? "Help information"}
         >
           <Icon
             className={cn(
-              "h-4 w-4",
-              "text-gray-400 hover:text-amber-600 dark:text-white/40 dark:hover:text-amber-400",
-              "transition-colors duration-200",
+              "size-4",
+              "text-label-tertiary hover:text-tint",
+              "duration-fast transition-colors",
               "cursor-help",
               iconClassName
             )}
@@ -60,12 +59,12 @@ export function HelpIcon({
       </TooltipTrigger>
       <TooltipContent side={side} sideOffset={8} className="max-w-sm">
         {title && (
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
-            <Icon className="h-3.5 w-3.5" />
+          <div className="text-subhead text-tint mb-2 flex items-center gap-2 font-semibold">
+            <Icon aria-hidden="true" className="size-3.5" />
             {title}
           </div>
         )}
-        <div className="text-sm leading-relaxed">{content}</div>
+        <div className="text-footnote">{content}</div>
       </TooltipContent>
     </Tooltip>
   );
@@ -75,24 +74,12 @@ export function HelpIcon({
  * SectionHelpIcon - Help icon variant for section headers
  */
 export function SectionHelpIcon(props: Omit<HelpIconProps, "className" | "iconClassName">) {
-  return (
-    <HelpIcon
-      {...props}
-      className="ml-2"
-      iconClassName="h-4 w-4 text-gray-400 hover:text-amber-600 dark:text-white/50 dark:hover:text-amber-300"
-    />
-  );
+  return <HelpIcon {...props} className="ml-2" iconClassName="size-4" />;
 }
 
 /**
  * InlineHelpIcon - Smaller help icon for inline usage
  */
 export function InlineHelpIcon(props: Omit<HelpIconProps, "className" | "iconClassName">) {
-  return (
-    <HelpIcon
-      {...props}
-      className="ml-1.5"
-      iconClassName="h-3.5 w-3.5 text-gray-400 hover:text-amber-600 dark:text-white/40 dark:hover:text-amber-400"
-    />
-  );
+  return <HelpIcon {...props} className="ml-2" iconClassName="size-3.5" />;
 }

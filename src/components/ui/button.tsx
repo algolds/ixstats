@@ -21,7 +21,7 @@ export const hitSlop =
 const filled = "bg-tint text-on-tint hover:bg-tint-hover";
 const gray = "bg-fill-3 text-label hover:bg-fill-2";
 const bordered = "border border-separator bg-transparent text-label hover:bg-fill-4";
-const sm = "h-(--control-height-sm) gap-1.5 rounded-control-sm px-3 text-footnote font-medium";
+const sm = "h-(--control-height-sm) gap-1 rounded-control-sm px-3 text-footnote font-medium";
 
 /**
  * Facet 3 Button (spec §7.2).

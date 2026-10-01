@@ -17,6 +17,7 @@ import {
   COLOR_ROLES_MORE_CONTRAST,
   ON_SYSTEM_COLOR,
   RADII,
+  STATUS_ALIASES,
   SYSTEM_COLORS,
   TEXT_STYLES,
   TINTED_FILL,
@@ -177,6 +178,42 @@ describe("Facet 3 tokens: CSS matches src/lib/design/tokens.ts", () => {
     }
   });
 
+  it("status roles alias their system colour and its ink", () => {
+    const aliases = blocks.find(
+      (b) =>
+        b.stack.length === 1 && b.stack[0] === "@theme inline static" && b.decls.has("--color-tint")
+    )!;
+    for (const [status, color] of Object.entries(STATUS_ALIASES)) {
+      expect([status, decl(aliases, `--color-${status}`)]).toEqual([
+        status,
+        `var(--color-${color})`,
+      ]);
+      expect([status, decl(aliases, `--color-${status}-ink`)]).toEqual([
+        status,
+        `var(--color-${color}-ink)`,
+      ]);
+    }
+  });
+
+  it("status Badge and Alert variants use the status ink, never the bare colour, on a tinted fill", () => {
+    const sources = ["src/components/ui/badge.tsx", "src/components/ui/alert.tsx"].map((file) =>
+      fs.readFileSync(path.join(ROOT, file), "utf8")
+    );
+    for (const source of sources) {
+      for (const status of Object.keys(STATUS_ALIASES)) {
+        // `text-success` next to `bg-success/15` (and not `text-success-ink`) falls below AA.
+        expect([status, new RegExp(`text-${status}(?![\\w-])`).test(source)]).toEqual([
+          status,
+          false,
+        ]);
+      }
+    }
+    const badge = sources[0]!;
+    for (const status of Object.keys(STATUS_ALIASES)) {
+      expect(badge).toContain(`${status}: "bg-${status}/15 text-${status}-ink`);
+    }
+  });
+
   it("app tints", () => {
     for (const [app, sets] of Object.entries(APP_TINTS)) {
       const b = tintBlock(app);
@@ -282,6 +319,27 @@ describe("Facet 3 tokens: contrast (spec §2.3)", () => {
           expect({ name, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
         }
       });
+    });
+
+    describe.each([false, true])("increase contrast: %s", (more) => {
+      // Status Badge variants (success, warning, caution, destructive, info) and tinted Alerts.
+      it.each(Object.entries(STATUS_ALIASES))(
+        "%s badge (%s-ink on its 15%% fill) ≥ 4.5:1 on every background role",
+        (status, name) => {
+          const color = role(appearance, name);
+          const ink = mix(color, role(appearance, "label", more), TINTED_FILL.inkMix);
+          for (const bg of BACKGROUND_ROLES) {
+            const fill = mix(color, role(appearance, bg, more), TINTED_FILL.alpha);
+            const ratio = contrast(ink, fill);
+            expect({ status, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+            // Alert descriptions in a status variant are `label` on the same fill.
+            const body = contrast(role(appearance, "label", more), fill);
+            expect({ status, bg, label: true, ok: body >= AA_TEXT, body }).toMatchObject({
+              ok: true,
+            });
+          }
+        }
+      );
     });
 
     it.each(Object.keys(SYSTEM_COLORS))("system %s", (name) => {

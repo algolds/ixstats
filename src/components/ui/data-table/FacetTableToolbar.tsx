@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Search, Xmark as X, Download } from "iconoir-react";
-import { Input } from "~/components/ui/input";
+import { Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { SearchField } from "~/components/ui/search-field";
 import { cn } from "~/lib/utils/cn";
 
 interface FacetTableToolbarProps {
@@ -46,52 +46,30 @@ export function FacetTableToolbar({
       {/* ─── Title & Description ──────────────────────────────────── */}
       {(title || description) && (
         <div className="min-w-0 flex-1">
-          {title && (
-            <h3 className="text-foreground truncate text-base font-bold tracking-tight sm:text-lg">
-              {title}
-            </h3>
-          )}
+          {title && <h3 className="text-title-3 text-label truncate">{title}</h3>}
           {description && (
-            <p className="text-muted-foreground mt-0.5 text-xs font-normal">{description}</p>
+            <p className="text-footnote text-label-secondary mt-0.5">{description}</p>
           )}
         </div>
       )}
 
       {/* ─── Actions, Search & Export Controls ─────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         {searchable && (
-          <div className="relative w-full max-w-xs min-w-[200px] flex-1 sm:w-64 sm:flex-none">
-            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-            <Input
-              type="text"
-              placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="border-border/50 bg-background/50 focus:border-primary/50 focus-visible:ring-primary/20 text-foreground h-9 rounded-xl pr-8 pl-9 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => onSearchChange("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 p-0.5"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+          <SearchField
+            value={searchTerm}
+            onValueChange={onSearchChange}
+            placeholder={searchPlaceholder}
+            aria-label={typeof title === "string" ? `Search ${title}` : "Search records"}
+            containerClassName="w-full max-w-xs min-w-[200px] flex-1 sm:w-64 sm:flex-none"
+          />
         )}
 
         {toolbarActions}
 
         {exportable && onExport && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onExport}
-            className="border-border/50 bg-card/60 hover:bg-muted text-foreground h-9 rounded-xl px-3 text-xs font-semibold backdrop-blur-md active:scale-95"
-          >
-            <Download className="mr-1.5 h-3.5 w-3.5" />
+          <Button type="button" variant="bordered" size="md" onClick={onExport}>
+            <Download aria-hidden="true" />
             Export CSV
           </Button>
         )}

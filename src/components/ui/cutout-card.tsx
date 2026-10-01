@@ -246,10 +246,7 @@ export type CutoutCardOverlayProps = HTMLAttributes<HTMLDivElement>;
 export function CutoutCardOverlay({ className, ...props }: CutoutCardOverlayProps) {
   return (
     <div
-      className={cn(
-        "from-background/35 dark:from-background/50 pointer-events-none absolute inset-0 bg-linear-to-t via-transparent to-transparent",
-        className
-      )}
+      className={cn("bg-fill-4 pointer-events-none absolute inset-0", className)}
       data-slot="cutout-card-overlay"
       {...props}
     />

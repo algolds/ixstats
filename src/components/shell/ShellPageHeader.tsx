@@ -11,6 +11,16 @@
  * ```tsx
  * <ShellPageHeader title="Vault" subtitle="IxCredits, cards and the marketplace." />
  * ```
+ *
+ * A page that keeps its own in-page title (hero `<h1>`) marks it with `shellPageTitleProps` so the
+ * title is not shown twice: while a `ShellPageHeader` is on the page under the new shell, the
+ * marked element is hidden wherever the shell header shows (below 1024px by default, at every
+ * width with `phoneOnly={false}`). Pure CSS (src/styles/facet/shell.css), so it is right before
+ * first paint; with the flag off nothing changes.
+ *
+ * ```tsx
+ * <h1 {...shellPageTitleProps} className="text-large-title">Countries</h1>
+ * ```
  */
 
 import type { ReactNode } from "react";
@@ -18,6 +28,12 @@ import type { ReactNode } from "react";
 import { cn } from "~/lib/utils/cn";
 import { PageHeader, type PageHeaderProps } from "./PageHeader";
 import { ShellGate } from "./ShellGate";
+
+/** Attribute that marks a page's own title as the one a `ShellPageHeader` replaces. */
+export const SHELL_PAGE_TITLE_ATTRIBUTE = "data-shell-page-title";
+
+/** Spread onto a page's own title element to hide it where the `ShellPageHeader` shows. */
+export const shellPageTitleProps = { [SHELL_PAGE_TITLE_ATTRIBUTE]: "" } as const;
 
 export interface ShellPageHeaderProps extends Pick<PageHeaderProps, "back" | "actions"> {
   title: string;
@@ -40,6 +56,7 @@ export function ShellPageHeader({
     <ShellGate variant="facet">
       <div
         data-slot="shell-page-header"
+        data-shell-page-header={phoneOnly ? "phone" : "all"}
         className={cn(
           "mx-auto w-full max-w-7xl px-2 pt-2 sm:px-4",
           phoneOnly && "lg:hidden",

@@ -8,6 +8,7 @@ import { useTabBounds } from "./useTabBounds";
 import { useSliderPhysics } from "../hooks/useSliderPhysics";
 import {
   sizeClasses,
+  toneIconClasses,
   toneIndicatorStyles,
   grabSpringConfig,
   DRAG_ELASTICITY,
@@ -15,35 +16,19 @@ import {
 } from "./constants";
 import { SPRING_PRESETS } from "../shared/constants";
 
-function blendColors(c1: string, c2: string, progress: number): string {
-  const hex = (h: string) => {
-    let clean = h.replace("#", "");
-    if (clean.length === 3) {
-      clean = clean
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    }
-    const num = parseInt(clean, 16);
-    return {
-      r: (num >> 16) & 255,
-      g: (num >> 8) & 255,
-      b: num & 255,
-    };
-  };
+/**
+ * Mixes two CSS colours (`progress` 0 → `from`, 1 → `to`) with `color-mix`, so any colour format
+ * — roles, system colours, data hex/rgb/oklch — blends without parsing.
+ */
+function mixColors(from: string, to: string, progress: number): string {
+  if (from === to) return from;
+  const p = Math.min(1, Math.max(0, progress));
+  return `color-mix(in srgb, ${from} ${Math.round((1 - p) * 1000) / 10}%, ${to})`;
+}
 
-  try {
-    const rgb1 = hex(c1);
-    const rgb2 = hex(c2);
-
-    const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * progress);
-    const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * progress);
-    const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * progress);
-
-    return `rgb(${r}, ${g}, ${b})`;
-  } catch {
-    return c1;
-  }
+/** `color` at `percent` opacity, via `color-mix` (no hex/rgba parsing). */
+function withAlpha(color: string, percent: number): string {
+  return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
 
 interface FacetTabTriggerProps {
@@ -52,7 +37,7 @@ interface FacetTabTriggerProps {
   useThemeColor: boolean;
   bounds?: Record<string, { left: number; width: number }>;
   metrics: (typeof sizeClasses)[keyof typeof sizeClasses];
-  tone: string;
+  tone: keyof typeof toneIconClasses;
   handlers: ReturnType<typeof useSliderPhysics>["handlers"];
   handleTabClick: (tabId: string, e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
@@ -87,58 +72,41 @@ function FacetTabTrigger({
       onPointerUp={handlers.onPointerUp}
       onPointerCancel={handlers.onPointerCancel}
       className={cn(
-        "relative z-20 flex cursor-pointer items-center justify-center whitespace-nowrap transition-colors duration-150 outline-none select-none",
+        "relative z-20 flex cursor-pointer items-center justify-center whitespace-nowrap outline-none select-none",
+        "duration-fast ease-out-facet transition-[color,transform]",
         tab.className ?? "flex-1",
-        "focus-visible:ring-ring focus-visible:ring-2",
+        "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
         metrics.item,
         isActive
-          ? cn(
-              "font-semibold",
-              tab.activeTextClassName || "text-foreground"
-            )
-          : "text-muted-foreground hover:text-foreground opacity-80 hover:opacity-100"
+          ? cn("font-semibold", tab.activeTextClassName || "text-label")
+          : "text-label-secondary hover:text-label"
       )}
       style={{
         touchAction: "pan-y",
       }}
     >
       {Icon && (
-        <div
+        <span
+          aria-hidden
           className={cn(
             metrics.icon,
-            "mr-1.5 flex shrink-0 items-center justify-center transition-colors duration-150",
+            "duration-fast flex shrink-0 items-center justify-center transition-colors",
             isActive
-              ? tab.activeIconClassName ||
-                  (tone === "neutral"
-                    ? "text-foreground"
-                    : tone === "accent"
-                      ? "text-indigo-500"
-                      : tone === "mycountry"
-                        ? "text-(--facet-mycountry)"
-                        : tone === "forum"
-                          ? "text-orange-500"
-                          : "text-red-500")
-              : "text-muted-foreground"
+              ? tab.activeIconClassName || toneIconClasses[tone] || toneIconClasses.accent
+              : "text-label-secondary"
           )}
         >
           <Icon className="h-full w-full" />
-        </div>
+        </span>
       )}
 
-      <span
-        className={cn(
-          "whitespace-nowrap transition-colors duration-150",
-          isActive ? tab.activeTextClassName || "text-foreground" : "text-muted-foreground"
-        )}
-      >
-        {tab.label}
-      </span>
+      <span className="whitespace-nowrap">{tab.label}</span>
 
       {tab.badge !== undefined && (
         <span
           className={cn(
-            "ml-1.5 flex scale-95 items-center justify-center rounded-full px-1.5 py-0.5 text-xs leading-none font-bold",
-            isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+            "text-caption flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
+            isActive ? "bg-label text-background" : "bg-fill-3 text-label-secondary"
           )}
         >
           {tab.badge}
@@ -195,7 +163,7 @@ export function FacetTabs({
     const x = xValue as number;
     const ids = tabs.map((t) => t.id);
     const activeIndex = ids.indexOf(activeTab);
-    const defaultColor = tabs[activeIndex]?.themeColor || "#6366f1";
+    const defaultColor = tabs[activeIndex]?.themeColor || "var(--color-tint)";
 
     const hasAllBounds = ids.every((id) => bounds[id] !== undefined);
     if (!hasAllBounds || ids.length < 2) {
@@ -235,34 +203,8 @@ export function FacetTabs({
     if (range <= 0) return prevColor;
 
     const progress = (x - prevTab.left) / range;
-    return blendColors(prevColor, nextColor, progress);
+    return mixColors(prevColor, nextColor, progress);
   });
-
-  const getRgba = (colorStr: string, opacity: number) => {
-    if (colorStr.startsWith("rgb")) {
-      const matches = colorStr.match(/\d+/g);
-      if (matches && matches.length >= 3) {
-        return `rgba(${matches[0]}, ${matches[1]}, ${matches[2]}, ${opacity})`;
-      }
-      return colorStr;
-    }
-    let clean = colorStr.replace("#", "");
-    if (clean.length === 3) {
-      clean = clean
-        .split("")
-        .map((c) => c + c)
-        .join("");
-    }
-    try {
-      const num = parseInt(clean, 16);
-      const r = (num >> 16) & 255;
-      const g = (num >> 8) & 255;
-      const b = num & 255;
-      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-    } catch {
-      return colorStr;
-    }
-  };
 
   // Roving focus (WAI-ARIA tabs): arrows move between tabs and activate them.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -283,8 +225,8 @@ export function FacetTabs({
       ?.focus();
   };
 
-  const indicatorBgColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.12));
-  const indicatorBorderColor = useTransform(interpolatedColor, (c) => getRgba(c, 0.28));
+  const indicatorBgColor = useTransform(interpolatedColor, (c) => withAlpha(c, 12));
+  const indicatorBorderColor = useTransform(interpolatedColor, (c) => withAlpha(c, 28));
 
   return (
     <div
@@ -292,9 +234,7 @@ export function FacetTabs({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "group/tabs relative flex items-center overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
-        "border-border/60 bg-muted/40 border",
-        "shadow-xs",
+        "group/tabs bg-fill-3 relative flex items-center overflow-hidden select-none",
         metrics.container,
         className
       )}
@@ -310,25 +250,16 @@ export function FacetTabs({
             borderColor: useThemeColor ? indicatorBorderColor : undefined,
           }}
           className={cn(
-            "pointer-events-none absolute z-10 overflow-hidden border shadow-xs transition-colors duration-200",
+            "pointer-events-none absolute z-10 overflow-hidden border",
             metrics.indicatorInset,
             metrics.indicator,
             useThemeColor
               ? ""
               : tabs.find((t) => t.id === activeTab)?.activeIndicatorClassName ||
-                  cn(
-                    activeIndicatorTone.light,
-                    activeIndicatorTone.dark
-                      .split(" ")
-                      .map((c) => `dark:${c}`)
-                      .join(" ")
-                  ),
+                  activeIndicatorTone,
             indicatorClassName
           )}
-        >
-          {/* Subtle light-catching top specular edge */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/15" />
-        </motion.div>
+        />
       )}
 
       {/* 2. Tab Triggers (Z-20) */}

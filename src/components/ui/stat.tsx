@@ -97,7 +97,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
           data-slot="stat-label-row"
           data-icon-placement={iconPlacement}
           className={cn(
-            "flex min-w-0 items-center gap-1.5",
+            "flex min-w-0 items-center gap-2",
             iconPlacement === "trailing" && "flex-row-reverse justify-between gap-2"
           )}
         >

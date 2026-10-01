@@ -65,9 +65,9 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
       return (
         <div className="bg-background flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
-            <p className="text-muted-foreground">Reconnecting to server...</p>
-            <p className="text-muted-foreground/60 mt-2 text-xs">
+            <div className="border-tint mx-auto mb-4 size-8 animate-spin rounded-full border-4 border-t-transparent motion-reduce:animate-none" />
+            <p className="text-body text-label-secondary">Reconnecting to server...</p>
+            <p className="text-caption text-label-tertiary mt-2">
               The development server restarted. Refreshing automatically...
             </p>
           </div>
@@ -106,8 +106,8 @@ export function ChunkLoadErrorHandler(): null {
           );
           // Show a brief message before reload
           document.body.innerHTML = `
-            <div style="display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--background, #0a0a0a);">
-              <div style="text-align: center; color: var(--muted-foreground, #a1a1aa);">
+            <div style="display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--color-background, #0b0c0f);">
+              <div style="text-align: center; color: var(--color-label-secondary, #a1a1aa);">
                 <p>Reconnecting to server...</p>
                 <p style="margin-top: 8px; font-size: 12px; opacity: 0.6;">The development server restarted. Refreshing automatically...</p>
               </div>
@@ -135,8 +135,8 @@ export function ChunkLoadErrorHandler(): null {
             "[ChunkLoadErrorHandler] Detected chunk load error in promise rejection, will auto-reload"
           );
           document.body.innerHTML = `
-            <div style="display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--background, #0a0a0a);">
-              <div style="text-align: center; color: var(--muted-foreground, #a1a1aa);">
+            <div style="display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--color-background, #0b0c0f);">
+              <div style="text-align: center; color: var(--color-label-secondary, #a1a1aa);">
                 <p>Reconnecting to server...</p>
                 <p style="margin-top: 8px; font-size: 12px; opacity: 0.6;">The development server restarted. Refreshing automatically...</p>
               </div>

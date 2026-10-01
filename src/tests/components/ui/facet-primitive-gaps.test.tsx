@@ -176,8 +176,8 @@ describe("Badge system colours", () => {
     expect(screen.getByText(name)).toHaveAttribute("data-variant", name);
   });
 
-  it("keeps the existing variants as they were", () => {
-    expect(badgeVariants({ variant: "success" })).toContain("bg-success/15 text-success");
+  it("keeps the existing variants (status text is the AA ink since Phase 4)", () => {
+    expect(badgeVariants({ variant: "success" })).toContain("bg-success/15 text-success-ink");
     expect(badgeVariants()).toBe(badgeVariants({ variant: "tinted" }));
   });
 });

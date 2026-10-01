@@ -6,6 +6,7 @@ import { Group as Users, Plus, ArrowRight } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
+import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
@@ -100,7 +101,10 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-title-2 text-label">ThinkPages Accounts</h1>
+          {/* Phones under the new shell get the ShellPageHeader title instead. */}
+          <h1 {...shellPageTitleProps} className="text-title-2 text-label">
+            ThinkPages Accounts
+          </h1>
           <p className="text-body text-label-secondary">
             Manage your personas — government officials, media outlets, and citizen voices.
           </p>

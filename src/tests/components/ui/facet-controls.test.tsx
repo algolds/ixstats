@@ -74,11 +74,11 @@ describe("Badge", () => {
     expect(badgeVariants({ variant: "secondary" })).toBe(badgeVariants({ variant: "neutral" }));
   });
 
-  it("colours status badges with their system colour on a fill of itself", () => {
+  it("colours status badges with their status ink on a fill of the colour", () => {
     render(<Badge variant="success">Active</Badge>);
     const badge = screen.getByText("Active");
     expect(badge.className).toContain("bg-success/15");
-    expect(badge.className).toContain("text-success");
+    expect(badge.className).toContain("text-success-ink");
     expect(badge.className).toContain("rounded-full");
     expect(badge.className).toContain("text-caption");
   });

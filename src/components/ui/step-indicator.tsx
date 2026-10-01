@@ -93,8 +93,7 @@ export const StepIndicator = React.forwardRef<HTMLElement, StepIndicatorProps>(
               {state === "complete" && <span className="sr-only"> (completed)</span>}
             </span>
           );
-          const itemClass =
-            "rounded-full flex min-h-8 min-w-0 items-center gap-1.5 py-1 pr-2.5 pl-1";
+          const itemClass = "rounded-full flex min-h-8 min-w-0 items-center gap-2 py-1 pr-3 pl-1";
           return (
             <li
               key={step.id}

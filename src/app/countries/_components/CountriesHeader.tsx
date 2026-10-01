@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 
 interface CountriesHeaderProps {
   searchInput?: string;
@@ -29,7 +30,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
     <div className="bg-background z-sticky sticky top-0 mb-6 pt-2 pb-3">
       <FacetCard className="overflow-hidden p-4 md:p-5">
         {/* Header Title (phones under the new shell get the ShellPageHeader title instead) */}
-        <div className="facet-nav:max-lg:hidden mb-3">
+        <div {...shellPageTitleProps} className="mb-3">
           <h1 className="text-large-title text-label flex items-center gap-2">
             <Globe aria-hidden="true" className="text-tint size-6" />
             <span>Countries</span>

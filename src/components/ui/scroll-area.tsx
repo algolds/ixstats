@@ -76,7 +76,7 @@ const ScrollBar = React.forwardRef<
     <ScrollAreaPrimitive.ScrollAreaScrollbar
       ref={ref}
       orientation={orientation}
-      className={cn(scrollBarVariants({ orientation }), "hover:bg-accent", className)}
+      className={cn(scrollBarVariants({ orientation }), "hover:bg-fill-3", className)}
       {...props}
     >
       <ScrollAreaPrimitive.ScrollAreaThumb className="bg-border hover:bg-foreground/30 relative flex-1 rounded-full transition-colors" />

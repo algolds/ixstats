@@ -33,6 +33,7 @@ export function FacetTablePagination({
   onPageSizeChange,
   className,
 }: FacetTablePaginationProps) {
+  const pageSizeLabelId = React.useId();
   if (totalPages <= 1 && !pageSizeOptions) {
     return null;
   }
@@ -57,32 +58,37 @@ export function FacetTablePagination({
   const pages = getPageNumbers();
 
   return (
-    <div
+    <nav
+      aria-label="Pagination"
       data-slot="facet-table-pagination"
       className={cn(
-        "border-border/30 flex flex-col gap-3 border-t pt-4 text-xs sm:flex-row sm:items-center sm:justify-between",
+        "border-separator text-footnote flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
       {/* ─── Results summary & Page size selector ─────────────────── */}
-      <div className="text-muted-foreground flex flex-wrap items-center gap-3">
-        <span>
-          Showing <strong className="text-foreground font-semibold">{startItem}</strong> to{" "}
-          <strong className="text-foreground font-semibold">{endItem}</strong> of{" "}
-          <strong className="text-foreground font-semibold">{totalItems.toLocaleString()}</strong>{" "}
+      <div className="text-label-secondary flex flex-wrap items-center gap-3">
+        <span className="tabular-nums">
+          Showing <strong className="text-label font-semibold">{startItem}</strong> to{" "}
+          <strong className="text-label font-semibold">{endItem}</strong> of{" "}
+          <strong className="text-label font-semibold">{totalItems.toLocaleString()}</strong>{" "}
           results
         </span>
 
         {pageSizeOptions && onPageSizeChange && (
-          <div className="border-border/40 flex items-center gap-1.5 border-l pl-2">
-            <span className="text-xs">Per page:</span>
+          <div className="border-separator flex items-center gap-2 border-l pl-2">
+            <span id={pageSizeLabelId}>Per page:</span>
             <Select value={String(pageSize)} onValueChange={(val) => onPageSizeChange(Number(val))}>
-              <SelectTrigger className="border-border/40 bg-background/50 h-7 w-16 rounded-lg text-xs">
+              <SelectTrigger
+                size="sm"
+                aria-labelledby={pageSizeLabelId}
+                className="w-16 tabular-nums"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {pageSizeOptions.map((opt) => (
-                  <SelectItem key={opt} value={String(opt)} className="text-xs">
+                  <SelectItem key={opt} value={String(opt)} className="tabular-nums">
                     {opt}
                   </SelectItem>
                 ))}
@@ -94,17 +100,16 @@ export function FacetTablePagination({
 
       {/* ─── Navigation Buttons ───────────────────────────────────── */}
       {totalPages > 1 && (
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+        <div className="flex items-center gap-1 self-end sm:self-auto">
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            variant="gray"
+            size="icon-sm"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             aria-label="Previous Page"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft aria-hidden="true" />
           </Button>
 
           <div className="flex items-center gap-1">
@@ -116,18 +121,20 @@ export function FacetTablePagination({
               return (
                 <React.Fragment key={p}>
                   {showEllipsis && (
-                    <span className="text-muted-foreground/60 px-1 text-xs select-none">…</span>
+                    <span aria-hidden="true" className="text-label-tertiary px-1 select-none">
+                      …
+                    </span>
                   )}
                   <Button
                     type="button"
-                    variant={isCurrent ? "default" : "outline"}
+                    variant={isCurrent ? "tinted" : "plain"}
                     size="sm"
+                    aria-current={isCurrent ? "page" : undefined}
+                    aria-label={`Page ${p}`}
                     onClick={() => onPageChange(p)}
                     className={cn(
-                      "h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                      isCurrent
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "border-border/40 bg-card/60 hover:bg-muted text-foreground"
+                      "min-w-(--control-height-sm) px-2 tabular-nums",
+                      !isCurrent && "text-label"
                     )}
                   >
                     {p}
@@ -139,17 +146,16 @@ export function FacetTablePagination({
 
           <Button
             type="button"
-            variant="outline"
-            size="sm"
+            variant="gray"
+            size="icon-sm"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="border-border/40 bg-card/60 hover:bg-muted text-foreground h-8 w-8 rounded-lg p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
             aria-label="Next Page"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight aria-hidden="true" />
           </Button>
         </div>
       )}
-    </div>
+    </nav>
   );
 }

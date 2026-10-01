@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { SpringPreset } from "../shared/constants";
 import type { TextureType } from "~/components/ui/texture-overlay";
+import type { FacetTabsTone } from "./constants";
 
 export interface FacetTabItem {
   id: string;
@@ -13,6 +14,10 @@ export interface FacetTabItem {
   activeTextClassName?: string;
   activeIconClassName?: string;
   glowClassName?: string;
+  /**
+   * Any CSS colour (data-driven, e.g. a country's or article's colour): tints the indicator when
+   * this tab is active (12% fill, 28% edge via `color-mix`), blending between tabs while dragging.
+   */
   themeColor?: string;
 }
 
@@ -23,7 +28,7 @@ export interface FacetTabsProps {
   /** @default "md" */
   size?: "sm" | "md" | "lg";
   /** @default "accent" */
-  tone?: "neutral" | "accent" | "mycountry" | "forum" | "sdi";
+  tone?: FacetTabsTone;
   /** @default "fluid" */
   springPreset?: SpringPreset;
   /** Tactile texture pattern for track and indicator @default "dots" */

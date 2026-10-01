@@ -45,9 +45,9 @@ const TONE_PRESSED: Record<ActionPillTone, string> = {
 
 const SIZE = {
   /** 24px tall, caption text: toolbars under a feed card. */
-  sm: "gap-1.5 px-2.5 py-1 text-caption [:where(&)_svg]:size-3.5",
+  sm: "gap-1 px-3 py-1 text-caption [:where(&)_svg]:size-3.5",
   /** 28px tall, footnote text: standalone action rows. */
-  md: "h-(--control-height-sm) gap-1.5 px-3 text-footnote font-medium [:where(&)_svg]:size-4",
+  md: "h-(--control-height-sm) gap-1 px-3 text-footnote font-medium [:where(&)_svg]:size-4",
 } as const;
 
 export interface ActionPillProps extends Omit<React.ComponentProps<"button">, "children"> {

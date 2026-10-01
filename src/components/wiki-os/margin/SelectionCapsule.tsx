@@ -3,8 +3,7 @@
 // Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
 // Full Apple Design & Emil Kowalski motion compliance.
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ChatBubble as MessageSquare,
   Bookmark,
@@ -13,8 +12,7 @@ import {
   DesignPencil as Edit3,
   ShareAndroid as Share2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
-
+import { VirtualAnchorPopover } from "~/components/ui/popover";
 import { useNotify } from "~/hooks/useNotify";
 
 export const HIGHLIGHT_PALETTE = [
@@ -54,13 +52,15 @@ export function SelectionCapsule({
   onShareQuote,
   isAuthenticated,
 }: SelectionCapsuleProps) {
-  const [selectionData, setSelectionData] = useState<SelectionPayload | null>(null);
+  const [selection, setSelection] = useState<{ payload: SelectionPayload; range: Range } | null>(
+    null
+  );
+  const selectionData = selection?.payload ?? null;
   const [copied, setCopied] = useState(false);
-  const capsuleRef = useRef<HTMLDivElement>(null);
   const notify = useNotify();
 
   const clearSelection = useCallback(() => {
-    setSelectionData(null);
+    setSelection(null);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -70,32 +70,30 @@ export function SelectionCapsule({
 
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const text = selection.toString().trim();
     if (text.length < 2) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const range = selection.getRangeAt(0);
     if (!container.contains(range.commonAncestorContainer)) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const rect = range.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
-    setSelectionData({
-      text,
-      rect,
-    });
+    // The capsule follows a copy of the range, so it stays on the text as the page scrolls.
+    setSelection({ payload: { text, rect }, range: range.cloneRange() });
   }, [contentRef]);
 
   useEffect(() => {
@@ -169,36 +167,23 @@ export function SelectionCapsule({
     }
   };
 
-  if (!selectionData || typeof document === "undefined") return null;
-
-  // Compute position centered above the selection with safe viewport bounds
-  const x = Math.max(
-    160,
-    Math.min(window.innerWidth - 160, selectionData.rect.left + selectionData.rect.width / 2)
-  );
-  const y = Math.max(70, selectionData.rect.top - 12);
-
-  const style: React.CSSProperties = {
-    position: "fixed",
-    left: `${x}px`,
-    top: `${y}px`,
-    transform: "translate(-50%, -100%)",
-    transformOrigin: "center bottom",
-  };
-
-  return createPortal(
-    // Anchored to a text selection (a virtual anchor the Popover primitive does not expose), so it
-    // portals itself; styled as a floating menu (material-thick, z-popover).
-    <div
-      ref={capsuleRef}
-      style={style}
+  return (
+    // Anchored to the text selection (a virtual anchor): centred above it, flipping below when
+    // there is no room. Keeps focus (and the selection) in the article.
+    <VirtualAnchorPopover
+      anchor={selection?.range ?? null}
+      onOpenChange={(open) => {
+        if (!open) clearSelection();
+      }}
+      side="top"
+      sideOffset={12}
       role="toolbar"
       aria-label="Selection actions"
-      className="material-thick animate-facet-in z-popover text-label shadow-floating flex items-center gap-1 rounded-full p-1 select-none"
+      className="flex w-auto items-center gap-1 rounded-full p-1 select-none"
     >
       {/* Highlight Color Palette */}
       {isAuthenticated && (
-        <div className="border-separator flex items-center gap-1 border-r pr-1.5 pl-0.5">
+        <div className="border-separator flex items-center gap-1 border-r pr-2 pl-0.5">
           {HIGHLIGHT_PALETTE.map((p) => (
             <button
               key={p.color}
@@ -217,7 +202,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-2.5 transition-[background-color,transform] active:scale-[0.98]"
+        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
         title="Discuss"
       >
         <MessageSquare className="text-margin-accent h-3.5 w-3.5" />
@@ -229,7 +214,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleSuggest}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-2.5 transition-[background-color,transform] active:scale-[0.98]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
           title="Suggest edit"
         >
           <Edit3 className="text-teal h-3.5 w-3.5" />
@@ -242,7 +227,7 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleStash}
-          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-2.5 transition-[background-color,transform] active:scale-[0.98]"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
           title="Save quote"
         >
           <Bookmark className="text-red h-3.5 w-3.5" />
@@ -271,7 +256,6 @@ export function SelectionCapsule({
       >
         {copied ? <Check className="text-green h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
-    </div>,
-    document.body
+    </VirtualAnchorPopover>
   );
 }

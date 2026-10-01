@@ -21,6 +21,9 @@
                            the new shell, where the AppSidebar / TabBar list the same
                            destinations (src/lib/navigation/app-sections.ts).
    facet-nav:              Variant for styles that apply only under the new shell.
+   [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden under the new
+                           shell wherever that page's <ShellPageHeader> shows (phones, or every
+                           width with phoneOnly={false}), so the title is never shown twice.
    ========================================================================== */
 
 /* AppSidebar collapsed to icons. */
@@ -100,5 +103,16 @@
      so it is right before first paint and never flashes. */
   :root[data-nav="facet"] [data-app-subnav] {
     display: none;
+  }
+
+  /* A page's own title next to its ShellPageHeader: only one of them shows. */
+  :root[data-nav="facet"]:has([data-shell-page-header="all"]) [data-shell-page-title] {
+    display: none;
+  }
+
+  @media (max-width: 1023.98px) {
+    :root[data-nav="facet"]:has([data-shell-page-header="phone"]) [data-shell-page-title] {
+      display: none;
+    }
   }
 }

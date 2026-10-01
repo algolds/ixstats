@@ -11,7 +11,7 @@ import { soundCues } from "~/lib/sound/cuelume";
  * The one scrim for modal presentation (Dialog, AlertDialog, Sheet): black at 25% (light) /
  * 40% (dark), no blur — the sheet or dialog above it carries the elevation (spec §5, §7.3).
  */
-export const overlayScrimClassName = "fixed inset-0 z-backdrop bg-black/25 dark:bg-black/40";
+export const overlayScrimClassName = "fixed inset-0 z-backdrop bg-scrim";
 
 /** Scrim fade in/out (Radix waits for the exit animation before unmounting). */
 export const overlayScrimMotionClassName =

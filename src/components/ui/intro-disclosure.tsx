@@ -93,7 +93,7 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
   return (
     <motion.div
       {...slideInOut(direction)}
-      className="rounded-rb-lg relative h-full w-full overflow-hidden rounded-sm rounded-tl-xl ring-2 ring-black/10 ring-offset-8 dark:ring-black/10 dark:ring-offset-black"
+      className="rounded-card ring-separator relative h-full w-full overflow-hidden ring-1"
     >
       {step.media ? (
         <div className="relative h-full w-full bg-black">
@@ -113,14 +113,14 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
               <video src={step.media.src} controls className="h-full w-full object-cover" />
             )}
           </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-black/55" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={controls}
             className="absolute right-0 bottom-0 left-0 p-6"
           >
-            <h3 className="mb-2 text-xl font-semibold text-white">{step.title}</h3>
-            <p className="max-h-32 overflow-y-auto text-sm leading-relaxed text-white/90">
+            <h3 className="text-title-2 mb-2 text-white">{step.title}</h3>
+            <p className="text-callout max-h-32 overflow-y-auto text-white/90">
               {step.full_description}
             </p>
           </motion.div>
@@ -132,8 +132,8 @@ function StepPreview({ step, direction }: { step: Step; direction: 1 | -1 }) {
             animate={controls}
             className="w-full max-w-none"
           >
-            <h3 className="text-primary mb-4 text-center text-2xl font-semibold">{step.title}</h3>
-            <div className="text-muted-foreground max-h-96 overflow-y-auto text-base leading-relaxed whitespace-pre-line">
+            <h3 className="text-title-1 text-tint mb-4 text-center">{step.title}</h3>
+            <div className="text-body text-label-secondary max-h-96 overflow-y-auto whitespace-pre-line">
               {step.full_description}
             </div>
           </motion.div>
@@ -156,21 +156,21 @@ function StepTab({ step, isActive, onClick, isCompleted }: StepTabProps) {
       {...hoverScale}
       onClick={onClick}
       className={cn(
-        "flex w-full flex-col items-start rounded-lg px-4 py-2 text-left transition-colors",
-        isActive ? "bg-muted border-border border" : "hover:bg-muted/70",
+        "rounded-row flex w-full flex-col items-start px-4 py-2 text-left transition-colors",
+        isActive ? "bg-fill-3 border-separator border" : "hover:bg-fill-4",
         "relative"
       )}
       aria-current={isActive ? "step" : undefined}
       aria-label={`${step.title}${isCompleted ? " (completed)" : ""}`}
     >
-      <div className="mb-1 text-sm font-medium">{step.title}</div>
-      <div className="text-muted-foreground line-clamp-2 hidden text-xs md:block">
+      <div className="text-subhead text-label mb-1 font-medium">{step.title}</div>
+      <div className="text-caption text-label-secondary line-clamp-2 hidden md:block">
         {step.short_description}
       </div>
       {isCompleted && (
         <motion.div {...fadeInScale} className="absolute top-2 right-2">
-          <div className="bg-primary rounded-full p-1">
-            <CheckIcon className="text-primary-foreground h-2 w-2" />
+          <div className="bg-tint rounded-full p-1">
+            <CheckIcon aria-hidden="true" className="text-on-tint size-2" />
           </div>
         </motion.div>
       )}
@@ -287,7 +287,7 @@ function StepContent({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={currentStep} {...slideInOut(direction)} className="mt-6 space-y-4">
           {!isDesktop && steps[currentStep]?.media && (
-            <div className="bg-muted aspect-video rounded-lg lg:overflow-hidden">
+            <div className="bg-fill-3 rounded-card aspect-video lg:overflow-hidden">
               {steps[currentStep]?.media?.type === "image" ? (
                 <Image
                   src={steps[currentStep]?.media?.src || "/placeholder.svg"}
@@ -316,7 +316,7 @@ function StepContent({
             <Button
               variant="ghost"
               onClick={onSkip}
-              className="text-muted-foreground hover:bg-card rounded-full"
+              className="text-label-secondary hover:bg-fill-4 rounded-full"
             >
               Skip all
             </Button>
@@ -353,7 +353,7 @@ function StepContent({
               checked={skipNextTime}
               onCheckedChange={(checked) => setSkipNextTime(checked as boolean)}
             />
-            <label htmlFor="skipNextTime" className="text-muted-foreground text-sm">
+            <label htmlFor="skipNextTime" className="text-footnote text-label-secondary">
               Don't show this again
             </label>
           </div>
@@ -467,7 +467,7 @@ export function IntroDisclosure({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl gap-0 overflow-hidden p-0" onKeyDown={handleKeyDown}>
-          <DialogHeader className="bg-muted border-border space-y-2 border-b p-6">
+          <DialogHeader className="bg-surface-secondary border-separator space-y-2 border-b p-6">
             <DialogTitle>Feature Tour</DialogTitle>
             {showProgressBar && (
               <div className="mt-2 flex w-full justify-center">
@@ -513,7 +513,7 @@ export function IntroDisclosure({
           onKeyDown={handleKeyDown}
           className="mx-auto flex h-full max-w-5xl flex-col"
         >
-          <DialogHeader className="bg-muted border-border space-y-2 border-b p-6">
+          <DialogHeader className="bg-surface-secondary border-separator space-y-2 border-b p-6">
             <DialogTitle>Feature Tour - {steps[currentStep]?.title}</DialogTitle>
             {showProgressBar && (
               <div className="mt-2 flex w-full justify-center">
@@ -537,18 +537,16 @@ export function IntroDisclosure({
                 ))}
               </div>
               {/* Preview */}
-              <div className="ring-border ring-offset-background relative aspect-[16/9] overflow-hidden rounded-lg ring-2 ring-offset-8">
+              <div className="ring-separator rounded-card relative aspect-[16/9] overflow-hidden ring-1">
                 {steps[currentStep] && (
                   <StepPreview step={steps[currentStep]} direction={direction} />
                 )}
               </div>
 
               {/* Step content */}
-              <div className="border-border space-y-4 rounded-lg border p-3">
-                <h3 className="text-foreground text-lg font-semibold">
-                  {steps[currentStep]?.title}
-                </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+              <div className="border-separator rounded-row space-y-4 border p-3">
+                <h3 className="text-title-3 text-label">{steps[currentStep]?.title}</h3>
+                <p className="text-callout text-label-secondary">
                   {steps[currentStep]?.full_description}
                 </p>
                 {steps[currentStep]?.action && (
@@ -579,13 +577,13 @@ export function IntroDisclosure({
           </div>
 
           {/* Fixed bottom navigation */}
-          <div className="bg-background absolute right-0 bottom-0 left-0 border-t">
+          <div className="bg-surface-elevated border-separator absolute right-0 bottom-0 left-0 border-t">
             <div className="p-4">
               <div className="mb-4 flex items-center justify-between">
                 <Button
                   variant="ghost"
                   onClick={onSkip}
-                  className="text-muted-foreground hover:bg-card rounded-full"
+                  className="text-label-secondary hover:bg-fill-4 rounded-full"
                 >
                   Skip all
                 </Button>
@@ -620,7 +618,7 @@ export function IntroDisclosure({
                     hideFeature();
                   }}
                 />
-                <label htmlFor="skipNextTime" className="text-muted-foreground text-sm">
+                <label htmlFor="skipNextTime" className="text-footnote text-label-secondary">
                   Don't show this again
                 </label>
               </div>

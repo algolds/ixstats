@@ -1,19 +1,21 @@
 import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
+import { FACET_CARD_SURFACE } from "~/components/ui/facet-container";
 
 /**
- * shadcn-shaped card on Facet 3 roles (§7.1): the same opaque surface as `FacetCard`
- * (`bg-surface`, `separator` hairline, `rounded-card`, `shadow-card`). Prefer `FacetCard`.
+ * shadcn-shaped card on Facet 3 roles (§7.1): renders exactly `FacetCard`'s opaque surface
+ * (`FACET_CARD_SURFACE`: `bg-surface`, `separator` hairline, `rounded-card`, `shadow-card`) with
+ * the shadcn layout (24px vertical rhythm, `CardHeader/Title/Description/Action/Content/Footer`).
+ *
+ * @deprecated Duplicates `FacetCard`. New code uses `FacetCard` (+ `FacetCardHeader/Content/
+ * Footer`) from `~/components/ui/facet-container`; existing `Card` call sites keep working.
  */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        "bg-surface text-label border-separator rounded-card shadow-card flex flex-col gap-6 border py-6",
-        className
-      )}
+      className={cn(FACET_CARD_SURFACE, "flex flex-col gap-6 py-6", className)}
       {...props}
     />
   );
@@ -24,7 +26,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
         className
       )}
       {...props}

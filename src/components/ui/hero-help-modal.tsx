@@ -7,7 +7,7 @@ import {
   NavArrowRight as ChevronRight,
   Xmark as X,
 } from "iconoir-react";
-import { Dialog, DialogContent } from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";
 
@@ -36,7 +36,7 @@ interface HeroHelpModalProps {
 export function HeroHelpModal({
   title,
   steps,
-  accentClass = "text-amber-500",
+  accentClass = "text-tint",
   triggerLabel = "Help & walkthrough",
   className,
 }: HeroHelpModalProps) {
@@ -60,71 +60,68 @@ export function HeroHelpModal({
         aria-label={triggerLabel}
         title={triggerLabel}
         className={cn(
-          "text-muted-foreground hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-colors hover:bg-white/10",
+          "text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 border-separator duration-fast focus-visible:outline-tint inline-flex size-7 items-center justify-center rounded-full border transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
           className
         )}
       >
-        <HelpCircle className="h-4 w-4" />
+        <HelpCircle aria-hidden="true" className="size-4" />
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent
-          showCloseButton={false}
-          className="border-border/60 bg-background/95 max-w-md gap-0 overflow-hidden border p-0 shadow-2xl backdrop-blur-2xl"
-        >
-          <div className="border-border/40 flex items-center justify-between border-b bg-white/[0.02] px-5 py-3 dark:bg-black/[0.1]">
+        <DialogContent showCloseButton={false} className="max-w-md gap-0 overflow-hidden p-0">
+          <div className="border-separator flex items-center justify-between border-b px-5 py-3">
             <div className="flex items-center gap-2">
-              <HelpCircle className={cn("h-4 w-4", accentClass)} />
-              <span className="text-foreground text-sm font-semibold">{title}</span>
+              <HelpCircle aria-hidden="true" className={cn("size-4", accentClass)} />
+              <DialogTitle className="text-headline text-label">{title}</DialogTitle>
             </div>
-            <button
+            <Button
               type="button"
+              variant="plain"
+              size="icon-sm"
               onClick={() => handleOpenChange(false)}
               aria-label="Close"
-              className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+              className="text-label-secondary hover:text-label"
             >
-              <X className="h-4 w-4" />
-            </button>
+              <X aria-hidden="true" />
+            </Button>
           </div>
 
           <div className="min-h-[140px] px-5 py-4">
-            <h3 className="text-foreground text-base font-bold">{step?.title}</h3>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{step?.body}</p>
+            <h3 className="text-title-3 text-label">{step?.title}</h3>
+            <p className="text-callout text-label-secondary mt-2">{step?.body}</p>
           </div>
 
-          <div className="border-border/40 flex items-center justify-between border-t bg-white/[0.01] px-5 py-3 dark:bg-black/[0.05]">
-            <div className="flex items-center gap-1.5">
+          <div className="border-separator bg-surface-secondary flex items-center justify-between border-t px-5 py-3">
+            <div aria-hidden="true" className="flex items-center gap-2">
               {steps.map((_, i) => (
                 <span
                   key={i}
                   className={cn(
-                    "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    i === index ? cn("w-4 bg-current", accentClass) : "bg-muted-foreground/30 w-1.5"
+                    "duration-fast h-1.5 rounded-full transition-[width,background-color]",
+                    i === index ? cn("w-4 bg-current", accentClass) : "bg-fill w-1.5"
                   )}
                 />
               ))}
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                variant="bordered"
                 size="sm"
-                className="h-8 text-xs"
                 disabled={isFirst}
                 onClick={() => setIndex((i) => Math.max(0, i - 1))}
               >
-                <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Back
+                <ChevronLeft aria-hidden="true" /> Back
               </Button>
               {isLast ? (
-                <Button size="sm" className="h-8 text-xs" onClick={() => handleOpenChange(false)}>
+                <Button size="sm" onClick={() => handleOpenChange(false)}>
                   Done
                 </Button>
               ) : (
                 <Button
                   size="sm"
-                  className="h-8 text-xs"
                   onClick={() => setIndex((i) => Math.min(steps.length - 1, i + 1))}
                 >
-                  Next <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                  Next <ChevronRight aria-hidden="true" />
                 </Button>
               )}
             </div>

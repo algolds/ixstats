@@ -77,6 +77,12 @@
   --color-fill-3: rgba(9, 9, 11, 0.08);
   --color-fill-4: rgba(9, 9, 11, 0.05);
 
+  /* Selected segment / switch thumb over a fill track (raised in light, a stronger fill in dark) */
+  --color-control-thumb: #ffffff;
+
+  /* Modal scrim under dialogs, sheets and alert dialogs (light: 25% black; dark: 40%) */
+  --color-scrim: rgba(0, 0, 0, 0.25);
+
   /* Separators */
   --color-separator: rgba(0, 0, 0, 0.1);
   --color-separator-opaque: #e4e4e7;
@@ -153,6 +159,12 @@
   --color-on-success: var(--color-on-green);
   --color-info: var(--color-blue);
   --color-on-info: var(--color-on-blue);
+  /* Status inks: text on a 15% fill of the status colour (status Badges, Alerts, toasts). */
+  --color-destructive-ink: var(--color-red-ink);
+  --color-warning-ink: var(--color-orange-ink);
+  --color-caution-ink: var(--color-yellow-ink);
+  --color-success-ink: var(--color-green-ink);
+  --color-info-ink: var(--color-blue-ink);
   --color-error: var(--color-red); /* legacy name */
 
   /* shadcn names → roles (kept until the migration finishes; §2.1) */
@@ -578,6 +590,9 @@
     --color-fill-2: rgba(244, 244, 245, 0.18);
     --color-fill-3: rgba(244, 244, 245, 0.12);
     --color-fill-4: rgba(244, 244, 245, 0.08);
+
+    --color-control-thumb: rgba(244, 244, 245, 0.24);
+    --color-scrim: rgba(0, 0, 0, 0.4);
 
     --color-separator: rgba(255, 255, 255, 0.1);
     --color-separator-opaque: #2a2d35;

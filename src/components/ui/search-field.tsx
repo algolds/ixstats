@@ -34,8 +34,8 @@ const sizes = {
   },
   md: {
     input: "h-(--control-height) rounded-control pl-8 pr-8",
-    icon: "left-2.5 size-4",
-    clear: "right-1.5 size-6",
+    icon: "left-3 size-4",
+    clear: "right-2 size-6",
   },
   lg: {
     input: "h-(--control-height-lg) rounded-control-lg pl-9 pr-10",

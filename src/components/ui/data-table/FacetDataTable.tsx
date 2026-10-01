@@ -11,6 +11,8 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils/cn";
 import { FacetMobileCard } from "./FacetMobileCard";
 import { FacetTableToolbar } from "./FacetTableToolbar";
@@ -284,18 +286,18 @@ export function FacetDataTable<T extends Record<string, any>>({
     const val = col.accessor ? col.accessor(row) : row[col.key];
     if (col.render) return col.render(val, row, index);
     if (val === null || val === undefined || val === "")
-      return <span className="text-muted-foreground/50">—</span>;
+      return <span className="text-label-tertiary">—</span>;
     return val;
   };
 
   const renderSortIcon = (colKey: string) => {
     if (!currentSort || currentSort.columnKey !== colKey) {
-      return <ArrowUpDown className="text-muted-foreground/50 ml-1 h-3 w-3 shrink-0" />;
+      return <ArrowUpDown aria-hidden="true" className="text-label-tertiary size-3 shrink-0" />;
     }
     return currentSort.direction === "asc" ? (
-      <ArrowUp className="text-primary ml-1 h-3 w-3 shrink-0" />
+      <ArrowUp aria-hidden="true" className="text-tint size-3 shrink-0" />
     ) : (
-      <ArrowDown className="text-primary ml-1 h-3 w-3 shrink-0" />
+      <ArrowDown aria-hidden="true" className="text-tint size-3 shrink-0" />
     );
   };
 
@@ -303,10 +305,7 @@ export function FacetDataTable<T extends Record<string, any>>({
   const isEmpty = !loading && paginatedData.length === 0;
 
   return (
-    <div
-      data-slot="facet-data-table"
-      className={cn("facet-hierarchy-child flex flex-col gap-4", className)}
-    >
+    <div data-slot="facet-data-table" className={cn("flex flex-col gap-4", className)}>
       {/* ─── Toolbar ──────────────────────────────────────────────── */}
       <FacetTableToolbar
         title={title}
@@ -322,31 +321,27 @@ export function FacetDataTable<T extends Record<string, any>>({
 
       {/* ─── Loading Skeleton View ────────────────────────────────── */}
       {loading ? (
-        <div className="space-y-3">
-          {/* Desktop Table Skeleton */}
-          <div
+        <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-3">
+          {/* Desktop Table Skeleton: shaped like the Table (header row + body rows) */}
+          <FacetCard
             className={cn(
-              layoutMode === "auto"
-                ? "hidden sm:block"
-                : layoutMode === "table"
-                  ? "block"
-                  : "hidden",
-              "border-border/40 space-y-3 overflow-hidden rounded-xl border p-4"
+              layoutMode === "auto" ? "hidden sm:flex" : layoutMode === "table" ? "flex" : "hidden",
+              "flex-col gap-3 overflow-hidden p-4"
             )}
           >
-            <div className="border-border/40 flex gap-4 border-b pb-3">
+            <div className="border-separator flex gap-4 border-b pb-3">
               {columns.slice(0, 5).map((_, i) => (
-                <Skeleton key={i} className="h-4 flex-1 rounded-md" />
+                <Skeleton key={i} className="rounded-control-sm h-4 flex-1" />
               ))}
             </div>
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-4 py-2">
                 {columns.slice(0, 5).map((_, j) => (
-                  <Skeleton key={j} className="h-8 flex-1 rounded-md" />
+                  <Skeleton key={j} className="rounded-control-sm h-8 flex-1" />
                 ))}
               </div>
             ))}
-          </div>
+          </FacetCard>
 
           {/* Mobile Card Skeleton */}
           <div
@@ -359,21 +354,21 @@ export function FacetDataTable<T extends Record<string, any>>({
             )}
           >
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+              <Skeleton key={i} className="rounded-card h-28 w-full" />
             ))}
           </div>
         </div>
       ) : isEmpty ? (
         /* ─── Empty State View ──────────────────────────────────────── */
-        <div className="border-border/40 bg-card/20 flex flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-12 text-center backdrop-blur-md">
-          {emptyIcon || <Database className="text-muted-foreground/40 mb-3 h-10 w-10" />}
-          <p className="text-foreground text-sm font-semibold">{emptyMessage}</p>
-          {searchTerm && (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Try adjusting your search terms or clearing active filters.
-            </p>
-          )}
-        </div>
+        <FacetCard>
+          <EmptyState
+            icon={emptyIcon || <Database />}
+            title={emptyMessage}
+            message={
+              searchTerm ? "Try adjusting your search terms or clearing active filters." : undefined
+            }
+          />
+        </FacetCard>
       ) : (
         <>
           {/* ─── Desktop Table Mode (sm: and up) ────────────────────── */}
@@ -382,32 +377,57 @@ export function FacetDataTable<T extends Record<string, any>>({
               <Table containerClassName={tableContainerClassName}>
                 <TableHeader>
                   <TableRow>
-                    {columns.map((col) => (
-                      <TableHead
-                        key={col.key}
-                        className={cn(
-                          "px-4 py-3 select-none",
-                          col.align === "center" && "text-center",
-                          col.align === "right" && "text-right",
-                          col.sortable &&
-                            "hover:text-label hover:bg-fill-4 cursor-pointer transition-colors",
-                          col.className,
-                          col.headerClassName
-                        )}
-                        onClick={() => col.sortable && handleSortToggle(col.key)}
-                      >
-                        <div
-                          className={cn(
-                            "flex items-center gap-1",
-                            col.align === "center" && "justify-center",
-                            col.align === "right" && "justify-end"
-                          )}
-                        >
+                    {columns.map((col) => {
+                      const sorted = currentSort?.columnKey === col.key ? currentSort : null;
+                      const content = (
+                        <>
                           <span>{col.header}</span>
                           {col.sortable && renderSortIcon(col.key)}
-                        </div>
-                      </TableHead>
-                    ))}
+                        </>
+                      );
+                      const justify = cn(
+                        col.align === "center" && "justify-center",
+                        col.align === "right" && "justify-end"
+                      );
+                      return (
+                        <TableHead
+                          key={col.key}
+                          aria-sort={
+                            col.sortable
+                              ? sorted
+                                ? sorted.direction === "asc"
+                                  ? "ascending"
+                                  : "descending"
+                                : "none"
+                              : undefined
+                          }
+                          className={cn(
+                            "px-4 py-3 select-none",
+                            col.align === "center" && "text-center",
+                            col.align === "right" && "text-right",
+                            col.sortable && "hover:text-label hover:bg-fill-4 transition-colors",
+                            col.className,
+                            col.headerClassName
+                          )}
+                        >
+                          {col.sortable ? (
+                            // A real button: sortable headers are reachable and operable by keyboard.
+                            <button
+                              type="button"
+                              onClick={() => handleSortToggle(col.key)}
+                              className={cn(
+                                "rounded-control-sm focus-visible:outline-tint inline-flex w-full cursor-pointer items-center gap-1 outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
+                                justify
+                              )}
+                            >
+                              {content}
+                            </button>
+                          ) : (
+                            <div className={cn("flex items-center gap-1", justify)}>{content}</div>
+                          )}
+                        </TableHead>
+                      );
+                    })}
                   </TableRow>
                 </TableHeader>
 

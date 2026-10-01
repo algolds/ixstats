@@ -584,7 +584,7 @@ function SwipeableRowRoot({
             <AnimatePresence>
               {isCommitting && commitColor && (
                 <motion.div
-                  className="pointer-events-none absolute inset-0 z-30 rounded-xl"
+                  className="rounded-row pointer-events-none absolute inset-0 z-30"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.85 }}
                   exit={{ opacity: 0 }}
@@ -679,7 +679,7 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
       data-swipe-tray="leading"
       className={cn(
         "absolute inset-y-0 left-0 z-0 flex items-center justify-start overflow-hidden",
-        "border-r border-black/[0.08] dark:border-white/10",
+        "bg-surface-secondary border-separator border-r",
         className
       )}
       style={{
@@ -690,25 +690,7 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
       role="group"
       aria-label="Leading actions"
     >
-      {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
-        </div>
-      </div>
-
-      {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
-        style={{
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
-        }}
-      />
-
-      {/* 3. Action Triggers container (Z-20) */}
+      {/* Action triggers over the tray's opaque inset surface (content, not chrome: no glass) */}
       <div className="relative z-20 flex h-full w-full items-center justify-start gap-0.5 px-1">
         {processedChildren}
       </div>
@@ -745,7 +727,7 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
       data-swipe-tray="trailing"
       className={cn(
         "absolute inset-y-0 right-0 z-0 flex items-center justify-end overflow-hidden",
-        "border-l border-black/[0.08] dark:border-white/10",
+        "bg-surface-secondary border-separator border-l",
         className
       )}
       style={{
@@ -756,25 +738,7 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
       role="group"
       aria-label="Trailing actions"
     >
-      {/* 1. Underlying background color & raw sheens (Z-0) */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/18 to-transparent dark:via-white/10" />
-          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/12 to-transparent dark:via-white/6" />
-        </div>
-      </div>
-
-      {/* 2. Frosted glass backdrop blur filter layer (Z-10) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] saturate-[190%] backdrop-blur-[20px]"
-        style={{
-          WebkitBackdropFilter: "blur(20px) saturate(190%)",
-        }}
-      />
-
-      {/* 3. Action Triggers container (Z-20) */}
+      {/* Action triggers over the tray's opaque inset surface (content, not chrome: no glass) */}
       <div className="relative z-20 flex h-full w-full items-center justify-end gap-0.5 px-1">
         {processedChildren}
       </div>
@@ -923,41 +887,44 @@ function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps
 // ── SwipeActionButton ───────────────────────────────────────────────────
 
 // Helper mapping Tailwind colors to tinted swipe-action styles
-const tailwindColorMap: Record<string, { light: string; dark: string }> = {
-  red: {
-    light: "bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-700",
-    dark: "dark:bg-red-500/15 dark:hover:bg-red-500/25 dark:border-white/10 dark:text-red-300",
-  },
-  green: {
-    light: "bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-700",
-    dark: "dark:bg-green-500/15 dark:hover:bg-green-500/25 dark:border-white/10 dark:text-green-300",
-  },
-  emerald: {
-    light:
-      "bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-700",
-    dark: "dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 dark:border-white/10 dark:text-emerald-300",
-  },
-  blue: {
-    light: "bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-700",
-    dark: "dark:bg-blue-500/15 dark:hover:bg-blue-500/25 dark:border-white/10 dark:text-blue-300",
-  },
-  indigo: {
-    light: "bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-700",
-    dark: "dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 dark:border-white/10 dark:text-indigo-300",
-  },
-  amber: {
-    light: "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-700",
-    dark: "dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:border-white/10 dark:text-amber-300",
-  },
-  yellow: {
-    light: "bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 text-yellow-700",
-    dark: "dark:bg-yellow-500/15 dark:hover:bg-yellow-500/25 dark:border-white/10 dark:text-yellow-300",
-  },
-  slate: {
-    light: "bg-slate-500/10 hover:bg-slate-500/20 border border-slate-500/20 text-slate-700",
-    dark: "dark:bg-slate-500/15 dark:hover:bg-slate-500/25 dark:border-white/10 dark:text-slate-300",
-  },
+/**
+ * Named swipe-action colours → a system colour's tinted fill (15%, its `-ink` text, AA on every
+ * background — token-contrast.test.ts). Legacy Tailwind palette names map to the nearest system
+ * colour. Written out in full so Tailwind sees every class.
+ */
+const SWIPE_TONES: Record<string, string> = {
+  red: "bg-red/15 hover:bg-red/25 border border-red/20 text-red-ink",
+  orange: "bg-orange/15 hover:bg-orange/25 border border-orange/20 text-orange-ink",
+  yellow: "bg-yellow/15 hover:bg-yellow/25 border border-yellow/20 text-yellow-ink",
+  green: "bg-green/15 hover:bg-green/25 border border-green/20 text-green-ink",
+  mint: "bg-mint/15 hover:bg-mint/25 border border-mint/20 text-mint-ink",
+  teal: "bg-teal/15 hover:bg-teal/25 border border-teal/20 text-teal-ink",
+  cyan: "bg-cyan/15 hover:bg-cyan/25 border border-cyan/20 text-cyan-ink",
+  blue: "bg-blue/15 hover:bg-blue/25 border border-blue/20 text-blue-ink",
+  indigo: "bg-indigo/15 hover:bg-indigo/25 border border-indigo/20 text-indigo-ink",
+  purple: "bg-purple/15 hover:bg-purple/25 border border-purple/20 text-purple-ink",
+  pink: "bg-pink/15 hover:bg-pink/25 border border-pink/20 text-pink-ink",
+  brown: "bg-brown/15 hover:bg-brown/25 border border-brown/20 text-brown-ink",
+  gray: "bg-gray/15 hover:bg-gray/25 border border-gray/20 text-gray-ink",
 };
+const SWIPE_TONE_ALIASES: Record<string, string> = {
+  emerald: "mint",
+  amber: "orange",
+  slate: "gray",
+  zinc: "gray",
+  sky: "cyan",
+  violet: "purple",
+  rose: "pink",
+  destructive: "red",
+  warning: "orange",
+  caution: "yellow",
+  success: "green",
+  info: "blue",
+};
+
+function swipeTone(color: string): string {
+  return SWIPE_TONES[SWIPE_TONE_ALIASES[color] ?? color] ?? SWIPE_TONES.gray!;
+}
 
 // ── SwipeActionButton ───────────────────────────────────────────────────
 
@@ -976,11 +943,11 @@ export function SwipeActionButton({
   // Determine if color is a CSS value or a Tailwind class name
   const isCssColor = /^(#|rgb|hsl|var\()/.test(color);
 
+  // A CSS colour (data or a role variable) gets the same tinted-fill formula via color-mix: 12% fill,
+  // ink = the colour pulled 20% toward the label.
   const btnClass = isCssColor
-    ? "bg-[color-mix(in_srgb,var(--btn-color)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--btn-color)_22%,transparent)] border border-[color-mix(in_srgb,var(--btn-color)_20%,transparent)] text-[color-mix(in_srgb,var(--btn-color)_85%,#0f172a)] dark:text-[color-mix(in_srgb,var(--btn-color)_85%,#f8fafc)]"
-    : tailwindColorMap[color]
-      ? `${tailwindColorMap[color].light} ${tailwindColorMap[color].dark}`
-      : `bg-${color}-500/10 hover:bg-${color}-500/20 border border-${color}-500/20 text-${color}-700 dark:text-${color}-300 dark:border-white/10 dark:bg-${color}-500/15 dark:hover:bg-${color}-500/25`;
+    ? "bg-[color-mix(in_srgb,var(--btn-color)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--btn-color)_22%,transparent)] border border-[color-mix(in_srgb,var(--btn-color)_20%,transparent)] text-[color-mix(in_srgb,var(--btn-color)_80%,var(--color-label))]"
+    : swipeTone(color);
 
   const inlineStyle = isCssColor ? ({ "--btn-color": color } as React.CSSProperties) : undefined;
 
@@ -1061,7 +1028,7 @@ export function SwipeActionButton({
         }}
         className={cn(
           "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-          "overflow-hidden whitespace-nowrap backdrop-blur-sm",
+          "overflow-hidden whitespace-nowrap",
           btnClass,
           className
         )}
@@ -1072,11 +1039,8 @@ export function SwipeActionButton({
         }}
         aria-label={ariaLabel ?? label}
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
-
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate text-xs font-bold">{label}</span>
+        <Icon aria-hidden="true" className="size-4 shrink-0" />
+        <span className="text-caption truncate font-semibold">{label}</span>
       </button>
     );
   }
@@ -1093,7 +1057,7 @@ export function SwipeActionButton({
       }}
       className={cn(
         "relative flex h-full flex-col items-center justify-center gap-1 px-3 transition-colors active:brightness-95",
-        "overflow-hidden whitespace-nowrap backdrop-blur-sm",
+        "overflow-hidden whitespace-nowrap",
         btnClass,
         className
       )}
@@ -1109,11 +1073,8 @@ export function SwipeActionButton({
       }}
       aria-label={ariaLabel ?? label}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent dark:via-white/6" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/8 to-transparent dark:via-white/4" />
-
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate text-xs font-bold">{label}</span>
+      <Icon aria-hidden="true" className="size-4 shrink-0" />
+      <span className="text-caption truncate font-semibold">{label}</span>
     </motion.button>
   );
 }

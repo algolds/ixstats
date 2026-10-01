@@ -5,6 +5,7 @@ import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 
 import { cn } from "~/lib/utils/cn";
 import { presentMotionClassName } from "~/components/ui/dialog";
+import { VirtualAnchorPopover, type VirtualAnchorPopoverProps } from "~/components/ui/popover";
 
 function HoverCard({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
   return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
@@ -31,7 +32,7 @@ function HoverCardContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-popover w-64 origin-(--radix-hover-card-content-transform-origin) rounded-card border border-separator bg-surface-elevated p-4 text-label shadow-floating outline-none",
+          "z-popover rounded-card border-separator bg-surface-elevated text-label shadow-floating w-64 origin-(--radix-hover-card-content-transform-origin) border p-4 outline-none",
           presentMotionClassName,
           className
         )}
@@ -43,4 +44,37 @@ function HoverCardContent({
 
 const HoverCardArrow = HoverCardPrimitive.Arrow;
 
-export { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardPortal, HoverCardArrow };
+export type VirtualAnchorHoverCardProps = Omit<VirtualAnchorPopoverProps, "surface">;
+
+/**
+ * A hover card anchored to a `VirtualAnchor` (an element found by event delegation, a range, a
+ * rect) — for previews whose trigger is not a React element (`HoverCard` needs a
+ * `HoverCardTrigger`). Same look as `HoverCardContent`; never takes focus. The caller owns the
+ * hover timing: pass `anchor` (or `null`) after its open/close delays and keep it open from the
+ * card's own `onMouseEnter`/`onMouseLeave`. No ARIA role unless you pass one.
+ */
+function VirtualAnchorHoverCard({
+  className,
+  sideOffset = 4,
+  role,
+  ...props
+}: VirtualAnchorHoverCardProps) {
+  return (
+    <VirtualAnchorPopover
+      surface="elevated"
+      sideOffset={sideOffset}
+      role={role}
+      className={cn("w-64", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+  HoverCardPortal,
+  HoverCardArrow,
+  VirtualAnchorHoverCard,
+};

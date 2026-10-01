@@ -15,6 +15,9 @@ import { springSnappy } from "~/lib/design/motion";
  * natural width, and the selected segment is scrolled into view. `scrollable` forces this on or
  * off; by default it is on above five options.
  *
+ * Each option may carry a trailing `badge` (a count in a tabular pill) with a `badgeLabel` for
+ * screen readers ("12 unread"); the badge is `aria-hidden` and its label joins the segment's name.
+ *
  * ARIA: a `radiogroup` of `radio`s by default; with `asTabs` a `tablist` of `tab`s (pass
  * `getTabPanelId` to wire `aria-controls`). One roving tab stop; the arrow keys, Home and End move
  * the selection. Name the control with `aria-label` (or `aria-labelledby`).
@@ -37,6 +40,16 @@ export interface SegmentedControlOption<T extends string = string> {
   disabled?: boolean;
   /** Accessible name when the label is icon-only or not plain text. */
   "aria-label"?: string;
+  /**
+   * Trailing count or short badge, e.g. `12` unread. Numbers render tabular in a small pill;
+   * nodes render as given. Hidden from assistive tech in favour of `badgeLabel`.
+   */
+  badge?: React.ReactNode;
+  /**
+   * What the badge means to a screen reader, appended to the segment's name ("Inbox, 12 unread").
+   * Defaults to the badge itself when it is a number or string.
+   */
+  badgeLabel?: string;
 }
 
 export interface SegmentedControlProps<T extends string = string> extends Omit<
@@ -71,13 +84,13 @@ export const MAX_SEGMENTS = 5;
 const sizes = {
   sm: {
     track: "h-(--control-height-sm) rounded-control-sm",
-    item: "px-2.5 text-footnote font-medium gap-1 [:where(&)_svg]:size-3.5",
+    item: "px-3 text-footnote font-medium gap-1 [:where(&)_svg]:size-3.5",
     // Concentric with the track: control-sm (8) minus the 2px track padding.
     thumb: "rounded-[calc(var(--radius-control-sm)-0.125rem)]",
   },
   md: {
     track: "h-(--control-height) rounded-control",
-    item: "px-3 text-body font-medium gap-1.5 [:where(&)_svg]:size-4",
+    item: "px-3 text-body font-medium gap-2 [:where(&)_svg]:size-4",
     thumb: "rounded-control-sm",
   },
 } as const;
@@ -177,6 +190,13 @@ export function SegmentedControl<T extends string = string>({
       {options.map((option, index) => {
         const selected = option.value === value;
         const isDisabled = disabled || option.disabled;
+        const hasBadge =
+          option.badge !== undefined && option.badge !== null && option.badge !== false;
+        const badgeLabel =
+          option.badgeLabel ??
+          (typeof option.badge === "number" || typeof option.badge === "string"
+            ? String(option.badge)
+            : undefined);
         return (
           <button
             key={option.value}
@@ -188,7 +208,11 @@ export function SegmentedControl<T extends string = string>({
             aria-checked={asTabs ? undefined : selected}
             aria-selected={asTabs ? selected : undefined}
             aria-controls={asTabs ? getTabPanelId?.(option.value) : undefined}
-            aria-label={option["aria-label"]}
+            aria-label={
+              option["aria-label"] && hasBadge && badgeLabel
+                ? `${option["aria-label"]}, ${badgeLabel}`
+                : option["aria-label"]
+            }
             tabIndex={index === tabStop ? 0 : -1}
             disabled={isDisabled}
             data-slot="segmented-control-item"
@@ -218,15 +242,27 @@ export function SegmentedControl<T extends string = string>({
                 layoutId={thumbId}
                 aria-hidden
                 transition={springSnappy}
-                className={cn(
-                  "bg-surface shadow-card dark:bg-fill absolute inset-0",
-                  metrics.thumb
-                )}
+                className={cn("bg-control-thumb shadow-card absolute inset-0", metrics.thumb)}
               />
             )}
             <span className="relative inline-flex min-w-0 items-center gap-[inherit]">
               {option.icon}
               {option.label}
+              {hasBadge && (
+                <span
+                  aria-hidden
+                  data-slot="segmented-control-badge"
+                  className={cn(
+                    "text-caption inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
+                    selected ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
+                  )}
+                >
+                  {option.badge}
+                </span>
+              )}
+              {hasBadge && badgeLabel && !option["aria-label"] && (
+                <span className="sr-only">, {badgeLabel}</span>
+              )}
             </span>
           </button>
         );

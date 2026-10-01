@@ -122,6 +122,8 @@ const FACET_CONVERTED = [
   "app/_components/LiveGameBanner.tsx",
   "lib/splash/",
   "lib/tier-utils.ts",
+  // Phase 4 primitives: the shared UI kit itself (status inks, no glass/v2 classes).
+  "components/ui/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
