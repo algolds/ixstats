@@ -10,7 +10,7 @@
  * normalised and capitalised but never given a namespace (`options.source`).
  */
 
-import { parseWikiTitle } from "../namespace-policy";
+import { TITLE_HEAD_CEILING, parseWikiTitle } from "../namespace-policy";
 import { toArticleSlug, type ArticleSlug } from "./domain-types";
 
 /** Canonical namespace names keyed by namespace id (the main namespace has no prefix). */
@@ -64,12 +64,6 @@ export interface CanonicalTitle {
 
 /** MediaWiki's longest page name (namespace prefix excluded), in UTF-8 bytes. */
 const MAX_TITLE_BYTES = 255;
-/**
- * ponytail: TITLE_HEAD_CEILING, 4,096 characters: the most of a title (the part before a `#`) that is looked
- * at. A page name is 255 bytes at most, a namespace prefix a few more, and blanks collapse, so a title
- * longer than this is no title. The fragment after `#` is not bounded: it is stored and shown as written.
- */
-const TITLE_HEAD_CEILING = 4_096;
 /** Characters MediaWiki never allows in a page name. "#" is gone by then: it starts the fragment. */
 const ILLEGAL_TITLE_CHARS = /[[\]{}|<>]/;
 /** Control characters (MediaWiki's legal-title-character set excludes them all). */

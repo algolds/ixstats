@@ -1,5 +1,5 @@
-// The inline parser as it was before the regex-DoS sweep (plan F15), verbatim apart from its import paths:
-// regex-dos-wikitext.test.ts holds the scanning rewrite against it. Not used by any code.
+// The inline parser as the integration branch had it before the regex-DoS sweep (plan F15, 224bd6dcd), verbatim
+// apart from its import paths: regex-dos-wikitext.test.ts holds the scanning rewrite against it. Not used by any code.
 
 /**
  * src/lib/wiki-os/wikitext/link-parser.ts — MediaWiki Link & Media Tokenizer.
@@ -9,7 +9,7 @@ import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { parseFileLinkInner } from "~/lib/wiki-os/wikitext/file-params";
 import { splitBalancedPipes, parseParameterList } from "~/lib/wiki-os/wikitext/parameter-parser";
 import { UNINDEXED, matchBraces, matchBrackets, type MatchIndex } from "~/lib/wiki-os/wikitext/match-index";
-import { findTagClose, matchOpenTag, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import { findTagClose, matchOpenTag, ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
 import { classifyTemplate } from "~/lib/wiki-os/wikitext/resolver";
 import type { WikiInlineNode, WikiTextNode } from "~/lib/wiki-os/wikitext/types";
 
@@ -178,6 +178,8 @@ interface InlineContext {
   text: string;
   brackets?: MatchIndex;
   braces?: MatchIndex;
+  /** What the scan of `text` keeps about its tags. */
+  scanner: ProtectedScanner;
 }
 
 interface InlineSpan {
@@ -320,10 +322,10 @@ function tryExternalLink(text: string, i: number): InlineSpan | null {
 const REF_NAME = /name\s*=\s*["']?([^"'\s>/]+)/i;
 
 /** `<ref>…</ref>` and `<ref name="a" />`; an unclosed `<ref>` is left as text. */
-function tryRef(text: string, i: number): InlineSpan | null {
-  const tag = matchOpenTag(text, i);
+function tryRef({ text, scanner }: InlineContext, i: number): InlineSpan | null {
+  const tag = matchOpenTag(text, i, scanner);
   if (tag?.name !== "ref") return null;
-  const end = findTagClose(text, tag);
+  const end = findTagClose(tag, scanner);
   if (end === -1) return null;
   const rawRef = text.slice(i, end);
   const nameMatch = REF_NAME.exec(text.slice(i, tag.openEnd));
@@ -412,11 +414,11 @@ function tryInlineConstruct(ctx: InlineContext, i: number): InlineSpan | null {
       return tryExternalLink(text, i);
     case "<": {
       // Comments and literal tags are copied as they are: nothing inside them is wikitext.
-      const end = skipProtectedAt(text, i);
+      const end = skipProtectedAt(text, i, false, ctx.scanner);
       if (end !== null) {
         return { part: { kind: "text", text: text.slice(i, end), literal: true }, end };
       }
-      return tryRef(text, i);
+      return tryRef(ctx, i);
     }
     case "{":
       return text.startsWith("{{", i) ? tryInlineTemplate(ctx, i) : null;
@@ -432,6 +434,7 @@ function tokenizeInline(text: string): InlinePart[] {
     text,
     brackets: text.includes("[[") ? matchBrackets(text) : undefined,
     braces: text.includes("{{") ? matchBraces(text) : undefined,
+    scanner: new ProtectedScanner(text),
   };
   const special = /[[<{]/g;
   let i = 0;

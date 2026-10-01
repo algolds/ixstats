@@ -40,18 +40,24 @@ function headingTitle(line: string, from: number, to: number): string | null {
 /**
  * `== Title ==` (what `/^(={1,6})\s*(.+?)\s*\1$/` captures: the level and the title). The longest run of
  * up to six `=` that also ends the line is the level; a run that is longer than that on one side leaves
- * its extra `=` in the title.
+ * its extra `=` in the title. `minLevel` 2 is `/^(={2,6})\s*(.+?)\s*\1\s*$/` with `trailingBlanks`: a
+ * heading with blanks after its closing run.
  */
-export function matchHeading(line: string): HeadingMatch | null {
+export function matchHeading(
+  line: string,
+  minLevel = 1,
+  trailingBlanks = false
+): HeadingMatch | null {
+  let end = line.length;
+  if (trailingBlanks) while (end > 0 && isBlank(line.charCodeAt(end - 1))) end--;
   let run = 0;
   while (run < 6 && line.charCodeAt(run) === 61) run++;
-  for (let level = run; level >= 1; level--) {
-    if (line.length <= 2 * level) continue;
+  for (let level = run; level >= minLevel; level--) {
+    if (end <= 2 * level) continue;
     let closes = true;
-    for (let at = line.length - level; at < line.length && closes; at++)
-      closes = line.charCodeAt(at) === 61;
+    for (let at = end - level; at < end && closes; at++) closes = line.charCodeAt(at) === 61;
     if (!closes) continue;
-    const title = headingTitle(line, level, line.length - level);
+    const title = headingTitle(line, level, end - level);
     if (title !== null) return { level, title };
   }
   return null;

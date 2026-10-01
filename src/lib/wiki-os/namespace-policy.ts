@@ -79,6 +79,13 @@ function interfaceRight(base: string, area: "site" | "user"): Right | null {
 
 /** Unicode spaces MediaWiki folds into a plain space when normalising titles. */
 const TITLE_SPACES = /[\u00A0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000_]+/g;
+/**
+ * ponytail: TITLE_HEAD_CEILING, 4,096 characters: the most of a title (the part before a `#`) that is looked
+ * at. A page name is 255 bytes at most, a namespace prefix a few more, and blanks collapse, so a title
+ * longer than this is no title (and half a dozen passes over two million characters are not worth a refusal).
+ * The fragment after `#` is not bounded: it is stored and shown as written.
+ */
+export const TITLE_HEAD_CEILING = 4_096;
 /** Bidirectional and zero-width marks MediaWiki strips from titles. */
 const TITLE_INVISIBLES = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
 /** MediaWiki decodes HTML character references in titles (`Template&#58;Foo` is `Template:Foo`). */
@@ -101,13 +108,13 @@ export interface ParsedWikiTitle {
 
 /**
  * Split a page title the way MediaWiki does. Returns null for a title that cannot be judged
- * (empty, or hiding a namespace prefix behind HTML character references).
+ * (empty, longer than TITLE_HEAD_CEILING, or hiding a namespace prefix behind HTML character references).
  */
 export function parseWikiTitle(
   rawTitle: string,
   { namespaces = true }: ParseWikiTitleOptions = {}
 ): ParsedWikiTitle | null {
-  if (CHARACTER_REFERENCE.test(rawTitle)) return null;
+  if (rawTitle.length > TITLE_HEAD_CEILING || CHARACTER_REFERENCE.test(rawTitle)) return null;
 
   let title = rawTitle
     .replace(TITLE_INVISIBLES, "")

@@ -8,6 +8,7 @@
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import { referencedFilenames } from "~/lib/wiki-os/core/media-references";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { checkEditPolicy, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
 import { redirectTargetOf } from "~/lib/wiki-os/xml/fetch-dump";
 
 const fixtures = fixtureTexts();
@@ -78,6 +79,20 @@ describe("canonicalizeTitle looks at no more than 4,096 characters of a title", 
   it("refuses a longer one at once, and does not bound the fragment", () => {
     expect(canonicalizeTitle(`foo${" ".repeat(5_000)}bar`)).toBeNull();
     expect(canonicalizeTitle(`foo#${"x".repeat(100_000)}`)?.fragment).toHaveLength(100_000);
+  });
+
+  it("is the bound of parseWikiTitle, which every caller of a raw title reaches", () => {
+    expect(parseWikiTitle(`Talk:foo${" ".repeat(4_000)}bar`)).toEqual({
+      namespaceId: 1,
+      base: "foo bar",
+    });
+    expect(parseWikiTitle(`foo${"x".repeat(5_000)}`)).toBeNull();
+    // a title no parser can judge is refused to everyone but an administrator, who is let through as before
+    const nobody = { rights: new Set<never>(), linkedWikiUsername: null };
+    expect(checkEditPolicy(`foo${"x".repeat(5_000)}`, nobody)).toEqual({
+      allowed: false,
+      reason: "That page title is not valid.",
+    });
   });
 });
 

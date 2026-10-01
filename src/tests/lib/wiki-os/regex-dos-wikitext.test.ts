@@ -18,7 +18,15 @@ import {
   findBalancedEquals,
   splitBalancedPipes,
 } from "~/lib/wiki-os/wikitext/parameter-parser";
-import { skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import {
+  ProtectedScanner,
+  findTagClose,
+  isCommentOnly,
+  matchOpenTag,
+  skipProtectedAt,
+} from "~/lib/wiki-os/wikitext/protected-regions";
+import * as legacyProtected from "./legacy/protected-regions";
+import { findSectionLine, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
 import {
   scanTemplateAt,
   scanTemplates,
@@ -565,10 +573,11 @@ interface LegacyTopLevelHandlers {
 function legacyScanTopLevel(value: string, handlers: LegacyTopLevelHandlers): string {
   const braces = matchBraces(value);
   const brackets = matchBrackets(value);
+  const scanner = new ProtectedScanner(value);
   let out = "";
   let i = 0;
   while (i < value.length) {
-    const protectedEnd = value[i] === "<" ? skipProtectedAt(value, i, true) : null;
+    const protectedEnd = value[i] === "<" ? skipProtectedAt(value, i, true, scanner) : null;
     const braceEnd = value.startsWith("{{", i) ? findMatchingClosingBraces(value, i, braces) : -2;
     const bracketEnd = value.startsWith("[[", i)
       ? findMatchingClosingBrackets(value, i, brackets)
@@ -885,13 +894,14 @@ describe("match-index: an opener the pass did not reach is scanned for, within a
 
 /** `scanTemplates` as it was: a search for `<` from every position it looked at. */
 function legacyScanTemplates(wikitext: string) {
+  const scanner = new ProtectedScanner(wikitext);
   const nextTemplateOpen = (from: number): number => {
     let i = from;
     let brace = wikitext.indexOf("{{", i);
     while (brace !== -1) {
       const tag = wikitext.indexOf("<", i);
       if (tag === -1 || tag > brace) return brace;
-      const end = skipProtectedAt(wikitext, tag);
+      const end = skipProtectedAt(wikitext, tag, false, scanner);
       i = end ?? tag + 1;
       if (brace < i) brace = wikitext.indexOf("{{", i);
     }
@@ -903,7 +913,7 @@ function legacyScanTemplates(wikitext: string) {
   while (i < wikitext.length) {
     const openIdx = nextTemplateOpen(i);
     if (openIdx === -1) break;
-    const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx);
+    const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx, scanner);
     if (parsed) templates.push(parsed);
     if (!closed) {
       if (parsed) diags.push(unclosedTemplateDiagnostic(parsed, openIdx, wikitext.length));
@@ -986,5 +996,201 @@ describe("link-parser: parseInlineLinksAndFormatting answers what it answered", 
       ...fixtures.flatMap((t) => t.split("\n")),
     ];
     expect(disagreements(texts, parseInlineLinksAndFormatting, legacyParseInline)).toEqual([]);
+  });
+});
+
+// ---- protected-regions: one memoized `>` and `-->` search per scan ---------------------------------------------
+
+describe("protected-regions: the scanner answers what the integration branch's scanner answered", () => {
+  const TOKENS = [
+    "<nowiki>",
+    "</nowiki>",
+    "</nowiki >",
+    "<nowiki ",
+    "<pre>",
+    "</pre>",
+    "<ref name=a>",
+    "<ref />",
+    "</ref>",
+    "<gallery>",
+    "</gallery>",
+    "<references />",
+    "<referencesfoo>",
+    "<!--",
+    "-->",
+    "<!-- x -->",
+    "<",
+    ">",
+    "/",
+    " ",
+    "a",
+    "\n",
+    "{{",
+    "}}",
+  ];
+
+  /** What every `<` of the text answers: the region it starts, the tag it opens and where that closes. */
+  function regionsOf(text: string, fresh: boolean): unknown[] {
+    const answers: unknown[] = [];
+    const scanner = new ProtectedScanner(text);
+    const legacy = new legacyProtected.ProtectedScanner(text);
+    for (let at = text.indexOf("<"); at !== -1; at = text.indexOf("<", at + 1)) {
+      if (fresh) {
+        const tag = matchOpenTag(text, at, scanner);
+        answers.push(
+          skipProtectedAt(text, at, true, scanner),
+          skipProtectedAt(text, at, false, scanner),
+          tag,
+          tag && findTagClose(tag, scanner)
+        );
+      } else {
+        const tag = legacyProtected.matchOpenTag(text, at, legacy);
+        answers.push(
+          legacyProtected.skipProtectedAt(text, at, true, legacy),
+          legacyProtected.skipProtectedAt(text, at, false, legacy),
+          tag,
+          tag && legacyProtected.findTagClose(tag, legacy)
+        );
+      }
+    }
+    return answers;
+  }
+
+  it("on random texts of tags and comments, and the real pages", () => {
+    const texts = [...randomTexts(TOKENS, 30_000, 31, 14), ...fixtures];
+    expect(
+      disagreements(
+        texts,
+        (text) => regionsOf(text, true),
+        (text) => regionsOf(text, false)
+      )
+    ).toEqual([]);
+  });
+
+  it("asks isCommentOnly the same of every line", () => {
+    const texts = [
+      ...randomTexts(TOKENS, 20_000, 32, 8),
+      ...fixtures.flatMap((text) => text.split("\n")),
+    ];
+    expect(disagreements(texts, isCommentOnly, legacyProtected.isCommentOnly)).toEqual([]);
+  });
+
+  it("answers a scan that goes back as it answers one that goes forward", () => {
+    const text = "<!-- a --><nowiki>x</nowiki><!-- b --><pre>y</pre><!-- c";
+    const scanner = new ProtectedScanner(text);
+    const opens = [...text.matchAll(/</g)].map((match) => match.index);
+    const forward = opens.map((at) => skipProtectedAt(text, at, true, scanner));
+    const back = [...opens].reverse().map((at) => skipProtectedAt(text, at, true, scanner));
+    expect(back.reverse()).toEqual(forward);
+  });
+});
+
+// ---- section-locator: findSectionLine's markup stripping and heading match are scans ---------------------------
+
+describe("section-locator: findSectionLine answers what the expressions answered", () => {
+  const LEGACY_HEADING = /^(={2,6})\s*(.+?)\s*\1\s*$/u;
+  /** `visibleHeadingText` as the integration branch had it. */
+  function legacyVisibleHeadingText(text: string): string {
+    return text
+      .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/gu, "$1")
+      .replace(/'{2,}/gu, "")
+      .replace(/<[^>]+>/gu, "")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .toLowerCase();
+  }
+  function legacyFindSectionLine(wikitext: string, section: string): number | null {
+    const target = legacyVisibleHeadingText(section);
+    if (!target) return null;
+    const index = wikitext.split("\n").findIndex((line) => {
+      const heading = LEGACY_HEADING.exec(line)?.[2];
+      return heading !== undefined && legacyVisibleHeadingText(heading) === target;
+    });
+    return index >= 0 ? index + 1 : null;
+  }
+
+  const LINE_TOKENS = [
+    "=",
+    "==",
+    "===",
+    " ",
+    "\t",
+    "\r",
+    " ",
+    " ",
+    "a",
+    "b c",
+    "[[",
+    "]]",
+    "|",
+    "[[x|",
+    "[[x]]",
+    "'''",
+    "''",
+    "<",
+    ">",
+    "<b>",
+    "</b>",
+    "<>",
+    "\n",
+  ];
+
+  it("matches a heading line exactly as the expression did, on lines of `=`, blanks and markup", () => {
+    const expected = (line: string) => {
+      const match = LEGACY_HEADING.exec(line);
+      return match ? { level: match[1]!.length, title: match[2]! } : null;
+    };
+    const lines = [...randomTexts(LINE_TOKENS, 60_000, 33, 10)].map((text) =>
+      text.replaceAll("\n", "")
+    );
+    expect(disagreements(lines, (line) => matchHeading(line, 2, true), expected)).toEqual([]);
+  });
+
+  it("finds the same heading for the same section name, on random pages and every real one", () => {
+    const names = [
+      ...randomTexts(LINE_TOKENS, 400, 34, 8),
+      "History",
+      "Early life",
+      "x",
+      "a b c",
+      "[[x|Label]]",
+      "'''A'''",
+    ];
+    const pages = [...randomTexts(LINE_TOKENS, 4_000, 35, 14), ...fixtures];
+    for (const name of names) {
+      expect(
+        disagreements(
+          pages,
+          (page) => findSectionLine(page, name),
+          (page) => legacyFindSectionLine(page, name)
+        )
+      ).toEqual([]);
+    }
+  });
+
+  it("finds every real page's own headings the same way", () => {
+    for (const page of fixtures) {
+      for (const heading of sectionHeadings(page).slice(0, 12)) {
+        expect(findSectionLine(page, heading.text)).toEqual(
+          legacyFindSectionLine(page, heading.text)
+        );
+      }
+    }
+  });
+
+  it("finishes a hostile section name and a hostile page in linear time", () => {
+    const hostile = [
+      "[[".repeat(100_000),
+      "<".repeat(200_000),
+      "[[a]x".repeat(40_000),
+      "== ".repeat(66_000),
+      `==${" ".repeat(200_000)}x`,
+    ];
+    const started = performance.now();
+    for (const text of hostile) {
+      findSectionLine("== History ==\n", text);
+      findSectionLine(text, "History");
+    }
+    expect(performance.now() - started).toBeLessThan(2_000);
   });
 });
