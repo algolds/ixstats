@@ -10,6 +10,11 @@
  * wikitext", NULL means "stale, render me". A writer of wikitext sets it to NULL and calls
  * `enqueueRender`; the previous bundle stays in place so readers keep seeing it meanwhile.
  *
+ * The same parse tells WikiOS what the page links, transcludes and uses and which categories it is
+ * in; the render stores that too (`wiki_links`, `wiki_template_links`, `wiki_image_links`, the category
+ * memberships, `displayTitle`, `pageProps`), each replaced as a set, and `invalidateDependents` marks the
+ * pages that transclude a changed page stale. `renderStaleBatch` renders the stale ones in the background.
+ *
  * Template chips (`{{MyCountry:...}}`) are stored as inert markers (see templates/chip-markers.ts)
  * and filled in per viewer, per request, by article-view-service.
  *
@@ -18,12 +23,15 @@
  */
 
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
   sanitizeWikiArticleHtml,
   wikiArticleSanitizerFingerprint,
 } from "~/lib/utils/sanitize-html";
-import { renderArticleViaMediaWiki } from "../adapters/mediawiki/parsoid";
+import { renderArticleViaMediaWiki, type RenderMetadata } from "../adapters/mediawiki/parsoid";
+import { CategoryService } from "../core/category-service";
+import { LinkGraphService } from "../core/link-graph-service";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
@@ -139,6 +147,12 @@ export async function renderFallbackView(articleId: string): Promise<ViewBundle 
 // Rendering one article
 // ---------------------------------------------------------------------------
 
+/** What a render produced: the HTML, and what MediaWiki reported about the page (null for stored HTML). */
+interface Rendered {
+  html: string;
+  metadata: RenderMetadata | null;
+}
+
 /**
  * The HTML to build the bundle from: MediaWiki's parse of the article's own wikitext, or, for an
  * HTML-only row with no wikitext, the stored HTML. Null when there is nothing or MediaWiki failed.
@@ -147,10 +161,64 @@ async function renderSource(article: {
   title: string;
   wikitext: string;
   contentHtml: string | null;
-}): Promise<string | null> {
-  if (article.wikitext.trim() === "")
-    return article.contentHtml?.trim() ? article.contentHtml : null;
+}): Promise<Rendered | null> {
+  if (article.wikitext.trim() === "") {
+    return article.contentHtml?.trim() ? { html: article.contentHtml, metadata: null } : null;
+  }
   return renderArticleViaMediaWiki(article.wikitext, article.title);
+}
+
+/** The page properties worth keeping; the rest of what MediaWiki reports is its own bookkeeping. */
+const KEPT_PAGE_PROPS = ["defaultsort", "disambiguation", "page_image_free", "notoc", "noeditsection"];
+
+/** Whether the response told WikiOS anything it can store (a response without any of it is left alone). */
+function reportsAnything(metadata: RenderMetadata): boolean {
+  return (
+    metadata.links !== null ||
+    metadata.templates !== null ||
+    metadata.images !== null ||
+    metadata.categories !== null
+  );
+}
+
+/**
+ * Replace the article's derived data with what the render reported, as one transaction: a reader never
+ * sees a page with the new links and the old categories. A field the response did not carry is left as
+ * it is.
+ */
+async function persistRenderMetadata(
+  articleId: string,
+  source: string,
+  metadata: RenderMetadata
+): Promise<void> {
+  const props = Object.fromEntries(
+    KEPT_PAGE_PROPS.flatMap((name) => {
+      const value = metadata.properties[name];
+      return value === undefined ? [] : [[name, value]];
+    })
+  );
+  const displayTitle = metadata.displayTitle ? sanitizeWikiArticleHtml(metadata.displayTitle) : "";
+
+  await db.$transaction(
+    async (tx) => {
+      if (metadata.links) await LinkGraphService.replaceLinks(tx, articleId, source, metadata.links);
+      if (metadata.templates) {
+        await LinkGraphService.replaceTemplateLinks(tx, articleId, metadata.templates);
+      }
+      if (metadata.images) await LinkGraphService.replaceImageLinks(tx, articleId, metadata.images);
+      if (metadata.categories) {
+        await CategoryService.replaceArticleCategories(tx, articleId, metadata.categories);
+      }
+      await tx.wikiArticle.update({
+        where: { id: articleId },
+        data: {
+          displayTitle: displayTitle || null,
+          pageProps: Object.keys(props).length > 0 ? props : Prisma.DbNull,
+        },
+      });
+    },
+    { maxWait: 10_000, timeout: 30_000 }
+  );
 }
 
 /**
@@ -158,31 +226,40 @@ async function renderSource(article: {
  * `htmlSyncedAt = now`. The write is guarded by the wikitext it rendered, so a save that lands
  * meanwhile is never overwritten; the render then restarts on the new text. On a MediaWiki failure
  * nothing is stored: the previous bundle stays and the article stays stale. When every attempt was
- * overtaken by a save the result says `superseded`, which is not a failure.
+ * overtaken by a save the result says `superseded`, which is not a failure. What MediaWiki reported
+ * about the page (links, templates, images, categories, properties) is stored after the bundle; a
+ * failure to store it is logged and does not cost the page its render.
  */
 export async function renderArticle(articleId: string): Promise<RenderResult> {
   for (let attempt = 0; attempt < MAX_RENDER_ATTEMPTS; attempt++) {
     const article = await db.wikiArticle.findUnique({
       where: { id: articleId },
-      select: { title: true, wikitext: true, contentHtml: true },
+      select: { title: true, source: true, wikitext: true, contentHtml: true },
     });
     if (!article) return FAILED;
 
-    const rawHtml = await renderSource(article);
-    if (!rawHtml) return FAILED;
+    const rendered = await renderSource(article);
+    if (!rendered) return FAILED;
 
-    const problem = describeRenderProblem(rawHtml, article.wikitext);
+    const problem = describeRenderProblem(rendered.html, article.wikitext);
     if (problem) console.warn(`[WikiOS:render] "${article.title}": ${problem}; stored anyway.`);
 
     const stored = await db.wikiArticle.updateMany({
       where: { id: articleId, wikitext: article.wikitext },
       data: {
-        contentHtml: rawHtml,
-        renderedView: buildViewBundle(rawHtml),
+        contentHtml: rendered.html,
+        renderedView: buildViewBundle(rendered.html),
         htmlSyncedAt: new Date(),
       },
     });
-    if (stored.count > 0) return { ok: true };
+    if (stored.count > 0) {
+      if (rendered.metadata && reportsAnything(rendered.metadata)) {
+        await persistRenderMetadata(articleId, article.source, rendered.metadata).catch((error) =>
+          console.warn(`[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`, error)
+        );
+      }
+      return { ok: true };
+    }
   }
   return SUPERSEDED;
 }

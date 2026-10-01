@@ -6,7 +6,6 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { createExportWriter } from "~/lib/wiki-os/xml/export-writer";
 import { readExport, type ImportEvent } from "~/lib/wiki-os/xml/import-reader";
@@ -31,9 +30,6 @@ jest.mock("~/lib/wiki-os/services/render-service", () => ({
   enqueueRender: jest.fn(),
   invalidateDependents: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
-  LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
-}));
 jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
   MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
 }));
@@ -42,7 +38,6 @@ const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),
   "utf8"
 );
-const syncLinks = jest.mocked(LinkGraphService.syncArticleLinks);
 
 async function* chunks(text: string): AsyncGenerator<string> {
   yield text;
@@ -249,14 +244,9 @@ describe("fresh import of the export-0.11 fixture", () => {
     expect(article("Testia").protectionLevel).toBe("ALL");
   });
 
-  it("syncs the link graph of each page it gave a head, outside the transaction", () => {
-    expect(syncLinks).toHaveBeenCalledTimes(5);
-    expect(syncLinks).toHaveBeenCalledWith(
-      article("Kingdom of Testia").id,
-      KINGDOM_V2,
-      "",
-      "ixwiki"
-    );
+  it("leaves the link graph, templates and categories of each page it gave a head to the render it queues (plan 406)", () => {
+    expect(enqueueRender).toHaveBeenCalledTimes(5);
+    expect(enqueueRender).toHaveBeenCalledWith(article("Kingdom of Testia").id, { background: true });
   });
 
   it("imports each page in one transaction with room for a long history", () => {
@@ -275,7 +265,7 @@ describe("re-import", () => {
   it("is a no-op: everything is skipped and nothing changes", async () => {
     await importFixture();
     const before = snapshotStore();
-    syncLinks.mockClear();
+    jest.mocked(enqueueRender).mockClear();
     store.writes = 0;
 
     const again = await importFixture();
@@ -292,7 +282,7 @@ describe("re-import", () => {
     });
     expect(snapshotStore()).toEqual(before);
     expect(store.writes).toBe(0);
-    expect(syncLinks).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
   });
 });
 
@@ -375,7 +365,6 @@ describe("the page's head only moves forward", () => {
       mwLatestRevId: 9999,
       contentHtml: "<p>seeded</p>",
     });
-    expect(syncLinks).not.toHaveBeenCalledWith(seeded.id, expect.anything(), "", "ixwiki");
     expect(enqueueRender).not.toHaveBeenCalledWith(seeded.id, expect.anything()); // its head did not change: nothing to render
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(4);
   });
@@ -394,7 +383,6 @@ describe("the page's head only moves forward", () => {
       mwPageId: 101,
     });
     expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
-    expect(syncLinks).toHaveBeenCalledWith(seeded.id, KINGDOM_V2, "", "ixwiki");
   });
 
   it("marks the pages that transclude a page stale when its head changes (plan 406)", async () => {
@@ -1087,7 +1075,7 @@ describe("dry run", () => {
     expect(store.writes).toBe(0);
     expect(store.articles).toHaveLength(0);
     expect(store.revisions).toHaveLength(0);
-    expect(syncLinks).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
     expect(transactionOptions).toHaveLength(0);
   });
 

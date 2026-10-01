@@ -16,8 +16,18 @@ jest.mock("~/server/db", () => ({
     },
   },
 }));
+// `mockRenderViaMediaWiki` answers with the HTML (or null); MediaWiki's metadata is the subject of
+// render-metadata.test.ts, so here a render reports nothing about the page.
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
-  renderArticleViaMediaWiki: (...a: unknown[]) => mockRenderViaMediaWiki(...a),
+  renderArticleViaMediaWiki: async (...a: unknown[]) => {
+    const html = (await mockRenderViaMediaWiki(...a)) as string | null;
+    return html === null
+      ? null
+      : {
+          html,
+          metadata: { links: null, templates: null, images: null, categories: null, displayTitle: null, properties: {} },
+        };
+  },
 }));
 
 import {

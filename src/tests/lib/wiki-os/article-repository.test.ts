@@ -391,6 +391,8 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     // The last-modified time is the page's current revision's: a parked one is not that.
     expect(select.revisions.where).toEqual({ parked: false });
     expect(select.categories.take).toBe(50);
+    // A category MediaWiki hides (a maintenance or tracking one) is not shown on the page.
+    expect(select.categories.where).toEqual({ category: { hidden: false } });
     expect(head).toEqual({
       id: "id-Foo bar",
       title: "Foo bar",

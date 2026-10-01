@@ -19,7 +19,6 @@ import {
   type WikiArticleEntity,
   type WikiRevisionSummary,
 } from "./domain-types";
-import { LinkGraphService } from "./link-graph-service";
 import { MediaAssetService } from "./media-asset-service";
 import { parseRedirect } from "./redirect";
 import { canonicalizeTitle } from "./title";
@@ -84,7 +83,9 @@ const VIEW_SELECT = {
     take: 1,
     select: { createdAt: true },
   },
+  // A category MediaWiki hides (__HIDDENCAT__, the maintenance and tracking ones) is not shown on the page.
   categories: {
+    where: { category: { hidden: false } },
     orderBy: { category: { name: "asc" } },
     take: MAX_VIEW_CATEGORIES,
     select: { category: { select: { name: true } } },
@@ -831,15 +832,10 @@ export class ArticleRepository {
 
     if (!input.dryRun && head && articleId) {
       // The new head is stale until rendered: render it off the read path, as a backlog (an editor's
-      // save renders before it).
+      // save renders before it). The render also fills the link graph, the template and image links
+      // and the categories; pages that transclude this one are stale now too.
       enqueueRender(articleId, { background: true });
       void invalidateDependents(input.title, input.source);
-      // Link graph outside the transaction, best effort; the render replaces it with MediaWiki's own.
-      try {
-        await LinkGraphService.syncArticleLinks(articleId, head.wikitext, "", input.source);
-      } catch (linkErr) {
-        console.warn("[ArticleRepository] Best-effort link graph sync failed:", linkErr);
-      }
     }
     return result;
   }

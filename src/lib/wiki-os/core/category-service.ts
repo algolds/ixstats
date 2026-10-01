@@ -4,8 +4,10 @@
  * Manages category creation, subcategory trees, and member lookups via PostgreSQL.
  */
 
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
+import { canonicalizeTitle } from "./title";
 
 export interface CategoryTreeItem {
   id: string;
@@ -14,6 +16,16 @@ export interface CategoryTreeItem {
   description: string | null;
   memberCount: number;
   subcategories: CategoryTreeItem[];
+}
+
+/** A category an article is in, as the render reports it (`categories` of `action=parse`). */
+export interface RenderedCategory {
+  /** The category's name without "Category:" (underscores or spaces). */
+  name: string;
+  /** The sort key given for this article ([[Category:X|key]] or {{DEFAULTSORT}}); null when none. */
+  sortKey: string | null;
+  /** MediaWiki hides the category (__HIDDENCAT__): it is not shown on the article. */
+  hidden: boolean;
 }
 
 export class CategoryService {
@@ -200,6 +212,46 @@ export class CategoryService {
       subcategories,
       parents: cat?.parent ? [cat.parent] : [],
     };
+  }
+
+  /**
+   * Replace the article's categories with the ones the render reported, inside `tx`: each category is
+   * created if it is new (and carries MediaWiki's `hidden` flag), the memberships are replaced as a set
+   * with their sort keys, so a category that is no longer reported disappears. The categories come from
+   * the render, which sees the ones templates add and the sort keys; nothing reads wikitext. Resolves to
+   * the number of memberships.
+   */
+  static async replaceArticleCategories(
+    tx: Prisma.TransactionClient,
+    articleId: string,
+    categories: readonly RenderedCategory[]
+  ): Promise<number> {
+    const bySlug = new Map<string, { name: string; sortKey: string | null; hidden: boolean }>();
+    for (const category of categories) {
+      const canon = canonicalizeTitle(`Category:${category.name}`);
+      if (!canon || canon.namespaceId !== 14) continue;
+      const slug = toArticleSlug(canon.base);
+      if (!bySlug.has(slug)) {
+        bySlug.set(slug, { name: canon.base, sortKey: category.sortKey, hidden: category.hidden });
+      }
+    }
+
+    const members: Array<{ articleId: string; categoryId: string; sortKey: string | null }> = [];
+    for (const [slug, category] of bySlug) {
+      const row = await tx.wikiCategory.upsert({
+        where: { slug },
+        create: { slug, name: category.name, hidden: category.hidden },
+        update: { hidden: category.hidden },
+        select: { id: true },
+      });
+      members.push({ articleId, categoryId: row.id, sortKey: category.sortKey });
+    }
+
+    await tx.wikiCategoryMember.deleteMany({ where: { articleId } });
+    if (members.length > 0) {
+      await tx.wikiCategoryMember.createMany({ data: members, skipDuplicates: true });
+    }
+    return members.length;
   }
 
   /**

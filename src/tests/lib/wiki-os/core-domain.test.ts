@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from "@jest/globals";
 import { ParserFunctionEvaluator } from "~/lib/wiki-os/core/parser-functions";
-import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 
 describe("WikiOS Domain Types & Slugifier", () => {
@@ -12,28 +11,6 @@ describe("WikiOS Domain Types & Slugifier", () => {
     expect(toArticleSlug("Treaty of Oakhaven")).toBe("treaty_of_oakhaven");
     expect(toArticleSlug("Vesper__Republic")).toBe("vesper_republic");
     expect(toArticleSlug("  Capital City  ")).toBe("capital_city");
-  });
-});
-
-describe("WikiOS LinkGraphService", () => {
-  it("extracts internal wikitext links with labels and section anchors", () => {
-    const wikitext =
-      "The [[Treaty of Oakhaven|peace treaty]] was signed in [[Vesper#Constitution|the capital]].";
-    const links = LinkGraphService.extractLinks(wikitext);
-
-    expect(links).toHaveLength(2);
-    expect(links[0]!.targetSlug).toBe("treaty_of_oakhaven");
-    expect(links[0]!.anchorText).toBe("peace treaty");
-    expect(links[1]!.targetSlug).toBe("vesper");
-    expect(links[1]!.sectionAnchor).toBe("Constitution");
-  });
-
-  it("filters out File: and Category: links from internal article link graph", () => {
-    const wikitext = "[[File:Banner.png|thumb]] [[Category:Treaties]] See [[Vesper]].";
-    const links = LinkGraphService.extractLinks(wikitext);
-
-    expect(links).toHaveLength(1);
-    expect(links[0]!.targetSlug).toBe("vesper");
   });
 });
 
