@@ -84,6 +84,22 @@ describe("WikiOS Media Theme System", () => {
       expect(getStoredMediaThemeMode()).toBe("plinth");
     });
 
+    it("lasts the session when storage can be read but not written (the choice is not reverted)", () => {
+      jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("quota");
+      });
+      setStoredMediaThemeMode("plinth");
+      expect(localStorage.getItem("wikios-media-theme-mode")).toBeNull();
+      expect(getStoredMediaThemeMode()).toBe("plinth");
+      expect(document.documentElement.getAttribute("data-media-theme")).toBe("plinth");
+    });
+
+    it("lets what is stored win over the session's choice (another tab changed it)", () => {
+      setStoredMediaThemeMode("plinth");
+      localStorage.setItem("wikios-media-theme-mode", "auto");
+      expect(getStoredMediaThemeMode()).toBe("auto");
+    });
+
     it("lasts the session when the browser blocks storage", () => {
       jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
         throw new Error("blocked");

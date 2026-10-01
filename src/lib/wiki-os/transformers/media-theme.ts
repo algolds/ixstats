@@ -132,7 +132,10 @@ export function getStoredMediaThemeMode(): "auto" | "plinth" {
   if (typeof window === "undefined") return "auto";
   let mode = sessionMode;
   try {
-    mode = normalizeMediaMode(localStorage.getItem(MEDIA_THEME_STORAGE_KEY));
+    // Nothing stored (or nothing stored yet: storage that reads but cannot be written to keeps no choice)
+    // leaves the mode chosen this session standing.
+    const stored = localStorage.getItem(MEDIA_THEME_STORAGE_KEY);
+    if (stored !== null) mode = normalizeMediaMode(stored);
   } catch {
     // storage is blocked: the mode chosen this session stands
   }
