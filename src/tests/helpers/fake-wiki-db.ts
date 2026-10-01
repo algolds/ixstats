@@ -175,6 +175,7 @@ export interface FakeWikiDb {
   wikiWatchlist: Table;
   stash: Table;
   stashItem: Table;
+  systemConfig: Table;
   $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>, options?: TransactionOptions): Promise<T>;
   /**
    * Records the statement (its `?` placeholders) and its values; changes no table. `pg_advisory_xact_lock(hashtext(key))`
@@ -253,6 +254,7 @@ export function createFakeWikiDb() {
     wikiWatchlist: createTable(() => ({ notificationTime: null })),
     stash: createTable(),
     stashItem: createTable(),
+    systemConfig: createTable(),
   };
   const db: FakeWikiDb = {
     ...tables,

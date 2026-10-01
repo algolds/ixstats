@@ -10,7 +10,8 @@
  *
  * It runs from the `wiki-mirror` cron job (src/server/cron/jobs.ts, which holds the job lock) and in-process
  * shortly after a write (`scheduleMirrorKick`, which takes the same lock through `runMirrorCycleLocked`), so only
- * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate.
+ * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate. Once an hour a cycle
+ * also deletes the orphaned staged upload files (staged-uploads.ts).
  */
 
 import { db } from "~/server/db";
@@ -41,6 +42,7 @@ import {
   type RevisionBatchPlan,
 } from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
+import { sweepStagedOrphansIfDue } from "./staged-uploads";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
@@ -179,6 +181,10 @@ export async function runMirrorCycle({
   result.dead = dead;
   await purgeDoneJobs();
   await alertDeadJobs();
+  // a leftover file is not worth failing a cycle over
+  await sweepStagedOrphansIfDue().catch((error: unknown) =>
+    console.warn("[WikiMirror] Sweeping orphaned staged files failed:", error)
+  );
   return result;
 }
 

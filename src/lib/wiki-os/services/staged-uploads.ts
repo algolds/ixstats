@@ -16,7 +16,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { MediaAssetService } from "../core/media-asset-service";
 import { MIRROR_SOURCE } from "./mirror-outbox";
-import { releaseStaged } from "./upload-staging";
+import { listStaged, releaseStaged, removeStaleTemporaries } from "./upload-staging";
 
 type Tx = Prisma.TransactionClient;
 
@@ -72,4 +72,47 @@ export async function releaseStagedFileUnlessNeeded(
   if (await isStagedFileNeeded(tx, sha1, exceptJobId)) return false;
   await releaseStaged(sha1);
   return true;
+}
+
+/** A staged file nothing needs is an orphan once it is this old (a crash between staging and the commit leaves one). */
+export const STAGED_ORPHAN_AGE_MS = 24 * 60 * 60_000;
+
+/**
+ * Delete the staged files older than a day that no asset serves and no unfinished upload job names, and the temporary
+ * files of writes that never finished; resolves to how many staged files went. Each file is judged under its own
+ * lock (`withStagedFileLock`), so an upload that records its rows and writes the file at this moment is waited for, and
+ * its rows are seen.
+ */
+export async function sweepStagedOrphans(now = new Date()): Promise<number> {
+  const before = new Date(now.getTime() - STAGED_ORPHAN_AGE_MS);
+  await removeStaleTemporaries(before);
+  let released = 0;
+  for (const { sha1, modifiedAt } of await listStaged()) {
+    if (modifiedAt >= before) continue;
+    if (await withStagedFileLock(sha1, (tx) => releaseStagedFileUnlessNeeded(tx, sha1))) released++;
+  }
+  return released;
+}
+
+export const STAGED_SWEEP_INTERVAL_MS = 60 * 60_000;
+export const STAGED_SWEEP_KEY = "wikiMirror.stagedSweepAt";
+
+/**
+ * `sweepStagedOrphans`, at most once an hour (the time of the last one is kept in `SystemConfig`, as mirror-alerts.ts does for
+ * its warning); resolves to how many files went, or null when it was not due. The time is stored before the sweep, so one that
+ * fails waits for the next hour as well.
+ */
+export async function sweepStagedOrphansIfDue(now = new Date()): Promise<number | null> {
+  const row = await db.systemConfig.findUnique({
+    where: { key: STAGED_SWEEP_KEY },
+    select: { value: true },
+  });
+  const last = row ? new Date(row.value).getTime() : Number.NaN;
+  if (now.getTime() - last < STAGED_SWEEP_INTERVAL_MS) return null;
+  await db.systemConfig.upsert({
+    where: { key: STAGED_SWEEP_KEY },
+    create: { key: STAGED_SWEEP_KEY, value: now.toISOString() },
+    update: { value: now.toISOString() },
+  });
+  return sweepStagedOrphans(now);
 }

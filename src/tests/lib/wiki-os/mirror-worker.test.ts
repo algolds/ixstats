@@ -20,6 +20,7 @@ import { executeRevisionBatch, planRevisionBatch } from "~/lib/wiki-os/services/
 import { runPageJob } from "~/lib/wiki-os/services/mirror-page-ops";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
+import { sweepStagedOrphansIfDue } from "~/lib/wiki-os/services/staged-uploads";
 import { discordWebhook } from "~/lib/discord/webhook";
 import { withJobLock } from "~/lib/system/job-lock";
 
@@ -141,6 +142,9 @@ jest.mock("~/lib/discord/webhook", () => ({
   discordWebhook: { sendWarning: jest.fn().mockResolvedValue(undefined) },
 }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
+  sweepStagedOrphansIfDue: jest.fn(),
+}));
 
 const planBatch = jest.mocked(planRevisionBatch);
 const sendBatch = jest.mocked(executeRevisionBatch);
@@ -203,6 +207,7 @@ beforeEach(() => {
   });
   pageJob.mockResolvedValue(undefined);
   uploadJob.mockResolvedValue(undefined);
+  jest.mocked(sweepStagedOrphansIfDue).mockResolvedValue(null);
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
 });
 
@@ -443,6 +448,21 @@ describe("runMirrorCycle", () => {
     expect(result).toEqual({ skipped: true, done: 0, failed: 0, dead: 0 });
     expect(revisionJob).not.toHaveBeenCalled();
     expect(byId(waiting.id)).toMatchObject({ state: "pending", attempts: 0 });
+  });
+
+  it("looks for orphaned staged files at the end of a cycle (the sweep throttles itself), and a failing sweep does not fail the cycle", async () => {
+    addJob();
+
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+    expect(sweepStagedOrphansIfDue).toHaveBeenCalledTimes(1);
+
+    jest.mocked(sweepStagedOrphansIfDue).mockRejectedValue(new Error("disk unreadable"));
+    addJob();
+    await expect(runMirrorCycle()).resolves.toMatchObject({ done: 1, failed: 0 });
+    expect(console.warn).toHaveBeenCalledWith(
+      "[WikiMirror] Sweeping orphaned staged files failed:",
+      expect.objectContaining({ message: "disk unreadable" })
+    );
   });
 
   it("stops after maxJobs attempts, leaving the rest for the next run", async () => {

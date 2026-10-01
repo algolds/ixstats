@@ -8,7 +8,7 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { getUploadDir } from "~/lib/wiki-os/config";
 import { isFileHash } from "../core/file-hash";
 
@@ -51,4 +51,39 @@ export async function readStaged(sha1: string): Promise<Buffer | null> {
 /** Delete the staged copy of `sha1`; nothing happens when it is not there. */
 export async function releaseStaged(sha1: string): Promise<void> {
   await rm(pathOf(sha1), { force: true });
+}
+
+/** The staged files (hash-named) and when each was last written; an empty list when nothing was ever staged. */
+export async function listStaged(): Promise<Array<{ sha1: string; modifiedAt: Date }>> {
+  const names = await readdir(getUploadDir()).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  const staged = await Promise.all(
+    names.filter(isFileHash).map(async (sha1) => {
+      const file = await stat(pathOf(sha1)).catch(() => null);
+      return file?.isFile() ? { sha1, modifiedAt: file.mtime } : null;
+    })
+  );
+  return staged.filter((entry) => entry !== null);
+}
+
+/**
+ * Delete the temporary files of writes that never finished (a crash between `writeFile` and `rename`) that are older than
+ * `before`; resolves to how many. A live write takes seconds, so a day-old one is dead.
+ */
+export async function removeStaleTemporaries(before: Date): Promise<number> {
+  const names = await readdir(getUploadDir()).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  let removed = 0;
+  for (const name of names.filter((entry) => entry.endsWith(".tmp"))) {
+    const file = await stat(`${getUploadDir()}/${name}`).catch(() => null);
+    if (file?.isFile() && file.mtime < before) {
+      await rm(`${getUploadDir()}/${name}`, { force: true });
+      removed++;
+    }
+  }
+  return removed;
 }
