@@ -42,9 +42,9 @@ class BodyTooLarge extends Error {}
  * The request body, read while counting bytes: past `MAX_BODY_BYTES` the stream is cancelled and the
  * request refused, whatever the Content-Length header claims (or does not: a chunked body has none).
  */
-async function readBodyBytes(req: NextRequest): Promise<Uint8Array> {
+async function readBodyBytes(req: NextRequest): Promise<Uint8Array<ArrayBuffer>> {
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) throw new BodyTooLarge();
-  if (!req.body) return new Uint8Array();
+  if (!req.body) return new Uint8Array(0);
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
