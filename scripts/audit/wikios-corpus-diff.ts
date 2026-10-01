@@ -133,7 +133,7 @@ async function main(): Promise<number> {
 
   // The same drivers run in both trees: the target list is copied into the old checkout.
   const oldTargetsPath = join(oldDir, "scripts/audit/wikios-regex-fuzz-targets.ts");
-  copyFileSync(join(import.meta.dir, "wikios-regex-fuzz-targets.ts"), oldTargetsPath);
+  copyFileSync(join(import.meta.dirname, "wikios-regex-fuzz-targets.ts"), oldTargetsPath);
   const oldTargets = (await import(oldTargetsPath)).TARGETS as readonly Target[];
 
   // ---- the corpus ------------------------------------------------------------------------------------------------
