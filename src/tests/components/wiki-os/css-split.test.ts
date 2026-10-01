@@ -93,6 +93,20 @@ describe("fonts", () => {
     expect(layout).toContain("hostGrotesk.variable");
   });
 
+  it("declares --wikios-font-brand on the element that carries next/font's variable, where it resolves", () => {
+    // `--wikios-font-brand: var(--font-host-grotesk)` on :root takes :root's value of the variable, and
+    // next/font defines the hashed family only on the element with its class: the font never applied.
+    const layout = read("src/app/(wiki-os)/layout.tsx");
+    expect(layout).toMatch(/className=\{`\$\{hostGrotesk\.variable\} wikios-brand-scope`\}/);
+
+    const css = read("src/styles/wiki-os/foundations.css");
+    expect(css).toMatch(
+      /\.wikios-brand-scope\s*\{[^}]*--wikios-font-brand:\s*var\(--font-host-grotesk\)/
+    );
+    const root = /:root\s*\{[\s\S]*?\n\}/.exec(css)![0];
+    expect(root).not.toMatch(/--wikios-font-brand:[^;]*var\(--font-host-grotesk\)/);
+  });
+
   it("does not ask for the Azeret Mono 400 file that does not exist", () => {
     const typography = read("src/styles/typography.css");
     expect(typography).not.toContain("Azeret Mono-400.ttf");

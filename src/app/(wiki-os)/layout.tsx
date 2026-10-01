@@ -49,7 +49,7 @@ export default async function WikiosLayout({ children }: { children: React.React
     <MediaContextProvider>
       <MediaThemeProvider>
         <WikiChromePrefsProvider prefs={chromePrefs}>
-          <div className={hostGrotesk.variable}>
+          <div className={`${hostGrotesk.variable} wikios-brand-scope`}>
             <WikiHalo />
             {children}
             {!isStandalone && <MiniPlayer />}
