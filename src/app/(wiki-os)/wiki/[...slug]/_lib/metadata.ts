@@ -54,9 +54,10 @@ function articleMetadata(data: ArticleHtml): Metadata {
  * and point at the article. Another wiki's page is client-rendered and sets its own. Tool, special
  * and raw routes redirect, so they have none.
  *
- * A page that does not exist is `notFound()` here as well as in the page: the response streams
- * (the root loading.tsx sends the shell at once), so by the time the page says 404 the status line
- * is gone. Metadata is resolved before a crawler's response starts, so crawlers get the real 404.
+ * A page that does not exist is `notFound()` here as well as in the page, so the decision does not
+ * depend on which of the two Next resolves first. The 404, 307 and 308 status lines only survive
+ * because no `loading.tsx` sits above the wiki routes (a Suspense boundary there flushes the shell
+ * first and every status becomes 200; see the architecture test).
  */
 export async function articleTargetMetadata(
   target: ArticleTarget,
