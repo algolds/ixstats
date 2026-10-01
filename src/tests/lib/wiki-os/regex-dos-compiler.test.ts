@@ -812,7 +812,7 @@ describe("wikitext-parser: parseWikitextToHtml answers what it answered", () => 
   });
 
   it("serves a text over its ceiling as escaped source, with a notice, and compiles one at it", () => {
-    const over = `<b>${"a & b ".repeat(40_000)}`;
+    const over = `<b>${"a & b ".repeat(55_000)}`;
     expect(over.length).toBeGreaterThan(COMPILE_CEILING);
     const html = parseWikitextToHtml(over);
     expect(html.startsWith('<p class="wikios-fallback-notice">')).toBe(true);

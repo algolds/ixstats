@@ -320,13 +320,13 @@ export function stripWikitextFiles(text: string): string {
 }
 
 /**
- * ponytail: COMPILE_CEILING, 200,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
+ * ponytail: COMPILE_CEILING, 300,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
  * the in-process fallback for a page MediaWiki could not render (a reader's page or an old revision, an
  * editor preview) and compiles lore cards and feed excerpts in the browser. Page text is user-controlled
  * and up to 2,000,000 characters and the compiler is a chain of regular-expression passes, so above this
  * a text is shown as its escaped source (`plainFallbackHtml`): a hostile page costs one copy, not a compile.
  */
-export const COMPILE_CEILING = 200_000;
+export const COMPILE_CEILING = 300_000;
 
 /** The source of a page too large to compile: HTML-escaped in a `<pre>`, under a short notice. */
 export function plainFallbackHtml(wikitext: string): string {
