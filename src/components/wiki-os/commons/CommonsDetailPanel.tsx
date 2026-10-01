@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
+import { isMediaWikiUrl } from "~/lib/wiki-os/config";
 
 interface CommonsImage {
   pageid: number;
@@ -127,7 +128,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
   }, [image.url]);
 
   const handleStash = useCallback(() => {
-    const isLocal = image.descriptionUrl.includes("ixwiki.com");
+    const isLocal = isMediaWikiUrl(image.descriptionUrl);
     const isIiwiki = image.descriptionUrl.includes("iiwiki.com");
     let title = `commons:${image.title}`;
     if (isLocal) {
@@ -345,7 +346,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
                 className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-muted active:scale-95"
               >
                 <ExternalLink className="h-3 w-3" />
-                {image.descriptionUrl.includes("ixwiki.com")
+                {isMediaWikiUrl(image.descriptionUrl)
                   ? "View on IxWiki"
                   : image.descriptionUrl.includes("iiwiki.com")
                     ? "View on IIWiki"
@@ -362,7 +363,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
               className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-muted active:scale-95"
             >
               <ExternalLink className="h-3 w-3" />
-              {image.descriptionUrl.includes("ixwiki.com")
+              {isMediaWikiUrl(image.descriptionUrl)
                 ? "View on IxWiki"
                 : image.descriptionUrl.includes("iiwiki.com")
                   ? "View on IIWiki"

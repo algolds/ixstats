@@ -5,6 +5,13 @@ import { ChatBubble as MessageCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ForumLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
+
+/** A link to an article of IxWiki (by the configured public host) or IIWiki; group 1 is the host, group 2 the title. */
+const WIKI_ARTICLE_LINK = new RegExp(
+  `(?:https?:\\/\\/)?(${mediaWikiHostPattern()}|(?:www\\.)?iiwiki\\.com)\\/wiki\\/([^#?\\s)]+)`,
+  "i"
+);
 
 export function MyLeagueInlinePreview({ leagueId }: { leagueId: string }) {
   const { data: leagueData } = api.sports.getLeague.useQuery(
@@ -114,9 +121,7 @@ export function getInlinePreviewLink(content: string | null | undefined): string
   );
   if (myClubMatch) return myClubMatch[0];
 
-  const wikiMatch = content.match(
-    /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
-  );
+  const wikiMatch = content.match(WIKI_ARTICLE_LINK);
   if (wikiMatch) return wikiMatch[0];
 
   const forumMatch = content.match(
@@ -134,9 +139,7 @@ export function PostInlineLinkPreview({ url }: { url: string }) {
   const myClubMatch = url.match(
     /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)*(?:ixwiki\.com|localhost:\d+)?(?:\/projects\/ixstates)?\/myclub\/([a-zA-Z0-9_-]+)/i
   );
-  const wikiMatch = url.match(
-    /(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i
-  );
+  const wikiMatch = url.match(WIKI_ARTICLE_LINK);
   const forumMatch = url.match(
     /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
   );

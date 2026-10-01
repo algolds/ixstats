@@ -13,8 +13,16 @@ Nothing else may call an IxWiki MediaWiki. A read that is not on the list below 
 Postgres has nothing, the answer is "nothing", never a retry against MediaWiki.
 
 This document is enforced: `src/tests/architecture/mediawiki-dependencies-doc.test.ts` fails when a source file that
-names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_URL`, `NEXT_PUBLIC_MEDIAWIKI_URL`,
-`WIKIOS_MEDIAWIKI*`, `IXWIKI_LOCAL_PATH`) is not mentioned here. Adding a call site means adding a row.
+names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `mediaWikiOrigin` / `mediaWikiApiUrl` /
+`mediaWikiImageUrl` / `publicArticleUrl` / `isMediaWikiUrl` / `mediaWikiHostPattern`, `api.php`, `NEXT_PUBLIC_MEDIAWIKI_URL`,
+`WIKIOS_MEDIAWIKI*`) is not mentioned here. Adding a call site means adding a row.
+
+**One config object (plan 415, v1 decision D14).** The wiki's host, its endpoints and its name are read from the environment
+once, in `src/lib/wiki-os/config.ts` (`wikiosConfig`, frozen). `NEXT_PUBLIC_MEDIAWIKI_URL` is the public origin (default
+`https://ixwiki.com`, spelled nowhere else); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
+IxWiki's MediaWiki uses (`mediaWikiApiUrl({ internal: true })`, `getMediaWikiApiUrl("ixwiki")`); a URL a browser follows is built
+from the public origin (`mediaWikiOrigin()`, `publicArticleUrl(title)`, `mediaWikiImageUrl(path)`). A link detector builds its regular
+expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(url)`, `wikiTitleFromArticleUrl(url)`).
 
 ## Categories
 
@@ -114,7 +122,7 @@ These files implement or link to the MediaWiki-compatible API that WikiOS **serv
 
 ### url-only (no request)
 
-`src/lib/wiki-os/config.ts` (the URL constants and `getMediaWikiApiUrl`), `src/env.ts` (the environment variables),
+`src/lib/wiki-os/config.ts` (`wikiosConfig` and the URL helpers), `src/env.ts` (the environment variables),
 `src/lib/wiki-os/transformers/image-url.ts` and `src/lib/wiki-os/transformers/html-transformer.ts` (image and link URLs),
 `src/lib/wiki-os/core/media-asset-service.ts` (an asset's canonical file URL), `src/lib/cards/lore-card-ixwiki.ts` (the file
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
@@ -141,12 +149,14 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | `src/lib/flags/flag-resolver.server.ts` | iiwiki flag `imageinfo`. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
 
-### Files that only mention an ixwiki.com address (no request to MediaWiki)
+### Files that only build or recognise an IxWiki address (no request to MediaWiki)
 
-`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the literals `ixwiki.com`, `index.php` and `rest.php`.
-None of these files calls IxWiki's MediaWiki:
+`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the `config.ts` URL helpers and the literals
+`ixwiki.com`, `index.php` and `rest.php`. None of these files calls IxWiki's MediaWiki; the address comes from the one
+configuration object, never from a literal:
 
-- **Links and display URLs** to public IxWiki pages and files, built into an `href` or text: `src/app/(wiki-os)/util/repository/page.tsx`,
+- **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
+  `isMediaWikiUrl`): `src/app/(wiki-os)/util/repository/page.tsx`,
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
   `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
@@ -154,6 +164,11 @@ None of these files calls IxWiki's MediaWiki:
   `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
+- **Detectors of a link to an IxWiki page** in stored or fed text, built from the configured host (`mediaWikiHostPattern`,
+  `wikiTitleFromArticleUrl`), so they keep matching the old absolute links: `src/components/dashboard/sections/TrendingSectionWidget.tsx`,
+  `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
+  `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
+  `src/lib/cards/ns-image-proxy.ts`, `src/lib/forum/forum-utils.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/thinkpages/AccountCreationModal.tsx`,
   `src/lib/sports/transition.ts`.
 - **URL rewriting and referrer comments**: `src/app/(wiki-os)/wiki/layout.tsx`, `src/lib/wiki-os/transformers/fix-editor-images.ts`,

@@ -24,6 +24,7 @@ import {
   Eye,
   Group as Users,
 } from "iconoir-react";
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
 // ──────────────────────────────────────────────
@@ -34,11 +35,14 @@ type DetectedLink =
   | { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki"; x: number; y: number }
   | { kind: "forum"; threadId: number; x: number; y: number };
 
+/** An absolute link to an article of the wiki, by the configured public host. */
+const ABSOLUTE_WIKI_LINK = new RegExp(`(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`);
+
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string, rect: DOMRect): DetectedLink | null {
-  // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
+  // Wiki links: <public host>/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
   const ixMatch =
-    href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
+    href.match(ABSOLUTE_WIKI_LINK) ??
     href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??
     href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   if (ixMatch) {

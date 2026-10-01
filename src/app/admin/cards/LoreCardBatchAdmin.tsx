@@ -48,6 +48,7 @@ import {
 import type { CardRarity } from "@prisma/client";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { IIWikiBadge } from "~/components/cards/display/IIWikiLogo";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
 
@@ -1896,11 +1897,10 @@ export function LoreCardBatchAdmin() {
               <div className="border-border/60 bg-card/40 flex items-center justify-between border-t px-6 py-3.5">
                 {previewImage.wikiSource ? (
                   <a
-                    href={
-                      previewImage.wikiSource === "iiwiki"
-                        ? `https://iiwiki.com/wiki/${encodeURIComponent(previewImage.title.replace(/ /g, "_"))}`
-                        : `https://ixwiki.com/wiki/${encodeURIComponent(previewImage.title.replace(/ /g, "_"))}`
-                    }
+                    href={publicArticleUrl(
+                      previewImage.title,
+                      previewImage.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
+                    )}
                     target="_blank"
                     rel="noreferrer"
                     className="text-primary inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"

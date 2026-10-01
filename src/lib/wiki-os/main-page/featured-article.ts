@@ -10,6 +10,7 @@
 // once more on the way to the hero's `dangerouslySetInnerHTML`.
 
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { mediaWikiHostPattern } from "../config";
 import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "../transformers/image-url";
 import { parseInert, type InertFragment } from "../transformers/inert-dom";
 
@@ -22,6 +23,10 @@ const FEATURED_SELECTORS = [
   'section[class*="featured" i]',
   'div[class*="card" i]',
 ];
+
+/** An absolute link to an article of the wiki, as the Main Page wikitext spells it (an `/wiki/` link is relative). */
+const ABSOLUTE_WIKI_URL = `https?:\\/\\/${mediaWikiHostPattern()}\\/wiki\\/`;
+const ABSOLUTE_WIKI_HREF = new RegExp(`^${ABSOLUTE_WIKI_URL}`);
 
 /** A page this short with a paragraph in it is taken to be the card itself. */
 const WHOLE_PAGE_LIMIT = 2500;
@@ -69,8 +74,8 @@ function dressCard(root: Element | DocumentFragment): void {
     const href = el.getAttribute("href");
     if (href?.startsWith("/w/Special:MyLanguage/")) {
       el.setAttribute("href", `/wiki/${href.slice("/w/Special:MyLanguage/".length)}`);
-    } else if (href && /^https?:\/\/ixwiki\.com\/wiki\//.test(href)) {
-      el.setAttribute("href", href.replace(/^https?:\/\/ixwiki\.com\/wiki\//, "/wiki/"));
+    } else if (href && ABSOLUTE_WIKI_HREF.test(href)) {
+      el.setAttribute("href", href.replace(ABSOLUTE_WIKI_HREF, "/wiki/"));
     }
   }
 }
@@ -118,15 +123,16 @@ function decodeSegment(segment: string): string {
   }
 }
 
+const WIKI_HREF = `href="(?:\\/wiki\\/|${ABSOLUTE_WIKI_URL})([^">]+)"`;
+const HEADING_LINK = new RegExp(
+  `<h3[^>]*>[\\s\\S]*?<a[^>]+${WIKI_HREF}[^>]*>([\\s\\S]*?)<\\/a>[\\s\\S]*?<\\/h3>`,
+  "i"
+);
+const ANY_LINK = new RegExp(`<a[^>]+${WIKI_HREF}[^>]*>([\\s\\S]*?)<\\/a>`, "i");
+
 /** The title and slug of the link the card is about; its heading is the last resort. */
 function titleOf(cardHtml: string): { title: string; slug: string } {
-  const link =
-    cardHtml.match(
-      /<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i
-    ) ??
-    cardHtml.match(
-      /<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i
-    );
+  const link = cardHtml.match(HEADING_LINK) ?? cardHtml.match(ANY_LINK);
   if (link) {
     return {
       title: stripTags(link[2] ?? link[1] ?? ""),

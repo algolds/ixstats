@@ -21,7 +21,7 @@ import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/builder";
 import type { WikiSection } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
-import { type WikiSource } from "~/lib/wiki-os/config";
+import { publicArticleUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 /** Classification is a sensitivity scale, so it keeps a status colour (text only). */
 const CLASSIFICATION_STYLES = {
@@ -167,12 +167,6 @@ export function WikiSectionCard({
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {section.images.map((imageLink: string, index: number) => {
                     const fileName = imageLink.replace(/\[\[File:([^|\\]+).*\]\]/, "$1");
-                    let imgBaseUrl = "https://ixwiki.com/wiki/";
-                    if (wikiSource === "iiwiki") {
-                      imgBaseUrl = "https://iiwiki.com/wiki/";
-                    } else if (wikiSource === "althistory") {
-                      imgBaseUrl = "https://althistory.fandom.com/wiki/";
-                    }
                     const resolvedSrc = resolveImageUrl(fileName, wikiSource);
 
                     return (
@@ -182,7 +176,7 @@ export function WikiSectionCard({
                           if (wikiSource === "ixwiki") {
                             router.push(titleToWikiOSPath(`File:${fileName}`));
                           } else {
-                            window.open(`${imgBaseUrl}File:${fileName}`, "_blank");
+                            window.open(publicArticleUrl(`File:${fileName}`, wikiSource), "_blank");
                           }
                         }}
                         className="group border-border bg-muted hover:border-ring/40 relative aspect-video cursor-pointer overflow-hidden rounded-xl border shadow-sm transition-[background-color,border-color,transform] duration-150"

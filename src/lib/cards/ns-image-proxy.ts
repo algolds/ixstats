@@ -1,4 +1,8 @@
 import { withBasePath } from "~/lib/base-path";
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
+
+/** An absolute URL on the wiki's own host; group 1 is the path. */
+const IXWIKI_URL = new RegExp(`^https?:\\/\\/${mediaWikiHostPattern()}\\/(.+)$`, "i");
 
 /**
  * Converts a card artwork URL to use our proxy endpoint if needed.
@@ -19,7 +23,7 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
   }
 
   // Handle Wiki URLs
-  const ixwikiMatch = artworkUrl.match(/^https?:\/\/(?:www\.)?ixwiki\.com\/(.+)$/i);
+  const ixwikiMatch = artworkUrl.match(IXWIKI_URL);
   if (ixwikiMatch) {
     return withBasePath(`/api/mediawiki/ixwiki/${ixwikiMatch[1]}`);
   }

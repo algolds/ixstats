@@ -12,6 +12,7 @@
 import { PrismaClient } from "@prisma/client";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "../../src/lib/wiki-os/config";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
@@ -36,8 +37,7 @@ if (!IXWIKI_DB_PASSWORD) {
   process.exit(1);
 }
 const IXWIKI_DB_NAME = process.env.IXWIKI_DB_NAME || "ixwiki";
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
+const API_URL = mediaWikiApiUrl({ internal: true });
 
 async function fetchApi(params: Record<string, string>): Promise<any> {
   const url = new URL(API_URL);
@@ -47,7 +47,7 @@ async function fetchApi(params: Record<string, string>): Promise<any> {
   url.searchParams.set("format", "json");
 
   const res = await fetch(url.toString(), {
-    headers: { "User-Agent": "IxStats-Builder" },
+    headers: { "User-Agent": DEFAULT_USER_AGENT },
     signal: AbortSignal.timeout(15000),
   });
 

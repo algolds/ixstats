@@ -10,6 +10,7 @@ import {
   ForumLinkPreview,
 } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cn } from "~/lib/utils";
+import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
 
 export interface FeedItemHeaderProps {
   activity: any;
@@ -30,7 +31,7 @@ export interface FeedItemHeaderProps {
 }
 
 export function FeedExternalLink({ url }: { url: string }) {
-  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+  const wikiTitle = wikiTitleFromArticleUrl(url);
   const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
 
   const link = (
@@ -45,9 +46,9 @@ export function FeedExternalLink({ url }: { url: string }) {
     </a>
   );
 
-  if (wikiMatch) {
+  if (wikiTitle) {
     return (
-      <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">
+      <WikiLinkPreview title={wikiTitle} wiki="ixwiki">
         {link}
       </WikiLinkPreview>
     );
