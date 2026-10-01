@@ -9,6 +9,7 @@ import { runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sy
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { notificationAPI } from "~/lib/notifications/api";
+import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 
 const mockSystemConfigFindUnique = jest.fn();
@@ -49,15 +50,18 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
   MediaWikiExportWorker: { enqueue: jest.fn() },
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
+jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
   evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
 }));
 
 const HWM_KEY = "wikiAutoSync.rcHighWater";
+const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
 
 const importPageRevisions = jest.mocked(ArticleRepository.importPageRevisions);
 const enqueueExport = jest.mocked(MediaWikiExportWorker.enqueue);
 const notify = jest.mocked(notificationAPI.create);
+const applyEvent = jest.mocked(applyLogEvent);
 
 // ---------------------------------------------------------------------------
 // A fake MediaWiki: revisions by id, the newest revision of each title, a recent-changes queue
@@ -82,6 +86,14 @@ interface Change {
   timestamp: string;
 }
 
+interface FakeLogEvent {
+  logid: number;
+  type: string;
+  action: string;
+  title: string;
+  timestamp: string;
+}
+
 const change = (title: string, revid: number, second: number): Change => ({
   title,
   revid,
@@ -96,6 +108,7 @@ const sha1Hex = (text: string): string => createHash("sha1").update(text, "utf8"
 
 const realFetch = globalThis.fetch;
 let rcResponses: Array<{ changes: Change[]; next?: Record<string, string> }> = [];
+let logResponses: Array<{ events: FakeLogEvent[]; next?: Record<string, string> }> = [];
 let mwRevisions: Map<number, FakeRevision> = new Map();
 let failingRevisions = new Set<number>();
 
@@ -125,6 +138,13 @@ const fetchMock = jest.fn(async (input: RequestInfo | URL): Promise<Response> =>
       ...(next.next ? { continue: next.next } : {}),
     });
   }
+  if (params.get("list") === "logevents") {
+    const next = logResponses.shift() ?? { events: [] };
+    return jsonResponse({
+      query: { logevents: next.events },
+      ...(next.next ? { continue: next.next } : {}),
+    });
+  }
   const revid = Number(params.get("revids"));
   if (params.has("revids") && failingRevisions.has(revid)) return jsonResponse({}, 500);
   if (params.get("rvprop") === "ids|sha1") {
@@ -150,8 +170,17 @@ const rcCalls = (): URLSearchParams[] =>
     .map(([input]) => new URL(String(input)).searchParams)
     .filter((params) => params.get("list") === "recentchanges");
 
+const logCalls = (): URLSearchParams[] =>
+  fetchMock.mock.calls
+    .map(([input]) => new URL(String(input)).searchParams)
+    .filter((params) => params.get("list") === "logevents");
+
 const storedHighWater = (): string | undefined =>
   mockSystemConfigUpsert.mock.calls.at(-1)?.[0]?.update?.value;
+
+/** The high-water mark written under `key`, if any. */
+const highWaterWritten = (key: string): string | undefined =>
+  mockSystemConfigUpsert.mock.calls.find(([args]) => args.where.key === key)?.[0].update.value;
 
 // ---------------------------------------------------------------------------
 // A tiny Postgres: the article row and the head revision the sync reads
@@ -205,6 +234,7 @@ const storedHead = (mwRevId: number | null, over: Partial<StoredHead> = {}): Sto
 beforeEach(() => {
   jest.clearAllMocks();
   rcResponses = [];
+  logResponses = [];
   mwRevisions = new Map();
   failingRevisions = new Set();
   article = null;
@@ -214,6 +244,7 @@ beforeEach(() => {
 
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
+  applyEvent.mockResolvedValue("applied");
   mockArticleFindUnique.mockImplementation(async ({ where }) =>
     article && article.title === where.source_title.title ? article : null
   );
@@ -345,6 +376,118 @@ describe("the cycle", () => {
     expect(importPageRevisions).not.toHaveBeenCalled();
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
     expect(storedHighWater()).toBe("2026-09-27T10:00:01Z");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Log events (plan 406 B): their own high-water mark, one chronological order with the edits
+// ---------------------------------------------------------------------------
+
+describe("log events in the cycle", () => {
+  const logEvent = (type: string, action: string, title: string, logid: number, second: number): FakeLogEvent => ({
+    logid,
+    type,
+    action,
+    title,
+    timestamp: `2026-09-27T10:00:0${second}Z`,
+  });
+
+  it("reads log events from their own high-water mark, oldest first, and follows lecontinue", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T08:00:00Z" } : null
+    );
+    logResponses = [
+      { events: [logEvent("delete", "delete", "A", 1, 1)], next: { lecontinue: "y", continue: "-||" } },
+      { events: [logEvent("block", "block", "User:B", 2, 2)] },
+    ];
+
+    await runAutoSyncCycle();
+
+    const [first, second] = logCalls();
+    expect(first?.get("ledir")).toBe("newer");
+    expect(first?.get("lestart")).toBe("2026-09-27T08:00:00Z");
+    expect(first?.get("lelimit")).toBe("50");
+    expect(first?.get("leprop")).toContain("details");
+    expect(second?.get("lecontinue")).toBe("y");
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+  });
+
+  it("the first run asks for the newest events (reversed to oldest first) and writes the log mark", async () => {
+    logResponses = [{ events: [logEvent("move", "move", "B", 2, 2), logEvent("delete", "delete", "A", 1, 1)] }];
+
+    await runAutoSyncCycle();
+
+    const [params] = logCalls();
+    expect(params?.get("lelimit")).toBe("30");
+    expect(params?.get("ledir")).toBeNull();
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
+  });
+
+  it("applies edits and log events in the order MediaWiki recorded them, a log event first within one second", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    const order: string[] = [];
+    applyEvent.mockImplementation(async (e) => {
+      order.push(`log:${e.logid}`);
+      return "applied";
+    });
+    importPageRevisions.mockImplementation(async (input) => {
+      order.push(`edit:${input.revisions[0]?.mwRevId}`);
+      return { created: false, inserted: 1, filled: 0, skipped: 0, conflicts: 0, headUpdated: true };
+    });
+    rcResponses = [{ changes: [change("Foo", 11, 2), change("Foo", 12, 3)] }];
+    logResponses = [{ events: [logEvent("delete", "delete", "Foo", 7, 2), logEvent("move", "move", "Bar", 8, 4)] }];
+    mwRevisions = new Map([
+      [11, { title: "Foo", revid: 11 }],
+      [12, { title: "Foo", revid: 12 }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(order).toEqual(["log:7", "edit:11", "edit:12", "log:8"]);
+  });
+
+  it("does not advance the log mark past a failed event, still applies the edits, and holds the page's later events back", async () => {
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === LOG_HWM_KEY ? { value: "2026-09-27T08:00:00Z" } : { value: "2026-09-27T09:00:00Z" }
+    );
+    applyEvent.mockImplementation(async (e) => {
+      if (e.logid === 2) throw new Error("db down");
+      return "applied";
+    });
+    logResponses = [
+      {
+        events: [
+          logEvent("delete", "delete", "A", 1, 1),
+          logEvent("delete", "delete", "B", 2, 2),
+          logEvent("move", "move", "B", 3, 3),
+          logEvent("delete", "delete", "C", 4, 4),
+        ],
+      },
+    ];
+    rcResponses = [{ changes: [change("D", 20, 5)] }];
+    mwRevisions = new Map([[20, { title: "D", revid: 20 }]]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    expect(applyEvent.mock.calls.map(([e]) => e.logid)).toEqual([1, 2, 4]);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z");
+    expect(highWaterWritten(HWM_KEY)).toBe("2026-09-27T10:00:05Z");
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    consoleError.mockRestore();
+  });
+
+  it("an ignored or skipped event does not hold the mark back", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T08:00:00Z" });
+    applyEvent.mockResolvedValueOnce("ignored").mockResolvedValueOnce("skipped");
+    logResponses = [{ events: [logEvent("upload", "upload", "File:X", 1, 1), logEvent("move", "move", "A", 2, 2)] }];
+
+    await runAutoSyncCycle();
+
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:02Z");
   });
 });
 

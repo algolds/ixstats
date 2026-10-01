@@ -39,7 +39,6 @@ import {
   plainTitle,
   type MediaWikiRevision,
 } from "./inbound-mediawiki";
-import { evictWikiTitleCaches } from "./title-cache-eviction";
 
 const SOURCE = "ixwiki";
 const SUMMARY_COLUMN_LIMIT = 480;
@@ -60,6 +59,16 @@ export type RevisionOutcome =
   | "fast-forward"
   | "parked"
   | "deferred";
+
+/**
+ * Forget what every cache holds about `title` (a page that came back, was renamed or deleted). Loaded on
+ * demand: the eviction module reaches the article view cache, which imports this sync, so a static
+ * import would be a cycle at load time.
+ */
+export async function evictCaches(title: string, articleId?: string | null): Promise<void> {
+  const { evictWikiTitleCaches } = await import("./title-cache-eviction");
+  await evictWikiTitleCaches(title, SOURCE, articleId);
+}
 
 /** The MediaWiki account the mirror edits as: the bot-password login without its "@appname". */
 function mirrorBotName(): string | null {
@@ -265,7 +274,7 @@ async function fastForward(
 /** A page deleted in WikiOS and created again in MediaWiki is back. */
 async function restoreRecreatedPage(article: StoredArticle): Promise<void> {
   await db.wikiArticle.update({ where: { id: article.id }, data: { status: "PUBLISHED" } });
-  await evictWikiTitleCaches(article.title, SOURCE, article.id);
+  await evictCaches(article.title, article.id);
 }
 
 // ---------------------------------------------------------------------------

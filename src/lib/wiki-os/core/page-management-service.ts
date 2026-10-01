@@ -282,7 +282,7 @@ export class PageManagementService {
    * with the title). Rows already at the destination are stale and replaced. Returns the moved edit
    * restriction, if any.
    */
-  private static async moveRestrictions(
+  static async moveRestrictions(
     tx: Prisma.TransactionClient,
     realm: string,
     oldTitle: string,
