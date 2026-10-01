@@ -71,7 +71,6 @@ describe("pages", () => {
     expect(mdb.wikiArticle!.findMany!.mock.calls[0]![0].where).toEqual({
       source: "ixwiki",
       status: { not: "ARCHIVED" },
-      wikitext: { not: "" },
       title: { in: ["Alpha", "Gamma"] },
     });
     expect(rows).toEqual([
@@ -295,10 +294,15 @@ describe("listings", () => {
     expect(await store.listBacklinks({ target: "Bad[title", filterRedirects: "all", limit: 1 })).toEqual([]);
   });
 
-  it("allcategories: only categories with members, with their sizes", async () => {
-    mdb.wikiCategory!.findMany!.mockResolvedValue([{ name: "Cats", _count: { members: 3 } }]);
+  it("allcategories: one row per name, counting members that are not deleted pages", async () => {
+    mdb.$queryRaw.mockResolvedValue([{ name: "Cats", members: BigInt(3) }]);
     expect(await store.listCategories({ dir: "ascending", limit: 5, prefix: "C" })).toEqual([{ name: "Cats", members: 3 }]);
-    expect(mdb.wikiCategory!.findMany!.mock.calls[0]![0].where).toEqual({ members: { some: {} }, name: { startsWith: "C" } });
+    const sql = mdb.$queryRaw.mock.calls[0]![0] as { sql: string; values: unknown[] };
+    expect(sql.sql).toContain('GROUP BY c."name"');
+    expect(sql.sql).toContain(`a."status" <> 'ARCHIVED'`);
+    expect(sql.sql).toContain("ORDER BY");
+    expect(sql.values).toContain("C");
+    expect(sql.values).toContain(6);
   });
 
   it("log events: the type, action, title and the time cursor, mapped to plain rows", async () => {

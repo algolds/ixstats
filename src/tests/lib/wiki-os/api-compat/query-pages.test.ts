@@ -5,7 +5,7 @@
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
-import { call, fakeWiki, makeDeps, type FakeWikiData } from "./harness";
+import { call, fakeSha1Hex, fakeWiki, makeDeps, type FakeWikiData } from "./harness";
 
 type Body = Record<string, any>;
 
@@ -221,11 +221,11 @@ describe("prop=revisions", () => {
       user: "Heku",
       userid: 7,
       size: 17,
-      sha1: "sha1-103",
+      sha1: fakeSha1Hex(103),
       comment: "more <b>",
       parsedcomment: "more &lt;b&gt;",
       tags: [],
-      slots: { main: { size: 17, sha1: "sha1-103" } },
+      slots: { main: { size: 17, sha1: fakeSha1Hex(103) } },
     });
   });
 

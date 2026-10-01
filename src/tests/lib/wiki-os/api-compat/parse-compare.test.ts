@@ -2,7 +2,7 @@
 /** Plan 410: action=parse (stored render vs private renderer), action=compare and action=opensearch. */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
-import { call, makeWikiDeps, type FakeWikiData } from "./harness";
+import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 
 type Body = Record<string, any>;
 
@@ -45,6 +45,14 @@ async function run(params: string, version = "formatversion=2") {
   return { body, calls: wiki.calls };
 }
 
+/** The same request from a bot-password session: `parse&text=` needs one. */
+async function runBot(params: string, version = "formatversion=2") {
+  const wiki = await makeWikiDeps(data());
+  await loggedIn(wiki.bot);
+  const body = (await wiki.bot.get(Object.fromEntries(new URLSearchParams(`${params}&${version}`)))) as Body;
+  return { body, calls: wiki.calls };
+}
+
 describe("action=parse", () => {
   it("serves the stored rendering of a page without calling the renderer", async () => {
     const { body, calls } = await run("action=parse&page=Alpha&prop=text|revid");
@@ -61,15 +69,41 @@ describe("action=parse", () => {
   it("renders the page's wikitext through the private renderer when the stored one is stale", async () => {
     const { body, calls } = await run("action=parse&page=Stale&prop=text");
     expect(body.parse.text).toBe("<p>rendered(Stale): stale wikitext</p>");
-    expect(calls.find((c) => c.name === "renderWikitext")!.args).toEqual(["stale wikitext", "Stale"]);
+    // the render service renders and stores it (single-flight); the response is what it stored
+    expect(calls.find((c) => c.name === "ensureRendered")!.args).toEqual(["art:Stale"]);
+    expect(calls.filter((c) => c.name === "renderWikitext")).toHaveLength(0);
   });
 
   it("renders given text with a title (default API), and refuses another content model", async () => {
-    const { body, calls } = await run("action=parse&text=%27%27hi%27%27&title=Sandbox&contentmodel=wikitext&prop=text");
+    const { body, calls } = await runBot("action=parse&text=%27%27hi%27%27&title=Sandbox&contentmodel=wikitext&prop=text");
     expect(body.parse).toEqual({ title: "Sandbox", pageid: 0, text: "<p>rendered(Sandbox): ''hi''</p>" });
     expect(calls.filter((c) => c.name === "renderWikitext")).toHaveLength(1);
-    expect((await run("action=parse&text=x&prop=text")).body.parse.title).toBe("API");
-    expect((await run("action=parse&text=x&contentmodel=json")).body.error.code).toBe("badvalue");
+    expect((await runBot("action=parse&text=x&prop=text")).body.parse.title).toBe("API");
+    expect((await runBot("action=parse&text=x&contentmodel=json")).body.error.code).toBe("badvalue");
+  });
+
+  it("refuses text= without a bot-password session (permissiondenied), and past 200,000 characters (toobig)", async () => {
+    const anonymous = await run("action=parse&text=%27%27hi%27%27&prop=text");
+    expect(anonymous.body.error.code).toBe("permissiondenied");
+    expect(anonymous.calls.filter((c) => c.name === "renderWikitext")).toHaveLength(0);
+    expect((await runBot(`action=parse&text=${"a".repeat(200_001)}&prop=text`)).body.error.code).toBe("toobig");
+    expect((await runBot(`action=parse&text=${"a".repeat(200_000)}&prop=text`)).body.parse.text).toContain("rendered(API)");
+  });
+
+  it("keeps page=, pageid= and oldid= open to everyone", async () => {
+    expect((await run("action=parse&page=Alpha&prop=text")).body.parse.title).toBe("Alpha");
+    expect((await run("action=parse&pageid=1&prop=text")).body.parse.title).toBe("Alpha");
+    expect((await run("action=parse&oldid=11&prop=text")).body.parse.title).toBe("Alpha");
+  });
+
+  it("limits what one parse lists and renders old revisions of anonymous callers through the render bucket", async () => {
+    const wiki = await makeWikiDeps(data(), {
+      extra: { rateLimit: async (_key, bucket) => ({ success: bucket !== "wiki_api_render", resetAt: new Date(0) }) },
+    });
+    const refused = (await call(wiki.deps, "action=parse&oldid=11&prop=text&formatversion=2")).body as Body;
+    expect(refused.error.code).toBe("ratelimited");
+    // a page with a fresh stored rendering costs no render and no bucket
+    expect(((await call(wiki.deps, "action=parse&page=Alpha&prop=text&formatversion=2")).body as Body).parse.text).toBe("<p>stored html of Alpha</p>");
   });
 
   it("renders an old revision", async () => {
@@ -98,7 +132,7 @@ describe("action=parse", () => {
     const v1 = await run("action=parse&page=Alpha&prop=categories", "format=json");
     expect(v1.body.parse.categories).toEqual([{ sortkey: "", "*": "Cats" }, { sortkey: "", "*": "Dogs" }]);
     // given text has no stored page: categories come from its links, with their sort keys
-    const text = await run(`action=parse&text=${encodeURIComponent("[[Category:Big cats|zz]] [[:Category:Not a member]] [[Category:Big cats]]")}&prop=categories`);
+    const text = await runBot(`action=parse&text=${encodeURIComponent("[[Category:Big cats|zz]] [[:Category:Not a member]] [[Category:Big cats]]")}&prop=categories`);
     expect(text.body.parse.categories).toEqual([{ sortkey: "zz", category: "Big_cats", hidden: false }]);
   });
 
@@ -169,10 +203,22 @@ describe("action=compare", () => {
       totitle: "Alpha",
       body: "<tr><td>old text</td><td>" + PAGE_TEXT + "</td></tr>",
     });
-    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT]);
+    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT, { maxOutputChars: 2 * 1024 * 1024 }]);
     const v1 = await run("action=compare&fromrev=11&torev=21", "format=json");
     expect(v1.body.compare["*"]).toBe("<tr><td>old text</td><td>beta</td></tr>");
     expect(v1.body.compare.body).toBeUndefined();
+  });
+
+  it("refuses fromtext or totext over 200,000 characters, and a diff over 2 MB, with toobig", async () => {
+    const big = "a".repeat(200_001);
+    const post = (params: Record<string, string>, services = {}) =>
+      makeWikiDeps(data(), { services }).then(async (wiki) => (await call(wiki.deps, "action=compare&formatversion=2", { method: "POST", body: params })).body as Body);
+    expect((await post({ fromtext: big, totext: "b" })).error.code).toBe("toobig");
+    expect((await post({ fromtext: "a", totext: big })).error.code).toBe("toobig");
+    expect((await post({ fromtext: "a".repeat(200_000), totext: "b" })).error).toBeUndefined();
+    const { DiffTooLarge } = await import("~/lib/wiki-os/transformers/wikitext-diff");
+    const tooLarge = await post({ fromtext: "a", totext: "b" }, { diff: () => { throw new DiffTooLarge(); } });
+    expect(tooLarge.error.code).toBe("toobig");
   });
 
   it("compares the newest revisions of two titles and adds the requested props", async () => {

@@ -2,7 +2,7 @@
 /** Plan 410: list modules and generators, with continuation walked to the end. */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
-import { call, fakeWiki, makeDeps, type FakeWikiData } from "./harness";
+import { call, fakeSha1Hex, fakeWiki, makeDeps, type FakeWikiData } from "./harness";
 import type { ApiDeps } from "~/lib/wiki-os/api-compat/types";
 
 type Body = Record<string, any>;
@@ -259,7 +259,7 @@ describe("list=recentchanges", () => {
       newlen: 8,
       comment: "edit A again <3",
       parsedcomment: "edit A again &lt;3",
-      sha1: "sha1-15",
+      sha1: fakeSha1Hex(15),
       tags: [],
     });
     expect(anon).toMatchObject({ type: "new", user: "1.2.3.4", anon: true, new: true });
@@ -432,8 +432,9 @@ describe("list=allcategories, allusers, blocks, protectedtitles, random", () => 
     expect(body.query.blocks).toEqual([
       { user: "Spammer", by: "Heku", timestamp: "2026-03-01T00:00:00Z", expiry: "infinity", reason: "spam", automatic: false, anononly: false, nocreate: false, autoblock: false, noemail: false, hidden: false, allowusertalk: true, partial: false },
     ]);
-    expect(body.continue).toEqual({ bkcontinue: "1", continue: "-||" });
-    expect((await run("list=blocks&bklimit=1&bkcontinue=1")).query.blocks[0].user).toBe("Troll");
+    expect(body.continue).toEqual({ bkcontinue: "block-id-1", continue: "-||" });
+    expect((await run("list=blocks&bklimit=1&bkcontinue=block-id-1")).query.blocks[0].user).toBe("Troll");
+    expect((await run("list=blocks&bkcontinue=%24%25")).error.code).toBe("badcontinue");
     expect((await run("list=blocks&bkdir=newer")).error.code).toBe("badvalue");
   });
 

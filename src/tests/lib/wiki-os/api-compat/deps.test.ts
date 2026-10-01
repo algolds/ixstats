@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /** Plan 410: createApiDeps binds each api.php service to the function the tRPC routers call. */
-jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
+jest.mock("~/server/db", () => ({ __esModule: true, db: { wikiArticle: { findMany: jest.fn() } } }));
 jest.mock("~/lib/cache/rate-limiter", () => ({ rateLimiter: { check: jest.fn().mockResolvedValue({ success: true, resetAt: new Date(0) }) } }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({ __esModule: true, wikitextToHtml: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({ __esModule: true, detectEditConflict: jest.fn() }));
@@ -33,6 +33,7 @@ jest.mock("~/lib/wiki-os/services/edit-service", () => ({
   requireRestorableWikitext: jest.fn(),
 }));
 
+import { db } from "~/server/db";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
@@ -89,12 +90,13 @@ describe("createApiDeps", () => {
     expect(detectEditConflict).toHaveBeenCalledWith("Alpha", "101");
   });
 
-  it("searches titles by prefix and text by full-text, with paging", async () => {
-    jest.mocked(NativeSearchService.spotlightSearch).mockResolvedValue([
-      { title: "A", snippet: "a" }, { title: "B", snippet: "b" }, { title: "C", snippet: "c" },
-    ] as never);
-    expect(await deps.search("x", "title", 2, 1)).toEqual({ hits: [{ title: "B", snippet: "b" }, { title: "C", snippet: "c" }], total: 3 });
-    expect(NativeSearchService.spotlightSearch).toHaveBeenCalledWith("x", "ixwiki", 3);
+  it("searches titles from the title column only, and text by full-text, with paging", async () => {
+    jest.mocked(db.wikiArticle.findMany).mockResolvedValue([{ title: "B" }, { title: "C" }] as never);
+    expect(await deps.search("x", "title", 2, 1)).toEqual({ hits: [{ title: "B", snippet: "" }, { title: "C", snippet: "" }], total: 3 });
+    expect(db.wikiArticle.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 1, take: 2, select: { title: true }, where: expect.objectContaining({ title: { contains: "x", mode: "insensitive" } }) })
+    );
+    expect(NativeSearchService.spotlightSearch).not.toHaveBeenCalled();
     jest.mocked(NativeSearchService.fulltextSearch).mockResolvedValue({ results: [{ title: "D", snippet: "d" }], total: 9 } as never);
     expect(await deps.search("y", "text", 5, 10)).toEqual({ hits: [{ title: "D", snippet: "d" }], total: 9 });
     expect(NativeSearchService.fulltextSearch).toHaveBeenCalledWith("y", "ixwiki", 5, 10);

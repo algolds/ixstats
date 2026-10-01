@@ -28,12 +28,13 @@ import {
   clearedSessionCookie,
   generateBotPassword,
   hashBotPassword,
-  isLoginNonce,
+  MAX_SESSIONS_PER_BOT_PASSWORD,
   loginNonceCookie,
   loginToken,
   loginWithBotPassword,
   newLoginNonce,
   readCookie,
+  readLoginNonce,
   readSessionCookie,
   resolveSession,
   serializeCookie,
@@ -65,6 +66,7 @@ function storeWith(overrides: Partial<AuthStore> = {}): jest.Mocked<AuthStore> {
     createSession: jest.fn().mockResolvedValue(undefined),
     findSession: jest.fn().mockResolvedValue(null),
     extendSession: jest.fn().mockResolvedValue(undefined),
+    pruneSessions: jest.fn().mockResolvedValue(undefined),
     deleteSession: jest.fn().mockResolvedValue(undefined),
     findWebUser: jest.fn().mockResolvedValue(null),
     ...overrides,
@@ -196,13 +198,26 @@ describe("session cookie and tokens", () => {
     expect(tokenIsValid(anonymous, "csrf", sessionToken("s1", "csrf"))).toBe(false);
   });
 
-  it("derives the login token from a nonce", () => {
-    const nonce = newLoginNonce();
-    expect(isLoginNonce(nonce)).toBe(true);
-    expect(isLoginNonce("short")).toBe(false);
-    expect(isLoginNonce(undefined)).toBe(false);
+  it("derives the login token from a signed nonce, and refuses a forged, tampered or expired one", () => {
+    const nonce = newLoginNonce(NOW);
+    expect(readLoginNonce(nonce, NOW)).toBe(nonce);
+    expect(readLoginNonce(undefined, NOW)).toBeNull();
+    expect(readLoginNonce("short", NOW)).toBeNull();
+    expect(readLoginNonce(`${nonce}x`, NOW)).toBeNull();
+    const [issued, random, signature] = nonce.split(".") as [string, string, string];
+    expect(readLoginNonce(`${issued}.${random}.${signature.split("").reverse().join("")}`, NOW)).toBeNull();
+    // a nonce a client made up, with a valid-looking shape
+    expect(readLoginNonce(`${issued}.${"0".repeat(32)}.${signature}`, NOW)).toBeNull();
     expect(loginToken(nonce)).toBe(loginToken(nonce));
-    expect(loginToken(nonce)).not.toBe(loginToken(newLoginNonce()));
+    expect(loginToken(nonce)).not.toBe(loginToken(newLoginNonce(NOW)));
+  });
+
+  it("expires a login nonce after ten minutes", () => {
+    const nonce = newLoginNonce(NOW);
+    expect(readLoginNonce(nonce, new Date(NOW.getTime() + 9 * 60 * 1000))).toBe(nonce);
+    expect(readLoginNonce(nonce, new Date(NOW.getTime() + 10 * 60 * 1000 + 1000))).toBeNull();
+    // one stamped well in the future is not one this server made
+    expect(readLoginNonce(nonce, new Date(NOW.getTime() - 5 * 60 * 1000))).toBeNull();
   });
 });
 
@@ -228,7 +243,7 @@ describe("cookies", () => {
 
   it("clears a cookie with Max-Age=0 and sets a short-lived login nonce", () => {
     expect(serializeCookie(clearedSessionCookie("/w/"))).toContain("Max-Age=0");
-    expect(loginNonceCookie("n", "/w/").maxAgeSeconds).toBe(900);
+    expect(loginNonceCookie("n", "/w/").maxAgeSeconds).toBe(600);
   });
 
   it("reads a cookie out of a Cookie header", () => {
@@ -264,6 +279,9 @@ describe("loginWithBotPassword", () => {
     expect(created).toMatchObject({ botPasswordId: "bp1", userId: "u1" });
     expect(created.expiresAt.getTime()).toBe(NOW.getTime() + SESSION_TTL_MS);
     expect(store.touchBotPassword).toHaveBeenCalledWith("bp1", NOW);
+    // expired sessions go, and the bot password keeps at most 20
+    expect(store.pruneSessions).toHaveBeenCalledWith("bp1", NOW, MAX_SESSIONS_PER_BOT_PASSWORD);
+    expect(MAX_SESSIONS_PER_BOT_PASSWORD).toBe(20);
     if (outcome.result === "Success") {
       expect(readSessionCookie(outcome.cookie.value)).toBe(created.id);
       expect(outcome.cookie.path).toBe("/w/");

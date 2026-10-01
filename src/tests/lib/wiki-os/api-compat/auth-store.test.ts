@@ -6,7 +6,7 @@ jest.mock("~/server/db", () => ({
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
     wikiBotPassword: { findUnique: jest.fn(), update: jest.fn() },
-    wikiApiSession: { create: jest.fn(), findUnique: jest.fn(), updateMany: jest.fn(), deleteMany: jest.fn() },
+    wikiApiSession: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), deleteMany: jest.fn() },
   },
 }));
 
@@ -17,7 +17,7 @@ const mdb = db as unknown as {
   user: { findUnique: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
   wikiBotPassword: { findUnique: jest.Mock; update: jest.Mock };
-  wikiApiSession: Record<"create" | "findUnique" | "updateMany" | "deleteMany", jest.Mock>;
+  wikiApiSession: Record<"create" | "findUnique" | "findMany" | "updateMany" | "deleteMany", jest.Mock>;
 };
 
 const userRow = { id: "u1", clerkUserId: "user_clerk", createdAt: new Date("2020-01-01T00:00:00Z"), role: { id: "r", name: "admin", level: 1 } };
@@ -106,5 +106,25 @@ describe("prismaAuthStore", () => {
     expect(mdb.user.findUnique.mock.calls[0]![0].where).toEqual({ clerkUserId: "user_clerk" });
     mdb.user.findUnique.mockResolvedValueOnce(null);
     expect(await prismaAuthStore.findWebUser("user_unknown")).toBeNull();
+  });
+});
+
+describe("pruneSessions", () => {
+  const now = new Date("2026-09-30T12:00:00Z");
+
+  it("deletes expired sessions, and the oldest ones past the cap for that bot password", async () => {
+    mdb.wikiApiSession.findMany.mockResolvedValue([{ id: "old1" }, { id: "old2" }]);
+    await prismaAuthStore.pruneSessions("bp1", now, 20);
+    expect(mdb.wikiApiSession.deleteMany).toHaveBeenNthCalledWith(1, { where: { expiresAt: { lt: now } } });
+    expect(mdb.wikiApiSession.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { botPasswordId: "bp1" }, orderBy: { createdAt: "desc" }, skip: 20, select: { id: true } })
+    );
+    expect(mdb.wikiApiSession.deleteMany).toHaveBeenNthCalledWith(2, { where: { id: { in: ["old1", "old2"] } } });
+  });
+
+  it("deletes nothing more when the bot password is within its cap", async () => {
+    mdb.wikiApiSession.findMany.mockResolvedValue([]);
+    await prismaAuthStore.pruneSessions("bp1", now, 20);
+    expect(mdb.wikiApiSession.deleteMany).toHaveBeenCalledTimes(1);
   });
 });

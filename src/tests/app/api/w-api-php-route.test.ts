@@ -120,6 +120,72 @@ describe("POST bodies", () => {
   });
 });
 
+describe("the body limit is enforced while streaming", () => {
+  const MB = 1024 * 1024;
+
+  /** A body of `totalBytes` in 1 MB chunks that counts how many chunks were pulled and sends no Content-Length. */
+  function chunkedBody(totalBytes: number, prefix = "") {
+    const state = { pulled: 0 };
+    let sent = 0;
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent >= totalBytes) return controller.close();
+        const chunk = sent === 0 && prefix ? encoder.encode(prefix + "x".repeat(MB - prefix.length)) : encoder.encode("x".repeat(MB));
+        sent += MB;
+        state.pulled++;
+        controller.enqueue(chunk);
+      },
+    });
+    return { stream, state };
+  }
+
+  const post = (body: BodyInit, headers: Record<string, string>) =>
+    route.POST(new NextRequest(url(), { method: "POST", headers, body, duplex: "half" } as ConstructorParameters<typeof NextRequest>[1]));
+
+  it("answers 413 toobig to a chunked 30 MB urlencoded body, and stops reading it", async () => {
+    const { stream, state } = chunkedBody(30 * MB, "action=edit&text=");
+    const response = await post(stream, { "content-type": "application/x-www-form-urlencoded" });
+    expect(response.status).toBe(413);
+    expect(response.headers.get("mediawiki-api-error")).toBe("toobig");
+    expect((await json(response)).error.code).toBe("toobig");
+    expect(state.pulled).toBeLessThan(12);
+  });
+
+  it("answers 413 toobig to a chunked 30 MB multipart body", async () => {
+    const boundary = "xBOUNDARYx";
+    const { stream, state } = chunkedBody(30 * MB, `--${boundary}\r\nContent-Disposition: form-data; name="text"\r\n\r\n`);
+    const response = await post(stream, { "content-type": `multipart/form-data; boundary=${boundary}` });
+    expect(response.status).toBe(413);
+    expect((await json(response)).error.code).toBe("toobig");
+    expect(state.pulled).toBeLessThan(12);
+  });
+
+  it("does not trust a Content-Length that undersells the body", async () => {
+    const { stream } = chunkedBody(30 * MB, "action=edit&text=");
+    const response = await post(stream, { "content-type": "application/x-www-form-urlencoded", "content-length": "20" });
+    expect(response.status).toBe(413);
+    expect((await json(response)).error.code).toBe("toobig");
+  });
+
+  it("refuses an honest oversized Content-Length with 413 before reading anything", async () => {
+    const response = await post("action=query", { "content-type": "application/x-www-form-urlencoded", "content-length": String(5 * MB) });
+    expect(response.status).toBe(413);
+  });
+
+  it("still reads a body just under the limit", async () => {
+    const response = await post(`action=query&meta=tokens&format=json&pad=${"x".repeat(3 * MB)}`, { "content-type": "application/x-www-form-urlencoded" });
+    expect(response.status).toBe(200);
+    expect((await json(response)).query.tokens.csrftoken).toBe("+\\");
+  });
+
+  it("answers a multipart body the parser cannot read with 400 badrequest, never a 500", async () => {
+    const response = await post("not multipart at all", { "content-type": "multipart/form-data; boundary=xx" });
+    expect(response.status).toBe(400);
+    expect((await json(response)).error.code).toBe("badrequest");
+  });
+});
+
 describe("the session cookie", () => {
   it("is HttpOnly, SameSite=Lax and scoped to the script's directory, and logs the next request in", async () => {
     const { cookie, setCookie } = await login();

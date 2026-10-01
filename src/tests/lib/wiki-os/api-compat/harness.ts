@@ -55,6 +55,7 @@ export async function fakeAuthStore(
       return session ? { session, user: HEKU } : null;
     },
     extendSession: async () => undefined,
+    pruneSessions: async () => undefined,
     deleteSession: async (id) => {
       sessions.delete(id);
     },
@@ -234,6 +235,10 @@ export interface FakeWikiData {
 
 const byteLength = (text: string) => Buffer.byteLength(text, "utf8");
 
+/** A MediaWiki-style (base 36, 31 digit) revision hash that differs per revision. */
+export const fakeSha1 = (revId: number) => revId.toString(36).padStart(31, "0");
+export const fakeSha1Hex = (revId: number) => BigInt(`0x${revId.toString(16)}`).toString(16).padStart(40, "0");
+
 /** An `ApiStore` over plain arrays, with the same ordering and cursor rules as the Prisma store. */
 export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): ApiStore {
   const state = { get pages() { return (data.pages ?? []).filter((page) => !page.deleted); } };
@@ -282,7 +287,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       minor: rev.minor ?? false,
       size: byteLength(rev.content ?? ""),
       sizeDiff: byteLength(rev.content ?? "") - (index > 0 ? byteLength(history[index - 1]!.content ?? "") : 0),
-      sha1: rev.sha1 ?? "sha1-" + rev.revId,
+      sha1: rev.sha1 ?? fakeSha1(rev.revId),
       content: rev.textHidden || !withContent ? null : (rev.content ?? ""),
       textHidden: rev.textHidden ?? false,
       commentHidden: rev.commentHidden ?? false,
@@ -496,11 +501,12 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
     },
     listBlocks: async (limit, cursor) => {
       const all = data.blocks ?? [];
-      const start = cursor ? Number(cursor) : 0;
+      // A real cursor is a row id (letters and digits, 8 or more characters).
+      const start = cursor ? Number(cursor.replace("block-id-", "")) : 0;
       const slice = all.slice(start, start + limit);
       return {
         blocks: slice.map((b) => ({ target: b.target, reason: b.reason ?? null, expiresAt: b.expiresAt ? new Date(b.expiresAt) : null, allowUserTalk: true, blockedBy: b.blockedBy ?? null, createdAt: new Date(b.createdAt) })),
-        nextCursor: start + limit < all.length ? String(start + limit) : null,
+        nextCursor: start + limit < all.length ? `block-id-${start + limit}` : null,
       };
     },
     listProtectedTitles: async (q) => {
@@ -560,6 +566,13 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
   let nextRevId = 9000;
   const services: ApiServices = {
     renderWikitext: record("renderWikitext", async (wikitext: string, title: string) => `<p>rendered(${title}): ${wikitext}</p>`),
+    ensureRendered: record("ensureRendered", async (articleId: string) => {
+      // The render service stores the rendering: the page then has a fresh HTML.
+      const title = articleId.slice("art:".length);
+      const page = (data.pages ?? []).find((p) => p.title === title);
+      (data.html ??= {})[title] = `<p>rendered(${title}): ${page?.wikitext ?? ""}</p>`;
+    }),
+    purgePage: record("purgePage", async () => undefined),
     diff: record("diff", (a: string, b: string) => `<tr><td>${a}</td><td>${b}</td></tr>`),
     assertCanEdit: record("assertCanEdit", async () => undefined),
     authorize: record("authorize", async () => undefined),
