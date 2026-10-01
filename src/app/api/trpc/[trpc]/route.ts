@@ -4,7 +4,6 @@ import { type NextRequest } from "next/server";
 import { env } from "~/env";
 import { appRouter } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
-import { readCacheResponseMeta } from "~/lib/wiki-os/http-cache";
 
 export const runtime = "nodejs";
 
@@ -22,8 +21,6 @@ const handler = (req: NextRequest) =>
     req,
     router: appRouter,
     createContext: () => createContext(req),
-    // An anonymous read of an article or the Main Page may sit in the CDN for a few seconds
-    responseMeta: readCacheResponseMeta(req),
     onError:
       env.NODE_ENV === "development"
         ? ({ path, error }) => {

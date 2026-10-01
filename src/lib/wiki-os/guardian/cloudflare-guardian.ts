@@ -49,8 +49,15 @@ export class CloudflareGuardian {
           "Content-Type": "application/json",
         },
         // One purge type per request: `files` only. (`tags` is an Enterprise feature, and a body
-        // naming both is refused.) The tRPC read URLs are never purged: they expire on their own, see
-        // PUBLIC_READ_CACHE_CONTROL's stale-while-revalidate in lib/wiki-os/http-cache.ts.
+        // naming both is refused.)
+        //
+        // ponytail: only the page URLs are cached at the edge; /api/trpc sends no shared-cache
+        // headers. The app's client is stream-only (httpBatchStreamLink, `trpc-accept:
+        // application/jsonl`), a streamed response commits its headers before any procedure runs, and
+        // Cloudflare ignores `Vary`, so a plain-JSON body cached under a tRPC URL could be served to
+        // the streaming client. If edge caching of getArticleHtml / getMainPage is ever wanted
+        // (follow-up F24): a splitLink to httpBatchLink for those two procedures, plus a CDN cache key
+        // on `trpc-accept`.
         body: JSON.stringify({ files: purgeUrls }),
         signal: AbortSignal.timeout(3000),
       });

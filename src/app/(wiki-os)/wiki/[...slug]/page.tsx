@@ -25,8 +25,8 @@ import { specialView } from "./_views/special-views";
 // ponytail: this page is never shared-cacheable (no `s-maxage`, even for an anonymous reader). The
 // request's CSP nonce is part of its HTML (src/proxy.ts puts it on Next's inline scripts), so a copy
 // kept by a CDN would give the next reader a nonce their own response header does not carry, and the
-// browser would refuse every script. What can be shared is the data: the tRPC reads of the article
-// and the Main Page carry `s-maxage` for an anonymous caller (app/api/trpc/[trpc]/route.ts).
+// browser would refuse every script. (The tRPC reads send no shared-cache headers either: see the
+// ponytail note in lib/wiki-os/guardian/cloudflare-guardian.ts.)
 interface RouteProps {
   params: Promise<{ slug: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
