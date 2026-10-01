@@ -14,6 +14,7 @@ import {
 } from "../wiki/components";
 
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
+import { MirrorStatusSection } from "./MirrorStatusSection";
 
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
@@ -32,6 +33,8 @@ export function WikiOSSettingsPanel() {
       />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
+
+      <MirrorStatusSection />
 
       <div className="border-border/40 space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
