@@ -1,16 +1,20 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 409: `loreCards.wiki.fetchArticlePreviewsBatch` previews pages from the live MediaWiki, which still
-// has a page WikiOS deleted. The preview leaves it out, and the wiki is not asked about it.
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: {
-    ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
-    systemConfig: { findMany: async () => [] },
-  },
-  isDatabaseReadOnly: true,
-}));
+// Plan 409: a page WikiOS deleted is left out of `loreCards.wiki.fetchArticlePreviewsBatch`. Plan 418: IxWiki's
+// pages are previewed from Postgres, and no wiki is asked.
+jest.mock("~/server/db", () => {
+  const helpers = jest.requireActual("~/tests/helpers/fake-lore-card-db");
+  return {
+    __esModule: true,
+    db: {
+      ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
+      systemConfig: { findMany: async () => [] },
+      ...helpers.loreCardDbExtras(helpers.loreCardQueryRaw),
+    },
+    isDatabaseReadOnly: true,
+  };
+});
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
   isSystemOwner: () => false,
@@ -67,9 +71,6 @@ describe("loreCards.wiki.fetchArticlePreviewsBatch", () => {
     });
 
     expect(previews.map((preview) => preview.title)).toEqual(["Shown land"]);
-    const asked = fetchMock.mock.calls.flatMap(
-      ([url]) => new URL(String(url)).searchParams.get("titles") ?? []
-    );
-    expect(asked.join("|")).not.toContain("Hidden");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

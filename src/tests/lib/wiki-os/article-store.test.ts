@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 import {
   getArticleWikitextShadow,
   getArticleHistoryShadow,
@@ -7,7 +8,6 @@ import {
 
 const mockGetArticleWikitext = jest.fn();
 const mockGetCurrentRevMeta = jest.fn();
-const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 
 const mockWikiArticleFindFirst = jest.fn();
@@ -43,7 +43,6 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
-  getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
 }));
 
@@ -64,7 +63,11 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** A request to IxWiki's MediaWiki is recorded (and rejected) even where the code under test would swallow it. */
+let guard: FetchGuard;
+
 beforeEach(() => {
+  guard = installFetchGuard();
   jest.clearAllMocks();
   mockTransaction.mockImplementation(async (cb: (tx: any) => any) => {
     if (typeof cb === "function") {
@@ -82,6 +85,8 @@ beforeEach(() => {
   mockWikiRevisionFindMany.mockResolvedValue([]);
 });
 
+afterEach(() => guard.restore());
+
 test("fresh shadow row is served without touching MediaWiki", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(row({ updatedAt: new Date("2026-06-01T00:00:00Z") }));
 
@@ -91,30 +96,40 @@ test("fresh shadow row is served without touching MediaWiki", async () => {
   expect(mockGetArticleWikitext).not.toHaveBeenCalled();
 });
 
-test("stale/missing shadow refetches from MediaWiki and backfills", async () => {
+test("a sister wiki's missing shadow is fetched from that wiki", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
-  mockGetCurrentRevMeta.mockResolvedValue({ revid: 42, timestamp: "2026-06-01T00:00:00Z" });
 
-  const res = await getArticleWikitextShadow("Foo");
+  const res = await getArticleWikitextShadow("Foo", "iiwiki");
 
+  expect(mockGetArticleWikitext).toHaveBeenCalledWith("Foo", "iiwiki");
   expect(res).toMatchObject({ wikitext: "fresh body", revid: 42, fromShadow: false });
 });
 
-test("MediaWiki failure falls back to null when not found in DB", async () => {
+test("an IxWiki page Postgres lacks is null: MediaWiki is not asked (plan 418)", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue(null);
+  mockGetArticleWikitext.mockResolvedValue({ wikitext: "fresh body", pageId: 42, length: 10 });
+
+  const res = await getArticleWikitextShadow("Foo");
+
+  expect(res).toBeNull();
+  expect(mockGetArticleWikitext).not.toHaveBeenCalled();
+});
+
+test("a sister wiki's failure falls back to null when not found in DB", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockRejectedValue(new Error("ECONNREFUSED"));
 
-  const res = await getArticleWikitextShadow("Foo").catch(() => null);
+  const res = await getArticleWikitextShadow("Foo", "iiwiki").catch(() => null);
 
   expect(res).toBeNull();
 });
 
-test("page deleted on MediaWiki returns null when not in DB", async () => {
+test("a sister wiki's page that is not there returns null when not in DB", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(null);
   mockGetArticleWikitext.mockResolvedValue(null);
 
-  const res = await getArticleWikitextShadow("Foo");
+  const res = await getArticleWikitextShadow("Foo", "iiwiki");
 
   expect(res).toBeNull();
 });
@@ -157,10 +172,10 @@ test("history read-through serves local revisions when present", async () => {
     byteDelta: -2,
   });
   expect(res.revisions[1]).toMatchObject({ revid: "9001", byteDelta: 6 });
+  expect(guard.calls()).toEqual([]);
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { articleId: "art1", parked: false } })
   );
-  expect(mockGetPageHistory).not.toHaveBeenCalled();
 });
 
 test("history asks for one more revision than the page to tell whether an older page exists", async () => {
@@ -187,6 +202,7 @@ test("history asks for one more revision than the page to tell whether an older 
 
   mockWikiRevisionFindMany.mockResolvedValue([row(2), row(1)]);
   expect((await getArticleHistoryShadow("Foo", 2)).hasMore).toBe(false);
+  expect(guard.calls()).toEqual([]);
 });
 
 test("a page after a cursor is answered from PostgreSQL only, empty past the oldest revision", async () => {
@@ -197,7 +213,7 @@ test("a page after a cursor is answered from PostgreSQL only, empty past the old
   const res = await getArticleHistoryShadow("Foo", 50, { before: "rev-1" });
 
   expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
-  expect(mockGetPageHistory).not.toHaveBeenCalled();
+  expect(guard.calls()).toEqual([]);
 });
 
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
@@ -223,32 +239,22 @@ test("history lists ask for parked revisions and get them flagged; everything el
   });
 
   expect(res.revisions[0]).toMatchObject({ revid: "9002", parked: true });
+  expect(guard.calls()).toEqual([]);
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { articleId: "art1" } })
   );
 });
 
-test("history read-through falls back to MediaWiki bridge when no local revisions", async () => {
+test("a page with no local revisions has an empty history: MediaWiki is not asked (plan 418)", async () => {
   mockWikiRevisionFindMany.mockResolvedValue([]);
-  mockGetPageHistory.mockResolvedValue([
-    {
-      rev_id: 7,
-      rev_timestamp: "2026-06-01T00:00:00Z",
-      rev_user_text: "carol",
-      rev_comment: "",
-      rev_len: 10,
-      rev_minor_edit: 0,
-      diff: 3,
-    },
-  ]);
 
   const res = await getArticleHistoryShadow("Foo", 50);
 
-  expect(mockGetPageHistory).toHaveBeenCalled();
-  expect(res.revisions[0]).toMatchObject({ revid: "7", user: "carol", byteDelta: 3 });
+  expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
+  expect(guard.calls()).toEqual([]);
 });
 
-describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
+describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and limited (NEW-5)", () => {
   const mwData = (title: string) => ({
     creator: { username: `creator-of-${title}`, timestamp: "2026-01-01T00:00:00Z" },
     lastEditor: { username: "editor", timestamp: "2026-02-01T00:00:00Z" },
@@ -260,11 +266,11 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
   it("calls MediaWiki once for repeated views, with a short timeout", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("CachedPage"));
 
-    const first = await getArticleAuthors("CachedPage");
-    const second = await getArticleAuthors("cachedpage");
+    const first = await getArticleAuthors("CachedPage", "iiwiki");
+    const second = await getArticleAuthors("cachedpage", "iiwiki");
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
-    expect(mockFetchAuthors).toHaveBeenCalledWith("CachedPage", "ixwiki", 250, 2500);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("CachedPage", "iiwiki", 250, 2500);
     expect(first.creator).toMatchObject({ username: "creator-of-CachedPage" });
     expect(second.creator).toMatchObject({ username: "creator-of-CachedPage" });
   });
@@ -272,7 +278,7 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
   it("shares one in-flight request between concurrent views", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("ConcurrentPage"));
 
-    await Promise.all([getArticleAuthors("ConcurrentPage"), getArticleAuthors("ConcurrentPage")]);
+    await Promise.all([getArticleAuthors("ConcurrentPage", "iiwiki"), getArticleAuthors("ConcurrentPage", "iiwiki")]);
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
   });
@@ -280,8 +286,8 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
   it("remembers a failed lookup briefly instead of retrying every view", async () => {
     mockFetchAuthors.mockRejectedValue(new Error("timeout"));
 
-    await getArticleAuthors("DownPage");
-    await getArticleAuthors("DownPage");
+    await getArticleAuthors("DownPage", "iiwiki");
+    await getArticleAuthors("DownPage", "iiwiki");
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
   });
@@ -289,13 +295,13 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
   it("takes the title as already decoded: a '%' in it neither throws nor is decoded again (plan 403)", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("100% Pure"));
 
-    await expect(getArticleAuthors("100% Pure")).resolves.toMatchObject({
+    await expect(getArticleAuthors("100% Pure", "iiwiki")).resolves.toMatchObject({
       creator: { username: "creator-of-100% Pure" },
     });
-    await getArticleAuthors("100%25 Pure");
+    await getArticleAuthors("100%25 Pure", "iiwiki");
 
-    expect(mockFetchAuthors).toHaveBeenCalledWith("100% Pure", "ixwiki", 250, 2500);
-    expect(mockFetchAuthors).toHaveBeenCalledWith("100%25 Pure", "ixwiki", 250, 2500);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100% Pure", "iiwiki", 250, 2500);
+    expect(mockFetchAuthors).toHaveBeenCalledWith("100%25 Pure", "iiwiki", 250, 2500);
   });
 
   it("still overlays a newer Postgres edit on the cached MediaWiki data", async () => {
@@ -305,8 +311,8 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
       createdAt: new Date("2026-03-01T00:00:00Z"),
     });
 
-    await getArticleAuthors("OverlayPage");
-    const again = await getArticleAuthors("OverlayPage");
+    await getArticleAuthors("OverlayPage", "iiwiki");
+    const again = await getArticleAuthors("OverlayPage", "iiwiki");
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
     expect(again.lastEditor).toMatchObject({ username: "WikiOSUser" });
@@ -319,7 +325,7 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
     );
     mockWikiArticleFindFirst.mockResolvedValue(null);
 
-    const lookups = Array.from({ length: 7 }, (_, n) => getArticleAuthors(`Fan out ${n}`));
+    const lookups = Array.from({ length: 7 }, (_, n) => getArticleAuthors(`Fan out ${n}`, "iiwiki"));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(6);
@@ -339,7 +345,7 @@ describe("getArticleAuthors MediaWiki lookup caching (NEW-5)", () => {
     mockFetchAuthors.mockClear();
 
     const results = [];
-    for (let n = 0; n < 125; n++) results.push(await getArticleAuthors(`Steady ${n}`));
+    for (let n = 0; n < 125; n++) results.push(await getArticleAuthors(`Steady ${n}`, "iiwiki"));
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(120);
     expect(results.filter((r) => r.creator === null)).toHaveLength(5);

@@ -7,6 +7,7 @@
 const mockFindUnique = jest.fn();
 const mockUpdateMany = jest.fn();
 const mockRenderViaMediaWiki = jest.fn();
+const mockSanitizeHook = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -37,6 +38,20 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   },
 }));
 
+// The real sanitizer; `mockSanitizeHook` sees each call first, so a test can make it throw.
+jest.mock("~/lib/utils/sanitize-html", () => {
+  const actual = jest.requireActual<typeof import("~/lib/utils/sanitize-html")>(
+    "~/lib/utils/sanitize-html"
+  );
+  return {
+    ...actual,
+    sanitizeWikiArticleHtml: (html: string) => {
+      mockSanitizeHook(html);
+      return actual.sanitizeWikiArticleHtml(html);
+    },
+  };
+});
+
 import {
   buildViewBundle,
   enqueueRender,
@@ -44,6 +59,7 @@ import {
   loadViewBundle,
   renderArticle,
   renderFallbackView,
+  renderInBackground,
   RENDERER_VERSION,
 } from "~/lib/wiki-os/services/render-service";
 import { wikiArticleSanitizerFingerprint } from "~/lib/utils/sanitize-html";
@@ -342,6 +358,76 @@ describe("enqueueRender", () => {
   });
 });
 
+describe("renderInBackground", () => {
+  it("starts one render without waiting, and joins one that is already running", async () => {
+    const id = freshId();
+    stubArticle(id);
+    const mediaWiki = deferred<string | null>();
+    mockRenderViaMediaWiki.mockReturnValue(mediaWiki.promise);
+
+    expect(renderInBackground(id)).toBeUndefined();
+    renderInBackground(id);
+    await flush();
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
+    expect(mockUpdateMany).not.toHaveBeenCalled();
+
+    mediaWiki.resolve(PARSED);
+    await flush();
+    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves an article alone while its last render's cool-down lasts; a write ends it", async () => {
+    const id = freshId();
+    stubArticle(id);
+    mockRenderViaMediaWiki.mockResolvedValue(null);
+    await ensureRendered(id, { waitMs: 1000 });
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
+
+    renderInBackground(id);
+    await flush();
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
+
+    mockRenderViaMediaWiki.mockResolvedValue(PARSED);
+    enqueueRender(id);
+    await flush();
+    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(2);
+  });
+
+  it("queues behind a save and a waiting reader, as backlog work", async () => {
+    const [a, b, outdated, save] = Array.from({ length: 4 }, freshId);
+    mockFindUnique.mockImplementation(async (args: { where: { id: string } }) => ({
+      title: args.where.id,
+      wikitext: "text",
+      contentHtml: null,
+    }));
+    const started: string[] = [];
+    const gates = new Map<string, Deferred<string>>();
+    mockRenderViaMediaWiki.mockImplementation(async (_text: string, title: string) => {
+      started.push(title);
+      const gate = deferred<string>();
+      gates.set(title, gate);
+      return gate.promise;
+    });
+    const open = async (id: string) => {
+      gates.get(id)?.resolve(PARSED);
+      await flush();
+    };
+    enqueueRender(a);
+    enqueueRender(b);
+    await flush();
+
+    renderInBackground(outdated);
+    enqueueRender(save);
+    await open(a);
+
+    expect(started).toEqual([a, b, save]);
+    await open(b);
+    expect(started).toEqual([a, b, save, outdated]);
+    await open(save);
+    await open(outdated);
+  });
+});
+
 describe("buildViewBundle", () => {
   it("extracts the infobox, notices and TOC and sanitizes every part", () => {
     const html =
@@ -397,7 +483,11 @@ describe("loadViewBundle", () => {
     const bundle = buildViewBundle(PARSED);
     mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
 
-    await expect(loadViewBundle("a")).resolves.toEqual({ bundle, htmlSyncedAt: syncedAt });
+    await expect(loadViewBundle("a")).resolves.toEqual({
+      bundle,
+      htmlSyncedAt: syncedAt,
+      outdated: false,
+    });
     expect(mockFindUnique).toHaveBeenCalledWith({
       where: { id: "a" },
       select: { renderedView: true, htmlSyncedAt: true },
@@ -408,13 +498,19 @@ describe("loadViewBundle", () => {
     const bundle = buildViewBundle(PARSED);
     mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: null });
 
-    await expect(loadViewBundle("a")).resolves.toEqual({ bundle, htmlSyncedAt: null });
+    await expect(loadViewBundle("a")).resolves.toEqual({
+      bundle,
+      htmlSyncedAt: null,
+      outdated: false,
+    });
   });
 
   it.each([
     ["no bundle yet", null],
-    ["another renderer version", { ...buildViewBundle(PARSED), rendererVersion: 0 }],
+    ["a version that is not a string", { ...buildViewBundle(PARSED), rendererVersion: 0 }],
+    ["no version at all", { ...buildViewBundle(PARSED), rendererVersion: undefined }],
     ["a malformed bundle", { bodyHtml: 5 }],
+    ["a bundle whose shape changed", { ...buildViewBundle(PARSED), toc: "none" }],
   ])("is null for %s", async (_name, renderedView) => {
     mockFindUnique.mockResolvedValue({ renderedView, htmlSyncedAt: syncedAt });
 
@@ -429,12 +525,82 @@ describe("loadViewBundle", () => {
 
   it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
     expect(RENDERER_VERSION).toBe(`3:${wikiArticleSanitizerFingerprint()}`);
-    mockFindUnique.mockResolvedValue({
-      renderedView: { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" },
-      htmlSyncedAt: syncedAt,
+    const bundle = { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" };
+    mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
+
+    await expect(loadViewBundle("a")).resolves.toMatchObject({ outdated: true });
+  });
+
+  describe("a bundle of another renderer version", () => {
+    const hostile = {
+      bodyHtml: '<p>Body</p><script>alert(1)</script><img src="x" onerror="alert(2)">',
+      infoboxHtml: '<table class="infobox"><tr><td onclick="alert(3)">Box</td></tr></table>',
+      noticesHtml: '<div class="hatnote"><script>alert(4)</script>Note</div>',
+      toc: [{ id: "History", text: "History", level: 2 }],
+      rendererVersion: "2",
+    };
+
+    it("is returned as outdated, with the freshness it had and its other fields as stored", async () => {
+      mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
+
+      const loaded = await loadViewBundle("a");
+
+      expect(loaded).toMatchObject({ htmlSyncedAt: syncedAt, outdated: true });
+      expect(loaded?.bundle.rendererVersion).toBe("2");
+      expect(loaded?.bundle.toc).toEqual(hostile.toc);
+      expect(loaded?.bundle.bodyHtml).toContain("<p>Body</p>");
     });
 
-    await expect(loadViewBundle("a")).resolves.toBeNull();
+    it("is re-sanitized by the current sanitizer: body, infobox and notices", async () => {
+      mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
+
+      const { bundle } = (await loadViewBundle("a"))!;
+
+      for (const html of [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml]) {
+        expect(html).not.toMatch(/<script|onerror|onclick|alert\(/i);
+      }
+      expect(bundle.infoboxHtml).toContain("Box");
+      expect(bundle.noticesHtml).toContain("Note");
+    });
+
+    it("keeps an absent infobox and notices absent", async () => {
+      mockFindUnique.mockResolvedValue({
+        renderedView: { ...hostile, infoboxHtml: null, noticesHtml: null },
+        htmlSyncedAt: null,
+      });
+
+      const loaded = await loadViewBundle("a");
+
+      expect(loaded).toMatchObject({ htmlSyncedAt: null, outdated: true });
+      expect(loaded?.bundle.infoboxHtml).toBeNull();
+      expect(loaded?.bundle.noticesHtml).toBeNull();
+    });
+
+    it("is null, with a warning, when the sanitizer throws on it: one page cannot fail every read", async () => {
+      mockSanitizeHook.mockImplementationOnce(() => {
+        throw new Error("pathological markup");
+      });
+      mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      await expect(loadViewBundle("a")).resolves.toBeNull();
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("a"), expect.any(Error));
+      warn.mockRestore();
+    });
+
+    it("keeps the template chip markers the sanitizer lets through", async () => {
+      const marked = buildViewBundle('<p><a href="/wiki/Template:MyCountry:x">y</a></p>');
+      mockFindUnique.mockResolvedValue({
+        renderedView: { ...marked, rendererVersion: "2" },
+        htmlSyncedAt: syncedAt,
+      });
+
+      const loaded = await loadViewBundle("a");
+
+      expect(marked.bodyHtml).toContain("data-wikios-chip");
+      expect(loaded?.bundle.bodyHtml).toBe(marked.bodyHtml);
+    });
   });
 });
 

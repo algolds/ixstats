@@ -6,6 +6,7 @@ import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
+import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -15,7 +16,13 @@ const mockFindUnique = jest.fn();
 const mockFindMany = jest.fn();
 const mockFindFirst = jest.fn();
 const mockRevisionFindMany = jest.fn();
+const mockJobCreate = jest.fn();
 
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/server/db", () => {
   const tx = {
     user: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
@@ -27,6 +34,7 @@ jest.mock("~/server/db", () => {
       findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
+    wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
   };
   return {
     db: {
@@ -103,6 +111,7 @@ beforeEach(() => {
   mockCount.mockResolvedValue(0);
   mockRevisionFindFirst.mockResolvedValue(null);
   mockRevisionCreate.mockResolvedValue({ id: "r1" });
+  mockJobCreate.mockResolvedValue({});
   mockFindUnique.mockResolvedValue(null);
   mockFindMany.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
@@ -434,6 +443,98 @@ describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", (
       ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "x" })
     ).rejects.toThrow("db down");
     expect(notifyWatchers).not.toHaveBeenCalled();
+  });
+});
+
+describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () => {
+  const save = (extra: { source?: string } = {}) => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text", ...extra });
+  };
+
+  it("inserts exactly one revision job, inside the transaction and after the revision it names", async () => {
+    const order: string[] = [];
+    mockRevisionCreate.mockImplementation(async () => {
+      order.push("revision");
+      return { id: "r1" };
+    });
+    mockJobCreate.mockImplementation(async () => void order.push("job"));
+    jest.mocked(enqueueRender).mockImplementation(() => void order.push("enqueue"));
+
+    await save();
+
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).toHaveBeenCalledWith({
+      data: {
+        source: "ixwiki",
+        kind: "revision",
+        title: "Foo",
+        articleId: "a1",
+        revisionId: "r1",
+      },
+    });
+    // the job is part of the transaction: it is written before the post-commit work
+    expect(order).toEqual(["revision", "job", "enqueue"]);
+  });
+
+  it("names the saved page by its canonical title, not the spelling that was typed", async () => {
+    await ArticleRepository.saveArticle({ slug: "foo_bar", title: "", wikitext: "text" });
+
+    expect(mockJobCreate.mock.calls[0]?.[0].data).toMatchObject({
+      kind: "revision",
+      title: "Foo bar",
+    });
+  });
+
+  it("queues a job for a save that changed nothing too: the revision exists, so MediaWiki gets it", async () => {
+    mockCount.mockResolvedValue(1);
+
+    await save();
+
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("kicks the worker once the job is committed, never when the transaction failed", async () => {
+    await save();
+    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
+
+    jest.mocked(scheduleMirrorKick).mockClear();
+    mockUpsert.mockRejectedValue(new Error("db down"));
+    await expect(
+      ArticleRepository.saveArticle({ slug: "Foo", title: "Foo", wikitext: "text" })
+    ).rejects.toThrow("db down");
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+  });
+
+  it("writes no job for the MediaWiki: namespace: the mirror account may never write it", async () => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+
+    await ArticleRepository.saveArticle({
+      slug: "MediaWiki:Sidebar",
+      title: "MediaWiki:Sidebar",
+      wikitext: "text",
+    });
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
+  it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
+    await save({ source: "iiwiki" });
+
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
+  it("fails the save, and queues nothing after it, when the job cannot be written", async () => {
+    mockJobCreate.mockRejectedValue(new Error("outbox down"));
+
+    await expect(save()).rejects.toThrow("outbox down");
+    expect(enqueueRender).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 });
 

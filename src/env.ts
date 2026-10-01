@@ -80,6 +80,12 @@ export const env = createEnv({
             .string()
             .min(32, "WIKI_SYNC_WEBHOOK_SECRET must be at least 32 characters in production")
         : z.string().optional(),
+    // HMAC key for WikiOS api.php sessions and tokens (src/lib/wiki-os/api-compat/auth.ts). Optional, and any
+    // string is accepted here, on purpose: a missing or too short key must never stop the app from starting.
+    // api.php treats a value under 32 characters as unset: it answers `sessionsecretmissing` to a login, a login
+    // token and any request that carries a session cookie (it never signs or accepts one with a fallback or
+    // short key), logs one warning, and keeps serving anonymous reads.
+    WIKIOS_API_SESSION_SECRET: z.string().optional(),
     // cron-runner.mjs job allowlist: comma-separated names from src/server/cron/jobs.ts, or "*".
     // Unset/empty schedules nothing.
     CRON_ENABLED_JOBS: z.string().optional(),
@@ -88,8 +94,11 @@ export const env = createEnv({
     WS_ALLOWED_ORIGINS: z.string().optional(),
     // System owner Clerk IDs (comma-separated) - loaded from env for security
     SYSTEM_OWNER_IDS: z.string().optional(),
-    // WikiOS MediaWiki Bot Username
-    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional().default("Heku@WikiOS"),
+    // The mirror's MediaWiki bot login, "<Account>@<bot name>" (Special:BotPasswords). No default: without it the
+    // mirror has no account to write as, so its jobs fail (it never writes anonymously, csrf-cache.ts). It must be
+    // the dedicated `WikiOSMirror` account, in the `wikios-mirror` group (plan 417's LocalSettings snippet), with
+    // the `import`, `importupload`, `edit`, `bot`, `move`, `delete`, `undelete` and `protect` grants.
+    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional(),
     // Declared for visibility; call sites still read process.env directly (plan 339).
     // MediaWiki bot password (lgpassword) for the WikiOS bot login (csrf-cache.ts)
     WIKIOS_MEDIAWIKI_BOT_TOKEN: z.string().optional(),
@@ -99,7 +108,7 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_INTERNAL_URL: z.string().optional(),
     // iiwiki api.php proxy URL that overrides the default iiwiki endpoint
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
-    // "true" stops WikiOS from queueing background MediaWiki sync jobs (sync-worker.ts)
+    // "true" stops the mirror worker (services/mirror-worker.ts): outbox jobs accumulate and nothing is lost
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
     CLOUDFLARE_API_TOKEN: z.string().optional(),
@@ -245,6 +254,7 @@ export const env = createEnv({
     APP_URL: process.env.APP_URL,
     CRON_SECRET: process.env.CRON_SECRET,
     WIKI_SYNC_WEBHOOK_SECRET: process.env.WIKI_SYNC_WEBHOOK_SECRET,
+    WIKIOS_API_SESSION_SECRET: process.env.WIKIOS_API_SESSION_SECRET,
     CRON_ENABLED_JOBS: process.env.CRON_ENABLED_JOBS,
     WS_ALLOWED_ORIGINS: process.env.WS_ALLOWED_ORIGINS,
     SYSTEM_OWNER_IDS: process.env.SYSTEM_OWNER_IDS,

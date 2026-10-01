@@ -14,7 +14,7 @@ import { isBlank, splitBlanks } from "./blank";
 import { findMatchingClosingBraces, findMatchingClosingBrackets } from "./link-parser";
 import { matchBraces, matchBrackets } from "./match-index";
 import { parseParameterList, splitBalancedPipes } from "./parameter-parser";
-import { skipProtectedAt } from "./protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 import type { WikiParameter } from "./types";
 
 /** The parameters `raw` (a complete `{{…}}`) holds, by key. Null when `raw` is not a complete template. */
@@ -43,6 +43,7 @@ const CONSTRUCT_START = /<|\{\{|\[\[|\}\}/g;
 function scanTopLevel(value: string, handlers: TopLevelHandlers): string {
   const braces = matchBraces(value);
   const brackets = matchBrackets(value);
+  const scanner = new ProtectedScanner(value);
   const out: string[] = [];
   let runStart = 0;
   /** Ends the plain text run at `to`, and starts the next one at `resume`. */
@@ -61,7 +62,7 @@ function scanTopLevel(value: string, handlers: TopLevelHandlers): string {
       continue;
     }
     const code = value.charCodeAt(i);
-    const protectedEnd = code === 60 ? skipProtectedAt(value, i, true) : null;
+    const protectedEnd = code === 60 ? skipProtectedAt(value, i, true, scanner) : null;
     const braceEnd =
       code === 123 && value.charCodeAt(i + 1) === 123
         ? findMatchingClosingBraces(value, i, braces)

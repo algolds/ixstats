@@ -16,7 +16,7 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { MediaWikiExportWorker } from "../adapters/mediawiki/sync-worker";
+import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import {
   ArticleRepository,
   type ImportedHead,
@@ -25,9 +25,10 @@ import {
 import { toRevisionRef } from "../core/domain-types";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
-import { extractLeadImageFromWikitext } from "../transformers/image-url";
+import { extractLeadImagePath } from "../transformers/image-url";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { mwSha1Base36 } from "../xml/sha1";
+import { enqueueRevisionJob, type RevisionJobInput } from "./mirror-outbox";
 import {
   decideInbound,
   matchesHead,
@@ -66,16 +67,9 @@ export async function evictCaches(title: string, articleId?: string | null): Pro
   await evictWikiTitleCaches(title, SOURCE, articleId);
 }
 
-/** The MediaWiki account the mirror edits as: the bot-password login without its "@appname". */
-function mirrorBotName(): string | null {
-  const login = process.env.WIKIOS_MEDIAWIKI_BOT_USER?.split("@")[0]?.trim();
-  return login ? normalizeWikiUsername(login) : null;
-}
-
 /** Whether `user` is WikiOS's own mirror account: what it writes to MediaWiki is WikiOS's, not news. */
 export function isMirrorUser(user: string | null): boolean {
-  const bot = mirrorBotName();
-  return bot !== null && user !== null && normalizeWikiUsername(user) === bot;
+  return isMirrorAccount(user);
 }
 
 /** The WikiOS user who verified the MediaWiki account `username`, if anyone. */
@@ -299,7 +293,7 @@ function buildHead(rev: MediaWikiRevision, createdAt: Date): ImportedHead {
     readingTime: Math.max(1, Math.ceil(words / 200)),
     redirectTargetSlug: redirect?.title ?? null,
     redirectTargetFragment: redirect?.fragment ?? null,
-    leadImageUrl: extractLeadImageFromWikitext(rev.wikitext),
+    leadImageUrl: extractLeadImagePath(rev.wikitext),
   };
 }
 
@@ -380,39 +374,48 @@ async function restoreRecreatedPage(article: StoredArticle): Promise<void> {
 // Park: keep the edit, push WikiOS's head back, tell the editor
 // ---------------------------------------------------------------------------
 
-/** Insert the revision as parked, or return false when WikiOS already has it. */
+/**
+ * Insert the revision as parked, or return false when WikiOS already has it. The re-push of WikiOS's head
+ * (`repush`, a mirror job that pushes the head again, dated now) is inserted in the same transaction: a
+ * committed park always has it.
+ */
 async function insertParked(
   rev: MediaWikiRevision,
   article: StoredArticle,
   headRev: HeadRevision | null,
-  reason: string
+  reason: string,
+  repush: RevisionJobInput | null
 ): Promise<boolean> {
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
-  const { count } = await db.wikiRevision.createMany({
-    data: [
-      {
-        articleId: article.id,
-        source: SOURCE,
-        mwRevId: rev.revid,
-        author: rev.user ?? DELETED_AUTHOR,
-        authorId: await verifiedWikiUserId(rev.user),
-        summary: rev.comment || null,
-        minor: rev.minor,
-        commentDeleted: rev.commentHidden,
-        userDeleted: rev.user === null,
-        byteSize,
-        byteDelta: byteSize - (headRev?.byteSize ?? 0),
-        sha1: rev.sha1,
-        createdAt: rev.timestamp,
-        wikitext: rev.wikitext,
-        format: "WIKITEXT",
-        parked: true,
-        parkReason: reason,
-      },
-    ],
-    skipDuplicates: true,
+  const authorId = await verifiedWikiUserId(rev.user);
+  return db.$transaction(async (tx) => {
+    const { count } = await tx.wikiRevision.createMany({
+      data: [
+        {
+          articleId: article.id,
+          source: SOURCE,
+          mwRevId: rev.revid,
+          author: rev.user ?? DELETED_AUTHOR,
+          authorId,
+          summary: rev.comment || null,
+          minor: rev.minor,
+          commentDeleted: rev.commentHidden,
+          userDeleted: rev.user === null,
+          byteSize,
+          byteDelta: byteSize - (headRev?.byteSize ?? 0),
+          sha1: rev.sha1,
+          createdAt: rev.timestamp,
+          wikitext: rev.wikitext,
+          format: "WIKITEXT",
+          parked: true,
+          parkReason: reason,
+        },
+      ],
+      skipDuplicates: true,
+    });
+    if (count > 0 && repush) await enqueueRevisionJob(tx, repush);
+    return count > 0;
   });
-  return count > 0;
 }
 
 /** Tell the MediaWiki account's WikiOS owner (a verified link) that their edit did not go live. */
@@ -493,15 +496,18 @@ export async function repushSkippedParks(): Promise<number> {
   for (const title of titles) {
     const article = await db.wikiArticle.findUnique({
       where: { source_title: { source: SOURCE, title } },
-      select: { slug: true, title: true, wikitext: true, status: true },
+      select: { id: true, title: true, status: true },
     });
     if (!article || article.status === "ARCHIVED") continue;
-    MediaWikiExportWorker.enqueue({
-      slug: article.slug,
+    const headRev = await loadHeadRevision(article.id);
+    if (!headRev) continue;
+    await enqueueRevisionJob(db, {
       title: article.title,
-      wikitext: article.wikitext,
-      summary: "Restoring the current WikiOS revision (an edit made here conflicted with it)",
-      minor: false,
+      articleId: article.id,
+      revisionId: headRev.id,
+      restore: {
+        summary: "Restoring the current WikiOS revision (an edit made here conflicted with it)",
+      },
     });
     pushed++;
   }
@@ -514,7 +520,6 @@ async function afterPark(
   rev: MediaWikiRevision,
   canon: CanonicalTitle,
   article: StoredArticle,
-  headRev: HeadRevision | null,
   headRef: string
 ): Promise<void> {
   if (mirrorBotName() === null) {
@@ -526,15 +531,6 @@ async function afterPark(
     await markRepushSkipped(article.title).catch((error) =>
       console.warn("[WikiAutoSync] Could not record the skipped re-push:", error)
     );
-  } else {
-    MediaWikiExportWorker.enqueue({
-      slug: article.slug,
-      title: article.title,
-      wikitext: article.wikitext,
-      summary: `Restoring WikiOS revision ${headRef}; your edit (rev ${rev.revid}) was kept in WikiOS history as a conflict`,
-      minor: false,
-      revisionId: headRev?.id,
-    });
   }
   try {
     await notifyParkedEditor(rev, canon, headRef);
@@ -551,18 +547,22 @@ async function parkRevision(
 ): Promise<RevisionOutcome> {
   const deleted = article.status === "ARCHIVED";
   const headRef = headRev ? toRevisionRef(headRev) : "none";
-  if (
-    !(await insertParked(
-      rev,
-      article,
-      headRev,
-      deleted ? "conflict:deleted" : `conflict:${headRef}`
-    ))
-  ) {
-    return "known";
-  }
-  // A page WikiOS deleted has no head to push back (that would bring it back to life in MediaWiki).
-  if (!deleted) await afterPark(rev, canon, article, headRev, headRef);
+  // A page WikiOS deleted has no head to push back (that would bring it back to life in MediaWiki), and
+  // without a mirror account the push is held back (afterPark records it).
+  const repush: RevisionJobInput | null =
+    !deleted && headRev && mirrorBotName() !== null
+      ? {
+          title: article.title,
+          articleId: article.id,
+          revisionId: headRev.id,
+          restore: {
+            summary: `Restoring WikiOS revision ${headRef}; your edit (rev ${rev.revid}) was kept in WikiOS history as a conflict`,
+          },
+        }
+      : null;
+  const reason = deleted ? "conflict:deleted" : `conflict:${headRef}`;
+  if (!(await insertParked(rev, article, headRev, reason, repush))) return "known";
+  if (!deleted) await afterPark(rev, canon, article, headRef);
   return "parked";
 }
 

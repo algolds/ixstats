@@ -4,7 +4,7 @@
 // Plan 406: categories MediaWiki hides (maintenance and tracking categories) are not listed.
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: { wikiCategory: { findMany: jest.fn() } },
+  db: { wikiCategory: { findMany: jest.fn() }, $queryRaw: jest.fn().mockResolvedValue([]) },
   isDatabaseReadOnly: true,
 }));
 

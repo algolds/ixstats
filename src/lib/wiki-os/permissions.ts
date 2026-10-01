@@ -12,7 +12,7 @@
 import { TRPCError } from "@trpc/server";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
+import { PageOperationError, talkTitleOf } from "~/lib/wiki-os/core/page-management-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import {
@@ -237,6 +237,45 @@ export async function authorizeAction(
       : [];
   const decision = decideAction({ action, title, permissions, restrictions, now: new Date() });
   if (!decision.allowed) throw forbidden(decision.code, decision.reason);
+}
+
+/**
+ * The caller may move `from` to `to` (and, with `moveTalk`, their talk pages). Besides `move` on the
+ * source and create on the destination, they must be able to write the source itself: its edit
+ * protection would otherwise travel with the page to a mover it keeps out, and a redirect at the old
+ * title is a new page there, so `create` (which also holds a salted title back) when one is left.
+ */
+export async function authorizeMove(
+  ctx: WikiAuthContext,
+  from: string,
+  to: string,
+  { moveTalk, leaveRedirect }: { moveTalk: boolean; leaveRedirect: boolean }
+): Promise<void> {
+  const writeSource = leaveRedirect ? "create" : "edit";
+  await authorizeAction(ctx, "move", from);
+  await authorizeAction(ctx, writeSource, from);
+  await authorizeAction(ctx, "move", to);
+  await authorizeAction(ctx, "create", to);
+  const fromTalk = moveTalk ? talkTitleOf(from) : null;
+  const toTalk = moveTalk ? talkTitleOf(to) : null;
+  if (fromTalk && toTalk) {
+    await authorizeAction(ctx, "move", fromTalk);
+    await authorizeAction(ctx, writeSource, fromTalk);
+    await authorizeAction(ctx, "move", toTalk);
+    await authorizeAction(ctx, "create", toTalk);
+  }
+}
+
+/** The caller may set (or remove: a `null` level) page protections: `protect`, and each level only for someone who can edit at that level. */
+export async function authorizeProtection(
+  ctx: WikiAuthContext,
+  title: string,
+  levels: ReadonlyArray<RestrictionLevel | null>
+): Promise<void> {
+  await authorizeAction(ctx, "protect", title);
+  for (const level of levels) {
+    if (level) await requireRight(ctx, rightForLevel(level));
+  }
 }
 
 /** Throws FORBIDDEN (`blocked`) when the caller is blocked: for writes that are not page edits, such as margin discussions and annotations. */

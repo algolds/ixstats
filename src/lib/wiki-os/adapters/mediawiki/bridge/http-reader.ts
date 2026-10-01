@@ -1,11 +1,12 @@
 // src/lib/wiki-os/bridge/http-reader.ts
 // HTTP readers for external MediaWiki endpoints (IIWiki, Althistory, Commons).
 
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import {
+  type PageImage,
+  type SisterWikiSource,
   type WikiArticle,
   type WikiSearchResult,
-  type WikiSource,
   cacheGet,
   cacheSet,
 } from "./types";
@@ -181,18 +182,13 @@ export async function iiwikiSearch(query: string, limit: number = 10): Promise<W
 export async function httpGetCategoryMembers(
   category: string,
   limit: number = 50,
-  type?: "page" | "subcat" | "file",
-  wiki: WikiSource = "ixwiki"
+  type: "page" | "subcat" | "file" | undefined,
+  wiki: SisterWikiSource
 ): Promise<{
   members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }>;
 }> {
   const cleanCat = category.replace(/^Category:/i, "");
-  const base =
-    wiki === "iiwiki"
-      ? getIiwikiApiBaseUrl()
-      : wiki === "althistory"
-        ? ALTHISTORY_API
-        : DEFAULT_MEDIAWIKI_URL;
+  const base = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
 
   const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
   url.searchParams.set("action", "query");
@@ -228,12 +224,12 @@ export async function httpGetCategoryMembers(
 }
 
 /**
- * Fetch full revision lineage from MediaWiki to accurately identify the original page creator,
- * creation timestamp, latest editor, and all historical contributors.
+ * Fetch a sister wiki page's revision lineage to identify the original page creator, creation
+ * timestamp, latest editor, and all historical contributors. IxWiki's own come from Postgres.
  */
 export async function fetchMediaWikiPageAuthorsAndRevisions(
   title: string,
-  wiki: WikiSource = "ixwiki",
+  wiki: SisterWikiSource,
   limit: number = 250,
   timeoutMs: number = 8000
 ): Promise<{
@@ -251,12 +247,7 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
 } | null> {
   // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
   const cleanTitle = title.replace(/_/g, " ").trim();
-  const rawBase =
-    wiki === "iiwiki"
-      ? getIiwikiApiBaseUrl()
-      : wiki === "althistory"
-        ? ALTHISTORY_API
-        : DEFAULT_MEDIAWIKI_URL;
+  const rawBase = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
   const base = rawBase.replace(/\/+$/, "");
 
   const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
@@ -416,111 +407,91 @@ export async function althistorySearch(
 
 export async function fetchPageImagesHttp(
   title: string,
+  wiki: SisterWikiSource,
   opts?: {
     excludePatterns?: RegExp[];
     thumbWidth?: number;
     limit?: number;
   }
-): Promise<Array<{
-  title: string;
-  url: string;
-  thumbUrl: string;
-  width: number;
-  height: number;
-}> | null> {
-  const cacheKey = `pageimages:${title}`;
-  const cached =
-    cacheGet<
-      Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }>
-    >(cacheKey);
+): Promise<PageImage[] | null> {
+  const cacheKey = `pageimages:${wiki}:${title}`;
+  const cached = cacheGet<PageImage[]>(cacheKey);
   if (cached) return cached;
 
-  const sources = [
-    { wiki: "ixwiki" as WikiSource, base: DEFAULT_MEDIAWIKI_URL },
-    { wiki: "iiwiki" as WikiSource, base: getIiwikiApiBaseUrl() },
-  ];
-
+  const apiUrl = wiki === "iiwiki" ? `${getIiwikiApiBaseUrl()}/api.php` : ALTHISTORY_API;
   const thumbWidth = opts?.thumbWidth ?? 200;
   const maxImages = opts?.limit ?? 50;
   const excludePatterns = opts?.excludePatterns ?? [];
 
-  for (const source of sources) {
-    try {
-      const listRes = await fetch(
-        `${source.base}/api.php?action=query&titles=${encodeURIComponent(title)}&prop=images&imlimit=${maxImages}&format=json&redirects=1`,
-        { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
-      );
-      if (!listRes.ok) continue;
-      const listData = (await listRes.json()) as {
-        query?: {
-          pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }>;
-        };
+  try {
+    const listRes = await fetch(
+      `${apiUrl}?action=query&titles=${encodeURIComponent(title)}&prop=images&imlimit=${maxImages}&format=json&redirects=1`,
+      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
+    );
+    if (!listRes.ok) return null;
+    const listData = (await listRes.json()) as {
+      query?: {
+        pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }>;
       };
-      const pages = listData?.query?.pages;
-      if (!pages) continue;
-      const page = Object.values(pages)[0];
-      if (page?.missing || !page?.images?.length) continue;
+    };
+    const pages = listData?.query?.pages;
+    if (!pages) return null;
+    const page = Object.values(pages)[0];
+    if (page?.missing || !page?.images?.length) return null;
 
-      const imageTitles = page.images
-        .map((img) => img.title)
-        .filter((t) => !excludePatterns.some((p) => p.test(t)));
-      if (imageTitles.length === 0) continue;
+    const imageTitles = page.images
+      .map((img) => img.title)
+      .filter((t) => !excludePatterns.some((p) => p.test(t)));
+    if (imageTitles.length === 0) return null;
 
-      const titlesParam = imageTitles.slice(0, maxImages).map(encodeURIComponent).join("|");
-      const infoRes = await fetch(
-        `${source.base}/api.php?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=${thumbWidth}&format=json`,
-        { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
-      );
-      if (!infoRes.ok) continue;
-      const infoData = (await infoRes.json()) as {
-        query?: {
-          pages?: Record<
-            string,
-            {
-              title?: string;
-              missing?: boolean;
-              imageinfo?: Array<{
-                url: string;
-                thumburl?: string;
-                width: number;
-                height: number;
-                mime?: string;
-              }>;
-            }
-          >;
-        };
+    const titlesParam = imageTitles.slice(0, maxImages).map(encodeURIComponent).join("|");
+    const infoRes = await fetch(
+      `${apiUrl}?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=${thumbWidth}&format=json`,
+      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
+    );
+    if (!infoRes.ok) return null;
+    const infoData = (await infoRes.json()) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            title?: string;
+            missing?: boolean;
+            imageinfo?: Array<{
+              url: string;
+              thumburl?: string;
+              width: number;
+              height: number;
+              mime?: string;
+            }>;
+          }
+        >;
       };
-      const infoPages = infoData?.query?.pages;
-      if (!infoPages) continue;
+    };
+    const infoPages = infoData?.query?.pages;
+    if (!infoPages) return null;
 
-      const images: Array<{
-        title: string;
-        url: string;
-        thumbUrl: string;
-        width: number;
-        height: number;
-      }> = [];
-      for (const p of Object.values(infoPages)) {
-        if (p?.missing || !p?.imageinfo?.[0]) continue;
-        const info = p.imageinfo[0];
-        if (info.width < 100 && info.height < 100) continue;
-        if (info.mime && !info.mime.startsWith("image/")) continue;
-        images.push({
-          title: p.title ?? "",
-          url: info.url,
-          thumbUrl: info.thumburl ?? info.url,
-          width: info.width,
-          height: info.height,
-        });
-      }
-
-      if (images.length > 0) {
-        cacheSet(cacheKey, images);
-        return images;
-      }
-    } catch {
-      continue;
+    const images: PageImage[] = [];
+    for (const p of Object.values(infoPages)) {
+      if (p?.missing || !p?.imageinfo?.[0]) continue;
+      const info = p.imageinfo[0];
+      if (info.width < 100 && info.height < 100) continue;
+      if (info.mime && !info.mime.startsWith("image/")) continue;
+      images.push({
+        title: p.title ?? "",
+        url: info.url,
+        thumbUrl: info.thumburl ?? info.url,
+        width: info.width,
+        height: info.height,
+      });
     }
+
+    if (images.length > 0) {
+      cacheSet(cacheKey, images);
+      return images;
+    }
+  } catch {
+    return null;
   }
   return null;
 }

@@ -17,7 +17,7 @@ import { isMagicWordLine, matchHeading, startsRedirect } from "./line-patterns";
 import { parseInlineLinksAndFormatting } from "./link-parser";
 import { parseWikiList } from "./list-parser";
 import { matchBraces, type MatchIndex } from "./match-index";
-import { findTagClose, isCommentOnly, matchOpenTag, type OpenTag } from "./protected-regions";
+import { findTagClose, isCommentOnly, matchOpenTag, ProtectedScanner, type OpenTag } from "./protected-regions";
 import { parseWikitable } from "./table-parser";
 import { scanTemplateAt, unclosedTemplateDiagnostic } from "./template-parser";
 import type {
@@ -37,6 +37,8 @@ interface ScanContext {
   diagnostics: Diagnostic[];
   /** Where every `{{` of the input closes, computed once for the whole scan. */
   braces: MatchIndex;
+  /** What the scan of the input keeps about its tags, built once so the scan stays linear. */
+  scanner: ProtectedScanner;
 }
 
 /** A block found at a line start: its node and the index of the line break that ends its last line. */
@@ -67,12 +69,12 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     };
   }
 
-  const ctx: ScanContext = { input, diagnostics, braces: matchBraces(input) };
+  const ctx: ScanContext = { input, diagnostics, braces: matchBraces(input), scanner: new ProtectedScanner(input) };
   let cursor = 0; // end of the previous block
   let pos = 0; // start of the line being scanned
 
   while (pos < input.length) {
-    const firstLineEnd = logicalLineEnd(input, pos, ctx.braces);
+    const firstLineEnd = logicalLineEnd(input, pos, ctx.braces, ctx.scanner);
     const firstLine = input.slice(pos, firstLineEnd);
     if (firstLine.trim() === "") {
       pos = firstLineEnd + 1;
@@ -182,19 +184,20 @@ function scanCommentOrMagicWord(
  * The literal or extension tag (`<pre>`, `<nowiki>`, `<gallery>`, …) that is the whole logical
  * line starting at `start`, when it is closed and nothing follows its closing tag.
  */
-function standaloneOpaqueTag(input: string, start: number, lineEnd: number): OpenTag | null {
-  const tag = matchOpenTag(input, start);
+function standaloneOpaqueTag(ctx: ScanContext, start: number, lineEnd: number): OpenTag | null {
+  const { input, scanner } = ctx;
+  const tag = matchOpenTag(input, start, scanner);
   if (!tag || tag.name === "ref" || tag.selfClosing) return null;
-  const close = findTagClose(input, tag);
+  const close = findTagClose(tag, scanner);
   return close !== -1 && input.slice(close, lineEnd).trim() === "" ? tag : null;
 }
 
 function scanOpaqueTag(ctx: ScanContext, start: number, lineEnd: number): Scanned | null {
-  const tag = standaloneOpaqueTag(ctx.input, start, lineEnd);
+  const tag = standaloneOpaqueTag(ctx, start, lineEnd);
   if (tag) return rawBlock(ctx, start, lineEnd, "tag", tag.name);
 
-  const open = matchOpenTag(ctx.input, start);
-  if (open && open.name !== "ref" && !open.selfClosing && findTagClose(ctx.input, open) === -1) {
+  const open = matchOpenTag(ctx.input, start, ctx.scanner);
+  if (open && open.name !== "ref" && !open.selfClosing && findTagClose(open, ctx.scanner) === -1) {
     // MediaWiki shows an unclosed tag as text, so the block is the paragraph that holds it.
     warn(ctx, "UNCLOSED_TAG", `Unclosed <${open.name}> tag`, start, lineEnd);
     return rawBlock(ctx, start, scanParagraph(ctx, start, lineEnd).lineEnd, "malformed", open.name);
@@ -207,13 +210,13 @@ function scanTemplateBlock(ctx: ScanContext, start: number, firstLineEnd: number
   const { input } = ctx;
   if (!input.startsWith("{{", start)) return null;
 
-  const { parsed, end, closed } = scanTemplateAt(input, start);
+  const { parsed, end, closed } = scanTemplateAt(input, start, ctx.scanner);
   if (!parsed) return null;
   if (!closed) {
     ctx.diagnostics.push(unclosedTemplateDiagnostic(parsed, start, input.length));
     return { node: templateNode(parsed), lineEnd: input.length };
   }
-  const lineEnd = Math.max(firstLineEnd, logicalLineEnd(input, end, ctx.braces));
+  const lineEnd = Math.max(firstLineEnd, logicalLineEnd(input, end, ctx.braces, ctx.scanner));
   if (input.slice(end, lineEnd).trim() === "") return { node: templateNode(parsed), lineEnd };
   // An infobox is a block even when text follows it on its line; the text is the next block.
   if (parsed.classification === "infobox" && !parsed.isParserFunction) {
@@ -287,7 +290,7 @@ function walkTable(ctx: ScanContext, firstLineEnd: number): TableScan {
   let pos = firstLineEnd + 1;
 
   while (depth > 0 && pos < input.length) {
-    lineEnd = logicalLineEnd(input, pos, ctx.braces);
+    lineEnd = logicalLineEnd(input, pos, ctx.braces, ctx.scanner);
     const text = input.slice(pos, lineEnd).trim();
     pos = lineEnd + 1;
     if (OPENS_TABLE.test(text)) {
@@ -356,7 +359,7 @@ function scanList(
   let lineEnd = firstLineEnd;
 
   while (lineEnd < input.length) {
-    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces);
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
     const next = input.slice(lineEnd + 1, nextEnd);
     const nextChar = next.trim()[0];
     if (!nextChar || !LIST_LINE.test(nextChar)) break;
@@ -383,7 +386,7 @@ function scanBlockquote(
   while (!BLOCKQUOTE_CLOSE.test(input.slice(segmentStart, lineEnd))) {
     if (lineEnd >= input.length) return null;
     segmentStart = lineEnd + 1;
-    lineEnd = logicalLineEnd(input, segmentStart, ctx.braces);
+    lineEnd = logicalLineEnd(input, segmentStart, ctx.braces, ctx.scanner);
   }
   const raw = input.slice(start, contentEnd(input, start, lineEnd));
   const match = /^<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(raw);
@@ -395,8 +398,8 @@ function scanBlockquote(
 }
 
 /** Whether the logical line `[start, lineEnd)` starts a block of its own, ending a paragraph. */
-function startsNewBlock(input: string, start: number, lineEnd: number): boolean {
-  const line = input.slice(start, lineEnd);
+function startsNewBlock(ctx: ScanContext, start: number, lineEnd: number): boolean {
+  const line = ctx.input.slice(start, lineEnd);
   const text = line.trim();
   return (
     text === "" ||
@@ -408,7 +411,7 @@ function startsNewBlock(input: string, start: number, lineEnd: number): boolean 
     isMagicWordLine(text) ||
     isCommentOnly(text) ||
     isTemplateOnlyLine(text) ||
-    standaloneOpaqueTag(input, start + line.length - line.trimStart().length, lineEnd) !== null
+    standaloneOpaqueTag(ctx, start + line.length - line.trimStart().length, lineEnd) !== null
   );
 }
 
@@ -417,8 +420,8 @@ function scanParagraph(ctx: ScanContext, start: number, firstLineEnd: number): S
   const { input } = ctx;
   let lineEnd = firstLineEnd;
   while (lineEnd < input.length) {
-    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces);
-    if (startsNewBlock(input, lineEnd + 1, nextEnd)) break;
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
+    if (startsNewBlock(ctx, lineEnd + 1, nextEnd)) break;
     lineEnd = nextEnd;
   }
   const text = input.slice(start, contentEnd(input, start, lineEnd));

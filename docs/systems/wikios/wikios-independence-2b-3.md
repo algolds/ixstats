@@ -15,7 +15,7 @@ With the completion of Plan 170 and Plan 191 (Stage 2b):
 - **48,200+ link graph edges** are indexed in `wiki_links` for indexed backlink lookups and zero-query Red Link resolution.
 - **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths (hash of the filename) and immutable edge caching.
 - **Spotlight Search** is served via `NativeSearchService` (a Prisma `contains` query; no trigram or GIN index).
-- **Sub-10ms Save Operations** commit directly to PostgreSQL first, dispatching non-blocking background queue tasks (`MediaWikiExportWorker`) to synchronize with upstream MediaWiki.
+- **Sub-10ms Save Operations** commit directly to PostgreSQL first, inserting a durable `WikiMirrorJob` in the same transaction (applied by `services/mirror-worker.ts`, plan 407) to synchronize with upstream MediaWiki.
 - **MediaWiki is demoted to a headless render (`action=parse`), export, and recent-changes source in the app.** Its public web UI is still live until Stage 3 cuts over.
 
 ---

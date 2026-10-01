@@ -11,7 +11,6 @@ import {
   syncSinglePage,
 } from "~/lib/wiki-os/services/auto-sync-service";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { notificationAPI } from "~/lib/notifications/api";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
@@ -29,6 +28,7 @@ const mockRevisionUpdateMany = jest.fn();
 const mockAccountLinkFindFirst = jest.fn();
 const mockQueryRaw = jest.fn();
 const mockTransaction = jest.fn();
+const mockJobCreate = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
@@ -50,13 +50,11 @@ jest.mock("~/server/db", () => ({
       updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
     },
     wikiAccountLink: { findFirst: (...a: unknown[]) => mockAccountLinkFindFirst(...a) },
+    wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
   },
 }));
 jest.mock("~/lib/wiki-os/core/article-repository", () => ({
   ArticleRepository: { importPageRevisions: jest.fn() },
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  MediaWikiExportWorker: { enqueue: jest.fn() },
 }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 jest.mock("~/lib/wiki-os/services/inbound-log-events", () => ({ applyLogEvent: jest.fn() }));
@@ -68,7 +66,8 @@ const HWM_KEY = "wikiAutoSync.rcHighWater";
 const LOG_HWM_KEY = "wikiAutoSync.logHighWater";
 
 const importPageRevisions = jest.mocked(ArticleRepository.importPageRevisions);
-const enqueueExport = jest.mocked(MediaWikiExportWorker.enqueue);
+/** The mirror jobs written: a park's re-push of WikiOS's head is a `revision` job in the outbox. */
+const pushedJobs = () => mockJobCreate.mock.calls.map(([args]) => args.data);
 const notify = jest.mocked(notificationAPI.create);
 const applyEvent = jest.mocked(applyLogEvent);
 
@@ -260,8 +259,14 @@ beforeEach(() => {
   applyEvent.mockResolvedValue("applied");
   // withJobLock: an interactive transaction whose first statement tries the advisory lock.
   mockQueryRaw.mockResolvedValue([{ locked: true }]);
+  mockJobCreate.mockResolvedValue({});
   mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
-    callback({ $queryRaw: (...a: unknown[]) => mockQueryRaw(...a) })
+    callback({
+      $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
+      // the park's own transaction: the parked revision and the re-push job are written together
+      wikiRevision: { createMany: (...a: unknown[]) => mockRevisionCreateMany(...a) },
+      wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    })
   );
   mockArticleFindUnique.mockImplementation(async ({ where }) =>
     article && article.title === where.source_title.title ? article : null
@@ -688,7 +693,7 @@ describe("fast-forward", () => {
       redirectTargetFragment: null,
     });
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 
   it("imports an edit whose parent is WikiOS's head (by MediaWiki revision id)", async () => {
@@ -708,7 +713,7 @@ describe("fast-forward", () => {
     // watchlist (plan 416): the importer tells the page's watchers; the head it replaces makes it a diff link.
     expect(input.previousRef).toBe("90");
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 
   it("imports two sequential MediaWiki edits of one page in one cycle, the second on top of the first", async () => {
@@ -842,7 +847,7 @@ describe("echo", () => {
       await runAutoSyncCycle();
 
       expect(importPageRevisions).not.toHaveBeenCalled();
-      expect(enqueueExport).not.toHaveBeenCalled();
+      expect(mockJobCreate).not.toHaveBeenCalled();
       expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
       expect(mockArticleUpdate).not.toHaveBeenCalled();
       const [{ data }] = mockRevisionCreateMany.mock.calls[0]!;
@@ -924,7 +929,7 @@ describe("echo", () => {
     await runAutoSyncCycle();
 
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
 });
@@ -977,15 +982,49 @@ describe("park", () => {
       parkReason: "conflict:90",
       createdAt: new Date("2026-09-27T10:00:01Z"),
     });
-    expect(enqueueExport).toHaveBeenCalledWith({
-      slug: "foo",
-      title: "Foo",
-      wikitext: "WikiOS text.",
-      summary:
-        "Restoring WikiOS revision 90; your edit (rev 95) was kept in WikiOS history as a conflict",
-      minor: false,
-      revisionId: "rev-9",
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).toHaveBeenCalledWith({
+      data: {
+        source: "ixwiki",
+        kind: "revision",
+        title: "Foo",
+        articleId: "art-1",
+        revisionId: "rev-9",
+        payload: {
+          restore: true,
+          summary:
+            "Restoring WikiOS revision 90; your edit (rev 95) was kept in WikiOS history as a conflict",
+        },
+      },
     });
+  });
+
+  it("writes the parked revision and the re-push job in one transaction, the job after the revision", async () => {
+    parkSetup();
+    const order: string[] = [];
+    mockRevisionCreateMany.mockImplementation(async () => {
+      order.push("parked revision");
+      return { count: 1 };
+    });
+    mockJobCreate.mockImplementation(async () => void order.push("re-push job"));
+
+    await runAutoSyncCycle();
+
+    expect(order).toEqual(["parked revision", "re-push job"]);
+    // the cycle's own lock transaction, and the park's
+    expect(mockTransaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not park an edit whose re-push job could not be written: the cycle fails and will read it again", async () => {
+    parkSetup();
+    mockJobCreate.mockRejectedValue(new Error("outbox down"));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    expect(notify).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("notifies the editor when the MediaWiki account has a verified link", async () => {
@@ -1021,7 +1060,7 @@ describe("park", () => {
     await runAutoSyncCycle();
 
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 
   it("does not push or notify when the parked revision was a duplicate insert", async () => {
@@ -1030,7 +1069,7 @@ describe("park", () => {
 
     await runAutoSyncCycle();
 
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
 
@@ -1044,7 +1083,7 @@ describe("park", () => {
       parked: true,
       parkReason: "conflict:deleted",
     });
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 
   it("brings a page WikiOS deleted back when MediaWiki creates it anew", async () => {
@@ -1218,7 +1257,7 @@ describe("syncSinglePage", () => {
     await expect(syncSinglePage("Foo")).resolves.toBe(false);
 
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     expect(importPageRevisions).not.toHaveBeenCalled();
   });
 
@@ -1566,7 +1605,7 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
     await runAutoSyncCycle();
 
     expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({ parked: true });
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     expect(notify).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith(
       expect.stringContaining("WIKIOS_MEDIAWIKI_BOT_USER is not set")
@@ -1624,7 +1663,7 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
 
     await runAutoSyncCycle();
 
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 
@@ -1640,24 +1679,27 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
     });
     mockArticleFindUnique.mockImplementation(async ({ where }) => {
       const title = where.source_title.title;
-      if (title === "Foo")
-        return { slug: "foo", title: "Foo", wikitext: "WikiOS text.", status: "PUBLISHED" };
-      if (title === "Deleted page")
-        return { slug: "deleted_page", title, wikitext: "x", status: "ARCHIVED" };
+      if (title === "Foo") return { id: "art-1", title: "Foo", status: "PUBLISHED" };
+      if (title === "Deleted page") return { id: "art-2", title, status: "ARCHIVED" };
       return null;
     });
+    head = storedHead(null);
 
     await runAutoSyncCycle();
 
-    expect(enqueueExport).toHaveBeenCalledTimes(1);
-    expect(enqueueExport).toHaveBeenCalledWith(
-      expect.objectContaining({ slug: "foo", title: "Foo", wikitext: "WikiOS text.", minor: false })
-    );
+    expect(mockJobCreate).toHaveBeenCalledTimes(1);
+    expect(pushedJobs()[0]).toMatchObject({
+      kind: "revision",
+      title: "Foo",
+      articleId: "art-1",
+      revisionId: "rev-9",
+      payload: { restore: true },
+    });
     expect(JSON.parse(skipped)).toEqual([]);
 
-    enqueueExport.mockClear();
+    mockJobCreate.mockClear();
     await runAutoSyncCycle();
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 
   it("pushes nothing and keeps the list while no account is configured", async () => {
@@ -1668,7 +1710,7 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
 
     await runAutoSyncCycle();
 
-    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
     expect(highWaterWritten(SKIPPED_KEY)).toBeUndefined();
   });
 });
@@ -1726,9 +1768,9 @@ describe("a page with text but no revision row (the shape of Crown Jewels of Cap
       parked: true,
       parkReason: "conflict:rev-base",
     });
-    expect(enqueueExport).toHaveBeenCalledWith(
-      expect.objectContaining({ wikitext: CROWN, revisionId: "rev-base" })
-    );
+    expect(pushedJobs()).toEqual([
+      expect.objectContaining({ kind: "revision", revisionId: "rev-base" }),
+    ]);
     expect(mockArticleUpdate).not.toHaveBeenCalled();
   });
 

@@ -71,7 +71,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   );
 
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title: cleanTitle },
+    { title: cleanTitle, wiki: "ixwiki" },
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 

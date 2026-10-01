@@ -1,16 +1,20 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
-// Plan 409: the lore-card routes read the live MediaWiki, which still has a page WikiOS deleted. They
-// return nothing about that page (the real generator and a fake database run behind them).
-jest.mock("~/server/db", () => ({
-  __esModule: true,
-  db: {
-    ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
-    systemConfig: { findMany: async () => [] },
-  },
-  isDatabaseReadOnly: true,
-}));
+// Plan 409: the lore-card routes return nothing about a page WikiOS deleted (the real generator and a fake
+// database run behind them). Plan 418: IxWiki's pages are read from Postgres and no wiki is asked.
+jest.mock("~/server/db", () => {
+  const helpers = jest.requireActual("~/tests/helpers/fake-lore-card-db");
+  return {
+    __esModule: true,
+    db: {
+      ...jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
+      systemConfig: { findMany: async () => [] },
+      ...helpers.loreCardDbExtras(helpers.loreCardQueryRaw),
+    },
+    isDatabaseReadOnly: true,
+  };
+});
 jest.mock("~/app/api/mediawiki/_rate-limit", () => ({
   wikiProxyRateLimitResponse: async () => null,
 }));
@@ -64,12 +68,14 @@ describe("the lore-card routes leave out a page WikiOS deleted", () => {
   it("random-articles", async () => {
     const body = await (await randomArticles(get("random-articles?source=ixwiki&count=10&minQuality=0"))).json();
     expect(body.articles.map((a: { title: string }) => a.title)).toEqual(["Shown land"]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("category-articles", async () => {
     const res = await categoryArticles(get("category-articles?source=ixwiki&category=Nations&minQuality=0"));
     const body = await res.json();
     expect(body.articles.map((a: { title: string }) => a.title)).toEqual(["Shown land"]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("preview-article", async () => {

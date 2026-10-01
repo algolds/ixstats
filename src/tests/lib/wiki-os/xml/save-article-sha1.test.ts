@@ -7,6 +7,11 @@ import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 
 const mockRevisionCreate = jest.fn();
 
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/server/db", () => {
   const tx = {
     user: { findFirst: jest.fn().mockResolvedValue(null), update: jest.fn() },
@@ -30,6 +35,7 @@ jest.mock("~/server/db", () => {
       findFirst: jest.fn().mockResolvedValue(null),
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
+    wikiMirrorJob: { create: jest.fn().mockResolvedValue({}) },
   };
   return { db: { $transaction: (cb: (t: typeof tx) => unknown) => cb(tx) } };
 });

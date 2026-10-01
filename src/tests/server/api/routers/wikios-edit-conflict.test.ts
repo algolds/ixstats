@@ -42,10 +42,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
   wikitextToHtml: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  __esModule: true,
-  MediaWikiExportWorker: { enqueue: jest.fn() },
-}));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
@@ -65,7 +61,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
 
@@ -114,7 +109,6 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2)", () => {
       currentRevisionRef: "rev-2",
     });
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
-    expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
   });
 
   it("saves when the base revision is the latest one", async () => {

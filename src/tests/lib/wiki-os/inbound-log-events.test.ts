@@ -4,6 +4,7 @@
  * rights). Each applied event writes one wiki_logs row carrying its MediaWiki log id; an event is applied
  * once; the mirror's own acts and the types WikiOS does not mirror are ignored.
  */
+import { ConflictError } from "~/lib/app-error";
 import { applyLogEvent } from "~/lib/wiki-os/services/inbound-log-events";
 import type { LogEvent } from "~/lib/wiki-os/services/inbound-mediawiki";
 import {
@@ -686,6 +687,18 @@ describe("a template or module that is deleted, restored or moved makes the page
 describe("the log row and the unique MediaWiki log id", () => {
   it("a writer that loses the race for the unique mwLogId has found the event already applied", async () => {
     tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
+    // What the production `db` throws for a unique violation (~/lib/prisma-error), not a Prisma error.
+    mockLogCreate.mockRejectedValue(
+      new ConflictError("Unique constraint violation on WikiLog (mwLogId)")
+    );
+
+    await expect(
+      applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
+    ).resolves.toBe("applied");
+  });
+
+  it("a Prisma unique error that the db wrapper did not convert is not mistaken for the race", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
     const { Prisma } = jest.requireActual("@prisma/client");
     mockLogCreate.mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
@@ -696,7 +709,7 @@ describe("the log row and the unique MediaWiki log id", () => {
 
     await expect(
       applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
-    ).resolves.toBe("applied");
+    ).rejects.toThrow("Unique constraint failed");
   });
 
   it("any other failure of the log write is the event's failure (it is retried)", async () => {

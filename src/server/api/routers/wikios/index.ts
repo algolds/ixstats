@@ -14,6 +14,7 @@
  *  - user-talk:             user info, contributions, talk pages, backlinks
  *  - page-views:            page info, page lists, category member pages, file info (plan 412)
  *  - page-admin:            move, delete, undelete, protect, block, user groups, log
+ *  - bot-passwords:         Special:BotPasswords (api.php credentials)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -29,6 +30,7 @@ import { wikiosDiscussionsRouter } from "./discussions";
 import { wikiosUtilitiesRouter } from "./utilities";
 import { wikiosPageViewsRouter } from "./page-views";
 import { wikiosPageAdminRouter } from "./page-admin";
+import { wikiosBotPasswordsRouter } from "./bot-passwords";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -43,5 +45,6 @@ export const wikiosRouter = mergeRouters(
   wikiosDiscussionsRouter,
   wikiosUtilitiesRouter,
   wikiosPageViewsRouter,
-  wikiosPageAdminRouter
+  wikiosPageAdminRouter,
+  wikiosBotPasswordsRouter
 );

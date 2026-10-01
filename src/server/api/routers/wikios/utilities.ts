@@ -6,12 +6,20 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
+import {
+  discardMirrorJob,
+  getMirrorStatus,
+  requeueMirrorJob,
+} from "~/lib/wiki-os/services/mirror-admin";
+import { refusals } from "~/lib/wiki-os/permissions";
+
+const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
 
 export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
@@ -88,6 +96,24 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           brokenRedirects.length === 0 ? 100 : Math.max(90, 100 - brokenRedirects.length),
       };
     }),
+
+  /**
+   * The outbound mirror's outbox for administrators: jobs by state, how long the oldest has waited, whether
+   * the worker is stopped or has no bot account, and the last dead jobs (MediaWiki is out of sync for those titles).
+   */
+  getMirrorStatus: adminProcedure.query(() => getMirrorStatus()),
+
+  /** Try a dead mirror job again from its first attempt. */
+  requeueMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+    await refusals(requeueMirrorJob(input.id));
+    return { success: true as const };
+  }),
+
+  /** Give up on a dead mirror job, so the jobs behind it for its title can run. */
+  discardMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+    await refusals(discardMirrorJob(input.id));
+    return { success: true as const };
+  }),
 
   /**
    * Diagnostic: Orphan Articles (0 incoming links)

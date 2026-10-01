@@ -73,7 +73,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
       return {
         username: wikiName,
         displayName: wikiName,
-        existsInMediaWiki: Boolean(mwInfo),
+        existsInMediaWiki: mwInfo?.exists === true,
         editCount: mwInfo?.user_editcount ?? 0,
         registration: mwInfo?.user_registration ?? null,
         groups: [] as string[],
