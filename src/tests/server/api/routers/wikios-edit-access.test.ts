@@ -53,7 +53,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   getArticleHistoryShadow: jest.fn(),
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -122,6 +122,50 @@ describe("wikios.getEditAccess (F35c)", () => {
     jest.mocked(db.wikiBlock.findMany).mockResolvedValue([] as never);
     const template = await signedIn().getEditAccess({ title: "Template:Flag" });
     expect(template.allowed).toBe(false);
+  });
+
+  describe("a deleted (ARCHIVED) page", () => {
+    const archived = () =>
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "ARCHIVED" } as never);
+    const asSysop = () =>
+      jest
+        .mocked(db.wikiUserGroup.findMany)
+        .mockResolvedValue([{ group: "sysop", expiresAt: null }] as never);
+
+    afterEach(() => {
+      jest.mocked(db.wikiUserGroup.findMany).mockResolvedValue([] as never);
+    });
+
+    it("gives a signed-in user without deletedhistory the answer a missing page gets: the query never reveals a deletion", async () => {
+      archived();
+      const answerForDeleted = await signedIn().getEditAccess({ title: "Vesperia" });
+
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null as never);
+      const answerForMissing = await signedIn().getEditAccess({ title: "Vesperia" });
+
+      expect(answerForDeleted).toEqual({ allowed: true, reason: null });
+      expect(answerForDeleted).toEqual(answerForMissing);
+    });
+
+    it("gives a signed-out reader the same refusal for a deleted page as for a missing one", async () => {
+      archived();
+      const answerForDeleted = await signedOut().getEditAccess({ title: "Vesperia" });
+
+      jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null as never);
+      const answerForMissing = await signedOut().getEditAccess({ title: "Vesperia" });
+
+      expect(answerForDeleted).toEqual(answerForMissing);
+      expect(answerForDeleted.reason).toBe('You do not have the "edit" right needed to create this page.');
+    });
+
+    it("tells an administrator (deletedhistory) that the page was deleted and cannot be edited", async () => {
+      archived();
+      asSysop();
+      await expect(signedIn().getEditAccess({ title: "Vesperia" })).resolves.toEqual({
+        allowed: false,
+        reason: "This page was deleted; ask an administrator to restore it",
+      });
+    });
   });
 
   it("is a bad request for a title MediaWiki refuses, not an answer", async () => {

@@ -25,6 +25,7 @@ import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import { getWikiActorLabel, requireWikiUserId, resolveWikiUsername } from "~/lib/wiki-os/auth";
 import {
   authorizeAction,
+  canSeeDeletedPages,
   refusals,
   requireCanonicalTitle,
   requireRight,
@@ -57,6 +58,11 @@ export const wikiosEditingRouter = createTRPCRouter({
           error instanceof TRPCError &&
           (error.code === "FORBIDDEN" || error.code === "PRECONDITION_FAILED");
         if (!refused) throw error;
+        // A deleted page ("PRECONDITION_FAILED: deleted") does not exist for a reader who may not see deleted
+        // pages: they get the answer a missing title gets, so this query never reveals that a page was deleted.
+        if (error.code === "PRECONDITION_FAILED" && !(await canSeeDeletedPages(ctx))) {
+          return { allowed: true as const, reason: null };
+        }
         return { allowed: false as const, reason: reasonOf(error.message) };
       }
     }),
