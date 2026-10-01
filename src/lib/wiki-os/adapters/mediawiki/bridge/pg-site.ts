@@ -95,41 +95,54 @@ export async function ixwikiGetPageImages(
 // Miscellaneous & Compatibility Shims
 // ---------------------------------------------------------------------------
 
-export async function ixwikiGetSiteStats(): Promise<{
-  articles: number;
-  pages: number;
-  edits: number;
-  images: number;
-  users: number;
-  activeUsers: number;
-}> {
-  try {
-    const [articles, totalPages, revisions, assets, users] = await Promise.all([
-      (db as any).wikiArticle.count({ where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" } }),
-      (db as any).wikiArticle.count({ where: { source: "ixwiki", status: "PUBLISHED" } }),
-      (db as any).wikiRevision.count({ where: { source: "ixwiki" } }),
-      (db as any).wikiAsset.count(),
-      (db as any).user.count({ where: { wikiUsername: { not: null } } }),
-    ]);
+/** An editor counts as active when they edited within this many days (MediaWiki's own definition). */
+const ACTIVE_USER_DAYS = 30;
 
-    return {
-      articles: articles || 4688,
-      pages: totalPages || 12590,
-      edits: revisions || 75352,
-      images: assets || 7555,
-      users: Math.max(users, 131),
-      activeUsers: 102,
-    };
-  } catch {
-    return {
-      articles: 4685,
-      pages: 5200,
-      edits: 48000,
-      images: 7555,
-      users: 120,
-      activeUsers: 14,
-    };
+/** Counts of what the wiki holds. A count that could not be read is null, never a made-up number. */
+export interface SiteStats {
+  articles: number | null;
+  pages: number | null;
+  edits: number | null;
+  images: number | null;
+  users: number | null;
+  activeUsers: number | null;
+}
+
+/** `read()`'s result, or null when it failed: one broken count does not blank the others. */
+async function countOrNull(read: () => Promise<number>): Promise<number | null> {
+  try {
+    return await read();
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    return null;
   }
+}
+
+export async function ixwikiGetSiteStats(): Promise<SiteStats> {
+  const since = new Date(Date.now() - ACTIVE_USER_DAYS * 24 * 60 * 60 * 1000);
+  const [articles, pages, edits, images, users, activeUsers] = await Promise.all([
+    countOrNull(() =>
+      db.wikiArticle.count({ where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" } })
+    ),
+    countOrNull(() => db.wikiArticle.count({ where: { source: "ixwiki", status: "PUBLISHED" } })),
+    // A parked edit (a MediaWiki edit that conflicted and never went live) is not an edit of the wiki
+    countOrNull(() => db.wikiRevision.count({ where: { source: "ixwiki", parked: false } })),
+    countOrNull(() => db.wikiAsset.count()),
+    countOrNull(() => db.user.count({ where: { wikiUsername: { not: null } } })),
+    countOrNull(async () => {
+      const editors = await db.wikiRevision.groupBy({
+        by: ["author"],
+        where: {
+          source: "ixwiki",
+          parked: false,
+          author: { not: null },
+          createdAt: { gte: since },
+        },
+      });
+      return editors.length;
+    }),
+  ]);
+  return { articles, pages, edits, images, users, activeUsers };
 }
 
 export async function ixwikiGetRandomPage(): Promise<string> {

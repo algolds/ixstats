@@ -178,6 +178,43 @@ test("history read-through serves local revisions when present", async () => {
   );
 });
 
+test("history asks for one more revision than the page to tell whether an older page exists", async () => {
+  const row = (n: number) => ({
+    id: `rev-${n}`,
+    mwRevId: null,
+    articleId: "art1",
+    createdAt: new Date(`2026-06-0${n}T00:00:00Z`),
+    author: "bob",
+    summary: "",
+    minor: false,
+    byteSize: n,
+    byteDelta: 1,
+    sha1: null,
+  });
+  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiRevisionFindMany.mockResolvedValue([row(3), row(2), row(1)]);
+
+  const res = await getArticleHistoryShadow("Foo", 2);
+
+  expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(expect.objectContaining({ take: 3 }));
+  expect(res.revisions.map((r) => r.revid)).toEqual(["rev-3", "rev-2"]);
+  expect(res.hasMore).toBe(true);
+
+  mockWikiRevisionFindMany.mockResolvedValue([row(2), row(1)]);
+  expect((await getArticleHistoryShadow("Foo", 2)).hasMore).toBe(false);
+});
+
+test("a page after a cursor is answered from PostgreSQL only, empty past the oldest revision", async () => {
+  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiRevisionFindFirst.mockResolvedValue({ id: "rev-1" });
+  mockWikiRevisionFindMany.mockResolvedValue([]);
+
+  const res = await getArticleHistoryShadow("Foo", 50, { before: "rev-1" });
+
+  expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
+  expect(mockGetPageHistory).not.toHaveBeenCalled();
+});
+
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
   mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
   mockWikiRevisionFindMany.mockResolvedValue([

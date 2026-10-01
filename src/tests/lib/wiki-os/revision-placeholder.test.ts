@@ -13,12 +13,18 @@ jest.mock("~/server/db", () => ({
 }));
 
 const createdAt = new Date("2026-06-01T00:00:00Z");
-const row = (wikitext: string, byteSize: number, mwRevId: number | null = null) => ({
+const row = (
+  wikitext: string,
+  byteSize: number,
+  mwRevId: number | null = null,
+  parked = false
+) => ({
   wikitext,
   byteSize,
   mwRevId,
   source: "ixwiki",
   createdAt,
+  parked,
   article: { title: "Foo" },
 });
 
@@ -35,6 +41,7 @@ describe("ixwikiGetRevisionWikitext placeholders", () => {
       title: "Foo",
       source: "ixwiki",
       timestamp: createdAt.toISOString(),
+      parked: false,
     });
     expect(mockFindFirst.mock.calls[0]?.[0].select).toMatchObject({
       byteSize: true,
@@ -63,6 +70,18 @@ describe("ixwikiGetRevisionWikitext placeholders", () => {
     await expect(getRevisionWikitext("cnative00000003")).resolves.toMatchObject({
       wikitext: "body",
     });
+  });
+});
+
+describe("ixwikiGetRevisionWikitext parked revisions", () => {
+  it("says whether the revision is parked (a conflicting MediaWiki edit that never went live), text and all", async () => {
+    mockFindFirst.mockResolvedValue(row("conflicting text", 16, 9001, true));
+
+    await expect(getRevisionWikitext("9001")).resolves.toMatchObject({
+      wikitext: "conflicting text",
+      parked: true,
+    });
+    expect(mockFindFirst.mock.calls[0]?.[0].select).toMatchObject({ parked: true });
   });
 });
 

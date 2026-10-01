@@ -48,6 +48,8 @@ export interface RevisionContent {
   /** The wiki the revision belongs to (always "ixwiki" here). */
   source: string;
   timestamp: string;
+  /** A MediaWiki edit that did not go live (conflict): it can be viewed, but never restored. */
+  parked: boolean;
 }
 
 /** Look up a revision by the reference history entries carry (see `toRevisionRef`). */
@@ -66,6 +68,7 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
         mwRevId: true,
         source: true,
         createdAt: true,
+        parked: true,
         article: { select: { title: true } },
       },
     });
@@ -78,6 +81,7 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
         title: rev.article.title,
         source: rev.source,
         timestamp: rev.createdAt.toISOString(),
+        parked: rev.parked,
       };
     }
   } catch (err) {

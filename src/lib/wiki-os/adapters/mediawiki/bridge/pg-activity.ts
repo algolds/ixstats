@@ -10,51 +10,57 @@ import { db } from "~/server/db";
 import { loadWikiUserInfo, type WikiUserInfo } from "~/lib/wiki-os/core/wiki-user-info";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
-import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { WikiRecentChange } from "./types";
 
 // ---------------------------------------------------------------------------
 // Activity, Contributions & History
 // ---------------------------------------------------------------------------
 
-export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
+/**
+ * The latest edits that went live. A parked one (a MediaWiki edit that conflicted with WikiOS's head
+ * and never went live) is left out, unless `includeParked`: the recent-changes page lists it, flagged
+ * `parked`; everything that presents "the latest change" (the Main Page, the feeds) does not.
+ */
+export async function ixwikiRecentChanges(
+  limit: number = 20,
+  { includeParked = false }: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
   try {
+    // A revision's size is stored with it, and the article's summary is its excerpt: no wikitext is read.
     const revs = await db.wikiRevision.findMany({
       where: {
         source: "ixwiki",
         article: { namespace: 0, status: "PUBLISHED" },
         author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
+        ...(includeParked ? {} : { parked: false }),
       },
       orderBy: { createdAt: "desc" },
       take: limit,
-      include: {
-        article: {
-          select: {
-            title: true,
-            summary: true,
-            leadImageUrl: true,
-            wikitext: true,
-          },
-        },
+      select: {
+        author: true,
+        summary: true,
+        byteSize: true,
+        byteDelta: true,
+        parked: true,
+        createdAt: true,
+        article: { select: { title: true, summary: true, leadImageUrl: true } },
       },
     });
 
     return revs
       .filter((r) => r.article?.title)
       .map((r) => {
-        const blurb = cleanExcerpt(r.wikitext || r.article.wikitext || r.article.summary, 180);
-        const rawSize = calculateRawTextBytes(r.wikitext || r.article.wikitext);
-        const delta = r.byteDelta !== 0 ? r.byteDelta : rawSize;
-
+        const delta = r.byteDelta !== 0 ? r.byteDelta : r.byteSize;
         return {
           title: r.article.title,
           user: r.author || "MediaWiki Editor",
-          timestamp: new Date(r.createdAt).toISOString(),
+          timestamp: r.createdAt.toISOString(),
           comment: r.summary || "",
           type: "edit" as const,
-          oldLen: Math.max(0, rawSize - delta),
-          newLen: rawSize,
-          blurb: blurb || null,
+          oldLen: Math.max(0, r.byteSize - delta),
+          newLen: r.byteSize,
+          blurb: cleanExcerpt(r.article.summary, 180) || null,
           thumbnail: resolveStoredImageUrl(r.article.leadImageUrl),
           parked: r.parked,
         };

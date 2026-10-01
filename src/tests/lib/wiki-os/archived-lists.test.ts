@@ -73,16 +73,17 @@ beforeEach(() => {
 describe("search", () => {
   it("spotlight search looks at published pages only", async () => {
     await NativeSearchService.spotlightSearch("Caph", "ixwiki", 5);
-    expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
-  });
-
-  it("full-text search filters the raw query and the fallback query", async () => {
-    await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
 
     const [sql] = mockDb.$queryRawUnsafe.mock.calls[0] as [string];
     expect(sql).toContain("status = 'PUBLISHED'");
-    expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
-    expect(mockDb.wikiArticle.count.mock.calls[0]?.[0].where).toMatchObject(published);
+  });
+
+  it("full-text search filters the page query and the count query", async () => {
+    await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
+
+    const [pageSql, countSql] = mockDb.$queryRawUnsafe.mock.calls.map((call) => call[0] as string);
+    expect(pageSql).toContain("a.status = 'PUBLISHED'");
+    expect(countSql).toContain("a.status = 'PUBLISHED'");
   });
 
   it("template search over articles filters too", async () => {
@@ -91,6 +92,23 @@ describe("search", () => {
       namespace: 10,
       ...published,
     });
+  });
+
+  // last: it leaves the search on its slow queries (the indexes "are missing") for the rest of the file
+  it("the slow queries used before the search indexes exist filter too", async () => {
+    mockDb.$queryRawUnsafe.mockRejectedValue(new Error("column a.searchVector does not exist"));
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await NativeSearchService.spotlightSearch("Caph", "ixwiki", 5);
+    await NativeSearchService.fulltextSearch("kingdom of caphiria", "ixwiki", 10);
+
+    const wheres = mockDb.wikiArticle.findMany.mock.calls.map((call) => call[0].where);
+    expect(wheres).toHaveLength(2);
+    expect(wheres).toEqual([
+      expect.objectContaining(published),
+      expect.objectContaining(published),
+    ]);
+    expect(mockDb.wikiArticle.count.mock.calls[0]?.[0].where).toMatchObject(published);
   });
 });
 

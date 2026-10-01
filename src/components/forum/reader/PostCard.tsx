@@ -17,7 +17,7 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { sanitizeHtml } from "~/lib/utils";
 
@@ -100,7 +100,7 @@ export function PostCard({
   const isOwnPost = currentForumUserId != null && currentForumUserId === authorId;
   const utils = api.useUtils();
   const { chatBadge } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
 
   const reactMutation = api.forum.reactToPost.useMutation({
     onMutate: () => {

@@ -69,12 +69,18 @@ export const wikiosSearchRouter = createTRPCRouter({
     }),
 
   /**
-   * Get recent changes from the wiki feed.
+   * Get recent changes from the wiki feed: the edits that went live. `includeParked` adds the ones
+   * that did not (MediaWiki edits that conflicted with WikiOS's head), flagged `parked`.
    */
   getRecentChanges: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        includeParked: z.boolean().default(false),
+      })
+    )
     .query(async ({ input }) => {
-      return getRecentChanges(input.limit);
+      return getRecentChanges(input.limit, { includeParked: input.includeParked });
     }),
 
   /**
@@ -93,7 +99,30 @@ export const wikiosSearchRouter = createTRPCRouter({
   }),
 
   /**
+   * Title typeahead for the search boxes: titles that start with, contain or resemble the text
+   * (id, title, summary and lead image only; never the wikitext), at most 10.
+   */
+  typeahead: publicProcedure
+    .input(
+      z.object({
+        query: z.string().min(1).max(200),
+        limit: z.number().int().min(1).max(10).default(10),
+      })
+    )
+    .query(async ({ input }) => {
+      const results = await NativeSearchService.spotlightSearch(input.query, "ixwiki", input.limit);
+      return {
+        results: results.map((r) => ({
+          title: r.title,
+          snippet: r.snippet,
+          thumbnail: r.leadImageUrl ?? null,
+        })),
+      };
+    }),
+
+  /**
    * Full-text search with weighted relevance scoring — native PostgreSQL tsvector primary.
+   * `snippetRanges` are the character ranges of `snippet` that matched (the client marks them).
    */
   advancedSearch: publicProcedure
     .input(
@@ -111,28 +140,28 @@ export const wikiosSearchRouter = createTRPCRouter({
           input.query,
           "ixwiki",
           input.limit,
-          input.offset
+          input.offset,
+          input.namespace
         );
-        if (native && native.results.length > 0) {
-          return {
-            results: native.results.map((r) => ({
-              title: r.title,
-              namespace: 0,
-              snippet: r.snippet,
-              titleSnippet: null,
-              sectionSnippet: null,
-              categorySnippet: null,
-              size: (r.readingTime || 1) * 200,
-              wordCount: (r.readingTime || 1) * 200,
-              timestamp: new Date().toISOString(),
-              thumbnail: r.leadImageUrl ?? null,
-            })),
-            totalHits: native.total,
-            hasMore: native.results.length >= input.limit,
-          };
-        }
+        return {
+          results: native.results.map((r) => ({
+            title: r.title,
+            namespace: input.namespace ?? 0,
+            snippet: r.snippet,
+            snippetRanges: r.snippetRanges,
+            titleSnippet: null,
+            sectionSnippet: null,
+            categorySnippet: null,
+            size: (r.readingTime || 1) * 200,
+            wordCount: (r.readingTime || 1) * 200,
+            timestamp: new Date().toISOString(),
+            thumbnail: r.leadImageUrl ?? null,
+          })),
+          totalHits: native.total,
+          hasMore: input.offset + native.results.length < native.total,
+        };
       } catch {
-        // Fallback to legacy MySQL fulltext search
+        // The native search could not answer: fall back to the bridge's reader
       }
 
       const result = await fullTextSearch(input.query, input.limit, input.offset, input.namespace);
@@ -141,6 +170,7 @@ export const wikiosSearchRouter = createTRPCRouter({
           title: r.title,
           namespace: r.namespace,
           snippet: r.snippet,
+          snippetRanges: [] as Array<[number, number]>,
           titleSnippet: null,
           sectionSnippet: null,
           categorySnippet: null,

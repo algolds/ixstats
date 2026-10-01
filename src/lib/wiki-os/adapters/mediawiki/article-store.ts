@@ -8,7 +8,7 @@
 import { db } from "~/server/db";
 import { Cache } from "~/lib/cache/cache";
 import { ArticleRepository, type FindArticleOptions } from "../../core/article-repository";
-import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
+import { toArticleSlug, toRevisionRef, type HistoryPosition } from "../../core/domain-types";
 import { loadRevisionAuthors } from "../../core/revision-authors";
 import {
   getArticleWikitext,
@@ -39,8 +39,14 @@ export interface HistoryRevision {
   size: number;
   byteDelta: number;
   minor: boolean;
+  /** MediaWiki's rev_sha1 of the text; null when the revision predates it (or came from MediaWiki). */
+  sha1: string | null;
   /** A MediaWiki edit that did not go live (conflict): in the history, never the page's current text. */
   parked: boolean;
+  /** MediaWiki revision deletion: `sha1`, `user` and `comment` are real here; a public reader is not shown them. */
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
 }
 
 /**
@@ -95,6 +101,8 @@ export async function getRevisionWikitextShadow(
   title: string;
   source: string;
   timestamp: string;
+  /** A MediaWiki edit that did not go live (conflict): never the text a revert or restore may put back. */
+  parked: boolean;
   fromShadow: boolean;
 } | null> {
   const revision = await getRevisionWikitext(revid);
@@ -102,30 +110,38 @@ export async function getRevisionWikitextShadow(
 }
 
 /**
- * Fetch revision history from PostgreSQL. Parked revisions are left out unless the caller is a
- * history list (`includeParked`): everything that reads "the latest revision" off this list (the
- * edit-conflict check, rollback) must not see them. MediaWiki is never asked.
+ * Fetch revision history from PostgreSQL. `position` pages through it (see `HistoryPosition`). Parked
+ * revisions are left out unless the caller is a history list (`includeParked`): everything that reads
+ * "the latest revision" off this list (the edit-conflict check, rollback) must not see them. MediaWiki
+ * is never asked.
  */
 export async function getPageHistoryShadow(
   title: string,
   limit = 50,
-  _offset?: number,
+  position?: HistoryPosition,
   source: WikiSource = "ixwiki",
   { includeParked = false }: { includeParked?: boolean } = {}
 ): Promise<{ revisions: HistoryRevision[]; hasMore: boolean; fromShadow: boolean }> {
-  const pgRevs = await ArticleRepository.getHistory(title, source, limit, { includeParked });
+  // One more than asked tells whether there is a next page
+  const pgRevs = await ArticleRepository.getHistory(title, source, limit + 1, position, {
+    includeParked,
+  });
   return {
-    revisions: pgRevs.map((r) => ({
+    revisions: pgRevs.slice(0, limit).map((r) => ({
       revid: toRevisionRef(r),
       timestamp: r.createdAt.toISOString(),
       user: r.author || "Wiki Contributor",
       comment: r.summary || "",
-      size: r.byteSize || 0,
-      byteDelta: r.byteDelta ?? 0,
+      size: r.byteSize,
+      byteDelta: r.byteDelta,
       minor: r.minor,
+      sha1: r.sha1,
       parked: r.parked,
+      textDeleted: r.textDeleted,
+      commentDeleted: r.commentDeleted,
+      userDeleted: r.userDeleted,
     })),
-    hasMore: false,
+    hasMore: pgRevs.length > limit,
     fromShadow: true,
   };
 }

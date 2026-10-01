@@ -269,11 +269,11 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
 }
 
 /**
- * Extracts the genuine lead image URL from MediaWiki / Parsoid article HTML.
+ * The genuine lead image of MediaWiki / Parsoid article HTML: its `<img>` tag and normalized URL.
  * Strictly ignores maintenance notices, WIP badges, template icons, and grabs
  * images from the Infobox first, then the first real content thumbnail/figure.
  */
-export function extractLeadImageFromHtml(html: string | null | undefined): string | null {
+function findLeadImage(html: string | null | undefined): { tag: string; url: string } | null {
   if (!html || typeof html !== "string") return null;
 
   // 1. Strip out all known maintenance / notice / ambox blocks
@@ -302,7 +302,7 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
       if (src && !isNoticeOrUtilityIcon(src)) {
         if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
           const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return normalized;
+          if (normalized) return { tag: fullTag, url: normalized };
         }
       }
     }
@@ -322,7 +322,7 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
       if (src && !isNoticeOrUtilityIcon(src)) {
         if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
           const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return normalized;
+          if (normalized) return { tag: fullTag, url: normalized };
         }
       }
     }
@@ -340,11 +340,86 @@ export function extractLeadImageFromHtml(html: string | null | undefined): strin
 
     if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
       const normalized = normalizeWikiImageUrl(rawSrc);
-      if (normalized) return normalized;
+      if (normalized) return { tag: fullTag, url: normalized };
     }
   }
 
   return null;
+}
+
+/** The URL of the genuine lead image of article HTML (see `findLeadImage`), or null. */
+export function extractLeadImageFromHtml(html: string | null | undefined): string | null {
+  return findLeadImage(html)?.url ?? null;
+}
+
+/** A lead image with the size of the file it shows (MediaWiki's `data-file-width`/`-height`), when the HTML says. */
+export interface LeadImage {
+  url: string;
+  fileWidth: number | null;
+  fileHeight: number | null;
+}
+
+const numberAttribute = (tag: string, name: string): number | null => {
+  const value = Number(new RegExp(`\\b${name}=["'](\\d+)["']`, "i").exec(tag)?.[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
+};
+
+/** The lead image of article HTML with its file's dimensions: what the page reserves its hero box from. */
+export function extractLeadImage(html: string | null | undefined): LeadImage | null {
+  const found = findLeadImage(html);
+  if (!found) return null;
+  return {
+    url: found.url,
+    fileWidth: numberAttribute(found.tag, "data-file-width"),
+    fileHeight: numberAttribute(found.tag, "data-file-height"),
+  };
+}
+
+/** The widest picture the article's hero shows; a larger file is served as a thumbnail this wide. */
+export const HERO_IMAGE_WIDTH = 1280;
+
+export interface HeroImage {
+  /** What the hero loads: a `HERO_IMAGE_WIDTH` thumbnail of a larger photo, else the file itself. */
+  src: string;
+  /** The file itself: where the hero falls back when the thumbnail cannot be had. */
+  original: string;
+  /** The picture's size as `src` serves it (null when the file's size is not known). */
+  width: number | null;
+  height: number | null;
+}
+
+const RASTER_FILE = /\.(?:png|jpe?g|gif|webp)(?:$|\?)/i;
+const THUMB_PATH = /\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/;
+const ORIGINAL_PATH = /\/images(\/[^/]+\/[^/]+)\/([^/?]+)$/;
+
+/**
+ * The hero's picture for a lead image URL. A photo wider than the hero can show is requested as a
+ * thumbnail of `HERO_IMAGE_WIDTH` (MediaWiki's /images/thumb/ scheme), not as the full file; a
+ * smaller one, a vector (MediaWiki would rasterize its thumbnail) and a file of unknown size are
+ * served as the file itself, as the hero always did.
+ */
+export function heroImage(
+  url: string,
+  fileWidth: number | null,
+  fileHeight: number | null
+): HeroImage {
+  const original = url.replace(THUMB_PATH, "$1");
+  if (
+    fileWidth === null ||
+    fileHeight === null ||
+    fileWidth <= HERO_IMAGE_WIDTH ||
+    !RASTER_FILE.test(original) ||
+    !ORIGINAL_PATH.test(original)
+  ) {
+    return { src: original, original, width: fileWidth, height: fileHeight };
+  }
+
+  return {
+    src: original.replace(ORIGINAL_PATH, `/images/thumb$1/$2/${HERO_IMAGE_WIDTH}px-$2`),
+    original,
+    width: HERO_IMAGE_WIDTH,
+    height: Math.round((HERO_IMAGE_WIDTH * fileHeight) / fileWidth),
+  };
 }
 
 // ---------------------------------------------------------------------------

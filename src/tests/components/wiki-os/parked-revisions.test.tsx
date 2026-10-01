@@ -14,9 +14,7 @@ jest.mock("~/trpc/react", () => ({
         useMutation: () => ({ mutate: jest.fn(), reset: jest.fn(), isPending: false, error: null }),
       },
       rollback: { useMutation: () => ({ mutate: jest.fn(), isPending: false, error: null }) },
-      getRevisionContent: {
-        useQuery: () => ({ data: { wikitext: "text", title: "Foo", source: "ixwiki" } }),
-      },
+      getDiff: { useQuery: () => ({ data: undefined, isLoading: false, error: null }) },
     },
   },
 }));
@@ -86,5 +84,60 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     );
 
     expect(screen.queryByRole("button", { name: /Rollback/ })).toBeNull();
+  });
+
+  it("offers no revert to a parked revision: it never was the page's text", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        // the revision compared with (index 1) is the parked one
+        revisions={[revision("r3", "bob"), revision("9001", "carol", true), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /Revert to this version/ })).toBeNull();
+    expect(screen.getByText(/r9001 never went live, so it cannot be restored/)).toBeInTheDocument();
+  });
+
+  it("still offers the revert when the revision compared with is live", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[revision("r3", "bob"), revision("r2", "carol"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /Revert to this version/ })).toBeInTheDocument();
+  });
+});
+
+describe("ScrubbableRevisionTimeline with a hidden author (MediaWiki revision deletion)", () => {
+  const hidden = (id: string) => ({ ...revision(id, "x"), author: null });
+
+  it("offers no rollback of an author whose name is hidden, and says who it is in the list", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[hidden("r3"), hidden("r2"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /Rollback/ })).toBeNull();
+    expect(screen.getAllByText("Community Contributor").length).toBeGreaterThan(0);
+  });
+
+  it("still offers it for a named author", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[revision("r3", "bob"), revision("r2", "bob"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Rollback bob" })).toBeInTheDocument();
   });
 });

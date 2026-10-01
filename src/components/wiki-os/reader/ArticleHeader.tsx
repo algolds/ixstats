@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { preload } from "react-dom";
 import Link from "next/link";
 import {
   Trophy,
@@ -14,6 +15,7 @@ import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
+import { heroImage } from "~/lib/wiki-os/transformers/image-url";
 import type { ActiveCountryData } from "~/components/wiki-os/shared/ActiveCountryUnifiedWidget";
 import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
@@ -50,6 +52,8 @@ export interface ArticleHeaderProps {
   wikiSource?: string;
   countryData?: ActiveCountryData | Record<string, unknown> | null;
   featuredImageUrl?: string | null;
+  /** The size of the lead image's file, when the article's HTML says (it fixes the hero's shape from the first paint). */
+  featuredImageFile?: { width: number | null; height: number | null } | null;
   themeColors?: ArticleThemeColors | null;
   authorInfo?: ArticleAuthorInfo | null;
   awardsData?: {
@@ -69,12 +73,19 @@ export interface ArticleHeaderProps {
   onTocClick: () => void;
 }
 
+/** The hero card's shape: its picture's, kept within a banner's range; 3.2 when the size is not known. */
+function heroAspectRatio(width: number | null, height: number | null): number {
+  if (!width || !height) return 3.2;
+  return Math.max(2.2, Math.min(4.0, width / height));
+}
+
 export function WikiOSHeader({
   title,
   lastModified,
   wikiSource,
   countryData,
   featuredImageUrl,
+  featuredImageFile,
   themeColors,
   authorInfo,
   awardsData,
@@ -88,19 +99,40 @@ export function WikiOSHeader({
         ? featuredImageUrl
         : null;
 
-  const backdropUrl = useMemo(() => {
+  // The hero's picture: a thumbnail 1280 px wide of a larger photo (never the full file, which
+  // was the page's biggest download), else the file itself; and its shape, known before any pixel.
+  const hero = useMemo(() => {
     if (!rawBackdropUrl) return null;
-    const thumbMatch = rawBackdropUrl.match(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\//);
-    if (thumbMatch) {
-      return rawBackdropUrl.replace(/\/thumb(\/[^/]+\/[^/]+\/[^/]+)\/[^/]+$/, "$1");
+    // the file size is the lead image's: a country's flag backdrop has no size we know
+    const file = typeof countryData?.flagUrl === "string" ? null : featuredImageFile;
+    return heroImage(rawBackdropUrl, file?.width ?? null, file?.height ?? null);
+  }, [rawBackdropUrl, countryData?.flagUrl, featuredImageFile]);
+  const backdropUrl = hero?.original ?? null;
+  // A thumbnail the server cannot make falls back to the file, in the same box
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const heroSrc = hero ? (failedSrc === hero.src ? hero.original : hero.src) : null;
+  if (heroSrc) {
+    // the browser starts fetching it with the HTML, before the page's scripts have run
+    preload(heroSrc, { as: "image", fetchPriority: "high", referrerPolicy: "no-referrer" });
+  }
+  const onHeroError = () => {
+    if (hero && hero.src !== hero.original) setFailedSrc(hero.src);
+  };
+  // A thumbnail that failed before hydration fired no React `onError`: the picture is already
+  // "complete" with no pixels. Look once the page is interactive, and fall back the same way.
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const picture = backdropRef.current?.querySelector("img");
+    if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
+      // reads the DOM's state (an external system) after hydration, which no render can know
+      // oxlint-disable-next-line
+      if (hero.src !== hero.original) setFailedSrc(hero.src);
     }
-    return rawBackdropUrl;
-  }, [rawBackdropUrl]);
+  }, [hero, failedSrc]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [showPopover, setShowPopover] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -114,24 +146,6 @@ export function WikiOSHeader({
     }
     return;
   }, [awardsData]);
-
-  // Capture natural image dimensions to adjust card aspect ratio dynamically
-  useEffect(() => {
-    if (!backdropUrl) {
-      // oxlint-disable-next-line
-      setAspectRatio(null);
-      return;
-    }
-    const img = new Image();
-    img.src = backdropUrl;
-    img.referrerPolicy = "no-referrer";
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        const ratio = img.naturalWidth / img.naturalHeight;
-        setAspectRatio(Math.max(2.2, Math.min(4.0, ratio)));
-      }
-    };
-  }, [backdropUrl]);
 
   const primaryAward = useMemo(() => {
     if (!awardsData?.awards || awardsData.awards.length === 0) return null;
@@ -238,7 +252,7 @@ export function WikiOSHeader({
   const containerStyle = {
     ...tiltStyle,
     transformStyle: "preserve-3d" as const,
-    aspectRatio: aspectRatio ? `${aspectRatio}` : "3.2",
+    aspectRatio: String(heroAspectRatio(hero?.width ?? null, hero?.height ?? null)),
     minHeight: "150px",
     maxHeight: "260px",
   } as React.CSSProperties;
@@ -298,6 +312,7 @@ export function WikiOSHeader({
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (
         <div
+          ref={backdropRef}
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden rounded-2xl select-none"
           style={
@@ -316,7 +331,9 @@ export function WikiOSHeader({
                 }}
               />
               <img
-                src={backdropUrl}
+                src={heroSrc ?? backdropUrl}
+                width={hero?.width ?? undefined}
+                height={hero?.height ?? undefined}
                 alt=""
                 className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
                 style={{
@@ -330,17 +347,23 @@ export function WikiOSHeader({
                   ...(heroMediaStyle.padding ? { padding: heroMediaStyle.padding } : {}),
                 }}
                 loading="eager"
+                fetchPriority="high"
                 referrerPolicy="no-referrer"
+                onError={onHeroError}
               />
             </>
           ) : (
             <img
-              src={backdropUrl}
+              src={heroSrc ?? backdropUrl}
+              width={hero?.width ?? undefined}
+              height={hero?.height ?? undefined}
               alt=""
               className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
               loading="eager"
+              fetchPriority="high"
               referrerPolicy="no-referrer"
+              onError={onHeroError}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent" />

@@ -173,10 +173,14 @@ export async function getPageSections(
 }
 
 /**
- * Get recent changes from IxWiki.
+ * Get recent changes from IxWiki: the edits that went live, plus the parked ones (flagged) when
+ * `includeParked`.
  */
-export async function getRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
-  return ixwikiRecentChanges(limit);
+export async function getRecentChanges(
+  limit: number = 20,
+  options: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
+  return ixwikiRecentChanges(limit, options);
 }
 
 /**
