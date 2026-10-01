@@ -6,6 +6,8 @@
  * PM2 ecosystem file), so `isWikiStandalone()` is safe to call from the proxy and from pages.
  */
 
+import { withBasePath } from "~/lib/base-path";
+
 const MAIN_PAGE_PATH = "/wiki/Main_Page";
 
 /** The standalone build cannot redirect to IxStates without NEXT_PUBLIC_IXSTATES_URL. */
@@ -79,10 +81,36 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
   return next === "" || next === "/" || next === "." || next === "-";
 }
 
+/** `NEXT_PUBLIC_IXSTATES_URL` without its trailing slash, or null when it is not set. */
+function configuredIxstatesUrl(): string | null {
+  return process.env.NEXT_PUBLIC_IXSTATES_URL?.trim().replace(/\/+$/, "") || null;
+}
+
 function ixstatesBaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_IXSTATES_URL?.trim();
+  const configured = configuredIxstatesUrl();
   if (!configured) throw new WikiStandaloneConfigError();
-  return configured.replace(/\/+$/, "");
+  return configured;
+}
+
+const ABSOLUTE_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+const ORIGIN = /^[a-z][a-z0-9+.-]*:\/\/[^/]+/i;
+
+/**
+ * The `href` of a route that belongs to IxStates, not to the wiki (`/blurbs`, `/mycountry`, `/dashboard`,
+ * `/countries`, `/achievements`, `/messages`, `/maps`, ...): `withBasePath(path)` inside IxStates, where the
+ * route is served on the same host, and the absolute IxStates URL in the standalone WikiOS build, which
+ * serves none of them (a relative link would only bounce through the guard's redirect). An absolute URL
+ * stays as it is, and so does a path that already starts with the IxStates URL's own path
+ * (`/projects/ixstates/...`). A standalone build with no NEXT_PUBLIC_IXSTATES_URL keeps the relative link:
+ * the guard then reports the missing configuration (`WikiStandaloneConfigError`) instead of a link failing the
+ * render of every page.
+ */
+export function ixstatesHref(path: string): string {
+  const base = ABSOLUTE_URL.test(path) || !isWikiStandalone() ? null : configuredIxstatesUrl();
+  if (!base) return withBasePath(path);
+  const rooted = path.startsWith("/") ? path : `/${path}`;
+  const basePath = base.replace(ORIGIN, "");
+  return `${base}${basePath && rooted.startsWith(`${basePath}/`) ? rooted.slice(basePath.length) : rooted}`;
 }
 
 /**

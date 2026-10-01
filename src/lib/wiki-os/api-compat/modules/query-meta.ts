@@ -14,7 +14,7 @@ import {
 import { mwTimestamp, type JsonObject, type JsonValue } from "../format";
 import { NAMESPACE_CANONICAL_NAMES } from "~/lib/wiki-os/core/title";
 import { GROUP_RIGHTS, changeableGroups, type Group } from "~/lib/wiki-os/rights";
-import { MEDIAWIKI_TARGET_VERSION } from "~/lib/wiki-os/config";
+import { MEDIAWIKI_TARGET_VERSION, wikiosConfig } from "~/lib/wiki-os/config";
 import type { ApiContext } from "../types";
 import { loginTokenFor } from "./login";
 
@@ -22,7 +22,7 @@ import { loginTokenFor } from "./login";
 // siteinfo
 // ---------------------------------------------------------------------------
 
-export const SITE_NAME = "IxWiki";
+export const SITE_NAME = wikiosConfig.siteName;
 /** The script path api.php lives under (the endpoint is `/w/api.php`). */
 export const SCRIPT_PATH = "/w";
 export const MAX_ARTICLE_SIZE = 2_097_152;

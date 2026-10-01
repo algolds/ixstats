@@ -13,11 +13,12 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **PostgreSQL primary storage.** Writes commit in under 10ms directly to `wiki_articles` and `wiki_revisions`.
 - **`contentHtml` cache.** `contentHtml` is served when present, but `ArticleRepository.saveArticle` writes an empty string unless the caller supplies HTML, so the next read re-renders through MediaWiki `action=parse`; reads also call MediaWiki for author data (cached). There is no measured sub-2ms, no-PHP read path.
 - **Relational link graph (`wiki_links`).** Stores directed edges for indexed backlink queries and identifies red links without extra lookups.
-- **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media records in `wiki_assets` (pointers to images on ixwiki.com; `md5Hash` hashes the filename, not the content) with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
+- **Native Media & Asset Engine (`MediaAssetService`, plan 411).** Manages the media records in `wiki_assets` (`md5Hash` hashes the filename for MediaWiki's shard path, `sha1` the content). Uploads are native: `services/upload-service.ts` checks the bytes (type sniffed from the first bytes, size, SVG safety), stages them under their SHA-1 in `WIKIOS_UPLOAD_DIR`, serves them at once from `/api/wiki/file/<name>`, creates the `File:` page and queues an `upload` mirror job (`services/mirror-upload.ts`) that sends the same bytes to MediaWiki and then switches the asset to its `/images/` path. No asset row is invented for a name that was never uploaded or fetched, and there is no made-up blurhash.
 - **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the real author; failures back off and end `dead` after 8 attempts for an administrator to requeue.
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
+- **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
 - **Canvas visual editor (`CANVAS_VERSION = 1`).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
 
@@ -69,7 +70,7 @@ flowchart TD
 ```
 src/lib/wiki-os/
 ├── index.ts                   # Root barrel export
-├── config.ts                  # Configuration and DEFAULT_MEDIAWIKI_URL
+├── config.ts                  # The one config object (`wikiosConfig`) and the URL helpers (plan 415)
 ├── types.ts                   # Nominal contracts
 ├── auth.ts                    # User identity and role resolution
 ├── use-wiki-auth.ts           # React client hook for authentication
@@ -83,7 +84,6 @@ src/lib/wiki-os/
 │   ├── native-search-service.ts # Two-tier search service
 │   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
-│   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr); exercised only by tests
 │   └── category-service.ts    # Recursive category tree queries
 │
 ├── guardian/                  # Security and CDN management
@@ -209,7 +209,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 `getCategories`, `getCategoryMembers`, `getCategoryTotalCounts`, `getParentCategories`, `getSubcategories`, `searchCategories`, `autocompleteCategories`
 
 **Editor** (`editing.ts`):
-`previewWikitext`, `saveWikitext`, `uploadFile`, `revertToRevision`, `rollback`, `restoreArticle`
+`previewWikitext`, `saveWikitext`, `revertToRevision`, `rollback`, `restoreArticle`. File uploads are not a tRPC call: they go through `POST /api/wiki/upload` (the raw file as the request body, plan 411) and api.php's `action=upload`, both ending in `services/upload-service.ts`.
 
 **Templates** (`templates.ts`):
 `searchTemplates`, `getTemplateData`, `getTemplatePreview`

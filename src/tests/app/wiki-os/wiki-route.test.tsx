@@ -29,6 +29,7 @@ const mockPrefetchedState = jest.fn();
 const mockMissingPages = jest.fn();
 const mockRandomPage = jest.fn();
 const mockFileInfo = jest.fn();
+const mockFileDetails = jest.fn();
 const mockCategoryPage = jest.fn();
 const mockListPages = jest.fn();
 const mockPageInfo = jest.fn();
@@ -45,6 +46,7 @@ jest.mock("~/trpc/server", () => ({
       getMissingPages: (...args: unknown[]) => mockMissingPages(...args),
       getRandomPage: (...args: unknown[]) => mockRandomPage(...args),
       getFileInfo: (...args: unknown[]) => mockFileInfo(...args),
+      getFileDetails: (...args: unknown[]) => mockFileDetails(...args),
       getCategoryPage: (...args: unknown[]) => mockCategoryPage(...args),
       listPages: (...args: unknown[]) => mockListPages(...args),
       getPageInfo: (...args: unknown[]) => mockPageInfo(...args),
@@ -146,6 +148,7 @@ beforeEach(() => {
   mockMissingPages.mockResolvedValue([]);
   mockCategoryPage.mockResolvedValue({ members: [], total: 0, next: null });
   mockFileInfo.mockResolvedValue(null);
+  mockFileDetails.mockResolvedValue(null);
   mockResolveAuthor.mockResolvedValue({ wikiUsername: "Jane" });
 });
 
@@ -677,6 +680,22 @@ describe("namespaced pages (plan 412 step 4)", () => {
 
     mockFileInfo.mockResolvedValue(null);
     expect((await outcome(["File:Nope.svg"])).signal).toBe("not-found");
+  });
+
+  it("a file page shows the file's upload history and usage below the description (plan 411), with or without a description page", async () => {
+    const details = { history: [], usage: [{ title: "Eurth", urlPath: "Eurth" }], usageTotal: 1 };
+    mockFileInfo.mockResolvedValue({ name: "Flag.svg", url: "https://ixwiki.com/images/Flag.svg" });
+    mockFileDetails.mockResolvedValue(details);
+
+    succeeds(article({ title: "File:Flag.svg" }));
+    const described = await outcome(["File:Flag.svg"]);
+    const below = propsOf(described.tree, "ArticlePageClient")?.children as ReactElement;
+    expect(below.props).toMatchObject({ details });
+    expect(mockFileDetails).toHaveBeenCalledWith({ file: "Flag.svg" });
+
+    fails("NOT_FOUND");
+    const bare = await outcome(["File:Flag.svg"]);
+    expect(propsOf(bare.tree, "FileDetails")).toMatchObject({ details });
   });
 });
 

@@ -179,6 +179,29 @@ export function decideAction(request: ActionRequest): ActionDecision {
     : { allowed: true };
 }
 
+/**
+ * Whether the caller may create the `File:` page an upload makes: MediaWiki needs `edit` and `createpage` for it on top
+ * of `upload`, and honours a create protection on the title (a salted title). It is `decideAction` for "create" without
+ * the namespace policy, which keeps File: pages to administrators: that rule is about editing a page by hand,
+ * and the right to upload is what lets someone give a new file its page.
+ */
+export function decideFilePageCreation(request: Omit<ActionRequest, "action">): ActionDecision {
+  const { title, permissions, restrictions, now } = request;
+  const { block, rights } = permissions;
+  if (block) return deny("blocked", describeBlock(block));
+  const restricted = checkRestrictions("create", restrictions, rights, now);
+  if (restricted) return restricted;
+  const missing = requiredRights("create", parseWikiTitle(title)?.namespaceId ?? 6).find(
+    (right) => !rights.has(right)
+  );
+  return missing
+    ? deny(
+        "permissiondenied",
+        `You do not have the "${missing}" right needed to create the page of this file.`
+      )
+    : { allowed: true };
+}
+
 function forbidden(code: DenialCode, reason: string): TRPCError {
   return new TRPCError({ code: "FORBIDDEN", message: `${code}: ${reason}` });
 }
@@ -236,6 +259,24 @@ export async function authorizeAction(
         })
       : [];
   const decision = decideAction({ action, title, permissions, restrictions, now: new Date() });
+  if (!decision.allowed) throw forbidden(decision.code, decision.reason);
+}
+
+/** Throws FORBIDDEN unless the caller may create the `File:` page of an upload: see `decideFilePageCreation`. */
+export async function authorizeFilePageCreation(
+  ctx: WikiAuthContext,
+  rawTitle: string,
+  source = "ixwiki"
+): Promise<void> {
+  const title = requireCanonicalTitle(rawTitle, source);
+  const [permissions, restrictions] = await Promise.all([
+    getWikiPermissions(ctx),
+    db.wikiRestriction.findMany({
+      where: { source, title },
+      select: { action: true, level: true, expiresAt: true },
+    }),
+  ]);
+  const decision = decideFilePageCreation({ title, permissions, restrictions, now: new Date() });
   if (!decision.allowed) throw forbidden(decision.code, decision.reason);
 }
 

@@ -46,9 +46,6 @@ jest.mock("~/lib/wiki-os/services/render-service", () => ({
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
-jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
-  MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
-}));
 
 describe("ArticleRepository.saveArticle revision hash", () => {
   it("stores the base-36 SHA-1 of the saved wikitext on the new revision", async () => {

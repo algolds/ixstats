@@ -8,7 +8,7 @@
  * (see `_media-response.ts`).
  */
 import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiApiUrl, mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 
 export const WIKI_USER_AGENT = "IxStats-Builder";
 
@@ -41,12 +41,11 @@ const READ_ACTIONS = ["query", "opensearch", "parse"] as const;
 export const WIKIS = {
   ixwiki: {
     label: "IxWiki",
-    siteUrl: DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, ""),
-    // Same-server optimisation when IXWIKI_LOCAL_PATH is set.
-    apiUrl: () =>
-      `${(process.env.IXWIKI_LOCAL_PATH || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "")}/api.php`,
-    imageInfoApiUrl: () => `${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`,
-    corsOrigins: ["https://ixwiki.com", "https://www.ixwiki.com", ...DEV_ORIGINS],
+    siteUrl: mediaWikiOrigin(),
+    // Server-side calls take the internal (same-server) api.php when WIKIOS_MEDIAWIKI_INTERNAL_URL is set.
+    apiUrl: () => mediaWikiApiUrl({ internal: true }),
+    imageInfoApiUrl: () => mediaWikiApiUrl({ internal: true }),
+    corsOrigins: [mediaWikiOrigin(), `https://www.${wikiosConfig.publicHost}`, ...DEV_ORIGINS],
     // None: WikiOS answers an IxWiki api.php itself (`/w/api.php`, from its own pages), and this proxy would
     // hand outside callers MediaWiki's copy of a page WikiOS has deleted. Only the media proxy
     // (`ixwiki/[...path]`, image files) still reaches IxWiki's MediaWiki from here.

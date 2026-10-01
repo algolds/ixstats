@@ -32,7 +32,6 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
   ArticleRepository: jest.requireMock("~/lib/wiki-os/core/article-repository").ArticleRepository,
-  MediaAssetService: { registerAsset: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/core/page-management-service", () => ({
   __esModule: true,
@@ -50,10 +49,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),
   getArticleHistoryShadow: jest.fn(),
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
-  __esModule: true,
-  executeMediaWikiWrite: jest.fn(),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";

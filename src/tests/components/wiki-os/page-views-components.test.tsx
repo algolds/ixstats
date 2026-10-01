@@ -36,6 +36,7 @@ import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
 import { CategoryMembers } from "~/components/wiki-os/reader/CategoryMembers";
 import { PageInfoTable } from "~/components/wiki-os/reader/PageInfoTable";
 import { PageList } from "~/components/wiki-os/reader/PageList";
+import { FileDetails } from "~/components/wiki-os/reader/FileDetails";
 import { FileImage } from "~/components/wiki-os/reader/FileImage";
 import { UserProfileCard } from "~/components/wiki-os/reader/UserProfileCard";
 import { DeletedPageLinks } from "~/components/wiki-os/reader/DeletedPageLinks";
@@ -249,6 +250,121 @@ describe("FileImage", () => {
     expect(image).toHaveAttribute("src", "https://ixwiki.com/images/a/ab/Flag.svg");
     expect(image).toHaveAttribute("fetchpriority", "high");
     expect(screen.getByText(/300 × 200 pixels, 2 KB, image\/svg\+xml/)).toBeInTheDocument();
+  });
+});
+
+describe("FileImage for a PDF (plan 411)", () => {
+  it("links the file instead of showing a picture", () => {
+    render(
+      <FileImage
+        file={{
+          name: "Treaty of Eurth.pdf",
+          url: "/api/wiki/file/Treaty_of_Eurth.pdf",
+          thumbUrl: null,
+          width: null,
+          height: null,
+          mimeType: "application/pdf",
+          sizeBytes: 90000,
+        }}
+      />
+    );
+
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Download Treaty of Eurth.pdf" })).toHaveAttribute(
+      "href",
+      "/api/wiki/file/Treaty_of_Eurth.pdf"
+    );
+    expect(screen.getByText(/88 KB, application\/pdf/)).toBeInTheDocument();
+  });
+});
+
+describe("FileDetails (plan 411)", () => {
+  const version = (over: Record<string, unknown> = {}) => ({
+    at: "2026-09-30T12:05:00.000Z",
+    user: "Jane Doe",
+    comment: "A better flag",
+    action: "overwrite",
+    width: 640,
+    height: 480,
+    size: 5120,
+    mime: "image/png",
+    ...over,
+  });
+
+  it("lists the upload history, newest first and marked current, with who uploaded each version", () => {
+    render(
+      <FileDetails
+        details={{
+          history: [
+            version(),
+            version({
+              at: "2026-09-01T08:30:00.000Z",
+              user: "Mod",
+              comment: null,
+              width: null,
+              height: null,
+              size: null,
+            }),
+          ],
+          usage: [],
+          usageTotal: 0,
+        }}
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: "File history" })).toBeInTheDocument();
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("30 Sept 2026, 12:05 UTC (current)");
+    expect(rows[0]).toHaveTextContent("640 × 480");
+    expect(rows[0]).toHaveTextContent("5 KB");
+    expect(rows[0]).toHaveTextContent("A better flag");
+    expect(rows[1]).toHaveTextContent("1 Sept 2026, 08:30 UTC");
+    expect(rows[1]).not.toHaveTextContent("(current)");
+    expect(screen.getByRole("link", { name: "Jane Doe" })).toHaveAttribute(
+      "href",
+      "/wiki/User:Jane_Doe"
+    );
+  });
+
+  it("shows no history table for a file WikiOS has no upload log of", () => {
+    render(<FileDetails details={{ history: [], usage: [], usageTotal: 0 }} />);
+
+    expect(screen.queryByRole("heading", { name: "File history" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "File usage" })).toBeInTheDocument();
+    expect(screen.getByText("No pages use this file.")).toBeInTheDocument();
+  });
+
+  it("links the pages that use the file, and says how many more there are", () => {
+    render(
+      <FileDetails
+        details={{
+          history: [],
+          usage: [
+            { title: "Eurth", urlPath: "Eurth" },
+            { title: "Flags of the world", urlPath: "Flags_of_the_world" },
+          ],
+          usageTotal: 340,
+        }}
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Flags of the world" })).toHaveAttribute(
+      "href",
+      "/wiki/Flags_of_the_world"
+    );
+    expect(screen.getByText(/These 340 pages use this file/)).toBeInTheDocument();
+    expect(screen.getByText(/Showing the first 2 of 340/)).toBeInTheDocument();
+  });
+
+  it("says a single page uses it", () => {
+    render(
+      <FileDetails
+        details={{ history: [], usage: [{ title: "Eurth", urlPath: "Eurth" }], usageTotal: 1 }}
+      />
+    );
+
+    expect(screen.getByText(/This page uses this file/)).toBeInTheDocument();
   });
 });
 

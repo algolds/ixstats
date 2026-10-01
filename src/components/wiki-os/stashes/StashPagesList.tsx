@@ -3,7 +3,7 @@
 // Saved wiki articles view with lead image thumbnail, WikiOS logomark, rich metadata, and quick actions.
 // Full Apple Design & Facet compliance.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import {
@@ -22,6 +22,18 @@ interface StashPagesListProps {
   items: StashedPageItem[];
   onUnstash: (pageTitle: string, contentType?: string) => void;
   thumbnailsMap?: Record<string, string>;
+}
+
+/** A stashed page's own note, sanitized once: one `{ __html }` per note, or React 19 writes it again on every render. */
+function StashNote({ note }: { note: string }) {
+  const markup = useMemo(() => ({ __html: sanitizeUserContent(note) }), [note]);
+
+  return (
+    <div
+      className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-3 text-xs leading-relaxed text-[var(--wikios-text-muted)] italic shadow-2xs"
+      dangerouslySetInnerHTML={markup}
+    />
+  );
 }
 
 function StashArticleThumbnail({ thumbUrl, title }: { thumbUrl?: string | null; title: string }) {
@@ -131,14 +143,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
             </div>
 
             {/* Custom User Note if present */}
-            {item.note && (
-              <div
-                className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-3 text-xs leading-relaxed text-[var(--wikios-text-muted)] italic shadow-2xs"
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeUserContent(item.note),
-                }}
-              />
-            )}
+            {item.note && <StashNote note={item.note} />}
           </div>
         );
       })}

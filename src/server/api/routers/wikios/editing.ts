@@ -15,7 +15,7 @@ import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
+import { ArticleRepository } from "~/lib/wiki-os/core";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import { getWikiActorLabel, requireWikiUserId, resolveWikiUsername } from "~/lib/wiki-os/auth";
 import {
@@ -23,7 +23,6 @@ import {
   refusals,
   requireCanonicalTitle,
   requireRight,
-  requireUploadTitle,
 } from "~/lib/wiki-os/permissions";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 import {
@@ -32,8 +31,6 @@ import {
   deletedPage,
   requireRestorableWikitext,
 } from "~/lib/wiki-os/services/edit-service";
-
-import { executeMediaWikiWrite } from "~/lib/wiki-os/adapters/mediawiki/write-service";
 
 export const wikiosEditingRouter = createTRPCRouter({
   /**
@@ -158,7 +155,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       const current = await ArticleRepository.findBySlug(title, "ixwiki", { includeArchived: true });
       if (current?.status === "ARCHIVED") throw deletedPage();
 
-      // Read-through: serve from shadow history with MySQL fallback
+      // Read-through: serve from the PostgreSQL revision history
       const history = await getArticleHistoryShadow(title, 50);
       const revisions = history.revisions;
       if (revisions.length < 2) {
@@ -209,72 +206,6 @@ export const wikiosEditingRouter = createTRPCRouter({
         success: true,
         title,
         revisionId: saveResult.revisionId,
-      };
-    }),
-
-  /**
-   * Upload a file (image/document) with Dual-Ingest (PostgreSQL wiki_assets + MediaWiki Action API).
-   */
-  uploadFile: lightMutationProcedure
-    .input(
-      z.object({
-        filename: z.string().min(1).max(255),
-        // ~10 MB decoded; rejected by validation, before anything is decoded.
-        fileBase64: z.string().max(15_000_000),
-        description: z.string().max(10000).default(""),
-        comment: z.string().max(500).default("Uploaded via WikiOS"),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      // The name MediaWiki will store it under: the rights are checked against that, not the raw text.
-      const fileTitle = requireUploadTitle(input.filename);
-      await authorizeAction(ctx, "upload", fileTitle);
-      const fileName = fileTitle.slice("File:".length);
-
-      // Validate file size (10MB max)
-      const fileBuffer = Buffer.from(input.fileBase64, "base64");
-      if (fileBuffer.length > 10 * 1024 * 1024) {
-        throw new Error("File size exceeds 10MB limit");
-      }
-
-      // 1. Dual-Ingest: Register asset in PostgreSQL wiki_assets
-      try {
-        const cleanName = fileName.replace(/ /g, "_");
-        const ext = cleanName.split(".").pop()?.toLowerCase() || "png";
-        const mimeType =
-          ext === "svg"
-            ? "image/svg+xml"
-            : ext === "jpg" || ext === "jpeg"
-              ? "image/jpeg"
-              : ext === "webp"
-                ? "image/webp"
-                : "image/png";
-
-        await MediaAssetService.registerAsset({
-          filename: cleanName,
-          title: cleanName.replace(/_/g, " "),
-          mimeType,
-          sizeBytes: fileBuffer.length,
-        });
-      } catch (assetErr) {
-        console.warn("[wikiosEditingRouter] Best-effort wiki_assets registration:", assetErr);
-      }
-
-      // 2. Upload to MediaWiki Action API
-      const result = await executeMediaWikiWrite({
-        action: "upload",
-        filename: fileName,
-        comment: `${input.comment} (via WikiOS)`,
-        text: input.description,
-        ignorewarnings: "1",
-      });
-
-      const { upload } = result.result;
-      return {
-        success: result.success,
-        filename: upload?.filename ?? fileName,
-        url: upload?.imageinfo?.url ?? null,
-        descriptionUrl: upload?.imageinfo?.descriptionurl ?? null,
       };
     }),
 

@@ -110,40 +110,6 @@ export async function ixwikiGetCurrentRevMeta(
   return null;
 }
 
-export async function ixwikiGetNamespacedWikitext(
-  title: string,
-  namespace: number
-): Promise<{ title: string; wikitext: string; pageId: number; namespace: number } | null> {
-  try {
-    const art: any = await (db as any).wikiArticle.findFirst({
-      where: {
-        source: "ixwiki",
-        namespace,
-        OR: [
-          { title },
-          { title: { contains: title, mode: "insensitive" } },
-          { slug: toArticleSlug(title) },
-        ],
-      },
-      select: { id: true, title: true, wikitext: true, namespace: true, status: true },
-    });
-    // A deleted page is gone: MediaWiki's copy of it is not a substitute.
-    if (art?.status === "ARCHIVED") return null;
-    if (art && art.wikitext) {
-      return {
-        title: art.title,
-        wikitext: art.wikitext,
-        pageId: 0,
-        namespace: art.namespace,
-      };
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  return null;
-}
-
 export interface ResolvedRedirect {
   /** The page to show: the input itself when it is not a redirect, else the redirect's target. */
   title: string;

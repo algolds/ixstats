@@ -3,7 +3,7 @@
 
 import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
-import { DEFAULT_MEDIAWIKI_URL, type WikiSource } from "../config";
+import { isMediaWikiUrl, mediaWikiImageUrl, type WikiSource } from "../config";
 import { forwardFinder } from "../wikitext/forward-finder";
 import {
   blocks,
@@ -183,8 +183,7 @@ export function getImagePath(filename: string): string {
  */
 export function getImageUrl(filename: string): string {
   const { fullPath } = getMd5ShardPath(filename);
-  const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
-  const directUrl = `${base}/images/${fullPath}`;
+  const directUrl = mediaWikiImageUrl(`/images/${fullPath}`);
   return normalizeWikiImageUrl(directUrl) || directUrl;
 }
 
@@ -261,8 +260,8 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
   }
 
   // Proxy ixwiki images to avoid direct hotlinking/CORS failures
-  if (url.startsWith("https://ixwiki.com/") || url.startsWith("http://ixwiki.com/")) {
-    const subpath = url.replace(/^https?:\/\/ixwiki\.com\//i, "");
+  if (/^https?:\/\//i.test(url) && isMediaWikiUrl(url)) {
+    const subpath = url.replace(/^https?:\/\/[^/]+\/?/i, "");
     return withBasePath(`/api/mediawiki/ixwiki/${subpath}`);
   }
 

@@ -6,7 +6,6 @@
 // WikiOS & Apple Design Standard.
 
 import React, { useMemo } from "react";
-import Link from "next/link";
 import {
   Globe,
   Coins as DollarSign,
@@ -19,6 +18,7 @@ import {
 import { soundEffects } from "~/lib/sound/cuelume";
 import { api } from "~/trpc/react";
 import { formatCompact } from "~/lib/format/compact";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 
 interface MarginInspectTabProps {
   articleTitle: string;
@@ -212,14 +212,14 @@ export function MarginInspectTab({
               </div>
             </div>
 
-            <Link
-              href={`/countries/${matchedCountry.id}`}
+            <a
+              href={ixstatesHref(`/countries/${matchedCountry.id}`)}
               className="text-margin-accent hover:text-margin-accent/90 flex items-center gap-1 p-1 text-xs font-bold transition-colors"
               title="Open sovereign dossier"
             >
               <span>Profile</span>
               <ExternalLink className="h-3 w-3" />
-            </Link>
+            </a>
           </div>
 
           {/* Metric Comparison Grid */}

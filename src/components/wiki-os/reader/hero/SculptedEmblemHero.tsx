@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import Link from "next/link";
 import {
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -165,6 +167,8 @@ export function SculptedEmblemHero({
   const calendarWeekDays = getCurrentWeekDays(clockTime);
   // oxlint-disable-next-line eslint/no-unused-vars
   const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
+  // one object per HTML: a new one each render would write the featured article's DOM again (React 19)
+  const featuredMarkup = useHtmlMarkup(featuredArticleHtml ?? "");
 
   // The count is what the database holds; without it the placeholder simply says "articles"
   const articleCount = siteStats?.articles;
@@ -587,8 +591,11 @@ export function SculptedEmblemHero({
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
+                className={cn(
+                  "wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed",
+                  ARTICLE_STYLE_ROOT_CLASS
+                )}
+                dangerouslySetInnerHTML={featuredMarkup}
               />
             )}
           </FeaturedArticleRefractionCard>

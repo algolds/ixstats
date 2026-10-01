@@ -85,36 +85,6 @@ function oldLeadParagraph(html: string): string {
     .trim();
 }
 
-/** The file names `MediaAssetService.processContentImages` found in a text, as it found them (its three expressions). */
-function oldReferencedFilenames(content: string): string[] {
-  const found = new Set<string>();
-  const fileRegex = /\[\[(?:File|Image):([^\]|#]+)/gi;
-  let match: RegExpExecArray | null;
-  while ((match = fileRegex.exec(content)) !== null) {
-    if (match[1]) found.add(match[1].trim());
-  }
-  const infoboxParamRegex =
-    /\|\s*(?:image|logo|flag|coat_of_arms|seal|map|photo)\s*=\s*([^|\n\r]+)/gi;
-  while ((match = infoboxParamRegex.exec(content)) !== null) {
-    const raw = match[1]?.trim();
-    if (raw && !raw.startsWith("{{") && /\.(?:png|jpg|jpeg|svg|gif|webp)$/i.test(raw)) {
-      found.add(
-        raw
-          .replace(/^\[\[(?:File|Image):/i, "")
-          .replace(/\]\].*$/, "")
-          .trim()
-      );
-    }
-  }
-  const htmlImgRegex =
-    /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'/?#]+))|data-file=["']([^"']+)["'])/gi;
-  while ((match = htmlImgRegex.exec(content)) !== null) {
-    const raw = match[1] || match[2];
-    if (raw) found.add(decodeURIComponent(raw).replace(/^(\d+px-)/i, ""));
-  }
-  return [...found];
-}
-
 async function main(): Promise<number> {
   const oldDir = resolve(option("old") ?? "");
   const corpusDir = resolve(option("corpus") ?? "");
@@ -276,14 +246,6 @@ async function main(): Promise<number> {
       new: async () =>
         (await import("../../src/lib/wiki-os/main-page/lead-paragraph")).leadParagraph,
     },
-    {
-      name: "core/media-references#referencedFilenames (against processContentImages' expressions)",
-      pages: [...wikitext, ...html],
-      old: async () => oldReferencedFilenames,
-      new: async () => {
-        const { referencedFilenames } = await import("../../src/lib/wiki-os/core/media-references");
-        return (text: string) => [...referencedFilenames(text)];
-      },
     },
     {
       name: "xml/import-reader#readExport (every event of a real dump)",

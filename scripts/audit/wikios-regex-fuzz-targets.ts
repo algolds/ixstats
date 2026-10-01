@@ -892,10 +892,6 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/main-page/lead-paragraph");
     return (s) => m.leadParagraph(s);
   }),
-  wikitext("core/media-references#referencedFilenames", async () => {
-    const m = await import("~/lib/wiki-os/core/media-references");
-    return (s) => m.referencedFilenames(s);
-  }),
   html("main-page/featured-article#featuredArticleDetails", async () => {
     const m = await import("~/lib/wiki-os/main-page/featured-article");
     return (s) => m.featuredArticleDetails(s);

@@ -4,6 +4,13 @@
  * mark in SystemConfig, follows rccontinue, never advances past a failed page, and applies MediaWiki
  * revisions one at a time, oldest first, by the inbound rule (fast-forward, echo or park).
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import { createHash } from "node:crypto";
 import {
   getInboundSyncStatus,

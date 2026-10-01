@@ -15,6 +15,7 @@ import { generatorFor, generatorNames, type GeneratorResult } from "./generator"
 import { LIST_MODULES } from "./query-list";
 import { metaSiteinfo, metaTokens, metaUserinfo } from "./query-meta";
 import type { PropContext, PropModule } from "./prop-common";
+import { propImageInfo } from "./file-info";
 import { propRevisions } from "./prop-revisions";
 import { propCategories, propImages, propInfo, propLinks, propPageprops, propTemplates } from "./query-prop";
 
@@ -34,6 +35,7 @@ export const PROP_MODULES: Readonly<Record<string, PropModule>> = {
   pageprops: propPageprops,
   templates: propTemplates,
   images: propImages,
+  imageinfo: propImageInfo,
 };
 
 function pageSelectors(rc: ApiContext): PageSelectors {

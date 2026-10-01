@@ -12,6 +12,7 @@ import type { MovePageOptions, MovePageResult, PageActor } from "~/lib/wiki-os/c
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
 import type { WikiAction } from "~/lib/wiki-os/permissions";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
+import type { UploadRequest, UploadResult } from "~/lib/wiki-os/services/upload-service";
 import type { WikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import type { SizeBudget } from "./budget";
 import type { FormatVersion, JsonValue } from "./format";
@@ -188,6 +189,20 @@ export interface ApiServices {
     reason: string;
     actor: PageActor;
   }): Promise<void>;
+  /**
+   * `action=upload` (plan 411): the upload service. It authorizes (`upload`, and `reupload` for a name that is taken),
+   * sniffs the bytes, answers with MediaWiki's warnings or stores the file, creates its `File:` page and queues
+   * its MediaWiki mirror job; it refuses with an `UploadError` for a file that may not be uploaded.
+   */
+  uploadFile(request: UploadRequest): Promise<UploadResult>;
+}
+
+/** A file part of a multipart POST (`action=upload`'s `file`): its bytes are the part, whole. */
+export interface RequestFile {
+  /** The name the client gave the part (MediaWiki's default file name for an upload). */
+  filename: string;
+  contentType: string;
+  bytes: Uint8Array;
 }
 
 /** What a module needs from the outside world: the data store, the existing services, the clock. */
@@ -226,4 +241,6 @@ export interface ApiContext {
   highLimits: boolean;
   /** How much page content this response may still hold. */
   budget: SizeBudget;
+  /** The file parts of a multipart POST, by field name (empty for any other request). */
+  files: ReadonlyMap<string, RequestFile>;
 }

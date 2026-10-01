@@ -126,6 +126,8 @@ export interface ImageRequest {
   headers: Headers;
   /** The requested file, used to name an SVG download. */
   fileName?: string;
+  /** Replaces the daily revalidation: for a file that may be replaced in minutes (a staged WikiOS upload). */
+  cacheControl?: string;
 }
 
 /**
@@ -143,6 +145,31 @@ function mayRenderSvgInline(headers: Headers): boolean {
 function svgDownloadName(fileName: string | undefined): string {
   const base = (fileName ?? "").replace(/\.svg$/i, "").replace(/[^A-Za-z0-9._-]+/g, "_");
   return `${base || "image"}.svg`;
+}
+
+/**
+ * The headers of a successful image response of `contentType`: CORS, the type, caching, nosniff, and for an SVG the
+ * sandbox CSP and a disposition that is inline only when the browser is loading an image (a `Vary` says so to caches).
+ */
+export function imageResponseHeaders(
+  contentType: string,
+  request: ImageRequest
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    ...MEDIA_CORS_HEADERS,
+    "Content-Type": contentType,
+    "Cache-Control": request.cacheControl ?? IMAGE_CACHE_CONTROL,
+    "X-Content-Type-Options": "nosniff",
+  };
+  if (contentType === "image/svg+xml") {
+    headers["Content-Security-Policy"] = SVG_CSP;
+    headers["Content-Disposition"] = mayRenderSvgInline(request.headers)
+      ? "inline"
+      : `attachment; filename="${svgDownloadName(request.fileName)}"`;
+    // The disposition depends on these request headers, so caches must not share it across them.
+    headers["Vary"] = "Sec-Fetch-Dest, Accept";
+  }
+  return headers;
 }
 
 /**
@@ -166,19 +193,8 @@ export async function imageOnlyResponse(res: Response, request: ImageRequest): P
   const body = await readCapped(res);
   if (!body) return reject(413);
 
-  const headers: Record<string, string> = {
-    ...MEDIA_CORS_HEADERS,
-    "Content-Type": contentType,
-    "Cache-Control": IMAGE_CACHE_CONTROL,
-    "X-Content-Type-Options": "nosniff",
-  };
-  if (contentType === "image/svg+xml") {
-    headers["Content-Security-Policy"] = SVG_CSP;
-    headers["Content-Disposition"] = mayRenderSvgInline(request.headers)
-      ? "inline"
-      : `attachment; filename="${svgDownloadName(request.fileName)}"`;
-    // The disposition depends on these request headers, so caches must not share it across them.
-    headers["Vary"] = "Sec-Fetch-Dest, Accept";
-  }
-  return new NextResponse(body, { status: 200, headers });
+  return new NextResponse(body, {
+    status: 200,
+    headers: imageResponseHeaders(contentType, request),
+  });
 }

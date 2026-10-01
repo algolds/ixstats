@@ -24,7 +24,8 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import dynamic from "next/dynamic";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -57,6 +58,13 @@ interface CountryActionsMenuProps {
   isOwnCountry?: boolean;
 }
 
+// The scheduler is a dialog nobody has opened yet when the menu mounts: its chunk is fetched when it is first
+// opened (plan 415, F19), not with every page that shows the menu (the wiki's sidebar widget does).
+const MeetingScheduler = dynamic(
+  () => import("~/components/executive/actions/MeetingScheduler").then((m) => m.MeetingScheduler),
+  { ssr: false }
+);
+
 type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
 export function CountryActionsMenu({
@@ -72,6 +80,7 @@ export function CountryActionsMenu({
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
+  const schedulerMounted = useMountOnFirstOpen(schedulerOpen);
 
   const { data: followStatus, refetch: refetchFollowStatus } =
     api.diplomaticCore.getFollowStatus.useQuery(
@@ -453,7 +462,7 @@ export function CountryActionsMenu({
           </div>
         </DialogContent>
       </Dialog>
-      {viewerCountryId && (
+      {viewerCountryId && schedulerMounted && (
         <MeetingScheduler
           countryId={viewerCountryId}
           open={schedulerOpen}

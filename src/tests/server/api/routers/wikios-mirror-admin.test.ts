@@ -10,6 +10,7 @@ jest.mock("~/server/db", () => ({
       findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),
       updateMany: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
   },
   isDatabaseReadOnly: true,

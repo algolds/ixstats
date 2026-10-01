@@ -8,17 +8,30 @@
  */
 
 import React, { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
-import { WikiView, WikiProfileView, WikiNarratorView } from "./views";
 import { PlayPauseMorph } from "./components/PlayPauseMorph";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
+
+// The plugin's metadata (id, priority, breadcrumb, accent) is synchronous; its expanded views are not needed
+// until the Halo opens, so each is its own chunk fetched then (plan 415, F19): the narrator player and the
+// profile view stay out of every article page's first load.
+const WikiView = dynamic(() => import("./views/WikiView").then((m) => m.WikiView), { ssr: false });
+const WikiProfileView = dynamic(
+  () => import("./views/WikiProfileView").then((m) => m.WikiProfileView),
+  { ssr: false }
+);
+const WikiNarratorView = dynamic(
+  () => import("./views/WikiNarratorView").then((m) => m.WikiNarratorView),
+  { ssr: false }
+);
 
 function getGreeting(ixTime: number): string {
   const hour = new Date(ixTime).getUTCHours();

@@ -15,7 +15,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 
 interface GovernanceSectionProps {
   searchFilter: string;
@@ -277,7 +277,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     </p>
                   </div>
                   <Link
-                    href={withBasePath("/admin/wikios-settings")}
+                    href={ixstatesHref("/admin/wikios-settings")}
                     data-cuelume-press="press"
                     data-cuelume-hover="tick"
                     className="border-wiki/40 bg-wiki/10 text-wiki hover:bg-wiki/20 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors active:scale-95"

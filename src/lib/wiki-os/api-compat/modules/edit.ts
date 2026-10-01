@@ -81,7 +81,7 @@ function readEditRequest(rc: ApiContext, p: ApiParams): EditRequest {
 }
 
 /** A text parameter that is too long, or holds a NUL (which PostgreSQL text cannot), is refused cleanly. */
-function checkedText(name: string, value: string | undefined): string | undefined {
+export function checkedText(name: string, value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   if (value.length > MAX_EDIT_CHARS) {
     throw new ApiError("toobig", `${name} is longer than ${MAX_EDIT_CHARS} characters.`);

@@ -10,6 +10,7 @@
  * normalised and capitalised but never given a namespace (`options.source`).
  */
 
+import { titleUrlPath, wikiosConfig } from "../config";
 import { TITLE_HEAD_CEILING, parseWikiTitle } from "../namespace-policy";
 import { toArticleSlug, type ArticleSlug } from "./domain-types";
 
@@ -20,8 +21,8 @@ export const NAMESPACE_CANONICAL_NAMES: Readonly<Record<number, string>> = Objec
   1: "Talk",
   2: "User",
   3: "User talk",
-  4: "IxWiki",
-  5: "IxWiki talk",
+  4: wikiosConfig.projectNamespace,
+  5: `${wikiosConfig.projectNamespace} talk`,
   6: "File",
   7: "File talk",
   8: "MediaWiki",
@@ -97,11 +98,6 @@ function capitalizeFirst(name: string): string {
   return (Array.from(upper).length === 1 ? upper : first) + rest.join("");
 }
 
-/** `/wiki/` path segment for a title: underscores, percent-encoded, ":" and "/" kept literal. */
-function toUrlPath(title: string): string {
-  return encodeURIComponent(title.replace(/ /g, "_")).replace(/%3A/g, ":").replace(/%2F/g, "/");
-}
-
 /** Split `raw` at its first "#": the page text and the trimmed, space-separated fragment. */
 function splitFragment(raw: string): { rest: string; fragment: string | null } {
   const hash = raw.indexOf("#");
@@ -160,7 +156,7 @@ export function canonicalizeTitle(
     base,
     slug: toArticleSlug(title),
     fragment,
-    urlPath: toUrlPath(title),
+    urlPath: titleUrlPath(title),
   };
 }
 

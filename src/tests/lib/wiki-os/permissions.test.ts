@@ -19,6 +19,7 @@ import {
   assertPageVisible,
   authorizeAction,
   decideAction,
+  decideFilePageCreation,
   importVerdict,
   requireCanonicalTitle,
   requireGroupChange,
@@ -543,6 +544,44 @@ describe("an upload is held by the File: page's edit protection too", () => {
     expect(
       isAllowed(autoconfirmed, "upload", "File:Flag.png", [restriction("edit", "sysop", PAST)])
     ).toBe(true);
+  });
+});
+
+describe("decideFilePageCreation (the File: page an upload creates)", () => {
+  const decideCreation = (who: WikiPermissions, restrictions: PageRestriction[] = []) =>
+    decideFilePageCreation({ title: "File:Flag.png", permissions: who, restrictions, now: NOW });
+
+  it("needs edit and createpage, and ignores the namespace rule that keeps File: pages to administrators", () => {
+    expect(decideCreation(plain)).toEqual({ allowed: true });
+    expect(decideCreation(autoconfirmed)).toEqual({ allowed: true });
+    expect(decideCreation(anonymous)).toMatchObject({ allowed: false, code: "permissiondenied" });
+    // the same account may not write that page by hand
+    expect(decide(plain, "create", "File:Flag.png")).toMatchObject({
+      allowed: false,
+      code: "namespaceprotected",
+    });
+  });
+
+  it("is held by create protection (a salted title) and by edit protection, until it expires", () => {
+    expect(decideCreation(autoconfirmed, [restriction("create", "sysop")])).toMatchObject({
+      allowed: false,
+      code: "titleprotected",
+    });
+    expect(decideCreation(autoconfirmed, [restriction("edit", "sysop")])).toMatchObject({
+      allowed: false,
+      code: "protectedpage",
+    });
+    expect(decideCreation(sysop, [restriction("create", "sysop")])).toEqual({ allowed: true });
+    expect(decideCreation(autoconfirmed, [restriction("create", "sysop", PAST)])).toEqual({
+      allowed: true,
+    });
+  });
+
+  it("is refused to a blocked user", () => {
+    const blocked = perms(["*", "user"], {
+      block: { reason: "vandalism", expiresAt: null, allowUserTalk: true } as ActiveBlock,
+    });
+    expect(decideCreation(blocked)).toMatchObject({ allowed: false, code: "blocked" });
   });
 });
 

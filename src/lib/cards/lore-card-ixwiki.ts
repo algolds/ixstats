@@ -13,7 +13,7 @@
 
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { CategoryService, type MemberKind } from "~/lib/wiki-os/core/category-service";
@@ -58,11 +58,10 @@ export async function ixwikiImageUrls(fileNames: readonly string[]): Promise<Map
   if (fileNames.length === 0) return urls;
 
   const assets = await MediaAssetService.findAssets([...fileNames]);
-  const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
   for (const name of fileNames) {
     const key = name.replace(/ /g, "_");
     const asset = assets.get(key) ?? assets.get(key.toLowerCase());
-    urls.set(name, asset?.url ?? `${base}${getImagePath(name)}`);
+    urls.set(name, asset?.url ?? mediaWikiImageUrl(getImagePath(name)));
   }
   return urls;
 }

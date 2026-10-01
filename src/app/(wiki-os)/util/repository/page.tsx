@@ -3,6 +3,7 @@
 // WikiOS Commons Explorer — category browsing, full-text search, stash integration.
 
 import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";
+import Link from "next/link";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
@@ -17,11 +18,13 @@ import {
   HelpCircle,
   Folder,
   Sparks as Sparkles,
+  Upload,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { isMediaWikiUrl, publicArticleUrl } from "~/lib/wiki-os/config";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 
 interface CommonsImage {
@@ -245,9 +248,9 @@ export default function RepositoryPage() {
               ? withBasePath(
                   rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
                 )
-              : rawUrl.includes("ixwiki.com/")
+              : isMediaWikiUrl(rawUrl)
                 ? withBasePath(
-                    rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+                    rawUrl.replace(/^https?:\/\/[^/]+\//, "/api/mediawiki/ixwiki/")
                   )
                 : rawUrl;
 
@@ -256,9 +259,7 @@ export default function RepositoryPage() {
               title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
               thumbUrl: proxiedUrl,
               url: proxiedUrl,
-              descriptionUrl: isIiwiki
-                ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-                : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
+              descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
               width: img.width || 0,
               height: img.height || 0,
               mime: img.mime || "image/png",
@@ -467,6 +468,13 @@ export default function RepositoryPage() {
               </button>
             )}
           </div>
+
+          <Button asChild size="sm" className="h-8 shrink-0 gap-1.5 px-3 text-xs">
+            <Link href="/util/upload">
+              <Upload className="h-3.5 w-3.5" />
+              Upload
+            </Link>
+          </Button>
         </div>
 
         {/* Filter controls */}

@@ -9,6 +9,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
 
@@ -19,7 +20,7 @@ function proxyDiscordUrl(url: string | null | undefined): string | undefined {
     if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
       const path = `/api/proxy-discord-image?url=${encodeURIComponent(url)}`;
       if (process.env.NODE_ENV === "production") {
-        return `https://ixwiki.com/projects/ixstates${path}`;
+        return `${mediaWikiOrigin()}/projects/ixstates${path}`;
       }
       return createUrl(path);
     }
@@ -39,7 +40,7 @@ function proxyDiscordUrl(url: string | null | undefined): string | undefined {
     }
 
     if (process.env.NODE_ENV === "production") {
-      return `https://ixwiki.com/projects/ixstates${cleanPath}`;
+      return `${mediaWikiOrigin()}/projects/ixstates${cleanPath}`;
     }
     return createUrl(cleanPath);
   }

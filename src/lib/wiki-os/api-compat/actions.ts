@@ -11,6 +11,7 @@ import { runDelete, runMove, runProtect, runRollback, runUndelete } from "./modu
 import { runParamInfo } from "./modules/paraminfo";
 import { runParse } from "./modules/parse";
 import { runPurge } from "./modules/purge";
+import { runUpload } from "./modules/upload";
 import { runQuery } from "./modules/query";
 import { buildRegistry } from "./registry";
 import type { ApiContext, ApiResult } from "./types";
@@ -36,6 +37,7 @@ const ACTIONS_WITHOUT_PARAMINFO: Readonly<Record<string, ActionSpec>> = {
   protect: { run: runProtect, post: true },
   rollback: { run: runRollback, post: true },
   purge: { run: runPurge, post: true },
+  upload: { run: runUpload, post: true },
 };
 
 /** Every action, `paraminfo` (which describes them all, itself included) among them. */

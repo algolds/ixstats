@@ -12,10 +12,7 @@ jest.mock("~/server/db", () => ({
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
-import {
-  ixwikiGetNamespacedWikitext,
-  ixwikiGetWikitext,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
+import { ixwikiGetWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
 import { getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
@@ -78,34 +75,6 @@ describe("ixwikiGetWikitext", () => {
     article.findUnique.mockResolvedValue(row({ status: "ARCHIVED" }));
 
     expect(await ixwikiGetWikitext("Caphiria")).toBeNull();
-    expect(guard.ixwikiCalls()).toEqual([]);
-  });
-});
-
-describe("ixwikiGetNamespacedWikitext", () => {
-  it("serves a talk page from Postgres", async () => {
-    article.findFirst.mockResolvedValue(
-      row({ title: "User talk:Kir", namespace: 3, wikitext: "Hello" })
-    );
-
-    expect(await ixwikiGetNamespacedWikitext("Kir", 3)).toEqual({
-      title: "User talk:Kir",
-      wikitext: "Hello",
-      pageId: 0,
-      namespace: 3,
-    });
-  });
-
-  it("answers null when Postgres has no such page, without asking MediaWiki", async () => {
-    expect(await ixwikiGetNamespacedWikitext("Kir", 3)).toBeNull();
-    expect(await ixwikiGetNamespacedWikitext("Kir", 2)).toBeNull();
-    expect(guard.ixwikiCalls()).toEqual([]);
-  });
-
-  it("answers null for a deleted page, without asking MediaWiki", async () => {
-    article.findFirst.mockResolvedValue(row({ title: "User:Kir", namespace: 2, status: "ARCHIVED" }));
-
-    expect(await ixwikiGetNamespacedWikitext("Kir", 2)).toBeNull();
     expect(guard.ixwikiCalls()).toEqual([]);
   });
 });

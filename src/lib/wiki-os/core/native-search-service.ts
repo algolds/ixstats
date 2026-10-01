@@ -505,7 +505,7 @@ import { extractIntroFromWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridg
 export { extractIntroFromWikitext };
 
 /**
- * Retrieves summary/intro for an article from PostgreSQL or direct MariaDB fast-path.
+ * Retrieves summary/intro for an article from PostgreSQL (a sister wiki's page falls back to its own wiki).
  */
 export async function getArticleSummaryFromShadow(
   title: string,
@@ -545,7 +545,7 @@ export async function getArticleSummaryFromShadow(
     // Postgres table column not present yet or read-only shadow miss — fall through
   }
 
-  // Fallback to bridge (MySQL + HTTP fallback)
+  // Fallback to the bridge (PostgreSQL for IxWiki, HTTP for a sister wiki)
   try {
     const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
     const res = await getArticleWikitext(cleanTitle, source as any);

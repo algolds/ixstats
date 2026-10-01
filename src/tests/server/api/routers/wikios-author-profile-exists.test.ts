@@ -71,3 +71,19 @@ describe("wikios.getAuthorProfile existsInMediaWiki", () => {
     expect(await profile("Nobody")).toMatchObject({ existsInMediaWiki: false, editCount: 0 });
   });
 });
+
+describe("wikios.getAuthorProfile groups (plan 415, F22)", () => {
+  it("are the rights engine's groups of the account, not an empty list", async () => {
+    jest.mocked(getUserInfo).mockResolvedValue(info({ groups: ["sysop", "bureaucrat", "user"] }));
+
+    expect(await profile("Kir")).toMatchObject({ groups: ["sysop", "bureaucrat", "user"] });
+  });
+
+  it("are empty for an account the wiki has no trace of, and for a lookup that failed", async () => {
+    jest.mocked(getUserInfo).mockResolvedValue(info({ exists: false, groups: [] }));
+    expect(await profile("Nobody")).toMatchObject({ groups: [] });
+
+    jest.mocked(getUserInfo).mockResolvedValue(null as never);
+    expect(await profile("Nobody")).toMatchObject({ groups: [], existsInMediaWiki: false });
+  });
+});

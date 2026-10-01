@@ -10,6 +10,7 @@
 // once more on the way to the hero's `dangerouslySetInnerHTML`.
 
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { mediaWikiHostPattern } from "../config";
 import { stripHtmlTags } from "../transformers/clean-markup-passes";
 import {
   PARAGRAPHS,
@@ -33,6 +34,10 @@ const FEATURED_SELECTORS = [
   'section[class*="featured" i]',
   'div[class*="card" i]',
 ];
+
+/** An absolute link to an article of the wiki, as the Main Page wikitext spells it (an `/wiki/` link is relative). */
+const ABSOLUTE_WIKI_URL = `https?:\\/\\/${mediaWikiHostPattern()}\\/wiki\\/`;
+const ABSOLUTE_WIKI_HREF = new RegExp(`^${ABSOLUTE_WIKI_URL}`);
 
 /** A page this short with a paragraph in it is taken to be the card itself. */
 const WHOLE_PAGE_LIMIT = 2500;
@@ -80,8 +85,8 @@ function dressCard(root: Element | DocumentFragment): void {
     const href = el.getAttribute("href");
     if (href?.startsWith("/w/Special:MyLanguage/")) {
       el.setAttribute("href", `/wiki/${href.slice("/w/Special:MyLanguage/".length)}`);
-    } else if (href && /^https?:\/\/ixwiki\.com\/wiki\//.test(href)) {
-      el.setAttribute("href", href.replace(/^https?:\/\/ixwiki\.com\/wiki\//, "/wiki/"));
+    } else if (href && ABSOLUTE_WIKI_HREF.test(href)) {
+      el.setAttribute("href", href.replace(ABSOLUTE_WIKI_HREF, "/wiki/"));
     }
   }
 }
@@ -129,6 +134,9 @@ function decodeSegment(segment: string): string {
   }
 }
 
+/** What follows `href="` of a link to a page of the wiki (`ABSOLUTE_WIKI_URL`, above, is the address it may start with). */
+const WIKI_PATH_AFTER_HREF = new RegExp(`^(?:\\/wiki\\/|${ABSOLUTE_WIKI_URL})([^">]+)"`, "i");
+
 /** An anchor to a page of the wiki: its `href` (after `/wiki/`) and its opening tag. */
 interface WikiAnchor {
   path: string;
@@ -137,16 +145,14 @@ interface WikiAnchor {
 
 /**
  * The anchors that link to a page of the wiki, in order (what
- * `/<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>/gi` finds): the address is the one after
+ * `/<a[^>]+href="(?:\/wiki\/|<the wiki's address>\/wiki\/)([^">]+)"[^>]*>/gi` finds): the address is the one after
  * the last `href="` of the tag that is such a link (the expression reads greedily).
  */
 function* wikiAnchors(scan: HtmlScan, from = 0): Generator<WikiAnchor> {
   for (const tag of openingTags(scan, ["a"], from)) {
     const text = scan.lower.slice(tag.start, tag.end);
     for (let at = text.lastIndexOf('href="'); at >= 3; at = text.lastIndexOf('href="', at - 1)) {
-      const match = /^(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"/.exec(
-        text.slice(at + 6)
-      );
+      const match = WIKI_PATH_AFTER_HREF.exec(text.slice(at + 6));
       if (!match) continue;
       const pathStart = tag.start + at + 6 + match[0].length - match[1]!.length - 1;
       yield { path: scan.html.slice(pathStart, pathStart + match[1]!.length), tag };

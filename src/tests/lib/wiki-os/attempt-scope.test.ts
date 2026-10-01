@@ -2,6 +2,13 @@
 /**
  * Plan 407: one time limit for all the MediaWiki calls of a mirror attempt, so the worker's lock can outlast it.
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import { requestSignal, withinAttempt } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import {
   getBotSessionAndToken,

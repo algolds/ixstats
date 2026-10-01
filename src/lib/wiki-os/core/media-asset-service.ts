@@ -8,9 +8,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import crypto from "crypto";
-import { DEFAULT_MEDIAWIKI_URL } from "../config";
-import { BlurHashService } from "./blurhash-service";
-import { referencedFilenames } from "./media-references";
+import { mediaWikiOrigin, STAGED_FILE_PATH } from "../config";
 import { CategoryService } from "./category-service";
 import { withoutArchivedFiles } from "./archived-titles";
 
@@ -32,8 +30,21 @@ export interface MediaAssetRecord {
   height: number | null;
   blurhash: string | null;
   md5Hash: string;
+  /** The content's hash (base 36); null for an asset that was registered from MediaWiki's files, never uploaded here. */
+  sha1: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** The facts of an uploaded file that `recordUpload` stores (the name is canonical, without `File:`). */
+export interface RecordUploadInput {
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  sha1: string;
+  uploaderId: string | null;
 }
 
 export interface RegisterAssetInput {
@@ -193,6 +204,115 @@ export class MediaAssetService {
     return found.slice(0, limit);
   }
 
+  /** The asset of the file called `name` (canonical, with or without `File:`), by its name only; null when there is none. */
+  static async findByFileName(
+    name: string,
+    client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
+  ): Promise<MediaAssetRecord | null> {
+    const { hash, cleanName } = this.getMd5ShardPath(name);
+    return (await client.wikiAsset.findFirst({
+      where: { OR: [{ md5Hash: hash }, { filename: cleanName }] },
+    })) as MediaAssetRecord | null;
+  }
+
+  /** The assets that hold the content `sha1` under another name than `name`: what MediaWiki's "duplicate" warning lists. */
+  static async findDuplicates(sha1: string, name: string): Promise<string[]> {
+    const { cleanName } = this.getMd5ShardPath(name);
+    const rows = await db.wikiAsset.findMany({
+      where: { sha1, filename: { not: cleanName } },
+      select: { title: true },
+      orderBy: { title: "asc" },
+      take: 10,
+    });
+    return rows.map((row) => row.title);
+  }
+
+  /**
+   * Record that `input.name` now holds the uploaded bytes, in the caller's transaction (the upload service writes
+   * the file's log entry and its mirror job there too). The asset is served from WikiOS (`/api/wiki/file/<name>`, no
+   * thumbnail) until the mirror job has put the same bytes in MediaWiki: `markMirrored` then switches the URL. A new
+   * version of a file replaces the row's facts in place; the older versions live in the upload log.
+   */
+  static async recordUpload(
+    tx: Prisma.TransactionClient,
+    input: RecordUploadInput
+  ): Promise<MediaAssetRecord> {
+    const { hash, cleanName } = this.getMd5ShardPath(input.name);
+    const facts = {
+      title: cleanName.replace(/_/g, " "),
+      filename: cleanName,
+      url: `${STAGED_FILE_PATH}${encodeURIComponent(cleanName)}`,
+      thumbnailUrl: null,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+      width: input.width,
+      height: input.height,
+      blurhash: null,
+      sha1: input.sha1,
+      uploaderId: input.uploaderId,
+    };
+    const existing = await this.findByFileName(cleanName, tx);
+    if (existing) {
+      return (await tx.wikiAsset.update({
+        where: { id: existing.id },
+        data: facts,
+      })) as MediaAssetRecord;
+    }
+    const slug = await this.freeSlug(tx, cleanName, hash);
+    return (await tx.wikiAsset.create({
+      data: { ...facts, slug, md5Hash: hash },
+    })) as MediaAssetRecord;
+  }
+
+  /** The lower-case file name as the asset's slug, or with a hash prefix before the extension when another file's name took it. */
+  private static async freeSlug(
+    tx: Prisma.TransactionClient,
+    cleanName: string,
+    hash: string
+  ): Promise<string> {
+    const slug = cleanName.toLowerCase();
+    if (!(await tx.wikiAsset.findUnique({ where: { slug }, select: { id: true } }))) return slug;
+    const dot = cleanName.lastIndexOf(".");
+    const base = dot === -1 ? cleanName : cleanName.slice(0, dot);
+    const extension = dot === -1 ? "" : cleanName.slice(dot);
+    return `${base.toLowerCase()}_${hash.slice(0, 6)}${extension.toLowerCase()}`;
+  }
+
+  /**
+   * MediaWiki holds the version `sha1` of the file `name`: the asset is served from its `/images/` path now. Nothing
+   * changes when the asset has moved on to a newer version (that one is still waiting for its own job); resolves to
+   * whether the row was switched.
+   */
+  static async markMirrored(
+    name: string,
+    sha1: string,
+    client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
+  ): Promise<boolean> {
+    const { shard, cleanName } = this.getMd5ShardPath(name);
+    const base = mediaWikiOrigin().replace(/\/+$/, "");
+    const { count } = await client.wikiAsset.updateMany({
+      where: { filename: cleanName, sha1 },
+      data: { url: `${base}/images/${shard}/${encodeURIComponent(cleanName)}`, thumbnailUrl: null },
+    });
+    return count > 0;
+  }
+
+  /** Whether WikiOS alone holds the bytes behind `url` (an asset URL): they are served from the staging directory. */
+  static isStagedUrl(url: string): boolean {
+    return url.startsWith(STAGED_FILE_PATH);
+  }
+
+  /** Whether an asset still waits to be mirrored with the content `sha1`: its staged copy must be kept. */
+  static async isStillStaged(
+    sha1: string,
+    client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
+  ): Promise<boolean> {
+    const count = await client.wikiAsset.count({
+      where: { sha1, url: { startsWith: STAGED_FILE_PATH } },
+    });
+    return count > 0;
+  }
+
   /**
    * Register or update a media asset in PostgreSQL `wiki_assets`
    */
@@ -202,7 +322,7 @@ export class MediaAssetService {
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();
 
-    const baseUrl = (data.originBaseUrl || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "");
+    const baseUrl = (data.originBaseUrl || mediaWikiOrigin()).replace(/\/+$/, "");
     const canonicalUrl = data.url || `${baseUrl}/images/${fullPath}`;
     const canonicalThumb =
       data.thumbnailUrl ||
@@ -275,7 +395,8 @@ export class MediaAssetService {
           sizeBytes: data.sizeBytes || 0,
           width: data.width ?? null,
           height: data.height ?? null,
-          blurhash: data.blurhash || BlurHashService.generateDeterministicHash(cleanName),
+          // No pixel was read here: a blurhash made up from the name would be a wrong picture, so readers use their placeholder.
+          blurhash: data.blurhash ?? null,
           md5Hash: hash,
         },
       })) as MediaAssetRecord;
@@ -289,26 +410,5 @@ export class MediaAssetService {
       }
       throw err;
     }
-  }
-
-  /**
-   * Extracts and auto-registers new image references found in wikitext or HTML
-   */
-  static async processContentImages(content: string, originBaseUrl?: string): Promise<number> {
-    if (!content) return 0;
-
-    const foundFilenames = referencedFilenames(content);
-
-    let registeredCount = 0;
-    for (const filename of foundFilenames) {
-      try {
-        await this.registerAsset({ filename, originBaseUrl });
-        registeredCount++;
-      } catch {
-        // Continue on error
-      }
-    }
-
-    return registeredCount;
   }
 }

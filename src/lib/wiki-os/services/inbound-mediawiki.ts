@@ -7,11 +7,11 @@
  */
 
 import { z } from "zod";
-import { DEFAULT_USER_AGENT } from "../config";
+import { DEFAULT_USER_AGENT, mediaWikiApiUrl } from "../config";
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
 
-const MEDIAWIKI_URL = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
+/** The api.php the sync reads: the internal one (a server-side call), the public one when none is configured. */
+const API_URL = mediaWikiApiUrl({ internal: true });
 const REQUEST_TIMEOUT_MS = 12_000;
 
 /** Postgres text cannot hold a NUL. */

@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
 export { injectPlaceholderElements, extractStatKeys } from "./placeholder-dom";
@@ -31,7 +31,7 @@ export function calculateDistanceAndBearing(
 }
 
 const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) => {
-  const src = withBasePath(
+  const src = ixstatesHref(
     `/maps?embed=true&lat=${lat.toFixed(4)}&lng=${lng.toFixed(4)}&zoom=${zoom}`
   );
 
@@ -184,7 +184,7 @@ export function DynamicStatSpan({
 
         {metadata?.detailsUrl && (
           <Link
-            href={withBasePath(metadata.detailsUrl)}
+            href={ixstatesHref(metadata.detailsUrl)}
             className="border-t border-white/5 pt-2 text-center text-xs font-bold text-blue-400 transition-colors hover:text-blue-300"
           >
             Analyze Dashboard &rarr;

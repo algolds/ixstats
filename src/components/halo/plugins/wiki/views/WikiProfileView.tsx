@@ -3,6 +3,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useRouter } from "next/navigation";
 import {
   OpenBook as BookOpen,
@@ -401,7 +402,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/15 to-orange-500/15 p-4 text-center text-xs font-semibold text-amber-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-500/25 hover:to-orange-500/25 active:scale-95"
               >
@@ -412,7 +413,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/executive", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/executive"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-indigo-600/15 p-4 text-center text-xs font-semibold text-indigo-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-indigo-500/25 hover:to-indigo-600/25 active:scale-95"
               >
@@ -423,7 +424,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/diplomacy", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/diplomacy"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-center text-xs font-semibold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20 active:scale-95"
               >
@@ -434,7 +435,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/editor", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/editor"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-center text-xs font-semibold text-blue-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/20 active:scale-95"
               >
@@ -445,7 +446,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/vault", router);
+                  navigateWithBasePath(ixstatesHref("/vault"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95"
               >
@@ -456,7 +457,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
               <button
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/politics", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/politics"), router);
                 }}
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4 text-center text-xs font-semibold text-indigo-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-indigo-500/20 active:scale-95"
               >
