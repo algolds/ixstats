@@ -46,7 +46,7 @@ const BLOCKED_VALUE = /expression\s*\(|(?:java|vb|live)script\s*:/;
 /** Functions that load a URL without `url(`, and the old IE/Mozilla script hooks. */
 const BLOCKED_FUNCTION =
   /(?:^|[^\w-])(?:-webkit-|-moz-)?(?:image-set|image|cross-fade|element|paint|src)\s*\(/;
-const URL_FUNCTION = /url\s*\(([^)]*)\)/g;
+const URL_OPEN = /url\s*\(/g;
 const URL_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const MEDIA_QUERY = /^[a-z0-9\s:,.()\-_/>=+*%]*$/i;
 const BLOCKED_MEDIA = /\b(?:url|expression)\s*\(/i;
@@ -294,17 +294,40 @@ function scopeSelectors(prelude: string, strings: readonly string[]): string | n
   return scoped.join(",");
 }
 
+/**
+ * The targets of the `url()` functions of `declaration` (escapes resolved), read in one pass: each runs from its `(`
+ * to the next `)`. Null when one has no `)` or holds another `url(`: such a declaration is not read further (a
+ * search from every `url(` to a `)` that never comes would be quadratic).
+ */
+function urlTargets(declaration: string): string[] | null {
+  const targets: string[] = [];
+  let from = 0;
+  for (;;) {
+    URL_OPEN.lastIndex = from;
+    const open = URL_OPEN.exec(declaration);
+    if (!open) return targets;
+    const start = open.index + open[0].length;
+    const close = declaration.indexOf(")", start);
+    if (close === -1) return null;
+    const target = declaration.slice(start, close);
+    if (/url\s*\(/.test(target)) return null;
+    targets.push(target);
+    from = close + 1;
+  }
+}
+
 /** Whether every `url()` in `declaration` (escapes resolved) is `https:` or relative. */
 function urlsAreAllowed(declaration: string): boolean {
-  for (const match of declaration.matchAll(URL_FUNCTION)) {
-    const target = (match[1] ?? "")
+  const targets = urlTargets(declaration);
+  if (targets === null) return false;
+  return targets.every((raw) => {
+    const target = raw
       .trim()
       .replace(/^["']|["']$/g, "")
       // the URL parser drops tabs and newlines inside a scheme: "java\tscript:" is "javascript:"
       .replace(/[\u0000- \u007f]/g, "");
-    if (URL_SCHEME.test(target) && !/^https:/i.test(target)) return false;
-  }
-  return true;
+    return !URL_SCHEME.test(target) || /^https:/i.test(target);
+  });
 }
 
 function isAllowedDeclaration(property: string, declaration: string): boolean {

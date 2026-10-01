@@ -153,6 +153,31 @@ describe("a trailing backslash does not escape what is written after it", () => 
   });
 });
 
+describe("a hostile declaration costs time linear in its size", () => {
+  const timed = (css: string): number => {
+    const started = performance.now();
+    scopeTemplateStyles(css);
+    return performance.now() - started;
+  };
+
+  it.each([
+    ["22,000 escaped `url(` names and no real paren", ".a{background:" + "u\\72l\\28 ".repeat(22_000) + "}"],
+    ["20,000 url( that never close", ".a{background:" + "url(".repeat(20_000) + "}"],
+    ["20,000 url( that close once, at the end", ".a{background:" + "url(a".repeat(20_000) + ")}"],
+    ["20,000 closed urls", ".a{background:" + "url(a) ".repeat(20_000) + "}"],
+    ["20,000 url followed by spaces and no paren", ".a{background:" + "url   ".repeat(20_000) + "}"],
+  ])("%s", (_name, css) => {
+    expect(timed(css)).toBeLessThan(250);
+  });
+
+  it("still judges every url of a long declaration", () => {
+    const many = "url(a.png) ".repeat(5_000);
+
+    expect(scopeTemplateStyles(`.a{background:${many}}`)).toContain("url(a.png)");
+    expect(scopeTemplateStyles(`.a{background:${many}url('javascript:alert(1)')}`)).toBe("");
+  });
+});
+
 describe("the other sanitizers are unchanged by the article's allowances", () => {
   const html = `${OPEN}.a{color:red}</style><center>c</center><font color="red">f</font><p>x</p>`;
 
