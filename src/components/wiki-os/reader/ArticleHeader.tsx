@@ -220,11 +220,14 @@ export function WikiOSHeader({
     maxHeight: "260px",
   } as React.CSSProperties;
 
-  const { getImageStyle } = useWikiMediaTheme();
+  // The picture's kind (and its own mode, if it has one) as attributes: foundations.css themes it
+  // from <html>, so the server and the first client render agree and no theme's frame is shown to
+  // the other's reader (an inline `filter` computed here from the theme was not the same twice).
+  const { getImageAttributes } = useWikiMediaTheme();
   const heroMediaType = useMemo(() => detectMediaType(backdropUrl), [backdropUrl]);
-  const heroMediaStyle = useMemo(
-    () => getImageStyle(backdropUrl || "", heroMediaType),
-    [backdropUrl, heroMediaType, getImageStyle]
+  const heroMedia = useMemo(
+    () => getImageAttributes(backdropUrl || "", heroMediaType),
+    [backdropUrl, heroMediaType, getImageAttributes]
   );
 
   const isSvg = useMemo(() => {
@@ -275,11 +278,7 @@ export function WikiOSHeader({
           ref={backdropRef}
           aria-hidden="true"
           className="rounded-card pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden select-none"
-          style={
-            heroMediaStyle.backgroundColor
-              ? { backgroundColor: heroMediaStyle.backgroundColor }
-              : undefined
-          }
+          {...heroMedia}
         >
           {isSvg ? (
             <>
@@ -295,17 +294,8 @@ export function WikiOSHeader({
                 width={hero?.width ?? undefined}
                 height={hero?.height ?? undefined}
                 alt=""
-                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 drop-shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
-                style={{
-                  ...(heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : {}),
-                  ...(heroMediaStyle.backgroundColor
-                    ? { backgroundColor: heroMediaStyle.backgroundColor }
-                    : {}),
-                  ...(heroMediaStyle.borderRadius
-                    ? { borderRadius: heroMediaStyle.borderRadius }
-                    : {}),
-                  ...(heroMediaStyle.padding ? { padding: heroMediaStyle.padding } : {}),
-                }}
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
+                {...heroMedia}
                 loading="eager"
                 fetchPriority="high"
                 referrerPolicy="no-referrer"
@@ -318,8 +308,7 @@ export function WikiOSHeader({
               width={hero?.width ?? undefined}
               height={hero?.height ?? undefined}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center saturate-110 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-              style={heroMediaStyle.filter ? { filter: heroMediaStyle.filter } : undefined}
+              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
               loading="eager"
               fetchPriority="high"
               referrerPolicy="no-referrer"

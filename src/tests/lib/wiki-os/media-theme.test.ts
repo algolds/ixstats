@@ -1,11 +1,11 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   detectMediaType,
-  getMediaFilterStyle,
   getImageIdentifier,
+  getStoredMediaThemeMode,
+  mediaThemeAttributes,
   normalizeMediaMode,
-  HUE_PRESERVED_INVERT_FILTER,
-  PURE_INVERT_FILTER,
+  setStoredMediaThemeMode,
 } from "~/lib/wiki-os/transformers/media-theme";
 import { resolveHighResWikiImage } from "~/lib/wiki-os/transformers/resolve-highres-image";
 
@@ -52,53 +52,48 @@ describe("WikiOS Media Theme System", () => {
     });
   });
 
-  describe("getMediaFilterStyle", () => {
-    describe("Dark Mode", () => {
-      const isDark = true;
-
-      it("automatically applies hue-preserved invert to SVGs and diagrams in auto mode", () => {
-        const svgStyle = getMediaFilterStyle("auto", "svg", isDark);
-        expect(svgStyle.filter).toBe(HUE_PRESERVED_INVERT_FILTER);
-
-        const diagramStyle = getMediaFilterStyle("auto", "diagram", isDark);
-        expect(diagramStyle.filter).toBe(HUE_PRESERVED_INVERT_FILTER);
-      });
-
-      it("automatically applies pure monochrome invert to math formulas in auto mode", () => {
-        const mathStyle = getMediaFilterStyle("auto", "math", isDark);
-        expect(mathStyle.filter).toBe(PURE_INVERT_FILTER);
-      });
-
-      it("keeps raster photos natural (no filter) in auto mode", () => {
-        const photoStyle = getMediaFilterStyle("auto", "photo", isDark);
-        expect(photoStyle.filter).toBe("none");
-      });
-
-      it("applies a frosted light plinth backplate in plinth mode for SVGs", () => {
-        const plinthStyle = getMediaFilterStyle("plinth", "svg", isDark);
-        expect(plinthStyle.filter).toBe("none");
-        expect(plinthStyle.backgroundColor).toBe("rgba(255, 255, 255, 0.94)");
-        expect(plinthStyle.borderRadius).toBe("8px");
-        expect(plinthStyle.padding).toBe("6px");
-      });
+  describe("mediaThemeAttributes", () => {
+    it("names the picture's kind and nothing about the theme or the reader's mode", () => {
+      expect(mediaThemeAttributes("svg")).toEqual({ "data-media-kind": "svg" });
+      expect(mediaThemeAttributes("photo")).toEqual({ "data-media-kind": "photo" });
     });
 
-    describe("Light Mode", () => {
-      const isDark = false;
-
-      it("renders SVGs with no filter in auto mode", () => {
-        const svgStyle = getMediaFilterStyle("auto", "svg", isDark);
-        expect(svgStyle.filter).toBe("none");
+    it("carries a picture's own mode when it has one, so it can win over the reader's", () => {
+      expect(mediaThemeAttributes("diagram", "plinth")).toEqual({
+        "data-media-kind": "diagram",
+        "data-media-mode": "plinth",
       });
-
-      it("renders math formulas with no filter in auto mode", () => {
-        const mathStyle = getMediaFilterStyle("auto", "math", isDark);
-        expect(mathStyle.filter).toBe("none");
+      expect(mediaThemeAttributes("math", "auto")).toEqual({
+        "data-media-kind": "math",
+        "data-media-mode": "auto",
       });
+    });
+  });
 
-      it("renders clean in plinth mode", () => {
-        expect(getMediaFilterStyle("plinth", "svg", isDark).filter).toBe("none");
+  describe("the reader's stored mode", () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+      setStoredMediaThemeMode("auto");
+      localStorage.clear();
+    });
+
+    it("is kept in storage and mirrored on <html>, where the stylesheet reads it", () => {
+      setStoredMediaThemeMode("plate");
+      expect(localStorage.getItem("wikios-media-theme-mode")).toBe("plinth");
+      expect(document.documentElement.getAttribute("data-media-theme")).toBe("plinth");
+      expect(getStoredMediaThemeMode()).toBe("plinth");
+    });
+
+    it("lasts the session when the browser blocks storage", () => {
+      jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("blocked");
       });
+      jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("blocked");
+      });
+      setStoredMediaThemeMode("plinth");
+      expect(getStoredMediaThemeMode()).toBe("plinth");
+      expect(document.documentElement.getAttribute("data-media-theme")).toBe("plinth");
     });
   });
 

@@ -67,7 +67,7 @@ export function ImageLightboxModal({
     panY: 0,
   });
 
-  const { getImageStyle } = useWikiMediaTheme();
+  const { getImageAttributes } = useWikiMediaTheme();
 
   const isSvg = useMemo(() => {
     return (
@@ -101,9 +101,11 @@ export function ImageLightboxModal({
     return detectMediaType(currentSrc);
   }, [isSvg, currentSrc]);
 
-  const imageFilterStyle = useMemo(() => {
-    return getImageStyle(currentSrc, mediaType);
-  }, [getImageStyle, currentSrc, mediaType]);
+  // the stylesheet themes the picture from these (foundations.css), as it does the hero's
+  const imageMedia = useMemo(
+    () => getImageAttributes(currentSrc, mediaType),
+    [getImageAttributes, currentSrc, mediaType]
+  );
 
   // Synchronize state when image prop changes
   useEffect(() => {
@@ -345,7 +347,7 @@ export function ImageLightboxModal({
                   src={currentSrc}
                   alt={image.alt || image.filename}
                   className="wikios-lightbox-img-master"
-                  style={imageFilterStyle}
+                  {...imageMedia}
                   onLoad={(e) => {
                     const target = e.currentTarget;
                     setImgNaturalSize({

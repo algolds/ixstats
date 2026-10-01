@@ -7,21 +7,20 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
   useMemo,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
+  type MediaThemeAttributes,
   type MediaThemeMode,
   type MediaType,
-  type MediaFilterStyle,
-  MEDIA_THEME_STORAGE_KEY,
   MEDIA_THEME_EVENT_NAME,
   MEDIA_IMAGE_OVERRIDE_EVENT_NAME,
   getStoredMediaThemeMode,
   setStoredMediaThemeMode,
-  getMediaFilterStyle,
+  mediaThemeAttributes,
   getImageIdentifier,
   normalizeMediaMode,
 } from "~/lib/wiki-os/transformers/media-theme";
@@ -33,8 +32,6 @@ interface MediaThemeContextType {
   setMediaThemeMode: (mode: MediaThemeMode) => void;
   /** Toggle global media theme mode: auto <-> plinth */
   cycleMediaThemeMode: () => void;
-  /** Whether the active UI theme is currently dark */
-  isDarkTheme: boolean;
   /** Per-image overrides keyed by image identifier / URL */
   imageOverrides: Record<string, "auto" | "plinth">;
   /** Set override for a specific image */
@@ -45,83 +42,43 @@ interface MediaThemeContextType {
   clearAllOverrides: () => void;
   /** Get effective mode for a specific image */
   getEffectiveImageMode: (src: string) => "auto" | "plinth";
-  /** Get computed CSS filter style for an image */
-  getImageStyle: (src: string, mediaType?: MediaType) => MediaFilterStyle;
+  /** The attributes the stylesheet themes an image by (its kind and, if it has one, its own mode) */
+  getImageAttributes: (src: string, mediaType?: MediaType) => MediaThemeAttributes;
 }
 
 const MediaThemeContext = createContext<MediaThemeContextType | undefined>(undefined);
 
-export function MediaThemeProvider({ children }: { children: ReactNode }) {
-  const [mediaThemeMode, setMediaThemeModeState] = useState<"auto" | "plinth">(
-    getStoredMediaThemeMode
+function subscribeToMediaThemeMode(onChange: () => void): () => void {
+  window.addEventListener(MEDIA_THEME_EVENT_NAME, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(MEDIA_THEME_EVENT_NAME, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+const serverMediaThemeMode = (): "auto" | "plinth" => "auto";
+
+/**
+ * The reader's media mode. The server cannot read it, so the server render and the hydrating one
+ * are "auto" and React re-renders with the stored mode once hydrated (reading it while rendering
+ * gave the client something other than the server's HTML).
+ */
+function useStoredMediaThemeMode(): "auto" | "plinth" {
+  return useSyncExternalStore(
+    subscribeToMediaThemeMode,
+    getStoredMediaThemeMode,
+    serverMediaThemeMode
   );
+}
+
+export function MediaThemeProvider({ children }: { children: ReactNode }) {
+  const mediaThemeMode = useStoredMediaThemeMode();
   const [imageOverrides, setImageOverrides] = useState<Record<string, "auto" | "plinth">>({});
-  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(() => {
-    if (typeof document === "undefined") return true;
-    return document.documentElement.getAttribute("data-theme") !== "light";
-  });
-
-  // 1. Listen for global storage changes & custom events
-  useEffect(() => {
-    const handleThemeEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: string }>;
-      if (customEvent.detail?.mode) {
-        setMediaThemeModeState(normalizeMediaMode(customEvent.detail.mode));
-      } else {
-        setMediaThemeModeState(getStoredMediaThemeMode());
-      }
-    };
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === MEDIA_THEME_STORAGE_KEY) {
-        setMediaThemeModeState(getStoredMediaThemeMode());
-      }
-    };
-
-    window.addEventListener(MEDIA_THEME_EVENT_NAME, handleThemeEvent);
-    window.addEventListener("storage", handleStorage);
-
-    return () => {
-      window.removeEventListener(MEDIA_THEME_EVENT_NAME, handleThemeEvent);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  // 2. Observe document data-theme mutations (Light <-> Dark mode changes)
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-
-    const checkTheme = () => {
-      const isLight = document.documentElement.getAttribute("data-theme") === "light";
-      setIsDarkTheme(!isLight);
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (
-          mutation.type === "attributes" &&
-          (mutation.attributeName === "data-theme" || mutation.attributeName === "class")
-        ) {
-          checkTheme();
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme", "class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   // Set global media mode
   const setMediaThemeMode = useCallback((mode: MediaThemeMode) => {
-    const canonical = normalizeMediaMode(mode);
-    setMediaThemeModeState(canonical);
-    setStoredMediaThemeMode(canonical);
+    setStoredMediaThemeMode(normalizeMediaMode(mode));
   }, []);
 
   // Toggle global media mode: auto <-> plinth
@@ -177,13 +134,13 @@ export function MediaThemeProvider({ children }: { children: ReactNode }) {
     [imageOverrides, mediaThemeMode]
   );
 
-  // Get computed style for image
-  const getImageStyle = useCallback(
-    (src: string, mediaType: MediaType = "unknown"): MediaFilterStyle => {
-      const mode = getEffectiveImageMode(src);
-      return getMediaFilterStyle(mode, mediaType, isDarkTheme);
-    },
-    [getEffectiveImageMode, isDarkTheme]
+  // Attributes for an image: its kind, and its own mode if it has one. The reader's mode and the
+  // theme are the stylesheet's to apply (from <html>), so these are the same on the server and in
+  // the first client render, and a light-theme reader is never shown a dark-theme frame.
+  const getImageAttributes = useCallback(
+    (src: string, mediaType: MediaType = "unknown"): MediaThemeAttributes =>
+      mediaThemeAttributes(mediaType, imageOverrides[getImageIdentifier(src)]),
+    [imageOverrides]
   );
 
   const value = useMemo<MediaThemeContextType>(
@@ -191,25 +148,23 @@ export function MediaThemeProvider({ children }: { children: ReactNode }) {
       mediaThemeMode,
       setMediaThemeMode,
       cycleMediaThemeMode,
-      isDarkTheme,
       imageOverrides,
       setImageOverride,
       clearImageOverride,
       clearAllOverrides,
       getEffectiveImageMode,
-      getImageStyle,
+      getImageAttributes,
     }),
     [
       mediaThemeMode,
       setMediaThemeMode,
       cycleMediaThemeMode,
-      isDarkTheme,
       imageOverrides,
       setImageOverride,
       clearImageOverride,
       clearAllOverrides,
       getEffectiveImageMode,
-      getImageStyle,
+      getImageAttributes,
     ]
   );
 
@@ -218,63 +173,27 @@ export function MediaThemeProvider({ children }: { children: ReactNode }) {
 
 /**
  * Hook to consume MediaThemeContext.
- * If used outside of provider, gracefully falls back to local storage and document theme.
+ * If used outside of provider, gracefully falls back to local storage.
  */
 export function useWikiMediaTheme(): MediaThemeContextType {
   const context = useContext(MediaThemeContext);
-  const [standaloneMode, setStandaloneMode] = useState<"auto" | "plinth">(getStoredMediaThemeMode);
-
-  useEffect(() => {
-    if (context) return;
-    const handleEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: string }>;
-      if (customEvent.detail?.mode) {
-        setStandaloneMode(normalizeMediaMode(customEvent.detail.mode));
-      } else {
-        setStandaloneMode(getStoredMediaThemeMode());
-      }
-    };
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === MEDIA_THEME_STORAGE_KEY) {
-        setStandaloneMode(getStoredMediaThemeMode());
-      }
-    };
-    window.addEventListener(MEDIA_THEME_EVENT_NAME, handleEvent);
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener(MEDIA_THEME_EVENT_NAME, handleEvent);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, [context]);
+  const standaloneMode = useStoredMediaThemeMode();
 
   if (context) return context;
 
   // Standalone fallback
-  const isDark =
-    typeof document !== "undefined"
-      ? document.documentElement.getAttribute("data-theme") !== "light"
-      : true;
-
-  const handleSetMode = (m: MediaThemeMode) => {
-    const canonical = normalizeMediaMode(m);
-    setStandaloneMode(canonical);
-    setStoredMediaThemeMode(canonical);
-  };
+  const handleSetMode = (m: MediaThemeMode) => setStoredMediaThemeMode(normalizeMediaMode(m));
 
   return {
     mediaThemeMode: standaloneMode,
     setMediaThemeMode: handleSetMode,
-    cycleMediaThemeMode: () => {
-      const nextMode: "auto" | "plinth" = standaloneMode === "auto" ? "plinth" : "auto";
-      handleSetMode(nextMode);
-    },
-    isDarkTheme: isDark,
+    cycleMediaThemeMode: () => handleSetMode(standaloneMode === "auto" ? "plinth" : "auto"),
     imageOverrides: {},
     setImageOverride: () => {},
     clearImageOverride: () => {},
     clearAllOverrides: () => {},
     getEffectiveImageMode: () => standaloneMode,
-    getImageStyle: (_src: string, mediaType: MediaType = "unknown") =>
-      getMediaFilterStyle(standaloneMode, mediaType, isDark),
+    getImageAttributes: (_src: string, mediaType: MediaType = "unknown") =>
+      mediaThemeAttributes(mediaType),
   };
 }

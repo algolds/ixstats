@@ -1,6 +1,7 @@
 // src/lib/wiki-os/media-theme.ts
-// Core TypeScript definitions, media type detection, CSS filter math, and storage utilities
-// for WikiOS dynamic & theme-compliant image/media rendering (Auto, Plinth).
+// Core TypeScript definitions, media type detection, the attributes a picture carries so the
+// stylesheet can theme it, and storage utilities for WikiOS dynamic & theme-compliant image/media
+// rendering (Auto, Plinth). The filters themselves are CSS (styles/wiki-os/foundations.css).
 
 export type MediaThemeMode =
   | "auto"
@@ -14,31 +15,9 @@ export type MediaThemeMode =
 
 export type MediaType = "svg" | "math" | "diagram" | "photo" | "unknown";
 
-export interface MediaFilterStyle {
-  filter?: string;
-  backgroundColor?: string;
-  boxShadow?: string;
-  borderRadius?: string;
-  padding?: string;
-}
-
 export const MEDIA_THEME_STORAGE_KEY = "wikios-media-theme-mode";
 export const MEDIA_THEME_EVENT_NAME = "wikios-media-theme-changed";
 export const MEDIA_IMAGE_OVERRIDE_EVENT_NAME = "wikios-media-override-changed";
-
-/**
- * Filter string for hue-preserved luminance inversion.
- * Inverts lightness (0.92) while rotating hue by 180° so original chromatic hues
- * (blues, reds, greens, yellows in coats of arms, flags, and diagrams) remain faithful
- * while pure black (#000000) becomes crisp readable light gray/white (#e5e5e5).
- */
-export const HUE_PRESERVED_INVERT_FILTER =
-  "invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02)";
-
-/**
- * Pure monochrome invert filter (for pure black-and-white math equations or mono icons).
- */
-export const PURE_INVERT_FILTER = "brightness(0) invert(1)";
 
 /**
  * Normalize any legacy mode string to one of the 2 canonical modes: "auto" | "plinth".
@@ -104,48 +83,25 @@ export function detectMediaType(src: string | null | undefined, el?: Element | n
 }
 
 /**
- * Compute the CSS filter and container style for a given image based on the active mode,
- * media type, and whether the current UI theme is dark.
+ * What the stylesheet needs to theme a picture: what it is and, only when this picture has a mode
+ * of its own, which one. Neither depends on the reader's theme or stored mode, so the server and the
+ * first client render write the same attributes. The theme is `<html data-theme>` (set before first
+ * paint) and the reader's mode is `<html data-media-theme>`; foundations.css combines them: in the
+ * dark theme "auto" inverts vector art, diagrams and formulas, and "plinth" sets transparent art on a
+ * light plate. Photos stay as they are, and in the light theme every picture does.
  */
-export function getMediaFilterStyle(
-  mode: MediaThemeMode,
+export interface MediaThemeAttributes {
+  "data-media-kind": MediaType;
+  "data-media-mode"?: "auto" | "plinth";
+}
+
+export function mediaThemeAttributes(
   mediaType: MediaType,
-  isDark: boolean
-): MediaFilterStyle {
-  const canonicalMode = normalizeMediaMode(mode);
-
-  // Light Mode: all images render naturally without inversion or plinth
-  if (!isDark) {
-    return { filter: "none" };
-  }
-
-  // Dark Mode Handling:
-  switch (canonicalMode) {
-    case "plinth":
-      // Apply plinth mat to transparent assets (SVGs, math, diagrams, unknown)
-      if (mediaType !== "photo") {
-        return {
-          filter: "none",
-          backgroundColor: "rgba(255, 255, 255, 0.94)",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2)",
-          borderRadius: "8px",
-          padding: "6px",
-        };
-      }
-      return { filter: "none" };
-
-    case "auto":
-    default:
-      // Auto mode: automatically invert SVGs, math, and diagrams in dark mode
-      if (mediaType === "svg" || mediaType === "diagram") {
-        return { filter: HUE_PRESERVED_INVERT_FILTER };
-      }
-      if (mediaType === "math") {
-        return { filter: PURE_INVERT_FILTER };
-      }
-      // Photos remain natural in auto mode
-      return { filter: "none" };
-  }
+  ownMode?: "auto" | "plinth"
+): MediaThemeAttributes {
+  return ownMode
+    ? { "data-media-kind": mediaType, "data-media-mode": ownMode }
+    : { "data-media-kind": mediaType };
 }
 
 /**
@@ -162,21 +118,26 @@ export function getImageIdentifier(src: string): string {
   }
 }
 
-/**
- * Read global media theme mode from localStorage.
- */
+/** The mode chosen this session, for a browser that will not let the page use localStorage. */
+let sessionMode: "auto" | "plinth" = "auto";
+
+/** `<html data-media-theme>`: the reader's mode, which the stylesheet themes pictures by. */
+function mirrorMode(mode: "auto" | "plinth"): void {
+  const root = document.documentElement;
+  if (root.getAttribute("data-media-theme") !== mode) root.setAttribute("data-media-theme", mode);
+}
+
+/** Read global media theme mode from localStorage (and mirror it on <html>). */
 export function getStoredMediaThemeMode(): "auto" | "plinth" {
   if (typeof window === "undefined") return "auto";
+  let mode = sessionMode;
   try {
-    const stored = localStorage.getItem(MEDIA_THEME_STORAGE_KEY);
-    const mode = normalizeMediaMode(stored);
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("data-media-theme", mode);
-    }
-    return mode;
+    mode = normalizeMediaMode(localStorage.getItem(MEDIA_THEME_STORAGE_KEY));
   } catch {
-    return "auto";
+    // storage is blocked: the mode chosen this session stands
   }
+  mirrorMode(mode);
+  return mode;
 }
 
 /**
@@ -184,16 +145,15 @@ export function getStoredMediaThemeMode(): "auto" | "plinth" {
  */
 export function setStoredMediaThemeMode(mode: MediaThemeMode): void {
   if (typeof window === "undefined") return;
+  const canonical = normalizeMediaMode(mode);
+  sessionMode = canonical;
   try {
-    const canonical = normalizeMediaMode(mode);
     localStorage.setItem(MEDIA_THEME_STORAGE_KEY, canonical);
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("data-media-theme", canonical);
-    }
-    window.dispatchEvent(new CustomEvent(MEDIA_THEME_EVENT_NAME, { detail: { mode: canonical } }));
   } catch {
-    // ignore
+    // storage is blocked: the mode lasts for this session
   }
+  mirrorMode(canonical);
+  window.dispatchEvent(new CustomEvent(MEDIA_THEME_EVENT_NAME, { detail: { mode: canonical } }));
 }
 
 /**
