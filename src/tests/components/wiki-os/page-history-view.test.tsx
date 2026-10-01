@@ -23,6 +23,7 @@ let firstPage: { revisions: ReturnType<typeof entry>[]; hasMore: boolean } | und
 };
 let firstError: { message: string } | null = null;
 const mockRefetch = jest.fn();
+const mockQuery = jest.fn();
 const timelineProps = jest.fn();
 
 jest.mock("~/trpc/react", () => ({
@@ -30,12 +31,10 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({ wikios: { getHistory: { fetch: mockFetch } } }),
     wikios: {
       getHistory: {
-        useQuery: () => ({
-          data: firstPage,
-          isLoading: false,
-          error: firstError,
-          refetch: mockRefetch,
-        }),
+        useQuery: (...args: unknown[]) => {
+          mockQuery(...args);
+          return { data: firstPage, isLoading: false, error: firstError, refetch: mockRefetch };
+        },
       },
     },
   },
@@ -72,7 +71,17 @@ describe("PageHistoryView paging", () => {
     fireEvent.click(screen.getByRole("button", { name: "Older 50" }));
 
     await waitFor(() => expect(screen.getByTestId("timeline")).toHaveTextContent("r3,r2,r1"));
-    expect(mockFetch).toHaveBeenCalledWith({ title: "Foo", limit: 50, before: "r2" });
+    // the history view shows the parked-revision badge, so it asks for those rows, paging included
+    expect(mockQuery).toHaveBeenCalledWith(
+      { title: "Foo", limit: 50, includeParked: true },
+      expect.anything()
+    );
+    expect(mockFetch).toHaveBeenCalledWith({
+      title: "Foo",
+      limit: 50,
+      before: "r2",
+      includeParked: true,
+    });
     // the last page was the end of the history: the button is gone
     expect(screen.queryByRole("button", { name: /Older/ })).toBeNull();
   });

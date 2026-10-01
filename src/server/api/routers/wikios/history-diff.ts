@@ -63,8 +63,9 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
    * Revision history of a page, newest first, without any revision's text. `before` is the
    * reference of the last revision already seen: the answer starts right after it. Parked
-   * revisions (MediaWiki edits that conflicted with WikiOS's head and never went live) are listed
-   * too, flagged `parked`.
+   * revisions (MediaWiki edits that conflicted with WikiOS's head and never went live) are left out
+   * unless `includeParked`: the history views ask for them, flagged `parked`, to show the badge;
+   * whatever resolves "the current revision" (`?diff=cur`) must not.
    */
   getHistory: rateLimitedPublicProcedure
     .input(
@@ -72,6 +73,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         title: z.string().min(1).max(500),
         limit: z.number().int().min(1).max(MAX_HISTORY_PAGE).default(50),
         before: revisionRef.optional(),
+        includeParked: z.boolean().default(false),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -81,7 +83,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         input.limit,
         input.before ? { before: input.before } : undefined,
         "ixwiki",
-        { includeParked: true }
+        { includeParked: input.includeParked }
       );
       return { revisions: revisions.map(publicRevision), hasMore };
     }),

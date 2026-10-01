@@ -25,7 +25,7 @@ interface OlderRevisions extends HistoryPage {
 export function PageHistoryView({ title, slug }: { title: string; slug: string }) {
   const utils = api.useUtils();
   const first = api.wikios.getHistory.useQuery(
-    { title, limit: HISTORY_PAGE },
+    { title, limit: HISTORY_PAGE, includeParked: true }, // the badge needs the parked ones
     { staleTime: 30_000 }
   );
   const [older, setOlder] = useState<OlderRevisions | null>(null);
@@ -48,6 +48,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
         title,
         limit: HISTORY_PAGE,
         before: last.revid,
+        includeParked: true,
       });
       setOlder({
         head,

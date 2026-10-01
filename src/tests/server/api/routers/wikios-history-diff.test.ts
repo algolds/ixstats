@@ -26,6 +26,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { createCallerFactory } from "~/server/api/trpc";
+import { resolveDiffRefs } from "~/lib/wiki-os/diff-refs";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import {
@@ -82,7 +83,7 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 413)", () => {
     const result = await caller().getHistory({ title: "Foo", limit: 1, before: "r3" });
 
     expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 1, { before: "r3" }, "ixwiki", {
-      includeParked: true,
+      includeParked: false,
     });
     // the deletion flags are for the server: they do not leave it
     const { textDeleted, commentDeleted, userDeleted, ...visible } = entry("r2", "bob");
@@ -138,7 +139,7 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 413)", () => {
   it("starts at the newest revision without a cursor, 50 at a time", async () => {
     await caller().getHistory({ title: "Foo" });
     expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki", {
-      includeParked: true,
+      includeParked: false,
     });
   });
 
@@ -321,6 +322,26 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
       expect(result.from.revid).toBe("9001");
     });
 
+    it("?diff=cur resolves to the live head when the newest row is parked: the default history read leaves it out", async () => {
+      jest
+        .mocked(getArticleHistoryShadow)
+        .mockImplementation(fakeStore([entry("9002", true), ...history]));
+
+      // what the diff view reads (no includeParked) ...
+      const { revisions } = await caller().getHistory({ title: "Foo", limit: 100 });
+      expect(revisions.map((r) => r.revid)).toEqual(["r3", "r1"]);
+      expect(
+        resolveDiffRefs(
+          { oldid: "r1", diff: "cur" },
+          revisions.map((r) => r.revid)
+        )
+      ).toEqual({ fromrev: "r1", torev: "r3" });
+
+      // ... while the history views ask for the parked rows, to badge them
+      const all = await caller().getHistory({ title: "Foo", limit: 100, includeParked: true });
+      expect(all.revisions[0]).toMatchObject({ revid: "9002", parked: true });
+    });
+
     it("the first live revision has nothing before it, however many parked edits follow it in the list", async () => {
       const result = await caller().getDiff({ torev: "r1" });
 
@@ -345,7 +366,7 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
 });
 
 describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
-  it("asks the store for parked revisions and passes them on flagged", async () => {
+  it("asks the store for parked revisions only when told to, and passes them on flagged", async () => {
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
         {
@@ -373,7 +394,7 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
       fromShadow: true,
     });
 
-    const result = await caller().getHistory({ title: "Foo" });
+    const result = await caller().getHistory({ title: "Foo", includeParked: true });
 
     expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki", {
       includeParked: true,
