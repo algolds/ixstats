@@ -27,6 +27,7 @@ const mockJobCreate = jest.fn();
 const mockRestrictionDeleteMany = jest.fn();
 const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
+const mockExecuteRaw = jest.fn();
 
 const mockInvalidateTemplates = jest.fn();
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
@@ -60,6 +61,8 @@ jest.mock("~/server/db", () => {
       updateMany: (...a: unknown[]) => mockRestrictionUpdateMany(...a),
       findUnique: (...a: unknown[]) => mockRestrictionFindUnique(...a),
     },
+    // the destination's creation lock (set_config for the wait limit, then pg_advisory_xact_lock)
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   };
   return {
     db: {
@@ -101,6 +104,7 @@ beforeEach(() => {
   mockRestrictionDeleteMany.mockResolvedValue({ count: 0 });
   mockRestrictionUpdateMany.mockResolvedValue({ count: 0 });
   mockRestrictionFindUnique.mockResolvedValue(null);
+  mockExecuteRaw.mockResolvedValue(0);
 });
 
 describe("PageManagementService.movePage", () => {
@@ -493,6 +497,38 @@ function expectLeanSelect(call: unknown[] | undefined) {
   expect(select).toBeDefined();
   for (const column of HEAVY) expect(select).not.toHaveProperty(column);
 }
+
+describe("PageManagementService.movePage and the destination's creation lock (m6)", () => {
+  it("queues behind a save that is creating the destination, then checks that the destination is free", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    const statements = mockExecuteRaw.mock.calls.map(([strings, ...values]) => [
+      (strings as TemplateStringsArray).join("?"),
+      ...values,
+    ]);
+    // the wait limit, then the advisory lock keyed by the same source:title a creating save takes (article-repository.ts)
+    expect(statements[0]).toEqual(["SELECT set_config('lock_timeout', ?, true)", "10s"]);
+    expect(statements[1]).toEqual(["SELECT pg_advisory_xact_lock(?::int, hashtext(?))", 41102, "ixwiki:New name"]);
+    // taken before the destination is looked up
+    const lockedAt = mockExecuteRaw.mock.invocationCallOrder[1]!;
+    const destinationLookup = mockFindFirst.mock.calls.findIndex(([args]) =>
+      JSON.stringify(args.where).includes("new_name")
+    );
+    expect(lockedAt).toBeLessThan(mockFindFirst.mock.invocationCallOrder[destinationLookup]!);
+  });
+
+  it("takes the creation lock of the talk page's destination too", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({ id: where.id }));
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    const keys = mockExecuteRaw.mock.calls
+      .filter(([strings]) => (strings as TemplateStringsArray).join("?").includes("pg_advisory_xact_lock"))
+      .map(([, , key]) => key);
+    expect(keys).toEqual(["ixwiki:New name", "ixwiki:Talk:New name"]);
+  });
+});
 
 describe("PageManagementService.movePage and the rendered view (plan 404)", () => {
   it("marks the moved page stale under its new name and queues its render after the commit", async () => {

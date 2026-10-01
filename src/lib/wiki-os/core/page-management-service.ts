@@ -8,6 +8,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
+import { lockTitleForCreation } from "./page-lock";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueDeleteJob, enqueueMoveJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateTemplateDependents } from "../services/render-service";
@@ -223,7 +224,9 @@ export class PageManagementService {
       );
     }
 
-    // 2. Check if target title already exists
+    // 2. Check if target title already exists. A save that is creating a page at the destination holds its creation
+    // lock until it commits: queue behind it, so that the check sees the page it made (and refuses) instead of racing it.
+    await lockTitleForCreation(tx, realm, newCanonicalTitle);
     const existingTarget = await tx.wikiArticle.findFirst({
       where: { source: realm, OR: [{ slug: newSlug }, { title: newCanonicalTitle }] },
       select: { id: true },

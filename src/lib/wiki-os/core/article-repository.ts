@@ -23,6 +23,7 @@ import {
   type WikiRevisionSummary,
 } from "./domain-types";
 import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
+import { lockPageForSave } from "./page-lock";
 import { isTransactionBusy, PageBusyError } from "./page-busy-error";
 import { parseRedirect } from "./redirect";
 import { fillRevisionParents } from "./revision-parents";
@@ -41,22 +42,10 @@ import { enqueueRender, invalidateDependents } from "../services/render-service"
 import { notifyWatchers } from "../services/watchlist-notify";
 
 /**
- * The first int of the per-title save locks, in the two-int form `pg_advisory_xact_lock(namespace, key)` (a key space of
- * its own: the single-int locks are `withJobLock`'s, staged-uploads.ts uses 41101, cards 7331). Arbitrary.
- */
-const ARTICLE_SAVE_LOCK_NAMESPACE = 41102;
-
-/**
  * The save's transaction: it may wait for the page's lock behind another save (or a long import of the page), so it
  * gets more than Prisma's 5 s, like the staged-file and render-metadata transactions.
  */
 export const SAVE_TRANSACTION = { maxWait: 10_000, timeout: 30_000 };
-/**
- * How long a save waits for the page's lock before it gives up as busy (PostgreSQL's `lock_timeout`, set for the
- * transaction only). Prisma's transaction timeout alone does not bound the wait: it cannot cancel a statement that is
- * blocked on a lock, so the connection would stay occupied until the holder (a long import of the page) finished.
- */
-const SAVE_LOCK_TIMEOUT = "10s";
 
 /** A save that waited too long for the page's lock is busy, and retryable: not a failure of the save. */
 function retryableWhenBusy(error: unknown): never {
@@ -614,6 +603,10 @@ async function importInto(
   client: ImportClient,
   input: ImportPageInput
 ): Promise<{ result: ImportPageResult; articleId: string | null; head: ImportedHead | null }> {
+  // A real import queues behind any save of the page (and holds the page against the next one), and reads the page
+  // only once it has the lock: a save that committed meanwhile is then part of what the dump's head is compared with,
+  // so an older head can never overwrite it. A dry run writes nothing and takes no lock.
+  if (!input.dryRun) await lockPageForSave(client, input.source, input.title);
   const article = await client.wikiArticle.findUnique({
     where: { source_title: { source: input.source, title: input.title } },
     select: { id: true, mwPageId: true, protectionLevel: true },
@@ -655,31 +648,6 @@ export interface FindArticleOptions {
 }
 
 type SaveTransaction = Prisma.TransactionClient;
-
-/**
- * Serialize the saves of one page: take the article row's lock (`SELECT ... FOR NO KEY UPDATE`, held until the
- * transaction ends), so a second save of the page waits here until the first has committed and then reads the head it
- * left. The lock is the row's own, so a writer that updates the row (a page move, the inbound sync, an import) queues
- * behind a save too. NO KEY UPDATE, not UPDATE: it conflicts with every other writer of the row but not with the
- * FOR KEY SHARE lock that the foreign-key check of an insert referencing the row takes (the render's link, category
- * and image rows), so a render storing its metadata is never blocked behind a save, nor a save behind it. A page with
- * no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the one that gets it
- * second reads the page the first created. Resolves to the locked row's id; null when there was no row.
- */
-async function lockPageForSave(
-  tx: SaveTransaction,
-  source: string,
-  title: string
-): Promise<string | null> {
-  // for this transaction only (`is_local`); the statement that waits too long fails with 55P03, which reads as busy
-  await tx.$executeRaw`SELECT set_config('lock_timeout', ${SAVE_LOCK_TIMEOUT}, true)`;
-  const locked = await tx.$queryRaw<Array<{ id: string }>>`
-    SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR NO KEY UPDATE`;
-  if (locked[0]) return locked[0].id;
-  // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
-  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ARTICLE_SAVE_LOCK_NAMESPACE}::int, hashtext(${`${source}:${title}`}))`;
-  return null;
-}
 
 /**
  * The page's latest live revision (a parked one is not the page), as a save under the page's lock reads it. With the

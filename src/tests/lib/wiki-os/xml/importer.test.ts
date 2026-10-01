@@ -19,6 +19,7 @@ import {
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 import {
+  rawStatements,
   resetStore,
   snapshotStore,
   store,
@@ -361,6 +362,39 @@ describe("a dump whose newest revision blanks the page (the inbound sync's write
     expect(newest).toMatchObject({ mwRevId: 7001, wikitext: "", byteSize: 0, textDeleted: false });
     expect(newest.parked ?? false).toBe(false);
     expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
+  });
+});
+
+describe("a real import locks the page before it reads it (m6)", () => {
+  it("takes the page's row lock first, once per page; a dry run takes none", async () => {
+    seedArticle();
+
+    await importFixture({ dryRun: true });
+    expect(rawStatements).not.toContain("row lock");
+
+    await importFixture();
+    // five pages in the dump: each locked once (the pages the dump creates take the creation lock instead)
+    expect(rawStatements.filter((statement) => statement === "row lock")).toHaveLength(5);
+    expect(rawStatements.filter((statement) => statement.includes("pg_advisory_xact_lock"))).toHaveLength(4);
+    expect(rawStatements.filter((statement) => statement.includes("set_config"))).toHaveLength(5);
+  });
+
+  it("does not let an older dump head overwrite a save that landed while the import waited for the lock", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+    // a save commits just before the import gets the page's lock: newer than the dump's head (2026-01-02)
+    store.onRowLock = (title) => {
+      if (title !== "Kingdom of Testia") return;
+      seeded.wikitext = "SAVED WHILE WAITING";
+      seedRevision(seeded.id, { wikitext: "SAVED WHILE WAITING", createdAt: new Date("2026-06-01T00:00:00Z") });
+    };
+
+    await importFixture();
+
+    // the dump's history is filled in, but its older head did not replace the newer save
+    expect(article("Kingdom of Testia").wikitext).toBe("SAVED WHILE WAITING");
+    expect(revisionsOf("Kingdom of Testia").map((row) => row.wikitext)).toContain("SAVED WHILE WAITING");
+    expect(revisionsOf("Kingdom of Testia")).toHaveLength(5);
   });
 });
 
