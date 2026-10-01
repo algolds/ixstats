@@ -192,17 +192,15 @@ describe("Special:Upload", () => {
   });
 
   it("shows a refusal and keeps the form", async () => {
-    fetchMock
-      .mockResolvedValueOnce(allowed)
-      .mockResolvedValueOnce(
-        answer(
-          {
-            error: "protectedpage: This page is protected from upload (sysop).",
-            code: "protectedpage",
-          },
-          403
-        )
-      );
+    fetchMock.mockResolvedValueOnce(allowed).mockResolvedValueOnce(
+      answer(
+        {
+          error: "protectedpage: This page is protected from upload (sysop).",
+          code: "protectedpage",
+        },
+        403
+      )
+    );
     render(<WikiUploadPage />);
 
     fireEvent.change(await screen.findByLabelText("File"), { target: { files: [png()] } });
