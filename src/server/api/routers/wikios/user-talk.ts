@@ -23,7 +23,7 @@ import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 export const wikiosUserTalkRouter = createTRPCRouter({
   /**
    * Consolidated author profile for WikiOS sidebar, header, and user cards.
-   * Resolves wiki identity, MediaWiki MySQL stats, loreward scores, and country affiliation in a single fast query (~15ms).
+   * Resolves wiki identity, wiki edit stats from PostgreSQL, loreward scores, and country affiliation in a single fast query (~15ms).
    */
   getAuthorProfile: publicProcedure
     .input(
@@ -76,7 +76,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         existsInMediaWiki: mwInfo?.exists === true,
         editCount: mwInfo?.user_editcount ?? 0,
         registration: mwInfo?.user_registration ?? null,
-        groups: [] as string[],
+        // the rights engine's groups of the account (explicit rows, implicit groups, the IxStates role), as the bridge reports them
+        groups: mwInfo?.groups ?? [],
         loreScore: loreStatsRecord?.totalScore ?? 0,
         loreStreak: loreStatsRecord?.currentStreak ?? 0,
         longestStreak: loreStatsRecord?.longestStreak ?? 0,
@@ -114,7 +115,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         };
       }
 
-      // 2. Fallback: MySQL bridge
+      // 2. Fallback: the bridge (PostgreSQL)
       const result: any = await getBacklinks(
         input.title,
         input.limit,
@@ -218,7 +219,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
   getUserInfo: publicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
-      // Direct MySQL — ~20ms vs ~300ms via API
+      // PostgreSQL (revisions and the rights engine), not a MediaWiki call
       return getUserInfo(input.username);
     }),
 });

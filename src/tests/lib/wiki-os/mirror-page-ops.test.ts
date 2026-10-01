@@ -3,6 +3,13 @@
  * Plan 407: the page-operation mirror jobs (move, delete, undelete, protect), and the "already done" answers
  * MediaWiki gives a retry that must not fail the job. MediaWiki is a scripted fake.
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import type { WikiMirrorJob } from "@prisma/client";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { MediaWikiApiError } from "~/lib/wiki-os/adapters/mediawiki/write-service";

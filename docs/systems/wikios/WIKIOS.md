@@ -18,6 +18,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
 - **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the real author; failures back off and end `dead` after 8 attempts for an administrator to requeue.
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
+- **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS confined to `.mw-parser-output` by `scope-template-styles.ts`: the reader gives that class, MediaWiki's own, to each element whose innerHTML is a part of the article (body, infobox, notices, the editors' previews), so a template's CSS never reaches the header, toolbar or margin around it; a selector that asks for the root's siblings is dropped, only `@media` at-rules survive, and `@import`, a `url()` to any host but the wiki's own origin (relative URLs stay), `attr()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped. `WIKIOS_TEMPLATESTYLES=0` is the emergency lever: it removes every `<style>` again (on when unset, empty, `1`, `true`, `on` or `yes`, off for any other value; part of the sanitizer fingerprint; runbook step 10c in [wikios-v1-cutover.md](../../operations/wikios-v1-cutover.md)). The scoper is tested against an exact oracle (lightningcss): `bun run audit:template-styles` for a deep run.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
 - **Canvas visual editor (`CANVAS_VERSION = 1`).** Plate-based block editor (Plan 206) with a WikiAST ↔ wikitext converter (Plans 205/208) and lossless template serialization (Plan 301).
 
@@ -69,7 +70,7 @@ flowchart TD
 ```
 src/lib/wiki-os/
 ├── index.ts                   # Root barrel export
-├── config.ts                  # Configuration and DEFAULT_MEDIAWIKI_URL
+├── config.ts                  # The one config object (`wikiosConfig`) and the URL helpers (plan 415)
 ├── types.ts                   # Nominal contracts
 ├── auth.ts                    # User identity and role resolution
 ├── use-wiki-auth.ts           # React client hook for authentication
@@ -83,7 +84,6 @@ src/lib/wiki-os/
 │   ├── native-search-service.ts # Two-tier search service
 │   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
-│   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr); exercised only by tests
 │   └── category-service.ts    # Recursive category tree queries
 │
 ├── guardian/                  # Security and CDN management

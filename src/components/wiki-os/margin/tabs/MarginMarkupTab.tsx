@@ -22,6 +22,7 @@ import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { MarginShareModal } from "../modals/MarginShareModal";
 
 interface AnnotationItem {
@@ -132,10 +133,9 @@ export function MarginMarkupTab({
 
   const handleExportAllMarkdown = async () => {
     if (annotations.length === 0) return;
-    const slug = encodeURIComponent(articleTitle.replace(/ /g, "_"));
     const markdownLines = [
       `# Notes and quotes: [[${articleTitle}]]`,
-      `*Source: https://ixwiki.com/wiki/${slug}*\n`,
+      `*Source: ${publicArticleUrl(articleTitle)}*\n`,
     ];
 
     annotations.forEach((ann, idx) => {

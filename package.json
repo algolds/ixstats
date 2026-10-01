@@ -17,6 +17,7 @@
     "audit:flags:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-flag-urls.ts",
     "audit:forum-links": "bun scripts/audit/list-forum-links.ts",
     "audit:idor": "bun scripts/audit/audit-country-idor.ts",
+    "audit:template-styles": "bun scripts/audit/fuzz-template-styles.ts",
     "audit:urls": "bun scripts/audit-production-urls.ts",
     "audit:urls:prod": "BASE_PATH=/projects/ixstates bun scripts/audit-production-urls.ts",
     "audit:v1": "bun scripts/audit/audit-v1.ts",
@@ -237,6 +238,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@csstools/css-tokenizer": "3.0.4",
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4.3.3",
@@ -253,6 +255,7 @@
     "@types/ws": "^8.18.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
+    "lightningcss": "1.32.0",
     "mysql2": "^3.24.2",
     "node-fetch-native": "^1.6.7",
     "oxlint": "^1.80.0",

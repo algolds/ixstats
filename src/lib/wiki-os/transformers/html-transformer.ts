@@ -3,7 +3,14 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
+import {
+  getWikiBaseUrl,
+  mediaWikiHostPattern,
+  mediaWikiOrigin,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,14 +63,18 @@ const TAG_STRIP_REGEX = /<[^>]+>/gu;
 const BUILTIN_TOC_REGEX = /<div[^>]*id="toc"[^>]*>[\s\S]*?<\/div>\s*(?:<\/div>)?/giu;
 const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
 const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
+const INDEX_PHP_HREF_ONCE_REGEX = /href="\/index\.php\?([^"]*)"/u;
+const ANCHOR_TAG_REGEX = /<a\b[^>]*>/gu;
+/** MediaWiki's tooltip of a red link: redundant, since the link is red and WikiOS opens the editor. */
+const MISSING_PAGE_TITLE_REGEX = /\s+title="[^"]*\(page does not exist\)"/u;
 const CLASS_NEW_REGEX = /class="new"/gu;
 /** Namespaces WikiOS does not read as articles of another wiki: they open on that wiki's own site. */
 const SITE_NAMESPACE_REGEX =
   /^(?:File|Image|Media|Special|User|Category|Template|Module|Help|MediaWiki|Talk|[A-Za-z]+_talk)(?::|%3A)/iu;
 const QUERY_TITLE_REGEX = /(?:^|&(?:amp;)?)title=([^&]*)/u;
 const QUERY_UPLOAD_FILE_REGEX = /(?:^|&(?:amp;)?)wpDestFile=([^&]*)/u;
-const MISSING_PAGE_TOOLTIP_REGEX = / \(page does not exist\)"/gu;
-const PAGE_NAME_REGEX = /^[^#]*/u;
+/** `Name?query#fragment` of a `/wiki/` link: the page name, then the wiki's own query (`?action=edit&redlink=1`), then the fragment. */
+const WIKI_PATH_REGEX = /^([^?#]*)(?:\?[^#]*)?(#.*)?$/u;
 
 const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
 /** A tag whose width or height is 1-24px is an icon (a notice's, a link marker's), never the lead image. */
@@ -72,8 +83,17 @@ const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
 const IMG_REFERRER_REGEX = /<img(?![^>]*referrerpolicy=)/gu;
 
 const STYLE_EDIT_SECTION_REGEX = /class="mw-editsection"/gu;
-const IMG_SRC_COMMON_REGEX =
-  /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/gu;
+/** The wiki's host (or its `www.` alias) as a regular-expression source: built from the configuration. */
+const MEDIAWIKI_HOST = mediaWikiHostPattern();
+const IMG_SRC_COMMON_REGEX = new RegExp(
+  `<img[^>]*src="(https?:\\/\\/(?:${MEDIAWIKI_HOST}\\/images|upload\\.wikimedia\\.org\\/wikipedia\\/commons)[^"]+)"`,
+  "gu"
+);
+/** An `http:` or protocol-relative spelling of the wiki's own host, which becomes its configured origin. */
+const LEGACY_ORIGIN_SOURCE = `(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`;
+const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_SOURCE}`, "gu");
+const LEGACY_ORIGIN_START_REGEX = new RegExp(`^${LEGACY_ORIGIN_SOURCE}`, "u");
+const SISTER_FILE_URL_REGEX = /^https?:\/\/(?:www\.)?iiwiki\.com\/images\//u;
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
 
@@ -283,7 +303,7 @@ function transformLinks(html: string, basePath: string, wikiSource: WikiSource):
 }
 
 function transformIxWikiLinks(html: string, basePath: string): string {
-  const origin = DEFAULT_MEDIAWIKI_URL;
+  const origin = mediaWikiOrigin();
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
   let result = html.replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => {
@@ -298,16 +318,40 @@ function transformIxWikiLinks(html: string, basePath: string): string {
     return `href="${basePath}/wiki/${path}"`;
   });
 
-  // 2. Transform red links with noreferrer
+  // 2. A red link opens WikiOS's own editor, as a relative link: not MediaWiki's index.php (about 190 bytes
+  // a link, and a trip to the classic wiki). Its tooltip repeats what the red already says.
+  result = result.replace(ANCHOR_TAG_REGEX, (tag) => redLinkToWikiOS(tag, basePath));
+
+  // 3. Transform the other index.php links with noreferrer
   result = result.replace(
     INDEX_PHP_HREF_REGEX,
     (_match, query: string) => `href="${origin}/index.php?${query}" rel="noreferrer"`
   );
 
-  // 3. Add wikios-redlink class to links with class="new"
+  // 4. Add wikios-redlink class to links with class="new"
   result = result.replace(CLASS_NEW_REGEX, 'class="new wikios-redlink"');
 
   return result;
+}
+
+/**
+ * The opening tag `tag` of an anchor, with a red link (`/index.php?title=X&action=edit&redlink=1`) pointed at
+ * WikiOS's editor for X (`<basePath>/wiki/<X's URL path>?action=edit&redlink=1`) and MediaWiki's "X (page
+ * does not exist)" tooltip dropped. Any other tag, and a red link whose title WikiOS cannot read, is as it was.
+ */
+function redLinkToWikiOS(tag: string, basePath: string): string {
+  const query = INDEX_PHP_HREF_ONCE_REGEX.exec(tag)?.[1];
+  if (query === undefined) return tag;
+  const params = new URLSearchParams(query.replace(/&amp;/gu, "&"));
+  const title = params.get("title");
+  const canon =
+    params.get("action") === "edit" && params.get("redlink") === "1" && title
+      ? canonicalizeTitle(title)
+      : null;
+  if (!canon) return tag;
+  return tag
+    .replace(/href="[^"]*"/u, `href="${basePath}/wiki/${canon.urlPath}?action=edit&amp;redlink=1"`)
+    .replace(MISSING_PAGE_TITLE_REGEX, "");
 }
 
 /** The page a red link points at: its title, or the missing file of an upload link. */
@@ -317,24 +361,46 @@ function redLinkPage(query: string): string | undefined {
 }
 
 /**
- * Another wiki's page is parsed by ixwiki, so its links resolve against ixwiki (ruling E-l). Articles stay in the
- * WikiOS reader for that wiki (`?source=`, before any #fragment); files, special, user and similar pages open on
- * that wiki; red links only mean "not on IxWiki", so they are ordinary links to that wiki's page.
+ * Another wiki's page is parsed by that wiki itself, so its links are its own (plan 415): an article stays in
+ * the WikiOS reader for that wiki (`?source=`, before any #fragment, whatever query the wiki put on the
+ * link); files, special, user and similar pages open on that wiki; a red link is a page missing there, so it
+ * keeps its red styling and leads to the reader for that wiki, which says so, not to a create form.
  */
 function transformSourceWikiLinks(html: string, basePath: string, wikiSource: WikiSource): string {
   const origin = getWikiBaseUrl(wikiSource).replace(/\/+$/u, "");
-  const href = (page: string) =>
-    SITE_NAMESPACE_REGEX.test(page)
-      ? `href="${origin}/wiki/${page}" rel="noreferrer"`
-      : `href="${basePath}/wiki/${page.replace(PAGE_NAME_REGEX, (name) => `${name}?source=${wikiSource}`)}"`;
+  const href = (path: string) => {
+    const [, name = "", fragment = ""] = WIKI_PATH_REGEX.exec(path) ?? [];
+    return SITE_NAMESPACE_REGEX.test(name)
+      ? `href="${origin}/wiki/${path}" rel="noreferrer"`
+      : `href="${basePath}/wiki/${name}?source=${wikiSource}${fragment}"`;
+  };
   return html
     .replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => href(path))
     .replace(INDEX_PHP_HREF_REGEX, (_match, query: string) => {
       const page = redLinkPage(query);
       return page ? href(page) : `href="${origin}/index.php?${query}" rel="noreferrer"`;
-    })
-    .replace(CLASS_NEW_REGEX, 'class="wikios-source-link"')
-    .replace(MISSING_PAGE_TOOLTIP_REGEX, '"');
+    });
+}
+
+/**
+ * One `srcset` candidate URL of an IxWiki page, absolute like its `src` (`transformImages`): a root-relative
+ * `/images/`, `/thumb/` or `/data/` path gets the origin, an `http:` or protocol-relative spelling of the
+ * wiki's own host becomes the origin, and anything else (a URL that is already absolute, another host's) is
+ * left exactly as it is: it is never prefixed a second time.
+ */
+function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
+  if (LEGACY_ORIGIN_START_REGEX.test(url)) return url.replace(LEGACY_ORIGIN_START_REGEX, `${origin}/`);
+  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${origin}${url}`;
+  if (url.startsWith("/thumb/")) return `${origin}/images${url}`;
+  return url;
+}
+
+/** One `srcset` candidate URL of another wiki's page: its files go through that wiki's media proxy; the rest is untouched. */
+function proxiedSourceSrcsetUrl(url: string, proxyBase: string): string {
+  if (SISTER_FILE_URL_REGEX.test(url)) return url.replace(SISTER_FILE_URL_REGEX, `${proxyBase}/images/`);
+  if (url.startsWith("/images/") || url.startsWith("/data/")) return `${proxyBase}${url}`;
+  if (url.startsWith("/thumb/")) return `${proxyBase}/images${url}`;
+  return url;
 }
 
 export function transformImages(
@@ -342,7 +408,7 @@ export function transformImages(
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki",
   { eagerFirst = false }: { eagerFirst?: boolean } = {}
 ): string {
-  let origin = DEFAULT_MEDIAWIKI_URL;
+  let origin = mediaWikiOrigin();
   let proxyBase = withBasePath("/api/mediawiki/ixwiki");
 
   if (wikiSource === "iiwiki") {
@@ -357,21 +423,16 @@ export function transformImages(
 
   if (wikiSource === "ixwiki") {
     result = result
-      .replace(/src="\/\/(?:www\.)?ixwiki\.com\//gu, `src="https://ixwiki.com/`)
-      .replace(/src="http:\/\/ixwiki\.com\//gu, `src="https://ixwiki.com/`)
+      .replace(LEGACY_SRC_ORIGIN_REGEX, `src="${origin}/`)
       .replace(/src="\/images\//gu, `src="${origin}/images/`)
       .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${origin}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
-      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
-        const transformed = srcset
-          .replace(/http:\/\/ixwiki\.com\//gu, `https://ixwiki.com/`)
-          .replace(/\/\/(?:www\.)?ixwiki\.com\//gu, `https://ixwiki.com/`)
-          .replace(/\/images\//gu, `${origin}/images/`)
-          .replace(/\/thumb\//gu, `${origin}/images/thumb/`)
-          .replace(/\/data\//gu, `${origin}/data/`);
-        return `srcset="${transformed}"`;
-      });
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) =>
+          `srcset="${mapSrcsetUrls(srcset, (url) => absoluteIxWikiSrcsetUrl(url, origin))}"`
+      );
   } else {
     // For iiwiki and althistory, map relative /images/ to proxy
     result = result
@@ -388,14 +449,11 @@ export function transformImages(
         /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//gu,
         `src="${proxyBase}/wiki/Special:FilePath/`
       )
-      .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
-        const transformed = srcset
-          .replace(/\/images\//gu, `${proxyBase}/images/`)
-          .replace(/\/thumb\//gu, `${proxyBase}/images/thumb/`)
-          .replace(/\/data\//gu, `${proxyBase}/data/`)
-          .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//gu, `${proxyBase}/images/`);
-        return `srcset="${transformed}"`;
-      });
+      .replace(
+        /srcset="([^"]*)"/gu,
+        (_match, srcset: string) =>
+          `srcset="${mapSrcsetUrls(srcset, (url) => proxiedSourceSrcsetUrl(url, proxyBase))}"`
+      );
   }
 
   // 2. Transform url() references in inline CSS

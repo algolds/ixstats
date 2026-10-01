@@ -336,7 +336,7 @@ export function detectWikiUrl(
   if (altMatch && altMatch[1]) {
     return { title: decodeURIComponent(altMatch[1].replace(/_/g, " ")), source: "althistory" };
   }
-  const generalMatch = url.match(/(?:ixwiki\.com)?\/wiki\/([^#?]+)/i);
+  const generalMatch = url.match(/\/wiki\/([^#?]+)/i);
   if (generalMatch && generalMatch[1]) {
     return { title: decodeURIComponent(generalMatch[1].replace(/_/g, " ")), source: "ixwiki" };
   }

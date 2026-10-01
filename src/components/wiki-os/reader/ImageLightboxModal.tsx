@@ -25,6 +25,7 @@ import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext
 import { detectMediaType, type MediaType } from "~/lib/wiki-os/transformers/media-theme";
 import type { HighResWikiImageResult } from "~/lib/wiki-os/transformers/resolve-highres-image";
 import { api } from "~/trpc/react";
+import { isMediaWikiUrl, mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { useUser } from "~/context/auth-context";
 
 // ---------------------------------------------------------------------------
@@ -264,7 +265,7 @@ export function ImageLightboxModal({
 
   // Stash handler
   const handleStash = useCallback(() => {
-    const isLocal = image.fileUrl?.includes("ixwiki.com");
+    const isLocal = image.fileUrl ? isMediaWikiUrl(image.fileUrl) : false;
     const isIiwiki = image.fileUrl?.includes("iiwiki.com");
     let title = `commons:File:${cleanTitle}`;
     if (isLocal) {
@@ -453,7 +454,7 @@ export function ImageLightboxModal({
                       <a
                         href={
                           image.fileUrl.startsWith("/")
-                            ? `https://ixwiki.com${image.fileUrl}`
+                            ? mediaWikiImageUrl(image.fileUrl)
                             : image.fileUrl
                         }
                         target="_blank"
@@ -551,7 +552,7 @@ export function ImageLightboxModal({
           {image.fileUrl && (
             <a
               href={
-                image.fileUrl.startsWith("/") ? `https://ixwiki.com${image.fileUrl}` : image.fileUrl
+                image.fileUrl.startsWith("/") ? mediaWikiImageUrl(image.fileUrl) : image.fileUrl
               }
               target="_blank"
               rel="noreferrer"

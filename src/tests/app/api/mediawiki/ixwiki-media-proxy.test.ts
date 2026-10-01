@@ -22,9 +22,9 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 import { GET } from "~/app/api/mediawiki/ixwiki/[...path]/route";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
-const ORIGIN = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
+const ORIGIN = mediaWikiOrigin();
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
 
 interface CallOptions {

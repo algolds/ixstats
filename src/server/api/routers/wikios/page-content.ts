@@ -14,10 +14,6 @@ import {
   getInfobox,
   getImageMeta,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import {
-  transformArticleHtml,
-  stripConflictingStyles,
-} from "~/lib/wiki-os/transformers/html-transformer";
 import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
@@ -31,7 +27,7 @@ import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
 import { getMainPageData } from "~/lib/wiki-os/services/main-page-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
-import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { renderSisterArticle, SisterRenderError } from "~/lib/wiki-os/services/sister-render-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import {
   assertTitleVisible,
@@ -125,7 +121,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const { wikiSource } = input;
 
-      // For external wikis, fetch wikitext then render via ixwiki's action=parse
+      // Another wiki's page: its wikitext is fetched from that wiki and rendered by that wiki's own parser
+      // (never IxWiki's, whose templates are not its templates), then sanitized and cached per revision.
       if (wikiSource !== "ixwiki") {
         const [article, authorInfo] = await Promise.all([
           getArticleWikitext(input.title, wikiSource),
@@ -135,55 +132,15 @@ export const wikiosPageContentRouter = createTRPCRouter({
           throw new Error(`Article "${input.title}" not found on ${wikiSource}`);
         }
 
-        // Use ixwiki's action=parse as a cross-wiki render proxy.
-        // Templates won't resolve but basic wikitext formatting will work.
-        const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-        const response = await fetch(apiBase, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            action: "parse",
-            text: article.wikitext,
-            contentmodel: "wikitext",
-            prop: "text",
-            disablelimitreport: "1",
-            disableeditsection: "1",
-            wrapoutputclass: "",
-            formatversion: "2",
-            format: "json",
-          }),
-          signal: AbortSignal.timeout(15000),
+        const rendered = await renderSisterArticle(wikiSource, article).catch((error: Error) => {
+          if (error instanceof SisterRenderError) {
+            throw new TRPCError({ code: "BAD_GATEWAY", message: error.message, cause: error });
+          }
+          throw error;
         });
 
-        if (!response.ok) {
-          throw new Error(`Cross-wiki render failed (${response.status})`);
-        }
-
-        const data = (await response.json()) as {
-          parse?: { text: string };
-          error?: { info: string };
-        };
-
-        if (data.error || !data.parse) {
-          throw new Error(`Cross-wiki render error: ${data.error?.info ?? "no parse result"}`);
-        }
-
-        const transformed = transformArticleHtml(
-          stripConflictingStyles(data.parse.text),
-          "",
-          wikiSource
-        );
-
-        // Another wiki's HTML is as untrusted as a user's: sanitized before it is served.
         return {
-          contentHtml: sanitizeWikiArticleHtml(transformed.contentHtml),
-          infoboxHtml: transformed.infoboxHtml
-            ? sanitizeWikiArticleHtml(transformed.infoboxHtml)
-            : null,
-          noticesHtml: transformed.noticesHtml
-            ? sanitizeWikiArticleHtml(transformed.noticesHtml)
-            : null,
-          toc: transformed.toc,
+          ...rendered,
           title: article.title,
           categories: [] as string[],
           lastModified: null,

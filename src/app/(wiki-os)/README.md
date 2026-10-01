@@ -74,7 +74,6 @@ src/lib/wiki-os/
 │   ├── article-repository.ts  # Authoritative CRUD repository (<2ms read, <10ms write)
 │   ├── link-graph-service.ts  # Link extractor & O(1) relational backlink graph engine
 │   ├── native-search-service.ts # Two-tier Spotlight autocomplete (<1.5ms) & full-text search
-│   ├── parser-functions.ts    # Native JS ParserFunctions evaluator (#if, #switch, #expr)
 │   └── category-service.ts    # Recursive category tree DAG & member lookups
 │
 ├── guardian/                  # Security & Edge Defense

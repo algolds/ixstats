@@ -1,7 +1,7 @@
 // src/lib/wiki-os/bridge/http-reader.ts
 // HTTP readers for external MediaWiki endpoints (IIWiki, Althistory, Commons).
 
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import {
   type PageImage,
   type SisterWikiSource,
@@ -39,11 +39,13 @@ export function markExternalHostOffline(hostname: string) {
 
 /**
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
- * Returns null on persistent failures instead of throwing or polling repeatedly.
+ * Returns null on persistent failures instead of throwing or polling repeatedly. `form` makes it a
+ * POST of that form (a render of a page's wikitext does not fit in a URL).
  */
 export async function fetchExternalWiki(
   url: string,
-  timeoutMs: number = 12000
+  timeoutMs: number = 12000,
+  form?: URLSearchParams
 ): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
@@ -55,11 +57,13 @@ export async function fetchExternalWiki(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
+      ...(form ? { method: "POST", body: form.toString() } : {}),
       headers: {
         "User-Agent": USER_AGENT,
         "Api-User-Agent": USER_AGENT,
         Accept: "application/json, text/html, */*",
         "Accept-Language": "en-US,en;q=0.9",
+        ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       },
       signal: controller.signal,
     });
@@ -96,13 +100,7 @@ export function getIiwikiApiBaseUrl(): string {
 }
 
 export function getFullIiwikiApiUrl(): string {
-  if (process.env.IIWIKI_DEV_PROXY_URL) {
-    return process.env.IIWIKI_DEV_PROXY_URL;
-  }
-  if (process.env.NODE_ENV === "development") {
-    return "https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php";
-  }
-  return "https://iiwiki.com/api.php";
+  return getMediaWikiApiUrl("iiwiki");
 }
 
 export async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
@@ -124,7 +122,7 @@ export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | nu
       action: "query",
       titles: title,
       prop: "revisions",
-      rvprop: "content",
+      rvprop: "content|ids",
       rvslots: "main",
     })) as {
       query?: {
@@ -133,7 +131,7 @@ export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | nu
           {
             pageid?: number;
             title?: string;
-            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
+            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
           }
         >;
       };
@@ -152,6 +150,7 @@ export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | nu
       pageId: page.pageid,
       wikitext,
       length: wikitext.length,
+      revId: page.revisions?.[0]?.revid,
     };
   } catch (err) {
     console.error("[WikiBridge] iiwiki fetch error:", err);
@@ -343,7 +342,7 @@ export async function althistoryGetWikitext(title: string): Promise<WikiArticle 
       action: "query",
       titles: title,
       prop: "revisions",
-      rvprop: "content",
+      rvprop: "content|ids",
       rvslots: "main",
     })) as {
       query?: {
@@ -352,7 +351,7 @@ export async function althistoryGetWikitext(title: string): Promise<WikiArticle 
           {
             pageid?: number;
             title?: string;
-            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
+            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
           }
         >;
       };
@@ -371,6 +370,7 @@ export async function althistoryGetWikitext(title: string): Promise<WikiArticle 
       pageId: page.pageid,
       wikitext,
       length: wikitext.length,
+      revId: page.revisions?.[0]?.revid,
     };
   } catch (err) {
     console.error("[WikiBridge] althistory fetch error:", err);

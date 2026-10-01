@@ -4,6 +4,12 @@
 // Plan 411: the `upload` mirror job. MediaWiki is a scripted fake (tests never touch a real wiki); the staging directory
 // is a real temp directory and the WikiOS tables an in-memory fake. The upload must carry the very bytes that were staged
 // (compared by SHA-1), an upload MediaWiki already holds is a success, and a wrong bot password writes nothing.
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
@@ -15,7 +21,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { WikiMirrorJob } from "@prisma/client";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
-import { DEFAULT_MEDIAWIKI_URL, STAGED_FILE_PATH } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin, STAGED_FILE_PATH } from "~/lib/wiki-os/config";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
@@ -199,7 +205,7 @@ describe("uploading a staged file", () => {
 
     const { shard } = MediaAssetService.getMd5ShardPath("Flag of Eurth.png");
     expect(tables.wikiAsset.rows[0]).toMatchObject({
-      url: `${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/images/${shard}/Flag_of_Eurth.png`,
+      url: `${mediaWikiOrigin().replace(/\/+$/, "")}/images/${shard}/Flag_of_Eurth.png`,
       thumbnailUrl: null,
       sha1,
     });

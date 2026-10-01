@@ -20,6 +20,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { AccountTypeSelector } from "./account/AccountTypeSelector";
 import { AccountDetailsForm } from "./account/AccountDetailsForm";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -287,7 +288,7 @@ export function AccountCreationModal({
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] p-1.5 shadow-sm">
                     <img
-                      src="https://ixwiki.com/images/8/88/Thinkpages_Logo.svg"
+                      src={mediaWikiImageUrl("/images/8/88/Thinkpages_Logo.svg")}
                       alt="Thinkpages"
                       className="h-full w-full object-contain"
                     />

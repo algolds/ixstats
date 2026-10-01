@@ -2,7 +2,7 @@
  * index.ts — Unified MediaWiki Adapter Barrel Export
  *
  * Exposes Parsoid conversion, Action API writing (the mirror account's calls), 14-digit timestamp utilities,
- * and direct MariaDB / HTTP federator bridges.
+ * and the bridges (PostgreSQL for IxWiki, HTTP for the sister wikis).
  */
 
 export * from "./parsoid";

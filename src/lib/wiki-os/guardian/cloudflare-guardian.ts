@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 /** Cloudflare's purge answer: `{ success, errors: [{ code, message }] }`. */
@@ -32,10 +32,7 @@ export class CloudflareGuardian {
     const canon = canonicalizeTitle(title, { source: realm });
     if (!canon) return; // not a title MediaWiki would accept: there is no page of that name to purge
 
-    const publicUrl = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_MEDIAWIKI_URL).replace(
-      /\/+$/,
-      ""
-    );
+    const publicUrl = (process.env.NEXT_PUBLIC_APP_URL || mediaWikiOrigin()).replace(/\/+$/, "");
     const purgeUrls = [
       `${publicUrl}/wiki/${canon.urlPath}`,
       `${publicUrl}/projects/ixstates/wiki/${canon.urlPath}`,

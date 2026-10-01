@@ -24,6 +24,7 @@ import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { isMediaWikiUrl, publicArticleUrl } from "~/lib/wiki-os/config";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 
 interface CommonsImage {
@@ -247,9 +248,9 @@ export default function RepositoryPage() {
               ? withBasePath(
                   rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
                 )
-              : rawUrl.includes("ixwiki.com/")
+              : isMediaWikiUrl(rawUrl)
                 ? withBasePath(
-                    rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+                    rawUrl.replace(/^https?:\/\/[^/]+\//, "/api/mediawiki/ixwiki/")
                   )
                 : rawUrl;
 
@@ -258,9 +259,7 @@ export default function RepositoryPage() {
               title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
               thumbUrl: proxiedUrl,
               url: proxiedUrl,
-              descriptionUrl: isIiwiki
-                ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-                : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
+              descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
               width: img.width || 0,
               height: img.height || 0,
               mime: img.mime || "image/png",

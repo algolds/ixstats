@@ -163,16 +163,6 @@ export async function ixwikiGetRandomPage(): Promise<string> {
   return "Ixnay";
 }
 
-export async function ixwikiGetPageProps(_pageId: number): Promise<Record<string, string>> {
-  return {};
-}
-
-export async function ixwikiGetPageProtection(
-  _title: string
-): Promise<{ edit: string; move: string }> {
-  return { edit: "all", move: "all" };
-}
-
 export async function ixwikiGetImageMeta(filename: string): Promise<{
   name: string;
   width: number;
@@ -201,9 +191,4 @@ export async function ixwikiGetImageMeta(filename: string): Promise<{
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
   return null;
-}
-
-export async function ixwikiGetPageLog(_title: string, _limit: number = 20): Promise<any[]> {
-  // TODO: Implement via PostgreSQL wikiLog table when available
-  return [];
 }

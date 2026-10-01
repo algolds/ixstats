@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { createElement } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 
 interface TooltipState {
   html: string;
@@ -98,6 +99,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     };
   }, [contentRef, show, hide]);
 
+  // one object per footnote HTML: a new one each render would write the tooltip's DOM again (React 19)
+  const tooltipMarkup = useHtmlMarkup(tooltip?.html ?? "");
+
   // Render the tooltip portal
   const portal = tooltip
     ? createPortal(
@@ -115,7 +119,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
           },
           createElement("div", {
             className: "wikios-cite-tooltip-inner",
-            dangerouslySetInnerHTML: { __html: tooltip.html },
+            dangerouslySetInnerHTML: tooltipMarkup,
           })
         ),
         document.body

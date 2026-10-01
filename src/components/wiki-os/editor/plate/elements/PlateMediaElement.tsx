@@ -5,6 +5,7 @@ import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
 import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 
 /** Stashed/Commons media block — original figure HTML or AST-resolved image rendered. */
 export function PlateMediaElement({
@@ -18,6 +19,8 @@ export function PlateMediaElement({
   const path = usePath();
   const editor = useEditorRef();
   const readOnly = useReadOnly();
+  // one object per HTML: a new one each render would write the figure's DOM again (React 19)
+  const htmlMarkup = useHtmlMarkup(el?.html ?? "");
   let cb: ReturnType<typeof usePlateWikiCallbacks> | null = null;
   try {
     cb = usePlateWikiCallbacks();
@@ -51,7 +54,7 @@ export function PlateMediaElement({
         {el.html ? (
           <div
             className="wikios-ve-media overflow-hidden rounded-xl [&_figure]:m-0 [&_img]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: el.html }}
+            dangerouslySetInnerHTML={htmlMarkup}
           />
         ) : (
           <figure

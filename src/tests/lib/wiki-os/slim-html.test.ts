@@ -4,7 +4,11 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { UNUSED_MEDIAWIKI_CLASSES, slimArticleHtml } from "~/lib/wiki-os/transformers/slim-html";
+import {
+  UNUSED_MEDIAWIKI_CLASSES,
+  slimArticleHtml,
+  templateStyleIdentifiers,
+} from "~/lib/wiki-os/transformers/slim-html";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
 import { chipKeysIn, chipMarker } from "~/lib/wiki-os/templates/chip-markers";
 
@@ -145,5 +149,69 @@ describe("the view bundle", () => {
     );
     expect(bundle.bodyHtml).toContain('<a href="/wiki/Urcea">Urcea</a>');
     expect(bundle.bodyHtml).not.toMatch(/>\s+</);
+  });
+});
+
+describe("classes a kept TemplateStyles block styles (plan 415 review, m3)", () => {
+  const STYLE = (css: string) => `<style data-mw-deduplicate="TemplateStyles:r1">${css}</style>`;
+
+  it("stay, though MediaWiki's own markup carries them everywhere and WikiOS styles none of them", () => {
+    const out = slimArticleHtml(
+      STYLE(".mw-parser-output .infobox-caption{font-weight:bold}.mw-parser-output .plainlinks a{color:red}") +
+        '<div class="infobox-caption">cap</div><div class="plainlinks mw-redirect"><a href="/wiki/X">x</a></div>'
+    );
+
+    expect(out).toContain('<div class="infobox-caption">cap</div>');
+    // only the class the sheet names is kept; the one it does not name is still dead weight
+    expect(out).toContain('<div class="plainlinks"><a href="/wiki/X">x</a></div>');
+  });
+
+  it("are dropped as before when no sheet names them, or when the style is not TemplateStyles'", () => {
+    expect(slimArticleHtml('<div class="infobox-caption treeview">x</div>')).toBe("<div>x</div>");
+    expect(slimArticleHtml(`<style>.infobox-caption{color:red}</style><div class="infobox-caption">x</div>`)).toBe(
+      '<style>.infobox-caption{color:red}</style><div>x</div>'
+    );
+    expect(
+      slimArticleHtml(STYLE(".mw-parser-output .other{color:red}") + '<div class="infobox-caption other">x</div>')
+    ).toContain('<div class="other">x</div>');
+  });
+
+  it("are found however the sheet names them: escapes, :is(), an attribute selector", () => {
+    const out = slimArticleHtml(
+      STYLE(".mw-parser-output .plain\\6c inks{a:b}.mw-parser-output :is(.treeview, .nv-view){a:b}.mw-parser-output [class~=infobox-below]{a:b}") +
+        '<div class="plainlinks">a</div><div class="treeview">b</div><div class="nv-view">c</div><div class="infobox-below">d</div><div class="nv-edit">e</div>'
+    );
+
+    for (const kept of ["plainlinks", "treeview", "nv-view", "infobox-below"]) expect(out).toContain(`class="${kept}"`);
+    expect(out).not.toContain("nv-edit");
+  });
+
+  it("stay in another part of the page than the sheet: the body's sheet styles the infobox", () => {
+    const raw =
+      '<div class="mw-parser-output">' +
+      '<style data-mw-deduplicate="TemplateStyles:r1">.mw-parser-output .infobox-caption{font-weight:bold}</style>' +
+      '<table class="infobox"><tbody><tr><td><div class="infobox-caption">Caption</div></td></tr></tbody></table>' +
+      '<p>Body <span class="plainlinks">text</span></p></div>';
+
+    const bundle = buildViewBundle(raw);
+
+    expect(bundle.infoboxHtml).toContain('class="infobox-caption"');
+    expect(bundle.bodyHtml).toContain("<span>text</span>"); // plainlinks is named by no sheet
+  });
+
+  it("templateStyleIdentifiers reads TemplateStyles blocks only, in one pass", () => {
+    expect(
+      [
+        ...templateStyleIdentifiers(
+          `${STYLE(".a-b .c{x:y}")}<style>.not-this{x:y}</style>`,
+          `<p>x</p>${STYLE(".d{x:y}")}`
+        ),
+      ].sort()
+    ).toEqual(["a-b", "c", "d", "x", "y"]);
+    // a block that never closes ends the search; many of them cost no more than their length
+    const hostile = '<style data-mw-deduplicate="x">'.repeat(20_000);
+    const started = performance.now();
+    expect(templateStyleIdentifiers(hostile).size).toBe(0);
+    expect(performance.now() - started).toBeLessThan(250);
   });
 });

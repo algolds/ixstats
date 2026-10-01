@@ -10,6 +10,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { WikiIntelligenceData, WikiSettings, DataConflict } from "~/types/dossier";
+import { getWikiBaseUrl } from "~/lib/wiki-os/config";
 
 /**
  * Props for the useDossier hook
@@ -88,8 +89,8 @@ const DEFAULT_WIKI_SETTINGS: WikiSettings = {
   maxSections: 10,
   customPages: [],
   wikiBaseUrls: {
-    ixwiki: "https://ixwiki.com",
-    iiwiki: "https://iiwiki.com",
+    ixwiki: getWikiBaseUrl("ixwiki"),
+    iiwiki: getWikiBaseUrl("iiwiki"),
     custom: "",
   },
   contentFilters: {

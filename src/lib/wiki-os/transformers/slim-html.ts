@@ -9,6 +9,7 @@
 //   - class/style/title attributes left empty;
 //   - whitespace between block elements, and in a table's or list's structure.
 
+import { cssIdentifiers } from "~/lib/utils/scope-template-styles";
 import { parseInertOnServer } from "./server-dom";
 
 /**
@@ -51,6 +52,29 @@ export const UNUSED_MEDIAWIKI_CLASSES: ReadonlySet<string> = new Set([
   "collapsible-list",
   "treeview",
 ]);
+
+const NO_CLASSES: ReadonlySet<string> = new Set();
+
+/**
+ * The identifiers (so, every class name) of the TemplateStyles blocks in `htmls`, sanitized HTML: a class a kept
+ * sheet styles (`infobox-caption`, `plainlinks`, ...) is not dead weight, whichever part of the page it is in.
+ * Read with `indexOf`, one pass: a block that never closes ends the search.
+ */
+export function templateStyleIdentifiers(...htmls: string[]): Set<string> {
+  const found = new Set<string>();
+  for (const html of htmls) {
+    for (let at = html.indexOf("<style"); at !== -1; ) {
+      const tagEnd = html.indexOf(">", at);
+      const close = tagEnd === -1 ? -1 : html.indexOf("</style", tagEnd);
+      if (close === -1) break;
+      if (html.slice(at, tagEnd).includes("data-mw-deduplicate")) {
+        for (const name of cssIdentifiers(html.slice(tagEnd + 1, close))) found.add(name);
+      }
+      at = html.indexOf("<style", close);
+    }
+  }
+  return found;
+}
 
 /** Attributes that say nothing when empty. */
 const REMOVABLE_WHEN_EMPTY = ["class", "style", "title"] as const;
@@ -127,11 +151,11 @@ function dropRedundantTitle(element: Element): void {
   }
 }
 
-function dropUnusedClasses(element: Element): void {
+function dropUnusedClasses(element: Element, styled: ReadonlySet<string>): void {
   const className = element.getAttribute("class");
   if (className === null) return;
   const names = className.split(/\s+/).filter(Boolean);
-  const kept = names.filter((name) => !UNUSED_MEDIAWIKI_CLASSES.has(name));
+  const kept = names.filter((name) => !UNUSED_MEDIAWIKI_CLASSES.has(name) || styled.has(name));
   if (kept.length === names.length) return;
   if (kept.length === 0) element.removeAttribute("class");
   else element.setAttribute("class", kept.join(" "));
@@ -173,14 +197,21 @@ function isLayoutWhitespace(text: Text): boolean {
   return isBlock(text.previousSibling) && isBlock(text.nextSibling);
 }
 
-/** `html` with its dead weight taken out. */
-export function slimArticleHtml(html: string): string {
+/**
+ * `html` with its dead weight taken out. A class that a TemplateStyles block styles stays, even one of
+ * UNUSED_MEDIAWIKI_CLASSES: the blocks of `html` itself, and `styled`, the classes the other parts of the same
+ * page style (the body's sheet styles the infobox too).
+ */
+export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_CLASSES): string {
   if (!html) return html;
   const { template, content, document } = parseInertOnServer(html);
+  const kept = html.includes("data-mw-deduplicate")
+    ? new Set([...styled, ...templateStyleIdentifiers(html)])
+    : styled;
 
   for (const element of Array.from(content.querySelectorAll("*"))) {
     dropRedundantTitle(element);
-    dropUnusedClasses(element);
+    dropUnusedClasses(element, kept);
     dropEmptyAttributes(element);
   }
 

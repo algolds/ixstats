@@ -8,12 +8,11 @@
  */
 
 import { z } from "zod";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, wikiosConfig } from "~/lib/wiki-os/config";
 import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import {
   getBotSessionAndToken,
   invalidateCsrfToken,
-  mediaWikiApiUrl,
   readApiBody,
 } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 
@@ -101,11 +100,11 @@ async function send<T>(
 
   let res: Response;
   if (method === "GET") {
-    const url = new URL(mediaWikiApiUrl());
+    const url = new URL(wikiosConfig.mediawiki.writeApiUrl);
     for (const [key, value] of Object.entries(fields)) url.searchParams.set(key, value);
     res = await fetch(url.toString(), { headers, signal });
   } else {
-    res = await fetch(mediaWikiApiUrl(), {
+    res = await fetch(wikiosConfig.mediawiki.writeApiUrl, {
       method: "POST",
       headers,
       body: postBody(fields, csrfToken, file),

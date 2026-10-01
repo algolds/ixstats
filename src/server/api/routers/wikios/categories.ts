@@ -82,7 +82,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         hasMore = rawMembers.length > input.limit;
         rawMembers = rawMembers.slice(0, input.limit);
       } else {
-        // 2. Resilient Bridge Fallback (MySQL IxWiki / HTTP Sister Wikis)
+        // 2. Resilient Bridge Fallback (PostgreSQL for IxWiki / HTTP for the sister wikis)
         const bridgeResult = await getCategoryMembers(input.category, input.limit, input.type);
         rawMembers = bridgeResult.members.map((m) => ({
           pageid: m.pageId ?? 0,

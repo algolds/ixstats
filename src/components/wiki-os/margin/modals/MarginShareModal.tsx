@@ -18,6 +18,7 @@ import {
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 interface MarginShareModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export function MarginShareModal({
     },
   });
 
-  const slug = encodeURIComponent(articleTitle.replace(/ /g, "_"));
+  const articleUrl = publicArticleUrl(articleTitle);
   const cleanQuote = quoteText.trim();
 
   const formats = [
@@ -72,7 +73,7 @@ export function MarginShareModal({
       icon: FileText,
       description: "For notes, docs, and chat",
       getContent: () =>
-        `> "${cleanQuote}"\n\n— *[${articleTitle}](https://ixwiki.com/wiki/${slug})*${
+        `> "${cleanQuote}"\n\n— *[${articleTitle}](${articleUrl})*${
           commentNote ? `\n> *Significance: ${commentNote}*` : ""
         }`,
     },
@@ -114,7 +115,7 @@ export function MarginShareModal({
     if (isSending) return;
     setIsSending(true);
     soundEffects.press();
-    const formattedMessage = `Quote from [[${articleTitle}]]:\n> "${cleanQuote}"\n\nhttps://ixwiki.com/wiki/${slug}`;
+    const formattedMessage = `Quote from [[${articleTitle}]]:\n> "${cleanQuote}"\n\n${articleUrl}`;
 
     sendMessageMutation.mutate({
       conversationId,

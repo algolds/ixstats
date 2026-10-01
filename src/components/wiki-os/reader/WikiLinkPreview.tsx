@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -210,7 +212,7 @@ function domNodeToReact(
       element.className || "text-blue-500 hover:underline cursor-pointer font-medium";
 
     return (
-      <Link key={index} href={withBasePath(href)} className={className}>
+      <Link key={index} href={ixstatesHref(href)} className={className}>
         {Array.from(element.childNodes).map((child, childIdx) =>
           domNodeToReact(child, childIdx, missing)
         )}
@@ -416,7 +418,7 @@ export function MentionPopover({
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
-        <Link href={withBasePath(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
+        <Link href={ixstatesHref(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
           {icon && <span className="shrink-0 text-[12px] leading-none">{icon}</span>}
           <span>{label}</span>
         </Link>
@@ -445,7 +447,7 @@ export function MentionPopover({
                 </div>
                 <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(`/myleague/${entityId}`)}
+                    href={ixstatesHref(`/myleague/${entityId}`)}
                     className="flex-1 rounded bg-amber-500/10 py-1 text-center text-xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:bg-amber-500/20 dark:text-amber-200 dark:hover:bg-amber-500/30"
                   >
                     View Workspace
@@ -475,7 +477,7 @@ export function MentionPopover({
                 </div>
                 <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(`/myclub/${entityId}`)}
+                    href={ixstatesHref(`/myclub/${entityId}`)}
                     className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
                   >
                     View Roster & Stats
@@ -500,13 +502,13 @@ export function MentionPopover({
                 </div>
                 <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(`/countries/${entityId}`)}
+                    href={ixstatesHref(`/countries/${entityId}`)}
                     className="flex-1 rounded bg-emerald-500/10 py-1 text-center text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-200 dark:hover:bg-emerald-500/30"
                   >
                     View Profile
                   </Link>
                   <Link
-                    href={withBasePath(`/mycountry/diplomacy`)}
+                    href={ixstatesHref(`/mycountry/diplomacy`)}
                     className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     Open Embassy
@@ -537,13 +539,13 @@ export function MentionPopover({
                 </div>
                 <div className="mt-1 flex gap-2">
                   <Link
-                    href={withBasePath(`/dashboard`)}
+                    href={ixstatesHref(`/dashboard`)}
                     className="flex-1 rounded bg-blue-500/10 py-1 text-center text-xs font-semibold text-blue-700 hover:bg-blue-500/20 dark:bg-blue-500/20 dark:text-blue-200 dark:hover:bg-blue-500/30"
                   >
                     View Feed
                   </Link>
                   <Link
-                    href={withBasePath(`/messages`)}
+                    href={ixstatesHref(`/messages`)}
                     className="flex-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     Message
@@ -560,7 +562,7 @@ export function MentionPopover({
                   Explore page profile.
                 </p>
                 <Link
-                  href={withBasePath(href)}
+                  href={ixstatesHref(href)}
                   className="mt-1 rounded border border-neutral-200 bg-neutral-100 py-1 text-center text-xs font-semibold text-neutral-700 hover:bg-neutral-200 dark:border-transparent dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   Go to Page
@@ -577,6 +579,8 @@ export function MentionPopover({
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
   const [isMounted, setIsMounted] = useState(false);
+  // the server's and the first client render's HTML: one object per string, or React 19 writes it again
+  const rawMarkup = useHtmlMarkup(html);
 
   useEffect(() => {
     // oxlint-disable-next-line
@@ -618,7 +622,7 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
   }, [root, missing]);
 
   if (!isMounted || !parsedContent) {
-    return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <Tag className={className} dangerouslySetInnerHTML={rawMarkup} />;
   }
 
   return <Tag className={className}>{parsedContent}</Tag>;

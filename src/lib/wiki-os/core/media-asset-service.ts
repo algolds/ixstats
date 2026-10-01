@@ -8,7 +8,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import crypto from "crypto";
-import { DEFAULT_MEDIAWIKI_URL, STAGED_FILE_PATH } from "../config";
+import { mediaWikiOrigin, STAGED_FILE_PATH } from "../config";
 import { CategoryService } from "./category-service";
 import { withoutArchivedFiles } from "./archived-titles";
 
@@ -289,7 +289,7 @@ export class MediaAssetService {
     client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
   ): Promise<boolean> {
     const { shard, cleanName } = this.getMd5ShardPath(name);
-    const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
+    const base = mediaWikiOrigin().replace(/\/+$/, "");
     const { count } = await client.wikiAsset.updateMany({
       where: { filename: cleanName, sha1 },
       data: { url: `${base}/images/${shard}/${encodeURIComponent(cleanName)}`, thumbnailUrl: null },
@@ -322,7 +322,7 @@ export class MediaAssetService {
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();
 
-    const baseUrl = (data.originBaseUrl || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "");
+    const baseUrl = (data.originBaseUrl || mediaWikiOrigin()).replace(/\/+$/, "");
     const canonicalUrl = data.url || `${baseUrl}/images/${fullPath}`;
     const canonicalThumb =
       data.thumbnailUrl ||

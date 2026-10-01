@@ -25,6 +25,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
@@ -384,7 +385,7 @@ export function SculptedMainPageContent({
               Explore Countries
             </h2>
             <Link
-              href={withBasePath("/countries")}
+              href={ixstatesHref("/countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 rounded text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none"

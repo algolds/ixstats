@@ -24,7 +24,7 @@ export const geoWikiRouter = createTRPCRouter({
 
       const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
-      // Try ixwiki first (direct MySQL, ~8ms), then iiwiki (HTTP, ~400ms)
+      // Try ixwiki first (PostgreSQL), then iiwiki (HTTP, ~400ms)
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
         const result = await getArticleIntro(name, wiki);
         if (result?.text) {
@@ -116,7 +116,7 @@ export const geoWikiRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
-      // Try ixwiki first (MySQL, ~30ms), then iiwiki (HTTP, ~400ms)
+      // Try ixwiki first (PostgreSQL), then iiwiki (HTTP, ~400ms)
       for (const wiki of ["ixwiki", "iiwiki"] as const) {
         const results = await searchPages(input.query, input.limit, wiki);
         if (results.length > 0) {

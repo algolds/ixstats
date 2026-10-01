@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import {
   OpenNewWindow as ExternalLink,
   GraphUp as TrendingUp,
@@ -110,7 +111,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             </Link>
 
             <Link
-              href={withBasePath(`/countries/${country.slug ?? country.id}`)}
+              href={ixstatesHref(`/countries/${country.slug ?? country.id}`)}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-[0.97]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
@@ -244,14 +245,14 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               {blurbs.map((r) => (
                 <Link
                   key={r.id}
-                  href={withBasePath(`/blurbs/${r.prompt.slug}`)}
+                  href={ixstatesHref(`/blurbs/${r.prompt.slug}`)}
                   className="wikios-portal-blurb"
                 >
                   <span className="wikios-portal-blurb-prompt">{r.prompt.title}</span>
                   <span className="wikios-portal-blurb-text">{r.content}</span>
                 </Link>
               ))}
-              <Link href={withBasePath("/blurbs")} className="wikios-portal-blurbs-more">
+              <Link href={ixstatesHref("/blurbs")} className="wikios-portal-blurbs-more">
                 All blurbs →
               </Link>
             </div>

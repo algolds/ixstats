@@ -6,6 +6,12 @@
 // for the one that holds the key), MediaWiki is the scripted fake, and the staging directory is a real one. Before the fix, B
 // found the file staged and skipped writing it, A's job released it before B's rows committed, and B's job went dead with
 // "staged file is gone".
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,

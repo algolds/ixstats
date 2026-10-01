@@ -14,8 +14,16 @@ Nothing else may call an IxWiki MediaWiki. A read that is not on the list below 
 Postgres has nothing, the answer is "nothing", never a retry against MediaWiki.
 
 This document is enforced: `src/tests/architecture/mediawiki-dependencies-doc.test.ts` fails when a source file that
-names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_URL`, `NEXT_PUBLIC_MEDIAWIKI_URL`,
-`WIKIOS_MEDIAWIKI*`, `IXWIKI_LOCAL_PATH`) is not mentioned here. Adding a call site means adding a row.
+names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `mediaWikiOrigin` / `mediaWikiApiUrl` /
+`mediaWikiImageUrl` / `publicArticleUrl` / `isMediaWikiUrl` / `mediaWikiHostPattern`, `api.php`, `NEXT_PUBLIC_MEDIAWIKI_URL`,
+`WIKIOS_MEDIAWIKI*`) is not mentioned here. Adding a call site means adding a row.
+
+**One config object (plan 415, v1 decision D14).** The wiki's host, its endpoints and its name are read from the environment
+once, in `src/lib/wiki-os/config.ts` (`wikiosConfig`, frozen). `NEXT_PUBLIC_MEDIAWIKI_URL` is the public origin (default
+`https://ixwiki.com`, spelled once, there; see "The literals that remain"); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
+IxWiki's MediaWiki uses (`mediaWikiApiUrl({ internal: true })`, `getMediaWikiApiUrl("ixwiki")`); a URL a browser follows is built
+from the public origin (`mediaWikiOrigin()`, `publicArticleUrl(title)`, `mediaWikiImageUrl(path)`). A link detector builds its regular
+expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(url)`, `wikiTitleFromArticleUrl(url)`).
 
 ## Categories
 
@@ -43,7 +51,6 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` (caller: `src/server/api/routers/wikios/editing.ts`) | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
 | `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
 | `src/lib/wiki-os/api-compat/deps.ts` (`renderWikitext`) | `renderArticleViaMediaWiki(<text or old revision's wikitext>)` | WikiOS's own `/w/api.php` (plan 410): `action=parse&text=` from a bot session, or `parse&oldid=` (20/min per IP). Never the in-process compiler: a failed render answers `renderunavailable`. |
-| `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
 
 ### sync (inbound)
 
@@ -138,7 +145,7 @@ same `uploadFile` service as the browser's upload (mirror section above): it nam
 
 ### url-only (no request)
 
-`src/lib/wiki-os/config.ts` (the URL constants and `getMediaWikiApiUrl`), `src/env.ts` (the environment variables),
+`src/lib/wiki-os/config.ts` (`wikiosConfig` and the URL helpers), `src/env.ts` (the environment variables),
 `src/lib/wiki-os/transformers/image-url.ts` and `src/lib/wiki-os/transformers/html-transformer.ts` (image and link URLs),
 `src/lib/wiki-os/core/media-asset-service.ts` (an asset's canonical file URL), `src/lib/cards/lore-card-ixwiki.ts` (the file
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
@@ -158,6 +165,7 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/http-reader.ts` | wikitext, search, category members, page images and page authors of iiwiki and AltHistory; Commons category members and file URLs. |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/batch-reader.ts` | batched wikitext of iiwiki and AltHistory (through `http-reader.ts`). |
+| `src/lib/wiki-os/services/sister-render-service.ts` (`renderSisterArticle`, called by `src/server/api/routers/wikios/page-content.ts` `getArticleHtml`) | `action=parse&text=<that wiki's wikitext>&title=` posted to **that wiki's own** `api.php` (`sisterApiUrl(source)`: the sister's address itself, never the development proxy or `IIWIKI_DEV_PROXY_URL`, which forward GET only; through `http-reader.ts` `fetchExternalWiki`, user agent `IxStats-Builder`), so its templates resolve against its own pages (plan 415, BUG-09; they used to be rendered by IxWiki's engine). The answer is transformed, sanitized and cached per `(source, title, revision)` for ten minutes (200 pages). A failed render is a `BAD_GATEWAY`. |
 | `src/server/api/routers/wikios/categories.ts`, `src/server/api/routers/wikios/search.ts` | the `wiki: "iiwiki" \| "althistory"` branch of `searchCategories`, `getCategories`, `getCategoryTotalCounts`, `getSubcategories`, `autocompleteCategories`, `searchFiles`. |
 | `src/lib/cards/lore-card-generator.ts` | every generator read for iiwiki (article data, previews, authors, category members, category search and info, main-namespace pages, random pages, file URLs). |
 | `src/server/api/routers/lore-cards/wiki.ts` | iiwiki's opensearch fallback and recent changes. |
@@ -165,12 +173,14 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | `src/lib/flags/flag-resolver.server.ts` | iiwiki flag `imageinfo`. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
 
-### Files that only mention an ixwiki.com address (no request to MediaWiki)
+### Files that only build or recognise an IxWiki address (no request to MediaWiki)
 
-`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the literals `ixwiki.com`, `index.php` and `rest.php`.
-None of these files calls IxWiki's MediaWiki:
+`src/tests/architecture/mediawiki-dependencies-doc.test.ts` also matches the `config.ts` URL helpers and the literals
+`ixwiki.com`, `index.php` and `rest.php`. None of these files calls IxWiki's MediaWiki; the address comes from the one
+configuration object, never from a literal:
 
-- **Links and display URLs** to public IxWiki pages and files, built into an `href` or text: `src/app/(wiki-os)/util/repository/page.tsx`,
+- **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
+  `isMediaWikiUrl`): `src/app/(wiki-os)/util/repository/page.tsx`,
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
   `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
@@ -178,6 +188,13 @@ None of these files calls IxWiki's MediaWiki:
   `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
+- **Detectors of a link to an IxWiki page** in stored or fed text, built from the configured host (`mediaWikiHostPattern`,
+  `wikiTitleFromArticleUrl`), so they keep matching the old absolute links: `src/components/dashboard/sections/TrendingSectionWidget.tsx`,
+  `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
+  `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
+  `src/lib/cards/ns-image-proxy.ts`, `src/lib/forum/forum-utils.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
+- **The one absolute origin a TemplateStyles `url()` may name** (`mediaWikiOrigin()`, handed to the scoper and part of the sanitizer
+  fingerprint; a relative URL stays allowed, any other host is dropped): `src/lib/utils/sanitize-html.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/thinkpages/AccountCreationModal.tsx`,
   `src/lib/sports/transition.ts`.
 - **URL rewriting and referrer comments**: `src/app/(wiki-os)/wiki/layout.tsx`, `src/lib/wiki-os/transformers/fix-editor-images.ts`,
@@ -190,22 +207,36 @@ None of these files calls IxWiki's MediaWiki:
   `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/navigation/UserProfileMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
-  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`ixwiki.com/projects/ixstates`):
+  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
   `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
+
+### The literals that remain (plan 415 count)
+
+`grep -rn "ixwiki.com" src` (tests excluded) names the wiki's host as a functional address in **one** line, and
+`src/tests/architecture/ixwiki-host-literal.test.ts` keeps it so. Every other hit is a comment, a `User-Agent` contact string,
+or a subdomain that is not MediaWiki (above).
+
+- `src/lib/wiki-os/config.ts`: the one default of `NEXT_PUBLIC_MEDIAWIKI_URL`, spelled once.
+
+The mirror (`csrf-cache.ts`, `write-service.ts`) reads `wikiosConfig.mediawiki.writeApiUrl` (`WIKIOS_MEDIAWIKI_API`, else the
+internal URL, else the public one) and `wikiosConfig.mediawiki.botUser`; the bot password stays an environment variable
+(`WIKIOS_MEDIAWIKI_BOT_TOKEN`), since the config object holds no secret. The inbound sync (`inbound-mediawiki.ts`) reads
+`mediaWikiApiUrl({ internal: true })`. With only `WIKIOS_MEDIAWIKI_INTERNAL_URL` set (the production cutover's setting), both now go to
+that loopback `api.php`; they used to go to the public host, which after the takeover is WikiOS's own `/api.php`.
 
 ## 3. Scripts (operator-run, outside `src/`)
 
 Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-media.ts`, `scripts/wikios-fetch-export.ts` (with
 `src/lib/wiki-os/xml/fetch-dump.ts`: an export-0.11 dump through the Action API), `scripts/wikios-import-rights.ts`,
-`scripts/audit/*` and `scripts/audit-wikios-parity.ts` (parity audits against live MediaWiki), `scripts/bench/wikios-bench.ts`,
+`scripts/audit/*` (parity audits against live MediaWiki), `scripts/bench/wikios-bench.ts`,
 `scripts/ops/verify-wikios-takeover.ts`, `scripts/deployment/*`, and the archived migrations under `scripts/archive/`.
 
 ## 4. What plan 418 moved to Postgres
 
 | Was (MediaWiki) | Now (Postgres) | Where |
 | --- | --- | --- |
-| live `prop=revisions` on a Postgres miss (`ixwikiGetWikitext`, `ixwikiGetNamespacedWikitext`) | `wiki_articles` only; a stub, a deleted or a missing page is "not found" | `bridge/pg-reader.ts`, `adapters/mediawiki/article-store.ts` |
+| live `prop=revisions` on a Postgres miss (the fallback `ixwikiGetWikitext` had; plan 415 deleted its namespaced twin, which nothing called) | `wiki_articles` only; a stub, a deleted or a missing page is "not found" | `bridge/pg-reader.ts`, `adapters/mediawiki/article-store.ts` |
 | creator, last editor and contributors from `prop=revisions` (last 250 only), `getArticleAuthors` | `wiki_revisions` without parked rows: creator = oldest, last editor = newest, contributors by edit count then name, IP authors folded into "Anonymous" | `core/revision-authors.ts` |
 | `list=recentchanges`, full history, `list=usercontribs`, `list=users` | `wiki_revisions` (contributions also by the verified owner's `authorId`), created pages = pages whose oldest live revision the account made, user info from revisions, the verified link and the rights engine | `bridge/pg-activity.ts`, `core/wiki-user-info.ts` |
 | `prop=images\|imageinfo` on ixwiki and then iiwiki for any title | `wiki_image_links` joined to `wiki_assets` (sister wikis for their own pages only) | `bridge/pg-site.ts`, `bridge/dispatchers.ts` |
@@ -231,14 +262,18 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 ## 6. Open items found by the audit (not changed by plan 418)
 
-- **`scripts/sync-ixwiki-full.ts` and `scripts/sync-ixwiki-live.ts`** import `../src/lib/wiki-os/transformers/excerpt`, a
-  module that no longer exists; they do not run.
+- **`scripts/audit/audit-wikios-db.ts`** still imports `../../src/lib/wiki-os/transformers/excerpt`, a module that no longer
+  exists (`cleanExcerpt` lives in `transformers/wikitext-parser.ts`); it does not run. (`scripts/sync-ixwiki-full.ts` and
+  `scripts/sync-ixwiki-live.ts` had the same import; plan 415 pointed them at `wikitext-parser.ts` and
+  `image-url.ts` `extractLeadImagePath`, the form a lead image is stored in, and made the live one read the wiki's address from
+  the config.)
 
 ## How to re-check
 
 ```bash
 grep -rn "getMediaWikiApiUrl\|mediaWikiApiUrl\|api\.php" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
-grep -rlE "DEFAULT_MEDIAWIKI_URL|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI|IXWIKI_LOCAL_PATH" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
+grep -rlE "mediaWikiOrigin|mediaWikiApiUrl|mediaWikiImageUrl|publicArticleUrl|isMediaWikiUrl|mediaWikiHostPattern|NEXT_PUBLIC_MEDIAWIKI_URL|WIKIOS_MEDIAWIKI" src --include=*.ts --include=*.tsx | grep -v "^src/tests"
+grep -rn "ixwiki\.com" src --include=*.ts --include=*.tsx | grep -v "^src/tests"   # the literals that remain: see "The literals that remain"
 bun run test -- src/tests/architecture/mediawiki-dependencies-doc.test.ts --maxWorkers=1
 ```
 

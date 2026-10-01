@@ -4,6 +4,8 @@ import React, { useState, useId } from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
 import { api } from "~/trpc/react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { useTemplateSchema } from "../../hooks/useTemplateSchema";
 import { parse } from "~/lib/wiki-os/wikitext/parser";
 import { templateWikitext } from "../wiki-structure-wikitext";
@@ -58,6 +60,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
     { template: templateName, params },
     { enabled: isModalOpen && activeTab === "preview", staleTime: 30_000 }
   );
+  // one object per preview HTML: a new one each render would write the preview's DOM again (React 19)
+  const previewMarkup = useHtmlMarkup(previewQuery.data ?? "");
 
   // Update a single parameter value. Only the parameters and the `edited` flag change: the serializer
   // rebuilds the template from its own wikitext, changing just the values that differ, so the
@@ -431,8 +435,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 ) : previewQuery.data ? (
                   <div className="overflow-x-auto rounded-xl border border-border/40 bg-card p-4 shadow-sm">
                     <div
-                      className="wikios-article-body text-xs"
-                      dangerouslySetInnerHTML={{ __html: previewQuery.data }}
+                      className={`wikios-article-body text-xs ${ARTICLE_STYLE_ROOT_CLASS}`}
+                      dangerouslySetInnerHTML={previewMarkup}
                     />
                   </div>
                 ) : (

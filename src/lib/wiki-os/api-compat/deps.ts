@@ -4,7 +4,7 @@
  */
 
 import { rateLimiter } from "~/lib/cache/rate-limiter";
-import { getWikiBaseUrl } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
@@ -94,7 +94,7 @@ export function createApiDeps(): ApiDeps {
     store: prismaApiStore,
     services,
     search,
-    siteUrl: getWikiBaseUrl().replace(/\/+$/, ""),
+    siteUrl: mediaWikiOrigin(),
     now: () => new Date(),
   };
 }

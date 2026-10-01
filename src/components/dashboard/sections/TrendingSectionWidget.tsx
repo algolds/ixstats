@@ -24,6 +24,7 @@ import {
 } from "~/components/ui/cutout-card";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import {
   normalizeWikiImageUrl,
@@ -348,11 +349,8 @@ export function TrendingSectionWidget() {
             trendingItems.map((item: any) => {
               const src = (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
               const SrcIcon = src.icon;
-              const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
               const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-              const wikiTitle = wikiMatch
-                ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
-                : null;
+              const wikiTitle = wikiTitleFromArticleUrl(item.url);
               const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
               const isWiki = !!wikiTitle;

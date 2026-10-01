@@ -19,6 +19,7 @@
 // Category:, Module:, Campaign:, Gadget*, Widget*, MediaWiki/Module/Gadget talk, other users' pages.
 // Special: and Media: are never editable, by anyone.
 
+import { wikiosConfig } from "~/lib/wiki-os/config";
 import type { Right } from "~/lib/wiki-os/rights";
 
 /** Canonical (lower-cased, space-separated) namespace names and aliases -> namespace id. */
@@ -30,9 +31,9 @@ const NAMESPACE_IDS: ReadonlyMap<string, number> = new Map(
     user: 2,
     "user talk": 3,
     project: 4,
-    ixwiki: 4,
+    [wikiosConfig.projectNamespace.toLowerCase()]: 4,
     "project talk": 5,
-    "ixwiki talk": 5,
+    [`${wikiosConfig.projectNamespace.toLowerCase()} talk`]: 5,
     file: 6,
     image: 6,
     "file talk": 7,

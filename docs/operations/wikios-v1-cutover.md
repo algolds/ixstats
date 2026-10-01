@@ -240,15 +240,15 @@ file is at most 10,000,000 bytes, sent to MediaWiki as one `action=upload` reque
 which uploads the page as an XML file, and XML escaping makes it bigger than the text: a 2,000,000-character page of
 `&` (MediaWiki's page limit is 2 MB) is about 10 MB of XML, and a batch of revisions is capped at about 6 MB. PHP's
 default `upload_max_filesize` is 2M. Set both `upload_max_filesize` and `post_max_size` to at least 16M, and check the
-`client_max_body_size` of the `ixwiki.com` server block (WikiOS writes through the public `api.php`; nginx's default
-is 1m). An upload that is too big does not fail quietly: the job's error shows the HTTP status and the start of the
+`client_max_body_size` of the loopback server of step 4 (WikiOS writes through it, and `wikios-render-internal.conf`
+sets 16m) and of the `ixwiki.com` server block (outside bots; nginx's default is 1m). An upload that is too big does not fail quietly: the job's error shows the HTTP status and the start of the
 answer, and the job ends up dead for an operator.
 
 ```bash
 sudo php-fpm8.4 -i 2>/dev/null | grep -E '^(upload_max_filesize|post_max_size)'          # both must show 16M or more
 printf 'upload_max_filesize = 16M\npost_max_size = 16M\n' | sudo tee /etc/php/8.4/fpm/conf.d/99-wikios-import.ini
 sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm
-sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 16m or more
+sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 16m or more (step 4 checks the loopback one)
 ```
 
 **Rollback:** `sudo cp -a "$BK/LocalSettings.php.step3" /ixwiki/config/LocalSettings.php && sudo rm /ixwiki/config/wikios-localsettings.php && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`
@@ -321,6 +321,34 @@ curl -s 'http://127.0.0.1:8081/api.php?action=parse&text=%7B%7B%23expr%3A2%2B3%7
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8081/index.php    # 404: only api.php and load.php are served
 ```
 
+This server carries more than renders: every server-side call to IxWiki's MediaWiki goes through it (plan 415), among them
+the mirror's bot login and its `action=edit`, `action=import` (the page as an XML upload of up to about 10 MB) and
+`action=upload` POSTs (plans 407 and 411). That is why its `client_max_body_size` is `16m`, matching the PHP limits of
+step 3: at 8m a big import would die with a bare 413. It is also why its `/api.php` `fastcgi_read_timeout` is `130s`, just
+over the mirror's 120 s import timeout (`IMPORT_TIMEOUT_MS`). PHP-FPM's `max_execution_time` for that pool (or its
+`request_terminate_timeout`, whichever the pool uses) must also allow at least about 130 s for imports, or PHP cuts a big import
+off first. Check the installed limit, and prove a bot login works through the loopback, with the password read from the env
+file into a shell variable, never typed or echoed (it reaches `curl` on stdin, not on its command line):
+
+```bash
+sudo nginx -T 2>/dev/null | awk '/listen 127.0.0.1:8081/,/^}/' | grep client_max_body_size   # 16m
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json'   # must be 200, not 301 (see the warning)
+BOT_USER=$(grep '^WIKIOS_MEDIAWIKI_BOT_USER=' "$IX/.env.production.local" | cut -d= -f2-)
+BOT_PASS=$(grep '^WIKIOS_MEDIAWIKI_BOT_TOKEN=' "$IX/.env.production.local" | cut -d= -f2-)
+JAR=$(mktemp); chmod 600 "$JAR"
+LT=$(curl -s -c "$JAR" 'http://127.0.0.1:8081/api.php?action=query&meta=tokens&type=login&format=json' | jq -r '.query.tokens.logintoken')
+printf '%s' "$BOT_PASS" | curl -s -b "$JAR" -c "$JAR" -d action=login -d format=json \
+  --data-urlencode "lgname=$BOT_USER" --data-urlencode "lgtoken=$LT" --data-urlencode 'lgpassword@-' \
+  http://127.0.0.1:8081/api.php | jq -r '.login.result'                  # must print Success
+unset BOT_PASS BOT_USER LT; shred -u "$JAR"
+```
+
+**Warning: `$wgForceHTTPS`.** If `LocalSettings.php` sets `$wgForceHTTPS = true`, MediaWiki answers a plain-http loopback request with
+a redirect to https, and every call of the mirror, the inbound sync and the renderer then fails (a 301 is not an
+answer to `action=parse`, and a login POST does not survive it). Confirm the siteinfo request above prints `200`, not `301`.
+If it prints `301`, stop here: the loopback needs `$wgForceHTTPS` off (or a condition that spares requests from 127.0.0.1)
+before the next step.
+
 The parse call must return JSON containing `"parse"`. Then add this line to `$IX/.env.production.local` by hand (back
 it up first: `bk "$IX/.env.production.local" env.production.local.step4`):
 
@@ -329,7 +357,9 @@ WIKIOS_MEDIAWIKI_INTERNAL_URL=http://127.0.0.1:8081/api.php
 ```
 
 (IxStates reads it too and starts rendering through loopback after its next restart; the `wikios` ecosystem file sets
-it as well.)
+it as well. The mirror's writes and the inbound sync's reads use it too, since every server-side call to IxWiki's MediaWiki
+does (plan 415), unless `WIKIOS_MEDIAWIKI_API` names another `api.php` for the mirror; before, they went to the public host,
+which after the takeover is WikiOS's own `/api.php`.)
 
 **Rollback:** `sudo rm /etc/nginx/conf.d/wikios-render-internal.conf && sudo nginx -t && sudo systemctl reload nginx`, and
 restore `"$BK/env.production.local.step4"` over `$IX/.env.production.local`.
@@ -736,6 +766,42 @@ seen by the daemon and fail2ban (Cloudflare still sees it, and `wikios-quiet.log
 
 **Rollback:** `sudo cp -a "$BK/ixwiki-defense.conf" /etc/ixwiki-defense.conf && sudo cp -a "$BK/ixwiki-bots.jail.conf" /etc/fail2ban/jail.d/ixwiki-bots.conf && sudo systemctl restart ixwiki-bot-defense && sudo fail2ban-client reload`;
 for change 1, re-copy the snippet from the checkout (step 8a) and `sudo nginx -t && sudo systemctl reload nginx`.
+
+### 10c. Emergency lever: turn TemplateStyles off
+
+Articles keep the `<style>` blocks that MediaWiki's TemplateStyles extension writes, after the sanitizer has scoped every
+selector under `.mw-parser-output` and filtered each declaration (`src/lib/utils/scope-template-styles.ts`; plan 415).
+If a CSS bypass is ever reported (a template's sheet styling the reader's chrome, hiding the page, or loading a host
+other than the wiki's), do not debug it first: switch the feature off, then fix it. With `WIKIOS_TEMPLATESTYLES=0` the
+sanitizer removes **every** `<style>` from article HTML, the behaviour before plan 415 (templates that lay themselves out
+with TemplateStyles then render unstyled, which is ugly but safe). The lever **fails closed**: only unset, empty, `1`,
+`true`, `on` and `yes` (any case) leave TemplateStyles on; every other value, `0` and `off` and a typo alike, turns it off.
+
+```bash
+bk "$IX/.env.production.local" env.production.local
+( umask 077; printf '\nWIKIOS_TEMPLATESTYLES=0\n' >> "$IX/.env.production.local" )
+ls -l "$IX/.env.production.local"                      # same mode as before (-rw-------)
+# the setting is read once at start by config.ts: restart IxStates (its usual restart) and WikiOS
+pm2 restart wikios --update-env
+```
+
+The setting is part of the sanitizer fingerprint that every stored article bundle carries (`RENDERER_VERSION`), so no
+purge is needed: a bundle built under the other setting counts as outdated, so a reader gets it re-sanitized by the current
+rules at once (with the lever pulled, the styles are gone from the first read after the restart) and the article is
+re-rendered in the background, and the `wiki-render-stale` job works through the rest (sister-wiki renders live in memory and
+go with the restart). Check an article whose
+templates use TemplateStyles (`<Title>` below; it printed 1 or more before):
+
+```bash
+curl -s "https://ixwiki.com/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 0 once the lever is pulled
+```
+
+**Turning it back on** (after the scoper is fixed and `bun run audit:template-styles` reports 0 violations and 0
+non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`) or delete the
+`WIKIOS_TEMPLATESTYLES` line (or set it to `1`), and restart both processes as above; the outdated bundles are re-rendered in the background and the styles come back as they are. A misspelt
+value (`ture`, `enabled`) keeps it **off**: check with the `curl` above that the styles are back.
+
+**Rollback:** the same lines, in reverse.
 
 ## 11. Footprint measurement
 

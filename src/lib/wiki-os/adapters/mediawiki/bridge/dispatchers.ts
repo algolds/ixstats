@@ -32,16 +32,12 @@ import {
   ixwikiResolveRedirect,
   ixwikiGetRevisionWikitext,
   ixwikiGetCurrentRevMeta,
-  ixwikiGetNamespacedWikitext,
   ixwikiSearchTemplates,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
   ixwikiGetCategoryInfo,
-  ixwikiGetPageProps,
-  ixwikiGetPageProtection,
   ixwikiGetImageMeta,
   ixwikiGetPageImages,
-  ixwikiGetPageLog,
 } from "./pg-reader";
 import {
   iiwikiGetWikitext,
@@ -196,14 +192,14 @@ export async function getUserContribs(
 }
 
 /**
- * Get all pages created by a user via direct MySQL.
+ * Get all pages created by a user from PostgreSQL.
  */
 export async function getUserCreatedPages(username: string, limit?: number) {
   return ixwikiGetUserCreatedPages(username, limit);
 }
 
 /**
- * Get user info via direct MySQL.
+ * Get user info from PostgreSQL.
  */
 export async function getUserInfo(username: string) {
   return ixwikiGetUserInfo(username);
@@ -329,14 +325,14 @@ export async function getCategoryMembers(
 }
 
 /**
- * Get site statistics via direct MySQL.
+ * Get site statistics from PostgreSQL.
  */
 export async function getSiteStats() {
   return ixwikiGetSiteStats();
 }
 
 /**
- * Get a random article title via direct MySQL.
+ * Get a random article title from PostgreSQL.
  */
 export async function getRandomPage() {
   return ixwikiGetRandomPage();
@@ -357,28 +353,21 @@ export async function getRevisionWikitext(ref: string) {
 }
 
 /**
- * Get current revision metadata (revid + timestamp) via direct MySQL.
+ * Get current revision metadata (revid + timestamp) from PostgreSQL.
  */
 export async function getCurrentRevMeta(title: string) {
   return ixwikiGetCurrentRevMeta(title);
 }
 
 /**
- * Get wikitext from any namespace via direct MySQL.
- */
-export async function getNamespacedWikitext(title: string, namespace: number) {
-  return ixwikiGetNamespacedWikitext(title, namespace);
-}
-
-/**
- * Search templates by prefix via direct MySQL.
+ * Search templates by prefix from PostgreSQL.
  */
 export async function searchTemplates(query: string, limit?: number) {
   return ixwikiSearchTemplates(query, limit);
 }
 
 /**
- * Full-text search via MySQL searchindex table.
+ * Full-text search of IxWiki's articles (PostgreSQL).
  */
 export async function fullTextSearch(
   query: string,
@@ -390,31 +379,17 @@ export async function fullTextSearch(
 }
 
 /**
- * Get parent categories via direct MySQL.
+ * Get parent categories from PostgreSQL.
  */
 export async function getParentCategories(title: string) {
   return ixwikiGetParentCategories(title);
 }
 
 /**
- * Get category info with subcategories via direct MySQL.
+ * Get category info with subcategories from PostgreSQL.
  */
 export async function getCategoryInfo(category: string) {
   return ixwikiGetCategoryInfo(category);
-}
-
-/**
- * Get page properties via direct MySQL.
- */
-export async function getPageProps(pageId: number) {
-  return ixwikiGetPageProps(pageId);
-}
-
-/**
- * Get page protection status via direct MySQL.
- */
-export async function getPageProtection(title: string) {
-  return ixwikiGetPageProtection(title);
 }
 
 /**
@@ -439,13 +414,6 @@ export async function getImageMeta(filename: string) {
     // Fallback
   }
   return ixwikiGetImageMeta(filename);
-}
-
-/**
- * Get page action log (stub — returns [] until wikiLog is implemented).
- */
-export async function getPageLog(title: string, limit?: number) {
-  return ixwikiGetPageLog(title, limit);
 }
 
 /**
