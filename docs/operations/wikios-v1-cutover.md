@@ -521,6 +521,32 @@ sha1sum /ixwiki/shared/images/<a>/<ab>/<Name>                              # equ
 A job that ended dead (`permissiondenied`, `filetype-banned`, a PHP or nginx size refusal) shows in the admin panel's
 mirror section with MediaWiki's answer.
 
+**Uploaded files under `/images/` (plan 411; do this before uploads are opened to users).** Once the `upload` job has run, an
+uploaded file is served by nginx from MediaWiki's `/images/` tree on the wiki's origin, with the content type nginx guesses
+from the name. A PDF or an SVG opened there directly is a document on that origin, so make nginx say that it is a download
+and that its type is not to be guessed. An SVG used as `<img src>` still renders (`Content-Disposition` does not touch an
+image load). Add the map in `http` context and the two `add_header` lines in the vhost's existing `location` that serves
+`/images/` (an `add_header` in a `location` replaces the ones it would inherit, so put them with that location's own):
+
+```bash
+sudo tee /etc/nginx/conf.d/wikios-images-headers.conf >/dev/null <<'EOF'
+# plan 411: an uploaded PDF or SVG opened directly is a download; nothing under /images/ has its type guessed
+map $uri $wikios_image_disposition {
+    default           "";
+    ~*\.(?:pdf|svg)$  "attachment";
+}
+EOF
+sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"     # in the location that serves /images/, add:
+#     add_header X-Content-Type-Options "nosniff" always;
+#     add_header Content-Disposition $wikios_image_disposition always;    # an empty value adds no header
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.svg" | grep -iE '^(content-disposition|x-content-type-options)'   # attachment + nosniff
+curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.png" | grep -iE '^(content-disposition|x-content-type-options)'   # nosniff only
+```
+
+**Rollback:** remove the two `add_header` lines and `sudo rm /etc/nginx/conf.d/wikios-images-headers.conf`, then
+`sudo nginx -t && sudo systemctl reload nginx`.
+
 **Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `= /maps`, `/sign-in`,
 `/sign-up` and `/sso-callback` to WikiOS, in front of anything MediaWiki served there. Check that nothing real is
 hidden by that (each command should report "No such file" or print nothing):
