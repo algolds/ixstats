@@ -26,6 +26,8 @@ type Row = WikiMirrorJob;
 let rows: Row[] = [];
 /** Ids of jobs another runner claims just before this worker's claim. */
 const racedClaims = new Set<string>();
+/** Ids of jobs whose outcome cannot be stored (the database fails when the job is marked done). */
+const storeFails = new Set<string>();
 let counter = 0;
 
 const matches = (row: Row, where: Record<string, unknown>): boolean =>
@@ -89,6 +91,7 @@ jest.mock("~/server/db", () => ({
         return row ? { ...row } : null;
       },
       update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+        if (data.state === "done" && storeFails.has(where.id)) throw new Error("db down");
         const row = rows.find((candidate) => candidate.id === where.id)!;
         apply(row, data);
         return { ...row };
@@ -171,6 +174,7 @@ beforeEach(() => {
   rows = [];
   counter = 0;
   racedClaims.clear();
+  storeFails.clear();
   config.clear();
   delete process.env.SKIP_MEDIAWIKI_SYNC;
   revisionJob.mockReset().mockResolvedValue(555);
@@ -578,6 +582,41 @@ describe("batches of revision jobs", () => {
     expect(result).toMatchObject({ done: 0, failed: 0 });
     expect(planBatch).not.toHaveBeenCalled();
     expect(byId(taken.id)).toMatchObject({ state: "running", attempts: 0 });
+  });
+
+  it("fails only the jobs not settled yet when an outcome cannot be stored, never one already done", async () => {
+    const first = addJob({ title: "Foo" });
+    const second = addJob({ title: "Foo" });
+    const third = addJob({ title: "Foo" });
+    storeFails.add(second.id);
+
+    const result = await runMirrorCycle();
+
+    expect(byId(first.id)).toMatchObject({ state: "done", attempts: 1, lastError: null });
+    // the second could not be marked done, and the third was never reached: both are failed, for the retry
+    expect(byId(second.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
+    expect(byId(third.id)).toMatchObject({ state: "pending", attempts: 1, lastError: "db down" });
+    expect(result).toMatchObject({ done: 1, failed: 2 });
+  });
+
+  it("still re-renders the users of a template after a batch that was partly stored", async () => {
+    const first = addJob({ title: "Template:Box" });
+    const second = addJob({ title: "Template:Box" });
+    storeFails.add(second.id);
+
+    await runMirrorCycle();
+
+    expect(byId(first.id).state).toBe("done");
+    expect(invalidateTemplateDependents).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not re-render anything when not even one outcome was stored", async () => {
+    const only = addJob({ title: "Template:Box" });
+    storeFails.add(only.id);
+
+    await runMirrorCycle();
+
+    expect(invalidateTemplateDependents).not.toHaveBeenCalled();
   });
 
   it("counts a batch against maxJobs by its jobs", async () => {

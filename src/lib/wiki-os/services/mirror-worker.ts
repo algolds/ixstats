@@ -32,7 +32,12 @@ import {
   reclaimInterruptedJobs,
   type MirrorJob,
 } from "./mirror-queue";
-import { executeRevisionBatch, planRevisionBatch } from "./mirror-revision";
+import {
+  executeRevisionBatch,
+  planRevisionBatch,
+  type BatchOutcome,
+  type RevisionBatchPlan,
+} from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
 
 const DEFAULT_MAX_JOBS = 50;
@@ -62,25 +67,39 @@ export interface MirrorCycleResult {
 
 /**
  * Settle a batch of revision jobs of one title: all of them, as the plan allows (a size cap leaves the tail for the
- * next batch). Nothing is stored until MediaWiki has answered.
+ * next batch). Nothing is stored until MediaWiki has answered. A failure of MediaWiki fails every job of the batch;
+ * a failure to store an outcome fails only the jobs not settled yet, never one already marked done.
  */
 async function runRevisionBatch(claimed: readonly MirrorJob[]): Promise<MirrorJob[]> {
   let handled = claimed;
+  let plan: RevisionBatchPlan;
+  let outcomes: BatchOutcome[];
   try {
-    const plan = await planRevisionBatch(claimed);
+    plan = await planRevisionBatch(claimed);
     handled = claimed.slice(0, plan.members.length);
     await releaseJobs(claimed.slice(handled.length).map((job) => job.id));
-    const outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, () => executeRevisionBatch(plan));
-    const settled: MirrorJob[] = [];
-    for (const { job, mwRevId, note } of outcomes)
-      settled.push(await completeJob(job, mwRevId, note));
-    // A template or module only now has its new text in MediaWiki, which renders every page that uses it:
-    // the renders made since the save used the old copy, so those pages are stale again.
-    void invalidateTemplateDependents(plan.title, claimed[0].source);
-    return settled;
+    outcomes = await withinAttempt(ATTEMPT_TIMEOUT_MS, () => executeRevisionBatch(plan));
   } catch (error) {
     return failAll(handled, error);
   }
+
+  const settled: MirrorJob[] = [];
+  let unsettled: Promise<MirrorJob[]> = Promise.resolve([]);
+  for (const [at, { job, mwRevId, note }] of outcomes.entries()) {
+    try {
+      settled.push(await completeJob(job, mwRevId, note));
+    } catch (error) {
+      unsettled = failAll(
+        outcomes.slice(at).map((outcome) => outcome.job),
+        error
+      );
+      break;
+    }
+  }
+  // A template or module only now has its new text in MediaWiki, which renders every page that uses it:
+  // the renders made since the save used the old copy, so those pages are stale again.
+  if (settled.length > 0) void invalidateTemplateDependents(plan.title, claimed[0].source);
+  return [...settled, ...(await unsettled)];
 }
 
 async function failAll(jobs: readonly MirrorJob[], error: unknown): Promise<MirrorJob[]> {
