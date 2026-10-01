@@ -61,7 +61,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 
 | Call site | What it reads | Callers |
 | --- | --- | --- |
-| `src/lib/wiki-os/adapters/mediawiki/account-proof.ts` `fetchWikiUser`, `fetchUserPageHistory`, `fetchPageCreator`, `wikiQuery` | `list=users`, a user page's revisions with their authors, a page's first revision | The self-service wiki-link proof (`ixnayid/linking.ts`, `modules/identity/identity.wiki-links.ts`), the admin link (`admin/users.ts`), and realm claims (`modules/realms/realms.claims.ts`, `routers/realms/index.ts`). Also reads iiwiki and AltHistory accounts. |
+| `src/lib/wiki-os/adapters/mediawiki/account-proof.ts` `fetchWikiUser`, `fetchUserPageHistory`, `fetchPageCreator`, `wikiQuery` | `list=users`, a user page's revisions with their authors, a page's first revision | The self-service wiki-link proof (`ixnayid/linking.ts`, `modules/identity/identity.wiki-links.ts`), the admin link (`admin/users.ts`), realm claims (`modules/realms/realms.claims.ts`, `routers/realms/index.ts`), and the admin link of an account WikiOS has no trace of or whose MediaWiki id it cannot know (`src/lib/wiki-os/adapters/ixstates/user-sync.ts` `findLinkableWikiAccount`: `fetchWikiUser`, admin-triggered). Also reads iiwiki and AltHistory accounts. |
 
 ### admin-refresh
 
@@ -147,10 +147,6 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 ## 6. Open items found by the audit (not changed by plan 418)
 
-- **Admin wiki link of a wiki account with no edits.** `lookupWikiUser` (admin `linkUserWiki`, the passport lookup) now answers
-  from Postgres: an account that has no revision, no verified link, no Lorewards row and no group reads as "not found". If
-  that matters for linking a brand-new wiki account, `findLinkableWikiAccount` should ask `account-proof.ts` `fetchWikiUser`
-  (an account-proof call, admin-triggered).
 - **`scripts/sync-ixwiki-full.ts` and `scripts/sync-ixwiki-live.ts`** import `../src/lib/wiki-os/transformers/excerpt`, a
   module that no longer exists; they do not run.
 
