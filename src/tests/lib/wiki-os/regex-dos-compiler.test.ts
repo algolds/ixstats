@@ -14,7 +14,11 @@ import {
   replaceSimpleLinks,
   stripUnclosedTemplateTail,
 } from "~/lib/wiki-os/transformers/clean-markup-passes";
-import { getImageUrl, resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import {
+  getImageUrl,
+  resolveImageUrl,
+  type ExtendedWikiSource,
+} from "~/lib/wiki-os/transformers/image-url";
 import {
   cleanWikiValue,
   firstCoordBody,
@@ -390,7 +394,8 @@ function legacyConvertWikitextImages(text: string, wikiSource: string): string {
         if (parts.length > 0 && parts[0]) {
           const rawFileName = parts[0];
           const imageUrl =
-            resolveImageUrl(rawFileName, wikiSource as any) ?? getImageUrl(rawFileName);
+            resolveImageUrl(rawFileName, wikiSource as ExtendedWikiSource) ??
+            getImageUrl(rawFileName);
 
           if (imageUrl) {
             const captionParts = parts.slice(1).filter((p) => {

@@ -337,6 +337,103 @@ export function plainFallbackHtml(wikitext: string): string {
   );
 }
 
+/** `text` with each `<ref>` replaced by its numbered mark; the contents go to `references` in the order of their numbers. */
+function numberRefs(text: string, references: string[]): string {
+  const refMap = new Map<string, number>();
+  const mark = (idx: number) =>
+    `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
+  return replaceRefs(text, ({ name, content }) => {
+    const cleanName = name ? name.trim() : "";
+    if (cleanName && refMap.has(cleanName)) return mark(refMap.get(cleanName)!);
+    const idx = references.length + 1;
+    if (cleanName) refMap.set(cleanName, idx);
+    references.push((content || "").trim() || cleanName);
+    return mark(idx);
+  });
+}
+
+/** The runs of lines that start with a list marker, as `wrap(items)` where each line is `renderItem(its text)`. */
+function listBlocks(
+  text: string,
+  lines: RegExp,
+  marker: RegExp,
+  renderItem: (item: string) => string,
+  wrap: (items: string) => string
+): string {
+  return text.replace(lines, (match) => {
+    const items = match
+      .split(/\n/)
+      .map((line) => line.replace(marker, "").trim())
+      .filter(Boolean)
+      .map(renderItem)
+      .join("");
+    return items ? wrap(items) : "";
+  });
+}
+
+/** Bullet lists (`* item`), numbered lists (`# item`) and definitions or indents (`: item`) as HTML. */
+function convertLists(text: string): string {
+  const bullets = listBlocks(
+    text,
+    /(?:^\*\s*.*(?:\n|$))+/gm,
+    /^\*+\s*/,
+    (item) =>
+      `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`,
+    (items) => `\n\n<ul class="my-2 space-y-1">${items}</ul>\n\n`
+  );
+  const numbered = listBlocks(
+    bullets,
+    /(?:^#\s*.*(?:\n|$))+/gm,
+    /^#+\s*/,
+    (item) =>
+      `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`,
+    (items) => `\n\n<ol class="my-2 space-y-1">${items}</ol>\n\n`
+  );
+  return listBlocks(
+    numbered,
+    /(?:^[:;]\s*.*(?:\n|$))+/gm,
+    /^[:;]+\s*/,
+    (item) => `<p class="ml-4 text-muted-foreground my-1 leading-relaxed">${item}</p>`,
+    (items) => `\n\n${items}\n\n`
+  );
+}
+
+/** The references as a list, in the place of a `<references />` or a `{{reflist}}`, or after the text when it has neither. */
+function expandReferenceList(text: string, references: string[]): string {
+  if (references.length === 0) return replaceReflists(replaceReferencesTags(text, ""), "");
+  const reflistHtml = `\n\n<ol class="references text-xs space-y-1 my-3 pl-5 list-decimal text-muted-foreground">${references
+    .map(
+      (ref, i) =>
+        `<li id="cite_note-${i + 1}" class="leading-relaxed"><span class="mw-cite-backlink"><a href="#cite_ref-${i + 1}" class="text-wiki mr-1">↑</a></span>${ref}</li>`
+    )
+    .join("")}</ol>\n\n`;
+  if (hasReferencesTag(text)) return replaceReferencesTags(text, reflistHtml);
+  if (hasReflist(text)) return replaceReflists(text, reflistHtml);
+  return `${text}\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
+}
+
+/** What a paragraph that starts with one of these is already: a block of HTML, to be left as it is. */
+const BLOCK_HTML_START = /^<(?:h[456]|ul|ol|figure|blockquote|table|div|hr|pre)/;
+
+/** The blocks of `text` (separated by blank lines) as paragraphs, a block that is HTML already left as it is. */
+function formatParagraphs(text: string): string {
+  const paragraphs: string[] = [];
+  for (const block of text.split(/\n\s*\n+/)) {
+    const trimmedBlock = block.trim();
+    if (!trimmedBlock) continue;
+    if (BLOCK_HTML_START.test(trimmedBlock)) {
+      paragraphs.push(trimmedBlock);
+      continue;
+    }
+    // Standard paragraph: replace single line breaks with space
+    const withBreaks = trimmedBlock.replace(/\n(?!\n)/g, " ");
+    paragraphs.push(
+      `<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3">${withBreaks}</p>`
+    );
+  }
+  return paragraphs.join("\n\n").trim();
+}
+
 /**
  * Robust wikitext parser that converts raw MediaWiki markup into clean HTML
  * for display in card modals, wiki previews, and lore excerpts.
@@ -361,20 +458,7 @@ export function parseWikitextToHtml(
 
   // 4. Parse references / footnotes (<ref>...</ref>)
   const references: string[] = [];
-  const refMap = new Map<string, number>();
-
-  text = replaceRefs(text, ({ name, content }) => {
-    const cleanName = name ? name.trim() : "";
-    if (cleanName && refMap.has(cleanName)) {
-      const idx = refMap.get(cleanName)!;
-      return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
-    }
-    const idx = references.length + 1;
-    if (cleanName) refMap.set(cleanName, idx);
-    const refContent = (content || "").trim();
-    references.push(refContent || cleanName);
-    return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
-  });
+  text = numberRefs(text, references);
 
   // 5. Strip galleries & math tags
   text = stripTagBlocks(text, "gallery");
@@ -420,44 +504,8 @@ export function parseWikitextToHtml(
       `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">${title}</h4>\n\n`
   );
 
-  // 11. Convert bullet lists (* item)
-  text = text.replace(/(?:^\*\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^\*+\s*/, "").trim())
-      .filter(Boolean)
-      .map(
-        (item) =>
-          `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
-      )
-      .join("");
-    return items ? `\n\n<ul class="my-2 space-y-1">${items}</ul>\n\n` : "";
-  });
-
-  // 12. Convert numbered lists (# item)
-  text = text.replace(/(?:^#\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^#+\s*/, "").trim())
-      .filter(Boolean)
-      .map(
-        (item) =>
-          `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
-      )
-      .join("");
-    return items ? `\n\n<ol class="my-2 space-y-1">${items}</ol>\n\n` : "";
-  });
-
-  // 13. Convert definition/indents (: item)
-  text = text.replace(/(?:^[:;]\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^[:;]+\s*/, "").trim())
-      .filter(Boolean)
-      .map((item) => `<p class="ml-4 text-muted-foreground my-1 leading-relaxed">${item}</p>`)
-      .join("");
-    return items ? `\n\n${items}\n\n` : "";
-  });
+  // 11-13. Convert bullet lists (* item), numbered lists (# item) and definitions/indents (: item)
+  text = convertLists(text);
 
   // 14. Convert horizontal rules: ----
   text = text.replace(/^----+/gm, '\n\n<hr class="my-4 border-border/40" />\n\n');
@@ -537,60 +585,10 @@ export function parseWikitextToHtml(
   );
 
   // 25b. Expand references list
-  if (references.length > 0) {
-    const reflistHtml = `\n\n<ol class="references text-xs space-y-1 my-3 pl-5 list-decimal text-muted-foreground">${references
-      .map(
-        (ref, i) =>
-          `<li id="cite_note-${i + 1}" class="leading-relaxed"><span class="mw-cite-backlink"><a href="#cite_ref-${i + 1}" class="text-wiki mr-1">↑</a></span>${ref}</li>`
-      )
-      .join("")}</ol>\n\n`;
-
-    if (hasReferencesTag(text)) {
-      text = replaceReferencesTags(text, reflistHtml);
-    } else if (hasReflist(text)) {
-      text = replaceReflists(text, reflistHtml);
-    } else {
-      text += `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
-    }
-  } else {
-    text = replaceReferencesTags(text, "");
-    text = replaceReflists(text, "");
-  }
+  text = expandReferenceList(text, references);
 
   // 26. Format Paragraphs
-  const rawParagraphs = text.split(/\n\s*\n+/);
-  const formattedParagraphs: string[] = [];
-
-  for (const block of rawParagraphs) {
-    const trimmedBlock = block.trim();
-    if (!trimmedBlock) continue;
-
-    // Check if block is already a block-level HTML element
-    if (
-      trimmedBlock.startsWith("<h4") ||
-      trimmedBlock.startsWith("<h5") ||
-      trimmedBlock.startsWith("<h6") ||
-      trimmedBlock.startsWith("<ul") ||
-      trimmedBlock.startsWith("<ol") ||
-      trimmedBlock.startsWith("<figure") ||
-      trimmedBlock.startsWith("<blockquote") ||
-      trimmedBlock.startsWith("<table") ||
-      trimmedBlock.startsWith("<div") ||
-      trimmedBlock.startsWith("<hr") ||
-      trimmedBlock.startsWith("<pre")
-    ) {
-      formattedParagraphs.push(trimmedBlock);
-      continue;
-    }
-
-    // Standard paragraph: replace single line breaks with space
-    const withBreaks = trimmedBlock.replace(/\n(?!\n)/g, " ");
-    formattedParagraphs.push(
-      `<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3">${withBreaks}</p>`
-    );
-  }
-
-  const htmlOutput = formattedParagraphs.join("\n\n").trim();
+  const htmlOutput = formatParagraphs(text);
   return infoboxHtml ? `${infoboxHtml}\n\n${htmlOutput}` : htmlOutput;
 }
 

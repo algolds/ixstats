@@ -24,6 +24,7 @@ import {
   isCommentOnly,
   matchOpenTag,
   skipProtectedAt,
+  type OpenTag,
 } from "~/lib/wiki-os/wikitext/protected-regions";
 import * as legacyProtected from "./legacy/protected-regions";
 import { findSectionLine, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
@@ -1086,8 +1087,8 @@ describe("protected-regions: the scanner answers what the integration branch's s
   ];
 
   /** What every `<` of the text answers: the region it starts, the tag it opens and where that closes. */
-  function regionsOf(text: string, fresh: boolean): unknown[] {
-    const answers: unknown[] = [];
+  function regionsOf(text: string, fresh: boolean): Array<number | OpenTag | null> {
+    const answers: Array<number | OpenTag | null> = [];
     const scanner = new ProtectedScanner(text);
     const legacy = new legacyProtected.ProtectedScanner(text);
     for (let at = text.indexOf("<"); at !== -1; at = text.indexOf("<", at + 1)) {

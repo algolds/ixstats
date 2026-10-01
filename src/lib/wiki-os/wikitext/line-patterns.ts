@@ -63,31 +63,40 @@ export function matchHeading(
   return null;
 }
 
+const isSpaceOrTab = (code: number): boolean => code === 32 || code === 9;
+
+/** A letter, a digit or an underscore. */
+const isWordCode = (code: number): boolean =>
+  code === 95 ||
+  (code >= 48 && code <= 57) ||
+  (code >= 65 && code <= 90) ||
+  (code >= 97 && code <= 122);
+
+/** Whether `line[start, end)` is one magic word: `__`, letters, digits and underscores, `__`. */
+function isMagicWord(line: string, start: number, end: number): boolean {
+  if (end - start < 5 || !line.startsWith("__", start) || !line.startsWith("__", end - 2)) {
+    return false;
+  }
+  for (let at = start; at < end; at++) {
+    if (!isWordCode(line.charCodeAt(at))) return false;
+  }
+  return true;
+}
+
 /**
  * A line of nothing but magic words, `__NOTOC__ __TOC__` (what `/^(?:__[A-Za-z0-9_]+__[ \t]*)+$/` matches): groups
  * of letters, digits and underscores that start and end with `__`, apart or side by side, with spaces and tabs
  * allowed after each.
  */
 export function isMagicWordLine(line: string): boolean {
-  if (line.length === 0 || line.charCodeAt(0) === 32 || line.charCodeAt(0) === 9) return false;
+  if (line.length === 0 || isSpaceOrTab(line.charCodeAt(0))) return false;
   let start = 0;
   while (start < line.length) {
     let end = start;
-    while (end < line.length && line.charCodeAt(end) !== 32 && line.charCodeAt(end) !== 9) end++;
-    if (end - start < 5 || !line.startsWith("__", start) || !line.startsWith("__", end - 2))
-      return false;
-    for (let at = start; at < end; at++) {
-      const code = line.charCodeAt(at);
-      const word =
-        code === 95 ||
-        (code >= 48 && code <= 57) ||
-        (code >= 65 && code <= 90) ||
-        (code >= 97 && code <= 122);
-      if (!word) return false;
-    }
+    while (end < line.length && !isSpaceOrTab(line.charCodeAt(end))) end++;
+    if (!isMagicWord(line, start, end)) return false;
     start = end;
-    while (start < line.length && (line.charCodeAt(start) === 32 || line.charCodeAt(start) === 9))
-      start++;
+    while (start < line.length && isSpaceOrTab(line.charCodeAt(start))) start++;
   }
   return true;
 }

@@ -35,7 +35,6 @@ jest.mock("~/lib/wiki-os/templates/template-resolver", () => ({
   __esModule: true,
   extractTemplateKeys: jest.fn(),
   resolveTemplates: jest.fn(),
-  applyResolvedTemplates: jest.fn(),
   registerTemplateProvider: jest.fn(),
 }));
 jest.mock("~/server/shared/ixstats-template-provider", () => ({ __esModule: true, ixstatsTemplateProvider: {} }));
