@@ -404,7 +404,7 @@ function hashString(text: string): string {
  * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter) or the TemplateStyles scoper
  * (`scope-template-styles.ts`) change: they shape the output but are not part of the config.
  */
-const SANITIZER_HOOKS_VERSION = 4;
+const SANITIZER_HOOKS_VERSION = 5;
 
 let articleSanitizerFingerprint: string | null = null;
 

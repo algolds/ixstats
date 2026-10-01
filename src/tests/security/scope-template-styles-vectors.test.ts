@@ -228,3 +228,69 @@ describe("a comment holding a `)` inside an unquoted url() (a browser reads url 
     );
   });
 });
+
+describe("the url() allowlist judges the target a browser fetches, not a truncated one", () => {
+  // a `)` inside a quoted url is part of the URL; escaped (`\\29`, `\\")`) it is part of an unquoted one too
+  it.each([
+    [`url("https://ixwiki.com)@evil.example/p.png")`],
+    [`url("https://ixwiki.com)x.evil.example/p.png")`],
+    [`url('https://ixwiki.com)@evil.example/p.png')`],
+    [`url(https://ixwiki.com\\29@evil.example/p.png)`],
+    [`url(https://ixwiki.com\\29 .evil.example/p.png)`],
+    [`url("https://ixwiki.com\\")@evil.example/")`],
+    [`url("https://ixwiki.com\\29@evil.example/p")`],
+  ])("%s keeps no url the browser sends to another host", (declaration) => {
+    const out = scopeTemplateStyles(`.a{background:${declaration};color:red}`, OWN_ORIGIN);
+
+    expect(violations(out)).toEqual([]);
+  });
+
+  it.each([
+    "https://ixwiki.com/a.png",
+    "https://ixwiki.com:443/a.png",
+    "/images/a.png",
+    "a.png",
+    "../a.png",
+    "#f",
+  ])("keeps %s, quoted either way and bare", (target) => {
+    for (const quote of ['"', "'", ""]) {
+      const out = scopeTemplateStyles(`.a{background:url(${quote}${target}${quote})}`, OWN_ORIGIN);
+
+      expect(out).toBe(`${S} .a{background:url(${quote}${target}${quote})}`);
+    }
+  });
+
+  it.each([
+    "https://ixwiki.com.evil.example/a",
+    "https://ixwiki.com@evil.example/a",
+    "HTTPS://EVIL.EXAMPLE/a",
+    "//ixwiki.com/a",
+    "\\\\\\\\evil.example/a", // CSS `\\\\` is two backslashes: the URL parser reads them as "//"
+    "https:/evil.example/a",
+    "http://ixwiki.com/a",
+    "data:image/png;base64,AA",
+    "javascript:alert(1)",
+    "https://xn--ixwiki-9ya.com/a",
+    "https://ixwiki.com:8443/a",
+  ])("drops %s, quoted either way and bare", (target) => {
+    for (const quote of ['"', "'", ""]) {
+      expect(scopeTemplateStyles(`.a{background:url(${quote}${target}${quote})}`, OWN_ORIGIN)).toBe("");
+    }
+  });
+
+  it("refuses a declaration whose url( it cannot read as a url (an escaped name, a string then more tokens)", () => {
+    expect(scopeTemplateStyles(`.a{background:u\\72l(a.png);color:red}`, OWN_ORIGIN)).toBe(`${S} .a{color:red}`);
+    expect(scopeTemplateStyles(`.a{background:url("a.png" b);color:red}`, OWN_ORIGIN)).toBe(`${S} .a{color:red}`);
+    expect(scopeTemplateStyles(`.a{background:url(a.png)url(b.png);color:red}`, OWN_ORIGIN)).toBe(
+      `${S} .a{background:url(a.png)url(b.png);color:red}`
+    );
+  });
+
+  it("reads a url inside a string literal in time linear in its size", () => {
+    const started = performance.now();
+    scopeTemplateStyles(`.a{content:"url(${" ".repeat(150_000)}";color:red}`, OWN_ORIGIN);
+    scopeTemplateStyles(`.a{content:"${"url(".repeat(40_000)}";color:red}`, OWN_ORIGIN);
+
+    expect(performance.now() - started).toBeLessThan(2_000);
+  });
+});

@@ -20,7 +20,10 @@
  *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose target,
  *    resolved the way a browser does, is neither relative to the page (`/images/a.png`, `a.png`; not `//host/...`)
  *    nor on the wiki's own origin (the `ownOrigin` argument, `https:` only): no other host is ever contacted by a
- *    template's CSS, so a page cannot make a reader's browser call out to a host the wiki does not control;
+ *    template's CSS, so a page cannot make a reader's browser call out to a host the wiki does not control. The
+ *    target is read as the CSS tokenizer delimits it (a quoted one is the whole string, an unquoted one runs to
+ *    the first unescaped `)`) and only then unescaped; a `url(` that reading does not find (an escaped name) drops
+ *    the declaration;
  *  - anything the splitter cannot read with certainty (an unterminated string, unbalanced brackets, a
  *    stray `}`, a nested rule inside a rule, a bad-url token, a `<` that could end the `<style>` element, a
  *    trailing backslash) drops the whole sheet or the rule: the browser must never parse the output differently
@@ -52,7 +55,12 @@ const BLOCKED_VALUE = /expression\s*\(|(?:java|vb|live)script\s*:/;
 /** Functions that load a URL without `url(`, and the old IE/Mozilla script hooks. */
 const BLOCKED_FUNCTION =
   /(?:^|[^\w-])(?:-webkit-|-moz-)?(?:image-set|image|cross-fade|element|paint|src)\s*\(/;
-const URL_OPEN = /url\s*\(/g;
+/** `url(` written plainly, not the tail of a longer name (`xurl(`, `-url(`). */
+const URL_NAME = /(?<![\w\-\u0080-\uffff])url\s*\(/gi;
+/** Every `url(` of a text with its escapes resolved: how many a browser will find. */
+const URL_NAME_COUNT = new RegExp(URL_NAME.source, "gi");
+/** What ends an unquoted url's text: the `)`, or what makes it a bad url (a quote, a `(`, whitespace). */
+const UNQUOTED_URL_STOP = /[)"'(\s]/;
 const URL_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 /** Relative URLs resolve against this; one that comes out on any other origin named a host. */
 const RELATIVE_BASE = "https://relative.invalid/";
@@ -302,25 +310,50 @@ function scopeSelectors(prelude: string, strings: readonly string[]): string | n
 }
 
 /**
- * The targets of the `url()` functions of `declaration` (escapes resolved), read in one pass: each runs from its `(`
- * to the next `)`. Null when one has no `)` or holds another `url(`: such a declaration is not read further (a
- * search from every `url(` to a `)` that never comes would be quadratic).
+ * The target of the `url(` whose argument starts at `from`, read the way the CSS tokenizer reads it, from text
+ * with its escapes still in it: a quoted target is the whole string (a `)` inside it is part of the URL), an unquoted
+ * one runs to the first unescaped `)`. It is unescaped after it is delimited, never before. Null when the argument is
+ * anything else (a bad url, a string followed by more tokens, no closing `)`). Linear: it only moves forward.
+ */
+function readUrlArgument(css: string, from: number): { target: string; end: number } | null {
+  let start = from;
+  while (CSS_SPACE.test(css.charAt(start))) start++;
+  const quote = css.charAt(start);
+  const quoted = quote === '"' || quote === "'";
+  if (quoted) start++;
+  let close = start;
+  for (; close < css.length; close++) {
+    const ch = css.charAt(close);
+    if (ch === "\\") {
+      const end = escapeEnd(css, close);
+      if (end === -1) return null;
+      close = end - 1;
+    } else if (quoted ? ch === quote : UNQUOTED_URL_STOP.test(ch)) {
+      break;
+    }
+  }
+  if (quoted && css.charAt(close) !== quote) return null;
+  let end = quoted ? close + 1 : close;
+  while (CSS_SPACE.test(css.charAt(end))) end++;
+  return css.charAt(end) === ")" ? { target: unescapeCss(css.slice(start, close)), end: end + 1 } : null;
+}
+
+/**
+ * The targets of the `url()` functions of `declaration` (escapes still in it, strings restored), each read as the
+ * tokenizer reads it, then unescaped. Null when the declaration holds a `url(` this reading did not find (an escaped
+ * name, an argument it cannot read): what is not judged is not kept.
  */
 function urlTargets(declaration: string): string[] | null {
   const targets: string[] = [];
-  let from = 0;
-  for (;;) {
-    URL_OPEN.lastIndex = from;
-    const open = URL_OPEN.exec(declaration);
-    if (!open) return targets;
-    const start = open.index + open[0].length;
-    const close = declaration.indexOf(")", start);
-    if (close === -1) return null;
-    const target = declaration.slice(start, close);
-    if (/url\s*\(/.test(target)) return null;
-    targets.push(target);
-    from = close + 1;
+  URL_NAME.lastIndex = 0;
+  for (let open = URL_NAME.exec(declaration); open; open = URL_NAME.exec(declaration)) {
+    const read = readUrlArgument(declaration, open.index + open[0].length);
+    if (!read) return null;
+    targets.push(read.target);
+    URL_NAME.lastIndex = read.end;
   }
+  const opens = unescapeCss(declaration).match(URL_NAME_COUNT)?.length ?? 0;
+  return opens === targets.length ? targets : null;
 }
 
 /**
@@ -331,7 +364,6 @@ function urlTargets(declaration: string): string[] | null {
 function urlIsAllowed(raw: string, ownOrigin: string | undefined): boolean {
   const target = raw
     .trim()
-    .replace(/^["']|["']$/g, "")
     // the URL parser drops tabs and newlines inside a scheme: "java\tscript:" is "javascript:"
     .replace(/[\u0000- \u007f]/g, "");
   const absolute = URL_SCHEME.test(target);
@@ -346,7 +378,7 @@ function urlIsAllowed(raw: string, ownOrigin: string | undefined): boolean {
   }
 }
 
-/** Whether every `url()` in `declaration` (escapes resolved) stays on the page or the wiki's own origin. */
+/** Whether every `url()` in `declaration` stays on the page or the wiki's own origin. */
 function urlsAreAllowed(declaration: string, ownOrigin: string | undefined): boolean {
   const targets = urlTargets(declaration);
   return targets !== null && targets.every((raw) => urlIsAllowed(raw, ownOrigin));
@@ -359,7 +391,7 @@ function isAllowedDeclaration(property: string, declaration: string, ownOrigin: 
     !BLOCKED_PROPERTY.test(unescapeCss(property).toLowerCase()) &&
     !BLOCKED_VALUE.test(judged) &&
     !BLOCKED_FUNCTION.test(judged) &&
-    urlsAreAllowed(judged, ownOrigin) &&
+    urlsAreAllowed(declaration, ownOrigin) &&
     !declaration.includes("<") &&
     !endsInEscape(declaration) // trimmed, it would escape the ";" or "}" written after it
   );
