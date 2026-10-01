@@ -92,11 +92,12 @@ const adminCtx = () =>
   });
 
 /** The row a revert reads: `wikitext: null` is an import placeholder of unknown text. */
-const revision = (wikitext: string | null, title = "Foo bar") => ({
+const revision = (wikitext: string | null, title = "Foo bar", parked = false) => ({
   wikitext,
   title,
   source: "ixwiki",
   timestamp: "2026-06-01T00:00:00.000Z",
+  parked,
   fromShadow: true as const,
 });
 
@@ -161,6 +162,24 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
     await expect(
       createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "r1" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expectNothingSaved();
+  });
+
+  it("refuses a parked revision (a conflicting MediaWiki edit that never went live): the head is unchanged", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("parked text", "Foo bar", true));
+
+    await expect(
+      createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "9001" })
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringContaining("never went live"),
+    });
+    // not saved, not exported to MediaWiki, no edge purge: the page's text is as it was
+    expectNothingSaved();
+    // and an admin, who may blank a page, may not restore it either
+    await expect(
+      createCaller(adminCtx() as never).revertToRevision({ title: "Foo bar", revid: "9001" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expectNothingSaved();
   });
 
@@ -249,6 +268,15 @@ describe("wikiosEditingRouter.rollback (plan 402)", () => {
 
   it("refuses a placeholder target revision", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(null));
+
+    await expect(
+      createCaller(userCtx() as never).rollback({ title: "Foo bar" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expectNothingSaved();
+  });
+
+  it("refuses a parked target revision, as a revert does (the history it reads leaves parked ones out; this is the second line)", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("parked text", "Foo bar", true));
 
     await expect(
       createCaller(userCtx() as never).rollback({ title: "Foo bar" })

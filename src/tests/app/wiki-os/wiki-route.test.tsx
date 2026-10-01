@@ -23,6 +23,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 const mockArticlePrefetch = jest.fn();
+const mockMainPagePrefetch = jest.fn();
 const mockRevisionPrefetch = jest.fn();
 const mockPrefetchedState = jest.fn();
 const mockMissingPages = jest.fn();
@@ -39,6 +40,7 @@ jest.mock("~/trpc/server", () => ({
     users: { resolveWikiAuthor: (...args: unknown[]) => mockResolveAuthor(...args) },
     wikios: {
       getArticleHtml: { prefetch: (...args: unknown[]) => mockArticlePrefetch(...args) },
+      getMainPage: { prefetch: (...args: unknown[]) => mockMainPagePrefetch(...args) },
       getRevisionHtml: { prefetch: (...args: unknown[]) => mockRevisionPrefetch(...args) },
       getMissingPages: (...args: unknown[]) => mockMissingPages(...args),
       getRandomPage: (...args: unknown[]) => mockRandomPage(...args),
@@ -265,9 +267,10 @@ describe("an article is read on the server (plan 412 step 2)", () => {
     expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "Aurelia" });
   });
 
-  it("the Main Page is rendered by the client without reading an article", async () => {
+  it("the Main Page reads its one query on the server, not an article, and renders from it", async () => {
     const { tree } = await outcome(["Main_Page"]);
     expect(mockArticlePrefetch).not.toHaveBeenCalled();
+    expect(mockMainPagePrefetch).toHaveBeenCalledTimes(1);
     expect(propsOf(tree, "ArticlePageClient")).toMatchObject({ title: "Main Page" });
   });
 

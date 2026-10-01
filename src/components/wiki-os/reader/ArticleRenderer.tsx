@@ -6,8 +6,11 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
-import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
-import { AppleBooksTocDrawer } from "~/components/wiki-os/reader/AppleBooksTocDrawer";
+import {
+  appendSectionEditLinks,
+  removeSectionEditLinks,
+  type TocEntry,
+} from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
@@ -35,6 +38,8 @@ import {
 } from "./ArticlePlaceholders";
 import { useStatValues } from "./useStatValues";
 import { useHydrated } from "./useHydrated";
+import { useScrollSpy } from "./useScrollSpy";
+import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
@@ -44,14 +49,37 @@ import { withBasePath } from "~/lib/base-path";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
-import {
-  WikiMarginDrawer,
-  MarginGutterPins,
-  SelectionCapsule,
-  MarginShareModal,
-  type SelectionPayload,
-} from "~/components/wiki-os/margin";
+import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import { useWikiChromePrefs } from "~/components/wiki-os/shared/WikiChromePrefs";
+import { COMPANION_COLLAPSED_COOKIE, writeCollapsedCookie } from "~/lib/wiki-os/chrome-prefs";
+import type { SelectionPayload } from "~/components/wiki-os/margin/SelectionCapsule";
+
+// The margin suite and the TOC drawer are interactions, not the first paint: each is its own chunk.
+// A drawer or modal is fetched when first opened; the capsule and the gutter pins (which need the
+// page's own selection and text) load right after hydration, off the critical path.
+const MarginGutterPins = dynamic(
+  () => import("~/components/wiki-os/margin/MarginGutterPins").then((m) => m.MarginGutterPins),
+  { ssr: false }
+);
+const SelectionCapsule = dynamic(
+  () => import("~/components/wiki-os/margin/SelectionCapsule").then((m) => m.SelectionCapsule),
+  { ssr: false }
+);
+const WikiMarginDrawer = dynamic(
+  () => import("~/components/wiki-os/margin/WikiMarginDrawer").then((m) => m.WikiMarginDrawer),
+  { ssr: false }
+);
+const MarginShareModal = dynamic(
+  () =>
+    import("~/components/wiki-os/margin/modals/MarginShareModal").then((m) => m.MarginShareModal),
+  { ssr: false }
+);
+const AppleBooksTocDrawer = dynamic(
+  () =>
+    import("~/components/wiki-os/reader/AppleBooksTocDrawer").then((m) => m.AppleBooksTocDrawer),
+  { ssr: false }
+);
 
 const CoordinatesMapEmbed = dynamic(
   () =>
@@ -135,9 +163,9 @@ function mayNameCountry(title: string): boolean {
 
 export function ArticleRenderer({
   title,
-  contentHtml,
-  infoboxHtml,
-  noticesHtml,
+  contentHtml: contentMarker,
+  infoboxHtml: infoboxMarker,
+  noticesHtml: noticesMarker,
   toc,
   categories,
   lastModified,
@@ -146,6 +174,12 @@ export function ArticleRenderer({
 }: ArticleRendererProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // In lean mode (lib/wiki-os/lean-article.ts) the three parts arrive as markers, and the real HTML is
+  // read from where the server rendered it: the DOM in the browser, the server's stash in the SSR render.
+  const leanToken = parseLeanMarker(contentMarker)?.token ?? null;
+  const contentHtml = useMemo(() => resolveLeanHtml(contentMarker) ?? "", [contentMarker]);
+  const infoboxHtml = useMemo(() => resolveLeanHtml(infoboxMarker), [infoboxMarker]);
+  const noticesHtml = useMemo(() => resolveLeanHtml(noticesMarker), [noticesMarker]);
   const {
     setWikiPage,
     activeModal,
@@ -165,26 +199,37 @@ export function ArticleRenderer({
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
   const [tocOpen, setTocOpen] = useState(false);
+  const tocDrawerMounted = useMountOnFirstOpen(tocOpen);
+  const marginDrawerMounted = useMountOnFirstOpen(marginOpen);
   // oxlint-disable-next-line eslint/no-unused-vars
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
-  const [companionCollapsed, setCompanionCollapsed] = useState(false);
-
-  // Persist companion collapsed preference (xl only)
-  useEffect(() => {
+  // Collapsed or not is the reader's saved choice, which the server read from its cookie: the first
+  // paint already has the right column width. (A choice kept only in localStorage, from before the
+  // cookie, is picked up after mount, once, and from then on lives in the cookie too.)
+  const { companionCollapsed: savedCompanionCollapsed } = useWikiChromePrefs();
+  const [companionCollapsed, setCompanionCollapsed] = useState(savedCompanionCollapsed ?? false);
+  const chooseCompanionCollapsed = (collapsed: boolean) => {
+    setCompanionCollapsed(collapsed);
+    writeCollapsedCookie(COMPANION_COLLAPSED_COOKIE, collapsed);
     try {
-      const v = localStorage.getItem("wikios:companionCollapsed");
-      if (v === "true") setCompanionCollapsed(true);
+      localStorage.setItem("wikios:companionCollapsed", String(collapsed));
     } catch {
       /* ignore */
     }
-  }, []);
+  };
   useEffect(() => {
+    if (savedCompanionCollapsed !== null) return;
     try {
-      localStorage.setItem("wikios:companionCollapsed", String(companionCollapsed));
+      if (localStorage.getItem("wikios:companionCollapsed") === "true") {
+        // a one-time migration from the old localStorage key, which only the browser can read
+        // oxlint-disable-next-line
+        setCompanionCollapsed(true);
+        writeCollapsedCookie(COMPANION_COLLAPSED_COOKIE, true);
+      }
     } catch {
       /* ignore */
     }
-  }, [companionCollapsed]);
+  }, [savedCompanionCollapsed]);
 
   // --- WikiOS Margin Suite State ---
   const [marginExpanded, setMarginExpanded] = useState(false);
@@ -399,9 +444,27 @@ export function ArticleRenderer({
   const hydrated = useHydrated();
   const processedHtml = useMemo(() => {
     if (!hydrated) return contentHtml;
-    const html = injectPlaceholderElements(contentHtml);
-    return isAuthenticated && !readOnly ? addSectionEditLinks(html, slug) : html;
-  }, [hydrated, contentHtml, isAuthenticated, readOnly, slug]);
+    return injectPlaceholderElements(contentHtml);
+  }, [hydrated, contentHtml]);
+
+  // A signed-in reader's section edit links are added to the live article, in place: signing in
+  // resolves after hydration, and the article's HTML is never written again for it. Signing out
+  // takes them out the same way.
+  const canEdit = isAuthenticated && !readOnly;
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    if (canEdit) appendSectionEditLinks(container, slug);
+    else removeSectionEditLinks(container);
+  }, [canEdit, slug, processedHtml]);
+  // React writes a `dangerouslySetInnerHTML` element's HTML again whenever the prop is a new object,
+  // even for the same string (React 19): built here once per HTML, so a re-render (a section change in
+  // the scroll spy, a query settling) leaves the article's DOM, its images and its added links alone.
+  const bodyMarkup = useMemo(() => ({ __html: processedHtml }), [processedHtml]);
+  const noticesMarkup = useMemo(
+    () => (noticesHtml ? { __html: noticesHtml } : null),
+    [noticesHtml]
+  );
   const processedInfoboxHtml = useMemo(() => {
     if (!infoboxHtml) return null;
     return hydrated ? injectPlaceholderElements(infoboxHtml) : infoboxHtml;
@@ -507,28 +570,9 @@ export function ArticleRenderer({
     return () => setWikiPage(null, [], null);
   }, [title, toc, themeColors, source, setWikiPage]);
 
-  // Scroll spy — single owner now in WikiArticleRightRail; this keeps WikiContext activeSectionId in sync
-  useEffect(() => {
-    if (toc.length === 0) return;
-    function tick() {
-      const ids = toc.map((e) => e.id);
-      let current: string | null = null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= 120) current = id;
-        }
-      }
-      setActiveSectionId(current);
-    }
-    window.addEventListener("scroll", tick, { passive: true });
-    tick();
-    return () => {
-      window.removeEventListener("scroll", tick);
-      setActiveSectionId(null);
-    };
-  }, [toc, setActiveSectionId]);
+  // Scroll spy — keeps WikiContext activeSectionId in sync (offsets cached, one pass per frame)
+  const tocIds = useMemo(() => toc.map((entry) => entry.id), [toc]);
+  useScrollSpy(tocIds, setActiveSectionId);
 
   // Navbox collapse toggle
   useEffect(() => {
@@ -583,9 +627,17 @@ export function ArticleRenderer({
   );
   const awardsData = awardsQuery.data;
 
-  const featuredImageUrl = useMemo(() => {
-    return extractLeadImageFromHtml(infoboxHtml) ?? extractLeadImageFromHtml(contentHtml);
-  }, [infoboxHtml, contentHtml]);
+  // The lead image and the size of its file (the hero reserves its shape from it, before it loads)
+  const featuredImage = useMemo(
+    () => extractLeadImage(infoboxHtml) ?? extractLeadImage(contentHtml),
+    [infoboxHtml, contentHtml]
+  );
+  const featuredImageUrl = featuredImage?.url ?? null;
+  const featuredImageFile = useMemo(
+    () =>
+      featuredImage ? { width: featuredImage.fileWidth, height: featuredImage.fileHeight } : null,
+    [featuredImage]
+  );
 
   const containerStyle = {
     "--wikios-accent": themeColors.primary,
@@ -622,6 +674,7 @@ export function ArticleRenderer({
           wikiSource={wikiSource}
           countryData={countryData}
           featuredImageUrl={featuredImageUrl}
+          featuredImageFile={featuredImageFile}
           themeColors={themeColors}
           authorInfo={authors}
           awardsData={awardsData}
@@ -661,17 +714,28 @@ export function ArticleRenderer({
         })()}
 
         {/* Page-top notices (WIP, stub, hatnotes) */}
-        {noticesHtml && (
-          <div className="wikios-notices" dangerouslySetInnerHTML={{ __html: noticesHtml }} />
+        {noticesMarkup && (
+          <div
+            id={leanToken ? leanElementId(leanToken, "notices") : undefined}
+            className="wikios-notices"
+            dangerouslySetInnerHTML={noticesMarkup}
+          />
         )}
 
         {/* Content layout */}
         <div className="wikios-article-main" ref={contentRef}>
           <div className="wikios-article-body wikios-article-content">
             {processedInfoboxHtml && (
-              <InfoboxWithMap infoboxHtml={processedInfoboxHtml} articleTitle={title} />
+              <InfoboxWithMap
+                infoboxHtml={processedInfoboxHtml}
+                articleTitle={title}
+                markupId={leanToken ? leanElementId(leanToken, "infobox") : undefined}
+              />
             )}
-            <div dangerouslySetInnerHTML={{ __html: processedHtml }} />
+            <div
+              id={leanToken ? leanElementId(leanToken, "body") : undefined}
+              dangerouslySetInnerHTML={bodyMarkup}
+            />
             {/* Render portals into injected placeholder nodes */}
             {portalTargets.map((target, _idx) => {
               if (target.type === "coords") {
@@ -758,7 +822,7 @@ export function ArticleRenderer({
             }}
             onClick={() => {
               soundEffects.press();
-              setCompanionCollapsed(true);
+              chooseCompanionCollapsed(true);
             }}
             className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
             title="Hide companion"
@@ -773,6 +837,7 @@ export function ArticleRenderer({
             contentHtml={contentHtml}
             lastModified={lastModified}
             authorInfo={authors}
+            authorsPending={!authorInfo && authorsQuery.isLoading}
             categories={categories}
             awardsData={awardsData}
             marginThreadsCount={
@@ -803,7 +868,7 @@ export function ArticleRenderer({
           type="button"
           onClick={() => {
             soundEffects.press();
-            setCompanionCollapsed(false);
+            chooseCompanionCollapsed(false);
           }}
           className="text-muted-foreground/40 hover:text-foreground sticky top-20 hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
           title="Show companion"
@@ -814,12 +879,14 @@ export function ArticleRenderer({
       )}
 
       {/* Apple Books Style TOC Drawer (Modal Sheet) */}
-      <AppleBooksTocDrawer
-        isOpen={tocOpen}
-        onClose={() => setTocOpen(false)}
-        entries={toc}
-        themeColors={themeColors}
-      />
+      {tocDrawerMounted && (
+        <AppleBooksTocDrawer
+          isOpen={tocOpen}
+          onClose={() => setTocOpen(false)}
+          entries={toc}
+          themeColors={themeColors}
+        />
+      )}
 
       {lightboxPortal}
       {citeTooltipPortal}
@@ -844,23 +911,25 @@ export function ArticleRenderer({
             onShareQuote={handleShareQuote}
           />
 
-          <WikiMarginDrawer
-            isOpen={marginOpen}
-            onClose={() => setMarginOpen(false)}
-            articleTitle={title}
-            initialTab={marginTab}
-            activeAnchor={activeAnchor}
-            draftQuote={draftQuote}
-            onClearDraftQuote={() => setDraftQuote(null)}
-            selectedThreadId={selectedThreadId}
-            onSelectThread={setSelectedThreadId}
-            selectedAnnotationId={selectedAnnotationId}
-            onSelectAnnotation={setSelectedAnnotationId}
-            contentRef={contentRef}
-            isAuthenticated={isAuthenticated}
-            themeColors={themeColors}
-            onExpandedChange={setMarginExpanded}
-          />
+          {marginDrawerMounted && (
+            <WikiMarginDrawer
+              isOpen={marginOpen}
+              onClose={() => setMarginOpen(false)}
+              articleTitle={title}
+              initialTab={marginTab}
+              activeAnchor={activeAnchor}
+              draftQuote={draftQuote}
+              onClearDraftQuote={() => setDraftQuote(null)}
+              selectedThreadId={selectedThreadId}
+              onSelectThread={setSelectedThreadId}
+              selectedAnnotationId={selectedAnnotationId}
+              onSelectAnnotation={setSelectedAnnotationId}
+              contentRef={contentRef}
+              isAuthenticated={isAuthenticated}
+              themeColors={themeColors}
+              onExpandedChange={setMarginExpanded}
+            />
+          )}
 
           {/* Share Modal Dialog */}
           {sharePayload && (

@@ -8,7 +8,8 @@ jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 import { categoryLinks, externalUrls, linkTargets, visibleText } from "~/lib/wiki-os/api-compat/scan";
-import { computeWikitextDiff, DiffTooLarge } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { diffTableHtml } from "~/lib/wiki-os/api-compat/diff-table";
+import { DiffTooLargeError, diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
 import { locateSection, replaceSection, sectionHeadings, sectionText } from "~/lib/wiki-os/wikitext/section-locator";
 
@@ -130,57 +131,58 @@ describe("no scan keeps state keyed on a text's content", () => {
   });
 });
 
-describe("the diff is linear and bounded", () => {
+describe("the compare table over plan 413's diff engine is bounded", () => {
   const lines = (count: number, tag: string) => Array.from({ length: count }, (_, i) => `${tag} line ${i}`).join("\n");
+  const table = (oldText: string, newText: string) => diffTableHtml(diffWikitext(oldText, newText, { context: 2 }), 2 * 1024 * 1024);
+  const toobig = (run: () => unknown) => {
+    try {
+      run();
+    } catch (error) {
+      return (error as { code?: string }).code;
+    }
+    return undefined;
+  };
 
-  it("diffs two 100,000-line texts that share nothing in under 500 ms", () => {
-    const { ms } = timed(() => computeWikitextDiff(lines(100_000, "old"), lines(100_000, "new")));
-    expect(ms).toBeLessThan(500);
-  });
-
-  it("diffs two 100,000-line texts that differ in every tenth line in under 500 ms", () => {
+  it("refuses two 100,000-line texts as toobig in under 500 ms, whether they share nothing or every tenth line differs", () => {
     const old = Array.from({ length: 100_000 }, (_, i) => `row ${i}`);
     const changed = old.map((line, i) => (i % 10 === 0 ? `${line} changed` : line));
-    const { ms } = timed(() => computeWikitextDiff(old.join("\n"), changed.join("\n")));
-    expect(ms).toBeLessThan(500);
+    for (const [from, to] of [[lines(100_000, "old"), lines(100_000, "new")], [old.join("\n"), changed.join("\n")]] as const) {
+      const { ms, value } = timed(() => toobig(() => table(from, to)));
+      expect(ms).toBeLessThan(500);
+      expect(value).toBe("toobig");
+    }
   });
 
-  it("diffs identical 100,000-line texts and an empty text against a large one quickly", () => {
-    const text = lines(100_000, "same");
-    expect(timed(() => computeWikitextDiff(text, text)).ms).toBeLessThan(500);
-    expect(timed(() => computeWikitextDiff("", text)).ms).toBeLessThan(500);
+  it("refuses a diff the engine had to cut (more rows than one answer carries) rather than show a smaller change", () => {
+    const old = Array.from({ length: 19_000 }, (_, i) => `row ${i}`);
+    const changed = old.map((line, i) => (i % 3 === 0 ? `${line} changed` : line));
+    const { ms, value } = timed(() => toobig(() => table(old.join("\n"), changed.join("\n"))));
+    expect(value).toBe("toobig");
+    expect(ms).toBeLessThan(1000);
   });
 
-  it("stops with DiffTooLarge as soon as the rows pass the limit, without building the rest", () => {
-    const { ms } = timed(() => {
-      expect(() => computeWikitextDiff(lines(100_000, "old"), lines(100_000, "new"), { maxOutputChars: 2 * 1024 * 1024 })).toThrow(DiffTooLarge);
-    });
-    expect(ms).toBeLessThan(500);
-  });
-
-  it("shows at most two unchanged lines on each side of a change when asked (MediaWiki's context)", () => {
-    const old = Array.from({ length: 100_000 }, (_, i) => `row ${i}`);
+  it("shows at most two unchanged lines on each side of a change (MediaWiki's context), even in a 19,000-line page", () => {
+    const old = Array.from({ length: 19_000 }, (_, i) => `row ${i}`);
     const changed = [...old];
-    changed[50_000] = "row 50000 changed";
-    const rows = computeWikitextDiff(old.join("\n"), changed.join("\n"), { contextLines: 2 }).split("\n");
-    const text = rows.join("\n");
-    // 2 before, the deleted line, the added line, 2 after
+    changed[9_500] = "row 9500 changed";
+    const { ms, value } = timed(() => table(old.join("\n"), changed.join("\n")));
+    expect(ms).toBeLessThan(500);
+    const rows = value.split("\n");
+    // 2 before, the removed line, the added line, 2 after
     expect(rows).toHaveLength(6);
-    for (const line of ["row 49998", "row 49999", "row 50001", "row 50002"]) expect(text).toContain(`>${line}<`);
-    expect(text).not.toContain(">row 49997<");
-    expect(text).not.toContain(">row 50003<");
-    // without the option a block beside a change is shown in full (the history view)
-    expect(computeWikitextDiff("a\nb\nc\nd\ne\nf\ng\nh\ni", "a\nb\nc\nd\nX\nf\ng\nh\ni").split("\n").length).toBe(10);
+    for (const line of ["row 9498", "row 9499", "row 9501", "row 9502"]) expect(value).toContain(`>${line}<`);
+    expect(value).not.toContain(">row 9497<");
+    expect(value).not.toContain(">row 9503<");
   });
 
   it("keeps both ends of a long unchanged block between two changes, and all of a short one", () => {
-    const lines = (middle: number) => ["start", ...Array.from({ length: middle }, (_, i) => `m${i}`), "end"];
+    const text = (middle: number) => ["start", ...Array.from({ length: middle }, (_, i) => `m${i}`), "end"];
     const diff = (middle: number) => {
-      const a = lines(middle);
+      const a = text(middle);
       const b = [...a];
       b[0] = "START";
       b[b.length - 1] = "END";
-      return computeWikitextDiff(a.join("\n"), b.join("\n"), { contextLines: 2 });
+      return table(a.join("\n"), b.join("\n"));
     };
     expect(diff(4).match(/diff-context/g)!.length / 2).toBe(4);
     const long = diff(10);
@@ -189,16 +191,29 @@ describe("the diff is linear and bounded", () => {
     expect(long).not.toContain(">m5<");
   });
 
-  it("answers identical texts with the no-changes row, however long", () => {
-    const text = Array.from({ length: 100_000 }, (_, i) => `row ${i}`).join("\n");
-    expect(computeWikitextDiff(text, text, { contextLines: 2 })).toContain("No changes");
+  it("answers identical texts, however long, with the no-changes row", () => {
+    const text = lines(19_000, "row");
+    expect(timed(() => table(text, text)).value).toContain("No changes");
+    expect(table("", "")).toContain("No changes");
   });
 
-  it("keeps the format for a small diff", () => {
-    const html = computeWikitextDiff("a\nb\nc", "a\nB\nc", { maxOutputChars: 10_000 });
-    expect(html).toContain("diff-deletedline");
-    expect(html).toContain("diff-addedline");
-    expect(computeWikitextDiff("same", "same")).not.toContain("diff-addedline");
+  it("refuses a text over 2 MB (DiffTooLargeError is the engine's) and a table past 2 MB", () => {
+    expect(() => diffWikitext("a".repeat(2 * 1024 * 1024 + 1), "b")).toThrow(DiffTooLargeError);
+    const diff = diffWikitext("x", "y", { context: 2 });
+    expect(toobig(() => diffTableHtml(diff, 100))).toBe("toobig");
+    expect(diffTableHtml(diff, 10_000)).toContain("diff-addedline");
+  });
+
+  it("lays a changed line out as MediaWiki does: the differing words inside ins and del, everything escaped", () => {
+    const html = table("a\nthe <b>old</b> text\nz", "a\nthe <i>new</i> text\nz");
+    expect(html).toContain('<td class="diff-deletedline">');
+    expect(html).toContain('<td class="diff-addedline">');
+    expect(html).not.toContain("<b>");
+    expect(html).not.toContain("<i>");
+    expect(html).toMatch(/<del class="diffchange diffchange-inline">[^<]*b[^<]*<\/del>/);
+    expect(html).toMatch(/<ins class="diffchange diffchange-inline">[^<]*i[^<]*<\/ins>/);
+    // a pure addition or removal carries its whole line
+    expect(table("a", "a\nnew")).toContain('<td class="diff-addedline"><ins class="diffchange diffchange-inline">new</ins></td>');
   });
 });
 
@@ -235,16 +250,15 @@ describe("action=parse and action=compare over hostile text", () => {
     expect(body.error?.code).toBe("nosuchsection");
   });
 
-  it("compare of two near-identical 1.9 MB revisions answers with its context, not toobig", async () => {
-    const lines = Array.from({ length: 150_000 }, (_, i) => `line ${i}`);
+  it("compare of two near-identical big revisions answers with its context, not toobig", async () => {
+    const lines = Array.from({ length: 19_000 }, (_, i) => `line ${i}`);
     const edited = [...lines];
-    edited[75_000] = "line 75000 edited";
+    edited[9_500] = "line 9500 edited";
     const wiki = await makeWikiDeps(
       { pages: [{ pageId: 1, title: "Big" }], revisions: [
         { revId: 1, page: "Big", timestamp: "2026-01-01T00:00:00Z", content: lines.join("\n") },
         { revId: 2, page: "Big", timestamp: "2026-01-02T00:00:00Z", content: edited.join("\n") },
       ] },
-      { services: { diff: computeWikitextDiff } }
     );
     const start = performance.now();
     const body = (await call(wiki.deps, "action=compare&fromrev=1&torev=2&formatversion=2")).body as Record<string, any>;
@@ -254,7 +268,7 @@ describe("action=parse and action=compare over hostile text", () => {
   }, 30_000);
 
   it("compare of two 100,000-line texts answers in under 500 ms, or says toobig", async () => {
-    const wiki = await makeWikiDeps(WIKI(), { services: { diff: computeWikitextDiff } });
+    const wiki = await makeWikiDeps(WIKI());
     const side = (tag: string) => Array.from({ length: 100_000 }, (_, i) => `${tag}${i}`).join("\n").slice(0, 199_999);
     const start = performance.now();
     const body = (await call(wiki.deps, `action=compare&formatversion=2`, { method: "POST", body: { fromtext: side("a"), totext: side("b") } })).body as Record<string, any>;

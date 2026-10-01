@@ -213,7 +213,7 @@ describe("action=rollback", () => {
       last_revid: 101,
     });
     expect(called("authorize")[0]!.args.slice(1)).toEqual(["rollback", "Alpha"]);
-    expect(called("requireRestorableWikitext")[0]!.args.slice(1)).toEqual(["Alpha", { wikitext: "good text", title: "Alpha" }]);
+    expect(called("requireRestorableWikitext")[0]!.args.slice(1)).toEqual(["Alpha", { wikitext: "good text", title: "Alpha", parked: false }]);
     expect(called("saveWikitext")[0]!.args[1]).toEqual({
       title: "Alpha",
       wikitext: "good text",

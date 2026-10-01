@@ -176,6 +176,84 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(body.compareDocumentPosition(members) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  describe("a lean page (plan 413, item 8c) carries markers for the article's HTML", () => {
+    const token = "123e4567-e89b-42d3-a456-426614174000";
+    const lean = (refetch: jest.Mock) =>
+      mockUseQuery.mockReturnValue({
+        data: { ...article, title: "Aurelia", contentHtml: `wikios-lean:${token}:body` },
+        isLoading: false,
+        error: null,
+        refetch,
+      });
+
+    it("asks for the article when the DOM the marker stands for is not there (a marker kept from an earlier page load)", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("treats that marker as no data: a loading state, never an article with an empty body", () => {
+      mockSignedIn = false;
+      lean(jest.fn());
+
+      render(<Reader title="Aurelia" />);
+
+      expect(screen.getByText("Loading article...")).toBeInTheDocument();
+      expect(mockRenderer).not.toHaveBeenCalled();
+    });
+
+    it("also when the element is there but empty", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      document.body.append(body);
+
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+      expect(mockRenderer).not.toHaveBeenCalled();
+      body.remove();
+    });
+
+    it("does not, when the server's DOM is there to read it back from", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      body.innerHTML = "<p>Eurth</p>";
+      document.body.append(body);
+
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).not.toHaveBeenCalled();
+      expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ title: "Aurelia" }));
+      body.remove();
+    });
+
+    it("a signed-in reader still asks once for their own chips: a lean copy is the anonymous one", () => {
+      const refetch = jest.fn();
+      mockSignedIn = true;
+      lean(refetch);
+      const body = document.createElement("div");
+      body.id = `wikios-lean-${token}-body`;
+      body.innerHTML = "<p>Eurth</p>";
+      document.body.append(body);
+
+      const { rerender } = render(<Reader title="Aurelia" />);
+      rerender(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+      body.remove();
+    });
+  });
+
   describe("viewer-specific chips (the route reads the article as an anonymous viewer)", () => {
     const chipHtml =
       '<p>Your GDP: <span class="wikios-stat-resolved" data-key="MyCountry:gdp">No Country Loaded</span></p>';
@@ -415,11 +493,11 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
 
-  it("the Main Page is the Main Page component, with no article query", () => {
+  it("the Main Page is the Main Page component (its own chunk), with no article query", async () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
     render(<Reader title="Main Page" />);
 
-    expect(screen.getByText("main page")).toBeInTheDocument();
+    expect(await screen.findByText("main page")).toBeInTheDocument();
     expect(mockUseQuery).toHaveBeenCalledWith(
       { title: "Main Page" },
       expect.objectContaining({ enabled: false })

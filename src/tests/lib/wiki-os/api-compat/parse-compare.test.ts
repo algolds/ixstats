@@ -3,6 +3,11 @@
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
+import { diffTableHtml } from "~/lib/wiki-os/api-compat/diff-table";
+import { DiffTooLargeError, diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
+
+/** The table the compare action answers for two texts: plan 413's engine at two lines of context, laid out as MediaWiki's rows. */
+const tableOf = (from: string, to: string) => diffTableHtml(diffWikitext(from, to, { context: 2 }), 2 * 1024 * 1024);
 
 type Body = Record<string, any>;
 
@@ -215,11 +220,13 @@ describe("action=compare", () => {
       torevid: 12,
       tons: 0,
       totitle: "Alpha",
-      body: "<tr><td>old text</td><td>" + PAGE_TEXT + "</td></tr>",
+      body: tableOf("old text", PAGE_TEXT),
     });
-    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT, { maxOutputChars: 2 * 1024 * 1024, contextLines: 2 }]);
+    expect(body.compare.body).toContain('<td class="diff-deletedline">');
+    expect(body.compare.body).toContain("Intro with [[Beta]] and"); // the new text's lines
+    expect(calls.find((c) => c.name === "diff")!.args).toEqual(["old text", PAGE_TEXT, { context: 2 }]);
     const v1 = await run("action=compare&fromrev=11&torev=21", "format=json");
-    expect(v1.body.compare["*"]).toBe("<tr><td>old text</td><td>beta</td></tr>");
+    expect(v1.body.compare["*"]).toBe(tableOf("old text", "beta"));
     expect(v1.body.compare.body).toBeUndefined();
   });
 
@@ -230,9 +237,11 @@ describe("action=compare", () => {
     expect((await post({ fromtext: big, totext: "b" })).error.code).toBe("toobig");
     expect((await post({ fromtext: "a", totext: big })).error.code).toBe("toobig");
     expect((await post({ fromtext: "a".repeat(200_000), totext: "b" })).error).toBeUndefined();
-    const { DiffTooLarge } = await import("~/lib/wiki-os/transformers/wikitext-diff");
-    const tooLarge = await post({ fromtext: "a", totext: "b" }, { diff: () => { throw new DiffTooLarge(); } });
-    expect(tooLarge.error.code).toBe("toobig");
+    // the engine's own refusals: a text over 2 MB, and one over 20,000 lines
+    expect((await post({ fromtext: "a", totext: "b" }, { diff: () => { throw new DiffTooLargeError(); } })).error.code).toBe("toobig");
+    const manyLines = Array.from({ length: 25_000 }, (_, i) => `l${i}`).join("\n");
+    expect(manyLines.length).toBeLessThan(200_000);
+    expect((await post({ fromtext: manyLines, totext: `${manyLines}\nmore` })).error.code).toBe("toobig");
   });
 
   it("compares the newest revisions of two titles and adds the requested props", async () => {
@@ -258,7 +267,8 @@ describe("action=compare", () => {
     expect((await run("action=compare&fromrev=11&torelative=next&prop=ids")).body.compare).toMatchObject({ fromrevid: 11, torevid: 12 });
     expect((await run("action=compare&fromrev=11&torelative=cur&prop=ids")).body.compare).toMatchObject({ fromrevid: 11, torevid: 12 });
     const text = await run("action=compare&fromtext=a&totext=b");
-    expect(text.body.compare).toEqual({ body: "<tr><td>a</td><td>b</td></tr>" });
+    expect(text.body.compare).toEqual({ body: tableOf("a", "b") });
+    expect(text.body.compare.body).toContain('<td class="diff-deletedline"><del class="diffchange diffchange-inline">a</del></td>');
   });
 
   it("refuses missing sides, unknown revisions, hidden text and missing pages", async () => {

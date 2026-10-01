@@ -237,6 +237,8 @@ export async function runRollback(rc: ApiContext): Promise<JsonObject> {
   const wikitext = await services.requireRestorableWikitext(rc.session.ctx, title, {
     wikitext: source.content,
     title: source.title,
+    // api.php's revision queries leave parked revisions out, so this one is live.
+    parked: false,
   });
   const summary =
     cleanComment(givenSummary ?? `Reverted edits by ${user} to last revision by ${target.user ?? "an unknown user"}`);

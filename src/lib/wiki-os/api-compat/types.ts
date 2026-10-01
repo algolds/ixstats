@@ -12,6 +12,7 @@ import type { MovePageOptions, MovePageResult, PageActor } from "~/lib/wiki-os/c
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
 import type { WikiAction } from "~/lib/wiki-os/permissions";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
+import type { WikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import type { SizeBudget } from "./budget";
 import type { FormatVersion, JsonValue } from "./format";
 import type { ApiParams } from "./params";
@@ -145,8 +146,8 @@ export interface ApiServices {
   purgePage(article: { id: string; title: string }): Promise<void>;
   /** Make sure the page's stored rendering is fresh: the render service's single-flight, capped render (waits a few seconds at most). */
   ensureRendered(articleId: string): Promise<void>;
-  /** The server diff: the `<tr>` rows of MediaWiki's diff table; throws `DiffTooLarge` past `maxOutputChars`. */
-  diff(oldText: string, newText: string, options?: { maxOutputChars?: number; contextLines?: number }): string;
+  /** The server diff (`diffWikitext`, plan 413): hunks of `context` unchanged lines around each change; throws `DiffTooLargeError` for a text over 2 MB. */
+  diff(oldText: string, newText: string, options: { context: number }): WikitextDiff;
   /** May the caller edit (or create) `title`? Throws the permission refusals. */
   assertCanEdit(ctx: WikiAuthContext, title: string): Promise<void>;
   authorize(ctx: WikiAuthContext, action: WikiAction, title: string): Promise<void>;
@@ -162,11 +163,11 @@ export interface ApiServices {
     title: string,
     levels: ReadonlyArray<"autoconfirmed" | "sysop" | null>
   ): Promise<void>;
-  /** The text a rollback may save from `revision` (refuses a placeholder, another page's revision, a blanking). */
+  /** The text a rollback may save from `revision` (refuses a parked revision, a placeholder, another page's revision, a blanking). */
   requireRestorableWikitext(
     ctx: WikiAuthContext,
     title: string,
-    revision: { wikitext: string | null; title: string }
+    revision: { wikitext: string | null; title: string; parked: boolean }
   ): Promise<string>;
   /** `detectEditConflict`: has the page moved on from the revision `baseRef` names? */
   detectEditConflict(title: string, baseRef: string | undefined): Promise<EditConflict | null>;

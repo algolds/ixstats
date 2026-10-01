@@ -18,7 +18,7 @@ import {
 } from "~/lib/wiki-os/services/edit-service";
 import { purgeArticle } from "~/lib/wiki-os/services/purge-service";
 import { ensureRendered } from "~/lib/wiki-os/services/render-service";
-import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { capWikiPermissions, getWikiPermissions } from "~/lib/wiki-os/rights";
 import { prismaAuthStore } from "./auth-store";
 import { prismaApiStore } from "./store";
@@ -59,7 +59,7 @@ const services: ApiServices = {
   ensureRendered: async (articleId) => {
     await ensureRendered(articleId, { waitMs: RENDER_WAIT_MS });
   },
-  diff: computeWikitextDiff,
+  diff: diffWikitext,
   assertCanEdit: (ctx, title) => assertCanEditArticle(ctx, title),
   authorize: (ctx, action, title) => authorizeAction(ctx, action, title),
   requireRight: async (ctx, right) => {

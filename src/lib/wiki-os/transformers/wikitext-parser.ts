@@ -185,6 +185,19 @@ function parseWikitables(input: string): string {
 }
 
 /**
+ * ` width="…" height="…"` for an image whose wikitext gave its size (`300px`, `300x200px`): the
+ * browser reserves the picture's box before it loads. Nothing for a size not given, and the height
+ * only when the text names one.
+ */
+export function imageDimensionAttributes(params: readonly string[]): string {
+  for (const param of params) {
+    const size = /^(\d+)(?:x(\d+))?px$/i.exec(param.trim());
+    if (size) return ` width="${size[1]}"${size[2] ? ` height="${size[2]}"` : ""}`;
+  }
+  return "";
+}
+
+/**
  * Converts wikitext file and image tags to HTML figure/img elements,
  * properly handling nested links and balanced brackets in captions.
  */
@@ -230,9 +243,10 @@ function convertWikitextImages(text: string, wikiSource: string): string {
             });
 
             const caption = captionParts.join(" | ");
+            const dimensions = imageDimensionAttributes(parts.slice(1));
 
             result += `\n\n<figure class="my-3 overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-xs backdrop-blur-md">
-      <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy" />
+      <img src="${imageUrl}" alt="${caption || rawFileName}" class="max-h-48 w-full object-cover rounded-t-xl" loading="lazy"${dimensions} />
       ${
         caption
           ? `<figcaption class="p-2 text-xs text-muted-foreground font-medium bg-muted/20 border-t border-border/40 leading-tight">${caption}</figcaption>`

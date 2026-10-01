@@ -2,6 +2,7 @@
  * Test harness for the api.php modules (plan 410): in-memory deps, a request builder and a tiny
  * "bot" that keeps its cookies between calls, the way Pywikibot does.
  */
+import { diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { hashBotPassword } from "~/lib/wiki-os/api-compat/auth";
 import { handleApiRequest, type ApiRequestInput, type ApiResponseOutput } from "~/lib/wiki-os/api-compat/dispatch";
@@ -649,7 +650,8 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
       (data.html ??= {})[title] = `<p>rendered(${title}): ${page?.wikitext ?? ""}</p>`;
     }),
     purgePage: record("purgePage", async () => undefined),
-    diff: record("diff", (a: string, b: string) => `<tr><td>${a}</td><td>${b}</td></tr>`),
+    // the real engine (plan 413's): it is pure, so no fake is needed
+    diff: record("diff", diffWikitext),
     assertCanEdit: record("assertCanEdit", async () => undefined),
     authorize: record("authorize", async () => undefined),
     requireRight: record("requireRight", async () => undefined),

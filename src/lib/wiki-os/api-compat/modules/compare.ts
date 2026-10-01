@@ -1,15 +1,17 @@
 /**
  * compare.ts — `action=compare` (plan 410): a diff between two revisions (or two texts) in
- * MediaWiki's diff table format (the `<tr>` rows), computed by the server diff WikiOS already has.
+ * MediaWiki's diff table format (the `<tr>` rows). The diff is WikiOS's one engine (`diffWikitext`),
+ * asked for ±2 lines of context as MediaWiki shows; `diff-table.ts` lays its hunks out as rows.
  */
 
+import { diffTableHtml } from "../diff-table";
 import { ApiError, missingOneOf } from "../errors";
 import { mwTimestamp, type JsonObject } from "../format";
 import type { ApiParams } from "../params";
 import type { RevisionRow } from "../store-types";
 import type { ApiContext } from "../types";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { DiffTooLarge } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { DiffTooLargeError } from "~/lib/wiki-os/transformers/wikitext-diff";
 
 /** Characters of `fromtext` / `totext` a request may send. */
 export const MAX_COMPARE_TEXT_CHARS = 200_000;
@@ -112,11 +114,12 @@ function revisionFields(label: "from" | "to", side: Side, props: ReadonlySet<Com
   };
 }
 
+/** The diff table of two texts; `toobig` when the engine will not compare them (a text over 2 MB, over 20,000 lines) or the table passes 2 MB. */
 function boundedDiff(rc: ApiContext, from: string, to: string): string {
   try {
-    return rc.deps.services.diff(from, to, { maxOutputChars: MAX_DIFF_CHARS, contextLines: MAX_CONTEXT_LINES });
+    return diffTableHtml(rc.deps.services.diff(from, to, { context: MAX_CONTEXT_LINES }), MAX_DIFF_CHARS);
   } catch (error) {
-    if (error instanceof DiffTooLarge) throw new ApiError("toobig", "The diff is larger than 2 MB.");
+    if (error instanceof DiffTooLargeError) throw new ApiError("toobig", "A text is larger than 2 MB and cannot be compared.");
     throw error;
   }
 }

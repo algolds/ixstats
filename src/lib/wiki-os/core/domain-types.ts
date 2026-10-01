@@ -35,6 +35,15 @@ export const toRevisionRef = (rev: { id: string; mwRevId?: number | null }): str
 export const parseRevisionRef = (ref: string): { mwRevId: number } | { id: string } =>
   /^\d+$/.test(ref) ? { mwRevId: Number(ref) } : { id: ref };
 
+/** MediaWiki's `rev_id` is a 32-bit integer column: a larger number cannot name a revision. */
+const MAX_MW_REV_ID = 2_147_483_647;
+
+/** Whether `ref` can be a revision reference: a `rev_id` that fits the column, or a row id. */
+export const isRevisionRef = (ref: string): boolean =>
+  /^\d+$/.test(ref)
+    ? ref.length <= 10 && Number(ref) <= MAX_MW_REV_ID
+    : /^[A-Za-z0-9_-]{1,64}$/.test(ref);
+
 // ---------------------------------------------------------------------------
 // Structured Block AST
 // ---------------------------------------------------------------------------
@@ -193,19 +202,30 @@ export interface WikiArticleEntity {
   updatedAt: Date;
 }
 
+/** One row of a page's history: everything but the revision's text. */
 export interface WikiRevisionSummary {
   id: RevisionId;
   /** MediaWiki rev_id; null for native WikiOS edits. */
-  mwRevId?: number | null;
+  mwRevId: number | null;
   articleId: ArticleId;
-  format: WikiContentFormat;
   summary: string | null;
   minor: boolean;
   author: string | null;
-  authorId: string | null;
   createdAt: Date;
   byteSize: number;
-  byteDelta?: number;
+  byteDelta: number;
+  /** MediaWiki's rev_sha1 of the text; null on rows that predate it. */
+  sha1: string | null;
   /** A MediaWiki edit that was not made on top of the page's head: in the history, never the current text. */
   parked: boolean;
+  /** MediaWiki revision deletion: what a public reader of the history must not be shown. */
+  textDeleted: boolean;
+  commentDeleted: boolean;
+  userDeleted: boolean;
 }
+
+/**
+ * Where a page of history starts, by revision reference (see `toRevisionRef`): right after the
+ * revision (`before`, the next page of older ones) or at the revision itself (`from`).
+ */
+export type HistoryPosition = { before: string } | { from: string };

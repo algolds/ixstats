@@ -2,6 +2,7 @@
 // src/components/wiki-os/editor/WikiSourceEditor.tsx
 // Wikitext source editor — CodeMirror 6 with wikitext toolbar, syntax decorations, and live preview.
 
+import "~/styles/wiki-os/editors.css";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { api } from "~/trpc/react";

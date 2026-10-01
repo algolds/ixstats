@@ -34,6 +34,9 @@ model WikiArticle {
   renderedView        Json?                // Reader view bundle built once per revision (WikiOS render-service); null until first render
   wikitext            String               @db.Text // Canonical wikitext representation
   summary             String?              @db.VarChar(500)
+  /// Stored generated column (title A, summary B, first 20,000 characters of wikitext C) read by the native
+  /// search; created by prisma/manual-migrations/2026-09-30-wikios-search-indexes.sql, never written by the app.
+  searchVector        Unsupported("tsvector")?
   
   // Structured Metadata & Infobox
   infoboxData         Json?                // Structured key-value infobox properties
