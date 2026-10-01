@@ -1,7 +1,7 @@
 /**
  * A tiny in-memory stand-in for the Prisma client's WikiOS tables, for tests that run the real services
  * (PageManagementService, RightsAdminService, the rights engine) end to end. It understands the subset of
- * Prisma the WikiOS code uses: equality, `in`, `not`, `gt`, `contains`, `OR`, compound unique keys (`source_title`),
+ * Prisma the WikiOS code uses: equality, `in`, `not`, `gt`, `contains`, a JSON `path`/`equals` filter, `OR`, compound unique keys (`source_title`),
  * `orderBy`, `take`, `cursor`/`skip`; `select` is ignored (full rows come back). Reads return copies, as a
  * real client does: a row fetched before an update still shows the old values afterwards.
  */
@@ -23,6 +23,14 @@ function matches(row: Row, where: Where): boolean {
     if (key === "AND") return (condition as Where[]).every((clause) => matches(row, clause));
     const value = row[key];
     if (!isPlainObject(condition)) return value === condition;
+    if ("path" in condition && "equals" in condition) {
+      // a JSON path filter: { path: ["sha1"], equals: "..." }
+      const found = (condition.path as string[]).reduce<unknown>(
+        (node, step) => (isPlainObject(node) ? node[step] : undefined),
+        value
+      );
+      return found === condition.equals;
+    }
     if ("contains" in condition) {
       const text = String(value ?? "");
       const needle = String(condition.contains);

@@ -15,7 +15,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { MediaAssetService } from "../core/media-asset-service";
-import { MIRROR_SOURCE, uploadPayloadSchema } from "./mirror-outbox";
+import { MIRROR_SOURCE } from "./mirror-outbox";
 import { releaseStaged } from "./upload-staging";
 
 type Tx = Prisma.TransactionClient;
@@ -35,16 +35,16 @@ export async function isStagedFileNeeded(
   exceptJobId?: string
 ): Promise<boolean> {
   if (await MediaAssetService.isStillStaged(sha1, tx)) return true;
-  const waiting = await tx.wikiMirrorJob.findMany({
+  const waiting = await tx.wikiMirrorJob.count({
     where: {
       source: MIRROR_SOURCE,
       kind: "upload",
       state: { notIn: ["done", "discarded"] },
+      payload: { path: ["sha1"], equals: sha1 },
       ...(exceptJobId === undefined ? {} : { id: { not: exceptJobId } }),
     },
-    select: { payload: true },
   });
-  return waiting.some((other) => uploadPayloadSchema.safeParse(other.payload).data?.sha1 === sha1);
+  return waiting > 0;
 }
 
 /**
