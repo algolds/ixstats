@@ -8,7 +8,7 @@
 import { db } from "~/server/db";
 import { Cache } from "~/lib/cache/cache";
 import { ArticleRepository, type FindArticleOptions } from "../../core/article-repository";
-import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
+import { toArticleSlug, toRevisionRef, type HistoryPosition } from "../../core/domain-types";
 import { getArticleWikitext, getPageHistory, getRevisionWikitext, type WikiSource } from "./bridge";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./bridge/http-reader";
 import type { ArticleAuthorInfo } from "~/lib/wiki-os/types/canonical";
@@ -33,6 +33,8 @@ export interface HistoryRevision {
   size: number;
   byteDelta: number;
   minor: boolean;
+  /** MediaWiki's rev_sha1 of the text; null when the revision predates it (or came from MediaWiki). */
+  sha1: string | null;
 }
 
 /**
@@ -90,34 +92,37 @@ export async function getRevisionWikitextShadow(
 }
 
 /**
- * Fetch revision history from PostgreSQL, falling back to MediaWiki.
+ * Fetch revision history from PostgreSQL, falling back to MediaWiki. `position` pages through it
+ * (see `HistoryPosition`): only PostgreSQL can answer a page that is not the first.
  */
 export async function getPageHistoryShadow(
   title: string,
   limit = 50,
-  offset?: number,
+  position?: HistoryPosition,
   source: WikiSource = "ixwiki"
 ): Promise<{ revisions: HistoryRevision[]; hasMore: boolean; fromShadow: boolean }> {
-  // 1. Check PostgreSQL revision records
-  const pgRevs = await ArticleRepository.getHistory(title, source, limit);
+  // 1. Check PostgreSQL revision records; one more than asked tells whether there is a next page
+  const pgRevs = await ArticleRepository.getHistory(title, source, limit + 1, position);
   if (pgRevs.length > 0) {
     return {
-      revisions: pgRevs.map((r) => ({
+      revisions: pgRevs.slice(0, limit).map((r) => ({
         revid: toRevisionRef(r),
         timestamp: r.createdAt.toISOString(),
         user: r.author || "Wiki Contributor",
         comment: r.summary || "",
-        size: r.byteSize || 0,
-        byteDelta: r.byteDelta ?? 0,
+        size: r.byteSize,
+        byteDelta: r.byteDelta,
         minor: r.minor,
+        sha1: r.sha1,
       })),
-      hasMore: false,
+      hasMore: pgRevs.length > limit,
       fromShadow: true,
     };
   }
+  if (position) return { revisions: [], hasMore: false, fromShadow: true };
 
   // 2. Fall back to MediaWiki
-  const revList = await getPageHistory(title, limit, offset);
+  const revList = await getPageHistory(title, limit);
   return {
     revisions: revList.map((r) => ({
       revid: String(r.rev_id),
@@ -127,8 +132,9 @@ export async function getPageHistoryShadow(
       size: r.rev_len || 0,
       byteDelta: r.diff || 0,
       minor: r.rev_minor_edit === 1,
+      sha1: null,
     })),
-    hasMore: revList.length >= limit,
+    hasMore: false,
     fromShadow: false,
   };
 }

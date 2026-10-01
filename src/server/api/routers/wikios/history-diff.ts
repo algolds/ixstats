@@ -10,45 +10,60 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { getRevisionView } from "~/lib/wiki-os/services/revision-view-service";
-import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
+import {
+  DiffTooLargeError,
+  diffWikitext,
+  type WikitextDiff,
+} from "~/lib/wiki-os/transformers/wikitext-diff";
 import { assertTitleVisible, canSeeTitle } from "~/lib/wiki-os/permissions";
 import {
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 
+/** The diff of two texts; a text over the 2 MB limit is a 413 with the reason, not a hung request. */
+function diffOrRefuse(oldText: string, newText: string): WikitextDiff {
+  try {
+    return diffWikitext(oldText, newText);
+  } catch (error) {
+    if (error instanceof DiffTooLargeError) {
+      throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: error.message });
+    }
+    throw error;
+  }
+}
+
+/** Most revisions one history request returns (the page the UI asks for is far smaller). */
+const MAX_HISTORY_PAGE = 500;
+
 export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
-   * Get revision history for a page.
+   * Revision history of a page, newest first, without any revision's text. `before` is the
+   * reference of the last revision already seen: the answer starts right after it.
    */
   getHistory: publicProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
-        limit: z.number().min(1).max(100).default(50),
-        offset: z.string().optional(),
+        limit: z.number().int().min(1).max(MAX_HISTORY_PAGE).default(50),
+        before: z.string().min(1).max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {
       await assertTitleVisible(ctx, input.title);
-      const result = await getArticleHistoryShadow(
+      const { revisions, hasMore } = await getArticleHistoryShadow(
         input.title,
         input.limit,
-        input.offset ? parseInt(input.offset, 10) : undefined,
+        input.before ? { before: input.before } : undefined,
         "ixwiki"
       );
-      return {
-        revisions: result.revisions,
-        continueToken:
-          result.hasMore && result.revisions.length > 0
-            ? result.revisions[result.revisions.length - 1]!.revid
-            : null,
-      };
+      return { revisions, hasMore };
     }),
 
   /**
-   * Get a visual diff between two revisions. Revision ids are history `revid`s; without
-   * `fromrev` the diff is against the revision before `torev`.
+   * The difference between two revisions as hunks of ±3 lines of context, computed here once.
+   * Revision ids are history `revid`s; without `fromrev` the diff is against the revision before
+   * `torev`.
    */
   getDiff: publicProcedure
     .input(
@@ -62,19 +77,19 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       if (!toData) throw new Error(`Revision r${input.torev} not found`);
       await assertTitleVisible(ctx, toData.title);
 
-      const history = await getArticleHistoryShadow(toData.title, 100, undefined, "ixwiki");
-      const toIndex = history.revisions.findIndex((r) => r.revid === input.torev);
-      const toRev = toIndex >= 0 ? history.revisions[toIndex] : null;
-
-      // History is newest-first, so the previous revision sits at toIndex + 1.
-      const previousRevId = toIndex >= 0 ? history.revisions[toIndex + 1]?.revid : undefined;
-      const resolvedFromRevId = input.fromrev || previousRevId || "";
+      // One history read finds both ends: `torev` itself and, right after it, the revision before.
+      const [toRev, previous] = (
+        await getArticleHistoryShadow(toData.title, 2, { from: input.torev }, "ixwiki")
+      ).revisions;
+      const resolvedFromRevId = input.fromrev || previous?.revid || "";
 
       const fromData = resolvedFromRevId
         ? await getRevisionWikitextShadow(resolvedFromRevId)
         : null;
-
-      const fromRev = history.revisions.find((r) => r.revid === resolvedFromRevId);
+      const fromRev = input.fromrev
+        ? (await getArticleHistoryShadow(toData.title, 1, { from: input.fromrev }, "ixwiki"))
+            .revisions[0]
+        : previous;
       // The "from" revision may belong to another page: a deleted one stays hidden too.
       if (fromData) await assertTitleVisible(ctx, fromData.title);
 
@@ -85,16 +100,10 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
           message: "Revision text has not been imported yet.",
         });
       }
-      const fromWikitext = fromData?.wikitext ?? "";
-      const toWikitext = toData.wikitext;
 
-      // Compute diff using Node.js engine
-      const diffHtml = computeWikitextDiff(fromWikitext, toWikitext);
-
+      const diff = diffOrRefuse(fromData?.wikitext ?? "", toData.wikitext);
       return {
-        diffHtml,
-        oldWikitext: fromWikitext,
-        newWikitext: toWikitext,
+        ...diff,
         from: {
           revid: resolvedFromRevId,
           user: fromRev?.user ?? (resolvedFromRevId ? "Previous Revision" : "Initial Document"),

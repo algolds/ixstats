@@ -184,8 +184,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
             {/* DiffViewer Component */}
             <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
               <DiffViewer
-                oldCode={data.oldWikitext ?? ""}
-                newCode={data.newWikitext ?? ""}
+                hunks={data.hunks}
                 layout={layout}
                 language="markdown"
                 oldTitle={`Revision r${data.from.revid} (${data.from.user})`}

@@ -193,17 +193,24 @@ export interface WikiArticleEntity {
   updatedAt: Date;
 }
 
+/** One row of a page's history: everything but the revision's text. */
 export interface WikiRevisionSummary {
   id: RevisionId;
   /** MediaWiki rev_id; null for native WikiOS edits. */
-  mwRevId?: number | null;
+  mwRevId: number | null;
   articleId: ArticleId;
-  format: WikiContentFormat;
   summary: string | null;
   minor: boolean;
   author: string | null;
-  authorId: string | null;
   createdAt: Date;
   byteSize: number;
-  byteDelta?: number;
+  byteDelta: number;
+  /** MediaWiki's rev_sha1 of the text; null on rows that predate it. */
+  sha1: string | null;
 }
+
+/**
+ * Where a page of history starts, by revision reference (see `toRevisionRef`): right after the
+ * revision (`before`, the next page of older ones) or at the revision itself (`from`).
+ */
+export type HistoryPosition = { before: string } | { from: string };

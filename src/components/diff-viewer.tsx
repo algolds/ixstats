@@ -1,29 +1,41 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
 import { DiffViewerCopyButton } from "~/components/diff-viewer-client";
+import {
+  DiffTooLargeError,
+  diffWikitext,
+  type DiffHunk,
+  type DiffRow as DiffLine,
+} from "~/lib/wiki-os/transformers/wikitext-diff";
 
 type DiffLayout = "unified" | "split";
 
-interface DiffLine {
-  type: "added" | "removed" | "context";
-  content: string;
-  oldNumber: number | null;
-  newNumber: number | null;
-}
+/** What the viewer draws: a line, or the unchanged stretch left out between two hunks. */
+type DiffEntry = DiffLine | { type: "gap"; skipped: number };
 
 interface WithStrings {
   oldCode: string;
   newCode: string;
   patch?: never;
+  hunks?: never;
 }
 
 interface WithPatch {
   patch: string;
   oldCode?: never;
   newCode?: never;
+  hunks?: never;
 }
 
-type DiffInput = WithStrings | WithPatch;
+/** A diff the server already computed: the viewer only draws it. */
+interface WithHunks {
+  hunks: readonly DiffHunk[];
+  oldCode?: never;
+  newCode?: never;
+  patch?: never;
+}
+
+type DiffInput = WithStrings | WithPatch | WithHunks;
 
 type DiffViewerProps = DiffInput &
   Omit<React.ComponentProps<"div">, "children"> & {
@@ -34,104 +46,62 @@ type DiffViewerProps = DiffInput &
     newTitle?: string;
   };
 
-function computeLines(input: DiffInput): DiffLine[] {
-  if ("patch" in input && input.patch) {
-    const lines: DiffLine[] = [];
-    let oldNum = 1;
-    let newNum = 1;
-    const rawLines = input.patch.split("\n");
-    for (const raw of rawLines) {
-      if (raw.startsWith("@@")) {
-        const match = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
-        if (match && match[1] && match[2]) {
-          oldNum = parseInt(match[1], 10);
-          newNum = parseInt(match[2], 10);
-        }
-        continue;
+function entriesFromPatch(patch: string): DiffLine[] {
+  const lines: DiffLine[] = [];
+  let oldNum = 1;
+  let newNum = 1;
+  for (const raw of patch.split("\n")) {
+    if (raw.startsWith("@@")) {
+      const match = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
+      if (match && match[1] && match[2]) {
+        oldNum = parseInt(match[1], 10);
+        newNum = parseInt(match[2], 10);
       }
-      if (raw.startsWith("+")) {
-        lines.push({
-          type: "added",
-          content: raw.slice(1),
-          oldNumber: null,
-          newNumber: newNum++,
-        });
-      } else if (raw.startsWith("-")) {
-        lines.push({
-          type: "removed",
-          content: raw.slice(1),
-          oldNumber: oldNum++,
-          newNumber: null,
-        });
-      } else if (raw.startsWith(" ")) {
-        lines.push({
-          type: "context",
-          content: raw.slice(1),
-          oldNumber: oldNum++,
-          newNumber: newNum++,
-        });
-      }
+      continue;
     }
-    return lines;
-  }
-
-  const oldLines = (input.oldCode ?? "").split("\n");
-  const newLines = (input.newCode ?? "").split("\n");
-  const m = oldLines.length;
-  const n = newLines.length;
-
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < n; j++) {
-      if (oldLines[i] === newLines[j]) {
-        dp[i + 1]![j + 1] = (dp[i]![j] ?? 0) + 1;
-      } else {
-        dp[i + 1]![j + 1] = Math.max(dp[i + 1]![j] ?? 0, dp[i]![j + 1] ?? 0);
-      }
-    }
-  }
-
-  const result: DiffLine[] = [];
-  let i = m;
-  let j = n;
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
-      result.unshift({
+    if (raw.startsWith("+")) {
+      lines.push({ type: "added", content: raw.slice(1), oldNumber: null, newNumber: newNum++ });
+    } else if (raw.startsWith("-")) {
+      lines.push({ type: "removed", content: raw.slice(1), oldNumber: oldNum++, newNumber: null });
+    } else if (raw.startsWith(" ")) {
+      lines.push({
         type: "context",
-        content: oldLines[i - 1] ?? "",
-        oldNumber: i,
-        newNumber: j,
+        content: raw.slice(1),
+        oldNumber: oldNum++,
+        newNumber: newNum++,
       });
-      i--;
-      j--;
-    } else if (j > 0 && (i === 0 || (dp[i]![j - 1] ?? 0) >= (dp[i - 1]![j] ?? 0))) {
-      result.unshift({
-        type: "added",
-        content: newLines[j - 1] ?? "",
-        oldNumber: null,
-        newNumber: j,
-      });
-      j--;
-    } else if (i > 0 && (j === 0 || (dp[i]![j - 1] ?? 0) < (dp[i - 1]![j] ?? 0))) {
-      result.unshift({
-        type: "removed",
-        content: oldLines[i - 1] ?? "",
-        oldNumber: i,
-        newNumber: null,
-      });
-      i--;
     }
   }
-
-  return result;
+  return lines;
 }
 
-function lineNumberWidth(lines: DiffLine[]): number {
+/** The rows of `hunks` in order, with a gap entry wherever unchanged lines were left out. */
+function entriesFromHunks(hunks: readonly DiffHunk[]): DiffEntry[] {
+  return hunks.flatMap((hunk): DiffEntry[] =>
+    hunk.skipped > 0 ? [{ type: "gap", skipped: hunk.skipped }, ...hunk.rows] : hunk.rows
+  );
+}
+
+/** The entries to draw. Two texts are diffed here by the same bounded diff the server runs. */
+function computeEntries(input: DiffInput): DiffEntry[] | "too-large" {
+  if (input.hunks) return entriesFromHunks(input.hunks);
+  if (input.patch) return entriesFromPatch(input.patch);
+  try {
+    return entriesFromHunks(
+      diffWikitext(input.oldCode ?? "", input.newCode ?? "", { context: Infinity }).hunks
+    );
+  } catch (error) {
+    if (error instanceof DiffTooLargeError) return "too-large";
+    throw error;
+  }
+}
+
+function lineNumberWidth(entries: readonly DiffEntry[]): number {
   let max = 0;
-  for (const line of lines) {
-    if (line.oldNumber && line.oldNumber > max) max = line.oldNumber;
-    if (line.newNumber && line.newNumber > max) max = line.newNumber;
+  for (const entry of entries) {
+    if (entry.type === "gap") continue;
+    if (entry.oldNumber && entry.oldNumber > max) max = entry.oldNumber;
+    if (entry.newNumber && entry.newNumber > max) max = entry.newNumber;
   }
   return Math.max(String(max).length, 2);
 }
@@ -160,133 +130,170 @@ function linePrefix(type: DiffLine["type"]) {
   return " ";
 }
 
-function UnifiedView({ lines, numWidth }: { lines: DiffLine[]; numWidth: number }) {
+/** A line's text, with the parts that changed from its counterpart highlighted (plain text, never markup). */
+function LineContent({ line }: { line: DiffLine }) {
+  if (!line.content) return <>{"\u00A0"}</>;
+  if (!line.marks?.length) return <>{line.content}</>;
+
+  const parts: React.ReactNode[] = [];
+  let at = 0;
+  for (const [start, end] of line.marks) {
+    if (start > at) parts.push(line.content.slice(at, start));
+    parts.push(
+      <mark
+        key={start}
+        className={cn(
+          "rounded-sm text-inherit",
+          line.type === "added" ? "bg-emerald-500/30" : "bg-red-500/30"
+        )}
+      >
+        {line.content.slice(start, end)}
+      </mark>
+    );
+    at = end;
+  }
+  if (at < line.content.length) parts.push(line.content.slice(at));
+  return <>{parts}</>;
+}
+
+function GapRow({ skipped, colSpan }: { skipped: number; colSpan: number }) {
+  return (
+    <tr className="bg-muted/30">
+      <td
+        colSpan={colSpan}
+        className="text-muted-foreground/70 px-3 py-0.5 text-center text-xs select-none"
+      >
+        … {skipped.toLocaleString()} unchanged {skipped === 1 ? "line" : "lines"} …
+      </td>
+    </tr>
+  );
+}
+
+function UnifiedView({ entries, numWidth }: { entries: readonly DiffEntry[]; numWidth: number }) {
   return (
     <table className="w-full border-collapse font-mono text-[13px] leading-relaxed">
       <tbody>
-        {lines.map((line, i) => (
-          <tr key={i} className={cn(lineColor(line.type, "bg"))}>
-            <td
-              className={cn("px-2 text-right align-top select-none", lineColor(line.type, "num"))}
-              style={{ minWidth: `${numWidth + 2}ch` }}
-            >
-              {line.oldNumber ?? ""}
-            </td>
-            <td
-              className={cn("px-2 text-right align-top select-none", lineColor(line.type, "num"))}
-              style={{ minWidth: `${numWidth + 2}ch` }}
-            >
-              {line.newNumber ?? ""}
-            </td>
-            <td
-              className={cn("px-1 text-center align-top select-none", lineColor(line.type, "num"))}
-            >
-              {linePrefix(line.type)}
-            </td>
-            <td className={cn("px-3 align-top whitespace-pre", lineColor(line.type, "text"))}>
-              {line.content || "\u00A0"}
-            </td>
-          </tr>
-        ))}
+        {entries.map((line, i) =>
+          line.type === "gap" ? (
+            <GapRow key={i} skipped={line.skipped} colSpan={4} />
+          ) : (
+            <tr key={i} className={cn(lineColor(line.type, "bg"))}>
+              <td
+                className={cn("px-2 text-right align-top select-none", lineColor(line.type, "num"))}
+                style={{ minWidth: `${numWidth + 2}ch` }}
+              >
+                {line.oldNumber ?? ""}
+              </td>
+              <td
+                className={cn("px-2 text-right align-top select-none", lineColor(line.type, "num"))}
+                style={{ minWidth: `${numWidth + 2}ch` }}
+              >
+                {line.newNumber ?? ""}
+              </td>
+              <td
+                className={cn(
+                  "px-1 text-center align-top select-none",
+                  lineColor(line.type, "num")
+                )}
+              >
+                {linePrefix(line.type)}
+              </td>
+              <td className={cn("px-3 align-top whitespace-pre", lineColor(line.type, "text"))}>
+                <LineContent line={line} />
+              </td>
+            </tr>
+          )
+        )}
       </tbody>
     </table>
   );
 }
 
-function SplitView({ lines, numWidth }: { lines: DiffLine[]; numWidth: number }) {
-  const leftLines: (DiffLine | null)[] = [];
-  const rightLines: (DiffLine | null)[] = [];
+type SplitCell = DiffEntry | null;
+
+/** Pairs removed and added lines side by side; a gap spans both columns. */
+function splitColumns(entries: readonly DiffEntry[]): { left: SplitCell[]; right: SplitCell[] } {
+  const left: SplitCell[] = [];
+  const right: SplitCell[] = [];
 
   let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
+  while (i < entries.length) {
+    const entry = entries[i]!;
 
-    if (line.type === "context") {
-      leftLines.push(line);
-      rightLines.push(line);
+    if (entry.type === "context" || entry.type === "gap") {
+      left.push(entry);
+      right.push(entry);
       i++;
-    } else if (line.type === "removed") {
-      const removed: DiffLine[] = [];
-      while (i < lines.length && lines[i].type === "removed") {
-        removed.push(lines[i]);
-        i++;
-      }
-      const added: DiffLine[] = [];
-      while (i < lines.length && lines[i].type === "added") {
-        added.push(lines[i]);
-        i++;
-      }
+    } else if (entry.type === "removed") {
+      const removed: DiffEntry[] = [];
+      while (i < entries.length && entries[i]!.type === "removed") removed.push(entries[i++]!);
+      const added: DiffEntry[] = [];
+      while (i < entries.length && entries[i]!.type === "added") added.push(entries[i++]!);
 
       const maxLen = Math.max(removed.length, added.length);
       for (let j = 0; j < maxLen; j++) {
-        leftLines.push(j < removed.length ? removed[j] : null);
-        rightLines.push(j < added.length ? added[j] : null);
+        left.push(removed[j] ?? null);
+        right.push(added[j] ?? null);
       }
-    } else if (line.type === "added") {
-      leftLines.push(null);
-      rightLines.push(line);
-      i++;
     } else {
+      left.push(null);
+      right.push(entry);
       i++;
     }
   }
+  return { left, right };
+}
 
+function SplitColumn({
+  cells,
+  side,
+  numWidth,
+}: {
+  cells: readonly SplitCell[];
+  side: "old" | "new";
+  numWidth: number;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse font-mono text-[13px] leading-relaxed">
+        <tbody>
+          {cells.map((line, idx) =>
+            line?.type === "gap" ? (
+              <GapRow key={idx} skipped={line.skipped} colSpan={2} />
+            ) : (
+              <tr key={idx} className={cn(line ? lineColor(line.type, "bg") : "")}>
+                <td
+                  className={cn(
+                    "px-2 text-right align-top select-none",
+                    line ? lineColor(line.type, "num") : "text-muted-foreground/30"
+                  )}
+                  style={{ minWidth: `${numWidth + 2}ch` }}
+                >
+                  {(side === "old" ? line?.oldNumber : line?.newNumber) ?? ""}
+                </td>
+                <td
+                  className={cn(
+                    "px-3 align-top whitespace-pre",
+                    line ? lineColor(line.type, "text") : ""
+                  )}
+                >
+                  {line ? <LineContent line={line} /> : "\u00A0"}
+                </td>
+              </tr>
+            )
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SplitView({ entries, numWidth }: { entries: readonly DiffEntry[]; numWidth: number }) {
+  const { left, right } = splitColumns(entries);
   return (
     <div className="divide-border/40 grid grid-cols-2 divide-x">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse font-mono text-[13px] leading-relaxed">
-          <tbody>
-            {leftLines.map((line, idx) => (
-              <tr key={idx} className={cn(line ? lineColor(line.type, "bg") : "")}>
-                <td
-                  className={cn(
-                    "px-2 text-right align-top select-none",
-                    line ? lineColor(line.type, "num") : "text-muted-foreground/30"
-                  )}
-                  style={{ minWidth: `${numWidth + 2}ch` }}
-                >
-                  {line?.oldNumber ?? ""}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 align-top whitespace-pre",
-                    line ? lineColor(line.type, "text") : ""
-                  )}
-                >
-                  {line?.content || "\u00A0"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse font-mono text-[13px] leading-relaxed">
-          <tbody>
-            {rightLines.map((line, idx) => (
-              <tr key={idx} className={cn(line ? lineColor(line.type, "bg") : "")}>
-                <td
-                  className={cn(
-                    "px-2 text-right align-top select-none",
-                    line ? lineColor(line.type, "num") : "text-muted-foreground/30"
-                  )}
-                  style={{ minWidth: `${numWidth + 2}ch` }}
-                >
-                  {line?.newNumber ?? ""}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 align-top whitespace-pre",
-                    line ? lineColor(line.type, "text") : ""
-                  )}
-                >
-                  {line?.content || "\u00A0"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SplitColumn cells={left} side="old" numWidth={numWidth} />
+      <SplitColumn cells={right} side="new" numWidth={numWidth} />
     </div>
   );
 }
@@ -296,28 +303,28 @@ export function DiffViewer({
   oldTitle,
   newTitle,
   className,
-  ...allProps
+  oldCode,
+  newCode,
+  patch,
+  hunks,
+  ...props
 }: DiffViewerProps) {
-  // Separate DiffInput keys from remaining DOM props
-  const { oldCode, newCode, patch, ...props } = allProps as DiffViewerProps &
-    Record<string, unknown>;
-  const input: DiffInput =
-    patch !== undefined
-      ? ({ patch } as WithPatch)
-      : ({ oldCode: oldCode ?? "", newCode: newCode ?? "" } as WithStrings);
-  const lines = computeLines(input);
-  const numWidth = lineNumberWidth(lines);
+  const input: DiffInput = hunks
+    ? { hunks }
+    : patch !== undefined
+      ? { patch }
+      : { oldCode: oldCode ?? "", newCode: newCode ?? "" };
+  const computed = computeEntries(input);
+  const entries = computed === "too-large" ? [] : computed;
+  const numWidth = lineNumberWidth(entries);
 
-  const stats = lines.reduce(
-    (acc, l) => {
-      if (l.type === "added") acc.added++;
-      if (l.type === "removed") acc.removed++;
-      return acc;
-    },
-    { added: 0, removed: 0 }
-  );
+  const stats = { added: 0, removed: 0 };
+  for (const entry of entries) {
+    if (entry.type === "added") stats.added++;
+    if (entry.type === "removed") stats.removed++;
+  }
 
-  const fullCode = lines.map((l) => l.content).join("\n");
+  const fullCode = entries.flatMap((e) => (e.type === "gap" ? [] : [e.content])).join("\n");
   const showHeader = oldTitle || newTitle;
 
   return (
@@ -357,10 +364,18 @@ export function DiffViewer({
       )}
 
       <div className="overflow-x-auto">
-        {layout === "split" ? (
-          <SplitView lines={lines} numWidth={numWidth} />
+        {computed === "too-large" ? (
+          <p className="text-muted-foreground px-4 py-6 text-center text-sm">
+            This text is too large to compare in the browser.
+          </p>
+        ) : entries.length === 0 ? (
+          <p className="text-muted-foreground px-4 py-6 text-center text-sm">
+            There are no differences.
+          </p>
+        ) : layout === "split" ? (
+          <SplitView entries={entries} numWidth={numWidth} />
         ) : (
-          <UnifiedView lines={lines} numWidth={numWidth} />
+          <UnifiedView entries={entries} numWidth={numWidth} />
         )}
       </div>
     </div>

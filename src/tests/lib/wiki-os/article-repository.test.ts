@@ -29,7 +29,10 @@ jest.mock("~/server/db", () => {
   return {
     db: {
       $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
-      wikiRevision: { findMany: (...a: unknown[]) => mockRevisionFindMany(...a) },
+      wikiRevision: {
+        findMany: (...a: unknown[]) => mockRevisionFindMany(...a),
+        findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
+      },
       wikiArticle: {
         findUnique: (...a: unknown[]) => mockFindUnique(...a),
         findMany: (...a: unknown[]) => mockFindMany(...a),
@@ -492,19 +495,17 @@ describe("ArticleRepository.findBySlug", () => {
 });
 
 describe("ArticleRepository.getHistory", () => {
-  const revision = (articleId: string) => ({
-    id: `rev-${articleId}`,
+  // what the select returns: no wikitext, no format, no author id
+  const revision = (articleId: string, id = `rev-${articleId}`) => ({
+    id,
     mwRevId: null,
-    articleId,
     summary: null,
     minor: false,
     author: "alice",
-    authorId: null,
     createdAt: new Date("2026-06-01T00:00:00Z"),
-    wikitext: "body",
     byteSize: 4,
     byteDelta: 4,
-    format: "WIKITEXT",
+    sha1: null,
   });
 
   it("reads the revisions of the one canonical article, never a case variant's", async () => {
@@ -523,12 +524,71 @@ describe("ArticleRepository.getHistory", () => {
     expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
     expect(mockRevisionFindMany.mock.calls[0]?.[0]).toMatchObject({
       where: { articleId: "id-Foo bar" },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: 10,
     });
     expect(history).toEqual([
       expect.objectContaining({ articleId: "id-Foo bar", author: "alice" }),
     ]);
+  });
+
+  it("never reads a revision's text: the select is the history columns only", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([]);
+
+    await ArticleRepository.getHistory("Foo");
+
+    expect(mockRevisionFindMany.mock.calls[0]?.[0].select).toEqual({
+      id: true,
+      mwRevId: true,
+      summary: true,
+      minor: true,
+      author: true,
+      createdAt: true,
+      byteSize: true,
+      byteDelta: true,
+      sha1: true,
+    });
+  });
+
+  it("pages after a revision: the cursor skips the revision itself, by rev_id or row id", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([revision("Foo", "rev-older")]);
+
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "rev-9001" });
+    await ArticleRepository.getHistory("Foo", "ixwiki", 50, { before: "9001" });
+    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
+      where: { articleId: "id-Foo", mwRevId: 9001 },
+    });
+    expect(mockRevisionFindMany.mock.calls.at(-1)?.[0]).toMatchObject({
+      cursor: { id: "rev-9001" },
+      skip: 1,
+      take: 50,
+    });
+
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
+    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "cuid-7" });
+    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
+      where: { articleId: "id-Foo", id: "cuid-7" },
+    });
+  });
+
+  it("starts at the revision itself for `from`, and is empty for a revision of another page", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([revision("Foo")]);
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
+
+    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { from: "cuid-7" });
+    const args = mockRevisionFindMany.mock.calls.at(-1)?.[0];
+    expect(args).toMatchObject({ cursor: { id: "cuid-7" }, take: 2 });
+    expect(args).not.toHaveProperty("skip");
+
+    mockRevisionFindMany.mockClear();
+    mockRevisionFindFirst.mockResolvedValueOnce(null);
+    await expect(
+      ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "elsewhere" })
+    ).resolves.toEqual([]);
+    expect(mockRevisionFindMany).not.toHaveBeenCalled();
   });
 
   it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {

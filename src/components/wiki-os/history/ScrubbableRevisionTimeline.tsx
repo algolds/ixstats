@@ -24,7 +24,6 @@ interface RevisionItem {
   byteSize: number;
   byteDelta?: number;
   createdAt: Date | string;
-  wikitext?: string;
 }
 
 interface ScrubbableRevisionTimelineProps {
@@ -78,19 +77,11 @@ export function ScrubbableRevisionTimeline({
   const targetRev = revisions[targetRevIndex];
   const compareRev = revisions[compareRevIndex];
 
-  // Fetch full wikitext for both revisions if needed
-  const { data: targetContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: targetRev?.id ?? "" },
-    { enabled: !!targetRev && !targetRev.wikitext, staleTime: 300_000 }
+  // The server diffs the two revisions once and sends only the hunks (never both texts)
+  const diff = api.wikios.getDiff.useQuery(
+    { fromrev: compareRev?.id, torev: targetRev?.id ?? "" },
+    { enabled: !!targetRev && !!compareRev, staleTime: 300_000 }
   );
-
-  const { data: compareContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: compareRev?.id ?? "" },
-    { enabled: !!compareRev && !compareRev.wikitext, staleTime: 300_000 }
-  );
-
-  const targetWikitext = targetRev?.wikitext || targetContent?.wikitext || "";
-  const compareWikitext = compareRev?.wikitext || compareContent?.wikitext || "";
 
   if (isLoading) {
     return (
@@ -374,14 +365,23 @@ export function ScrubbableRevisionTimeline({
 
       {/* Embedded DiffViewer */}
       <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
-        <DiffViewer
-          oldCode={compareWikitext}
-          newCode={targetWikitext}
-          layout={layout}
-          language="markdown"
-          oldTitle={`Revision B (r${compareRev?.id || "origin"})`}
-          newTitle={`Revision A (r${targetRev?.id || "current"})`}
-        />
+        {diff.error ? (
+          <p className="text-xs font-medium text-red-400">
+            Failed to load the comparison: {diff.error.message}
+          </p>
+        ) : diff.data ? (
+          <DiffViewer
+            hunks={diff.data.hunks}
+            layout={layout}
+            language="markdown"
+            oldTitle={`Revision B (r${compareRev?.id || "origin"})`}
+            newTitle={`Revision A (r${targetRev?.id || "current"})`}
+          />
+        ) : (
+          <div className="flex h-24 items-center justify-center">
+            <div className="border-wiki h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          </div>
+        )}
       </div>
     </div>
   );

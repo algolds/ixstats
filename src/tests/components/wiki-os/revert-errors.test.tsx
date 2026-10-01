@@ -38,9 +38,9 @@ jest.mock("~/trpc/react", () => ({
       getDiff: {
         useQuery: () => ({
           data: {
-            diffHtml: "",
-            oldWikitext: "old",
-            newWikitext: "new",
+            hunks: [],
+            added: 0,
+            removed: 0,
             from: { revid: "r1", user: "amy", timestamp: "", comment: "" },
             to: { revid: "r2", user: "bob", timestamp: "", comment: "" },
           },
@@ -67,7 +67,6 @@ const revisions = ["r2", "r1"].map((id, index) => ({
   minor: false,
   byteSize: 10,
   createdAt: new Date("2026-06-01T00:00:00Z"),
-  wikitext: id === "r2" ? "new" : "old",
 }));
 
 const renderTimeline = () =>

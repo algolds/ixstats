@@ -47,28 +47,148 @@ const revision = (wikitext: string | null) => ({
   fromShadow: true as const,
 });
 
+const entry = (revid: string, user: string, comment = "") => ({
+  revid,
+  user,
+  timestamp: "",
+  comment,
+  size: 1,
+  byteDelta: 0,
+  minor: false,
+  sha1: null,
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(getArticleHistoryShadow).mockResolvedValue({
-    revisions: [
-      { revid: "r2", user: "bob", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
-      { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
-    ],
+    revisions: [entry("r2", "bob", "second"), entry("r1", "amy", "first")],
     hasMore: false,
     fromShadow: true,
   });
 });
 
-describe("wikiosHistoryDiffRouter.getDiff (plan 402)", () => {
-  it("diffs two revisions whose text is known", async () => {
+describe("wikiosHistoryDiffRouter.getHistory (plan 413)", () => {
+  it("asks for one page, from after the revision the client already has", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [entry("r2", "bob")],
+      hasMore: true,
+      fromShadow: true,
+    });
+
+    const result = await caller().getHistory({ title: "Foo", limit: 1, before: "r3" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 1, { before: "r3" }, "ixwiki");
+    expect(result).toEqual({ revisions: [entry("r2", "bob")], hasMore: true });
+  });
+
+  it("starts at the newest revision without a cursor, 50 at a time", async () => {
+    await caller().getHistory({ title: "Foo" });
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki");
+  });
+
+  it("allows up to 500 per request and no more", async () => {
+    await expect(caller().getHistory({ title: "Foo", limit: 500 })).resolves.toBeDefined();
+    await expect(caller().getHistory({ title: "Foo", limit: 501 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    await expect(caller().getHistory({ title: "Foo", limit: 0 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+  });
+});
+
+describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
+  it("diffs a revision against the one before it and returns hunks, never the texts", async () => {
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision("one\ntwo\nthree"))
+      .mockResolvedValueOnce(revision("one\nTWO\nthree"));
+
+    const result = await caller().getDiff({ torev: "r2" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 2, { from: "r2" }, "ixwiki");
+    expect(result).not.toHaveProperty("oldWikitext");
+    expect(result).not.toHaveProperty("newWikitext");
+    expect(result).not.toHaveProperty("diffHtml");
+    expect(result.added).toBe(1);
+    expect(result.removed).toBe(1);
+    expect(result.hunks).toHaveLength(1);
+    expect(result.hunks[0]!.rows.map((r) => `${r.type}:${r.content}`)).toEqual([
+      "context:one",
+      "removed:TWO",
+      "added:two",
+      "context:three",
+    ]);
+    expect(result.from).toMatchObject({ revid: "r1", user: "amy", comment: "first" });
+    expect(result.to).toMatchObject({ revid: "r2", user: "bob", comment: "second" });
+  });
+
+  it("names the explicit older revision from its own history entry", async () => {
+    jest
+      .mocked(getArticleHistoryShadow)
+      .mockResolvedValueOnce({
+        revisions: [entry("r5", "eve", "five"), entry("r4", "dan")],
+        hasMore: false,
+        fromShadow: true,
+      })
+      .mockResolvedValueOnce({
+        revisions: [entry("r1", "amy", "first")],
+        hasMore: false,
+        fromShadow: true,
+      });
     jest
       .mocked(getRevisionWikitextShadow)
       .mockResolvedValueOnce(revision("new"))
       .mockResolvedValueOnce(revision("old"));
 
+    const result = await caller().getDiff({ torev: "r5", fromrev: "r1" });
+
+    expect(getArticleHistoryShadow).toHaveBeenLastCalledWith("Foo", 1, { from: "r1" }, "ixwiki");
+    expect(getRevisionWikitextShadow).toHaveBeenLastCalledWith("r1");
+    expect(result.from).toMatchObject({ revid: "r1", user: "amy" });
+    expect(result.to).toMatchObject({ revid: "r5", user: "eve" });
+  });
+
+  it("is a whole-text diff against an empty text for the first revision", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [entry("r1", "amy")],
+      hasMore: false,
+      fromShadow: true,
+    });
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValueOnce(revision("a\nb"));
+
+    const result = await caller().getDiff({ torev: "r1" });
+
+    expect(result.from).toMatchObject({ revid: "", user: "Initial Document" });
+    expect(result.added).toBe(2);
+    expect(result.removed).toBe(0);
+  });
+
+  it("a change in 1,000 lines is a few rows of context, not the thousand", async () => {
+    const base = Array.from({ length: 1000 }, (_, i) => `line ${i}`);
+    const changed = [...base];
+    changed[100] = "edited";
+    changed[800] = "edited";
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision(changed.join("\n")))
+      .mockResolvedValueOnce(revision(base.join("\n")));
+
     const result = await caller().getDiff({ torev: "r2" });
 
-    expect(result).toMatchObject({ oldWikitext: "old", newWikitext: "new" });
+    expect(result.hunks.flatMap((h) => h.rows).length).toBeLessThanOrEqual(20);
+  });
+
+  it("refuses a text over 2 MB with 413 and the reason", async () => {
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision("x".repeat(2 * 1024 * 1024 + 1)))
+      .mockResolvedValueOnce(revision("old"));
+
+    await expect(caller().getDiff({ torev: "r2" })).rejects.toMatchObject({
+      code: "PAYLOAD_TOO_LARGE",
+      message: expect.stringContaining("2 MB"),
+    });
   });
 
   it.each<[string, string | null, string | null]>([

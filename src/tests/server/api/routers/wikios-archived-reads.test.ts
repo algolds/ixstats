@@ -114,8 +114,26 @@ beforeEach(() => {
   jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision);
   jest.mocked(getArticleHistoryShadow).mockResolvedValue({
     revisions: [
-      { revid: "r2", user: "bob", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
-      { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false },
+      {
+        revid: "r2",
+        user: "bob",
+        timestamp: "",
+        comment: "",
+        size: 1,
+        byteDelta: 0,
+        minor: false,
+        sha1: null,
+      },
+      {
+        revid: "r1",
+        user: "amy",
+        timestamp: "",
+        comment: "",
+        size: 1,
+        byteDelta: 0,
+        minor: false,
+        sha1: null,
+      },
     ],
     hasMore: false,
     fromShadow: true,
@@ -190,7 +208,7 @@ describe("revision reads of a deleted page", () => {
 
   it("getDiff works for a published page", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue({ ...revision, title: "Urcea" });
-    await expect(history(null).getDiff({ torev: "r2" })).resolves.toHaveProperty("diffHtml");
+    await expect(history(null).getDiff({ torev: "r2" })).resolves.toHaveProperty("hunks");
   });
 });
 
