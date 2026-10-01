@@ -7,8 +7,9 @@
 // short markers instead of the three HTML parts:
 //
 //   - the server renders the page from the real HTML (the page handed it to the SSR render through a
-//     process-wide stash, under a token: both renders are in the same process. Each part is handed
-//     over once, and an entry is forgotten after a few seconds and when 200 newer ones exist);
+//     process-wide stash, under a token: both renders are in the same process. A part can be read
+//     again (a retried SSR render finds it); an entry is forgotten after a few seconds, and when 200
+//     newer ones exist);
 //   - the browser, hydrating, finds the three parts where they already are, in the DOM, by element id.
 //
 // Only a document request of an anonymous reader is lean. A client-side navigation (it asks for the
@@ -55,7 +56,7 @@ export function leanFlightEnabled(): boolean {
 // ─── The server's stash ───────────────────────────────────────────
 
 interface StashedArticle {
-  /** The parts not yet handed to the SSR render. */
+  /** The HTML of the parts the SSR render reads. */
   parts: Partial<Record<LeanPart, string>>;
   expires: number;
 }
@@ -99,15 +100,9 @@ export function stashLeanArticle(parts: LeanArticleParts): string {
   return token;
 }
 
-/** A part of a stashed article, or null. With `take` the server hands it over once: it is not kept. */
-function readStashed(token: string, part: LeanPart, take: boolean): string | null {
-  const entry = liveEntry(token);
-  const html = entry?.parts[part] ?? null;
-  if (entry && html !== null && take) {
-    delete entry.parts[part];
-    if (Object.keys(entry.parts).length === 0) stash().delete(token);
-  }
-  return html;
+/** A part of a stashed article, or null. Reading does not use it up: a retried SSR render needs it again. */
+function readStashed(token: string, part: LeanPart): string | null {
+  return liveEntry(token)?.parts[part] ?? null;
 }
 
 // ─── Reading a marker back ────────────────────────────────────────
@@ -117,14 +112,14 @@ export const leanEnvironment = { isServer: () => typeof window === "undefined" }
 
 /**
  * The HTML a marker stands for, or `value` itself when it is not a marker. Null when it cannot be
- * found: the server's stash has expired (or the part was already handed over), or the browser has no
- * element for it, or an empty one (the marker is from an earlier page load). The server takes the
- * part from the stash; the browser reads the element's HTML from the DOM the server rendered.
+ * found: the server's stash has expired, or the browser has no element for it, or an empty one (the
+ * marker is from an earlier page load). The server reads the part from the stash; the browser reads
+ * the element's HTML from the DOM the server rendered.
  */
 export function resolveLeanHtml(value: string | null | undefined): string | null {
   const marker = parseLeanMarker(value);
   if (!marker) return value ?? null;
-  if (leanEnvironment.isServer()) return readStashed(marker.token, marker.part, true);
+  if (leanEnvironment.isServer()) return readStashed(marker.token, marker.part);
   // an element with nothing in it is not the article either (a part that is a marker is never empty)
   return document.getElementById(leanElementId(marker.token, marker.part))?.innerHTML || null;
 }
@@ -133,6 +128,6 @@ export function resolveLeanHtml(value: string | null | undefined): string | null
 export function isLeanResolvable(value: string | null | undefined): boolean {
   const marker = parseLeanMarker(value);
   if (!marker) return true;
-  if (leanEnvironment.isServer()) return readStashed(marker.token, marker.part, false) !== null;
+  if (leanEnvironment.isServer()) return readStashed(marker.token, marker.part) !== null;
   return !!document.getElementById(leanElementId(marker.token, marker.part))?.firstChild;
 }

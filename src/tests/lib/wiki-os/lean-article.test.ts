@@ -61,16 +61,18 @@ describe("the server's stash", () => {
     expect(isLeanResolvable("<p>x</p>")).toBe(true);
   });
 
-  it("hands each part over once, and forgets the article with its last part", () => {
+  it("lets a part be read again: a retried SSR render finds the HTML it already read", () => {
     const token = stashLeanArticle({ body: BODY, infobox: "<table></table>", notices: null });
 
-    expect(resolveLeanHtml(leanMarker(token, "body"))).toBe(BODY);
+    // the render reads each part, and a retry of it reads them all again
+    for (let render = 0; render < 3; render++) {
+      expect(resolveLeanHtml(leanMarker(token, "body"))).toBe(BODY);
+      expect(resolveLeanHtml(leanMarker(token, "infobox"))).toBe("<table></table>");
+      expect(isLeanResolvable(leanMarker(token, "body"))).toBe(true);
+    }
+    // memory is bounded by the TTL and the cap instead
+    jest.advanceTimersByTime(5_001);
     expect(resolveLeanHtml(leanMarker(token, "body"))).toBeNull();
-    expect(isLeanResolvable(leanMarker(token, "body"))).toBe(false);
-    // the other part is still there until it is taken
-    expect(isLeanResolvable(leanMarker(token, "infobox"))).toBe(true);
-    expect(resolveLeanHtml(leanMarker(token, "infobox"))).toBe("<table></table>");
-    expect(isLeanResolvable(leanMarker(token, "infobox"))).toBe(false);
     expect(
       (globalThis as { __wikiosLeanStash?: Map<string, unknown> }).__wikiosLeanStash?.has(token)
     ).toBe(false);
