@@ -173,6 +173,20 @@ describe("revisions", () => {
     expect(oldest).toMatchObject({ revId: 42, ref: "42", parentId: 0, isHead: false, userId: 321, textHidden: true, content: null });
   });
 
+  it("takes sha1 from the text for a legacy row without one, only when the text was read and is not deleted", async () => {
+    mdb.$queryRaw.mockResolvedValue([]);
+    mdb.wikiAccountLink!.findMany!.mockResolvedValue([]);
+    const blankHash = "phoiac9h4m842xq45sp7s6u21eteeq1"; // MediaWiki's rev_sha1 of the empty text
+    mdb.wikiRevision!.findMany!.mockResolvedValue([
+      revisionRecord({ revId: 1, id: "r1", sha1: null, wikitext: "" }),
+      revisionRecord({ revId: 2, id: "r2", sha1: null }),
+      revisionRecord({ revId: 3, id: "r3", sha1: null, wikitext: "secret", textDeleted: true }),
+      revisionRecord({ revId: 4, id: "r4", sha1: "stored", wikitext: "other" }),
+    ]);
+    const rows = await store.revisionsById([1, 2, 3, 4], true);
+    expect(rows.map((row) => row.sha1)).toEqual([blankHash, null, null, "stored"]);
+  });
+
   it("fails loudly when a revision has no revId", async () => {
     mdb.wikiRevision!.findMany!.mockResolvedValue([revisionRecord({ revId: null })]);
     await expect(store.findRevisions({ dir: "older", limit: 1, withContent: false })).rejects.toThrow(/wiki_revisions\.revId/);

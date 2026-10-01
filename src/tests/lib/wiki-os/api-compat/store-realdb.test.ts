@@ -95,6 +95,10 @@ describeRealDb("the api.php store against a real PostgreSQL (scratch copy of the
     // headRevisions / parentIds (raw, DISTINCT ON and a correlated subquery)
     const [first, second] = await store.revisionsById([rev.revId, rev.revId + 1], false);
     expect([first!.parentId, second!.parentId]).toEqual([0, rev.revId]);
+    // the stored sha1 is NULL: hashed from the text when it was read, left null when it was not
+    expect(first!.sha1).toBeNull();
+    const [hashed] = await store.revisionsById([rev.revId], true);
+    expect(hashed!.sha1).toMatch(/^[0-9a-z]{31}$/);
 
     // listings: random, categorymembers (row comparison with a cursor), allcategories (GROUP BY, bigint count)
     expect((await store.randomPages({ namespaces: [0], filterRedirects: "all", limit: 5 })).map((page) => page.title).sort()).toEqual(["Alpha", "Blank"]);

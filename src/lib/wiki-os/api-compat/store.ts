@@ -14,6 +14,7 @@ import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { isActive } from "~/lib/wiki-os/rights";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { syntheticUserId } from "./auth-store";
 import {
   findLogs,
@@ -218,6 +219,14 @@ async function authorIds(names: readonly string[]): Promise<Map<string, number>>
   );
 }
 
+/**
+ * `rev_sha1` of a legacy row that has none, from the text when the query already read it (never a
+ * read made for the hash): null otherwise, and for a revision whose text is deleted.
+ */
+function hashOfText(record: RevisionRecord): string | null {
+  return record.wikitext !== undefined && !record.textDeleted ? mwSha1Base36(record.wikitext) : null;
+}
+
 async function toRevisionRows(records: readonly RevisionRecord[]): Promise<RevisionRow[]> {
   if (records.length === 0) return [];
   const revIds = records.map((record) => {
@@ -250,7 +259,7 @@ async function toRevisionRows(records: readonly RevisionRecord[]): Promise<Revis
       minor: record.minor,
       size: record.byteSize,
       sizeDiff: record.byteDelta,
-      sha1: record.sha1,
+      sha1: record.sha1 ?? hashOfText(record),
       content: record.textDeleted ? null : (record.wikitext ?? null),
       textHidden: record.textDeleted,
       commentHidden: record.commentDeleted,
