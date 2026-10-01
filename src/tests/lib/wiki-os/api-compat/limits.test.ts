@@ -435,6 +435,32 @@ describe("continuations and counts", () => {
     }
   });
 
+  it("answers a forged or unknown rvcontinue of several pages (or revids) with badcontinue, never a restart", async () => {
+    const MB = 1024 * 1024;
+    const wiki: FakeWikiData = {
+      pages: Array.from({ length: 6 }, (_, i) => ({ pageId: i + 1, title: `Heavy ${i}` })),
+      revisions: Array.from({ length: 6 }, (_, i) => ({ revId: 1000 + i, page: `Heavy ${i}`, timestamp: "2026-01-01T00:00:00Z", content: "h".repeat(2 * MB) })),
+    };
+    const deps = await makeDeps({ store: fakeWiki(wiki) });
+    const titles = Array.from({ length: 6 }, (_, i) => `Heavy ${i}`).join("|");
+    const ask = async (token: string, selector = `titles=${titles}`) =>
+      (await call(deps, `action=query&${selector}&prop=revisions&rvprop=ids|content&rvslots=main&rvcontinue=${encodeURIComponent(token)}&formatversion=2`)).body as Body;
+    const first = (await call(deps, `action=query&titles=${titles}&prop=revisions&rvprop=ids|content&rvslots=main&formatversion=2`)).body as Body;
+    const real = first.continue.rvcontinue as string;
+    expect(real).toMatch(/^\d+\|\d+$/);
+    // the real token continues
+    expect((await ask(real)).error).toBeUndefined();
+    // forged, stale, from another request, or half a token
+    for (const token of ["999|999", "1|1", "4|1000", "4|1003x", "4", "x|y", "4|1003|7", real.replace("|", "||")]) {
+      expect([token, (await ask(token)).error?.code]).toEqual([token, "badcontinue"]);
+    }
+    // the token of one set of pages is no token for another
+    expect((await ask(real, "titles=Heavy 0|Heavy 1")).error.code).toBe("badcontinue");
+    // revids: a token naming a revision that is not among them
+    const byId = (await ask("1|1004", "revids=1000|1001|1002")).error;
+    expect(byId.code).toBe("badcontinue");
+  });
+
   it("gives sha1 as 40 hexadecimal characters, as MediaWiki's tools expect", async () => {
     const deps = await makeDeps({ store: fakeWiki(wikiData()) });
     const body = (await call(deps, "action=query&titles=Existing&prop=revisions&rvprop=sha1&formatversion=2")).body as Body;

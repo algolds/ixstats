@@ -243,15 +243,18 @@ function wantedRevisions(pages: readonly PageEntry[], byRevisionId: boolean): Wa
   });
 }
 
-/** Where a resumed request starts in `wanted`: at the revision `rvcontinue` names (`pageid|revid`). */
+/**
+ * Where a resumed request starts in `wanted`: at the revision `rvcontinue` names (`pageid|revid`).
+ * A value that names no revision this request asks for (forged, stale, or from another request) is
+ * `badcontinue`: it must never quietly restart the listing.
+ */
 function resumeIndex(wanted: readonly WantedRevision[], raw: string | undefined): number {
   const cursor = optionalCursor(raw, ["n", "n"] as const);
   if (!cursor) return 0;
   const [pageId, revId] = cursor;
-  const exact = wanted.findIndex((item) => item.entry.key === pageId && item.revId === revId);
-  if (exact !== -1) return exact;
-  const page = wanted.findIndex((item) => item.entry.key >= pageId);
-  return page === -1 ? wanted.length : page;
+  const at = wanted.findIndex((item) => item.entry.key === pageId && item.revId === revId);
+  if (at === -1) throw badContinue();
+  return at;
 }
 
 /**
