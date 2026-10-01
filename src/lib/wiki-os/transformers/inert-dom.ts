@@ -66,26 +66,38 @@ export const DOM_DEPTH_CEILING = 400;
  */
 export const DOM_SIZE_CEILING = 500_000;
 
+/** The lower-case name of the tag whose name starts at `from` (letters and digits), or "" when none does. */
+function tagNameAt(html: string, from: number): string {
+  let end = from;
+  while (isNameCode(html.charCodeAt(end))) end++;
+  return html.slice(from, end).toLowerCase();
+}
+
 /**
- * Whether `html` holds more than DOM_DEPTH_CEILING tags open at once, counting every opening tag that is not
- * a void element as open until a closing tag of any name closes one (an over-count: the parser also closes `<p>`
- * and `<li>` by itself, so a page can only be passed over, never parsed too deep). One scan.
+ * Whether `html` holds more than DOM_DEPTH_CEILING tags open at once. An opening tag that is not a void element is
+ * open until a closing tag of its name closes it, and everything opened after it with it (what the parser does:
+ * a closing tag with no open element of its name is ignored, so `<s></i>` repeated nests as deep as it is long). An over-count
+ * (the parser also closes `<p>` and `<li>` by itself), so a page can only be passed over, never parsed too deep.
+ * One scan: a count of the open elements of each name says at once whether a closing tag closes anything.
  */
 export function nestsTooDeep(html: string): boolean {
-  let depth = 0;
+  const open: string[] = [];
+  const openOfName = new Map<string, number>();
   for (let at = html.indexOf("<"); at !== -1; at = html.indexOf("<", at + 1)) {
     const code = html.charCodeAt(at + 1);
     if (code === 47) {
-      depth = Math.max(0, depth - 1);
-    } else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) {
-      let end = at + 2;
-      while (isNameCode(html.charCodeAt(end))) end++;
-      if (
-        !VOID_ELEMENTS.has(html.slice(at + 1, end).toLowerCase()) &&
-        ++depth > DOM_DEPTH_CEILING
-      ) {
-        return true;
+      const name = tagNameAt(html, at + 2);
+      if (!openOfName.get(name)) continue;
+      for (let top = open.pop(); top !== undefined; top = open.pop()) {
+        openOfName.set(top, openOfName.get(top)! - 1);
+        if (top === name) break;
       }
+    } else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) {
+      const name = tagNameAt(html, at + 1);
+      if (VOID_ELEMENTS.has(name)) continue;
+      open.push(name);
+      openOfName.set(name, (openOfName.get(name) ?? 0) + 1);
+      if (open.length > DOM_DEPTH_CEILING) return true;
     }
   }
   return false;

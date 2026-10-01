@@ -1201,6 +1201,8 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
     '<a href="/wiki/Template:CountryData:C:population">x</a> ',
   ],
   ["<p>{{CountryData:C:population}}</p>", "<p>{{CountryData:C:population}}</p>"],
+  // an opener and a closing tag of another name, which closes nothing: nested as deep as it is long
+  ["<s></i>", "<s></i>"],
 ];
 
 /** The XML units, for the dump reader. */

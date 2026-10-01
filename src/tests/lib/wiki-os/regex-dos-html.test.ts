@@ -489,6 +489,28 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
     expect(nestsTooDeep("a < b <3 </ >")).toBe(false);
   });
 
+  it("ignores a closing tag with no open element of its name, as the parser does", () => {
+    expect(nestsTooDeep(nested("<s></i>", 12_000))).toBe(true);
+    expect(nestsTooDeep(nested("<s></i>", 100))).toBe(false);
+    expect(nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 200_000)}`)).toBe(false);
+    expect(nestsTooDeep(`${nested("<S>", 300)}${nested("</s>", 300)}${nested("<i>", 300)}`)).toBe(
+      false
+    );
+    // a closing tag closes what was opened after its element, too
+    expect(
+      nestsTooDeep(`${nested("<u>", 200)}${"<b><i>".repeat(100)}</u>${nested("<u>", 200)}`)
+    ).toBe(false);
+    expect(nestsTooDeep(`${nested("<u>", 300)}${nested("<b>", 100)}${nested("<i>", 2)}`)).toBe(
+      true
+    );
+  });
+
+  it("is quick on closing tags that close nothing", () => {
+    const started = performance.now();
+    nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 400_000)}`);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it("slimArticleHtml and markTemplateChips return such a page unchanged, at once", () => {
     const html = `${nested("<s>", 6_000)}{{MyCountry:gdp}}`;
     const started = performance.now();
