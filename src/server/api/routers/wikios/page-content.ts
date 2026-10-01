@@ -500,9 +500,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB).
+   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB). Public, so
+   * rate-limited: every call fetches and buffers a file.
    */
-  downloadFile: publicProcedure
+  downloadFile: rateLimitedPublicProcedure
     .input(z.object({ filename: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
       const cleanFilename = input.filename.replace(/^File:/i, "");

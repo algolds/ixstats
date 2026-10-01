@@ -153,6 +153,10 @@ describe("getAuditLogs", () => {
 describe("downloadFile", () => {
   const asset = { url: "https://ixwiki.com/images/a/ab/Flag.png", mimeType: "image/png" };
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it("returns the file as base64 with the asset's type", async () => {
     jest.mocked(MediaAssetService.findAsset).mockResolvedValue(asset as never);
     jest.mocked(downloadMedia).mockResolvedValue(Buffer.from([1, 2, 3]));
@@ -186,6 +190,23 @@ describe("downloadFile", () => {
     jest.mocked(downloadMedia).mockResolvedValue(null);
 
     await expect(content(null).downloadFile({ filename: "Flag.png" })).resolves.toBeNull();
+  });
+
+  it("is rate-limited for anonymous callers and stops before looking the file up", async () => {
+    jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
+    jest.spyOn(rateLimiter, "check").mockResolvedValue({
+      success: false,
+      remaining: 0,
+      resetAt: new Date(Date.now() + 60_000),
+    } as never);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(content(null).downloadFile({ filename: "Flag.png" })).rejects.toThrow(
+      /Too many requests/
+    );
+
+    expect(MediaAssetService.findAsset).not.toHaveBeenCalled();
+    expect(downloadMedia).not.toHaveBeenCalled();
   });
 
   it("gives null for a file nothing knows", async () => {
