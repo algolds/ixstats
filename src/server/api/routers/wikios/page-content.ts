@@ -33,6 +33,7 @@ import {
   visibleTitles,
 } from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
+import { downloadMedia } from "~/lib/wiki-os/services/media-download";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
@@ -489,7 +490,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Download a media file from the wiki as base64.
+   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB).
    */
   downloadFile: publicProcedure
     .input(z.object({ filename: z.string().min(1).max(500) }))
@@ -500,11 +501,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
       if (!url) return null;
 
       try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const arrayBuffer = await res.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        return { content: base64, mime: asset?.mimeType || "image/png" };
+        // Allowlisted hosts only, at most 10 MB: this endpoint is public (plan 416).
+        const bytes = await downloadMedia(url);
+        if (!bytes) return null;
+        return { content: bytes.toString("base64"), mime: asset?.mimeType || "image/png" };
       } catch (err) {
         console.error("[WikiOS] Failed to download media file:", err);
         return null;
