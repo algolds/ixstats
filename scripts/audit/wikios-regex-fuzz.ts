@@ -34,6 +34,7 @@ import {
   TARGETS,
   familiesFor,
   inputFor,
+  runSize,
   type Family,
   type Target,
 } from "./wikios-regex-fuzz-targets";
@@ -187,7 +188,7 @@ async function measure(target: Target, families: Family[], options: Options): Pr
     const job: Job = {
       target: target.name,
       families: remaining,
-      size: Math.min(options.size, target.limits?.maxChars ?? options.size),
+      size: runSize(target, options.size),
       probeSize: PROBE_SIZE,
       budgetMs: budgetOf(target, options),
     };

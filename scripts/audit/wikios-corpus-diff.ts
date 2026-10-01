@@ -232,6 +232,7 @@ const NATURAL: ReadonlySet<string> = new Set(["transformers/slim-html#slimArticl
 
 function pagesOf(corpus: Corpus, kind: Target["kind"]): Page[] {
   if (kind === "html" || kind === "markup") return corpus.html;
+  if (kind === "svg" || kind === "css") return []; // no real SVG or stylesheet in the corpus
   return kind === "xml" ? corpus.xml : corpus.wikitext;
 }
 

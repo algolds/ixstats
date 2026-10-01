@@ -19,14 +19,14 @@
 /** What a target's call returns; the runner only times it. */
 type Result = string | number | boolean | object | null | undefined | void;
 
-export type TargetKind = "wikitext" | "html" | "markup" | "xml";
+export type TargetKind = "wikitext" | "html" | "markup" | "xml" | "svg" | "css";
 
 export interface Target {
   /** `folder/file#export`, as listed in this file; `@…` names the way the function is driven. */
   name: string;
   /**
    * What the function reads: wikitext, HTML (also fed the wikitext families), markup (HTML as MediaWiki serves it: only
-   * the HTML families) or an XML dump.
+   * the HTML families), an XML dump, an SVG document's content (the driver wraps it in an `<svg>`) or a stylesheet.
    */
   kind: TargetKind;
   /** Imports the module and returns the call that takes the hostile text. */
@@ -34,10 +34,11 @@ export interface Target {
   /**
    * What the function is allowed that the rest are not, and why. `maxChars`: the most text it accepts (it
    * answers a longer one with a plain copy or a refusal of its own, so the run feeds it that much and no more).
+   * `scale`: a multiple of the size it is run at (an upload is read at up to ten times a page's 2 MB: 2.5 is 5 MB).
    * `slowFactor`: a multiple of the budget, for a function that is linear but whose answer is a record per
    * few characters (a text of nothing but `|` has a million parameters, and building them is the work).
    */
-  limits?: { maxChars?: number; slowFactor?: number; why: string };
+  limits?: { maxChars?: number; scale?: number; slowFactor?: number; why: string };
 }
 
 const wikitext = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
@@ -55,6 +56,18 @@ const html = (name: string, load: Target["load"], limits?: Target["limits"]): Ta
 const markup = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
   name,
   kind: "markup",
+  load,
+  ...(limits ? { limits } : {}),
+});
+const svg = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
+  name,
+  kind: "svg",
+  load,
+  ...(limits ? { limits } : {}),
+});
+const css = (name: string, load: Target["load"], limits?: Target["limits"]): Target => ({
+  name,
+  kind: "css",
   load,
   ...(limits ? { limits } : {}),
 });
@@ -840,6 +853,63 @@ export const TARGETS: readonly Target[] = [
     return (s) => m.parseTemplateData("x", s);
   }),
 
+  // ---- core/ (uploads: an SVG is read whole, up to 10 MB), utils/ and the srcset of an image ---------
+  svg(
+    "core/svg-scan#scanSvg",
+    async () => {
+      const m = await import("~/lib/wiki-os/core/svg-scan");
+      return (s) => m.scanSvg(`<svg xmlns="http://www.w3.org/2000/svg">${s}</svg>`);
+    },
+    {
+      scale: 2.5,
+      slowFactor: 2.5,
+      why: "an upload is read at up to ten times a page: it is run at 2.5 times the 2 MB, and allowed 2.5 times the time",
+    }
+  ),
+  svg(
+    "core/file-sniff#sniffFile@svg",
+    async () => {
+      const m = await import("~/lib/wiki-os/core/file-sniff");
+      const encoder = new TextEncoder();
+      return (s) =>
+        m.sniffFile(encoder.encode(`<svg xmlns="http://www.w3.org/2000/svg">${s}</svg>`));
+    },
+    {
+      scale: 2.5,
+      slowFactor: 2.5,
+      why: "an upload is read at up to ten times a page: it is run at 2.5 times the 2 MB, and allowed 2.5 times the time",
+    }
+  ),
+  wikitext("core/file-sniff#sniffFile@bytes", async () => {
+    const m = await import("~/lib/wiki-os/core/file-sniff");
+    const encoder = new TextEncoder();
+    return (s) => [
+      m.sniffFile(encoder.encode(s)),
+      m.fileExtension(s),
+      m.extensionMatches("png", s),
+    ];
+  }),
+  wikitext("core/file-hash#sha1Base36ToHex", async () => {
+    const m = await import("~/lib/wiki-os/core/file-hash");
+    return (s) => [m.isFileHash(s), m.sha1Base36ToHex(s.slice(0, 30))];
+  }),
+  css("utils/scope-template-styles#scopeTemplateStyles", async () => {
+    const m = await import("~/lib/utils/scope-template-styles");
+    return (s) => m.scopeTemplateStyles(s, "https://ixwiki.com");
+  }),
+  css("utils/scope-template-styles#cssIdentifiers", async () => {
+    const m = await import("~/lib/utils/scope-template-styles");
+    return (s) => m.cssIdentifiers(s);
+  }),
+  html("transformers/slim-html#templateStyleIdentifiers", async () => {
+    const m = await import("~/lib/wiki-os/transformers/slim-html");
+    return (s) => m.templateStyleIdentifiers(s, s);
+  }),
+  html("transformers/srcset#mapSrcsetUrls", async () => {
+    const m = await import("~/lib/wiki-os/transformers/srcset");
+    return (s) => m.mapSrcsetUrls(s, (url) => url);
+  }),
+
   // ---- api-compat/ (the api.php surface reads page text and request strings) -----------------------
   wikitext("api-compat/scan#linkTargets", async () => {
     const m = await import("~/lib/wiki-os/api-compat/scan");
@@ -1159,6 +1229,78 @@ const CATEGORY_THEN_SPACES: Family = {
   build: (size) => `[[Category:${" ".repeat(Math.max(0, size - 11))}`,
 };
 
+/** What an SVG document is made of (the driver wraps the text in `<svg xmlns="http://www.w3.org/2000/svg">`). */
+const SVG_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
+  ["<g>", "<g>"],
+  ["</g>", "</g>"],
+  ["<g/>", "<g/>"],
+  ["<g></g>", "<g></g>"],
+  ['<path d="…"/>', '<path d="M0 0L1 1z"/>'],
+  ['<g␠a="1"…>', '<g a="1" b="2" c="3" d="4" e="5">'],
+  ['<a href="#x">x</a>', '<a href="#x">x</a>'],
+  ["<use␠href", '<use href="#a"/>'],
+  ["<text>x</text>", "<text>x</text>"],
+  ["<style>…url(#b)</style>", "<style>.a{fill:url(#b)}</style>"],
+  ["url(", "url("],
+  ["@import", "@import "],
+  ["&#x75;", "&#x75;"],
+  ["&amp;", "&amp;"],
+  ["&#", "&#"],
+  ["\\75rl(", "\\75rl("],
+  ["<!-- c -->", "<!-- c -->"],
+  ["<!--", "<!--"],
+  ["<![CDATA[x]]>", "<![CDATA[x]]>"],
+  ["<![CDATA[", "<![CDATA["],
+  ["<?x?>", "<?x?>"],
+  ["<?", "<?"],
+  ["<", "<"],
+  [">", ">"],
+  ['"', '"'],
+  ["'", "'"],
+  ["<g␠", "<g "],
+  ["<g/", "<g/"],
+  ["xlink:href=", "xlink:href="],
+  ['on…="', 'onload="'],
+  ["javascript:", "javascript:"],
+  ["data:", "data:"],
+  ["space", " "],
+  ["LF", "\n"],
+];
+
+/** What a stylesheet is made of. */
+const CSS_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
+  [".a{b:c}", ".a{b:c}"],
+  [".a,.b{c:d}", ".a,.b{c:d}"],
+  ["{", "{"],
+  ["}", "}"],
+  [";", ";"],
+  ["a{", "a{"],
+  [".a:is(", ".a:is("],
+  ["@import", "@import url("],
+  ["@media␠", "@media screen{"],
+  ["@font-face{", "@font-face{"],
+  ["@", "@"],
+  ["url(", "url("],
+  ["url(…)", "url(a)"],
+  ["/*", "/*"],
+  ["*/", "*/"],
+  ["/* c */", "/* c */"],
+  ['"', '"'],
+  ["'", "'"],
+  ["\\", "\\"],
+  ["\\75rl(", "\\75rl("],
+  ["calc(", "calc("],
+  ["(", "("],
+  [")", ")"],
+  ["[", "["],
+  ["]", "]"],
+  [":", ":"],
+  [",", ","],
+  ["space", " "],
+  ["LF", "\n"],
+  ["\u0000", "\u0000"],
+];
+
 /** `prefix`, then `open` as many times as the size allows and `close` as many: nested, and balanced, to the depth the size gives. */
 const nested = (name: string, open: string, close: string, prefix = ""): Family => ({
   name,
@@ -1227,6 +1369,15 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<p>{{CountryData:C:population}}</p>", "<p>{{CountryData:C:population}}</p>"],
   // an opener and a closing tag of another name, which closes nothing: nested as deep as it is long
   ["<s></i>", "<s></i>"],
+  // a srcset: candidates, a URL that ends in commas
+  ["/images/a.png␠1x,␠", "/images/a.png 1x, "],
+  ["a,,,,,,,,,,x␠", "a,,,,,,,,,,x "],
+  // TemplateStyles blocks, closed and not
+  [
+    '<style␠data-mw-deduplicate="a">.a{b:c}</style>',
+    '<style data-mw-deduplicate="a">.a{b:c}</style>',
+  ],
+  ['<style␠data-mw-deduplicate="a">', '<style data-mw-deduplicate="a">'],
 ];
 
 /** The XML units, for the dump reader. */
@@ -1316,6 +1467,41 @@ export const FAMILIES: readonly Family[] = [
   // nested to the depth the size allows: what a DOM pass is quadratic in
   { ...nested("<s>…</s>", "<s>", "</s>"), only: "html" as const },
   { ...nested("<div>…</div>", "<div>", "</div>"), only: "html" as const },
+  ...SVG_UNITS.map(([name, unit]) => ({
+    name,
+    build: (size: number) => repeatTo(unit, size),
+    only: "svg" as const,
+  })),
+  { ...nested("<g>…</g>", "<g>", "</g>"), only: "svg" as const },
+  {
+    name: "soup:svg#10",
+    build: soup(
+      SVG_UNITS.map(([, unit]) => unit),
+      10
+    ),
+    only: "svg" as const,
+  },
+  ...CSS_UNITS.map(([name, unit]) => ({
+    name,
+    build: (size: number) => repeatTo(unit, size),
+    only: "css" as const,
+  })),
+  { ...nested("{…}", "{", "}"), only: "css" as const },
+  { ...nested("(…)", "(", ")"), only: "css" as const },
+  {
+    name: "soup:css#11",
+    build: soup(
+      CSS_UNITS.map(([, unit]) => unit),
+      11
+    ),
+    only: "css" as const,
+  },
+  // one token of a srcset (no space) that is a long run of commas and then a character
+  {
+    name: "a,,,…,x",
+    build: (size: number) => `a${",".repeat(Math.max(0, size - 2))}x`,
+    only: "html" as const,
+  },
   { name: "soup:html#7", build: soup([...HTML_UNIT_TEXTS, ...WELL_FORMED], 7), only: "html" },
   {
     name: "soup:html#8",
@@ -1330,6 +1516,11 @@ export const FAMILIES: readonly Family[] = [
   { name: "soup:xml#9", build: soup([...XML_UNIT_TEXTS, ...WELL_FORMED], 9), only: "xml" },
 ];
 
+/** The characters a run feeds `target`, when a run feeds a page's `base`: its `maxChars` caps that, its `scale` multiplies it. */
+export function runSize(target: Target, base: number): number {
+  return Math.round(Math.min(base, target.limits?.maxChars ?? base) * (target.limits?.scale ?? 1));
+}
+
 /**
  * The families a target of `kind` is fed: wikitext ones for all, HTML ones for HTML, XML ones for XML. Markup is fed
  * the HTML ones alone: what MediaWiki serves has no wikitext, no comment and no element the browser does not know,
@@ -1337,6 +1528,7 @@ export const FAMILIES: readonly Family[] = [
  */
 export function familiesFor(kind: TargetKind): Family[] {
   if (kind === "markup") return FAMILIES.filter((family) => family.only === "html");
+  if (kind === "svg" || kind === "css") return FAMILIES.filter((family) => family.only === kind);
   return FAMILIES.filter((family) => !family.only || family.only === kind);
 }
 

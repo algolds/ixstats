@@ -12,6 +12,7 @@ import {
   TARGETS,
   familiesFor,
   inputFor,
+  runSize,
   type Target,
 } from "../../../../scripts/audit/wikios-regex-fuzz-targets";
 
@@ -42,7 +43,7 @@ async function slowFamilies(target: Target): Promise<string[]> {
   const call = await target.load();
   await time(call, "<p>{{a}} [[b]] 'c'</p>"); // what a function sets up on its first call (a DOM, a table) is not what is measured
   const slow: string[] = [];
-  const size = Math.min(SIZE, target.limits?.maxChars ?? SIZE);
+  const size = runSize(target, SIZE);
   const budget = BUDGET_MS * (target.limits?.slowFactor ?? 1);
   for (const family of familiesFor(target.kind)) {
     const probe = await best(call, inputFor(target.kind, family, size / 10), budget);
