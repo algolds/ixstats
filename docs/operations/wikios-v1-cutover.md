@@ -786,8 +786,10 @@ pm2 restart wikios --update-env
 ```
 
 The setting is part of the sanitizer fingerprint that every stored article bundle carries (`RENDERER_VERSION`), so no
-purge is needed: a stored bundle built under the other setting is never served, and each article re-renders without its
-styles the next time it is read (sister-wiki renders live in memory and go with the restart). Check an article whose
+purge is needed: a bundle built under the other setting counts as outdated, so a reader gets it re-sanitized by the current
+rules at once (with the lever pulled, the styles are gone from the first read after the restart) and the article is
+re-rendered in the background, and the `wiki-render-stale` job works through the rest (sister-wiki renders live in memory and
+go with the restart). Check an article whose
 templates use TemplateStyles (`<Title>` below; it printed 1 or more before):
 
 ```bash
@@ -796,7 +798,7 @@ curl -s "https://ixwiki.com/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 
 
 **Turning it back on** (after the scoper is fixed and `bun run audit:template-styles` reports 0 violations and 0
 non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`) or delete the
-`WIKIOS_TEMPLATESTYLES` line (or set it to `1`), and restart both processes as above; bundles re-render again. A misspelt
+`WIKIOS_TEMPLATESTYLES` line (or set it to `1`), and restart both processes as above; the outdated bundles are re-rendered in the background and the styles come back as they are. A misspelt
 value (`ture`, `enabled`) keeps it **off**: check with the `curl` above that the styles are back.
 
 **Rollback:** the same lines, in reverse.
