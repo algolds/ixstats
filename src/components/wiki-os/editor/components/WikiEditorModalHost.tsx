@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Puzzle, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { useEditorModalContext } from "../context/EditorModalContext";
 import { useTemplateSchema } from "../hooks/useTemplateSchema";
 
@@ -245,7 +246,7 @@ function TemplateEditorDialog({
 
           {showPreview && previewQuery.data && (
             <div
-              className="wikios-ti-preview"
+              className={`wikios-ti-preview ${ARTICLE_STYLE_ROOT_CLASS}`}
               dangerouslySetInnerHTML={previewMarkup}
             />
           )}

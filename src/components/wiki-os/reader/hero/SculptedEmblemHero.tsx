@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import Link from "next/link";
 import {
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -590,7 +591,10 @@ export function SculptedEmblemHero({
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed"
+                className={cn(
+                  "wikios-main-featured-content wikios-article-content relative z-10 text-left text-sm leading-relaxed",
+                  ARTICLE_STYLE_ROOT_CLASS
+                )}
                 dangerouslySetInnerHTML={featuredMarkup}
               />
             )}

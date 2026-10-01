@@ -6,6 +6,7 @@ import "~/styles/wiki-os/editors.css";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { api } from "~/trpc/react";
 import {
   EditorView,
@@ -439,7 +440,7 @@ export function WikiSourceEditor({
                 )}
               </div>
               <div
-                className="wikios-editor-preview-content wikios-article-body"
+                className={`wikios-editor-preview-content wikios-article-body ${ARTICLE_STYLE_ROOT_CLASS}`}
                 dangerouslySetInnerHTML={previewMarkup}
               />
             </div>

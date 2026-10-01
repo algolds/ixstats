@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
  * Plan 415 review (m4, m5): a TemplateStyles sheet is confined to `.mw-parser-output`, so every element whose
- * innerHTML is a part of an article (the body, the infobox, the page-top notices) must carry that class, or the sheet's rules do not reach it, and nothing else may:
+ * innerHTML is a part of an article (the body, the infobox, the page-top notices, the editors' previews, the
+ * Main Page's featured card) must carry that class, or the sheet's rules do not reach it, and nothing else may:
  * the reader's own chrome stays outside every root.
  */
 import fs from "node:fs";
@@ -14,6 +15,10 @@ const PARTS: ReadonlyArray<readonly [string, string]> = [
   ["src/components/wiki-os/reader/ArticleRenderer.tsx", "bodyMarkup"],
   ["src/components/wiki-os/reader/ArticleRenderer.tsx", "noticesMarkup"],
   ["src/components/wiki-os/reader/InfoboxWithMap.tsx", "infoboxMarkup"],
+  ["src/components/wiki-os/editor/WikiSourceEditor.tsx", "previewMarkup"],
+  ["src/components/wiki-os/editor/plate/elements/PlateInteractiveTemplateElement.tsx", "previewMarkup"],
+  ["src/components/wiki-os/editor/components/WikiEditorModalHost.tsx", "previewMarkup"],
+  ["src/components/wiki-os/reader/hero/SculptedEmblemHero.tsx", "featuredMarkup"],
 ];
 
 /** The JSX opening tag that holds `dangerouslySetInnerHTML={markup}`. */
