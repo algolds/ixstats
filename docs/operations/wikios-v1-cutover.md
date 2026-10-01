@@ -403,14 +403,15 @@ the PM2 file, the runtime env and the **build** env, and deploy.
 **Two more server-local prerequisites of this build.** Neither is in git (`next.config.js` is untracked, and `public/` is
 gitignored by `/public/*`), so a fresh checkout does not carry them:
 
-1. **`optimizePackageImports` (plan 413).** In the same `next.config.js`, add `"iconoir-react"` and `"motion"` to the
+1. **`optimizePackageImports` (plan 413).** In the same `next.config.js`, add `"iconoir-react"` and `"motion/react"` to the
    `experimental.optimizePackageImports` array. Every WikiOS page imports icons from `iconoir-react` (plan 413 measured about
-   7 MB of dev chunks from it on the wiki route without the entry), and `motion` is imported by the root layout on every
-   page. The file is the one the IxStates build reads too: the entries are harmless there, and the next IxStates deploy
-   picks them up. Check:
+   7 MB of dev chunks from it on the wiki route without the entry), and the root layout imports `motion` on every page.
+   The entry is `"motion/react"`, not `"motion"`: every import in the code is `from "motion/react"`, and Next matches the
+   specifier exactly, so a bare `"motion"` entry would do nothing. The file is the one the IxStates build reads too: the
+   entries are harmless there, and the next IxStates deploy picks them up. Check:
 
    ```bash
-   grep -n '"iconoir-react"\|"motion"' "$IX/next.config.js"        # expect two lines, both inside optimizePackageImports
+   grep -n '"iconoir-react"\|"motion/react"' "$IX/next.config.js"   # expect two lines, both inside optimizePackageImports
    ```
 
 2. **The brand font.** `public/fonts/HostGrotesk/HostGrotesk[wght].ttf` must exist in `$IX`. The `(wiki-os)` layout loads it
@@ -1022,7 +1023,7 @@ Every one of them is copied into `$BK` before its first edit.
 
 | File | Edit | Step |
 |------|------|------|
-| `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite**; `"iconoir-react"` and `"motion"` added to `experimental.optimizePackageImports` | 5 |
+| `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite**; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` | 5 |
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | must exist (gitignored directory): `next/font/local` fails the build without it | 5 |
 | `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411) | 1c, 3c, 4, 5 |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
