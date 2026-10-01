@@ -229,17 +229,46 @@ function parseRules(text: string): RawRule[] | null {
   return braces === 0 && closers.length === 0 ? rules : null;
 }
 
+/** A character that continues an identifier (CSS Syntax 4.2): `token` is not finished before one. */
+const IDENT_CHAR = /[\w\-\\\u0080-\uffff]/;
+
 function startsWithToken(selector: string, token: string): boolean {
-  return selector.startsWith(token) && !/[\w-]/.test(selector.charAt(token.length));
+  return selector.startsWith(token) && !IDENT_CHAR.test(selector.charAt(token.length));
 }
 
-/** `selector` confined to the article: under the scope, `.mw-parser-output` standing for the scope itself. */
-function scopeSelector(selector: string): string {
-  if (startsWithToken(selector, ARTICLE_STYLE_SCOPE)) return selector;
-  if (startsWithToken(selector, MEDIAWIKI_WRAPPER)) {
-    return `${ARTICLE_STYLE_SCOPE}${selector.slice(MEDIAWIKI_WRAPPER.length)}`;
+/**
+ * Whether the first combinator of `selector`, from index `from` on (outside parentheses and brackets, escapes read
+ * as the spec reads them: a hex escape takes the one space after it), is `+` or `~`: a selector that starts with the
+ * root and then asks for its next or later siblings styles elements outside it.
+ */
+function reachesSiblings(selector: string, from: number): boolean {
+  let depth = 0;
+  for (let i = from; i < selector.length; i++) {
+    const ch = selector.charAt(i);
+    if (ch === "\\") {
+      const end = escapeEnd(selector, i);
+      if (end !== -1) i = end - 1;
+    } else if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
+    else if (depth === 0 && (ch === "+" || ch === "~")) return true;
+    else if (depth === 0 && (ch === ">" || CSS_SPACE.test(ch))) return /^[ \t\n\r\f]*[+~]/.test(selector.slice(i));
   }
-  return `${ARTICLE_STYLE_SCOPE} ${selector}`;
+  return false;
+}
+
+/**
+ * `selector` confined to the article: under the scope, `.mw-parser-output` standing for the scope itself. Null for
+ * a selector that would reach outside it: one that starts with a combinator, or that starts with the root and then
+ * asks for its siblings (`.wikios-article ~ *`, `.mw-parser-output + p`).
+ */
+function scopeSelector(selector: string): string | null {
+  if (/^[>+~]/.test(selector)) return null;
+  const token = [ARTICLE_STYLE_SCOPE, MEDIAWIKI_WRAPPER].find((root) => startsWithToken(selector, root));
+  if (token === undefined) return `${ARTICLE_STYLE_SCOPE} ${selector}`;
+  if (reachesSiblings(selector, token.length)) return null;
+  return token === ARTICLE_STYLE_SCOPE
+    ? selector
+    : `${ARTICLE_STYLE_SCOPE}${selector.slice(MEDIAWIKI_WRAPPER.length)}`;
 }
 
 /** The selector list of a rule, scoped; null when any selector is empty or unsafe (the browser drops such a rule too). */
@@ -250,7 +279,9 @@ function scopeSelectors(prelude: string, strings: readonly string[]): string | n
   for (const raw of selectors) {
     const selector = inflate(raw, strings).trim();
     if (!selector || selector.length > MAX_SELECTOR_LENGTH || selector.includes("<")) return null;
-    scoped.push(scopeSelector(selector));
+    const confined = scopeSelector(selector);
+    if (confined === null) return null;
+    scoped.push(confined);
   }
   return scoped.join(",");
 }

@@ -90,6 +90,45 @@ describe("a bad-url token hides nothing from the scoper (CSS Syntax 4.3.6)", () 
   });
 });
 
+describe("a sibling combinator on the root does not reach outside the article", () => {
+  it.each([
+    [`${S} ~ *{display:none}`],
+    [`${S} + *{display:none}`],
+    [`${S}~*{display:none}`],
+    [`${S}+*{display:none}`],
+    [`${S}:not(.x) ~ *{display:none}`],
+    [`${S}.a:nth-child(2n+1)  ~ *{display:none}`],
+    [`${S}/**/~ *{display:none}`],
+    [`${S}\n~\f*{display:none}`],
+    [`${S}.a\\2b x ~ y{display:none}`],
+    [".mw-parser-output ~ *{display:none}"],
+    [".mw-parser-output + *{display:none}"],
+    [".mw-parser-output:not(.x) ~ *{display:none}"],
+    ["~ *{display:none}"],
+    ["+ *{display:none}"],
+    ["> *{display:none}"],
+    [`.a, ${S} ~ *{display:none}`],
+  ])("%s", (css) => {
+    const out = scopeTemplateStyles(css);
+
+    expect(out === "" || browserView(out).selectors.every(confined)).toBe(true);
+    expect(out).not.toMatch(new RegExp(`${ROOT}\\s*[+~]`));
+  });
+
+  it("keeps the siblings of an element inside the article, and a child or descendant of the root", () => {
+    expect(scopeTemplateStyles(`${S} .a ~ .b{color:red}`)).toBe(`${S} .a ~ .b{color:red}`);
+    expect(scopeTemplateStyles(`${S} > .a + .b{color:red}`)).toBe(`${S} > .a + .b{color:red}`);
+    expect(scopeTemplateStyles(`${S}.wide .a ~ .b{color:red}`)).toBe(`${S}.wide .a ~ .b{color:red}`);
+    expect(scopeTemplateStyles(".a ~ .b, .c + .d{color:red}")).toBe(`${S} .a ~ .b,${S} .c + .d{color:red}`);
+  });
+
+  it("a class that merely starts with the root's name is not the root (its escape is part of the identifier)", () => {
+    expect(scopeTemplateStyles(`${S}\\({color:red}`)).toBe(`${S} ${S}\\({color:red}`);
+    expect(scopeTemplateStyles(`${S}\\2d x{color:red}`)).toBe(`${S} ${S}\\2d x{color:red}`);
+    expect(scopeTemplateStyles(`${S}é{color:red}`)).toBe(`${S} ${S}é{color:red}`);
+  });
+});
+
 describe("the other sanitizers are unchanged by the article's allowances", () => {
   const html = `${OPEN}.a{color:red}</style><center>c</center><font color="red">f</font><p>x</p>`;
 
