@@ -28,10 +28,11 @@ jest.mock("~/server/db", () => ({
   },
 }));
 jest.mock("~/lib/discord/webhook", () => ({
-  discordWebhook: { sendWarning: jest.fn().mockResolvedValue(undefined) },
+  discordWebhook: { isEnabled: jest.fn(), sendWarning: jest.fn() },
 }));
 
 const warn = jest.mocked(discordWebhook.sendWarning);
+const isEnabled = jest.mocked(discordWebhook.isEnabled);
 const NOW = new Date("2026-10-01T12:00:00Z");
 const minutesAgo = (minutes: number) => new Date(NOW.getTime() - minutes * 60_000);
 const job = (title: string, lastError: string | null = "MediaWiki 503") => ({
@@ -42,6 +43,8 @@ const job = (title: string, lastError: string | null = "MediaWiki 503") => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  isEnabled.mockReturnValue(true);
+  warn.mockResolvedValue(true); // Discord delivers
   mockConfigFind.mockResolvedValue(null);
   mockCount.mockResolvedValue(0);
   mockFindMany.mockResolvedValue([]);
@@ -67,6 +70,44 @@ describe("alertDeadJobs", () => {
       create: { key: DEAD_ALERT_KEY, value: NOW.toISOString() },
       update: { value: NOW.toISOString() },
     });
+  });
+
+  it("does not remember the warning when Discord did not deliver it, so the next cycle tries again", async () => {
+    mockCount.mockResolvedValue(1);
+    mockFindMany.mockResolvedValue([job("Foo")]);
+    warn.mockResolvedValue(false); // down, refused, or not reachable
+
+    await alertDeadJobs(NOW);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(mockConfigUpsert).not.toHaveBeenCalled();
+
+    // the next cycle, a minute later: no stamp, so it is not held back, and this time it arrives
+    warn.mockResolvedValue(true);
+    await alertDeadJobs(new Date(NOW.getTime() + 60_000));
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(mockConfigUpsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not remember the warning of several jobs either when it was not delivered", async () => {
+    mockCount.mockResolvedValue(3);
+    mockFindMany.mockResolvedValue(["A", "B", "C"].map((title) => job(title)));
+    warn.mockResolvedValue(false);
+
+    await alertDeadJobs(NOW);
+
+    expect(mockConfigUpsert).not.toHaveBeenCalled();
+  });
+
+  it("looks up nothing and sends nothing when no Discord webhook is configured", async () => {
+    isEnabled.mockReturnValue(false);
+    mockCount.mockResolvedValue(2);
+
+    await alertDeadJobs(NOW);
+
+    expect(mockConfigFind).not.toHaveBeenCalled();
+    expect(mockCount).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+    expect(mockConfigUpsert).not.toHaveBeenCalled();
   });
 
   it("tells several as one message: the count, the newest few, the number left out", async () => {

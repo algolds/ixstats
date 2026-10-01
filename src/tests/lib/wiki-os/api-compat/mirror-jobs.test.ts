@@ -87,8 +87,11 @@ const data = (): FakeWikiData => ({
 /** Whether the job inserts happened inside a `$transaction`, in the order they were made. */
 let insertedInTransaction: boolean[] = [];
 
-async function setup() {
+async function setup(
+  { tokenType = "csrf", moreRevisions = [] }: { tokenType?: string; moreRevisions?: NonNullable<FakeWikiData["revisions"]> } = {}
+) {
   const wiki = data();
+  wiki.revisions!.push(...moreRevisions);
   let nextRevId = 9000;
   const wikiDeps = await makeWikiDeps(wiki, {
     services: {
@@ -115,7 +118,7 @@ async function setup() {
     },
     grants: ["basic", "editpage", "createeditmovepage", "uploadfile", "uploadeditmovefile"],
   });
-  const token = await loggedIn(wikiDeps.bot);
+  const token = await loggedIn(wikiDeps.bot, tokenType);
   const act = (
     action: string,
     params: Record<string, string>,
@@ -230,6 +233,54 @@ describe("api.php action=edit", () => {
     await act("edit", { title: "MediaWiki:Sidebar", text: "* navigation" });
 
     expect(tables.wikiRevision.rows).toHaveLength(1);
+    expect(jobs()).toEqual([]);
+  });
+});
+
+describe("api.php action=rollback", () => {
+  /** A vandal edited Alpha after Heku: the page's text in WikiOS (the saves' base) and the harness's history agree. */
+  const vandalised = [
+    {
+      revId: 104,
+      page: "Alpha",
+      timestamp: "2026-01-04T10:00:00Z",
+      user: "Vandal",
+      content: "vandalised",
+    },
+  ];
+  const alphaIsVandalised = () => {
+    tables.wikiArticle.rows.find((row) => row.id === "a-alpha")!.wikitext = "vandalised";
+  };
+
+  it("inserts one revision job, in the save's own transaction, for the revision that restores the earlier text", async () => {
+    alphaIsVandalised();
+    const { act } = await setup({ tokenType: "rollback", moreRevisions: vandalised });
+
+    const body = await act("rollback", { title: "Alpha", user: "Vandal" });
+
+    expect(body.rollback).toMatchObject({ title: "Alpha", old_revid: 104, last_revid: 101 });
+    expect(tables.wikiRevision.rows).toHaveLength(1);
+    expect(tables.wikiRevision.rows[0]).toMatchObject({ wikitext: "good text" });
+    expect(summary()).toEqual(["revision:Alpha"]);
+    expect(jobs()[0]).toMatchObject({
+      source: "ixwiki",
+      kind: "revision",
+      articleId: "a-alpha",
+      revisionId: tables.wikiRevision.rows[0]!.id,
+      state: "pending",
+    });
+    expect(insertedInTransaction).toEqual([true]);
+    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
+  });
+
+  it("inserts no job for a rollback that is refused (the page's last editor is someone else)", async () => {
+    alphaIsVandalised();
+    const { act } = await setup({ tokenType: "rollback", moreRevisions: vandalised });
+
+    const refused = await act("rollback", { title: "Alpha", user: "Heku" });
+
+    expect(refused.error.code).toBe("alreadyrolled");
+    expect(tables.wikiRevision.rows).toEqual([]);
     expect(jobs()).toEqual([]);
   });
 });

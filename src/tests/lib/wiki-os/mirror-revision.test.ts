@@ -261,6 +261,49 @@ describe("importing a revision", () => {
         "wikios&gt;Community Contributor",
       ]);
     });
+
+    it("sends a label on one line: line breaks and tabs become a space", async () => {
+      expect(
+        await authors(
+          revisionRow({ id: "rev-1", author: "Some\n Country\tTwo\r\n", authorId: null }),
+          revisionRow({ id: "rev-2", author: "\n\t", authorId: null })
+        )
+      ).toEqual(["wikios&gt;Some Country Two", "wikios&gt;Community Contributor"]);
+    });
+
+    it("cuts a long label to the 248 bytes that fit MediaWiki's 255-byte actor name beside `wikios>`, never inside a character", async () => {
+      const labels = {
+        ascii: "x".repeat(300),
+        twoBytes: "é".repeat(200), // 400 bytes
+        threeBytes: "日".repeat(100), // 300 bytes: 248 falls inside the 83rd character
+        fourBytes: "😀".repeat(100), // 400 bytes
+        short: "Eurth".repeat(10),
+      };
+      const sent = await authors(
+        ...Object.values(labels).map((author, at) =>
+          revisionRow({ id: `rev-${at + 1}`, author, authorId: null })
+        )
+      );
+      const decoded = sent.map((name) => (name ?? "").replace("wikios&gt;", "wikios>"));
+
+      expect(decoded.map((name) => name.startsWith("wikios>"))).toEqual(Array(5).fill(true));
+      const bytes = decoded.map((name) => Buffer.byteLength(name, "utf8"));
+      expect(bytes).toEqual([255, 255, 253, 255, 57]);
+      expect(decoded[0]).toBe(`wikios>${"x".repeat(248)}`);
+      expect(decoded[1]).toBe(`wikios>${"é".repeat(124)}`);
+      expect(decoded[2]).toBe(`wikios>${"日".repeat(82)}`);
+      expect(decoded[3]).toBe(`wikios>${"😀".repeat(62)}`);
+      expect(decoded[4]).toBe(`wikios>${labels.short}`);
+      expect(decoded.join("")).not.toContain("\uFFFD");
+    });
+
+    it("leaves no space behind when the cut falls after one", async () => {
+      const [name] = await authors(
+        revisionRow({ id: "rev-1", author: `${"x".repeat(247)} tail`, authorId: null })
+      );
+
+      expect(name).toBe(`wikios&gt;${"x".repeat(247)}`);
+    });
   });
 
   it("marks a minor edit minor", async () => {
@@ -283,20 +326,23 @@ describe("importing a revision", () => {
     expect(template).toContain("<model>wikitext</model>");
   });
 
-  it("asks MediaWiki for the page's current revision and its hash, after the import", async () => {
+  it("asks MediaWiki for the page's current revision and its hash twice: before the import, to know who made the newest revision, and after it, to verify", async () => {
     await runRevisionJob(job());
 
     const calls = wiki.calls();
-    const verify = calls.find((request) => request.params.prop === "revisions");
-    expect(verify?.params).toMatchObject({
-      action: "query",
-      titles: "Foo bar",
-      rvprop: "ids|sha1|timestamp|user",
-      rvlimit: "1",
-    });
-    expect(calls.indexOf(verify!)).toBeGreaterThan(
-      calls.findIndex((r) => r.params.action === "import")
-    );
+    const reads = calls.filter((request) => request.params.prop === "revisions");
+    expect(reads).toHaveLength(2);
+    for (const read of reads) {
+      expect(read.params).toMatchObject({
+        action: "query",
+        titles: "Foo bar",
+        rvprop: "ids|sha1|timestamp|user",
+        rvlimit: "1",
+      });
+    }
+    const importAt = calls.findIndex((r) => r.params.action === "import");
+    expect(calls.indexOf(reads[0]!)).toBeLessThan(importAt);
+    expect(calls.indexOf(reads[1]!)).toBeGreaterThan(importAt);
   });
 
   it("stamps the WikiOS revision and the article with the MediaWiki revision that holds the text", async () => {
@@ -484,12 +530,15 @@ describe("when the import is refused", () => {
       expect((failure as MediaWikiApiError).code).toBe(code);
       expect((failure as MediaWikiApiError).message).toContain("You may not import.");
       expect(requestsTo("edit")).toHaveLength(0);
-      expect(requestsTo("query")).toHaveLength(0);
+      // the only read is the one before the import: a refused import is never verified
+      expect(requestsTo("query")).toHaveLength(1);
+      expect(wiki.calls().at(-1)?.params.action).toBe("import");
       expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
     }
   );
 
   it("fails the job on an HTTP error", async () => {
+    currentRevisionIs(777);
     globalThis.fetch = jest.fn(async (input: string | URL | Request, init?: RequestInit) => {
       if (init?.body instanceof FormData) return new Response("bad gateway", { status: 502 });
       return wiki.fetch(input, init);
@@ -500,6 +549,7 @@ describe("when the import is refused", () => {
 
   it("says what an oversized upload was answered with: the status and the start of the body, not a parse error", async () => {
     const page = `<html><head><title>413 Request Entity Too Large</title></head>${"<p>x</p>".repeat(100)}</html>`;
+    currentRevisionIs(777);
     globalThis.fetch = jest.fn(async (input: string | URL | Request, init?: RequestInit) => {
       if (init?.body instanceof FormData) return new Response(page, { status: 413 });
       return wiki.fetch(input, init);
@@ -517,6 +567,7 @@ describe("when the import is refused", () => {
   });
 
   it("says so, with the status and the start of the body, when a successful answer is not JSON", async () => {
+    currentRevisionIs(777);
     globalThis.fetch = jest.fn(async (input: string | URL | Request, init?: RequestInit) => {
       if (init?.body instanceof FormData) {
         return new Response("<br />\n<b>Fatal error</b>: Allowed memory size exhausted", {
@@ -772,11 +823,11 @@ describe("a batch of revisions of one title", () => {
     });
   });
 
-  it("reads the page's current revision once, and its history to find the earlier revisions", async () => {
+  it("reads the page's current revision before the import and after it, and its history to find the earlier revisions", async () => {
     await runBatch([jobFor(1), jobFor(2)]);
 
     const reads = wiki.calls().filter((call) => call.params.prop === "revisions");
-    expect(reads.map((call) => call.params.rvlimit)).toEqual(["1", "max"]);
+    expect(reads.map((call) => call.params.rvlimit)).toEqual(["1", "1", "max"]);
   });
 
   it("gives the import more time than any other call: MediaWiki updates the page for every revision it imports", async () => {
@@ -913,6 +964,69 @@ describe("a batch of revisions of one title", () => {
       expect(outcomes[0]?.note).toContain("only the batch's newest text was pushed");
       expect(outcomes[1]?.note).toContain("pushed as an edit instead");
       expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 20 });
+    });
+  });
+
+  describe("who made the newer revision is read before the import, not after it", () => {
+    /** `rvlimit=1` answers with each current revision in turn (before the import, then after it); the history is the older pages. */
+    function currentThenAfterImport(
+      answers: Array<{ revid: number; text: string; user: string }>
+    ) {
+      const queue = [...answers];
+      wiki.on("query", ({ params }) => {
+        if (params.rvlimit !== "1") {
+          return {
+            query: {
+              pages: [
+                {
+                  title: "Foo bar",
+                  revisions: [{ revid: 10, sha1: hexSha1(T1), timestamp: "2026-09-27T10:00:00Z" }],
+                },
+              ],
+            },
+          };
+        }
+        const now = queue.length > 1 ? queue.shift()! : queue[0]!;
+        return {
+          query: {
+            pages: [
+              {
+                title: "Foo bar",
+                revisions: [{ revid: now.revid, sha1: hexSha1(now.text), user: now.user }],
+              },
+            ],
+          },
+        };
+      });
+      wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
+    }
+
+    it("blames someone else's edit even though the import's own null revision, by the mirror, is what MediaWiki shows afterwards", async () => {
+      currentThenAfterImport([
+        { revid: 12, text: "A human's text.\n", user: "WikiOSAdmin" }, // before the import
+        { revid: 13, text: "A human's text.\n", user: "WikiOSMirror" }, // after it: the null revision copies that text
+      ]);
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(requestsTo("edit")).toHaveLength(1);
+      expect(requestsTo("edit")[0]?.params.baserevid).toBe("13");
+      expect(outcomes[1]?.note).toContain("MediaWiki had a newer revision");
+      expect(outcomes[1]?.note).not.toContain("the mirror's own");
+      expect(outcomes[0]?.note).toContain("MediaWiki had a newer revision");
+      expect(outcomes[0]?.note).not.toContain("the mirror's own");
+    });
+
+    it("says it was the mirror's own when the revision before the import was the mirror's, whoever made the one after", async () => {
+      currentThenAfterImport([
+        { revid: 12, text: "An earlier import's text.\n", user: "WikiOSMirror" },
+        { revid: 13, text: "An earlier import's text.\n", user: "WikiOSMirror" },
+      ]);
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(outcomes[1]?.note).toContain("the mirror's own");
+      expect(outcomes[0]?.note).toContain("the mirror's own");
     });
   });
 
