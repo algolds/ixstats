@@ -211,6 +211,27 @@ describe("uploading a staged file", () => {
     expect(executedSql[0]?.values).toContain("Flag of Eurth.png");
   });
 
+  it("fails the job, and switches nothing, when the pages that use the file cannot be marked stale; the retry does both (review minor 2)", async () => {
+    const bytes = png(21);
+    const sha1 = await stagedUpload(bytes);
+    imageInfo(null);
+    wiki.on("upload", () => ({ upload: { result: "Success" } }));
+    jest.spyOn(db, "$executeRaw").mockRejectedValueOnce(new Error("db down"));
+
+    await expect(runUploadJob(uploadJob(sha1))).rejects.toThrow("db down");
+
+    // one transaction: the asset still serves the staged copy, which is still there
+    expect(tables.wikiAsset.rows[0]?.url).toBe(`${STAGED_FILE_PATH}Flag_of_Eurth.png`);
+    expect(await isStaged(sha1)).toBe(true);
+
+    // the retry finds the file in MediaWiki already, and finishes
+    imageInfo(sha1Of(bytes));
+    await runUploadJob(uploadJob(sha1));
+    expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
+    expect(await isStaged(sha1)).toBe(false);
+    expect(calls("upload")).toHaveLength(1);
+  });
+
   it("is done when MediaWiki refuses the upload as no change and its hash agrees", async () => {
     const bytes = png(4);
     const sha1 = await stagedUpload(bytes);

@@ -16,6 +16,7 @@
  * The description page's current text goes along as `text`: MediaWiki uses it only when it has no page for the file yet.
  */
 
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { db } from "~/server/db";
 import { MediaAssetService } from "../core/media-asset-service";
@@ -121,17 +122,17 @@ async function sendFile(
   }
 }
 
-/** Pages that use the file were rendered while MediaWiki had no such file: they are stale now (the render queue fixes them). */
-async function markUsersStale(name: string): Promise<void> {
-  try {
-    await db.$executeRaw`
-      UPDATE wiki_articles SET "htmlSyncedAt" = NULL
-      WHERE source = ${MIRROR_SOURCE}
-        AND "htmlSyncedAt" IS NOT NULL
-        AND id IN (SELECT "articleId" FROM wiki_image_links WHERE "fileName" = ${name})`;
-  } catch (error) {
-    console.warn(`[WikiMirror] Marking the pages that use "${name}" stale failed:`, error);
-  }
+/**
+ * Pages that use the file were rendered while MediaWiki had no such file: they are stale now (the render queue fixes
+ * them). In the transaction that switches the asset: if marking them fails, the switch is undone and the job fails,
+ * and the retry (which finds the file in MediaWiki already) does both again.
+ */
+async function markUsersStale(tx: Prisma.TransactionClient, name: string): Promise<void> {
+  await tx.$executeRaw`
+    UPDATE wiki_articles SET "htmlSyncedAt" = NULL
+    WHERE source = ${MIRROR_SOURCE}
+      AND "htmlSyncedAt" IS NOT NULL
+      AND id IN (SELECT "articleId" FROM wiki_image_links WHERE "fileName" = ${name})`;
 }
 
 /**
@@ -162,7 +163,7 @@ export async function runUploadJob(job: MirrorJob): Promise<void> {
   // Under the file's lock, so an upload of the same bytes that is recording its rows now cannot lose the file to the release below.
   await withStagedFileLock(sha1, async (tx) => {
     await MediaAssetService.markMirrored(name, sha1, tx);
-    await markUsersStale(name);
+    await markUsersStale(tx, name);
     await releaseStagedFileUnlessNeeded(tx, sha1, job.id);
   });
 }
