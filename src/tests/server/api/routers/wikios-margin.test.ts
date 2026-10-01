@@ -444,3 +444,67 @@ describe("deleteComment", () => {
     });
   });
 });
+
+describe("writing to a deleted page's Margin", () => {
+  const archive = () =>
+    tables.wikiArticle.seed({
+      source: "ixwiki",
+      title: "Caphiria",
+      slug: "caphiria",
+      status: "ARCHIVED",
+    });
+  const newThread = { articleTitle: "Caphiria", title: "Border dispute", content: "Look at this" };
+
+  it("opens a thread on a published page, and on a title with no page yet", async () => {
+    tables.wikiArticle.seed({ source: "ixwiki", title: "Caphiria", slug: "caphiria" });
+
+    await expect(margin("other").createThread(newThread)).resolves.toMatchObject({
+      articleTitle: "Caphiria",
+    });
+    await expect(
+      margin("other").createThread({ ...newThread, articleTitle: "Not yet written" })
+    ).resolves.toBeDefined();
+    expect(threads.rows).toHaveLength(2);
+  });
+
+  it("answers NOT_FOUND to createThread for a deleted page, and writes nothing", async () => {
+    archive();
+
+    await expect(margin("other").createThread(newThread)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(threads.rows).toHaveLength(0);
+    expect(comments.rows).toHaveLength(0);
+  });
+
+  it("lets a reader with deletedhistory open a thread on a deleted page", async () => {
+    archive();
+
+    await expect(margin("sysop").createThread(newThread)).resolves.toBeDefined();
+    expect(threads.rows).toHaveLength(1);
+  });
+
+  it("answers NOT_FOUND to postComment on a deleted page's thread, and writes nothing", async () => {
+    const thread = seedThread({}, 1);
+    archive();
+
+    await expect(
+      margin("other").postComment({ threadId: thread.id, content: "Me too" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(comments.rows).toHaveLength(1);
+  });
+
+  it("lets anyone reply on a published page's thread, and a reader with deletedhistory on a deleted one", async () => {
+    const thread = seedThread({}, 1);
+
+    await expect(
+      margin("other").postComment({ threadId: thread.id, content: "Me too" })
+    ).resolves.toMatchObject({ content: "Me too" });
+
+    archive();
+    await expect(
+      margin("sysop").postComment({ threadId: thread.id, content: "Noted" })
+    ).resolves.toMatchObject({ content: "Noted" });
+    expect(comments.rows).toHaveLength(3);
+  });
+});

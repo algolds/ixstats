@@ -72,6 +72,8 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const authUserId = requireWikiUserId(ctx);
       await requireNotBlocked(ctx);
+      // The reads hide a deleted page's Margin: the writes must not reveal or extend it either.
+      await assertTitleVisible(ctx, input.articleTitle);
       // Posting "as" a country is only allowed for a country the caller may write to.
       if (input.countryId) await assertCountryWriteAccess(ctx, input.countryId);
       const dbUser = ctx.user as any;
@@ -142,6 +144,7 @@ export const wikiosDiscussionsRouter = createTRPCRouter({
       if (!thread) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Thread not found" });
       }
+      await assertTitleVisible(ctx, thread.articleTitle);
 
       return db.$transaction(async (tx) => {
         const client = tx as any;
