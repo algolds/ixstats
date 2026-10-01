@@ -23,7 +23,12 @@ export function calculateVitalityData(
   country: Pick<
     BaseCountryData,
     "economicTier" | "adjustedGdpGrowth" | "populationGrowthRate" | "populationDensity"
-  >
+  >,
+  /**
+   * Server-computed Diplomatic Standing (`countries.getActivityRingsData`, from relations,
+   * embassies, alliances, treaties and hostile actions). Null or absent = no diplomatic record.
+   */
+  diplomaticStanding: number | null = null
 ): VitalityData {
   // Economic Vitality (based on GDP per capita and growth)
   const economicTierScore = ECONOMIC_TIER_SCORES[country.economicTier] ?? 25;
@@ -38,16 +43,16 @@ export function calculateVitalityData(
     : 60;
   const populationWellbeing = (popGrowthHealth + densityFactor) / 2;
 
-  // Diplomatic Standing (simplified for public view)
-  const diplomaticStanding = 60;
-
   // Governmental Efficiency (based on economic tier as proxy)
   const governmentalEfficiency = economicTierScore * 0.8;
 
   return {
     economicVitality,
     populationWellbeing,
-    diplomaticStanding,
+    diplomaticStanding:
+      typeof diplomaticStanding === "number" && Number.isFinite(diplomaticStanding)
+        ? Math.min(100, Math.max(0, diplomaticStanding))
+        : null,
     governmentalEfficiency,
   };
 }

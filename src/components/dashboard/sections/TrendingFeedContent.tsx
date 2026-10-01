@@ -63,7 +63,7 @@ export function TrendingFeedContent({
             <Link
               key={topic.id}
               href={withBasePath(`/hashtags/${encodeURIComponent(topic.hashtag)}`)}
-              className="bg-fill-3 hover:bg-fill-2 text-label text-caption duration-fast ease-out-facet focus-visible:outline-tint rounded-full px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="bg-fill-3 hover:bg-fill-2 text-label text-caption duration-fast ease-out-facet focus-visible:outline-tint rounded-full px-3 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               title={`${topic.postCount} post${topic.postCount !== 1 ? "s" : ""}`}
             >
               {topic.title}

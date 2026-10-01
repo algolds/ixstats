@@ -35,6 +35,9 @@ import {
   relativeTime,
 } from "./tray/types";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { tweenFast } from "~/lib/design/motion";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
@@ -276,7 +279,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
-              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-1.5 py-0.5 text-center font-semibold"
+              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
               whiteSpace="nowrap"
             >
               {String(totalUnreadCount)}
@@ -285,68 +288,58 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         </div>
         <div className="flex items-center gap-1">
           {totalUnreadCount > 0 && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleMarkAllRead}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
-              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-40"
+              className="text-label-secondary hover:text-label"
               title="Mark all notifications and messages as read"
             >
-              <CheckCircle className="text-green h-3 w-3" />
+              <CheckCircle aria-hidden className="text-green" />
               <PreText className="text-inherit" whiteSpace="nowrap">
                 Read all
               </PreText>
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => {
               soundEffects.droplet();
               onClose();
             }}
-            data-cuelume-press="droplet"
-            className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
+            className="text-label-secondary hover:text-label"
             title="Close tray"
+            aria-label="Close tray"
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       </div>
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
-      <div className="rounded-row border-separator bg-fill-4 mb-3 flex items-center gap-1 border p-1">
-        {tabs.map((tab) => {
+      <SegmentedControl
+        aria-label="Inbox"
+        asTabs
+        fullWidth
+        size="sm"
+        className="mb-3"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        options={tabs.map((tab) => {
           const Icon = tab.icon;
-          const isSelected = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              data-cuelume-press="page"
-              data-cuelume-hover="tick"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "rounded-control text-caption relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.98]",
-                isSelected ? "text-label" : "text-label-secondary hover:text-label hover:bg-fill-3"
-              )}
-            >
-              {isSelected && (
-                <motion.div
-                  layoutId="halo-notif-tab-indicator"
-                  className="rounded-control border-separator bg-surface absolute inset-0 border"
-                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Icon className={cn("h-3.5 w-3.5", isSelected && "text-yellow")} />
-                <span>{tab.label}</span>
-                {tab.unread > 0 && (
-                  <span className="bg-yellow text-caption text-on-yellow flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 font-semibold">
-                    {tab.unread > 9 ? "9+" : tab.unread}
-                  </span>
-                )}
-              </span>
-            </button>
-          );
+          return {
+            value: tab.id,
+            label: tab.label,
+            icon: <Icon aria-hidden />,
+            badge: tab.unread > 0 ? (tab.unread > 9 ? "9+" : tab.unread) : undefined,
+            badgeLabel: tab.unread > 0 ? `${tab.unread} unread` : undefined,
+          };
         })}
-      </div>
+      />
 
       {/* Main Content Area */}
       <div
@@ -397,13 +390,15 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   <div key={group.label}>
                     {/* Group header */}
                     <button
+                      type="button"
                       onClick={() => toggleGroup(group.label)}
-                      className="hover:bg-fill-4 rounded-control-sm mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors"
+                      aria-expanded={!isCollapsed}
+                      className="hover:bg-fill-4 rounded-control-sm focus-visible:outline-tint mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors focus-visible:outline-2"
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <motion.div
                           animate={{ rotate: isCollapsed ? 0 : 90 }}
-                          transition={{ duration: 0.15 }}
+                          transition={tweenFast}
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
@@ -477,20 +472,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
       {/* Expand / Minimize DI Size Toggle */}
       <div className="border-separator mt-3 flex justify-center border-t pt-2">
-        <button
+        <Button
+          type="button"
+          variant="bordered"
+          size="icon-sm"
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
           }}
-          className="text-label-secondary hover:text-label border-separator hover:bg-fill-4 flex h-7 w-7 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+          className="text-label-secondary hover:text-label rounded-full"
           title={isUltra ? "Standard View" : "Expanded View"}
           aria-label={isUltra ? "Standard View" : "Expanded View"}
         >
-          {isUltra ? (
-            <Minimize2 className="text-label-secondary h-3.5 w-3.5" />
-          ) : (
-            <Maximize2 className="text-label-secondary h-3.5 w-3.5" />
-          )}
-        </button>
+          {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
+        </Button>
       </div>
     </div>
   );

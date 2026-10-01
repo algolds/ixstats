@@ -14,6 +14,7 @@ import { useFormattedAnimatedValue, MOTION_VARIANTS } from "./animation-utils";
 import type { MetricCardProps } from "./types";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { Button } from "~/components/ui/button";
 
 export function MetricCard({
   label,
@@ -96,14 +97,20 @@ export function MetricCard({
           )}
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <h3 className="text-label text-headline truncate">{label}</h3>
               {tooltip && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="text-label-secondary hover:text-green cursor-pointer p-0.5 transition-colors focus:outline-none">
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="More information"
+                      className="text-label-secondary hover:text-label size-6"
+                    >
+                      <Info aria-hidden className="size-3.5" />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent
                     side="top"

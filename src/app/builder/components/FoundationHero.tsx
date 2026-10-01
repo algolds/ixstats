@@ -70,13 +70,13 @@ function PathCard({
               {badge && <Badge variant="tinted">{badge}</Badge>}
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <h3 className="text-label text-title-3">{title}</h3>
               <p className="text-label-secondary text-body leading-relaxed">{description}</p>
             </div>
           </div>
 
-          <div className="text-label-secondary group-hover:text-label text-caption mt-6 flex items-center gap-1.5 font-semibold transition-colors">
+          <div className="text-label-secondary group-hover:text-label text-caption mt-6 flex items-center gap-2 font-semibold transition-colors">
             <span>Continue</span>
             <ArrowRight
               aria-hidden="true"
@@ -283,7 +283,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
+                    <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"
@@ -363,7 +363,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
+                    <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"

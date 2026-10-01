@@ -27,8 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { fieldStyles } from "~/components/ui/input";
 import { springSmooth } from "~/lib/design/motion";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
@@ -280,7 +280,7 @@ export function AccountCreationModal({
       >
         {/* Header */}
         <DialogHeader className="border-separator flex-row items-center gap-3 border-b px-4 py-3 text-left sm:px-6 sm:py-4">
-          <div className="border-separator bg-surface-secondary rounded-row flex size-10 shrink-0 items-center justify-center overflow-hidden border p-1.5">
+          <div className="border-separator bg-surface-secondary rounded-row flex size-10 shrink-0 items-center justify-center overflow-hidden border p-2">
             <img
               src="https://ixwiki.com/images/8/88/Thinkpages_Logo.svg"
               alt="Thinkpages"
@@ -292,13 +292,15 @@ export function AccountCreationModal({
               <span>Create Thinkpages Account</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
+                  <Button
                     type="button"
-                    className="text-label-secondary hover:text-label transition-colors"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-label-secondary hover:text-label"
                     aria-label="Thinkpages Help"
                   >
-                    <HelpCircle className="size-4" />
-                  </button>
+                    <HelpCircle aria-hidden />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs p-3">
                   <p className="text-headline mb-1">About ThinkPages</p>
@@ -397,71 +399,73 @@ export function AccountCreationModal({
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={springSmooth}
-                        className="mt-4 grid grid-cols-1 gap-3 overflow-hidden sm:grid-cols-3 sm:gap-4"
+                        className="mt-4 grid grid-cols-1 gap-4 overflow-hidden"
                       >
                         <div>
-                          <label className="text-subhead text-label mb-2 block">
+                          <span
+                            id="tp-create-posting-frequency"
+                            className="text-subhead text-label mb-2 block"
+                          >
                             Posting Frequency
-                          </label>
-                          <select
+                          </span>
+                          <SegmentedControl
+                            aria-labelledby="tp-create-posting-frequency"
+                            size="sm"
+                            fullWidth
                             value={formData.postingFrequency}
-                            onChange={(e) =>
-                              setFormData((p) => ({
-                                ...p,
-                                postingFrequency: e.target.value as any,
-                              }))
+                            onValueChange={(v) =>
+                              setFormData((p) => ({ ...p, postingFrequency: v as any }))
                             }
-                            className={cn(
-                              fieldStyles,
-                              "rounded-control text-body block h-(--control-height) w-full px-3"
-                            )}
-                          >
-                            <option value="low">Low</option>
-                            <option value="moderate">Moderate</option>
-                            <option value="active">Active</option>
-                          </select>
+                            options={[
+                              { value: "low", label: "Low" },
+                              { value: "moderate", label: "Moderate" },
+                              { value: "active", label: "Active" },
+                            ]}
+                          />
                         </div>
                         <div>
-                          <label className="text-subhead text-label mb-2 block">
+                          <span
+                            id="tp-create-political-lean"
+                            className="text-subhead text-label mb-2 block"
+                          >
                             Political Lean
-                          </label>
-                          <select
+                          </span>
+                          <SegmentedControl
+                            aria-labelledby="tp-create-political-lean"
+                            size="sm"
+                            fullWidth
                             value={formData.politicalLean}
-                            onChange={(e) =>
-                              setFormData((p) => ({
-                                ...p,
-                                politicalLean: e.target.value as any,
-                              }))
+                            onValueChange={(v) =>
+                              setFormData((p) => ({ ...p, politicalLean: v as any }))
                             }
-                            className={cn(
-                              fieldStyles,
-                              "rounded-control text-body block h-(--control-height) w-full px-3"
-                            )}
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </select>
+                            options={[
+                              { value: "left", label: "Left" },
+                              { value: "center", label: "Center" },
+                              { value: "right", label: "Right" },
+                            ]}
+                          />
                         </div>
                         <div>
-                          <label className="text-subhead text-label mb-2 block">Personality</label>
-                          <select
-                            value={formData.personality}
-                            onChange={(e) =>
-                              setFormData((p) => ({
-                                ...p,
-                                personality: e.target.value as any,
-                              }))
-                            }
-                            className={cn(
-                              fieldStyles,
-                              "rounded-control text-body block h-(--control-height) w-full px-3"
-                            )}
+                          <span
+                            id="tp-create-personality"
+                            className="text-subhead text-label mb-2 block"
                           >
-                            <option value="serious">Serious</option>
-                            <option value="casual">Casual</option>
-                            <option value="satirical">Satirical</option>
-                          </select>
+                            Personality
+                          </span>
+                          <SegmentedControl
+                            aria-labelledby="tp-create-personality"
+                            size="sm"
+                            fullWidth
+                            value={formData.personality}
+                            onValueChange={(v) =>
+                              setFormData((p) => ({ ...p, personality: v as any }))
+                            }
+                            options={[
+                              { value: "serious", label: "Serious" },
+                              { value: "casual", label: "Casual" },
+                              { value: "satirical", label: "Satirical" },
+                            ]}
+                          />
                         </div>
                       </motion.div>
                     )}

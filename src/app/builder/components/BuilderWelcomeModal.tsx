@@ -218,7 +218,7 @@ export function BuilderWelcomeModal({
               </div>
 
               <div className="bg-surface-secondary rounded-row p-3">
-                <div className="mb-1.5 flex items-center gap-2">
+                <div className="mb-2 flex items-center gap-2">
                   <BookOpen aria-hidden="true" className="text-tint h-4 w-4" />
                   <h4 className="text-headline text-label">How It Works</h4>
                 </div>
@@ -230,12 +230,12 @@ export function BuilderWelcomeModal({
               </div>
             </TabsContent>
 
-            <TabsContent value="1" role="tabpanel" className="grid grid-cols-2 gap-2.5 text-left">
+            <TabsContent value="1" role="tabpanel" className="grid grid-cols-2 gap-2 text-left">
               {MAIN_STEPS.map((step) => {
                 const Icon = step.icon;
                 return (
                   <div key={step.title} className="bg-surface-secondary rounded-row p-3">
-                    <div className="mb-1.5 flex items-center gap-2">
+                    <div className="mb-2 flex items-center gap-2">
                       <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                       <h4 className="text-headline text-label">{step.title}</h4>
                     </div>
@@ -266,7 +266,7 @@ export function BuilderWelcomeModal({
               })}
             </TabsContent>
 
-            <TabsContent value="3" role="tabpanel" className="space-y-3.5 text-left">
+            <TabsContent value="3" role="tabpanel" className="space-y-4 text-left">
               <Eyebrow className="block">Common Questions</Eyebrow>
               <dl className="space-y-3">
                 {FAQS.map((faq) => (

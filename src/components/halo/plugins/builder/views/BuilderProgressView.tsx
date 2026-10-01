@@ -163,14 +163,14 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             <span className="bg-border h-1.5 w-1.5 rounded-full" />
             <span className="text-caption text-label-secondary">v{BUILDER_VERSION}</span>
           </div>
-          <h2 className="text-title-3 text-label font-extrabold">
+          <h2 className="text-title-3 text-label">
             Building: <span className="text-yellow">{countryName || "New Country"}</span>
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Autosave status pill */}
-          <div className="rounded-control border-separator bg-surface text-caption text-label-secondary flex h-8 items-center gap-1.5 border px-3 select-none">
+          <div className="rounded-control border-separator bg-surface text-caption text-label-secondary flex h-8 items-center gap-2 border px-3 select-none">
             <span className="relative flex h-1.5 w-1.5">
               {isAutoSaving ? (
                 <>
@@ -191,36 +191,32 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
           </div>
 
           {isConfirmingRestart ? (
-            <div className="rounded-control border-red/30 bg-red/10 flex items-center gap-1.5 border p-0.5">
+            <div className="rounded-control border-red/30 bg-red/10 flex items-center gap-2 border p-0.5">
               <span className="text-caption text-red px-2 font-semibold">Reset draft?</span>
-              <button
-                onClick={handleConfirmRestart}
-                className="rounded-control-sm bg-red text-caption text-on-red flex h-7 items-center px-2.5 font-semibold transition-transform active:scale-[0.98]"
-                type="button"
-                data-cuelume-press
-              >
+              <Button type="button" variant="destructive" size="sm" onClick={handleConfirmRestart}>
                 Yes, Reset
-              </button>
-              <button
-                onClick={() => setIsConfirmingRestart(false)}
-                className="rounded-control-sm border-separator bg-surface text-caption text-label-secondary hover:text-label flex h-7 items-center border px-2 font-semibold transition-transform active:scale-[0.98]"
+              </Button>
+              <Button
                 type="button"
-                data-cuelume-press
+                variant="bordered"
+                size="sm"
+                onClick={() => setIsConfirmingRestart(false)}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              onClick={() => setIsConfirmingRestart(true)}
-              className="rounded-control border-separator bg-surface text-caption text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red flex h-8 cursor-pointer items-center gap-1.5 border px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-              title="Restart Builder"
+            <Button
               type="button"
-              data-cuelume-press
+              variant="bordered"
+              size="sm"
+              onClick={() => setIsConfirmingRestart(true)}
+              title="Restart Builder"
+              className="text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw aria-hidden />
               Restart
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -228,7 +224,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
       <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
         {/* Step Progress Tracker */}
         <div className="space-y-2 text-left md:col-span-7">
-          <h3 className="text-eyebrow text-label-secondary mb-2.5">Progress Checklist</h3>
+          <h3 className="text-eyebrow text-label-secondary mb-2">Progress Checklist</h3>
           <div className="space-y-2">
             {BUILDER_STEPS.map((st) => {
               const state = getStepState(st.key);
@@ -279,7 +275,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
 
             <div className="text-footnote space-y-2">
               <div className="border-separator flex items-center justify-between border-b py-1">
-                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Building2 className="text-label-secondary h-3.5 w-3.5" />
                   Government
                 </span>
@@ -290,7 +286,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 </span>
               </div>
               <div className="border-separator flex items-center justify-between border-b py-1">
-                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Coins className="text-label-secondary h-3.5 w-3.5" />
                   Total Budget
                 </span>
@@ -301,7 +297,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 </span>
               </div>
               <div className="border-separator flex items-center justify-between border-b py-1">
-                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Globe className="text-label-secondary h-3.5 w-3.5" />
                   Capital City
                 </span>
@@ -310,7 +306,7 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
                 </span>
               </div>
               <div className="border-separator flex items-center justify-between border-b py-1">
-                <span className="text-label-secondary flex items-center gap-1.5 font-semibold">
+                <span className="text-label-secondary flex items-center gap-2 font-semibold">
                   <Crown className="text-label-secondary h-3.5 w-3.5" />
                   Currency
                 </span>

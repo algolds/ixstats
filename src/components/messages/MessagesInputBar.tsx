@@ -118,14 +118,16 @@ export function MessagesInputBar({
               {replyingTo.content.replace(/<[^>]*>/g, "").substring(0, 80)}
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onCancelReply}
             aria-label="Cancel reply"
-            className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm cursor-pointer p-0.5 transition-colors"
+            className="text-label-secondary hover:text-label"
           >
-            <X className="size-3.5" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       )}
 

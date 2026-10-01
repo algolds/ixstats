@@ -6,6 +6,7 @@ import { useRef, useEffect } from "react";
 import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 
 interface WikiSearchDropdownProps {
   searchQuery: string;
@@ -46,13 +47,16 @@ export function WikiSearchDropdown({
             data-command-palette-search="true"
           />
           {searchQuery && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onSearchChange("")}
+              aria-label="Clear search"
               className="text-label-secondary hover:text-label"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <X aria-hidden />
+            </Button>
           )}
         </div>
       </div>
@@ -76,7 +80,7 @@ export function WikiSearchDropdown({
                 key={result.title}
                 type="button"
                 onClick={() => onSelectArticle(result.title)}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-1.5 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-2 text-left transition-colors"
               >
                 <span className="text-body flex items-center gap-2">
                   <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">

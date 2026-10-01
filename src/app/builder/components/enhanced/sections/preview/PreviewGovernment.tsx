@@ -112,7 +112,7 @@ export const PreviewGovernment = memo(function PreviewGovernment({
       </div>
 
       {/* Selected Institutions / Components */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
           <Shield className="text-tint h-3.5 w-3.5" />
           Institutions

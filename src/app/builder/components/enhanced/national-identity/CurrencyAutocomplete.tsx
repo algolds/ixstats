@@ -10,6 +10,7 @@ import { POPULAR_CURRENCIES } from "./identityUtils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface CurrencyAutocompleteProps {
   fieldName: string;
@@ -88,7 +89,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         </Button>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {/* Currency Selector Mode */}
         {inputMode === "selector" ? (
           <div className="space-y-2">
@@ -143,7 +144,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
               <Badge variant="neutral">Custom Sovereign Currency</Badge>
             )}
             {currencyInfo.symbol && (
-              <span className="text-label-secondary text-footnote inline-flex items-center gap-1.5">
+              <span className="text-label-secondary text-footnote inline-flex items-center gap-2">
                 <span>Symbol:</span>
                 <span className="bg-fill-3 rounded-control-sm text-caption text-label inline-flex items-center gap-1 px-2 py-0.5">
                   <CurrencyIcon
@@ -159,31 +160,27 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         )}
 
         {/* Quick Access Badges for Popular Currencies */}
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-2 pt-1">
           <div className="text-subhead text-label-secondary">Quick select</div>
-          <div className="flex flex-wrap gap-1.5">
-            {POPULAR_CURRENCIES.map(({ code, symbol, label }) => {
-              const isSelected = value === code;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => handleValueChange(code)}
-                  aria-pressed={isSelected}
-                  className={`text-caption rounded-control inline-flex items-center gap-1 border px-2 py-1 transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] ${
-                    isSelected
-                      ? "border-tint/50 bg-tint-fill text-tint"
-                      : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3 hover:text-label"
-                  }`}
-                  title={label}
-                  data-cuelume-press
-                >
-                  <CurrencyIcon code={code} symbol={symbol} className="h-3.5 w-3.5 shrink-0" />
-                  <span>{code}</span>
-                </button>
-              );
-            })}
-          </div>
+          <ToggleGroup
+            type="single"
+            aria-label="Popular currencies"
+            variant="outline"
+            size="sm"
+            disallowEmpty
+            value={POPULAR_CURRENCIES.some((c) => c.code === value) ? value : ""}
+            onValueChange={(code) => {
+              if (code) handleValueChange(code);
+            }}
+            className="flex flex-wrap gap-2"
+          >
+            {POPULAR_CURRENCIES.map(({ code, symbol, label }) => (
+              <ToggleGroupItem key={code} value={code} title={label} className="gap-1">
+                <CurrencyIcon code={code} symbol={symbol} className="size-3.5 shrink-0" />
+                <span>{code}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       </div>
     </div>

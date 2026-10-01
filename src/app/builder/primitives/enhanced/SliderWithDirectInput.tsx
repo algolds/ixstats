@@ -9,6 +9,7 @@ import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
 import { ChangedFieldDot } from "../ChangedFieldDot";
 import { EditPencil as Edit3, ControlSlider as Sliders } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 interface SliderWithDirectInputProps extends EnhancedInputProps {
   orientation?: "horizontal" | "vertical";
@@ -204,11 +205,11 @@ export function SliderWithDirectInput({
                 )}
               </label>
             )}
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-2">
               {showValue && (
                 <div
                   className={cn(
-                    "rounded-control border-separator bg-background text-headline text-label inline-flex items-center gap-1.5 border px-2.5 py-1 tabular-nums shadow-2xs",
+                    "rounded-control border-separator bg-background text-headline text-label inline-flex items-center gap-2 border px-3 py-1 tabular-nums shadow-2xs",
                     valueClassName
                   )}
                 >
@@ -225,23 +226,24 @@ export function SliderWithDirectInput({
                 </div>
               )}
               {allowModeToggle && (
-                <button
+                <Button
                   type="button"
+                  variant="gray"
+                  size="icon-sm"
                   onClick={() => setInputMode(inputMode === "slider" ? "input" : "slider")}
-                  className={cn(
-                    "rounded-control border-separator bg-fill-4 border p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                    "text-label-secondary hover:text-label hover:bg-fill-3"
-                  )}
+                  className="text-label-secondary hover:text-label"
                   title={inputMode === "slider" ? "Switch to direct input" : "Switch to slider"}
+                  aria-label={
+                    inputMode === "slider" ? "Switch to direct input" : "Switch to slider"
+                  }
                   disabled={disabled}
-                  data-cuelume-press
                 >
                   {inputMode === "slider" ? (
                     <Edit3 className="h-3.5 w-3.5" />
                   ) : (
                     <Sliders className="h-3.5 w-3.5" />
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -268,7 +270,7 @@ export function SliderWithDirectInput({
             onBlur={handleInputBlur}
             disabled={disabled}
             className={cn(
-              "rounded-control w-full border px-4 py-3 md:py-2.5",
+              "rounded-control w-full border px-4 py-3 md:py-3",
               "bg-surface",
               "text-label placeholder-muted-foreground",
               "border-separator",

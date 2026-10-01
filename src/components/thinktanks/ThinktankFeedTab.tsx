@@ -20,6 +20,17 @@ import { Textarea } from "~/components/ui/textarea";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -64,6 +75,8 @@ export function ThinktankFeedTab({
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [showMediaInput, setShowMediaInput] = useState(false);
+  /** The post awaiting the moderator's removal confirmation (AlertDialog, spec §7.3). */
+  const [pendingRemovePostId, setPendingRemovePostId] = useState<string | null>(null);
 
   // Queries
   const { data: feedData, isLoading: isLoadingFeed } = api.thinkpages.getGroupFeed.useQuery(
@@ -171,29 +184,25 @@ export function ThinktankFeedTab({
                   <span className="text-footnote text-label-secondary mr-1 flex items-center gap-1">
                     <Group className="size-3.5" aria-hidden="true" /> Post as:
                   </span>
-                  {accounts.map((acc: any) => {
-                    const isSelected = (selectedAccountId || accounts[0]?.id) === acc.id;
-                    return (
-                      <button
-                        type="button"
-                        key={acc.id}
-                        onClick={() => {
-                          soundEffects.press();
-                          setSelectedAccountId(acc.id);
-                        }}
-                        className={cn(
-                          "text-caption flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors duration-150",
-                          isSelected
-                            ? "bg-tint-fill text-tint"
-                            : "bg-fill-4 text-label-secondary hover:bg-fill-3 hover:text-label"
-                        )}
-                      >
+                  <ToggleGroup
+                    type="single"
+                    aria-label="Post as"
+                    variant="pill"
+                    size="sm"
+                    disallowEmpty
+                    value={selectedAccountId || accounts[0]?.id}
+                    onValueChange={(id) => {
+                      if (id) setSelectedAccountId(id);
+                    }}
+                  >
+                    {accounts.map((acc: any) => (
+                      <ToggleGroupItem key={acc.id} value={acc.id} className="gap-1">
                         <span className="size-2 rounded-full bg-current" aria-hidden="true" />
                         <span>{acc.displayName || acc.username}</span>
                         <span className="text-label-secondary">({acc.accountType})</span>
-                      </button>
-                    );
-                  })}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
                 </div>
               )}
 
@@ -206,32 +215,33 @@ export function ThinktankFeedTab({
               />
 
               {/* Quick Intent Tag Presets */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 {[
                   { label: "💡 Note to self", tag: "note-to-self" },
                   { label: "🤝 Collaborative", tag: "collaborative" },
                   { label: "🔍 Critique wanted", tag: "critique" },
                   { label: "🗺️ Lore & Maps", tag: "lore" },
                 ].map((item) => (
-                  <button
+                  <Button
                     type="button"
+                    variant="gray"
+                    size="sm"
                     key={item.tag}
                     onClick={() => {
-                      soundEffects.press();
                       if (!postContent.includes(item.label)) {
                         setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
                       }
                     }}
-                    className="bg-fill-4 text-caption text-label-secondary hover:bg-fill-3 hover:text-label rounded-full px-2 py-0.5 transition-colors"
+                    className="rounded-full"
                   >
                     {item.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
               {/* Media URL Row */}
               {showMediaInput && (
-                <div className="bg-fill-4 border-separator rounded-row flex items-center gap-2 border px-3 py-1.5">
+                <div className="bg-fill-4 border-separator rounded-row flex items-center gap-2 border px-3 py-2">
                   <MediaImage className="text-label-secondary h-4 w-4" />
                   <input
                     type="url"
@@ -255,7 +265,7 @@ export function ThinktankFeedTab({
                       setShowMediaInput((prev) => !prev);
                     }}
                     className={cn(
-                      "rounded-control text-footnote h-8 px-2.5",
+                      "rounded-control text-footnote h-8 px-3",
                       showMediaInput
                         ? "bg-fill-3 text-label"
                         : "text-label-secondary hover:text-label"
@@ -352,7 +362,7 @@ export function ThinktankFeedTab({
                         )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <span className="text-headline text-label">{displayName}</span>
                           {countryName && (
                             <span className="text-label-secondary text-footnote">
@@ -390,41 +400,34 @@ export function ThinktankFeedTab({
 
                   {/* Actions Footer */}
                   <div className="border-separator text-footnote text-label-secondary mt-3 flex items-center gap-4 border-t pt-2 tabular-nums">
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-label flex items-center gap-1 transition-colors"
-                    >
+                    {/* Engagement counts (read-only here; react from the full post view). */}
+                    <span className="flex items-center gap-1">
                       <Heart className="size-3.5" aria-hidden="true" />
                       <span>{post.reactions?.length ?? 0}</span>
-                    </button>
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-label flex items-center gap-1 transition-colors"
-                    >
+                      <span className="sr-only">reactions</span>
+                    </span>
+                    <span className="flex items-center gap-1">
                       <ChatBubble className="size-3.5" aria-hidden="true" />
                       <span>{post.replies?.length ?? 0}</span>
-                    </button>
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-label flex items-center gap-1 transition-colors"
-                    >
+                      <span className="sr-only">replies</span>
+                    </span>
+                    <span className="flex items-center gap-1">
                       <Repeat className="size-3.5" aria-hidden="true" />
                       <span>{post.repostsCount ?? 0}</span>
-                    </button>
+                      <span className="sr-only">reposts</span>
+                    </span>
                     {canModerate && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         disabled={removePostMutation.isPending}
-                        onClick={() => {
-                          if (!confirm("Remove this post from the feed?")) return;
-                          soundEffects.press();
-                          removePostMutation.mutate({ groupId, postId: post.id });
-                        }}
-                        className="hover:text-destructive ml-auto flex items-center gap-1 transition-colors"
+                        onClick={() => setPendingRemovePostId(post.id)}
+                        className="text-label-secondary hover:text-destructive ml-auto"
                       >
-                        <Trash className="size-3.5" aria-hidden="true" />
+                        <Trash aria-hidden="true" />
                         <span>Remove</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -433,6 +436,32 @@ export function ThinktankFeedTab({
           )}
         </div>
       </div>
+
+      <AlertDialog
+        open={pendingRemovePostId !== null}
+        onOpenChange={(open) => !open && setPendingRemovePostId(null)}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this post from the feed?</AlertDialogTitle>
+            <AlertDialogDescription>Members will no longer see it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (pendingRemovePostId) {
+                  removePostMutation.mutate({ groupId, postId: pendingRemovePostId });
+                }
+                setPendingRemovePostId(null);
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Floating Frosted Glass Overlay (Apple Design) ── */}
       {!isMember && !readOnly && (

@@ -488,7 +488,7 @@ export function GovernmentStep({
             <div className="space-y-6">
               {/* GDP Cap Alert Banner */}
               {gdpCapWarning && (
-                <div className="rounded-control border-red/25 bg-red/5 text-footnote text-red flex items-start gap-2.5 border p-3.5">
+                <div className="rounded-control border-red/25 bg-red/5 text-footnote text-red flex items-start gap-2 border p-4">
                   <AlertTriangle className="text-red mt-0.5 h-4.5 w-4.5 shrink-0" />
                   <div className="leading-relaxed">{gdpCapWarning}</div>
                 </div>

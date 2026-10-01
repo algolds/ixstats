@@ -58,7 +58,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
   return (
     <div className="space-y-3 pt-2">
       <div className="flex items-center justify-between">
-        <h4 className="text-subhead text-label-secondary flex items-center gap-1.5">
+        <h4 className="text-subhead text-label-secondary flex items-center gap-2">
           <EditPencil aria-hidden className="size-4" />
           <span>
             Full WikiOS and database activity stream{" "}

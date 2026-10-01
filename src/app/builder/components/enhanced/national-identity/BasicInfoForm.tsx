@@ -14,10 +14,11 @@ import {
 } from "iconoir-react";
 import { GlassSelectBox } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { BasicInfoCoreIndicators } from "./BasicInfoCoreIndicators";
-import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { api } from "~/trpc/react";
 import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
@@ -379,35 +380,30 @@ export const BasicInfoForm = React.memo(
               </div>
 
               {/* 2. Unified Constitutional Governance (Government Type + Ceremonial Official Name) */}
-              <div className="rounded-row border-separator bg-surface space-y-3 border p-3.5">
+              <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-label text-caption flex items-center gap-1.5 font-semibold">
+                  <label className="text-label text-caption flex items-center gap-2 font-semibold">
                     <Crown className="text-tint h-3.5 w-3.5" />
                     <span>Constitutional Form & Ceremonial Title</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={isCustomOfficialName ? "tinted" : "plain"}
                     onClick={toggleCustomOfficialName}
-                    data-cuelume-press
-                    className={cn(
-                      "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                      isCustomOfficialName
-                        ? "border-tint/30 bg-tint-fill text-tint border"
-                        : "text-label-secondary hover:bg-fill-4 hover:text-label"
-                    )}
                   >
                     {isCustomOfficialName ? (
                       <>
-                        <Lock className="h-3 w-3" />
+                        <Lock aria-hidden />
                         <span>Reset to Auto</span>
                       </>
                     ) : (
                       <>
-                        <Edit3 className="h-3 w-3" />
+                        <Edit3 aria-hidden />
                         <span>Customize Title</span>
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -463,9 +459,9 @@ export const BasicInfoForm = React.memo(
               </div>
 
               {/* 3. Civic Geography & Demonym */}
-              <div className="rounded-row border-separator bg-surface space-y-3 border p-3.5">
+              <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-label text-caption flex items-center gap-1.5 font-semibold">
+                  <label className="text-label text-caption flex items-center gap-2 font-semibold">
                     <Building className="text-teal h-3.5 w-3.5" />
                     <span>Civic Geography & Demonym</span>
                   </label>
@@ -485,50 +481,44 @@ export const BasicInfoForm = React.memo(
                     iconClassName="text-teal"
                     onSave={handleCapitalCitySave}
                     extraLabelElement={
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         {countryId && (
-                          <button
+                          <Button
                             type="button"
+                            size="sm"
+                            variant="plain"
                             onClick={() => {
                               soundEffects.press();
                               setIsMapPickerOpen(true);
                             }}
-                            className="text-caption text-tint hover:bg-tint-fill rounded-control-sm focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 active:scale-95"
                             title="Select Capital location on map"
-                            data-cuelume-press
                           >
-                            <MapPin className="h-3 w-3" />
+                            <MapPin aria-hidden />
                             <span>Pick on Map</span>
-                          </button>
+                          </Button>
                         )}
-                        <button
-                          type="button"
-                          onClick={toggleLargestLock}
-                          className={cn(
-                            "text-caption rounded-control-sm focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 active:scale-95",
-                            isLargestLocked
-                              ? "text-tint bg-tint-fill"
-                              : "text-label-secondary hover:text-label hover:bg-fill-3"
-                          )}
+                        <Toggle
+                          size="sm"
+                          pressed={isLargestLocked}
+                          onPressedChange={() => toggleLargestLock()}
                           title={
                             isLargestLocked
                               ? "Unlock Largest City to set a different value"
                               : "Set Largest City to match Capital City"
                           }
-                          data-cuelume-press
                         >
                           {isLargestLocked ? (
                             <>
-                              <Link2 className="h-3 w-3" />
+                              <Link2 aria-hidden />
                               <span>Linked</span>
                             </>
                           ) : (
                             <>
-                              <Link2Off className="text-label-tertiary h-3 w-3" />
+                              <Link2Off aria-hidden className="text-label-tertiary" />
                               <span>Unlinked</span>
                             </>
                           )}
-                        </button>
+                        </Toggle>
                       </div>
                     }
                   />

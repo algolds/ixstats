@@ -202,15 +202,18 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
             {/* Back Button */}
             {onBack && (
-              <button
+              <Button
                 type="button"
+                variant="gray"
+                size="sm"
                 onClick={onBack}
-                className="rounded-row border-separator bg-fill-3 text-caption text-label hover:bg-fill-3 mt-0.5 flex shrink-0 cursor-pointer items-center gap-1.5 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                className="mt-0.5 shrink-0"
                 title="Back to search"
+                aria-label="Back to search"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                <ArrowLeft aria-hidden />
                 <span className="hidden sm:inline">Back</span>
-              </button>
+              </Button>
             )}
 
             {/* Flag + Coat of Arms */}
@@ -259,7 +262,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 </Badge>
               )}
               <div className="text-label-secondary text-body flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <CheckCircle className="text-green h-3.5 w-3.5" />
                   <span>{fieldCount} fields extracted</span>
                 </span>
@@ -273,7 +276,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
               {/* Background LoreScanner Status Pill */}
               {loreScanStatus && (
-                <div className="mt-2.5 flex items-center gap-2">
+                <div className="mt-2 flex items-center gap-2">
                   {loreScanStatus.isScanning ? (
                     <div className="border-blue/30 bg-blue/10 text-caption text-blue inline-flex items-center gap-2 rounded-full border px-3 py-1">
                       <div className="bg-blue h-2 w-2 animate-ping rounded-full" />
@@ -283,7 +286,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                       </span>
                     </div>
                   ) : loreScanStatus.hasCompleted ? (
-                    <div className="border-green/30 bg-green/10 text-caption text-green inline-flex items-center gap-1.5 rounded-full border px-3 py-1">
+                    <div className="border-green/30 bg-green/10 text-caption text-green inline-flex items-center gap-2 rounded-full border px-3 py-1">
                       <CheckCircle className="text-green h-3.5 w-3.5" />
                       <span>
                         LoreScanner: Enriched {loreScanStatus.pagesFound ?? 0} subpages
@@ -342,13 +345,15 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
               className="border-separator rounded-control overflow-hidden border"
             >
               <button
+                type="button"
                 onClick={() => toggleSection(section.id)}
-                className="hover:bg-fill-4 flex w-full items-center justify-between p-3 text-left transition-colors"
+                aria-expanded={isExpanded}
+                className="hover:bg-fill-4 focus-visible:outline-tint flex w-full items-center justify-between p-3 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
               >
                 <div className="flex items-center gap-2">
                   <Icon className="text-blue h-4 w-4" />
                   <span className="text-body font-medium">{section.title}</span>
-                  <Badge variant="secondary" className="text-footnote h-5 px-1.5 py-0">
+                  <Badge variant="neutral" className="tabular-nums">
                     {section.fields.length}
                   </Badge>
                 </div>
@@ -368,7 +373,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="space-y-1.5 px-3 pb-3">
+                    <div className="space-y-2 px-3 pb-3">
                       {section.fields.map((field, i) => (
                         <div key={i} className="flex items-start justify-between gap-3 py-1">
                           <span className="text-label-secondary text-body shrink-0">
@@ -409,7 +414,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
 
           <Button
             size="lg"
-            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2.5 px-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            className="group rounded-row bg-blue text-headline text-on-blue shadow-floating hover:bg-blue h-12 cursor-pointer gap-2 px-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             onClick={onContinue}
             disabled={isLoading}
           >

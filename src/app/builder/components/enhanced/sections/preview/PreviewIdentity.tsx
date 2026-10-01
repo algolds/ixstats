@@ -49,7 +49,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
         {/* Coat of Arms */}
         {economicInputs?.coatOfArmsUrl && (
-          <div className="rounded-row border-separator bg-surface shadow-card hover:border-tint/40 hover:shadow-card relative flex h-16 w-16 items-center justify-center overflow-hidden border p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+          <div className="rounded-row border-separator bg-surface shadow-card hover:border-tint/40 hover:shadow-card relative flex h-16 w-16 items-center justify-center overflow-hidden border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
             <img
               src={economicInputs.coatOfArmsUrl}
               alt="Coat of Arms"
@@ -70,7 +70,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             <Globe className="text-tint h-3.5 w-3.5" />
             Basic Info
           </h4>
-          <dl className="mt-3 space-y-2.5">
+          <dl className="mt-3 space-y-2">
             <div className="space-y-0.5">
               <dt className="text-eyebrow text-label-secondary">Common Name</dt>
               <dd className="text-caption text-label font-semibold break-words">
@@ -114,7 +114,7 @@ export const PreviewIdentity = memo(function PreviewIdentity({
             <Languages className="text-tint h-3.5 w-3.5" />
             Culture
           </h4>
-          <dl className="mt-3 space-y-2.5">
+          <dl className="mt-3 space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">
                 <dt className="text-eyebrow text-label-secondary">Demonym</dt>

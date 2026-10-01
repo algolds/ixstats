@@ -53,7 +53,7 @@ function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
 
   return (
     <span
-      className="flex max-w-[130px] min-w-0 items-center gap-1.5 overflow-hidden select-none sm:max-w-[180px]"
+      className="flex max-w-[130px] min-w-0 items-center gap-2 overflow-hidden select-none sm:max-w-[180px]"
       title={`Builder: ${fullLabel}`}
     >
       <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" />

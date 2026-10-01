@@ -3,7 +3,9 @@ import { Search, Xmark, NavArrowRight } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { SearchViewProps, SearchFilter } from "../types";
 import { PreText } from "~/components/ui/pretext";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { Button } from "~/components/ui/button";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -13,17 +15,18 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "features", label: "Features" },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Statecraft: "bg-yellow/10 text-yellow border border-yellow/20",
-  Vault: "bg-teal/10 text-teal border border-teal/20",
-  Geography: "bg-green/10 text-green border border-green/20",
-  Knowledge: "bg-blue/10 text-blue border border-blue/20",
-  Community: "bg-blue/10 text-blue border border-blue/20",
-  Sports: "bg-yellow/10 text-yellow border border-yellow/20",
-  Labs: "bg-indigo/10 text-indigo border border-indigo/20",
-  System: "bg-fill-3 text-label-secondary border border-separator",
-  Country: "bg-blue/10 text-blue border border-blue/20",
-  Wiki: "bg-wiki/10 text-wiki border border-wiki/30",
+/** Result category → Badge colour (system colours; the wiki uses its own ink tint). */
+const CATEGORY_BADGE: Record<string, BadgeVariant> = {
+  Statecraft: "yellow",
+  Vault: "teal",
+  Geography: "green",
+  Knowledge: "blue",
+  Community: "blue",
+  Sports: "yellow",
+  Labs: "indigo",
+  System: "neutral",
+  Country: "blue",
+  Wiki: "indigo",
 };
 
 function SearchViewComponent({
@@ -78,35 +81,29 @@ function SearchViewComponent({
             data-command-palette-search="true"
           />
           {searchQuery && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setSearchQuery?.("")}
-              className="text-label-secondary hover:text-label absolute top-1/2 right-3 -translate-y-1/2 p-1"
+              aria-label="Clear search"
+              className="text-label-secondary hover:text-label absolute top-1/2 right-2 -translate-y-1/2"
             >
-              <Xmark className="h-4 w-4" />
-            </button>
+              <Xmark aria-hidden />
+            </Button>
           )}
         </div>
       </div>
 
       {/* Filter pills */}
-      <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => {
-              soundEffects.tick();
-              setSearchFilter?.(f.value);
-            }}
-            className={`text-caption rounded-full px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-              searchFilter === f.value
-                ? "bg-tint-fill text-tint"
-                : "text-label-secondary hover:text-label bg-fill-4 hover:bg-fill-2"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        aria-label="Search in"
+        size="sm"
+        className="mb-3"
+        value={searchFilter}
+        onValueChange={(value) => setSearchFilter?.(value)}
+        options={FILTERS}
+      />
 
       {/* Results list */}
       <div className="max-h-[380px] space-y-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
@@ -116,17 +113,17 @@ function SearchViewComponent({
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeStyle = CATEGORY_COLORS[cat] || "bg-fill-3 text-label-secondary";
+            const badgeVariant = CATEGORY_BADGE[cat] ?? "neutral";
 
             return (
               <button
+                type="button"
                 key={result.id}
                 onClick={() => {
-                  soundEffects.press();
                   result.action();
                   closeDropdown();
                 }}
-                className="group rounded-row hover:bg-fill-3 flex w-full items-center gap-3 p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-[0.985]"
+                className="group rounded-row hover:bg-fill-3 focus-visible:outline-tint duration-fast ease-out-facet flex w-full items-center gap-3 p-3 text-left transition-colors select-none focus-visible:outline-2"
               >
                 {/* Icon or Flag */}
                 <div className="rounded-control bg-fill-4 flex h-9 w-9 shrink-0 items-center justify-center">
@@ -152,11 +149,7 @@ function SearchViewComponent({
                     >
                       {result.title}
                     </PreText>
-                    <span
-                      className={`text-caption inline-flex shrink-0 rounded-full px-2 py-0.5 ${badgeStyle}`}
-                    >
-                      {cat}
-                    </span>
+                    <Badge variant={badgeVariant}>{cat}</Badge>
                   </div>
                   {result.description && (
                     <PreText
@@ -182,14 +175,16 @@ function SearchViewComponent({
                 {`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
               </PreText>
               {searchFilter !== "all" && (
-                <button
+                <Button
+                  type="button"
+                  variant="link"
                   onClick={() => setSearchFilter?.("all")}
-                  className="text-tint ml-1 font-medium hover:underline"
+                  className="ml-1 h-auto p-0"
                 >
                   <PreText className="inline" whiteSpace="nowrap">
                     Search all
                   </PreText>
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -201,21 +196,21 @@ function SearchViewComponent({
             </PreText>
             <div className="text-label-secondary text-footnote flex items-center justify-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">⌘K</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">⌘K</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   search
                 </PreText>
               </span>
               <span className="text-label-tertiary">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">Tab</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Tab</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   filter
                 </PreText>
               </span>
               <span className="text-label-tertiary">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">Esc</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Esc</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   close
                 </PreText>

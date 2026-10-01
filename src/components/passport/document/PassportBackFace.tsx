@@ -143,7 +143,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           {/* Editable signature */}
           <FacetCard variant="inset" className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-subhead text-label flex items-center gap-1.5">
+              <h3 className="text-subhead text-label flex items-center gap-2">
                 <Edit3 aria-hidden className="text-label-secondary size-4" />
                 <span>Signature inscription</span>
               </h3>
@@ -199,7 +199,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
         {/* Signature ribbon shelf picker */}
         <FacetCard variant="inset" className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-subhead text-label flex items-center gap-1.5">
+            <h3 className="text-subhead text-label flex items-center gap-2">
               <Pin aria-hidden className="text-label-secondary size-4" />
               <span>Signature ribbons</span>
             </h3>

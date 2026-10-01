@@ -34,7 +34,7 @@ export function BlurbsNav() {
             href={withBasePath(item.href)}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "rounded-control-sm text-caption flex items-center gap-1.5 px-3 py-1.5 transition-colors",
+              "rounded-control-sm text-caption flex items-center gap-2 px-3 py-2 transition-colors",
               isActive
                 ? "text-label bg-fill-3"
                 : "text-label-secondary hover:text-label hover:bg-fill-3"

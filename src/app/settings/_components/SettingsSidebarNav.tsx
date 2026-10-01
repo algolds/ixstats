@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Xmark, User as UserIcon, Crown } from "iconoir-react";
+import { User as UserIcon, Crown } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { cn } from "~/lib/utils";
 import { formatMembershipTier } from "~/lib/tier-utils";
+import { Badge } from "~/components/ui/badge";
+import { SearchField } from "~/components/ui/search-field";
 import {
   SETTINGS_SECTIONS,
   type SettingSectionId,
@@ -61,11 +63,11 @@ export function SettingsSidebarNav({
       className="w-full space-y-4 lg:sticky lg:top-(--shell-top-offset)"
       aria-label="Settings Navigation"
     >
-      {/* Profile Card Pill */}
+      {/* Profile card */}
       {user && (
-        <div className="border-border/40 bg-card/40 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
+        <div className="border-separator bg-surface rounded-card border p-4">
           <div className="flex items-center gap-3">
-            <div className="border-border/60 bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border">
+            <div className="border-separator bg-fill-3 rounded-row relative h-10 w-10 shrink-0 overflow-hidden border">
               {user.imageUrl ? (
                 <img
                   src={user.imageUrl}
@@ -73,36 +75,31 @@ export function SettingsSidebarNav({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+                <div className="text-label-secondary flex h-full w-full items-center justify-center">
                   <UserIcon className="h-5 w-5" />
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-foreground truncate text-xs font-bold">
+              <div className="text-headline text-label truncate">
                 {user.username || user.firstName || "Diplomat"}
               </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+              <div className="mt-0.5 flex flex-wrap items-center gap-1">
                 {membershipTier &&
                   (() => {
                     const tierInfo = formatMembershipTier(membershipTier);
                     return (
-                      <span
-                        className={cn(
-                          "py-0.2 inline-flex items-center gap-1 rounded-md border px-1.5 text-xs font-bold tracking-tight",
-                          tierInfo.badgeClass
-                        )}
-                      >
-                        {tierInfo.isPremium && <Crown className="h-2.5 w-2.5 shrink-0" />}
+                      <Badge variant={tierInfo.badgeVariant}>
+                        {tierInfo.isPremium && <Crown aria-hidden />}
                         {tierInfo.label}
-                      </span>
+                      </Badge>
                     );
                   })()}
                 {roleDisplayName && (
-                  <span className="py-0.2 inline-flex items-center gap-1 rounded-md border border-purple-500/20 bg-purple-500/10 px-1.5 text-xs font-bold text-purple-600 dark:text-purple-400">
-                    <Crown className="h-2.5 w-2.5 shrink-0" />
+                  <Badge variant="purple">
+                    <Crown aria-hidden />
                     {roleDisplayName}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </div>
@@ -110,36 +107,22 @@ export function SettingsSidebarNav({
         </div>
       )}
 
-      {/* Live Search Input */}
-      <div className="relative">
-        <Search className="text-muted-foreground pointer-events-none absolute top-2.5 left-3 h-3.5 w-3.5" />
-        <input
-          type="text"
-          placeholder="Search settings..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-border/40 bg-card/40 text-foreground placeholder:text-muted-foreground/70 focus:border-border/80 w-full rounded-xl border py-1.5 pr-8 pl-8.5 text-xs shadow-2xs backdrop-blur-md focus:outline-none"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery("")}
-            className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 cursor-pointer"
-          >
-            <Xmark className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+      {/* Live search */}
+      <SearchField
+        size="sm"
+        placeholder="Search settings..."
+        aria-label="Search settings"
+        value={searchQuery}
+        onValueChange={setSearchQuery}
+      />
 
-      {/* Grouped Navigation */}
+      {/* Grouped navigation */}
       <nav className="space-y-4">
         {categories.map(([category, items]) => (
-          <div key={category} className="space-y-1.5">
-            <h3 className="text-muted-foreground/80 px-2 text-xs font-bold tracking-wider uppercase">
-              {category}
-            </h3>
+          <div key={category} className="space-y-2">
+            <h3 className="text-subhead text-label-secondary px-2">{category}</h3>
 
-            <div className="border-border/40 bg-card/30 space-y-0.5 rounded-2xl border p-1 shadow-xs backdrop-blur-md">
+            <div className="border-separator bg-surface rounded-card space-y-0.5 border p-1">
               {items.map((item) => {
                 const isActive = activeSection === item.id;
                 const Icon = item.icon;
@@ -149,34 +132,33 @@ export function SettingsSidebarNav({
                     key={item.id}
                     type="button"
                     onClick={() => onSelectSection(item.id)}
-                    data-cuelume-press="soft"
-                    data-cuelume-hover="tick"
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none active:scale-[0.98]",
+                      "group rounded-row text-callout flex min-h-9 w-full cursor-pointer items-center justify-between px-3 py-2 text-left outline-none",
+                      "duration-fast ease-out-facet transition-[color,background-color]",
+                      "focus-visible:outline-tint focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid",
                       isActive
-                        ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-bold shadow-2xs"
-                        : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground font-medium"
+                        ? "bg-tint-fill text-label font-semibold"
+                        : "text-label-secondary hover:bg-fill-4 hover:text-label font-medium"
                     )}
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <div
                         className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] transition-transform",
-                          item.glyphClass,
-                          isActive ? "scale-105" : "group-hover:scale-105"
+                          "rounded-control-sm flex h-6 w-6 shrink-0 items-center justify-center",
+                          item.glyphClass
                         )}
                       >
-                        <Icon className="h-3.5 w-3.5" />
+                        <Icon aria-hidden className="h-3.5 w-3.5" />
                       </div>
                       <span className="truncate">{item.label}</span>
                     </div>
 
                     <div
+                      aria-hidden
                       className={cn(
-                        "h-1.5 w-1.5 shrink-0 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                        isActive
-                          ? "bg-primary scale-125 shadow-xs"
-                          : "group-hover:bg-muted-foreground/30 bg-transparent"
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        isActive ? "bg-tint" : "bg-transparent"
                       )}
                     />
                   </button>

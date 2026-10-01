@@ -29,9 +29,9 @@ import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 
 /** A quick-action row in the 12rem sidebar card. */
 const QUICK_ACTION =
-  "text-body text-label hover:bg-fill-4 active:bg-fill-3 rounded-row duration-fast ease-out-facet focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 px-2 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
+  "text-body text-label hover:bg-fill-4 active:bg-fill-3 rounded-row duration-fast ease-out-facet focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 px-2 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
 const QUICK_ACTION_DISABLED =
-  "text-body text-label-tertiary rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-1.5";
+  "text-body text-label-tertiary rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-2";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 
@@ -203,7 +203,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <>
             <dl className="space-y-1">
               <div className="text-footnote flex items-center justify-between">
-                <dt className="text-label-secondary flex items-center gap-1.5">
+                <dt className="text-label-secondary flex items-center gap-2">
                   <Users aria-hidden className="size-3.5" /> Pop
                 </dt>
                 <dd className="text-label font-medium tabular-nums">
@@ -211,7 +211,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 </dd>
               </div>
               <div className="text-footnote flex items-center justify-between">
-                <dt className="text-label-secondary flex items-center gap-1.5">
+                <dt className="text-label-secondary flex items-center gap-2">
                   <DollarSign aria-hidden className="size-3.5" /> GDP
                 </dt>
                 <dd className="text-label font-medium tabular-nums">
@@ -220,7 +220,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               </div>
               {(country as any)?.newStats?.landArea && (
                 <div className="text-footnote flex items-center justify-between">
-                  <dt className="text-label-secondary flex items-center gap-1.5">
+                  <dt className="text-label-secondary flex items-center gap-2">
                     <MapIcon aria-hidden className="size-3.5" /> Area
                   </dt>
                   <dd className="text-label font-medium tabular-nums">
@@ -320,7 +320,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         {crisesCount > 0 && (
           <Link
             href={createUrl("/mycountry/executive")}
-            className="bg-destructive/15 text-destructive hover:bg-destructive/25 rounded-row text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center justify-center gap-1.5 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-destructive/15 text-destructive hover:bg-destructive/25 rounded-row text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center justify-center gap-2 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             title={`${crisesCount} active crises! Click to view.`}
           >
             <AlertTriangle aria-hidden className="size-3.5" />

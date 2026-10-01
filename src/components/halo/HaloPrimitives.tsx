@@ -12,11 +12,10 @@ import React, {
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
+import { springSnappy } from "~/lib/design/motion";
 
-// Spring physics — Apple HIG fluid spring: critically damped settle (damping ratio ~1.0)
-export const stiffness = 420;
-export const damping = 38;
-export const mass = 0.8; // lighter mass = faster acceleration into target shape
+// The island morphs with the Facet snappy spring (spec §8): it answers a press directly, at the
+// same settle speed as the controls inside it.
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
@@ -326,12 +325,7 @@ export const DynamicIslandContent = ({
             borderRadius: currentSize.borderRadius,
             opacity: isCompactSize(state.size) ? 0.8 : 0.3,
           }}
-          transition={{
-            type: "spring",
-            stiffness,
-            damping,
-            mass,
-          }}
+          transition={springSnappy}
         >
           <div className="bg-destructive/35 absolute inset-0 rounded-[inherit] blur-xl" />
         </motion.div>
@@ -357,12 +351,7 @@ export const DynamicIslandContent = ({
           height: targetHeight,
           borderRadius: currentSize.borderRadius,
         }}
-        transition={{
-          type: "spring",
-          stiffness,
-          damping,
-          mass,
-        }}
+        transition={springSnappy}
         style={{
           transform: "translateZ(0)",
           WebkitFontSmoothing: "antialiased",
@@ -466,12 +455,7 @@ export const HaloContainer = ({ className, children }: DynamicContainerProps) =>
         opacity: 1,
         scale: 1,
         y: 0,
-        transition: {
-          type: "spring" as const,
-          stiffness,
-          damping,
-          mass,
-        },
+        transition: springSnappy,
       }}
       exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
@@ -493,12 +477,7 @@ export const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: {
-          type: "spring",
-          stiffness,
-          damping,
-          mass,
-        },
+        transition: springSnappy,
       }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
@@ -521,7 +500,7 @@ export const DynamicTitle = ({ className, children }: MotionProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: { type: "spring", stiffness, damping, mass },
+        transition: springSnappy,
       }}
     >
       {children}
@@ -537,7 +516,7 @@ export const DynamicDescription = ({ className, children }: MotionProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: { type: "spring", stiffness, damping, mass },
+        transition: springSnappy,
       }}
     >
       {children}

@@ -65,7 +65,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "age" ? "default" : "ghost"}
                 onClick={() => setActiveChart("age")}
                 className={cn(
-                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "age"
                     ? "bg-green text-on-green shadow-card hover:bg-green"
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"
@@ -78,7 +78,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "urbanRural" ? "default" : "ghost"}
                 onClick={() => setActiveChart("urbanRural")}
                 className={cn(
-                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "urbanRural"
                     ? "bg-green text-on-green shadow-card hover:bg-green"
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"
@@ -91,7 +91,7 @@ export function DemographicsVisualizations({
                 variant={activeChart === "regional" ? "default" : "ghost"}
                 onClick={() => setActiveChart("regional")}
                 className={cn(
-                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "regional"
                     ? "bg-green text-on-green shadow-card hover:bg-green"
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"

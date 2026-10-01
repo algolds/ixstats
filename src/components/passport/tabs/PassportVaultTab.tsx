@@ -65,7 +65,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-subhead text-label-secondary flex items-center gap-1.5">
+        <h2 className="text-subhead text-label-secondary flex items-center gap-2">
           <Crown aria-hidden className="size-4" />
           <span>Vault collection</span>
         </h2>

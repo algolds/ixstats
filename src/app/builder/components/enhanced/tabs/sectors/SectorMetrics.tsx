@@ -44,7 +44,7 @@ export function SectorMetrics({
           <span className="text-label-secondary text-footnote mr-1">Status:</span>
           <div className="flex items-center gap-2">
             <span
-              className={`text-caption rounded-full border px-2.5 py-1 font-semibold ${
+              className={`text-caption rounded-full border px-3 py-1 font-semibold ${
                 gdpValid
                   ? "border-green/20 bg-green/10 text-green"
                   : "border-caution/20 bg-caution/10 text-caution"
@@ -53,7 +53,7 @@ export function SectorMetrics({
               GDP: {(100 - totalGDP).toFixed(1)}% remaining
             </span>
             <span
-              className={`text-caption rounded-full border px-2.5 py-1 font-semibold ${
+              className={`text-caption rounded-full border px-3 py-1 font-semibold ${
                 employmentValid
                   ? "border-green/20 bg-green/10 text-green"
                   : "border-caution/20 bg-caution/10 text-caution"

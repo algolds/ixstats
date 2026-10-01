@@ -198,7 +198,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-2">
           {/* Header Row: Title on Left, Badges / Timestamp / Open Link on Right */}
           <FeedItemHeader
             activity={activity}

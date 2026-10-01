@@ -12,15 +12,7 @@ export interface TierInfo {
   isPremium: boolean;
   /** Render with `<Badge variant={badgeVariant}>`. */
   badgeVariant: TierBadgeVariant;
-  /**
-   * Role classes for callers that style their own chip (same look as the Badge variant: the
-   * caution role for Premium, a neutral fill otherwise). Prefer `badgeVariant`.
-   */
-  badgeClass: string;
 }
-
-const NEUTRAL_BADGE_CLASS = "border-separator bg-fill-3 text-label-secondary";
-const PREMIUM_BADGE_CLASS = "border-caution/30 bg-caution/15 text-caution";
 
 export function formatMembershipTier(tier?: string | null): TierInfo {
   if (!tier) {
@@ -28,7 +20,6 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
       label: "Citizen",
       isPremium: false,
       badgeVariant: "neutral",
-      badgeClass: NEUTRAL_BADGE_CLASS,
     };
   }
 
@@ -41,7 +32,6 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
       label: "Premium",
       isPremium: true,
       badgeVariant: "caution",
-      badgeClass: PREMIUM_BADGE_CLASS,
     };
   }
 
@@ -52,7 +42,6 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
         : tier.charAt(0).toUpperCase() + tier.slice(1).replace(/_/g, " "),
     isPremium: false,
     badgeVariant: "neutral",
-    badgeClass: NEUTRAL_BADGE_CLASS,
   };
 }
 

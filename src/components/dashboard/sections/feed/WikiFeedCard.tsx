@@ -131,7 +131,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
             </div>
 
             {/* Author / subtitle / diff metadata */}
-            <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-1.5">
+            <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
               {isGrouped ? (
                 <span>
                   <span className="text-label font-medium tabular-nums">{activity._editCount}</span>{" "}
@@ -242,7 +242,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
                     key={i}
                     className="text-label-secondary text-footnote flex items-center justify-between py-0.5"
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+                    <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
                       <span className="text-label shrink-0 font-medium">
                         {sub.user?.name ?? "?"}
                       </span>

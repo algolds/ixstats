@@ -103,9 +103,7 @@ export function SplashFold() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2
-          className={`text-large-title md:text-large-title mb-2 tracking-tight ${splashGold.headline}`}
-        >
+        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>
           There&apos;s more in the box
         </h2>
         <p className="text-label-secondary mx-auto max-w-2xl leading-relaxed">

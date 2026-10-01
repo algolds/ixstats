@@ -167,7 +167,7 @@ export function ThinktankPapersTab({
     <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-transparent md:grid-cols-12">
       {/* ── Left Sidebar: Document List ── */}
       <div className="border-separator bg-fill-4 lg:col-span-3.5 flex h-full flex-col border-r md:col-span-4">
-        <div className="border-separator space-y-2.5 border-b p-3.5">
+        <div className="border-separator space-y-2 border-b p-4">
           <div className="flex items-center justify-between">
             <h3 className="text-subhead text-label-secondary">Docs ({docs.length})</h3>
             {isMember && (
@@ -178,7 +178,7 @@ export function ThinktankPapersTab({
           </div>
 
           <div className="relative">
-            <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search docs & notes..."
               value={searchQuery}

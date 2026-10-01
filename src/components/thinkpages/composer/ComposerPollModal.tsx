@@ -60,7 +60,7 @@ export function ComposerPollModal({
         </DialogHeader>
 
         {/* Poll Question */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label htmlFor="poll-question" className="text-subhead text-label">
             Question / Topic *
           </label>
@@ -76,7 +76,7 @@ export function ComposerPollModal({
 
         {/* Poll Type & Multiple Options */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <span className="text-subhead text-label block">Poll Type</span>
             <Select
               value={pollDraft.pollType}

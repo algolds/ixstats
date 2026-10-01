@@ -317,7 +317,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
           {visibleFilters.map((f) => {
             const Icon = f.icon;
             return (
-              <ToggleGroupItem key={f.id} value={f.id} className="gap-1.5">
+              <ToggleGroupItem key={f.id} value={f.id} className="gap-2">
                 <Icon aria-hidden className="size-3.5" />
                 {f.label}
               </ToggleGroupItem>

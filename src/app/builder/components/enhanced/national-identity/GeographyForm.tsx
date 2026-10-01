@@ -170,7 +170,7 @@ export const GeographyForm = React.memo(
             <FacetCardContent className="space-y-4 p-6">
               <div className="grid grid-cols-3 gap-3">
                 {/* ISO Code */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <MapIcon className="text-label-secondary size-3.5" />
                     <span>ISO Code</span>
@@ -186,7 +186,7 @@ export const GeographyForm = React.memo(
                 </div>
 
                 {/* Web Domain */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Wifi className="text-label-secondary size-3.5" />
                     <span>Web Domain</span>
@@ -201,7 +201,7 @@ export const GeographyForm = React.memo(
                 </div>
 
                 {/* Calling Code */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Phone className="text-label-secondary size-3.5" />
                     <span>Calling Code</span>
@@ -232,7 +232,7 @@ export const GeographyForm = React.memo(
 
             <FacetCardContent className="space-y-4 p-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Clock className="text-label-secondary h-3.5 w-3.5" />
                     <span>Time Zone</span>
@@ -245,7 +245,7 @@ export const GeographyForm = React.memo(
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <label className="text-label text-caption flex items-center gap-1">
                     <Phone className="text-label-secondary h-3.5 w-3.5" />
                     <span>Emergency Number</span>
@@ -259,7 +259,7 @@ export const GeographyForm = React.memo(
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption flex items-center gap-1">
                   <MapIcon className="text-label-secondary h-3.5 w-3.5" />
                   <span>Postal Code Format</span>
@@ -375,7 +375,7 @@ export const GeographyForm = React.memo(
 
           <FacetCardContent className="space-y-4 p-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption flex items-center gap-1">
                   <span>Latitude (-90° to +90°)</span>
                 </label>
@@ -387,7 +387,7 @@ export const GeographyForm = React.memo(
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <label className="text-label text-caption flex items-center gap-1">
                   <span>Longitude (-180° to +180°)</span>
                 </label>

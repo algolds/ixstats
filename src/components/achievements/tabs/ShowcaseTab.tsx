@@ -121,7 +121,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                       {isUnlocked && count > 1 && (
                         <Badge
                           variant="caution"
-                          className="bg-surface absolute -top-1.5 -right-1.5 tabular-nums"
+                          className="bg-surface absolute -top-2 -right-2 tabular-nums"
                         >
                           {count}
                         </Badge>

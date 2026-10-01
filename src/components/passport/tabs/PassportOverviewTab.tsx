@@ -196,7 +196,7 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <h2 className={`flex items-center gap-1.5 ${SECTION_LABEL}`}>
+        <h2 className={`flex items-center gap-2 ${SECTION_LABEL}`}>
           <Crown aria-hidden className="size-4" />
           <span>Featured realm</span>
         </h2>
@@ -244,7 +244,7 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
         </FacetListSection>
 
         <section className="space-y-3">
-          <h2 className={`flex items-center gap-1.5 ${SECTION_LABEL}`}>
+          <h2 className={`flex items-center gap-2 ${SECTION_LABEL}`}>
             <Trophy aria-hidden className="size-4" />
             <span>Civic stature</span>
           </h2>

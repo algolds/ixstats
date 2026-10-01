@@ -57,7 +57,7 @@ import {
 } from "~/components/country-profile/derive";
 import { economyVitals, headlineVitals, peopleVitals } from "~/components/country-profile/vitals";
 import { useScrollSpy } from "~/components/country-profile/useScrollSpy";
-import { scrollBehavior } from "~/components/country-profile/labels";
+import { censusRealmName, scrollBehavior } from "~/components/country-profile/labels";
 import { useCountryProfileLayer, type CountryProfileLayer } from "../_hooks/useCountryProfileLayer";
 import type { LoreChapter } from "../_utils/profileLayer";
 import { CountryTabs } from "./CountryTabs";
@@ -154,6 +154,8 @@ function CommandBody({
   const loreChapters = (Object.keys(LORE_TITLES) as LoreChapter[]).filter((k) => lore.chapters[k]);
   const dna = toDnaAxes(world.rankings);
   const dnaLine = dnaSummary(dna);
+  // World Census ranks are realm ranks: label them with the realm they are drawn from.
+  const censusRealm = censusRealmName(identity.realm);
   const pillars = conditionPillars(vitals);
   const inMatrix = new Set<string>(pillars.map((p) => p.key));
   const branches = stateBranches(state, identity);
@@ -278,10 +280,10 @@ function CommandBody({
               >
                 <CountryDNA
                   axes={dna}
-                  caption={`${identity.name}'s World Census percentile in ${dna.length} categories. ${dnaLine ?? ""}`}
+                  caption={`${identity.name}'s World Census percentile within ${censusRealm} in ${dna.length} categories. ${dnaLine ?? ""}`}
                 />
                 <FacetList variant="plain">
-                  <DnaLegend axes={dna} />
+                  <DnaLegend axes={dna} realm={censusRealm} />
                 </FacetList>
               </div>
             )}

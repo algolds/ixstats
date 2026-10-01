@@ -32,8 +32,9 @@ import { CurrencyIcon } from "./CurrencyIcon";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
-import { getCurrencyInfo } from "~/lib/utils";
+import { cn, getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_LANGUAGES } from "./identityUtils";
+import { IMAGE_SCRIM_LIGHT } from "~/app/builder/lib/image-scrim";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -248,8 +249,13 @@ export const CultureForm = React.memo(
                   <Image className="h-5 w-5" />
                 </div>
               )}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                <Image className="h-4 w-4 text-white" />
+              <div
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100",
+                  IMAGE_SCRIM_LIGHT
+                )}
+              >
+                <Image aria-hidden className="size-4" />
               </div>
             </button>
 
@@ -351,7 +357,7 @@ export const CultureForm = React.memo(
               {/* National Day & Sport Grid */}
               <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-label text-body flex items-center gap-1.5 font-medium">
+                  <label className="text-label text-body flex items-center gap-2 font-medium">
                     <span>National Day</span>
                   </label>
                   <Input
@@ -362,7 +368,7 @@ export const CultureForm = React.memo(
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-label text-body flex items-center gap-1.5 font-medium">
+                  <label className="text-label text-body flex items-center gap-2 font-medium">
                     <Trophy className="text-label-secondary h-3.5 w-3.5" />
                     <span>National Sport</span>
                   </label>
@@ -429,7 +435,7 @@ export const CultureForm = React.memo(
                 {identity.currency && !getCurrencyInfo(identity.currency).isISO && (
                   <div className="animate-in fade-in slide-in-from-top-1 bg-surface-secondary rounded-row flex items-center justify-between p-3">
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <CurrencyIcon
                           code={identity.currency}
                           symbol={identity.currencySymbol || "$"}
@@ -491,7 +497,7 @@ export const CultureForm = React.memo(
                     Add More Cultural Motifs:
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {unrevealedSymbols.map((sym) => {
                     const Icon = sym.icon;
                     return (

@@ -8,6 +8,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 export interface ComposerAccountSwitcherProps {
   account: any;
@@ -89,70 +90,52 @@ export function ComposerAccountSwitcher({
             )}
           </div>
 
-          <div className="thin-scrollbar grid max-h-52 gap-1 overflow-y-auto">
-            {onPostAsYourself && (
-              <button
-                type="button"
-                onClick={() => {
-                  onPostAsYourself();
-                  setShowAccountManager(false);
-                }}
-                disabled={isPostAsYourselfPending}
-                className="border-separator text-label hover:bg-fill-4 rounded-row flex w-full cursor-pointer items-center gap-2 border border-dashed p-2 text-left transition-colors duration-150 disabled:opacity-60"
-              >
-                <div className="bg-fill-3 text-label-secondary flex size-7 items-center justify-center rounded-full">
-                  <UserIcon className="size-3.5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-headline text-label truncate">Post as yourself</div>
-                  <div className="text-footnote text-label-secondary truncate">
-                    Your own name, no nation attached
-                  </div>
-                </div>
-              </button>
-            )}
-            {accounts.map((acc) => {
-              const selected = acc.id === account.id;
-              return (
-                <button
-                  type="button"
+          <FacetList variant="plain" className="thin-scrollbar max-h-52 overflow-y-auto">
+            <FacetListSection aria-label="Post as">
+              {onPostAsYourself && (
+                <FacetRow
+                  onClick={() => {
+                    onPostAsYourself();
+                    setShowAccountManager(false);
+                  }}
+                  disabled={isPostAsYourselfPending}
+                  leading={
+                    <span className="bg-fill-3 text-label-secondary flex size-7 items-center justify-center rounded-full">
+                      <UserIcon className="size-3.5" aria-hidden="true" />
+                    </span>
+                  }
+                  title="Post as yourself"
+                  subtitle="Your own name, no nation attached"
+                />
+              )}
+              {accounts.map((acc) => (
+                <FacetRow
                   key={acc.id}
-                  aria-current={selected || undefined}
+                  selected={acc.id === account.id}
+                  selectionStyle="tint"
                   onClick={() => {
                     onAccountSelect?.(acc);
                     setShowAccountManager(false);
                   }}
-                  className={cn(
-                    "rounded-row flex w-full cursor-pointer items-center gap-2 p-2 text-left transition-colors duration-150",
-                    selected ? "bg-tint-fill" : "hover:bg-fill-4"
-                  )}
-                >
-                  <Avatar className="border-separator size-7 border">
-                    <AvatarImage src={getAccountAvatar(acc)} />
-                    <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
-                      {acc.displayName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={cn(
-                        "text-headline truncate",
-                        selected ? "text-tint" : "text-label"
-                      )}
-                    >
-                      {acc.displayName}
-                    </div>
-                    <div className="text-footnote text-label-secondary truncate">
-                      @{acc.username}
-                    </div>
-                  </div>
-                  <Badge variant="outline">
-                    {acc.accountType === "personal" ? "you" : acc.accountType}
-                  </Badge>
-                </button>
-              );
-            })}
-          </div>
+                  leading={
+                    <Avatar className="border-separator size-7 border">
+                      <AvatarImage src={getAccountAvatar(acc)} />
+                      <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+                        {acc.displayName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  }
+                  title={acc.displayName}
+                  subtitle={`@${acc.username}`}
+                  trailing={
+                    <Badge variant="outline">
+                      {acc.accountType === "personal" ? "you" : acc.accountType}
+                    </Badge>
+                  }
+                />
+              ))}
+            </FacetListSection>
+          </FacetList>
         </PopoverContent>
       </Popover>
     </div>

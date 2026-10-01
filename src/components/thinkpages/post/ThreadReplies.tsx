@@ -2,6 +2,7 @@
 
 import React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface ThreadRepliesProps {
   post: any;
@@ -56,13 +57,16 @@ export function ThreadReplies({
   return (
     <>
       {hasReplies && (
-        <button
+        <Button
+          type="button"
+          variant="link"
           onClick={() => setShowReplies(!showReplies)}
-          className="text-body text-blue mt-2 hover:underline"
+          aria-expanded={showReplies}
+          className="mt-2 h-auto p-0"
         >
           {showReplies ? "Hide" : "Show"} {effectiveCount}{" "}
           {effectiveCount === 1 ? "reply" : "replies"}
-        </button>
+        </Button>
       )}
 
       {showReplies && (

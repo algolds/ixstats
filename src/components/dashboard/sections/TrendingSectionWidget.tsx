@@ -137,7 +137,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </Badge>
       </div>
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           {intro?.text ? (
             <p className="text-label-secondary text-footnote line-clamp-3">

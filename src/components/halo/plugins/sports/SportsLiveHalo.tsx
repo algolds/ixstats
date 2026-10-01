@@ -56,7 +56,7 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   const state = useLiveMatchState(match);
   if (!state) return null;
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex items-center gap-2">
       <Radio className={`text-red h-3 w-3 shrink-0 ${state.isFinal ? "" : "animate-pulse"}`} />
       <PreText className="text-label text-caption font-semibold tabular-nums" whiteSpace="nowrap">
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
@@ -85,7 +85,7 @@ function SportsLiveView({ context }: DIViewProps) {
       />
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="bg-red text-caption text-on-red flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold">
+          <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
             <Radio className={`h-2.5 w-2.5 ${state.isFinal ? "" : "animate-pulse"}`} />
             {state.isFinal ? "FULL TIME" : "LIVE"}
           </span>
@@ -95,7 +95,7 @@ function SportsLiveView({ context }: DIViewProps) {
         <div className="flex items-center justify-around">
           <TeamBadge team={match.homeTeam} />
           <div className="space-y-1 text-center">
-            <div className="text-large-title flex items-center justify-center gap-2 font-extrabold tabular-nums">
+            <div className="text-large-title flex items-center justify-center gap-2 tabular-nums">
               <span>{state.homeScore}</span>
               <span className="text-label-secondary">:</span>
               <span>{state.awayScore}</span>
@@ -132,7 +132,7 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
       >
         {shortFor(team)}
       </div>
-      <p className="text-caption mt-1.5 max-w-full truncate font-semibold">{team.name}</p>
+      <p className="text-caption mt-2 max-w-full truncate font-semibold">{team.name}</p>
     </div>
   );
 }

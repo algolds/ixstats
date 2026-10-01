@@ -6,6 +6,7 @@ import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
 import { MyCountryView } from "../plugins/mycountry";
 import type { ExpandedViewProps, DIPlugin } from "../types";
+import { Button } from "~/components/ui/button";
 
 function ExpandedViewComponent({
   mode,
@@ -48,7 +49,7 @@ function ExpandedViewComponent({
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
-        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-2.5">
+        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2 font-medium">
             <span className="relative flex h-2 w-2">
               <span className="bg-red absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
@@ -58,12 +59,9 @@ function ExpandedViewComponent({
               Playing as: <span className="font-mono">{targetUser}</span>
             </span>
           </div>
-          <button
-            onClick={handleStopImpersonating}
-            className="rounded-control-sm bg-red text-caption text-on-red hover:bg-red/90 px-2.5 py-1 font-semibold transition-colors"
-          >
+          <Button type="button" variant="destructive" size="sm" onClick={handleStopImpersonating}>
             Stop
-          </button>
+          </Button>
         </div>
       )}
       <AnimatePresence mode="wait">

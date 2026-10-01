@@ -77,9 +77,7 @@ export function SplashLiveFeed() {
       className="mx-auto mb-14 max-w-7xl md:mb-16"
     >
       <div className="mb-5 text-center">
-        <h2 className={`text-title-3 md:text-title-2 tracking-tight ${splashGold.headline}`}>
-          Happening now
-        </h2>
+        <h2 className={`text-title-3 md:text-title-2 ${splashGold.headline}`}>Happening now</h2>
         <p className="text-label-secondary text-body mx-auto mt-1 max-w-lg leading-relaxed">
           Real updates, same stream as your dashboard—ThinkPages, wiki edits, achievements, forum,
           and public notices.

@@ -184,7 +184,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                     </div>
                   )}
 
-                  <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-label text-title-2 truncate">
                         {countryName || item.name}

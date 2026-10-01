@@ -18,6 +18,7 @@ import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchM
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface ThinktankCreateModalProps {
   isOpen: boolean;
@@ -120,7 +121,7 @@ export function ThinktankCreateModal({
             </div>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             {/* Logo / Avatar Picker */}
             <div className="bg-surface-secondary rounded-row flex items-center gap-3 p-3">
               <Avatar className="border-separator rounded-control size-11 border">
@@ -140,13 +141,15 @@ export function ThinktankCreateModal({
                   {avatarUrl ? "Change Emblem" : "Select from Repository"}
                 </Button>
                 {avatarUrl && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setAvatarUrl("")}
-                    className="text-label-secondary hover:text-label text-footnote ml-2"
+                    className="text-label-secondary hover:text-label ml-2"
                   >
                     Clear
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -173,25 +176,23 @@ export function ThinktankCreateModal({
 
             <div className="space-y-1">
               <label className="text-subhead text-label">Category</label>
-              <div className="flex flex-wrap gap-1">
+              <ToggleGroup
+                type="single"
+                aria-label="Category"
+                variant="pill"
+                size="sm"
+                disallowEmpty
+                value={category}
+                onValueChange={(cat) => {
+                  if (cat) setCategory(cat);
+                }}
+              >
                 {categories.map((cat) => (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => {
-                      soundEffects.press();
-                      setCategory(cat);
-                    }}
-                    className={`text-caption rounded-full px-2.5 py-1 transition-colors duration-150 ${
-                      category === cat
-                        ? "bg-tint-fill text-tint"
-                        : "bg-fill-4 text-label-secondary hover:bg-fill-3"
-                    }`}
-                  >
+                  <ToggleGroupItem key={cat} value={cat}>
                     {cat}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
 
             <div className="space-y-1">

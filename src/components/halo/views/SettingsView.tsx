@@ -43,6 +43,7 @@ import {
   SectionLabel,
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -64,7 +65,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
   const handleToggleMorePrefs = useCallback(
     (expanded: boolean) => {
-      soundEffects.press();
       setMorePrefsExpanded(expanded);
       setSize(expanded ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM);
     },
@@ -156,8 +156,8 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
-            <div className="bg-tint/15 rounded-control-sm shrink-0 p-1.5">
+          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+            <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
                 <Moon className="text-tint h-3.5 w-3.5" />
               ) : (
@@ -185,7 +185,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <ToggleSwitch
               enabled={compactMode}
               onToggle={() => {
-                soundEffects.toggle();
                 toggleCompactMode();
               }}
             />
@@ -228,7 +227,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <Switch
                 checked={mediaThemeMode === "plinth"}
                 onCheckedChange={(checked) => {
-                  soundEffects.toggle();
                   setMediaThemeMode(checked ? "plinth" : "auto");
                 }}
               />
@@ -237,93 +235,61 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* More Preferences Trigger Row (Wiki) — smoothly toggles the side panel */}
           {isOnWikiPage && (
-            <button
-              type="button"
-              onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
-              className={cn(
-                "group rounded-control flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
-                morePrefsExpanded
-                  ? "border-blue/25 bg-blue/10 text-blue border"
-                  : "hover:bg-fill-3 border border-transparent"
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div
-                  className={cn(
-                    "rounded-control-sm shrink-0 p-1.5",
-                    morePrefsExpanded ? "bg-blue/20" : "bg-blue/15"
-                  )}
-                >
-                  <BookOpen className="text-blue h-3.5 w-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <PreText
-                    className={cn(
-                      "text-body block font-medium",
-                      morePrefsExpanded ? "text-blue" : "text-label"
-                    )}
-                    whiteSpace="nowrap"
-                  >
-                    {morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
-                  </PreText>
-                  <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
-                    {morePrefsExpanded ? "" : "Citations, TOC, search, & links"}
-                  </PreText>
-                </div>
-              </div>
-              <ChevronRight
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  morePrefsExpanded
-                    ? "text-blue rotate-90"
-                    : "text-label-secondary group-hover:text-label group-hover:translate-x-0.5"
-                )}
-              />
-            </button>
+            <FacetList variant="plain">
+              <FacetListSection aria-label="Reader preferences">
+                <FacetRow
+                  onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
+                  selected={morePrefsExpanded}
+                  selectionStyle="tint"
+                  aria-current={false}
+                  leading={<BookOpen className="text-blue size-4" />}
+                  title={morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
+                  subtitle={morePrefsExpanded ? undefined : "Citations, TOC, search, & links"}
+                  accessory={
+                    <ChevronRight
+                      aria-hidden
+                      className={cn(
+                        "duration-fast ease-out-facet size-4 transition-transform",
+                        morePrefsExpanded ? "text-tint rotate-90" : "text-label-tertiary"
+                      )}
+                    />
+                  }
+                />
+              </FacetListSection>
+            </FacetList>
           )}
 
           {/* Account */}
           {isSignedIn ? (
             <>
               <SectionLabel>Account</SectionLabel>
-              <button
-                onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="rounded-control hover:bg-fill-3 flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]"
-              >
-                <div className="rounded-control-sm bg-blue/15 shrink-0 p-1.5">
-                  <User className="text-blue h-3.5 w-3.5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">
-                    Account Settings
-                  </PreText>
-                  <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
-                    Profile, preferences, &amp; security
-                  </PreText>
-                </div>
-                <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
-              </button>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Account">
+                  <FacetRow
+                    onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
+                    leading={<User className="text-blue size-4" />}
+                    title="Account Settings"
+                    subtitle="Profile, preferences, & security"
+                    accessory="chevron"
+                  />
+                </FacetListSection>
+              </FacetList>
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
               <div className="border-separator mt-1 flex items-center justify-between border-t pt-2">
                 {isAdmin ? (
                   <Button
-                    asChild
+                    type="button"
                     size="sm"
                     variant="ghost"
                     className="text-label-secondary hover:bg-red/10 hover:text-red"
+                    onClick={() => {
+                      onClose();
+                      window.location.href = createAbsoluteUrl("/admin");
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        window.location.href = createAbsoluteUrl("/admin");
-                      }}
-                      className="flex cursor-pointer items-center gap-1.5"
-                    >
-                      <Settings className="text-red h-3 w-3" />
-                      <span>Admin</span>
-                    </button>
+                    <Settings aria-hidden className="text-red" />
+                    <span>Admin</span>
                   </Button>
                 ) : (
                   <div />
@@ -336,7 +302,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   className="text-label-secondary hover:text-destructive hover:bg-destructive/10"
                 >
                   <SignOutButton>
-                    <div className="flex cursor-pointer items-center gap-1.5">
+                    <div className="flex cursor-pointer items-center gap-2">
                       <LogOut className="h-3 w-3" />
                       <PreText className="text-footnote" whiteSpace="nowrap">
                         Sign Out
@@ -377,7 +343,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <ToggleSwitch
                 enabled={showCiteTooltips}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setShowCiteTooltips(!showCiteTooltips);
                 }}
               />
@@ -393,7 +358,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <ToggleSwitch
                 enabled={showWikiToc}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setShowWikiToc(!showWikiToc);
                 }}
               />
@@ -409,7 +373,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <ToggleSwitch
                 enabled={dynamicSearchWiki}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setDynamicSearchWiki(!dynamicSearchWiki);
                 }}
               />
@@ -425,7 +388,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <ToggleSwitch
                 enabled={openInNewTab}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setOpenInNewTab(!openInNewTab);
                 }}
               />
@@ -433,29 +395,20 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Deep Wiki Settings Link */}
             <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  router.push(withBasePath("/settings#wiki-settings"));
-                }}
-                className="hover:bg-fill-4 group rounded-control border-separator bg-fill-4 flex w-full cursor-pointer items-center justify-between gap-3 border px-3 py-2.5 text-left transition-colors"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                  <div className="rounded-control-sm bg-indigo/15 shrink-0 p-1.5">
-                    <BookOpen className="text-indigo h-3.5 w-3.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-label text-caption block truncate font-semibold">
-                      Wiki System Settings
-                    </span>
-                    <span className="text-label-secondary text-footnote block truncate">
-                      Autonomous lore scanner &amp; sources
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="text-label-secondary group-hover:text-label h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </button>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Wiki system settings">
+                  <FacetRow
+                    onClick={() => {
+                      onClose();
+                      router.push(withBasePath("/settings#wiki-settings"));
+                    }}
+                    leading={<BookOpen className="text-indigo size-4" />}
+                    title="Wiki System Settings"
+                    subtitle="Autonomous lore scanner & sources"
+                    accessory="chevron"
+                  />
+                </FacetListSection>
+              </FacetList>
             </div>
           </div>
         )}
@@ -489,25 +442,32 @@ function SettingsHeader({
       </div>
       <div className="flex items-center gap-1">
         {onRefresh && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onRefresh}
             disabled={isRefreshing}
             title="Refresh data"
-            className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 items-center justify-center transition-colors disabled:opacity-40"
+            className="text-label-secondary hover:text-label"
+            aria-label="Refresh data"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          </button>
+            <RefreshCw aria-hidden className={isRefreshing ? "animate-spin" : ""} />
+          </Button>
         )}
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => {
             soundEffects.droplet();
             onClose();
           }}
-          data-cuelume-press="droplet"
-          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 items-center justify-center transition-colors"
+          aria-label="Close"
+          className="text-label-secondary hover:text-label"
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
     </div>
   );
@@ -535,7 +495,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
       {onIconClick ? (
         <button
           type="button"
@@ -546,15 +506,16 @@ function SettingsRow({
           onMouseEnter={() => onIconHover?.(true)}
           onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
+          aria-label={iconTitle}
           className={cn(
-            "rounded-control-sm shrink-0 cursor-pointer p-1.5 transition-colors active:scale-[0.98]",
+            "rounded-control-sm focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2 active:scale-[0.98]",
             iconBg
           )}
         >
           {icon}
         </button>
       ) : (
-        <div className={`rounded-control-sm shrink-0 p-1.5 ${iconBg}`}>{icon}</div>
+        <div className={`rounded-control-sm shrink-0 p-2 ${iconBg}`}>{icon}</div>
       )}
       <div className="min-w-0 flex-1">
         <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">

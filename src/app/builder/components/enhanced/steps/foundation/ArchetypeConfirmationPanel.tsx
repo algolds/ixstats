@@ -33,7 +33,7 @@ export function ArchetypeConfirmationPanel({
             className="rounded-card shadow-floating flex w-full max-w-2xl items-center justify-between gap-6 px-6 py-4"
           >
             <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Award aria-hidden className="text-tint h-4 w-4" />
                 <span className="text-footnote text-label-secondary">Selected Archetype</span>
               </div>

@@ -92,7 +92,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon aria-hidden className="size-3.5 shrink-0" />
@@ -129,7 +129,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </Link>
 
           <div className="space-y-1 text-center">
-            <div className="text-label-secondary text-footnote flex items-center justify-center gap-1.5">
+            <div className="text-label-secondary text-footnote flex items-center justify-center gap-2">
               <Link href="/privacy" className="hover:text-label transition-colors hover:underline">
                 Privacy Policy
               </Link>

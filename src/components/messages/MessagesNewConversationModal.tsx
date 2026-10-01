@@ -7,6 +7,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { SearchField } from "~/components/ui/search-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface MessagesNewConversationModalProps {
   isOpen: boolean;
@@ -55,20 +56,21 @@ export function MessagesNewConversationModal({
 
         <div className="space-y-4">
           {/* Self-message shortcut */}
-          <button
-            onClick={() => handleCreate(currentUserId)}
-            disabled={isCreating}
-            type="button"
-            className="border-separator hover:bg-fill-4 rounded-control flex w-full items-center gap-3 border p-3 text-left transition-colors"
-          >
-            <div className="bg-tint text-on-tint flex size-9 items-center justify-center rounded-full">
-              <MessageSquare className="size-4" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-headline text-label">Message Myself</p>
-              <p className="text-footnote text-label-secondary">Save notes and drafts</p>
-            </div>
-          </button>
+          <FacetList>
+            <FacetListSection aria-label="Shortcuts">
+              <FacetRow
+                onClick={() => handleCreate(currentUserId)}
+                disabled={isCreating}
+                leading={
+                  <span className="bg-tint text-on-tint flex size-9 items-center justify-center rounded-full">
+                    <MessageSquare className="size-4" aria-hidden="true" />
+                  </span>
+                }
+                title="Message Myself"
+                subtitle="Save notes and drafts"
+              />
+            </FacetListSection>
+          </FacetList>
 
           {/* Search */}
           <SearchField
@@ -100,38 +102,31 @@ export function MessagesNewConversationModal({
             ) : !users || users.length === 0 ? (
               <p className="text-body text-label-secondary py-6 text-center">No users found</p>
             ) : (
-              <div className="space-y-1">
-                {(users as any[]).map((user: any) => (
-                  <button
-                    key={user.id || user.clerkUserId}
-                    onClick={() => handleCreate(user.clerkUserId || user.id, diplomatic)}
-                    disabled={isCreating}
-                    type="button"
-                    className="hover:bg-fill-4 rounded-control flex w-full items-center gap-3 p-2 text-left transition-colors"
-                  >
-                    <Avatar className="size-8">
-                      <AvatarImage src={user.country?.flag ?? undefined} />
-                      <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
-                        {(user.country?.name ?? user.displayName ?? "?")
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .substring(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-headline text-label truncate">
-                        {user.country?.name ?? user.displayName ?? "Unknown"}
-                      </p>
-                      {user.country?.slug && (
-                        <p className="text-footnote text-label-secondary truncate">
-                          @{user.country.slug}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Users">
+                  {(users as any[]).map((user: any) => (
+                    <FacetRow
+                      key={user.id || user.clerkUserId}
+                      onClick={() => handleCreate(user.clerkUserId || user.id, diplomatic)}
+                      disabled={isCreating}
+                      leading={
+                        <Avatar className="size-8">
+                          <AvatarImage src={user.country?.flag ?? undefined} />
+                          <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
+                            {(user.country?.name ?? user.displayName ?? "?")
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                              .substring(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      }
+                      title={user.country?.name ?? user.displayName ?? "Unknown"}
+                      subtitle={user.country?.slug ? `@${user.country.slug}` : undefined}
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             )}
           </div>
         </div>

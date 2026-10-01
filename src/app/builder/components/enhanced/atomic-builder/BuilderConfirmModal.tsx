@@ -63,7 +63,7 @@ export function BuilderConfirmModal({
               : "Review your configuration before saving."}
           </p>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {deltaWarning && (
               <div
                 role="note"
@@ -109,7 +109,7 @@ export function BuilderConfirmModal({
           </div>
 
           {(hasWarnings || isEditMode) && (
-            <div className="flex items-start gap-2.5 pt-2 select-none">
+            <div className="flex items-start gap-2 pt-2 select-none">
               <Checkbox
                 id="confirm-verify-checkbox"
                 checked={isVerified}

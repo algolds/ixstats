@@ -35,7 +35,7 @@ export function ReactionPills({
   if (!hasVisible) return null;
 
   return (
-    <div className="mb-2 flex w-full flex-wrap items-center gap-1.5">
+    <div className="mb-2 flex w-full flex-wrap items-center gap-2">
       {Object.entries(reactionCounts).map(([type, count]) => {
         if ((count as number) <= 0) return null;
 

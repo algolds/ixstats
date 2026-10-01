@@ -7,6 +7,13 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { createUrl } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { RealmFeed } from "~/app/r/[realm]/_components/RealmFeed";
 
 const ALL = "__all__";
@@ -102,24 +109,25 @@ export default function RealmsDirectoryPage() {
       <section className="border-separator bg-surface rounded-card border p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-label text-headline">Realm feed</h2>
-          <label className="text-label-secondary text-footnote flex items-center gap-2">
-            Showing
-            <select
-              value={selected}
-              onChange={(e) => setChoice(e.target.value)}
-              className="border-separator bg-background text-label rounded-control text-footnote border px-2 py-1"
-            >
-              <option value={ALL}>All realms</option>
-              {selected !== ALL && !realms?.some((realm) => realm.id === selected) && (
-                <option value={selected}>Your realm</option>
-              )}
-              {realms?.map((realm) => (
-                <option key={realm.id} value={realm.id}>
-                  {realm.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="text-label-secondary text-footnote flex items-center gap-2">
+            <span id="realm-feed-scope">Showing</span>
+            <Select value={selected} onValueChange={setChoice}>
+              <SelectTrigger size="sm" aria-labelledby="realm-feed-scope">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value={ALL}>All realms</SelectItem>
+                {selected !== ALL && !realms?.some((realm) => realm.id === selected) && (
+                  <SelectItem value={selected}>Your realm</SelectItem>
+                )}
+                {realms?.map((realm) => (
+                  <SelectItem key={realm.id} value={realm.id}>
+                    {realm.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <RealmFeed realmId={selected === ALL ? null : selected} />
       </section>

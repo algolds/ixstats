@@ -465,7 +465,7 @@ export function EnhancedNumberInput({
             disabled && "cursor-not-allowed opacity-50"
           )}
         >
-          <div className="relative flex w-full items-center justify-between pr-1.5">
+          <div className="relative flex w-full items-center justify-between pr-2">
             <input
               ref={inputRef}
               type="text"

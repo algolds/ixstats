@@ -26,17 +26,21 @@ export default function FactbookLayout({
   const { slug } = use(params);
   const pathname = usePathname();
   const section = sectionFromPathname(pathname);
-  const { country } = useCountryData();
+  const { country, activityRingsData } = useCountryData();
+  const diplomaticStanding = activityRingsData?.diplomaticStanding ?? null;
 
   const vitalityData = useMemo(() => {
     if (!country) return null;
-    return calculateVitalityData({
-      economicTier: country.economicTier,
-      adjustedGdpGrowth: country.adjustedGdpGrowth,
-      populationGrowthRate: country.populationGrowthRate,
-      populationDensity: country.populationDensity ?? null,
-    });
-  }, [country]);
+    return calculateVitalityData(
+      {
+        economicTier: country.economicTier,
+        adjustedGdpGrowth: country.adjustedGdpGrowth,
+        populationGrowthRate: country.populationGrowthRate,
+        populationDensity: country.populationDensity ?? null,
+      },
+      diplomaticStanding
+    );
+  }, [country, diplomaticStanding]);
 
   return (
     <FactbookMetricsProvider section={section}>

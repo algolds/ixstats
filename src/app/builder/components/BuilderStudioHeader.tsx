@@ -134,16 +134,16 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
     <TooltipProvider delayDuration={150}>
       <header className="relative w-full pb-3">
         <div className="mx-auto w-full max-w-6xl px-4">
-          <FacetCard className="rounded-card flex flex-wrap items-center justify-between gap-2.5 p-2 sm:flex-nowrap sm:p-2.5">
+          <FacetCard className="rounded-card flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3">
             {/* Left Group: Back Button & Step Context */}
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
                 disabled={isBackDisabled}
-                className="shrink-0 gap-1.5"
+                className="shrink-0 gap-2"
                 aria-label="Previous step"
               >
                 <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
@@ -174,7 +174,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
 
               <div aria-hidden="true" className="bg-separator-opaque h-4 w-px shrink-0" />
 
-              <div className="hidden items-center gap-1.5 px-1 md:flex">
+              <div className="hidden items-center gap-2 px-1 md:flex">
                 <Eyebrow>
                   Step {stepIndex + 1} of {steps.length}
                 </Eyebrow>
@@ -184,7 +184,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
             {/* Center: Connected Step Progression Track */}
             <nav
               aria-label="Wizard Steps"
-              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto py-0.5 sm:gap-2"
+              className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto py-0.5 sm:gap-2"
               style={{ scrollbarWidth: "none" }}
             >
               {steps.map((stepKey, idx) => {
@@ -213,7 +213,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                         onClick={() => onNavigate(stepKey)}
                         aria-current="step"
                         data-cuelume-press="tick"
-                        className="text-label border-tint/50 bg-tint-fill text-caption flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-semibold active:scale-[0.97]"
+                        className="text-label border-tint/50 bg-tint-fill text-caption flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold active:scale-[0.97]"
                       >
                         <Icon aria-hidden="true" className="text-tint h-3.5 w-3.5" />
                         <span className="whitespace-nowrap">{label}</span>
@@ -285,7 +285,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                       soundEffects.press();
                       openGuide({ tab: "milestones", section: activeSection });
                     }}
-                    className="shrink-0 gap-1.5"
+                    className="shrink-0 gap-2"
                     aria-label="Open Step Guide"
                   >
                     <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />

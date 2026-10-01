@@ -21,6 +21,7 @@ import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
+import { IMAGE_SCRIM, IMAGE_SCRIM_ACTION } from "~/app/builder/lib/image-scrim";
 
 export interface IdentityHeroBannerProps {
   countryName: string;
@@ -216,39 +217,48 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                   className="h-full w-full object-cover transition-transform duration-300 group-hover/flag:scale-105"
                 />
               ) : (
-                <div className="text-label-secondary flex h-full w-full flex-col items-center justify-center gap-1.5 p-2 text-center">
+                <div className="text-label-secondary flex h-full w-full flex-col items-center justify-center gap-2 p-2 text-center">
                   <Flag className="text-label-tertiary h-6 w-6" />
                   <span className="text-caption">No Flag</span>
                 </div>
               )}
 
               {/* Hover Quick Action Scrim */}
-              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/60 opacity-0 transition-opacity duration-200 group-hover/flag:opacity-100">
-                <button
+              <div
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity duration-200 group-focus-within/flag:opacity-100 group-hover/flag:opacity-100",
+                  IMAGE_SCRIM
+                )}
+              >
+                <Button
                   type="button"
+                  variant="plain"
+                  size="icon"
                   onClick={() => {
                     soundEffects.press();
                     onSelectFlag();
                   }}
-                  className="rounded-control flex size-8 items-center justify-center bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
+                  className={IMAGE_SCRIM_ACTION}
                   title="Search IxWiki Repository"
-                  data-cuelume-press
+                  aria-label="Search IxWiki Repository"
                 >
-                  <ImageIcon className="h-4 w-4" />
-                </button>
-                <button
+                  <ImageIcon aria-hidden />
+                </Button>
+                <Button
                   type="button"
+                  variant="plain"
+                  size="icon"
                   onClick={() => {
                     soundEffects.press();
                     flagInputRef.current?.click();
                   }}
-                  className="rounded-control flex size-8 items-center justify-center bg-white/20 text-white transition-transform hover:scale-110 active:scale-95"
+                  className={IMAGE_SCRIM_ACTION}
                   title="Upload Custom Flag"
+                  aria-label="Upload Custom Flag"
                   disabled={isUploadingFlag}
-                  data-cuelume-press
                 >
-                  <Upload className="h-4 w-4" />
-                </button>
+                  <Upload aria-hidden />
+                </Button>
               </div>
             </div>
 
@@ -266,29 +276,36 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                 )}
 
                 {/* Coat of Arms Hover Action Scrim */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-200 group-hover/coa:opacity-100">
-                  <button
+                <div
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-focus-within/coa:opacity-100 group-hover/coa:opacity-100",
+                    IMAGE_SCRIM
+                  )}
+                >
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
                       soundEffects.press();
                       onSelectCoatOfArms();
                     }}
-                    className="text-white hover:scale-110 active:scale-95"
+                    className={cn("rounded-full", IMAGE_SCRIM_ACTION)}
                     title="Change Coat of Arms"
-                    data-cuelume-press
+                    aria-label="Change Coat of Arms"
                   >
-                    <ImageIcon className="h-3.5 w-3.5" />
-                  </button>
+                    <ImageIcon aria-hidden className="size-3.5" />
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Core Text Details */}
-          <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-2">
             {/* Meta Pill Badges */}
-            <div className="text-footnote flex flex-wrap items-center gap-1.5">
+            <div className="text-footnote flex flex-wrap items-center gap-2">
               <Badge variant="tinted">
                 <Crown aria-hidden />
                 <span>{governmentType || "Republic"}</span>
@@ -323,7 +340,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
             {/* National Motto Quote */}
             {motto && (
-              <div className="text-footnote text-tint flex items-center gap-1.5 pt-0.5 italic">
+              <div className="text-footnote text-tint flex items-center gap-2 pt-0.5 italic">
                 <Quote className="h-3 w-3 shrink-0 opacity-70" />
                 <span className="truncate">“{motto}”</span>
               </div>

@@ -13,7 +13,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
-import { FlagWatermark } from "~/components/mycountry/shell/FlagWatermark";
+import { FlagWatermark } from "~/components/ui/facet";
 import NumberFlow from "~/components/ui/number-flow";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 

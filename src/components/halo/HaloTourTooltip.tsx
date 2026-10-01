@@ -126,14 +126,16 @@ export function HaloTourTooltip() {
                   <span className="text-tint text-eyebrow">
                     Halo Walkthrough • {currentStep} of 5
                   </span>
-                  <button
-                    onClick={skipTour}
+                  <Button
                     type="button"
-                    className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-full p-1 transition-colors"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={skipTour}
+                    className="text-label-secondary hover:text-label rounded-full"
                     aria-label="Close Tour"
                   >
-                    <X className="size-4" />
-                  </button>
+                    <X aria-hidden />
+                  </Button>
                 </div>
 
                 {/* Title & Description */}
@@ -143,7 +145,7 @@ export function HaloTourTooltip() {
                 </div>
 
                 {/* Progress Dots */}
-                <div className="flex items-center gap-1.5 py-1">
+                <div className="flex items-center gap-2 py-1">
                   {TOUR_STEPS.map((s) => (
                     <div
                       key={s.id}

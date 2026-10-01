@@ -130,7 +130,7 @@ export function HeroPostView({
             </Avatar>
           </button>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               <PersonaAuthorCard username={post.account.username ?? ""}>
                 <button
                   onClick={() => onAccountClick?.(post.account.id)}
@@ -148,7 +148,7 @@ export function HeroPostView({
                 </span>
               )}
               {post.account.country && (
-                <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-1.5 py-0.5">
+                <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
                   {post.account.country.flag && (
                     <img
                       src={normalizeFlagUrl(post.account.country.flag) ?? undefined}
@@ -168,7 +168,7 @@ export function HeroPostView({
               <span className="text-label-tertiary text-footnote">·</span>
               <div
                 className={cn(
-                  "rounded-control-sm text-caption flex items-center gap-1 px-1.5 py-0.5",
+                  "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5",
                   ACCOUNT_TYPE_COLORS[
                     post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
                   ] || "bg-fill-2 text-label-secondary"

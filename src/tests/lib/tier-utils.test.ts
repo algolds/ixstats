@@ -13,8 +13,7 @@ describe("formatMembershipTier", () => {
     expect(res.label).toBe("Premium");
     expect(res.isPremium).toBe(true);
     expect(res.badgeVariant).toBe("caution");
-    expect(res.badgeClass).toContain("text-caution");
-    expect(res.badgeClass).not.toMatch(/dark:|amber-/);
+    expect(res).not.toHaveProperty("badgeClass");
   });
 
   it("formats premium as Premium", () => {

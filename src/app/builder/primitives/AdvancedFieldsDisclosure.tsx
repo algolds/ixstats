@@ -90,7 +90,7 @@ export function AdvancedFieldsDisclosure<K extends string>({
       <CollapsibleTrigger
         data-cuelume-press="toggle"
         data-cuelume-hover="tick"
-        className="text-label-secondary hover:text-label focus-visible:ring-tint rounded-control-sm text-caption flex items-center gap-1.5 font-semibold transition-[color,transform] focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
+        className="text-label-secondary hover:text-label focus-visible:ring-tint rounded-control-sm text-caption flex items-center gap-2 font-semibold transition-[color,transform] focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
       >
         <Settings className="h-3.5 w-3.5" aria-hidden="true" />
         <span>{open ? "Hide advanced options" : "Show advanced options"}</span>

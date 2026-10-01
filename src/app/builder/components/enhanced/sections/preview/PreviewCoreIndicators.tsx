@@ -103,7 +103,7 @@ export const PreviewCoreIndicators = memo(function PreviewCoreIndicators({
             className="rounded-row border-separator bg-surface hover:border-separator hover:bg-surface flex flex-col items-center justify-center border p-3 text-center transition-colors"
             title={item.subValue ? `${item.label}: ${item.subValue}` : item.label}
           >
-            <div className="rounded-control bg-tint-fill text-tint mb-1.5 flex h-7 w-7 items-center justify-center">
+            <div className="rounded-control bg-tint-fill text-tint mb-2 flex h-7 w-7 items-center justify-center">
               <Icon className="h-3.5 w-3.5" />
             </div>
             <div className="text-headline text-label sm:text-title-3 max-w-full truncate">

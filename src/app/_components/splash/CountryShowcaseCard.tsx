@@ -124,7 +124,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
       <div className="relative z-10 space-y-5">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="text-label text-large-title md:text-large-title mb-1.5">
+            <h3 className="text-label text-large-title md:text-large-title mb-2">
               {identity?.officialName || displayName}
             </h3>
             <div className="flex flex-wrap items-center gap-2">
@@ -198,7 +198,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-secondary rounded-row p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+              <div className="mb-1 flex items-center gap-2">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
                 <Eyebrow>Total GDP</Eyebrow>
               </div>
@@ -207,7 +207,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               </div>
             </div>
             <div className="bg-surface-secondary rounded-row p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+              <div className="mb-1 flex items-center gap-2">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
                 <Eyebrow>Population</Eyebrow>
               </div>
@@ -216,7 +216,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               </div>
             </div>
             <div className="bg-surface-secondary rounded-row p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+              <div className="mb-1 flex items-center gap-2">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
                 <Eyebrow>Per Capita</Eyebrow>
               </div>
@@ -225,7 +225,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               </div>
             </div>
             <div className="bg-surface-secondary rounded-row p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+              <div className="mb-1 flex items-center gap-2">
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
@@ -358,11 +358,11 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                   <Activity className="text-label-secondary h-4 w-4" />
                   <Eyebrow>Country Health</Eyebrow>
                 </div>
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-baseline gap-2">
                   <span className={`text-title-1 ${healthColor}`}>{overallHealth}</span>
                   <span className="text-label-secondary text-footnote">/100</span>
                   <span
-                    className={`rounded-control-sm ml-1.5 border ${healthBorder} text-caption px-1.5 py-0.5 font-bold ${healthColor}`}
+                    className={`rounded-control-sm ml-2 border ${healthBorder} text-caption px-2 py-0.5 font-bold ${healthColor}`}
                   >
                     {healthGrade}
                   </span>

@@ -18,7 +18,7 @@ import type {
 } from "../types";
 
 /** Section header (sentence-case `text-subhead`). */
-const SECTION_LABEL = "text-subhead text-label-secondary flex items-center gap-1.5";
+const SECTION_LABEL = "text-subhead text-label-secondary flex items-center gap-2";
 
 /** An inset panel inside the passport card. */
 
@@ -54,7 +54,7 @@ function rarityLabel(rarity: string): string {
 
 function Hidden({ what, handle, isOwner }: { what: string; handle: string; isOwner: boolean }) {
   return (
-    <p className="text-label-secondary text-footnote flex items-center gap-1.5">
+    <p className="text-label-secondary text-footnote flex items-center gap-2">
       <EyeClosed aria-hidden className="size-3.5 shrink-0" />
       {isOwner
         ? `You hide your ${what}. Change it on the back of your passport.`
@@ -118,7 +118,7 @@ function AchievementsPanel({
           <h4 className="text-footnote text-label-secondary font-medium">
             Ribbon rack · <span className="tabular-nums">{achievements.ribbons.length}</span>
           </h4>
-          <div className="flex flex-wrap gap-1.5" data-testid="passport-ribbon-shelf">
+          <div className="flex flex-wrap gap-2" data-testid="passport-ribbon-shelf">
             {achievements.ribbons.map((ribbon) => (
               <RibbonBar key={ribbon.key} ribbon={ribbon} />
             ))}

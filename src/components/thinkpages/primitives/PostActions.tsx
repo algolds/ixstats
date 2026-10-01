@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 
 import { updateReactionsInCacheData, updatePostReactionsList } from "./ReactionCacheUpdater";
+import { ActionPill } from "~/components/ui/action-pill";
 
 interface PostActionsProps {
   postId: string;
@@ -429,70 +430,45 @@ export function PostActions({
     onShare?.(postId);
   }, [postId, onShare, notify]);
 
-  const iconSize = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
-  const pillPadding =
-    size === "sm"
-      ? "px-2 py-1 text-footnote"
-      : size === "lg"
-        ? "px-3.5 py-2 text-body"
-        : "px-2.5 py-1.5 text-footnote";
+  // ActionPill (spec §7.2) has two sizes; the large toolbar uses the standalone `md` pill.
+  const pillSize = size === "sm" ? "sm" : "md";
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-        {/* Reply Button */}
-        <button
-          type="button"
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+        {/* Reply */}
+        <ActionPill
+          size={pillSize}
+          tone="blue"
+          icon={<MessageCircle />}
+          count={showCounts && replyCount > 0 ? replyCount : undefined}
           onClick={() => onReply?.(postId)}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
-            pillPadding,
-            "text-label-secondary hover:bg-blue/10 hover:text-blue"
-          )}
           aria-label="Reply to post"
         >
-          <MessageCircle
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:scale-110 group-active:scale-[0.98]"
-            )}
-          />
-          <span>Reply</span>
-          {showCounts && replyCount > 0 && (
-            <span className="font-semibold tabular-nums">{replyCount}</span>
-          )}
-        </button>
+          Reply
+        </ActionPill>
 
-        {/* Repost Button */}
-        <button
-          type="button"
+        {/* Repost */}
+        <ActionPill
+          size={pillSize}
+          pressed={isReposted}
+          icon={<Repeat2 />}
+          count={showCounts && repostCount > 0 ? repostCount : undefined}
           onClick={handleRepost}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
-            pillPadding,
-            isReposted
-              ? "bg-tint-fill text-tint font-semibold"
-              : "text-label-secondary hover:bg-tint-fill hover:text-tint"
-          )}
           aria-label="Repost"
         >
-          <Repeat2
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:rotate-45 group-active:scale-[0.98]"
-            )}
-          />
-          <span>Repost</span>
-          {showCounts && repostCount > 0 && (
-            <span className="font-semibold tabular-nums">{repostCount}</span>
-          )}
-        </button>
+          Repost
+        </ActionPill>
 
-        {/* Like/Reaction Button */}
+        {/* Like / reaction */}
         <div className="relative">
-          <button
-            type="button"
+          <ActionPill
             ref={reactionButtonRef}
+            size={pillSize}
+            tone="pink"
+            pressed={isLiked || showReactionPopup}
+            icon={<Heart className={cn(isLiked && "fill-current")} />}
+            count={showCounts && likeCount > 0 ? likeCount : undefined}
             onClick={(e) => {
               e.stopPropagation();
               handleLike();
@@ -502,15 +478,7 @@ export function PostActions({
               e.stopPropagation();
               setShowReactionPopup(!showReactionPopup);
             }}
-            className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
-              pillPadding,
-              isLiked
-                ? "bg-pink/10 text-pink font-semibold"
-                : "text-label-secondary hover:bg-pink/10 hover:text-pink",
-              !currentUserAccountId && "cursor-not-allowed opacity-50",
-              showReactionPopup && "bg-pink/10"
-            )}
+            className={cn(!currentUserAccountId && "cursor-not-allowed opacity-50")}
             title={
               currentUserAccountId
                 ? "Click to like (right-click for emoji reactions)"
@@ -518,18 +486,8 @@ export function PostActions({
             }
             aria-label="Like post"
           >
-            <Heart
-              className={cn(
-                iconSize,
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:scale-115 group-active:scale-[0.98]",
-                isLiked && "scale-105 fill-current"
-              )}
-            />
-            <span>{isLiked ? "Liked" : "Like"}</span>
-            {showCounts && likeCount > 0 && (
-              <span className="font-semibold tabular-nums">{likeCount}</span>
-            )}
-          </button>
+            {isLiked ? "Liked" : "Like"}
+          </ActionPill>
 
           {/* Reaction popup, anchored to the like button (opened by right-click). */}
           <Popover open={showReactionPopup} onOpenChange={setShowReactionPopup}>
@@ -549,25 +507,10 @@ export function PostActions({
           </Popover>
         </div>
 
-        {/* Share Button */}
-        <button
-          type="button"
-          onClick={handleShare}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
-            pillPadding,
-            "text-label-secondary hover:bg-teal/10 hover:text-teal"
-          )}
-          aria-label="Share post"
-        >
-          <Share
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-[0.98]"
-            )}
-          />
-          <span>Share</span>
-        </button>
+        {/* Share */}
+        <ActionPill size={pillSize} icon={<Share />} onClick={handleShare} aria-label="Share post">
+          Share
+        </ActionPill>
       </div>
 
       {/* Repost Modal */}

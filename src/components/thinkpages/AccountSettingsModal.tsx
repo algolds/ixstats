@@ -10,13 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
-
-const SELECT_CLASS = cn(
-  fieldStyles,
-  "rounded-control text-body block h-(--control-height) w-full px-3"
-);
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -96,64 +90,68 @@ export function AccountSettingsModal({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label htmlFor="tp-posting-frequency" className="text-subhead text-label mb-2 block">
+            <span id="tp-posting-frequency" className="text-subhead text-label mb-2 block">
               Posting Frequency
-            </label>
-            <select
-              id="tp-posting-frequency"
+            </span>
+            <SegmentedControl
+              aria-labelledby="tp-posting-frequency"
+              fullWidth
               value={postingFrequency}
-              onChange={(e) => setPostingFrequency(e.target.value as any)}
-              className={SELECT_CLASS}
-            >
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="active">Active</option>
-            </select>
+              onValueChange={setPostingFrequency}
+              options={[
+                { value: "low", label: "Low" },
+                { value: "moderate", label: "Moderate" },
+                { value: "active", label: "Active" },
+              ]}
+            />
           </div>
           <div>
-            <label htmlFor="tp-political-lean" className="text-subhead text-label mb-2 block">
+            <span id="tp-political-lean" className="text-subhead text-label mb-2 block">
               Political Lean
-            </label>
-            <select
-              id="tp-political-lean"
+            </span>
+            <SegmentedControl
+              aria-labelledby="tp-political-lean"
+              fullWidth
               value={politicalLean}
-              onChange={(e) => setPoliticalLean(e.target.value as any)}
-              className={SELECT_CLASS}
-            >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
-            </select>
+              onValueChange={setPoliticalLean}
+              options={[
+                { value: "left", label: "Left" },
+                { value: "center", label: "Center" },
+                { value: "right", label: "Right" },
+              ]}
+            />
           </div>
           <div>
-            <label htmlFor="tp-personality" className="text-subhead text-label mb-2 block">
+            <span id="tp-personality" className="text-subhead text-label mb-2 block">
               Personality
-            </label>
-            <select
-              id="tp-personality"
+            </span>
+            <SegmentedControl
+              aria-labelledby="tp-personality"
+              fullWidth
               value={personality}
-              onChange={(e) => setPersonality(e.target.value as any)}
-              className={SELECT_CLASS}
-            >
-              <option value="serious">Serious</option>
-              <option value="casual">Casual</option>
-              <option value="satirical">Satirical</option>
-            </select>
+              onValueChange={setPersonality}
+              options={[
+                { value: "serious", label: "Serious" },
+                { value: "casual", label: "Casual" },
+                { value: "satirical", label: "Satirical" },
+              ]}
+            />
           </div>
           <div>
-            <label htmlFor="tp-account-type" className="text-subhead text-label mb-2 block">
+            <span id="tp-account-type" className="text-subhead text-label mb-2 block">
               Account Type (Category)
-            </label>
-            <select
-              id="tp-account-type"
+            </span>
+            <SegmentedControl
+              aria-labelledby="tp-account-type"
+              fullWidth
               value={accountType}
-              onChange={(e) => setAccountType(e.target.value as any)}
-              className={SELECT_CLASS}
-            >
-              <option value="government">Government</option>
-              <option value="media">Media</option>
-              <option value="citizen">Citizen</option>
-            </select>
+              onValueChange={setAccountType}
+              options={[
+                { value: "government", label: "Government" },
+                { value: "media", label: "Media" },
+                { value: "citizen", label: "Citizen" },
+              ]}
+            />
           </div>
         </div>
         <DialogFooter>

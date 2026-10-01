@@ -19,6 +19,7 @@ import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { timeAgo } from "~/lib/format/compact";
 import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
+import { Badge } from "~/components/ui/badge";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
@@ -67,7 +68,7 @@ export function WikiWorkspaceTab({
           open={draftsOpen}
           onToggle={() => setDraftsOpen(!draftsOpen)}
         >
-          <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+          <div className="max-h-[160px] scrollbar-thin space-y-0.5 overflow-y-auto">
             {localDrafts.map((draft, idx) => (
               <button
                 key={idx}
@@ -79,7 +80,7 @@ export function WikiWorkspaceTab({
                     router
                   );
                 }}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
@@ -110,13 +111,13 @@ export function WikiWorkspaceTab({
           open={sessionsOpen}
           onToggle={() => setSessionsOpen(!sessionsOpen)}
         >
-          <div className="max-h-[160px] scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-0.5 overflow-y-auto">
+          <div className="max-h-[160px] scrollbar-thin space-y-0.5 overflow-y-auto">
             {pausedSessions.map((session, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => onNavigateToArticle(session.title, session.source)}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
@@ -129,9 +130,9 @@ export function WikiWorkspaceTab({
                     {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <span className="text-label-secondary rounded-control-sm border-separator bg-fill-4 text-caption shrink-0 border px-1.5 py-0.5 font-semibold tabular-nums">
+                <Badge variant="neutral" className="tabular-nums">
                   {session.scrollPercent}%
-                </span>
+                </Badge>
               </button>
             ))}
           </div>
@@ -241,7 +242,7 @@ function IxWikiPageActions({
 
 export function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-label-secondary text-subhead mb-1.5">
+    <div className="text-label-secondary text-subhead mb-2">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -267,7 +268,8 @@ export function CollapsibleSection({
       <button
         type="button"
         onClick={onToggle}
-        className="text-label-secondary hover:text-label text-subhead mb-1 flex w-full cursor-pointer items-center justify-between"
+        aria-expanded={open}
+        className="text-label-secondary hover:text-label text-subhead focus-visible:outline-tint mb-1 flex w-full cursor-pointer items-center justify-between focus-visible:outline-2"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -302,7 +304,7 @@ export function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body flex w-full items-center justify-between px-2 py-1.5 text-left transition-colors"
+      className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body flex w-full items-center justify-between px-2 py-2 text-left transition-colors"
     >
       <span className="flex items-center gap-2">
         <span className="text-label-secondary [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
@@ -312,7 +314,7 @@ export function QuickAction({
       </span>
       {shortcut && (
         <PreText
-          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-1.5 py-0.5"
+          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-2 py-0.5"
           whiteSpace="nowrap"
         >
           {shortcut}

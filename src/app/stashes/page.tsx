@@ -411,7 +411,7 @@ export default function StashesPage() {
                     <div className="border-separator bg-surface rounded-card shadow-card space-y-4 border p-4">
                       {/* Active Stash Header Banner */}
                       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-                        <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2">
                           <span
                             className="shadow-card h-3.5 w-3.5 shrink-0 rounded-full"
                             style={{

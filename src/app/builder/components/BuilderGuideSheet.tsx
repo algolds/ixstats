@@ -177,7 +177,7 @@ export function BuilderGuideSheet({
 
         {/* Footer info bar */}
         <div className="border-separator text-label-secondary text-footnote flex items-center justify-between border-t px-5 py-3">
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <InfoCircle aria-hidden="true" className="h-3.5 w-3.5" />
             Changes auto-save in draft
           </span>

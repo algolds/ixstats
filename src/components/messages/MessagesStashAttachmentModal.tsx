@@ -7,11 +7,12 @@ import {
   Bookmark,
   Folder,
   NavArrowLeft as ChevronLeft,
-  NavArrowRight as ChevronRight,
   SystemRestart as Loader2,
   ArrowRight,
 } from "iconoir-react";
 import { SearchField } from "~/components/ui/search-field";
+import { Button } from "~/components/ui/button";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface MessagesStashAttachmentModalProps {
   isOpen: boolean;
@@ -85,14 +86,16 @@ export function MessagesStashAttachmentModal({
         <DialogHeader className="border-separator border-b pb-3">
           <DialogTitle className="text-title-3 flex items-center gap-2">
             {selectedStashId ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={handleBack}
                 aria-label="Back to collections"
-                className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm mr-1 flex items-center justify-center p-1 transition-colors"
+                className="text-label-secondary hover:text-label mr-1"
               >
-                <ChevronLeft className="size-5" />
-              </button>
+                <ChevronLeft aria-hidden className="size-5" />
+              </Button>
             ) : (
               <Bookmark className="text-tint size-5" aria-hidden="true" />
             )}
@@ -135,26 +138,23 @@ export function MessagesStashAttachmentModal({
                   {searchQuery.trim() ? "No matching pages found." : "No pages in this collection."}
                 </p>
               ) : (
-                <div className="space-y-1">
-                  {filteredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectItem(item)}
-                      type="button"
-                      className="group hover:bg-fill-4 rounded-control flex w-full items-center justify-between p-2 text-left transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-headline text-label truncate">{item.pageTitle}</p>
-                        <p className="text-footnote text-label-secondary mt-0.5 truncate font-mono">
-                          /wiki/{item.pageSlug}
-                        </p>
-                      </div>
-                      <span className="text-caption text-tint flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                        Attach Link <ArrowRight className="size-3.5" aria-hidden="true" />
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <FacetList variant="plain">
+                  <FacetListSection aria-label="Stashed pages">
+                    {filteredItems.map((item) => (
+                      <FacetRow
+                        key={item.id}
+                        onClick={() => handleSelectItem(item)}
+                        title={item.pageTitle}
+                        subtitle={<span className="font-mono">/wiki/{item.pageSlug}</span>}
+                        trailing={
+                          <span className="text-caption text-tint flex items-center gap-1">
+                            Attach Link <ArrowRight className="size-3.5" aria-hidden="true" />
+                          </span>
+                        }
+                      />
+                    ))}
+                  </FacetListSection>
+                </FacetList>
               )
             ) : isLoadingStashes ? (
               <div className="flex justify-center py-8">
@@ -168,34 +168,30 @@ export function MessagesStashAttachmentModal({
                 No Lore Stash collections found.
               </p>
             ) : (
-              <div className="space-y-1">
-                {filteredStashes.map((stash) => (
-                  <button
-                    key={stash.id}
-                    onClick={() => handleSelectStash(stash.id)}
-                    type="button"
-                    className="group hover:bg-fill-4 rounded-control flex w-full items-center justify-between p-2 text-left transition-colors"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Folder
-                        className="size-4 shrink-0"
-                        style={{ color: stash.color }}
-                        aria-hidden="true"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-headline text-label truncate">{stash.name}</p>
-                        <p className="text-footnote text-label-secondary mt-0.5 tabular-nums">
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Lore Stash collections">
+                  {filteredStashes.map((stash) => (
+                    <FacetRow
+                      key={stash.id}
+                      onClick={() => handleSelectStash(stash.id)}
+                      leading={
+                        <Folder
+                          className="size-4 shrink-0"
+                          style={{ color: stash.color }}
+                          aria-hidden="true"
+                        />
+                      }
+                      title={stash.name}
+                      subtitle={
+                        <span className="tabular-nums">
                           {stash.itemCount} {stash.itemCount === 1 ? "item" : "items"}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight
-                      className="text-label-tertiary size-4 shrink-0 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden="true"
+                        </span>
+                      }
+                      accessory="chevron"
                     />
-                  </button>
-                ))}
-              </div>
+                  ))}
+                </FacetListSection>
+              </FacetList>
             )}
           </div>
         </div>

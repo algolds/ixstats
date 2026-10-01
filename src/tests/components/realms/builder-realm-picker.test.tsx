@@ -1,5 +1,48 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { BuilderRealmPicker } from "~/app/builder/components/BuilderRealmPicker";
+
+// Radix Select doesn't render its options in jsdom; swap in a native <select>.
+jest.mock("~/components/ui/select", () => {
+  const SelectCtx = React.createContext<{
+    value?: string;
+    onValueChange?: (v: string) => void;
+  }>({});
+  return {
+    Select: ({
+      value,
+      onValueChange,
+      children,
+    }: {
+      value?: string;
+      onValueChange?: (v: string) => void;
+      children: React.ReactNode;
+    }) => <SelectCtx.Provider value={{ value, onValueChange }}>{children}</SelectCtx.Provider>,
+    SelectTrigger: () => null,
+    SelectValue: () => null,
+    SelectContent: ({ children }: { children: React.ReactNode }) => {
+      const { value, onValueChange } = React.useContext(SelectCtx);
+      return (
+        <select value={value} onChange={(e) => onValueChange?.(e.target.value)}>
+          {children}
+        </select>
+      );
+    },
+    SelectItem: ({
+      value,
+      disabled,
+      children,
+    }: {
+      value: string;
+      disabled?: boolean;
+      children: React.ReactNode;
+    }) => (
+      <option value={value} disabled={disabled}>
+        {children}
+      </option>
+    ),
+  };
+});
 
 let mockData: unknown;
 jest.mock("~/trpc/react", () => ({

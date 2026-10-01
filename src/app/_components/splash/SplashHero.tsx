@@ -64,7 +64,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       <motion.div
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={`bg-surface border-separator shadow-card rounded-card mb-6 flex flex-col items-center gap-3 border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-3.5 ${splashGold.border} `}
+        className={`bg-surface border-separator shadow-card rounded-card mb-6 flex flex-col items-center gap-3 border px-4 py-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-2 sm:px-6 sm:py-4 ${splashGold.border} `}
       >
         <div className="flex items-center gap-2">
           <div className={splashGold.pulseDot} aria-hidden />

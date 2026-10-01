@@ -26,8 +26,10 @@ import { isStandaloneClient } from "~/lib/system/standalone-detection";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
+import { springSnappy } from "~/lib/design/motion";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;
@@ -79,24 +81,26 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
     window.location.href = createAbsoluteUrl(path);
   };
 
-  const actionButtonClass = (colors: string) =>
-    `flex w-full items-center justify-start gap-2.5 rounded-row border border-separator bg-fill-4 px-3.5 py-3 text-caption font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
+  /** Country action tiles: neutral gray buttons; the icon carries each section's system colour. */
+  const ACTION_BUTTON = "w-full justify-start";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ type: "spring", stiffness: 420, damping: 38 }}
+      transition={springSnappy}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
           {user && (
             <button
+              type="button"
               onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-              className="group relative flex-shrink-0 rounded-full transition-transform hover:scale-105 active:scale-[0.98]"
+              className="group focus-visible:outline-tint relative flex-shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
               title="Account Settings"
+              aria-label="Account settings"
             >
               {user?.imageUrl ? (
                 <img
@@ -117,42 +121,45 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </PreText>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {country && (
             <>
-              <button
+              <Button
                 type="button"
+                variant="gray"
+                size="sm"
                 onClick={() => {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
                   window.location.href = createAbsoluteUrl(`/countries/${slug}`);
                 }}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 border-separator bg-fill-4 hover:border-separator rounded-control text-caption inline-flex cursor-pointer items-center gap-1 border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 title="Public Country Profile"
               >
-                <User className="text-blue h-3 w-3" />
+                <User aria-hidden className="text-blue size-3.5" />
                 <span>Profile</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="gray"
+                size="sm"
                 onClick={() => {
                   window.location.href = createAbsoluteUrl("/mycountry/editor");
                 }}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 border-separator bg-fill-4 hover:border-separator rounded-control text-caption inline-flex cursor-pointer items-center gap-1 border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 title="Open MyCountry Map Editor"
               >
-                <Edit3 className="text-yellow h-3 w-3" />
+                <Edit3 aria-hidden className="text-yellow size-3.5" />
                 <span>Editor</span>
-              </button>
+              </Button>
             </>
           )}
           <Button
-            size="sm"
+            size="icon-sm"
             variant="ghost"
             onClick={onClose}
-            className="text-label-secondary hover:text-label size-7 p-0"
+            className="text-label-secondary hover:text-label"
             title="Close expanded view"
+            aria-label="Close expanded view"
           >
-            <X className="h-3.5 w-3.5" />
+            <X aria-hidden />
           </Button>
         </div>
       </div>
@@ -162,7 +169,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           {/* ── Your Country ─────────────────────────────────── */}
           <div className="border-separator border-b px-4 pb-3">
             <div className="mb-2 flex w-full items-center justify-between">
-              <div className="text-label text-caption flex items-center gap-1.5 font-semibold">
+              <div className="text-label text-caption flex items-center gap-2 font-semibold">
                 <Crown
                   className={cn(
                     "h-3.5 w-3.5",
@@ -175,13 +182,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </div>
               {/* Membership badge */}
               {userProfile.membershipTier === "mycountry_premium" ? (
-                <span className="border-yellow/25 bg-yellow/10 text-caption text-yellow inline-flex items-center rounded-full border px-2 py-0.5">
-                  Premium
-                </span>
+                <Badge variant="yellow">Premium</Badge>
               ) : (
-                <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
-                  Basic
-                </span>
+                <Badge variant="neutral">Basic</Badge>
               )}
             </div>
 
@@ -207,26 +210,27 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
               <div className="mt-1 mb-2 flex flex-wrap gap-1">
                 {userProfile.role && (
-                  <span className="rounded-control-sm border-indigo/25 bg-indigo/5 text-caption text-indigo inline-flex items-center gap-0.5 border px-1.5 py-0.5 font-semibold">
-                    <Shield className="text-indigo h-2 w-2 shrink-0" />
+                  <Badge variant="indigo">
+                    <Shield aria-hidden />
                     {userProfile.role.displayName}
-                  </span>
+                  </Badge>
                 )}
                 {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
-                  <span className="rounded-control-sm border-yellow/25 bg-yellow/5 text-caption text-yellow inline-flex items-center gap-0.5 border px-1.5 py-0.5 font-semibold">
-                    <Crown className="text-yellow h-2.5 w-2.5 shrink-0" />
+                  <Badge variant="yellow">
+                    <Crown aria-hidden />
                     Founding Member
-                  </span>
+                  </Badge>
                 )}
               </div>
             )}
-            <div className="rounded-control relative -mx-1 px-1 py-1.5">
+            <div className="rounded-control relative -mx-1 px-1 py-2">
               <button
+                type="button"
                 onClick={() =>
                   userProfile.country &&
                   (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
                 }
-                className="hover:bg-fill-4 rounded-control flex w-full items-center gap-3 p-1 text-left transition-colors"
+                className="hover:bg-fill-4 rounded-control focus-visible:outline-tint flex w-full items-center gap-3 p-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="rounded-control flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">
                   <UnifiedCountryFlag
@@ -250,8 +254,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
+                      <div className="mt-2 grid grid-cols-2 gap-2">
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setMetricView((v) => ({
@@ -259,7 +264,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                             }));
                           }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 p-1.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
                         >
                           <PreText
                             className="text-label-secondary text-eyebrow"
@@ -287,6 +292,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                         </button>
 
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setMetricView((v) => ({
@@ -294,7 +300,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               population: v.population === "total" ? "density" : "total",
                             }));
                           }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 p-1.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
                         >
                           <PreText
                             className="text-label-secondary text-eyebrow"
@@ -337,90 +343,104 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           <div className="px-3 py-2">
             <p className="text-subhead text-label-secondary px-1 pb-2">Country Actions</p>
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => handleNavigate("/mycountry/editor")}
-                className={actionButtonClass(
-                  "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15"
-                )}
+                className={ACTION_BUTTON}
               >
-                <Edit3 className="h-4 w-4 shrink-0" />
+                <Edit3 aria-hidden className="text-yellow" />
                 <span className="truncate">Country Editor</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => handleNavigate("/mycountry/map-editor")}
-                className={actionButtonClass("border-teal/20 bg-teal/5 text-teal hover:bg-teal/15")}
+                className={ACTION_BUTTON}
               >
-                <Map className="h-4 w-4 shrink-0" />
+                <Map aria-hidden className="text-teal" />
                 <span className="truncate">Map Editor</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => handleNavigate("/mycountry/politics")}
-                className={actionButtonClass(
-                  "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15"
-                )}
+                className={ACTION_BUTTON}
               >
-                <Scale className="h-4 w-4 shrink-0" />
+                <Scale aria-hidden className="text-indigo" />
                 <span className="truncate">Politics</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => handleNavigate("/messages")}
-                className={actionButtonClass("border-blue/20 bg-blue/5 text-blue hover:bg-blue/15")}
+                className={ACTION_BUTTON}
               >
-                <MessageSquare className="h-4 w-4 shrink-0" />
+                <MessageSquare aria-hidden className="text-blue" />
                 <span className="truncate">Messages</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => handleNavigate("/mycountry/diplomacy")}
-                className={actionButtonClass("border-teal/20 bg-teal/5 text-teal hover:bg-teal/15")}
+                className={ACTION_BUTTON}
               >
-                <Handshake className="h-4 w-4 shrink-0" />
+                <Handshake aria-hidden className="text-teal" />
                 <span className="truncate">Diplomacy</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                type="button"
+                variant="gray"
                 onClick={() => {
                   const wikiPath = userProfile?.country?.name
                     ? `/wiki/${encodeURIComponent(userProfile.country.name.replace(/ /g, "_"))}`
                     : "/wiki";
                   handleNavigate(wikiPath);
                 }}
-                className={actionButtonClass(
-                  "border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20 hover:text-wiki-hover"
-                )}
+                className={ACTION_BUTTON}
               >
-                <BookOpen className="h-4 w-4 shrink-0" />
+                <BookOpen aria-hidden className="text-indigo" />
                 <span className="truncate">Wiki Page</span>
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* ── Bottom Actions (Sign Out & View Profile) ────── */}
           <div className="border-separator flex items-center justify-between border-t px-3 py-2">
             <SignOutButton>
-              <button className="text-label-secondary hover:bg-destructive/10 hover:text-destructive group rounded-control text-footnote flex items-center gap-2.5 px-3 py-2 transition-colors">
-                <LogOut className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5 group-hover:scale-110" />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-label-secondary hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut aria-hidden />
                 <PreText className="text-inherit" whiteSpace="nowrap">
                   Sign Out
                 </PreText>
-              </button>
+              </Button>
             </SignOutButton>
 
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() =>
                 userProfile?.country?.name && handleNavigate(getNationUrl(userProfile.country.name))
               }
               disabled={!userProfile?.country?.name}
-              className="text-label-secondary hover:bg-fill-4 hover:text-label group rounded-control text-footnote flex items-center gap-2.5 px-3 py-2 transition-colors disabled:opacity-50"
+              className="text-label-secondary hover:text-label"
             >
-              <Globe className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+              <Globe aria-hidden />
               <PreText className="text-inherit" whiteSpace="nowrap">
                 View Profile
               </PreText>
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -431,17 +451,20 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             <PreText className="text-label-secondary text-footnote mb-4" whiteSpace="nowrap">
               {isStandalone ? "Sign in with IxnayID to edit maps" : "Sign in with IxnayID"}
             </PreText>
-            <button
+            <Button
+              type="button"
+              variant="filled"
+              size="sm"
               onClick={() =>
                 (window.location.href =
                   process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
               }
-              className="bg-tint text-on-tint hover:bg-tint/90 rounded-control-sm text-caption w-full px-4 py-2 transition-colors"
+              className="w-full"
             >
               <PreText className="text-inherit" whiteSpace="nowrap">
                 Sign In
               </PreText>
-            </button>
+            </Button>
           </div>
         </div>
       )}

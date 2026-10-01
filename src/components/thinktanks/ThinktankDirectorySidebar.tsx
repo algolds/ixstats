@@ -151,7 +151,7 @@ export function ThinktankDirectorySidebar({
             {availableCategories.map((cat) => (
               <ToggleGroupItem key={cat.name} value={cat.name} className="shrink-0 gap-1">
                 <span>{cat.name}</span>
-                <span className="bg-fill-3 rounded-full px-1.5 tabular-nums">{cat.count}</span>
+                <span className="bg-fill-3 rounded-full px-2 tabular-nums">{cat.count}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -237,7 +237,7 @@ export function ThinktankDirectorySidebar({
                     <span className="text-headline text-label truncate">{g.name}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       {g.hasRecentActivity && g.lastActivity && (
-                        <Badge variant="tinted" className="px-1.5">
+                        <Badge variant="tinted" className="px-2">
                           <Sparks aria-hidden="true" />
                           {formatRelativeTime(g.lastActivity)}
                         </Badge>

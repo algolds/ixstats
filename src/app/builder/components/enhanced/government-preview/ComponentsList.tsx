@@ -56,7 +56,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                     key={componentType}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-fill-3 border-muted hover:border-tint/30 rounded-control flex items-start gap-3 border p-4 transition-colors"
+                    className="bg-fill-3 border-separator hover:border-tint/30 rounded-control flex items-start gap-3 border p-4 transition-colors"
                   >
                     <div className="bg-tint-fill rounded-control shrink-0 p-2">
                       <Crown className="text-tint h-5 w-5" />

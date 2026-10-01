@@ -1,6 +1,14 @@
 "use client";
 
+import { useId } from "react";
 import { api } from "~/trpc/react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export interface BuilderRealmPickerProps {
   /** The chosen realm id; null/undefined → the server's default (the active nation's realm, else IxWorld). */
@@ -13,6 +21,7 @@ export interface BuilderRealmPickerProps {
  * realm it only says so when the player is already at their nation cap there.
  */
 export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps) {
+  const labelId = useId();
   const { data } = api.realms.builderRealms.useQuery(undefined, { staleTime: 60_000 });
   if (!data || data.realms.length === 0) return null;
 
@@ -29,20 +38,21 @@ export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps)
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-label-secondary text-footnote flex items-center gap-2">
-        <span>Found in</span>
-        <select
-          value={selectedId}
-          onChange={(event) => onChange(event.target.value)}
-          className="border-separator bg-background text-label rounded-control text-footnote border px-2 py-1"
-        >
-          {data.realms.map((realm) => (
-            <option key={realm.id} value={realm.id} disabled={!realm.canCreate}>
-              {realm.name} ({realm.held}/{realm.cap})
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="text-label-secondary text-footnote flex items-center gap-2">
+        <span id={labelId}>Found in</span>
+        <Select value={selectedId} onValueChange={onChange}>
+          <SelectTrigger size="sm" aria-labelledby={labelId}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {data.realms.map((realm) => (
+              <SelectItem key={realm.id} value={realm.id} disabled={!realm.canCreate}>
+                {realm.name} ({realm.held}/{realm.cap})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {full}
     </div>
   );

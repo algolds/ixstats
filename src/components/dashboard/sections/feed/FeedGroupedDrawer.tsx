@@ -49,7 +49,7 @@ export function FeedGroupedDrawer({ subEdits, isWiki, className }: FeedGroupedDr
                 key={i}
                 className="text-label-secondary text-footnote flex items-center justify-between py-0.5"
               >
-                <div className="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+                <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
                   <span className="text-label shrink-0 font-medium">{sub.user?.name ?? "?"}</span>
                   <span aria-hidden className="text-label-tertiary">
                     ·

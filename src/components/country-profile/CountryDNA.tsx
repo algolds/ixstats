@@ -138,13 +138,19 @@ export function CountryDNA({
   );
 }
 
-/** The DNA's figures as rows: category, the country's value, its world rank and percentile. */
+/**
+ * The DNA's figures as rows: category, the country's value, its rank within its realm and
+ * percentile. Census ranks are realm ranks, so pass `realm` to label them ("#3 of 41 in Ixnay").
+ */
 export function DnaLegend({
   axes,
+  realm,
   header = "World Census",
   className,
 }: {
   axes: readonly DnaAxis[];
+  /** The realm the census ranks the nation in. */
+  realm?: string | null;
   header?: React.ReactNode;
   className?: string;
 }) {
@@ -160,7 +166,9 @@ export function DnaLegend({
           subtitle={axis.value}
           trailing={
             <span className="flex flex-col items-end tabular-nums">
-              <span className="text-headline text-label">{rankLabel(axis.rank, axis.total)}</span>
+              <span className="text-headline text-label">
+                {rankLabel(axis.rank, axis.total, realm)}
+              </span>
               <span className="text-footnote text-label-secondary">
                 Percentile {axis.percentile}
               </span>

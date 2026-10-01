@@ -82,14 +82,14 @@ export function WikiAuthorPopover({ username }: { username: string }) {
             <div className="border-separator flex flex-col gap-0.5 border-t pt-2">
               <Link
                 href={wikiUserUrl}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-1.5 px-2 py-1 transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
               >
                 <BookOpen aria-hidden className="size-3.5 shrink-0" />
                 Wiki user page
               </Link>
               <Link
                 href={wikiContribsUrl}
-                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-1.5 px-2 py-1 transition-colors"
+                className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
               >
                 <Clock aria-hidden className="size-3.5 shrink-0" />
                 Contributions
@@ -98,14 +98,14 @@ export function WikiAuthorPopover({ username }: { username: string }) {
                 <>
                   <Link
                     href={createUrl(`/countries/${author.country.slug}`)}
-                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-1.5 px-2 py-1 transition-colors"
+                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
                   >
                     <Globe aria-hidden className="size-3.5 shrink-0" />
                     Country page
                   </Link>
                   <Link
                     href={createUrl(`/maps?country=${author.country.id}`)}
-                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-1.5 px-2 py-1 transition-colors"
+                    className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
                   >
                     <MapIcon aria-hidden className="size-3.5 shrink-0" />
                     View on map

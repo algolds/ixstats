@@ -68,9 +68,9 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
   }, [value, onSave, fieldName, disabled]);
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <label className="text-label text-caption flex items-center justify-between font-semibold">
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           {Icon && <Icon className={cn("h-3.5 w-3.5", iconClassName || "text-label-secondary")} />}
           <span>{label || formatFieldLabel(fieldName)}</span>
           <ChangedFieldDot name={fieldName} value={value} />

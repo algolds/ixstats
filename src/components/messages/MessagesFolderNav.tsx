@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Settings, SoundHigh, ChatBubble, User } from "iconoir-react";
-import { buttonVariants } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import {
   Popover,
@@ -118,18 +118,19 @@ export function MessagesFolderNav({
               </div>
               <div className="flex items-center gap-2">
                 {settings.notificationSounds && (
-                  <button
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="sm"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       soundEffects.chime();
                     }}
                     title="Test notification sound"
-                    className="text-caption text-tint hover:bg-fill-4 rounded-control-sm cursor-pointer px-1.5 py-0.5 transition-colors"
                   >
                     Test
-                  </button>
+                  </Button>
                 )}
                 <Switch
                   checked={settings.notificationSounds}

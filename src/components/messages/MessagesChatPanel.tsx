@@ -124,15 +124,17 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
       </div>
 
       {onDismiss && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onDismiss}
-          className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm absolute top-3 right-3 cursor-pointer p-1 transition-colors"
+          className="text-label-secondary hover:text-label absolute top-2 right-2"
           title="Dismiss notification"
           aria-label="Dismiss notification"
         >
-          <X className="size-3.5" />
-        </button>
+          <X aria-hidden />
+        </Button>
       )}
     </div>
   );

@@ -146,7 +146,7 @@ export function MidRibbonPassportDocument({
               {/* Identity & Overview Grid (Restrained Information Grammar) */}
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                 {/* Left: Unobstructed High-Res Portrait & Signature */}
-                <div className="flex flex-col items-center gap-3.5 sm:items-start lg:col-span-4">
+                <div className="flex flex-col items-center gap-4 sm:items-start lg:col-span-4">
                   <div className="bg-fill-3 border-separator rounded-row relative h-44 w-38 overflow-hidden border sm:h-52 sm:w-44">
                     {highResAvatarUrl ? (
                       <img
@@ -176,7 +176,7 @@ export function MidRibbonPassportDocument({
                 <div className="space-y-4 lg:col-span-8">
                   {/* Name, Handle & Role */}
                   <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-label text-title-1">{displayName}</h2>
                       <Button
                         type="button"
@@ -226,7 +226,7 @@ export function MidRibbonPassportDocument({
                   {/* ThinkPages Voice Bio (if available) */}
                   {data.thinkpages.bio && (
                     <FacetCard variant="inset" padding="sm" className="space-y-1">
-                      <div className="text-label-secondary text-subhead flex items-center gap-1.5">
+                      <div className="text-label-secondary text-subhead flex items-center gap-2">
                         <Sparkles aria-hidden className="size-3.5" />
                         <span>ThinkPages bio</span>
                       </div>

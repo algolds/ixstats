@@ -111,7 +111,7 @@ export function ThinktankRosterTab({
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search roster..."
             value={searchQuery}
@@ -174,7 +174,7 @@ export function ThinktankRosterTab({
 
                   {/* Member Name & Subtitle */}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <span className="text-headline text-label truncate">{displayName}</span>
                       {isSelf && (
                         <span className="text-caption text-tint font-semibold">(You)</span>

@@ -142,7 +142,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             aria-expanded={showDiagnostics}
             className="hover:bg-fill-4 focus-visible:outline-tint flex w-full items-center justify-between px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
           >
-            <span className="text-label-secondary text-caption flex items-center gap-1.5">
+            <span className="text-label-secondary text-caption flex items-center gap-2">
               <Terminal aria-hidden className="size-3.5" />
               <span>Diagnostic metadata preview ({logs.length} logs)</span>
             </span>
@@ -192,7 +192,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
                     {logs.map((log, index) => (
                       <div
                         key={index}
-                        className="border-separator flex items-start gap-1.5 border-b pb-0.5 last:border-b-0"
+                        className="border-separator flex items-start gap-2 border-b pb-0.5 last:border-b-0"
                       >
                         <Badge
                           variant={

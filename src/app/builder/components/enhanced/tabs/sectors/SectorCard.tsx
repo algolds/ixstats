@@ -139,7 +139,7 @@ export function SectorCard({
                   <Badge
                     variant={isBoosted ? "default" : "secondary"}
                     className={cn(
-                      "text-footnote px-1.5 py-0 leading-none",
+                      "text-footnote px-2 py-0 leading-none",
                       isBoosted
                         ? "border-green/30 bg-green/20 text-green"
                         : isPenalized
@@ -192,14 +192,14 @@ export function SectorCard({
 
         {/* Incompatible Component List */}
         {isLocked && lockedBy.length > 0 && (
-          <div className="border-red/10 bg-red/[0.03] text-footnote text-red rounded border px-2.5 py-1 leading-tight">
+          <div className="border-red/10 bg-red/[0.03] text-footnote text-red rounded border px-3 py-1 leading-tight">
             <span className="font-semibold">Incompatible with:</span> {lockedBy.join(", ")}
           </div>
         )}
 
         {/* Recommendations list */}
         {isRecommended && !isActive && !isLocked && recommendedBy.length > 0 && (
-          <div className="border-green/10 bg-green/[0.03] text-footnote text-green flex items-start gap-1 rounded border px-2.5 py-1 leading-tight">
+          <div className="border-green/10 bg-green/[0.03] text-footnote text-green flex items-start gap-1 rounded border px-3 py-1 leading-tight">
             <ArrowUpRight className="mt-0.5 h-3 w-3 shrink-0" />
             <div>
               <span className="font-semibold">Recommended by:</span> {recommendedBy.join(", ")}
@@ -408,7 +408,7 @@ export function SectorCard({
             <Badge
               key={idx}
               variant="secondary"
-              className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 border-none px-1.5 py-1 leading-none font-normal"
+              className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 border-none px-2 py-1 leading-none font-normal"
             >
               {char}
             </Badge>

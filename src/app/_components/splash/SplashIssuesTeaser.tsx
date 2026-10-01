@@ -99,9 +99,7 @@ export function SplashIssuesTeaser() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2
-          className={`text-large-title md:text-large-title mb-2 tracking-tight ${splashGold.headline}`}
-        >
+        <h2 className={`text-large-title mb-2 ${splashGold.headline}`}>
           Some mail won&apos;t wait
         </h2>
         <p className="text-label-secondary text-body mx-auto max-w-xl leading-relaxed">
@@ -217,7 +215,7 @@ export function SplashIssuesTeaser() {
             ) : null}
           </AnimatePresence>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 px-2">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 px-2">
             {issues.map((iss: any, i: number) => (
               <button
                 key={iss.id}

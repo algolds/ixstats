@@ -11,6 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { IMAGE_SCRIM } from "~/app/builder/lib/image-scrim";
 
 export interface EligibleCountry {
   pageName: string;
@@ -132,7 +133,12 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
           )}
         >
           {/* Completeness Badge in Top-Left */}
-          <div className="text-caption absolute top-3 left-3 z-20 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-white tabular-nums">
+          <div
+            className={cn(
+              "text-caption absolute top-3 left-3 z-20 flex items-center gap-1 rounded-full px-2 py-0.5 tabular-nums",
+              IMAGE_SCRIM
+            )}
+          >
             <span>{country.completeness}%</span>
           </div>
 
@@ -213,7 +219,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 pt-2">
+                <div className="flex items-center gap-2 pt-2">
                   <Button
                     type="button"
                     variant="bordered"
@@ -262,8 +268,13 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
           )}
 
           {/* Persistent Country Name Label — a flat image scrim band (fixed white on black) */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-black/60 px-3 py-2">
-            <span className="text-headline line-clamp-2 text-white">{country.displayName}</span>
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 z-10 px-3 py-2",
+              IMAGE_SCRIM
+            )}
+          >
+            <span className="text-headline line-clamp-2">{country.displayName}</span>
           </div>
         </div>
       </motion.div>

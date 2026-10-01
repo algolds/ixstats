@@ -221,18 +221,20 @@ export function PostComposers({
                 <span className="text-footnote text-label-secondary hidden sm:inline">
                   Esc to cancel
                 </span>
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => {
                     setShowReplyComposer(false);
                     setSelectedImages([]);
                   }}
-                  type="button"
-                  className="text-label-secondary hover:text-label hover:bg-fill-3 rounded-full p-1 transition-colors"
+                  className="text-label-secondary hover:text-label rounded-full"
                   title="Close (Esc)"
                   aria-label="Close reply"
                 >
-                  <X className="size-3.5" />
-                </button>
+                  <X aria-hidden />
+                </Button>
               </div>
             </div>
 
@@ -359,7 +361,7 @@ export function PostComposers({
 
                     <div className="text-footnote text-label-secondary hidden items-center gap-1 sm:flex">
                       <span>Press</span>
-                      <kbd className="border-separator bg-fill-4 text-caption text-label-secondary rounded-control-sm border px-1.5 py-0.5">
+                      <kbd className="border-separator bg-fill-4 text-caption text-label-secondary rounded-control-sm border px-2 py-0.5">
                         Enter
                       </kbd>
                       <span>to reply</span>

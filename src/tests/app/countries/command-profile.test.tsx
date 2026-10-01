@@ -131,7 +131,7 @@ describe("CommandProfileView", () => {
     expect(within(pulse).getByText("Consolidating")).toBeTruthy();
     const dna = document.getElementById("command-dna")!;
     expect(within(dna).getByText("GDP per Capita")).toBeTruthy();
-    expect(within(dna).getByText("#3 of 41")).toBeTruthy();
+    expect(within(dna).getByText("#3 of 41 in IxWorld")).toBeTruthy();
     expect(within(dna).getByText("Employment")).toBeTruthy();
     expect(within(dna).getByText("94.5%")).toBeTruthy();
     // No invented stability or military figures.

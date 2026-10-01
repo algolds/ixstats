@@ -253,7 +253,7 @@ export function EnhancedAccountManager({
               aria-checked={isActive}
               onClick={() => setFilterType(type)}
               className={cn(
-                "text-caption rounded-control-sm flex flex-1 cursor-pointer items-center justify-between gap-1 px-2 py-1.5 transition-[color,background-color] duration-150",
+                "text-caption rounded-control-sm flex flex-1 cursor-pointer items-center justify-between gap-1 px-2 py-2 transition-[color,background-color] duration-150",
                 isActive
                   ? "bg-surface text-label shadow-card"
                   : "text-label-secondary hover:text-label"
@@ -267,7 +267,7 @@ export function EnhancedAccountManager({
                 )}
                 <span>{type === "all" ? "All" : type.charAt(0).toUpperCase() + type.slice(1)}</span>
               </span>
-              <span className="bg-fill-3 rounded-full px-1.5 py-0.5 tabular-nums">
+              <span className="bg-fill-3 rounded-full px-2 py-0.5 tabular-nums">
                 {count}/{limit}
               </span>
             </button>

@@ -111,7 +111,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
           </div>
 
           {/* User/Country Info */}
-          <div className="text-label-secondary text-footnote sm:text-body mb-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="text-label-secondary text-footnote sm:text-body mb-2 flex flex-wrap items-center gap-2 sm:gap-2">
             {activity.user.countryName && (
               <>
                 <UnifiedCountryFlag
@@ -196,19 +196,19 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       {/* Footer - Engagement Stats */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:pt-4">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-1.5">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.likes}</span>
           </div>
-          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-1.5">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.comments}</span>
           </div>
-          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-1.5">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.shares}</span>
           </div>
-          <div className="text-label-secondary text-body hidden items-center gap-1.5 sm:flex">
+          <div className="text-label-secondary text-body hidden items-center gap-2 sm:flex">
             <Eye className="h-4 w-4" />
             <span>{activity.engagement.views}</span>
           </div>

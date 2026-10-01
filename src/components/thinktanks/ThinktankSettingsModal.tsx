@@ -21,9 +21,15 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Input, fieldStyles } from "~/components/ui/input";
-import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
@@ -224,7 +230,7 @@ export function ThinktankSettingsModal({
                     No banner set
                   </div>
                 )}
-                <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                <div className="absolute top-2 right-2 flex items-center gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -307,21 +313,21 @@ export function ThinktankSettingsModal({
 
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-subhead text-label">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className={cn(
-                  fieldStyles,
-                  "rounded-control text-body h-(--control-height) w-full px-3"
-                )}
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <label id="thinktank-category-label" className="text-subhead text-label">
+                Category
+              </label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger aria-labelledby="thinktank-category-label" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Rules & Guidelines */}
@@ -337,7 +343,7 @@ export function ThinktankSettingsModal({
 
             {/* ── Invite Users Section ── */}
             <div className="bg-surface-secondary rounded-row space-y-2 p-4">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Plus className="text-tint size-4" aria-hidden="true" />
                 <span className="text-subhead text-label">Invite Members</span>
               </div>
@@ -429,7 +435,7 @@ export function ThinktankSettingsModal({
             </div>
 
             {/* Privacy Toggle */}
-            <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-3.5">
+            <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-4">
               <div className="flex items-center gap-2">
                 {type === "public" ? (
                   <Globe className="text-label-secondary size-4" aria-hidden="true" />

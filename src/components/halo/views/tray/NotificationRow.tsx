@@ -7,6 +7,7 @@ import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable
 import { cn } from "~/lib/utils";
 import type { NotificationItem } from "./types";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { Button } from "~/components/ui/button";
 
 export interface NotificationRowProps {
   n: NotificationItem;
@@ -37,7 +38,7 @@ export function NotificationRow({
   return (
     <SwipeableRow
       id={`notif-${n.source}-${n.id}`}
-      className="rounded-row mb-1.5 last:mb-0"
+      className="rounded-row mb-2 last:mb-0"
       springPreset="bouncy"
       expanded={isExpanded}
       onExpandedChange={(expanded) => {
@@ -94,7 +95,6 @@ export function NotificationRow({
       {/* Front card content */}
       <SwipeableRow.Content>
         <div
-          data-cuelume-hover="whisper"
           className={cn(
             "rounded-row relative flex w-full flex-col overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
             !isRead
@@ -153,34 +153,40 @@ export function NotificationRow({
 
       {/* Expanded detail panel */}
       <SwipeableRow.Expanded>
-        <div className="border-separator bg-fill-4 rounded-b-row space-y-3 border-t px-3.5 pt-3 pb-3.5 pl-[18px]">
+        <div className="border-separator bg-fill-4 rounded-b-row space-y-3 border-t px-4 pt-3 pb-4 pl-[18px]">
           <p className="text-label text-caption selection:bg-yellow/30 leading-relaxed whitespace-pre-wrap select-text">
             {n.description || n.message}
           </p>
 
-          <div className="flex items-center gap-2 pt-1.5">
+          <div className="flex items-center gap-2 pt-2">
             {n.href && (
-              <button
+              <Button
+                type="button"
+                variant="filled"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleClick(n);
                 }}
-                className="border-tint/30 bg-tint text-on-tint hover:bg-tint/90 rounded-control-sm text-caption flex flex-1 cursor-pointer items-center justify-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="flex-1"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight aria-hidden />
                 <span>Open</span>
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              type="button"
+              variant="gray"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 handleDismiss(n);
               }}
-              className="text-label-secondary hover:text-label border-separator bg-fill-4 hover:bg-fill-4 rounded-control-sm text-caption flex flex-1 cursor-pointer items-center justify-center gap-1.5 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+              className="flex-1"
             >
-              <X className="text-label-tertiary h-3.5 w-3.5" />
+              <X aria-hidden />
               <span>Dismiss</span>
-            </button>
+            </Button>
           </div>
         </div>
       </SwipeableRow.Expanded>

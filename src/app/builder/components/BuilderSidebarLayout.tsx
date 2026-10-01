@@ -124,12 +124,12 @@ export function BuilderSidebarLayout({
               >
                 {mode === "edit" ? (
                   <>
-                    <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                    <XCircle className="mr-2 h-3.5 w-3.5" />
                     Discard Changes & Exit Editor
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
                     Restart Builder from Scratch
                   </>
                 )}

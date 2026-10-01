@@ -137,7 +137,7 @@ export function FloatingRibbonRack({
   return (
     <TooltipProvider delayDuration={100}>
       <div
-        className={cn("inline-flex items-center gap-1.5 select-none", className)}
+        className={cn("inline-flex items-center gap-2 select-none", className)}
         style={style}
         data-testid="ribbon-rack"
       >

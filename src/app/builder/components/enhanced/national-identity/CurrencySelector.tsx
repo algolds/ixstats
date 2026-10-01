@@ -4,6 +4,13 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { SearchField } from "~/components/ui/search-field";
 import { Badge } from "~/components/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
 import { CurrencyIcon } from "./CurrencyIcon";
 import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils";
@@ -122,89 +129,80 @@ export function CurrencySelector({
       </PopoverTrigger>
 
       <PopoverContent className="w-80 overflow-hidden p-0 sm:w-96" align="start" sideOffset={4}>
-        {/* STICKY TOP SEARCH HEADER - Fixed at top, never scrolls */}
-        <div className="border-separator border-b p-2">
-          <SearchField
-            ref={inputRef}
-            size="sm"
-            aria-label="Search currencies"
-            placeholder="Search 400+ currencies & crypto..."
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && filteredCurrencies.length > 0) {
-                e.preventDefault();
-                onValueChange(filteredCurrencies[0].code);
-                setOpen(false);
-              } else if (e.key === "Escape" && !searchQuery) {
-                setOpen(false);
-              }
-            }}
-          />
-        </div>
-
-        {/* Custom current selection indicator if active */}
-        {isCustomSelection && (
-          <div className="border-separator border-b p-1">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-control-sm text-caption bg-fill-3 flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left font-semibold"
-            >
-              <CurrencyIcon
-                code={value}
-                symbol={currencyInfo.symbol}
-                className="text-label-secondary h-4 w-4 shrink-0"
-              />
-              <span className="text-caption font-mono font-semibold">{value}</span>
-              <Badge variant="outline" className="text-footnote ml-auto">
-                Custom
-              </Badge>
-              <Check className="text-tint ml-1 h-3.5 w-3.5 shrink-0" />
-            </button>
+        {/* Combobox (spec §7.2): our own filtering over 400+ currencies, cmdk for the listbox
+            semantics and arrow/Enter navigation (Enter picks the highlighted, first by default). */}
+        <Command shouldFilter={false} className="rounded-none bg-transparent">
+          <div className="border-separator border-b p-2">
+            <SearchField
+              ref={inputRef}
+              size="sm"
+              aria-label="Search currencies"
+              placeholder="Search 400+ currencies & crypto..."
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
           </div>
-        )}
 
-        {/* SCROLLABLE ITEMS LIST - Dedicated independent scroll container */}
-        <div className="max-h-72 overflow-y-auto overscroll-contain p-1">
-          {filteredCurrencies.map(({ code, name, symbol }) => {
-            const isSelected = value.toLowerCase() === code.toLowerCase();
-            return (
-              <button
-                key={code}
-                type="button"
-                onClick={() => {
-                  onValueChange(code);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "rounded-control text-footnote flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors select-none",
-                  isSelected ? "bg-fill-3 text-label font-semibold" : "hover:bg-fill-3 text-label"
-                )}
-              >
-                <CurrencyIcon
-                  code={code}
-                  symbol={symbol}
-                  className="text-label-secondary h-4 w-4 shrink-0"
-                />
-                <span className="text-caption font-mono font-semibold">{code}</span>
-                <span className="text-label-secondary text-footnote max-w-[160px] truncate sm:max-w-[200px]">
-                  {name}
-                </span>
-                <span className="text-caption text-label-secondary ml-auto shrink-0 pl-2">
-                  {symbol}
-                </span>
-                {isSelected && <Check className="text-tint ml-1 h-3.5 w-3.5 shrink-0" />}
-              </button>
-            );
-          })}
+          <CommandList className="max-h-72 overscroll-contain">
+            {/* Custom current selection indicator if active */}
+            {/* The current custom (non-listed) currency, shown for reference only. */}
+            {isCustomSelection && (
+              <div className="border-separator border-b p-1">
+                <div className="bg-fill-3 rounded-control-sm text-body flex items-center gap-2 px-2 py-2">
+                  <CurrencyIcon
+                    code={value}
+                    symbol={currencyInfo.symbol}
+                    className="text-label-secondary h-4 w-4 shrink-0"
+                  />
+                  <span className="text-caption font-mono font-semibold">{value}</span>
+                  <Badge variant="outline" className="ml-auto">
+                    Custom
+                  </Badge>
+                  <Check aria-hidden className="text-tint ml-1 size-3.5" />
+                  <span className="sr-only">(selected)</span>
+                </div>
+              </div>
+            )}
 
-          {filteredCurrencies.length === 0 && (
-            <div className="text-footnote text-label-secondary p-4 text-center">
-              No currency found matching &quot;{searchQuery}&quot;
-            </div>
-          )}
-        </div>
+            <CommandEmpty>No currency found matching &quot;{searchQuery}&quot;</CommandEmpty>
+            <CommandGroup>
+              {filteredCurrencies.map(({ code, name, symbol }) => {
+                const isSelected = value.toLowerCase() === code.toLowerCase();
+                return (
+                  <CommandItem
+                    key={code}
+                    value={code}
+                    onSelect={() => {
+                      onValueChange(code);
+                      setOpen(false);
+                    }}
+                    data-checked={isSelected || undefined}
+                    className={cn("text-footnote", isSelected && "font-semibold")}
+                  >
+                    <CurrencyIcon
+                      code={code}
+                      symbol={symbol}
+                      className="text-label-secondary h-4 w-4 shrink-0"
+                    />
+                    <span className="text-caption font-mono font-semibold">{code}</span>
+                    <span className="text-label-secondary text-footnote max-w-[160px] truncate sm:max-w-[200px]">
+                      {name}
+                    </span>
+                    <span className="text-caption text-label-secondary ml-auto shrink-0 pl-2">
+                      {symbol}
+                    </span>
+                    {isSelected && (
+                      <>
+                        <Check aria-hidden className="text-tint ml-1 size-3.5" />
+                        <span className="sr-only">(selected)</span>
+                      </>
+                    )}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   );

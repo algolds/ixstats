@@ -59,7 +59,7 @@ export function PersonaAuthorCard({ username, children }: PersonaAuthorCardProps
         ) : isError || !profile ? (
           <p className="text-label-secondary text-footnote">This account is unavailable.</p>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={profile.profileImageUrl ?? ""} />

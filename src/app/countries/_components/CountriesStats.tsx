@@ -1,6 +1,6 @@
 "use client";
 
-import { NavArrowDown, Check, Globe, Group, MapPin, StatsReport, Trophy } from "iconoir-react";
+import { NavArrowDown, Globe, Group, MapPin, StatsReport, Trophy } from "iconoir-react";
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
@@ -8,6 +8,8 @@ import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocu
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { tweenFast } from "~/lib/design/motion";
 
 interface CountriesStatsProps {
   countries: CountryCardData[];
@@ -93,11 +95,10 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0, duration: 0.2 }}
+        transition={{ ...tweenFast, delay: 0 }}
       >
         <Popover>
           <PopoverTrigger
-            data-cuelume-press="tick"
             className={cn(
               "border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
               continentFilter && "border-tint/50"
@@ -119,41 +120,34 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           <PopoverContent className="w-64 p-0">
             <div className="p-3">
               <Eyebrow className="mb-2 block">Filter by Continent</Eyebrow>
-              <button
-                onClick={() => onContinentFilter(null)}
-                className={cn(
-                  "rounded-control-sm text-body flex w-full items-center justify-between px-2.5 py-1.5 transition-colors",
-                  !continentFilter
-                    ? "bg-fill-3 text-label font-medium"
-                    : "text-label hover:bg-fill-3"
-                )}
-              >
-                <span>All Continents</span>
-                {!continentFilter && <Check className="h-3.5 w-3.5" />}
-              </button>
-              <div className="border-separator my-1.5 border-t" />
-              <div className="max-h-48 space-y-0.5 overflow-y-auto">
-                {continentCounts.map(([continent, count]) => (
-                  <button
-                    key={continent}
-                    onClick={() =>
-                      onContinentFilter(continentFilter === continent ? null : continent)
-                    }
-                    className={cn(
-                      "rounded-control-sm text-body flex w-full items-center justify-between px-2.5 py-1.5 transition-colors",
-                      continentFilter === continent
-                        ? "bg-fill-3 text-label font-medium"
-                        : "text-label hover:bg-fill-3"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <MapPin aria-hidden="true" className="text-label-secondary h-3 w-3" />
-                      <span>{continent}</span>
-                    </div>
-                    <span className="text-label-secondary text-footnote">{count}</span>
-                  </button>
-                ))}
-              </div>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Continents">
+                  <FacetRow
+                    title="All Continents"
+                    accessory="check"
+                    selected={!continentFilter}
+                    onClick={() => onContinentFilter(null)}
+                  />
+                </FacetListSection>
+                <FacetListSection
+                  aria-label="Filter by continent"
+                  groupClassName="max-h-48 overflow-y-auto"
+                >
+                  {continentCounts.map(([continent, count]) => (
+                    <FacetRow
+                      key={continent}
+                      leading={<MapPin aria-hidden="true" className="size-3.5" />}
+                      title={continent}
+                      trailing={count}
+                      accessory="check"
+                      selected={continentFilter === continent}
+                      onClick={() =>
+                        onContinentFilter(continentFilter === continent ? null : continent)
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             </div>
           </PopoverContent>
         </Popover>
@@ -163,13 +157,10 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, duration: 0.2 }}
+        transition={{ ...tweenFast, delay: 0.05 }}
       >
         <Popover>
-          <PopoverTrigger
-            data-cuelume-press="tick"
-            className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
-          >
+          <PopoverTrigger className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Group aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
@@ -190,24 +181,27 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 {Math.round(totalPopulation).toLocaleString()}
               </p>
               <Eyebrow className="mb-2 block">Top 5 by Population</Eyebrow>
-              <div className="space-y-1">
-                {topByPopulation.map((c, i) => (
-                  <button
-                    key={c.id}
-                    onClick={() => onCountryClick(c.id, c.name)}
-                    data-cuelume-press="tick"
-                    className="text-label hover:bg-fill-3 rounded-control-sm text-body flex w-full items-center justify-between px-2.5 py-1.5 transition-colors active:scale-[0.99]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-label-secondary text-footnote w-4">{i + 1}.</span>
-                      <span className="font-medium">{c.name}</span>
-                    </span>
-                    <span className="text-label-secondary text-footnote tabular-nums">
-                      {Math.round(c.currentPopulation).toLocaleString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Top five">
+                  {topByPopulation.map((c, i) => (
+                    <FacetRow
+                      key={c.id}
+                      onClick={() => onCountryClick(c.id, c.name)}
+                      leading={
+                        <span className="text-label-secondary text-footnote w-4 tabular-nums">
+                          {i + 1}.
+                        </span>
+                      }
+                      title={c.name}
+                      trailing={
+                        <span className="text-label-secondary text-footnote tabular-nums">
+                          {Math.round(c.currentPopulation).toLocaleString()}
+                        </span>
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             </div>
           </PopoverContent>
         </Popover>
@@ -217,13 +211,10 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.2 }}
+        transition={{ ...tweenFast, delay: 0.1 }}
       >
         <Popover>
-          <PopoverTrigger
-            data-cuelume-press="tick"
-            className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
-          >
+          <PopoverTrigger className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <StatsReport aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
@@ -242,24 +233,27 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 ${Math.round(totalGDP).toLocaleString()}
               </p>
               <Eyebrow className="mb-2 block">Top 5 by Total GDP</Eyebrow>
-              <div className="space-y-1">
-                {topByGDP.map((c, i) => (
-                  <button
-                    key={c.id}
-                    onClick={() => onCountryClick(c.id, c.name)}
-                    data-cuelume-press="tick"
-                    className="text-label hover:bg-fill-3 rounded-control-sm text-body flex w-full items-center justify-between px-2.5 py-1.5 transition-colors active:scale-[0.99]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-label-secondary text-footnote w-4">{i + 1}.</span>
-                      <span className="font-medium">{c.name}</span>
-                    </span>
-                    <span className="text-label-secondary text-footnote tabular-nums">
-                      ${Math.round(c.currentTotalGdp).toLocaleString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Top five">
+                  {topByGDP.map((c, i) => (
+                    <FacetRow
+                      key={c.id}
+                      onClick={() => onCountryClick(c.id, c.name)}
+                      leading={
+                        <span className="text-label-secondary text-footnote w-4 tabular-nums">
+                          {i + 1}.
+                        </span>
+                      }
+                      title={c.name}
+                      trailing={
+                        <span className="text-label-secondary text-footnote tabular-nums">
+                          ${Math.round(c.currentTotalGdp).toLocaleString()}
+                        </span>
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             </div>
           </PopoverContent>
         </Popover>
@@ -269,13 +263,10 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.2 }}
+        transition={{ ...tweenFast, delay: 0.15 }}
       >
         <Popover>
-          <PopoverTrigger
-            data-cuelume-press="tick"
-            className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
-          >
+          <PopoverTrigger className="border-separator bg-surface hover:bg-fill-3 focus-visible:ring-tint rounded-row w-full cursor-pointer border p-4 text-left transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Trophy aria-hidden="true" className="text-label-secondary h-5 w-5 shrink-0" />
@@ -296,23 +287,27 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 ${Math.round(avgGDPPerCapita).toLocaleString()}
               </p>
               <Eyebrow className="mb-2 block">Top 5 Highest</Eyebrow>
-              <div className="space-y-1">
-                {topByGDPPerCapita.map((c, i) => (
-                  <button
-                    key={c.id}
-                    onClick={() => onCountryClick(c.id, c.name)}
-                    className="text-label hover:bg-fill-3 rounded-control-sm text-body flex w-full items-center justify-between px-2.5 py-1.5 transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-label-secondary text-footnote w-4">{i + 1}.</span>
-                      <span className="font-medium">{c.name}</span>
-                    </span>
-                    <span className="text-label-secondary text-footnote tabular-nums">
-                      ${Math.round(c.currentGdpPerCapita).toLocaleString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Top five">
+                  {topByGDPPerCapita.map((c, i) => (
+                    <FacetRow
+                      key={c.id}
+                      onClick={() => onCountryClick(c.id, c.name)}
+                      leading={
+                        <span className="text-label-secondary text-footnote w-4 tabular-nums">
+                          {i + 1}.
+                        </span>
+                      }
+                      title={c.name}
+                      trailing={
+                        <span className="text-label-secondary text-footnote tabular-nums">
+                          ${Math.round(c.currentGdpPerCapita).toLocaleString()}
+                        </span>
+                      }
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             </div>
           </PopoverContent>
         </Popover>

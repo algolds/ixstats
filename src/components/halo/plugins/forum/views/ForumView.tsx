@@ -20,6 +20,8 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { PreText } from "~/components/ui/pretext";
 import type { DIViewProps, ViewMode } from "~/components/halo/types";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export interface ForumViewProps extends DIViewProps {}
 
@@ -58,7 +60,7 @@ function ForumRow({
         onClick ? "cursor-pointer" : "cursor-default"
       }`}
     >
-      <div className={`rounded-control-sm shrink-0 p-1.5 transition-colors ${iconBg}`}>{icon}</div>
+      <div className={`rounded-control-sm shrink-0 p-2 transition-colors ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
         <PreText
           className="text-label text-body block truncate leading-normal font-medium"
@@ -108,48 +110,65 @@ function ForumHeader({
       <div className="flex items-center gap-1">
         {onSwitchMode && (
           <>
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onSwitchMode("search")}
-              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
+              className="text-label-secondary hover:text-label"
               title="Global Search"
               type="button"
+              aria-label="Global Search"
             >
-              <Search className="h-3.5 w-3.5" />
-            </button>
-            <button
+              <Search aria-hidden />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onSwitchMode("notifications")}
-              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
+              className="text-label-secondary hover:text-label"
               title="Notifications"
               type="button"
+              aria-label="Notifications"
             >
-              <Bell className="h-3.5 w-3.5" />
-            </button>
-            <button
+              <Bell aria-hidden />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onSwitchMode("settings")}
-              className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
+              className="text-label-secondary hover:text-label"
               title="Settings"
               type="button"
+              aria-label="Settings"
             >
-              <Settings className="h-3.5 w-3.5" />
-            </button>
+              <Settings aria-hidden />
+            </Button>
           </>
         )}
         {onRefresh && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onRefresh}
             disabled={isRefreshing}
             title="Refresh data"
-            className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 items-center justify-center transition-colors disabled:opacity-40"
+            className="text-label-secondary hover:text-label"
+            aria-label="Refresh data"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          </button>
+            <RefreshCw aria-hidden className={isRefreshing ? "animate-spin" : ""} />
+          </Button>
         )}
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onClose}
-          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm flex h-7 w-7 cursor-pointer items-center justify-center transition-colors"
+          className="text-label-secondary hover:text-label"
+          aria-label="Close"
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
     </div>
   );
@@ -251,7 +270,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
           rightElement={
             unreadAlerts > 0 ? (
               <PreText
-                className="bg-orange text-caption text-on-orange shadow-card flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 font-semibold"
+                className="bg-orange text-caption text-on-orange shadow-card flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-2 font-semibold"
                 whiteSpace="nowrap"
               >
                 {String(unreadAlerts)}
@@ -266,32 +285,16 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
 
           {/* Segmented control for tabs */}
           {isSignedIn && (
-            <div className="bg-fill-4 rounded-control flex max-w-[140px] flex-1 p-0.5">
-              <button
-                onClick={() => setActiveTab("recent")}
-                className={`rounded-control-sm text-caption flex-1 py-0.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  activeTab === "recent"
-                    ? "bg-surface text-orange shadow-card"
-                    : "text-label-secondary hover:text-label"
-                }`}
-              >
-                <PreText className="text-inherit" whiteSpace="nowrap">
-                  Recent
-                </PreText>
-              </button>
-              <button
-                onClick={() => setActiveTab("stash")}
-                className={`rounded-control-sm text-caption flex-1 py-0.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  activeTab === "stash"
-                    ? "bg-surface text-orange shadow-card"
-                    : "text-label-secondary hover:text-label"
-                }`}
-              >
-                <PreText className="text-inherit" whiteSpace="nowrap">
-                  Stash
-                </PreText>
-              </button>
-            </div>
+            <SegmentedControl
+              aria-label="Discussions"
+              size="sm"
+              value={activeTab}
+              onValueChange={setActiveTab}
+              options={[
+                { value: "recent", label: "Recent" },
+                { value: "stash", label: "Stash" },
+              ]}
+            />
           )}
         </div>
 

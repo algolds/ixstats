@@ -202,7 +202,7 @@ export default function ChangelogPage() {
               label={`v${PLATFORM_VERSION} · ${RELEASE_NAME} (${channelTheme.shortName})`}
               size="sm"
               className={cn(
-                "text-caption shadow-card border px-2.5 py-1 tabular-nums",
+                "text-caption shadow-card border px-3 py-1 tabular-nums",
                 channelTheme.borderColor,
                 channelTheme.bgColor
               )}

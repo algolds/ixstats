@@ -238,7 +238,7 @@ export function GlassCanvasComposer({
                 <Repeat2 className="size-3.5" aria-hidden="true" />
                 <span>Reposting</span>
               </div>
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2">
                 <Avatar className="size-5">
                   <AvatarImage
                     src={repostData.originalPost.account?.profileImageUrl}
@@ -287,7 +287,7 @@ export function GlassCanvasComposer({
                     type="button"
                     onClick={() => removeImage(imageUrl)}
                     aria-label="Remove image"
-                    className="material-thin text-label hover:text-destructive absolute top-1.5 right-1.5 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
+                    className="material-thin text-label hover:text-destructive absolute top-2 right-2 z-10 cursor-pointer rounded-full p-0.5 transition-colors"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -312,7 +312,7 @@ export function GlassCanvasComposer({
                     type="button"
                     onClick={() => removeVisualization(viz.id)}
                     aria-label="Remove chart"
-                    className="text-destructive hover:bg-destructive/10 absolute top-1.5 right-1.5 cursor-pointer rounded-full p-0.5 transition-colors"
+                    className="text-destructive hover:bg-destructive/10 absolute top-2 right-2 cursor-pointer rounded-full p-0.5 transition-colors"
                   >
                     <X className="size-3.5" />
                   </button>

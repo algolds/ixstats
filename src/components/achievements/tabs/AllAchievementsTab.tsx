@@ -253,7 +253,7 @@ function GroupedSeriesCard({
                       aria-pressed={isCurrent}
                       aria-disabled={!lvlUnlocked}
                       className={cn(
-                        "rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint relative flex h-6 min-w-6 items-center justify-center px-1.5 tabular-nums transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2",
+                        "rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint relative flex h-6 min-w-6 items-center justify-center px-2 tabular-nums transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2",
                         isCurrent
                           ? "bg-surface text-label shadow-card"
                           : lvlUnlocked
@@ -408,7 +408,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               const RarityIcon = config.icon;
               const count = rarityCounts[r] ?? 0;
               return (
-                <ToggleGroupItem key={r} value={r} className="gap-1.5">
+                <ToggleGroupItem key={r} value={r} className="gap-2">
                   <RarityIcon aria-hidden className="size-3.5" />
                   <span>{config.label}</span>
                   <span className="text-label-secondary tabular-nums">{count}</span>

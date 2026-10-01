@@ -27,6 +27,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 const QUICK_REACTIONS = ["❤️", "🔥", "👏", "💡", "🤯", "🚀"];
 
@@ -332,7 +333,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
             <PopoverContent side="top" align="start" className="w-64 p-3">
               <div className="text-footnote space-y-2">
                 <div className="border-separator flex items-center justify-between border-b pb-2">
-                  <span className="text-label text-headline flex items-center gap-1.5">
+                  <span className="text-label text-headline flex items-center gap-2">
                     <Bookmark aria-hidden className="text-label-secondary size-4" />
                     Lore stash
                   </span>
@@ -349,33 +350,26 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
                     No custom stashes found. Click Save to Stash to create your default stash.
                   </p>
                 ) : (
-                  <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
-                    {userStashes.map((stash: any) => {
-                      const active = stashedIn.some((s: any) => s.id === stash.id);
-                      return (
-                        <button
+                  <FacetList variant="plain" className="max-h-48 overflow-y-auto">
+                    <FacetListSection aria-label="Your stashes">
+                      {userStashes.map((stash: any) => (
+                        <FacetRow
                           key={stash.id}
-                          type="button"
                           onClick={() => handleToggleSpecificStash(stash.id)}
-                          aria-pressed={active}
-                          className={cn(
-                            "rounded-row text-body flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-colors",
-                            active ? "bg-tint-fill text-tint" : "hover:bg-fill-4 text-label"
-                          )}
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
+                          accessory="check"
+                          selected={stashedIn.some((s: any) => s.id === stash.id)}
+                          leading={
                             <span
                               aria-hidden
                               className="size-2.5 shrink-0 rounded-full"
                               style={{ backgroundColor: stash.color || "var(--color-info)" }}
                             />
-                            <span className="truncate">{stash.name}</span>
-                          </div>
-                          {active && <Check aria-hidden className="size-4 shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                          }
+                          title={stash.name}
+                        />
+                      ))}
+                    </FacetListSection>
+                  </FacetList>
                 )}
 
                 {isStashed && (
@@ -425,7 +419,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
               className="bg-surface-secondary rounded-row mt-3 space-y-2 p-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-subhead text-label flex items-center gap-1.5">
+                <span className="text-subhead text-label flex items-center gap-2">
                   <Edit aria-hidden className="text-label-secondary size-4" />
                   Add margin note or discussion
                 </span>

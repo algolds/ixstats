@@ -15,6 +15,9 @@ import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { springSnappy } from "~/lib/design/motion";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 
 export function MyCountryActionsView({ onClose }: DIViewProps) {
   React.useEffect(() => {
@@ -35,38 +38,35 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
     [onClose]
   );
 
-  const actionButtonClass = (colors: string) =>
-    `flex w-full items-center justify-start gap-2.5 rounded-row border border-separator bg-fill-4 px-3.5 py-3 text-caption font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:scale-[1.02] active:scale-[0.98] ${colors}`;
-
   const quickActions = [
     {
       label: "Meetings",
       icon: Briefcase,
-      colors: "border-yellow/20 bg-yellow/5 text-yellow hover:bg-yellow/15",
+      iconClass: "text-yellow",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Embassies",
       icon: Globe,
-      colors: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
+      iconClass: "text-teal",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Foreign Policy",
       icon: Globe,
-      colors: "border-teal/20 bg-teal/5 text-teal hover:bg-teal/15",
+      iconClass: "text-teal",
       action: () => navigateToSection("diplomacy"),
     },
     {
       label: "Domestic Policy",
       icon: Gavel,
-      colors: "border-indigo/20 bg-indigo/5 text-indigo hover:bg-indigo/15",
+      iconClass: "text-indigo",
       action: () => navigateToSection("executive"),
     },
     {
       label: "Operations",
       icon: Shield,
-      colors: "border-red/20 bg-red/5 text-red hover:bg-red/15",
+      iconClass: "text-red",
       action: () => navigateToSection("defense"),
       isPremium: true,
     },
@@ -77,7 +77,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ type: "spring", stiffness: 420, damping: 38 }}
+      transition={springSnappy}
       className="flex w-full flex-col p-4 text-left"
     >
       {/* Header */}
@@ -88,17 +88,19 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
             MyCountry® Quick Actions
           </PreText>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => {
             soundEffects.droplet();
             onClose();
           }}
-          data-cuelume-press="droplet"
-          className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex h-7 w-7 items-center justify-center transition-colors"
+          className="text-label-secondary hover:text-label"
           aria-label="Close Quick Actions"
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
 
       {/* Grid list */}
@@ -107,22 +109,22 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
           const Icon = item.icon;
           const isLast = idx === quickActions.length - 1;
           return (
-            <button
+            <Button
               key={idx}
-              data-cuelume-hover="tick"
-              data-cuelume-press="press"
+              type="button"
+              variant="gray"
               onClick={item.action}
-              className={cn(actionButtonClass(item.colors), isLast && "col-span-2")}
+              className={cn("w-full justify-start", isLast && "col-span-2")}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon aria-hidden className={item.iconClass} />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <span className="rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow flex shrink-0 items-center gap-1 border px-1.5 py-0.5">
-                  <Crown className="text-yellow h-2.5 w-2.5" />
+                <Badge variant="yellow">
+                  <Crown aria-hidden />
                   Premium
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -113,19 +113,19 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         </div>
 
         <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-5 gap-y-1">
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex items-baseline gap-2">
             <span className="text-label font-semibold tabular-nums">
               {governmentComponents.length}
             </span>
             Institutions
           </span>
           {populationLabel ? (
-            <span className="flex items-baseline gap-1.5">
+            <span className="flex items-baseline gap-2">
               <span className="text-label font-semibold tabular-nums">{populationLabel}</span>
               Population
             </span>
           ) : null}
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex items-baseline gap-2">
             <span className="text-label font-semibold">{currency}</span>
             Currency
           </span>
@@ -169,7 +169,7 @@ function PreviewSection({
             data-cuelume-hover="tick"
             className="border-separator hover:bg-fill-3 focus-visible:ring-tint flex min-h-11 w-full items-center justify-between gap-3 border-b px-4 py-3 text-left transition-[background-color] duration-150 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
           >
-            <span className="flex min-w-0 items-center gap-2.5">
+            <span className="flex min-w-0 items-center gap-2">
               <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
               <span className="text-label text-headline">{title}</span>
             </span>

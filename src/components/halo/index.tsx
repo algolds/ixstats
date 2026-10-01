@@ -21,6 +21,7 @@ import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
+import { springSnappy } from "~/lib/design/motion";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -329,10 +330,10 @@ function CommandPaletteContent({
                     duration: 2,
                     ease: "easeInOut",
                   },
-                  scale: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
-                  y: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
+                  scale: springSnappy,
+                  y: springSnappy,
                 }
-              : { type: "spring", stiffness: 420, damping: 38, mass: 0.8 }
+              : springSnappy
           }
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}

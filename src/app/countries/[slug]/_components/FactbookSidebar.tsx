@@ -3,16 +3,15 @@
 import React from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
-import type { RingConfig } from "~/components/mycountry/shared/primitives/VitalityRings";
+import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Building,
   Group as Users,
-  Globe,
   StatUp as TrendingUp,
   Activity,
   Trophy,
@@ -24,12 +23,10 @@ import {
 } from "iconoir-react";
 import { formatDistanceToNow } from "date-fns";
 import { api } from "~/trpc/react";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flags/flag-color-extractor";
-import { createUrl } from "~/lib/utils";
+import { cn, createUrl } from "~/lib/utils";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
-import { getAppleVitalityColor } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
 import type { VitalityData } from "../_types";
 
 const CountryMapEmbed = dynamic(
@@ -37,8 +34,38 @@ const CountryMapEmbed = dynamic(
     import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
       default: m.CountryMapEmbed,
     })),
-  { ssr: false, loading: () => <div className="bg-muted h-56 animate-pulse rounded-b-xl" /> }
+  { ssr: false, loading: () => <Skeleton className="h-56 w-full rounded-none" /> }
 );
+
+/** Vitality score → status colour role (optimal ≥80, strong ≥65, moderate ≥45, strained). */
+function vitalityColor(score: number | null): string {
+  if (score === null) return "var(--color-fill)";
+  if (score >= 80) return "var(--color-green)";
+  if (score >= 65) return "var(--color-cyan)";
+  if (score >= 45) return "var(--color-yellow)";
+  return "var(--color-red)";
+}
+
+interface VitalityRing {
+  key: keyof VitalityData;
+  label: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Null = no data (shown as "—"). */
+  value: number | null;
+}
+
+/** Activity type → system colour (icon) and dot. */
+const ACTIVITY_TONE: Record<string, { icon: React.ReactNode; dot: string }> = {
+  achievement: { icon: <Trophy aria-hidden className="text-yellow size-3.5" />, dot: "bg-yellow" },
+  economic: { icon: <TrendingUp aria-hidden className="text-blue size-3.5" />, dot: "bg-blue" },
+  diplomatic: { icon: <Users aria-hidden className="text-purple size-3.5" />, dot: "bg-purple" },
+  social: { icon: <MessageSquare aria-hidden className="text-green size-3.5" />, dot: "bg-green" },
+};
+const DEFAULT_ACTIVITY_TONE = {
+  icon: <Activity aria-hidden className="text-label-secondary size-3.5" />,
+  dot: "bg-label-tertiary",
+};
 
 interface FactbookSidebarProps {
   vitalityData: VitalityData | null;
@@ -47,10 +74,7 @@ interface FactbookSidebarProps {
 
 /**
  * FactbookSidebar — persistent right-column public briefing shown across all
- * factbook sections: telemetry vitality rings, geography map embed, and the
- * recent-activity feed.
- *
- * Implements Apple Design physical hover/active micro-interactions and depth blur.
+ * factbook sections: vitality rings, geography map embed, and the recent-activity feed.
  */
 export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarProps) {
   const { country } = useCountryData();
@@ -68,9 +92,6 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
       },
       { enabled: !!country?.id }
     );
-
-  const flagColors = React.useMemo(() => getFlagColors(country?.name || ""), [country?.name]);
-  const flagThemeCSS = React.useMemo(() => generateFlagThemeCSS(flagColors), [flagColors]);
 
   const handleRingClick = (key: string) => {
     if (!country?.id) return;
@@ -90,37 +111,33 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
     }
   };
 
-  const vitalityRings: RingConfig[] = React.useMemo(
+  const vitalityRings: VitalityRing[] = React.useMemo(
     () => [
       {
         key: "economicVitality",
-        label: "Economic Health",
-        subtitle: "GDP & Growth",
-        color: getAppleVitalityColor(vitalityData?.economicVitality ?? 0),
+        label: "Economic health",
+        subtitle: "GDP & growth",
         icon: DollarSign,
         value: vitalityData?.economicVitality ?? 0,
       },
       {
         key: "populationWellbeing",
-        label: "Population Wellbeing",
+        label: "Population wellbeing",
         subtitle: "Demographics",
-        color: getAppleVitalityColor(vitalityData?.populationWellbeing ?? 0),
         icon: Users,
         value: vitalityData?.populationWellbeing ?? 0,
       },
       {
         key: "diplomaticStanding",
-        label: "Diplomatic Standing",
-        subtitle: "International",
-        color: getAppleVitalityColor(vitalityData?.diplomaticStanding ?? 0),
+        label: "Diplomatic standing",
+        subtitle: "Relations, embassies, treaties",
         icon: Shield,
-        value: vitalityData?.diplomaticStanding ?? 0,
+        value: vitalityData?.diplomaticStanding ?? null,
       },
       {
         key: "governmentalEfficiency",
-        label: "Government Efficiency",
+        label: "Government efficiency",
         subtitle: "Administration",
-        color: getAppleVitalityColor(vitalityData?.governmentalEfficiency ?? 0),
         icon: Building,
         value: vitalityData?.governmentalEfficiency ?? 0,
       },
@@ -130,77 +147,71 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
 
   if (!country) return null;
 
-  return (
-    <div className="space-y-6" style={flagThemeCSS}>
-      {/* National Vitality Telemetry Card */}
-      <FacetCard
-        depth={1}
-        interactive="none"
-        className="group bg-card/30 relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-sm saturate-180 backdrop-blur-xl"
-      >
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-[var(--flag-glow-primary)] opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-35" />
-          <Activity
-            className="absolute -right-3 -bottom-3 h-20 w-20 text-[var(--flag-primary)] opacity-[0.05]"
-            strokeWidth={1}
-          />
-        </div>
+  const viewActivity = () => router.push(createUrl(`/countries/${countrySlug}/activity`));
 
-        {/* Vitality Rings 2x2 Grid */}
-        <div className="relative grid grid-cols-2 gap-3">
-          {vitalityRings.map((ring) => (
-            <div
-              key={ring.key}
-              data-cuelume-press="soft"
-              onClick={() => handleRingClick(ring.key)}
-              className="flex h-14 cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-2.5 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 ease-out hover:scale-[1.02] hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.98]"
-            >
-              <HealthRing
-                value={ring.value}
-                size={36}
-                color={ring.color}
-                label={ring.label}
-                tooltip={`${ring.label}: ${Math.round(ring.value)}% - ${ring.subtitle}`}
-                className="shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-muted-foreground/80 truncate text-xs font-extrabold tracking-wider uppercase">
-                  {ring.label}
-                </div>
-                <div className="text-xs leading-tight font-extrabold" style={{ color: ring.color }}>
-                  {Math.round(ring.value)}%
-                </div>
-              </div>
-            </div>
-          ))}
+  return (
+    <div className="space-y-6">
+      {/* National vitality */}
+      <FacetCard padding="sm" aria-label="National vitality">
+        <div className="grid grid-cols-2 gap-2">
+          {vitalityRings.map((ring) => {
+            const known = ring.value !== null;
+            const shown = known ? `${Math.round(ring.value ?? 0)}%` : "—";
+            return (
+              <button
+                key={ring.key}
+                type="button"
+                onClick={() => handleRingClick(ring.key)}
+                aria-label={`${ring.label}: ${known ? shown : "no record yet"}`}
+                className={cn(
+                  "bg-surface-secondary rounded-row flex min-h-14 cursor-pointer items-center gap-3 p-2 text-left",
+                  "hover:bg-fill-3 duration-fast ease-out-facet transition-colors",
+                  "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                )}
+              >
+                <HealthRing
+                  value={ring.value ?? 0}
+                  size={36}
+                  color={vitalityColor(ring.value)}
+                  label={ring.label}
+                  tooltip={
+                    known
+                      ? `${ring.label}: ${shown} – ${ring.subtitle}`
+                      : `${ring.label}: no diplomatic record yet`
+                  }
+                  className="shrink-0"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="text-caption text-label-secondary block truncate">
+                    {ring.label}
+                  </span>
+                  <span className="text-headline text-label block tabular-nums">{shown}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </FacetCard>
 
-      {/* Geography Map */}
+      {/* Geography map */}
       {!mapLoading && hasGeometry && (
-        <FacetCard
-          depth={1}
-          interactive="none"
-          className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
-        >
-          <CardContent className="p-0">
-            <CountryMapEmbed
-              countryId={country.id}
-              height="h-56"
-              showNeighbors={true}
-              showCities={true}
-              boundsPadding={50}
-            />
-          </CardContent>
-          <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-            <span className="text-muted-foreground text-xs font-medium">
+        <FacetCard className="overflow-hidden">
+          <CountryMapEmbed
+            countryId={country.id}
+            height="h-56"
+            showNeighbors={true}
+            showCities={true}
+            boundsPadding={50}
+          />
+          <div className="border-separator flex items-center justify-between border-t px-4 py-2">
+            <span className="text-footnote text-label-secondary tabular-nums">
               {country.currentPopulation
                 ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                 : ""}
             </span>
             <a
               href={createUrl(`/maps?country=${country.id}`)}
-              className="text-xs font-semibold text-blue-500 transition-colors hover:text-blue-400"
+              className="text-footnote text-tint font-medium hover:underline"
             >
               Open full map →
             </a>
@@ -208,117 +219,74 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         </FacetCard>
       )}
 
-      {/* Recent Activity Feed */}
-      <FacetCard
-        depth={1}
-        interactive="none"
-        className="bg-card/30 overflow-hidden rounded-2xl border border-white/10 shadow-sm saturate-180 backdrop-blur-xl"
-      >
-        <CardHeader className="px-4 py-3 pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-foreground/90 flex items-center gap-2 text-xs font-extrabold tracking-wider uppercase">
-              <Activity className="h-3.5 w-3.5 text-[var(--flag-primary)]" />
-              Recent Activity
-            </CardTitle>
-            {activityData && activityData.activities.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(createUrl(`/countries/${countrySlug}/activity`))}
-                className="h-7 px-2 text-xs font-semibold transition-transform duration-100 active:scale-95"
-              >
-                View All
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
+      {/* Recent activity */}
+      <FacetCard>
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <h3 className="text-headline text-label flex items-center gap-2">
+            <Activity aria-hidden className="text-label-secondary size-4" />
+            Recent activity
+          </h3>
+          {activityData && activityData.activities.length > 0 && (
+            <Button variant="plain" size="sm" onClick={viewActivity}>
+              View all
+              <ArrowRight aria-hidden />
+            </Button>
+          )}
+        </div>
+        <div className="px-4 pb-4">
           {activityLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-3" role="status" aria-label="Loading activity">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex animate-pulse items-start gap-3">
-                  <div className="bg-muted mt-2 h-2 w-2 rounded-full"></div>
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="mt-2 size-2 rounded-full" />
                   <div className="flex-1 space-y-2">
-                    <div className="bg-muted h-4 w-3/4 rounded"></div>
-                    <div className="bg-muted h-3 w-1/2 rounded"></div>
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
                   </div>
                 </div>
               ))}
             </div>
           ) : activityData && activityData.activities.length > 0 ? (
-            <div className="space-y-3">
-              {activityData.activities.slice(0, 5).map((activity, idx) => {
-                const getActivityIcon = () => {
-                  switch (activity.type) {
-                    case "achievement":
-                      return <Trophy className="h-3.5 w-3.5 text-yellow-500" />;
-                    case "economic":
-                      return <TrendingUp className="h-3.5 w-3.5 text-blue-500" />;
-                    case "diplomatic":
-                      return <Users className="h-3.5 w-3.5 text-purple-500" />;
-                    case "social":
-                      return <MessageSquare className="h-3.5 w-3.5 text-green-500" />;
-                    default:
-                      return <Activity className="text-muted-foreground h-3.5 w-3.5" />;
-                  }
-                };
-
-                const getActivityColor = () => {
-                  switch (activity.type) {
-                    case "achievement":
-                      return "bg-yellow-400";
-                    case "economic":
-                      return "bg-blue-400";
-                    case "diplomatic":
-                      return "bg-purple-400";
-                    case "social":
-                      return "bg-green-400";
-                    default:
-                      return "bg-muted-foreground";
-                  }
-                };
-
+            <ul className="divide-separator divide-y">
+              {activityData.activities.slice(0, 5).map((activity) => {
+                const tone = ACTIVITY_TONE[activity.type] ?? DEFAULT_ACTIVITY_TONE;
                 return (
-                  <div
+                  <li
                     key={activity.id}
-                    className={`flex items-start gap-2.5 rounded-lg p-1.5 transition-colors duration-150 hover:bg-white/[0.02] ${
-                      idx < activityData.activities.length - 1
-                        ? "border-border/40 border-b pb-3"
-                        : ""
-                    }`}
+                    className="flex items-start gap-2 py-3 first:pt-0 last:pb-0"
                   >
-                    <div
-                      className={`h-2 w-2 rounded-full ${getActivityColor()} mt-1.5 shrink-0`}
-                    ></div>
+                    <span
+                      aria-hidden
+                      className={cn("mt-2 size-2 shrink-0 rounded-full", tone.dot)}
+                    />
                     <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        {getActivityIcon()}
-                        <p className="truncate text-xs font-semibold">{activity.title}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        {tone.icon}
+                        <p className="text-headline text-label truncate">{activity.title}</p>
                       </div>
                       {activity.source === "thinkpages" && (
-                        <Badge variant="outline" className="mt-1 h-4 text-xs font-bold">
+                        <Badge variant="outline" className="mt-1">
                           ThinkPages
                         </Badge>
                       )}
-                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-2.5 w-2.5" />
+                      <div className="text-footnote text-label-secondary mt-1 flex items-center gap-2 tabular-nums">
+                        <span className="flex items-center gap-1">
+                          <Clock aria-hidden className="size-3" />
                           {formatDistanceToNow(new Date(activity.timestamp), {
                             addSuffix: true,
                           })}
-                        </div>
+                        </span>
                         {activity.engagement && (
                           <>
                             {activity.engagement.likes > 0 && (
                               <span className="flex items-center gap-0.5">
-                                <MessageSquare className="h-2.5 w-2.5" />
+                                <MessageSquare aria-hidden className="size-3" />
                                 {activity.engagement.likes}
                               </span>
                             )}
                             {activity.engagement.comments > 0 && (
                               <span className="flex items-center gap-0.5">
-                                <MessageSquare className="h-2.5 w-2.5" />
+                                <MessageSquare aria-hidden className="size-3" />
                                 {activity.engagement.comments}
                               </span>
                             )}
@@ -326,26 +294,24 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
                         )}
                       </div>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           ) : (
-            <div className="flex flex-col items-center justify-center py-6 text-center">
-              <Activity className="text-muted-foreground/40 mb-2 h-6 w-6" />
-              <p className="text-muted-foreground text-xs font-medium">No recent public activity</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push(createUrl(`/countries/${countrySlug}/activity`))}
-                className="mt-2 h-7 px-2 text-xs font-semibold transition-transform duration-100 active:scale-95"
-              >
-                View Activity Tab
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
+            <EmptyState
+              compact
+              icon={<Activity />}
+              title="No recent public activity"
+              action={
+                <Button variant="plain" size="sm" onClick={viewActivity}>
+                  View activity tab
+                  <ArrowRight aria-hidden />
+                </Button>
+              }
+            />
           )}
-        </CardContent>
+        </div>
       </FacetCard>
     </div>
   );

@@ -44,7 +44,7 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
               onClick={() => onSelectTab(tab.id)}
               aria-pressed={isActive}
               className={cn(
-                "rounded-control text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-1.5 px-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+                "rounded-control text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
                 isActive
                   ? "bg-surface text-label shadow-card"
                   : "text-label-secondary hover:text-label hover:bg-fill-4"
@@ -61,7 +61,7 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
                   initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={shouldReduceMotion ? REDUCED_MOTION_FADE : springSnappy}
-                  className="bg-fill-3 text-caption rounded-full px-1.5 tabular-nums"
+                  className="bg-fill-3 text-caption rounded-full px-2 tabular-nums"
                 >
                   {count}
                 </motion.span>

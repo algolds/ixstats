@@ -43,7 +43,8 @@ export interface BaseCountryData {
 export interface VitalityData {
   economicVitality: number;
   populationWellbeing: number;
-  diplomaticStanding: number;
+  /** From the country's diplomatic record; null when it has none (shown as "—"). */
+  diplomaticStanding: number | null;
   governmentalEfficiency: number;
 }
 

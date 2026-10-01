@@ -54,7 +54,7 @@ export function LaborVisualizations({
                 variant={activeChart === "type" ? "default" : "ghost"}
                 onClick={() => setActiveChart("type")}
                 className={cn(
-                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "type"
                     ? "bg-green text-on-green shadow-card hover:bg-green"
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"
@@ -67,7 +67,7 @@ export function LaborVisualizations({
                 variant={activeChart === "sector" ? "default" : "ghost"}
                 onClick={() => setActiveChart("sector")}
                 className={cn(
-                  "rounded-control-sm text-caption h-7 px-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "sector"
                     ? "bg-green text-on-green shadow-card hover:bg-green"
                     : "text-label-secondary hover:bg-fill-4 hover:text-label"

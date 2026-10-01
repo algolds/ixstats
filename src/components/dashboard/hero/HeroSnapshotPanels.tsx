@@ -43,7 +43,7 @@ export function StatPill({
   color: string;
 }) {
   return (
-    <div className="bg-fill-4 rounded-control flex items-center gap-2 px-2 py-1.5">
+    <div className="bg-fill-4 rounded-control flex items-center gap-2 px-2 py-2">
       <Icon aria-hidden className={cn("size-3.5 shrink-0", color)} />
       <div className="min-w-0">
         <p className="text-label-secondary text-eyebrow">{label}</p>
@@ -100,7 +100,7 @@ export function DetailList({ title, children }: { title: string; children: React
   return (
     <div className="bg-fill-4 rounded-control mt-2 flex min-h-0 flex-1 flex-col gap-1 p-2">
       <p className="text-subhead text-label-secondary">{title}</p>
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2">{children}</div>
     </div>
   );
 }

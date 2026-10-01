@@ -29,13 +29,19 @@ function FlagDot({ src, name }: { src: string | null; name: string }) {
   );
 }
 
-/** World Census standing (mycountry.getRankings): value + global rank per category. */
+/**
+ * World Census standing (mycountry.getRankings): value + rank per category. The census ranks a
+ * nation within its realm, so the hint names the realm.
+ */
 export function RankingGrid({
   rankings,
+  realm,
   limit,
   className,
 }: {
   rankings: ProfileWorld["rankings"];
+  /** The realm the census ranks the nation in. */
+  realm?: string | null;
   limit?: number;
   className?: string;
 }) {
@@ -51,7 +57,7 @@ export function RankingGrid({
               size="sm"
               label={r.category}
               value={r.value}
-              hint={`${rankLabel(r.rank, r.total)} worldwide`}
+              hint={rankLabel(r.rank, r.total, realm)}
             />
           </dd>
         </div>

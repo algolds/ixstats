@@ -18,6 +18,7 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { springSnappy } from "~/lib/design/motion";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -170,7 +171,7 @@ function CompactViewComponent({
         <div className="h-full w-full">
           <DynamicContainer
             className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
-              isSticky ? "px-3 py-1.5" : "px-4 py-2"
+              isSticky ? "px-3 py-2" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
             {/* ── Sticky: peek text or wiki breadcrumb ──────────────── */}
@@ -181,8 +182,8 @@ function CompactViewComponent({
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  transition={{ type: "spring", stiffness: 420, damping: 38 }}
-                  className="flex items-center gap-1.5 px-2 py-0.5"
+                  transition={springSnappy}
+                  className="flex items-center gap-2 px-2 py-0.5"
                 >
                   <Bell className="text-yellow h-3 w-3" />
                   <span className="text-label text-caption max-w-[160px] truncate whitespace-nowrap">
@@ -217,7 +218,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`rounded-control-sm hover:bg-fill-2 flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                  className={`rounded-control-sm hover:bg-fill-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -226,7 +227,7 @@ function CompactViewComponent({
                 </div>
               ) : (
                 <div
-                  className={`flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                  className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                 >
@@ -243,8 +244,8 @@ function CompactViewComponent({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 38 }}
-                    className="flex items-center gap-1.5 px-2 py-1"
+                    transition={springSnappy}
+                    className="flex items-center gap-2 px-2 py-1"
                   >
                     <Bell className="text-yellow h-3 w-3" />
                     <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
@@ -257,7 +258,7 @@ function CompactViewComponent({
                     initial={{ opacity: 0, y: -6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 6 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 38 }}
+                    transition={springSnappy}
                     className="flex items-center gap-1"
                   >
                     {/* Context switcher / Plugin center */}
@@ -283,20 +284,20 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="rounded-control-sm hover:bg-fill-2 flex max-w-[160px] min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]"
+                          className="rounded-control-sm hover:bg-fill-2 flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
                         </div>
                       ) : (
-                        <div className="flex max-w-[160px] min-w-0 items-center gap-1.5 overflow-hidden px-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]">
+                        <div className="flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]">
                           {pluginCenter}
                         </div>
                       )
                     ) : (
                       <button
                         onClick={() => onSwitchMode("mycountry")}
-                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-1.5 px-1.5 py-0.5 transition-colors"
+                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors"
                       >
                         {user?.imageUrl ? (
                           <img
@@ -325,7 +326,6 @@ function CompactViewComponent({
                     <Button
                       size="sm"
                       variant="ghost"
-                      data-cuelume-hover="tick"
                       onClick={() => {
                         soundEffects.scan();
                         onSwitchMode("search");
@@ -348,7 +348,6 @@ function CompactViewComponent({
                       <Button
                         size="sm"
                         variant="ghost"
-                        data-cuelume-hover="chime"
                         onClick={() => {
                           soundEffects.bloom();
                           onSwitchMode("notifications");
@@ -372,8 +371,8 @@ function CompactViewComponent({
                               key={`total-${totalUnreadCount}`}
                               initial={{ scale: 0.8, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0, opacity: 0 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                              exit={{ scale: 0.8, opacity: 0 }}
+                              transition={springSnappy}
                               className={`bg-yellow text-caption text-on-yellow shadow-floating absolute flex items-center justify-center rounded-full border-0 font-semibold ${
                                 isSticky
                                   ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
@@ -399,7 +398,6 @@ function CompactViewComponent({
                     <Button
                       size="sm"
                       variant="ghost"
-                      data-cuelume-hover="tick"
                       onClick={() => {
                         soundEffects.bloom();
                         onSwitchMode("settings");

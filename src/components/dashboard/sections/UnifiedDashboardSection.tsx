@@ -270,7 +270,7 @@ export function UnifiedDashboardSection({
                 {hasCountry && accounts.length > 1 && selectedAccount && (
                   <div className="text-footnote flex items-center gap-2 px-1">
                     <span className="text-label-secondary">Posting as:</span>
-                    <div className="text-label flex items-center gap-1.5 font-medium">
+                    <div className="text-label flex items-center gap-2 font-medium">
                       <span>@{selectedAccount.username}</span>
                       <span className="text-label-secondary text-footnote font-normal">
                         ({selectedAccount.accountType})

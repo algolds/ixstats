@@ -6,21 +6,18 @@ import {
   Search,
   SystemRestart as Loader2,
   Xmark as X,
-  NavArrowDown as ChevronDown,
   OpenNewWindow as ExternalLink,
   Globe,
   Group as Users,
   Dollar as DollarSign,
-  Check,
   FilterList,
 } from "iconoir-react";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "~/components/ui/dropdown-menu";
+import { MenuButton } from "~/components/ui/menu-button";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -204,7 +201,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-            className="border-separator bg-surface shadow-floating flex items-center gap-3 rounded-full border px-4 py-2.5"
+            className="border-separator bg-surface shadow-floating flex items-center gap-3 rounded-full border px-4 py-3"
           >
             {selectedCountryFlag && !flagImgError ? (
               <img
@@ -232,58 +229,47 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
         {/* ─── Unified Search & Filter Island ─── */}
         {!isParsing && !isParsed && (
           <div className="border-separator bg-surface rounded-card shadow-card relative w-full border p-2 sm:p-3">
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               {/* Left Group: Wiki Source Selector + Search Input */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                {/* Wiki Switcher Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      data-cuelume-press
-                      className="hover:bg-fill-3 rounded-row border-separator bg-fill-4 text-caption text-label shadow-card flex shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
-                      title="Switch Wiki Source"
-                    >
-                      <img
-                        src={withBasePath(logoMap[selectedSite.name]!)}
-                        alt={selectedSite.displayName}
-                        className="h-4 w-4 object-contain"
-                      />
-                      <span>{selectedSite.displayName}</span>
-                      <ChevronDown className="text-label-secondary h-3 w-3 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48 p-1.5">
-                    <DropdownMenuLabel className="text-caption text-label-secondary px-2 py-1 font-semibold">
-                      Wiki Source
-                    </DropdownMenuLabel>
+                {/* Wiki source menu */}
+                <MenuButton
+                  size="sm"
+                  variant="gray"
+                  className="shrink-0"
+                  title="Switch Wiki Source"
+                  icon={
+                    <img
+                      src={withBasePath(logoMap[selectedSite.name]!)}
+                      alt=""
+                      className="size-4 object-contain"
+                    />
+                  }
+                  label={selectedSite.displayName}
+                  contentClassName="w-48"
+                >
+                  <DropdownMenuLabel>Wiki source</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={selectedSite.name}
+                    onValueChange={(name) => {
+                      const site = wikiSites.find((w) => w.name === name);
+                      if (!site) return;
+                      soundEffects.press();
+                      onSelectSite(site);
+                    }}
+                  >
                     {wikiSites.map((site) => (
-                      <DropdownMenuItem
-                        key={site.name}
-                        onClick={() => {
-                          soundEffects.press();
-                          onSelectSite(site);
-                        }}
-                        className={cn(
-                          "rounded-control-sm text-footnote flex cursor-pointer items-center justify-between px-2 py-1.5",
-                          selectedSite.name === site.name && "text-tint bg-tint-fill"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={withBasePath(logoMap[site.name]!)}
-                            alt={site.displayName}
-                            className="h-4 w-4 object-contain"
-                          />
-                          <span>{site.displayName}</span>
-                        </div>
-                        {selectedSite.name === site.name && (
-                          <Check className="text-tint h-3.5 w-3.5" />
-                        )}
-                      </DropdownMenuItem>
+                      <DropdownMenuRadioItem key={site.name} value={site.name}>
+                        <img
+                          src={withBasePath(logoMap[site.name]!)}
+                          alt=""
+                          className="size-4 object-contain"
+                        />
+                        <span>{site.displayName}</span>
+                      </DropdownMenuRadioItem>
                     ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenuRadioGroup>
+                </MenuButton>
 
                 <div aria-hidden className="bg-separator-opaque h-4 w-px shrink-0" />
 
@@ -318,19 +304,21 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   />
 
                   {searchTerm && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSearchTerm("");
                         setShowResults(false);
                         inputRef.current?.focus();
                       }}
-                      className="hover:bg-fill-3 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors active:scale-90"
+                      className="text-label-secondary shrink-0 rounded-full"
                       aria-label="Clear search"
                     >
-                      <X className="text-label-secondary h-3 w-3" />
-                    </button>
+                      <X aria-hidden />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -351,48 +339,35 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   options={GOV_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))}
                 />
 
-                {/* Sort Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      data-cuelume-press
-                      className={cn(
-                        "rounded-control text-caption shadow-card flex h-7 cursor-pointer items-center gap-1.5 border px-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95 sm:h-8",
-                        sortOption !== "default"
-                          ? "border-tint/40 bg-tint-fill text-tint font-semibold"
-                          : "border-separator bg-fill-4 text-label-secondary hover:border-separator hover:bg-background hover:text-label"
-                      )}
-                    >
-                      <FilterList className="h-3.5 w-3.5 opacity-70" />
-                      <span className="hidden whitespace-nowrap sm:inline">
-                        {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
-                      </span>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 p-1.5">
-                    <DropdownMenuLabel className="text-caption text-label-secondary px-2 py-1 font-semibold">
-                      Sort Nations
-                    </DropdownMenuLabel>
+                {/* Sort menu */}
+                <MenuButton
+                  size="sm"
+                  variant={sortOption !== "default" ? "tinted" : "gray"}
+                  icon={<FilterList aria-hidden />}
+                  aria-label="Sort nations"
+                  label={
+                    <span className="hidden whitespace-nowrap sm:inline">
+                      {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
+                    </span>
+                  }
+                  align="end"
+                  contentClassName="w-48"
+                >
+                  <DropdownMenuLabel>Sort nations</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={sortOption}
+                    onValueChange={(id) => {
+                      soundEffects.press();
+                      onSelectSort(id);
+                    }}
+                  >
                     {SORT_OPTIONS.map((opt) => (
-                      <DropdownMenuItem
-                        key={opt.id}
-                        onClick={() => {
-                          soundEffects.press();
-                          onSelectSort(opt.id);
-                        }}
-                        className={cn(
-                          "rounded-control-sm text-footnote flex cursor-pointer items-center justify-between px-2 py-1.5",
-                          sortOption === opt.id && "text-tint bg-tint-fill font-semibold"
-                        )}
-                      >
-                        <span>{opt.label}</span>
-                        {sortOption === opt.id && <Check className="text-tint h-3.5 w-3.5" />}
-                      </DropdownMenuItem>
+                      <DropdownMenuRadioItem key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </DropdownMenuRadioItem>
                     ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenuRadioGroup>
+                </MenuButton>
 
                 {/* Nation Count Badge */}
                 <Badge variant="neutral" className="tabular-nums">
@@ -452,7 +427,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
                 {/* Results List */}
                 {searchResults.length > 0 && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {searchResults.slice(0, 10).map((result, index) => (
                       <div
                         key={result.title}
@@ -507,7 +482,7 @@ function SearchResultItemInline({
       onClick={onSelect}
       onFocus={onFocus}
       className={cn(
-        "group rounded-row flex cursor-pointer items-start gap-3 border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
+        "group rounded-row flex cursor-pointer items-start gap-3 border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
         isFocused && "ring-blue/50 ring-2",
         isSelected ? "border-blue/40 bg-blue/10" : "bg-surface hover:bg-fill-3 border-separator"
       )}

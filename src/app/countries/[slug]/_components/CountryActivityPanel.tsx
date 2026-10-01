@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import {
   Activity,
   StatUp as TrendingUp,
@@ -19,11 +22,10 @@ import {
   RssFeed as Rss,
   OpenBook as BookOpen,
 } from "iconoir-react";
-import Link from "next/link";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { escapeHtml, sanitizeUserContent } from "~/lib/utils";
+import { cn, escapeHtml, sanitizeUserContent } from "~/lib/utils";
 import type { ActivityFilter, ActivityTimeRange, CountryActivityItem } from "../_types";
 
 /**
@@ -117,179 +119,175 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
   ];
 
   const getItemIcon = (type: string, source: string) => {
-    if (source === "thinkpages" || type === "post") return <Rss className="h-4 w-4 text-sky-500" />;
+    if (source === "thinkpages" || type === "post")
+      return <Rss aria-hidden className="text-cyan size-4" />;
     switch (type) {
       case "achievement":
       case "milestone":
-        return <Trophy className="h-4 w-4 text-yellow-500" />;
+        return <Trophy aria-hidden className="text-yellow size-4" />;
       case "economic":
-        return <TrendingUp className="h-4 w-4 text-emerald-500" />;
+        return <TrendingUp aria-hidden className="text-green size-4" />;
       case "diplomatic":
-        return <Globe className="h-4 w-4 text-purple-500" />;
+        return <Globe aria-hidden className="text-purple size-4" />;
       case "social":
-        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+        return <MessageSquare aria-hidden className="text-blue size-4" />;
       case "event":
-        return <Zap className="h-4 w-4 text-orange-500" />;
+        return <Zap aria-hidden className="text-orange size-4" />;
       default:
-        return <Activity className="text-muted-foreground h-4 w-4" />;
+        return <Activity aria-hidden className="text-label-secondary size-4" />;
     }
   };
 
   const getItemDotColor = (type: string, source: string) => {
-    if (source === "thinkpages" || type === "post") return "bg-sky-400";
+    if (source === "thinkpages" || type === "post") return "bg-cyan";
     switch (type) {
       case "achievement":
       case "milestone":
-        return "bg-yellow-400";
+        return "bg-yellow";
       case "economic":
-        return "bg-emerald-400";
+        return "bg-green";
       case "diplomatic":
-        return "bg-purple-400";
+        return "bg-purple";
       case "social":
-        return "bg-blue-400";
+        return "bg-blue";
       case "event":
-        return "bg-orange-400";
+        return "bg-orange";
       default:
-        return "bg-muted-foreground";
+        return "bg-label-tertiary";
     }
   };
 
   const getSourceBadge = (source: string) => {
     switch (source) {
       case "thinkpages":
-        return (
-          <Badge variant="outline" className="text-xs font-bold">
-            ThinkPages
-          </Badge>
-        );
+        return <Badge variant="outline">ThinkPages</Badge>;
       default:
         return null;
     }
   };
 
+  const summary = [
+    { label: "Total items", value: feed.length },
+    {
+      label: "Posts",
+      value: feed.filter((i) => i.type === "social" || i.source === "thinkpages").length,
+    },
+    { label: "Economic", value: feed.filter((i) => i.type === "economic").length },
+    { label: "Diplomatic", value: feed.filter((i) => i.type === "diplomatic").length },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Main Feed */}
+        {/* Main feed */}
         <div className="space-y-4 lg:col-span-3">
           {/* Header */}
-          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base font-extrabold tracking-tight">
-                    <Activity className="text-primary h-5 w-5" />
-                    Activity Feed
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    Posts, events, and milestones from {countryName.replace(/_/g, " ")}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {(["7d", "30d", "90d"] as const).map((range) => (
-                    <Button
-                      key={range}
-                      variant={timeRange === range ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setTimeRange(range)}
-                      className="h-7 px-2.5 text-xs font-semibold transition-transform duration-100 active:scale-95"
-                    >
-                      {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
-                    </Button>
-                  ))}
-                </div>
+          <FacetCard padding="md" className="space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-title-3 text-label flex items-center gap-2">
+                  <Activity aria-hidden className="text-tint size-5" />
+                  Activity feed
+                </h2>
+                <p className="text-callout text-label-secondary">
+                  Posts, events, and milestones from {countryName.replace(/_/g, " ")}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex flex-wrap gap-1.5">
-                {filterOptions.map((opt) => {
-                  const Icon = opt.icon;
-                  return (
-                    <Button
-                      key={opt.value}
-                      variant={filter === opt.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilter(opt.value)}
-                      className="h-7 px-3 text-xs font-semibold transition-transform duration-100 active:scale-95"
-                    >
-                      <Icon className="mr-1.5 h-3 w-3" />
-                      {opt.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+              <SegmentedControl
+                aria-label="Time range"
+                size="sm"
+                value={timeRange}
+                onValueChange={setTimeRange}
+                options={[
+                  { value: "7d", label: "7 days" },
+                  { value: "30d", label: "30 days" },
+                  { value: "90d", label: "90 days" },
+                ]}
+              />
+            </div>
+            <SegmentedControl
+              aria-label="Activity type"
+              size="sm"
+              value={filter}
+              onValueChange={setFilter}
+              options={filterOptions.map((opt) => {
+                const Icon = opt.icon;
+                return { value: opt.value, label: opt.label, icon: <Icon aria-hidden /> };
+              })}
+            />
+          </FacetCard>
 
-          {/* Feed Items */}
+          {/* Feed items */}
           {isLoading ? (
-            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
-              <CardContent className="space-y-4 pt-6">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex animate-pulse items-start gap-3">
-                    <div className="bg-muted mt-2 h-2 w-2 shrink-0 rounded-full"></div>
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-3 w-1/4" />
-                    </div>
+            <FacetCard
+              padding="md"
+              className="space-y-4"
+              role="status"
+              aria-label="Loading activity"
+            >
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="mt-2 size-2 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-1/4" />
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </div>
+              ))}
+            </FacetCard>
           ) : feed.length > 0 ? (
-            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
-              <CardContent className="space-y-1 pt-6">
-                {feed.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className={`flex items-start gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-white/[0.03] ${
-                      idx < feed.length - 1 ? "border-border/40 border-b" : ""
-                    }`}
-                  >
-                    <div
-                      className={`mt-2 h-2 w-2 shrink-0 rounded-full ${getItemDotColor(item.type, item.source)}`}
+            <FacetCard padding="md">
+              <ul className="divide-separator divide-y">
+                {feed.map((item) => (
+                  <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "mt-2 size-2 shrink-0 rounded-full",
+                        getItemDotColor(item.type, item.source)
+                      )}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                           {getItemIcon(item.type, item.source)}
                           <p
-                            className="truncate text-sm font-semibold"
+                            className="text-headline text-label truncate"
                             dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.title) }}
                           />
                         </div>
                         {getSourceBadge(item.source)}
                       </div>
-                      <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                      <p className="text-callout text-label-secondary mt-1 line-clamp-2">
                         <span
                           dangerouslySetInnerHTML={{ __html: renderWithEmojis(item.description) }}
                         />
                       </p>
-                      <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                      <div className="text-footnote text-label-secondary mt-2 flex items-center gap-3 tabular-nums">
+                        <span className="flex items-center gap-1">
+                          <Clock aria-hidden className="size-3" />
                           {isValid(item.timestamp)
                             ? formatDistanceToNow(item.timestamp, { addSuffix: true })
                             : "recently"}
-                        </div>
+                        </span>
                         {item.engagement && (
                           <>
                             {(item.engagement.likes ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3 text-rose-500" />
+                                <Heart aria-hidden className="text-pink size-3" />
                                 {item.engagement.likes}
                               </span>
                             )}
                             {(item.engagement.comments ?? 0) > 0 && (
                               <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3 w-3 text-sky-500" />
+                                <MessageSquare aria-hidden className="text-blue size-3" />
                                 {item.engagement.comments}
                               </span>
                             )}
                             {item.engagement.shares && item.engagement.shares > 0 && (
                               <span className="flex items-center gap-1">
-                                <Share2 className="h-3 w-3 text-emerald-500" />
+                                <Share2 aria-hidden className="text-green size-3" />
                                 {item.engagement.shares}
                               </span>
                             )}
@@ -297,88 +295,48 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                         )}
                       </div>
                     </div>
-                  </div>
+                  </li>
                 ))}
+              </ul>
 
-                {!showMore && feed.length >= 15 && (
-                  <div className="pt-3 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowMore(true)}
-                      className="text-xs font-semibold transition-transform duration-100 active:scale-95"
-                    >
-                      <ChevronDown className="mr-1 h-3 w-3" />
-                      Load more activity
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              {!showMore && feed.length >= 15 && (
+                <div className="pt-3 text-center">
+                  <Button variant="plain" size="sm" onClick={() => setShowMore(true)}>
+                    <ChevronDown aria-hidden />
+                    Load more activity
+                  </Button>
+                </div>
+              )}
+            </FacetCard>
           ) : (
-            <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
-              <CardContent className="py-12 text-center">
-                <Activity className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
-                <p className="text-muted-foreground text-sm font-semibold">
-                  No activity found for this time period.
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Try expanding the time range or removing filters.
-                </p>
-              </CardContent>
-            </Card>
+            <FacetCard>
+              <EmptyState
+                icon={<Activity />}
+                title="No activity found for this time period."
+                message="Try expanding the time range or removing filters."
+              />
+            </FacetCard>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Quick Stats */}
-          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-extrabold tracking-wider uppercase">
-                Activity Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Total Items</span>
-                <span className="text-sm font-extrabold">{feed.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Posts</span>
-                <span className="text-sm font-bold">
-                  {feed.filter((i) => i.type === "social" || i.source === "thinkpages").length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Economic</span>
-                <span className="text-sm font-bold">
-                  {feed.filter((i) => i.type === "economic").length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">Diplomatic</span>
-                <span className="text-sm font-bold">
-                  {feed.filter((i) => i.type === "diplomatic").length}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Wiki Link */}
-          <Card className="bg-card/40 border-white/10 saturate-180 backdrop-blur-xl transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]">
-            <CardContent className="pt-6">
+          <FacetList>
+            <FacetListSection header="Activity summary">
+              {summary.map((row) => (
+                <FacetRow key={row.label} title={row.label} trailing={row.value} />
+              ))}
+            </FacetListSection>
+            <FacetListSection>
               <WikiLinkPreview title={countryName}>
-                <Link
+                <FacetRow
                   href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
-                  className="text-primary flex items-center gap-2 text-sm font-bold hover:underline"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  View on IxWiki
-                </Link>
+                  leading={<BookOpen className="size-4" />}
+                  title="View on IxWiki"
+                />
               </WikiLinkPreview>
-            </CardContent>
-          </Card>
+            </FacetListSection>
+          </FacetList>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { formatFullWordNumber } from "~/app/builder/components/enhanced/steps/fo
 import { Globe, Check, Xmark as X } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { IMAGE_SCRIM } from "~/app/builder/lib/image-scrim";
 
 export interface CountryCardData {
   id: string;
@@ -163,7 +164,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 pt-2">
+                    <div className="flex items-center gap-2 pt-2">
                       <Button
                         type="button"
                         variant="bordered"
@@ -212,8 +213,13 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
             )}
 
             {/* Persistent Country Name Label — a flat image scrim band (fixed white on black) */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-black/60 px-3 py-2">
-              <span className="text-headline line-clamp-2 text-white">{country.name}</span>
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-x-0 bottom-0 z-10 px-3 py-2",
+                IMAGE_SCRIM
+              )}
+            >
+              <span className="text-headline line-clamp-2">{country.name}</span>
             </div>
           </div>
         </motion.div>

@@ -40,7 +40,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 text-red-500">
+      <div className="text-destructive container mx-auto px-4 py-8">
         <AlertTriangle className="mr-2 inline-block" />
         Error loading country data: {error.message}
       </div>
@@ -68,7 +68,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
           <div className="mb-6">
             <Link
               href={createUrl(`/countries/${country.slug}`)}
-              className="text-primary hover:underline"
+              className="text-tint hover:underline"
             >
               &larr; Back to {country.name}
             </Link>

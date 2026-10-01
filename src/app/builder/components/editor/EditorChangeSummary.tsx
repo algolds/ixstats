@@ -83,7 +83,7 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
                   Edit
                 </Button>
               </div>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {items.slice(0, MAX_LISTED).map((change) => {
                   const value = formatValue(change.value);
                   return (

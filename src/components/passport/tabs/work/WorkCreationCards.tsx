@@ -41,7 +41,7 @@ export const WorkArticleCards = React.memo(function WorkArticleCards({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-subhead text-label-secondary flex items-center gap-1.5">
+        <h4 className="text-subhead text-label-secondary flex items-center gap-2">
           <BookOpen aria-hidden className="size-4" />
           <span>
             Authored wiki pages <span className="tabular-nums">({articles.length})</span>

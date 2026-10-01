@@ -29,9 +29,19 @@ export function relationshipBadge(relationship: string): { label: string; varian
   }
 }
 
-/** Ordinal rank, e.g. "#3 of 42". */
-export function rankLabel(rank: number, total: number): string {
-  return total > 0 ? `#${rank} of ${total}` : `#${rank}`;
+/**
+ * Ordinal rank, e.g. "#3 of 42", or "#3 of 42 in Ixnay" with the field it is ranked in. World
+ * Census ranks are realm ranks (the census ranks a nation among its realm's countries), so pass
+ * the realm name wherever a census rank is shown.
+ */
+export function rankLabel(rank: number, total: number, realm?: string | null): string {
+  const base = total > 0 ? `#${rank} of ${total}` : `#${rank}`;
+  return realm ? `${base} in ${realm}` : base;
+}
+
+/** The realm a nation's census ranks are drawn from; the primary realm when none is set. */
+export function censusRealmName(realm: { name: string } | null | undefined): string {
+  return realm?.name || "IxWorld";
 }
 
 /** Smooth scrolling unless the OS or the in-app Reduce Motion setting says otherwise. */

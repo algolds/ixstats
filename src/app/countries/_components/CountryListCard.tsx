@@ -104,7 +104,7 @@ export function CountryListCard({
     <FacetCard
       depth={2}
       className={cn(
-        "group hover:border-foreground/20 rounded-card flex h-full flex-col overflow-hidden",
+        "group hover:border-label-tertiary rounded-card flex h-full flex-col overflow-hidden",
         dominantColor && "border-l-2"
       )}
       // The flag's dominant colour is data, not decoration: a thin identity edge.

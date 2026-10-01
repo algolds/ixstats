@@ -94,7 +94,7 @@ export function NationBuilderShowcase() {
           </div>
 
           <div
-            className={`text-label-secondary rounded-row text-body mb-6 flex flex-wrap items-center gap-2 px-3 py-2.5 ${splashGold.subtlePanel}`}
+            className={`text-label-secondary rounded-row text-body mb-6 flex flex-wrap items-center gap-2 px-3 py-3 ${splashGold.subtlePanel}`}
           >
             <motion.span>
               <Lock className={`inline h-4 w-4 ${splashGold.text}`} aria-hidden />
@@ -154,13 +154,13 @@ export function NationBuilderShowcase() {
           </div>
 
           <div className="text-label-secondary text-footnote md:text-body mt-6 flex flex-wrap gap-3">
-            <span className={`rounded-control px-3 py-1.5 ${splashGold.subtlePanel}`}>
+            <span className={`rounded-control px-3 py-2 ${splashGold.subtlePanel}`}>
               Optional: <strong className={`font-medium ${splashGold.text}`}>IxWiki import</strong>{" "}
               before foundation
             </span>
             <Link
               href="/help/gameplay/country-building"
-              className={`rounded-control px-3 py-1.5 font-medium ${splashGold.subtlePanel} ${splashGold.text} hover:underline`}
+              className={`rounded-control px-3 py-2 font-medium ${splashGold.subtlePanel} ${splashGold.text} hover:underline`}
             >
               How building works →
             </Link>

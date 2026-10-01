@@ -303,7 +303,7 @@ export function EconomySectorsTab({
                   onClick={normalizeSectors}
                   className="border-green/20 text-caption text-green hover:bg-green/10 hover:text-green h-8 py-1 font-semibold"
                 >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
                   Normalize Ratios
                 </Button>
               )}
@@ -316,7 +316,7 @@ export function EconomySectorsTab({
                 placeholder="Search sectors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="text-label placeholder:text-label-secondary rounded-control border-separator bg-fill-4 text-footnote focus:ring-green/20 w-full border py-1.5 pr-4 pl-9 focus:ring-2 focus:outline-none"
+                className="text-label placeholder:text-label-secondary rounded-control border-separator bg-fill-4 text-footnote focus:ring-green/20 w-full border py-2 pr-4 pl-9 focus:ring-2 focus:outline-none"
               />
             </div>
           </div>

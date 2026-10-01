@@ -72,14 +72,16 @@ function InfoTip({ children }: { children: React.ReactNode }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label="More information"
             onClick={(e) => e.stopPropagation()}
-            className="text-label-secondary hover:text-label cursor-pointer"
+            className="text-label-secondary hover:text-label"
           >
-            <CircleHelp aria-hidden className="size-3.5" />
-          </button>
+            <CircleHelp aria-hidden />
+          </Button>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           {children}
@@ -133,25 +135,29 @@ export function ArchetypeGrid({
             {/* Step indicator */}
             <div className="border-separator bg-surface text-caption flex items-center gap-2 rounded-full border px-3 py-1 select-none">
               {selectedTemplate ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={onBackToBenchmark}
-                  className="text-label-secondary hover:text-label flex cursor-pointer items-center gap-1 transition-colors"
+                  className="text-label-secondary hover:text-label -ml-2"
                   title="Click to change benchmark country"
                 >
                   <Check aria-hidden className="text-green size-3.5" />
                   Step 1: {selectedTemplate.name}
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={onBackToBenchmark}
-                  className="text-label-tertiary hover:text-label-secondary flex cursor-pointer items-center gap-1 transition-colors"
+                  className="text-label-secondary hover:text-label -ml-2"
                   title="Click to add a benchmark country"
                 >
                   <span aria-hidden className="bg-label-tertiary size-1.5 rounded-full" />
                   Step 1: Benchmark Country (Skipped)
-                </button>
+                </Button>
               )}
               <span aria-hidden className="text-label-tertiary">
                 •

@@ -10,13 +10,7 @@ import { calculateVitalityData } from "~/app/countries/[slug]/_utils/countryData
 
 describe("Factbook Routing Utilities", () => {
   it("defines exactly 5 canonical factbook sections", () => {
-    expect(FACTBOOK_SECTIONS).toEqual([
-      "overview",
-      "economy",
-      "labor",
-      "government",
-      "geography",
-    ]);
+    expect(FACTBOOK_SECTIONS).toEqual(["overview", "economy", "labor", "government", "geography"]);
   });
 
   it("validates factbook section strings", () => {
@@ -66,8 +60,21 @@ describe("Country Vitality Calculation", () => {
 
     expect(result.economicVitality).toBeGreaterThanOrEqual(95);
     expect(result.populationWellbeing).toBeGreaterThan(50);
-    expect(result.diplomaticStanding).toBe(60);
+    // No made-up figure: without a diplomatic record the standing is unknown.
+    expect(result.diplomaticStanding).toBeNull();
     expect(result.governmentalEfficiency).toBeCloseTo(76, 0);
+  });
+
+  it("passes through the server-computed diplomatic standing, clamped to 0-100", () => {
+    const base = {
+      economicTier: "Healthy",
+      adjustedGdpGrowth: 0.02,
+      populationGrowthRate: 0.01,
+      populationDensity: 100,
+    };
+    expect(calculateVitalityData(base, 72).diplomaticStanding).toBe(72);
+    expect(calculateVitalityData(base, 140).diplomaticStanding).toBe(100);
+    expect(calculateVitalityData(base, null).diplomaticStanding).toBeNull();
   });
 
   it("calculates vitality metrics with negative growth safely bounded", () => {

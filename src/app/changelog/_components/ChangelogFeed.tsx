@@ -163,7 +163,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
               {/* Release Header */}
               <div className="border-separator mb-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <h2 className="text-label text-title-1">
                       v{release.version}{" "}
                       <span className="text-label-secondary font-semibold">
@@ -203,7 +203,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              "rounded-control-sm text-eyebrow inline-flex items-center gap-1.5 border px-2 py-0.5",
+                              "rounded-control-sm text-eyebrow inline-flex items-center gap-2 border px-2 py-0.5",
                               catMeta.badgeBg
                             )}
                           >
@@ -215,14 +215,14 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         {/* Title & Description */}
                         <div>
                           <h3 className="text-label text-headline">{item.title}</h3>
-                          <p className="text-label-secondary text-footnote mt-1.5 leading-relaxed">
+                          <p className="text-label-secondary text-footnote mt-2 leading-relaxed">
                             {item.description}
                           </p>
                         </div>
 
                         {/* Bullet Highlights */}
                         {item.highlights && item.highlights.length > 0 && (
-                          <div className="border-separator bg-fill-4 rounded-row space-y-1.5 border p-3">
+                          <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
                             <span className="text-label-secondary text-eyebrow">
                               Key Highlights
                             </span>
@@ -246,7 +246,7 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                         <div className="border-separator mt-4 border-t pt-3">
                           <Link
                             href={item.link.href}
-                            className="group/link text-tint hover:text-tint/80 text-caption inline-flex items-center gap-1.5 font-semibold transition-colors"
+                            className="group/link text-tint hover:text-tint/80 text-caption inline-flex items-center gap-2 font-semibold transition-colors"
                           >
                             <span>{item.link.label}</span>
                             <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />

@@ -71,7 +71,7 @@ export function MessageTrayItem({
   return (
     <SwipeableRow
       id={`msg-tray-${conversation.id}`}
-      className="rounded-row mb-1.5 last:mb-0"
+      className="rounded-row mb-2 last:mb-0"
       springPreset="bouncy"
       expanded={isExpanded}
       onExpandedChange={(expanded) => {
@@ -161,8 +161,8 @@ export function MessageTrayItem({
 
             {/* Conversation Details */}
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex items-center justify-between gap-1.5">
-                <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span className="text-label text-caption truncate font-semibold">
                     {displayTitle}
                   </span>

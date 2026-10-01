@@ -5,23 +5,20 @@ import {
   Globe,
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
-  NavArrowDown as ChevronDown,
-  Check,
   Coins,
 } from "iconoir-react";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "~/components/ui/dropdown-menu";
+import { MenuButton } from "~/components/ui/menu-button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   CountryFocusCardBuilder,
   type CountryCardData,
 } from "../components/CountryFocusCardBuilder";
 import type { RealCountryData } from "../lib/economy-data-service";
-import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -224,6 +221,15 @@ export function CountryGrid({
     }
   }, []);
 
+  const pressedPresets = useMemo(() => {
+    const nonTierSelected = selectedArchetypes.filter(
+      (id) => !ECONOMIC_TIERS.some((t) => t.id === id)
+    );
+    return FILTER_PRESETS.map((p) => p.id as string).filter((id) =>
+      id === "all" ? nonTierSelected.length === 0 : selectedArchetypes.includes(id)
+    );
+  }, [selectedArchetypes]);
+
   const hasActiveFilters =
     searchTerm.trim().length > 0 || selectedArchetypes.length > 0 || Boolean(activeEconTier);
 
@@ -232,7 +238,7 @@ export function CountryGrid({
       <div className="rounded-card border-separator bg-surface relative flex max-h-[70vh] flex-col overflow-hidden border">
         {/* Header: Title, Live Counter, Inline Search, Econ Tier Dropdown & Filter Rail */}
         <div className="border-separator shrink-0 border-b p-3 sm:px-4">
-          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Left: Title, Counter, Help Button, and Reset */}
             <div className="flex shrink-0 items-center gap-2">
               <span className="text-headline text-label whitespace-nowrap">
@@ -265,54 +271,36 @@ export function CountryGrid({
                 />
               )}
 
-              {/* Economic Tiers Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    data-cuelume-press
-                    className={cn(
-                      "rounded-control text-caption flex h-8 shrink-0 cursor-pointer items-center gap-1.5 border px-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95",
-                      activeEconTier
-                        ? "border-tint/40 bg-tint-fill text-tint shadow-card font-semibold"
-                        : "border-separator bg-fill-4 text-label-secondary hover:border-separator hover:bg-background hover:text-label"
-                    )}
-                  >
-                    <Coins className="h-3.5 w-3.5" />
-                    <span className="whitespace-nowrap">
-                      {activeEconTier ? `${activeEconTier.label} Econ` : "Econ Tier"}
-                    </span>
-                    <ChevronDown className="h-3 w-3 opacity-60" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 p-1.5">
-                  <DropdownMenuLabel className="text-caption text-label-secondary px-2 py-1 font-semibold">
-                    Economic Development Tier
-                  </DropdownMenuLabel>
-                  {ECONOMIC_TIERS.map((tier) => {
-                    const isSelected =
-                      tier.id === "all" ? !activeEconTier : activeEconTier?.id === tier.id;
-                    return (
-                      <DropdownMenuItem
-                        key={tier.id}
-                        onClick={() => handleSelectEconTier(tier.id)}
-                        className={cn(
-                          "rounded-control-sm text-footnote flex cursor-pointer items-center justify-between px-2 py-1.5",
-                          isSelected && "bg-tint-fill text-tint font-medium"
-                        )}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-label font-medium">{tier.label}</span>
-                          <span className="text-footnote text-label-secondary">
-                            {tier.description}
-                          </span>
-                        </div>
-                        {isSelected && <Check className="text-tint h-3.5 w-3.5" />}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Economic tier menu */}
+              <MenuButton
+                size="sm"
+                variant={activeEconTier ? "tinted" : "gray"}
+                icon={<Coins aria-hidden />}
+                label={
+                  <span className="whitespace-nowrap">
+                    {activeEconTier ? `${activeEconTier.label} Econ` : "Econ Tier"}
+                  </span>
+                }
+                className="shrink-0"
+                contentClassName="w-56"
+              >
+                <DropdownMenuLabel>Economic development tier</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={activeEconTier?.id ?? "all"}
+                  onValueChange={handleSelectEconTier}
+                >
+                  {ECONOMIC_TIERS.map((tier) => (
+                    <DropdownMenuRadioItem key={tier.id} value={tier.id}>
+                      <span className="flex flex-col gap-0.5">
+                        <span className="text-label font-medium">{tier.label}</span>
+                        <span className="text-footnote text-label-secondary">
+                          {tier.description}
+                        </span>
+                      </span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </MenuButton>
 
               {/* Vertical Divider */}
               <div aria-hidden className="bg-separator-opaque hidden h-5 w-px shrink-0 sm:block" />
@@ -323,15 +311,16 @@ export function CountryGrid({
                   {/* Left Scroll Chevron */}
                   {canScrollLeft && (
                     <div className="bg-surface pointer-events-none absolute left-0 z-10 flex h-full items-center pr-1">
-                      <button
+                      <Button
                         type="button"
+                        variant="bordered"
+                        size="icon-sm"
                         onClick={() => scrollRail("left")}
-                        data-cuelume-press
                         aria-label="Scroll left"
-                        className="border-separator bg-background text-label-secondary shadow-card hover:text-label pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
+                        className="bg-surface pointer-events-auto rounded-full"
                       >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </button>
+                        <ChevronLeft aria-hidden />
+                      </Button>
                     </div>
                   )}
 
@@ -339,49 +328,45 @@ export function CountryGrid({
                   <div
                     ref={railRef}
                     onWheel={handleRailWheel}
-                    className="flex scrollbar-none items-center gap-1.5 overflow-x-auto scroll-smooth px-0.5 py-0.5 select-none"
+                    className="scrollbar-none overflow-x-auto scroll-smooth px-0.5 py-0.5 select-none"
                     style={{ WebkitOverflowScrolling: "touch" }}
                   >
-                    {FILTER_PRESETS.map((preset) => {
-                      const isAll = preset.id === "all";
-                      const nonTierSelectedCount = selectedArchetypes.filter(
-                        (id) => !ECONOMIC_TIERS.some((t) => t.id === id)
-                      ).length;
-                      const isSelected = isAll
-                        ? nonTierSelectedCount === 0
-                        : selectedArchetypes.includes(preset.id);
-
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => onToggleArchetype(preset.id)}
-                          data-cuelume-press
-                          className={cn(
-                            "text-caption shrink-0 cursor-pointer rounded-full px-3 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]",
-                            isSelected
-                              ? "border-tint/40 bg-tint-fill text-tint shadow-card border font-semibold"
-                              : "border-separator bg-fill-4 text-label-secondary hover:border-separator hover:bg-background hover:text-label border"
-                          )}
-                        >
+                    {/* Each press toggles exactly one preset ("All" clears the others). */}
+                    <ToggleGroup
+                      type="multiple"
+                      aria-label="Country filters"
+                      variant="pill"
+                      size="sm"
+                      value={pressedPresets}
+                      onValueChange={(next) => {
+                        const changed = FILTER_PRESETS.map((p) => p.id).filter(
+                          (id) => next.includes(id) !== pressedPresets.includes(id)
+                        );
+                        changed.forEach((id) => onToggleArchetype(id));
+                      }}
+                      className="flex-nowrap gap-2"
+                    >
+                      {FILTER_PRESETS.map((preset) => (
+                        <ToggleGroupItem key={preset.id} value={preset.id} className="shrink-0">
                           {preset.label}
-                        </button>
-                      );
-                    })}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
                   </div>
 
                   {/* Right Scroll Chevron */}
                   {canScrollRight && (
                     <div className="bg-surface pointer-events-none absolute right-0 z-10 flex h-full items-center pl-1">
-                      <button
+                      <Button
                         type="button"
+                        variant="bordered"
+                        size="icon-sm"
                         onClick={() => scrollRail("right")}
-                        data-cuelume-press
                         aria-label="Scroll right"
-                        className="border-separator bg-background text-label-secondary shadow-card hover:text-label pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
+                        className="bg-surface pointer-events-auto rounded-full"
                       >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
+                        <ChevronRight aria-hidden />
+                      </Button>
                     </div>
                   )}
                 </div>

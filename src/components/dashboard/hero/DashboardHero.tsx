@@ -232,7 +232,7 @@ export function DashboardHeroComponent({
             <div className="mb-2 flex items-center justify-between gap-2">
               <Link
                 href={`/countries/${profileSlug}`}
-                className="group/title flex min-w-0 cursor-pointer items-center gap-2.5"
+                className="group/title flex min-w-0 cursor-pointer items-center gap-2"
                 title={`View ${stats.countryName} Profile`}
               >
                 <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-control">
@@ -248,7 +248,7 @@ export function DashboardHeroComponent({
                 </AvatarGlow>
 
                 <div className="flex min-w-0 flex-col">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-label text-title-3 truncate underline-offset-2 group-hover/title:underline">
                       {stats.countryName}
                     </span>
@@ -257,7 +257,7 @@ export function DashboardHeroComponent({
                     )}
                   </div>
 
-                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
                     {stats.governmentType && (
                       <Badge variant="neutral">{stats.governmentType}</Badge>
                     )}

@@ -14,7 +14,7 @@ const sizeConfig = {
     container: "h-9 w-9 rounded-row p-1",
   },
   md: {
-    container: "h-11 w-11 rounded-card p-1.5",
+    container: "h-11 w-11 rounded-card p-2",
   },
   lg: {
     container: "h-14 w-14 rounded-card p-2",

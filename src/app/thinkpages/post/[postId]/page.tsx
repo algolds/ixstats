@@ -241,7 +241,7 @@ export default function PostPage({ params }: PostPageProps) {
             }
             disabled={!currentAccount || createPostMutation.isPending}
             aria-label="Reply"
-            className="text-body text-label placeholder:text-label-tertiary flex-1 border-none bg-transparent py-1.5 focus:outline-none disabled:opacity-50"
+            className="text-body text-label placeholder:text-label-tertiary flex-1 border-none bg-transparent py-2 focus:outline-none disabled:opacity-50"
           />
 
           <Button

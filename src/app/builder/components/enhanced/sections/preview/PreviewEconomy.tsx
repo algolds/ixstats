@@ -54,7 +54,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
 
       {/* Labor & Employment */}
       {laborEmployment && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Briefcase className="text-tint h-3.5 w-3.5" />
             Labor
@@ -112,7 +112,7 @@ export const PreviewEconomy = memo(function PreviewEconomy({
 
       {/* Demographics */}
       {demographics && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Users className="text-tint h-3.5 w-3.5" />
             Demographics

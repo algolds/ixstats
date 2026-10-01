@@ -244,7 +244,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <h3 className="text-headline text-label truncate">{displayTitle}</h3>
                 {isSystemThread || isLoreBotThread ? (
                   <Badge variant="caution">Official</Badge>

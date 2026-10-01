@@ -84,7 +84,7 @@ function WikiBreadcrumb() {
   // ── Narrator Active in Breadcrumb: Clean, tactile, zero clutter ──
   if (isNarratorActive && narratorActions) {
     return (
-      <div className="flex max-w-[170px] min-w-0 items-center gap-1.5 select-none sm:max-w-[220px]">
+      <div className="flex max-w-[170px] min-w-0 items-center gap-2 select-none sm:max-w-[220px]">
         {/* Leading: Tactile Apple Play/Pause Morph Button */}
         <button
           type="button"
@@ -130,7 +130,7 @@ function WikiBreadcrumb() {
 
   // ── Default Reading / Profile Breadcrumb ──
   return (
-    <div className="flex max-w-[160px] min-w-0 items-center gap-1.5 sm:max-w-[200px]">
+    <div className="flex max-w-[160px] min-w-0 items-center gap-2 sm:max-w-[200px]">
       {/* Title or Personalized Greeting */}
       {hasSpecificTitle ? (
         <span
@@ -140,7 +140,7 @@ function WikiBreadcrumb() {
           {articleTitle}
         </span>
       ) : (
-        <span className="flex min-w-0 items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-2">
           {user?.imageUrl ? (
             <img
               src={user.imageUrl}
@@ -178,7 +178,7 @@ function WikiBreadcrumb() {
                 {activeSectionName}
               </span>
             </PopoverTrigger>
-            <PopoverContent side="bottom" align="start" sideOffset={8} className="w-56 p-1.5">
+            <PopoverContent side="bottom" align="start" sideOffset={8} className="w-56 p-2">
               <div className="max-h-[200px] scrollbar-thin space-y-0.5 overflow-y-auto select-none">
                 {tocEntries
                   .filter((e) => e.level <= 3)
@@ -192,7 +192,7 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "text-caption rounded-control-sm flex w-full cursor-pointer items-center px-2.5 py-1.5 text-left transition-colors duration-150 select-none",
+                          "text-caption rounded-control-sm flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors duration-150 select-none",
                           isActive && !themeColors
                             ? "bg-fill-3 text-label"
                             : isActive

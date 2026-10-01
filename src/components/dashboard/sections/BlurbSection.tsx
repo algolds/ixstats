@@ -83,7 +83,7 @@ export function BlurbSection() {
 
           {/* Footer meta and call to action */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-label-secondary text-footnote flex items-center gap-1.5 tabular-nums">
+            <span className="text-label-secondary text-footnote flex items-center gap-2 tabular-nums">
               <MessageCircle aria-hidden className="size-3.5" />
               {responseCount} {responseCount === 1 ? "response" : "responses"}
             </span>
@@ -198,7 +198,7 @@ export function BlurbResponseModal({
                   aria-label="Your response"
                   className="text-label placeholder:text-label-tertiary text-body w-full resize-none bg-transparent px-3 py-2 focus:outline-none"
                 />
-                <div className="border-separator text-footnote flex items-center justify-between border-t px-3 py-1.5">
+                <div className="border-separator text-footnote flex items-center justify-between border-t px-3 py-2">
                   <span
                     className={cn(
                       "tabular-nums transition-colors",
@@ -246,7 +246,7 @@ export function BlurbResponseModal({
         {/* User's existing submitted response */}
         {isSignedIn && myResponse && (
           <div className="border-separator bg-surface-secondary border-b px-5 py-4">
-            <div className="text-success text-subhead mb-1 flex items-center gap-1.5">
+            <div className="text-success text-subhead mb-1 flex items-center gap-2">
               <CheckCircle2 aria-hidden className="size-4" />
               <span>Your country&apos;s dispatch</span>
             </div>
@@ -293,7 +293,7 @@ export function BlurbResponseModal({
                   r.featured ? "border-caution/40" : "border-transparent"
                 )}
               >
-                <div className="mb-1.5 flex items-center justify-between gap-2">
+                <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {countryFlag ? (
                       <img src={countryFlag} alt="" className="h-3.5 w-5 rounded-xs object-cover" />
@@ -323,7 +323,7 @@ export function BlurbResponseModal({
                 {r.linkedArticles &&
                   Array.isArray(r.linkedArticles) &&
                   r.linkedArticles.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {r.linkedArticles.map(
                         (article: { title: string; url: string }, i: number) => (
                           <Link
@@ -367,7 +367,7 @@ export function BlurbResponseModal({
         <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
             href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
-            className="text-tint text-footnote inline-flex items-center gap-1.5 underline-offset-2 hover:underline"
+            className="text-tint text-footnote inline-flex items-center gap-2 underline-offset-2 hover:underline"
           >
             <ExternalLink aria-hidden className="size-3.5" />
             <span>Open full topic</span>

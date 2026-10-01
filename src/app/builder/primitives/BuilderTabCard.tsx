@@ -124,7 +124,7 @@ export function BuilderTabCard({
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "rounded-control text-caption relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-1.5 px-3 py-2 font-semibold whitespace-nowrap transition-colors duration-200",
+                  "rounded-control text-caption relative z-10 flex flex-1 cursor-pointer items-center justify-center gap-2 px-3 py-2 font-semibold whitespace-nowrap transition-colors duration-200",
                   isActive ? currentTheme.activeText : "text-label-secondary hover:text-label"
                 )}
                 whileTap={{ scale: 0.97 }}

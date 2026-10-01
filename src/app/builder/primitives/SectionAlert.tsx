@@ -15,7 +15,7 @@ export function SectionAlerts({ alerts, className }: SectionAlertsProps) {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div className={cn("space-y-2.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {alerts.map((alert, idx) => {
         const isError = alert.severity === "error";
         const isWarning = alert.severity === "warning";
@@ -25,7 +25,7 @@ export function SectionAlerts({ alerts, className }: SectionAlertsProps) {
             key={`${alert.section}-${alert.field ?? idx}-${alert.message}`}
             variant={isError ? "destructive" : "default"}
             className={cn(
-              "border py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+              "border py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isError && "border-destructive/30 bg-destructive/5 text-destructive",
               isWarning && "border-caution/30 bg-caution/10 text-caution",
               !isError && !isWarning && "border-blue/30 bg-blue/10 text-blue"
