@@ -5,11 +5,29 @@
  * Generates a two-column HTML diff table matching MediaWiki's diff format.
  */
 
+/** The diff would be longer than `maxOutputChars`: nothing is built past that point. */
+export class DiffTooLarge extends Error {
+  constructor() {
+    super("The diff is larger than the limit");
+    this.name = "DiffTooLarge";
+  }
+}
+
+export interface DiffOptions {
+  /** Stop with `DiffTooLarge` once the rows come to more than this many characters (default: no limit). */
+  maxOutputChars?: number;
+}
+
 /**
  * Compute a line-level diff between two wikitext strings
  * and produce an HTML table similar to MediaWiki's diff output.
+ * Linear in the number of lines once the inputs are too large for the exact algorithm.
  */
-export function computeWikitextDiff(oldText: string, newText: string): string {
+export function computeWikitextDiff(
+  oldText: string,
+  newText: string,
+  { maxOutputChars = Number.POSITIVE_INFINITY }: DiffOptions = {}
+): string {
   const oldLines = oldText.split("\n");
   const newLines = newText.split("\n");
 
@@ -21,14 +39,22 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
   }
 
   const rows: string[] = [];
+  let outputChars = 0;
+  const addRow = (row: string): void => {
+    outputChars += row.length + 1;
+    if (outputChars > maxOutputChars) throw new DiffTooLarge();
+    rows.push(row);
+  };
 
-  for (const change of changes) {
+  for (const [changeIndex, change] of changes.entries()) {
+    // Decided once per change, not once per line (it looks at the neighbouring changes).
+    const showContext = change.type === "equal" && isNearChange(changes, changeIndex, 3);
     switch (change.type) {
       case "equal":
         for (const line of change.lines) {
           // Context line (show a few around changes)
-          if (isNearChange(changes, change, 3)) {
-            rows.push(
+          if (showContext) {
+            addRow(
               `<tr>` +
                 `<td class="diff-marker" data-marker=" "></td>` +
                 `<td class="diff-context">${escapeHtml(line)}</td>` +
@@ -42,7 +68,7 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
 
       case "delete":
         for (const line of change.lines) {
-          rows.push(
+          addRow(
             `<tr>` +
               `<td class="diff-marker" data-marker="−"></td>` +
               `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
@@ -55,7 +81,7 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
 
       case "insert":
         for (const line of change.lines) {
-          rows.push(
+          addRow(
             `<tr>` +
               `<td class="diff-marker"></td>` +
               `<td class="diff-empty"></td>` +
@@ -69,7 +95,7 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
       case "replace":
         // Show deleted lines first, then added lines
         for (const line of change.oldLines) {
-          rows.push(
+          addRow(
             `<tr>` +
               `<td class="diff-marker" data-marker="−"></td>` +
               `<td class="diff-deletedline"><del class="diffchange diffchange-inline">${escapeHtml(line)}</del></td>` +
@@ -79,7 +105,7 @@ export function computeWikitextDiff(oldText: string, newText: string): string {
           );
         }
         for (const line of change.newLines) {
-          rows.push(
+          addRow(
             `<tr>` +
               `<td class="diff-marker"></td>` +
               `<td class="diff-empty"></td>` +
@@ -159,7 +185,7 @@ function longestCommonSubsequence(a: string[], b: string[]): [number, number][] 
   }
 
   // Standard DP
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0) as number[]);
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array.from({ length: n + 1 }, () => 0));
 
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
@@ -177,7 +203,7 @@ function longestCommonSubsequence(a: string[], b: string[]): [number, number][] 
     j = n;
   while (i > 0 && j > 0) {
     if (a[i - 1] === b[j - 1]) {
-      result.unshift([i - 1, j - 1]);
+      result.push([i - 1, j - 1]);
       i--;
       j--;
     } else if (dp[i - 1]![j]! > dp[i]![j - 1]!) {
@@ -187,40 +213,44 @@ function longestCommonSubsequence(a: string[], b: string[]): [number, number][] 
     }
   }
 
-  return result;
+  return result.reverse();
 }
 
 /**
- * Simple LCS for very large inputs — uses hash-based matching.
+ * Simple LCS for very large inputs — uses hash-based matching. Each line's candidate positions are
+ * walked once (a pointer per distinct line only moves forward), so it is linear in the line count
+ * even when one line is repeated a hundred thousand times.
  */
 function simpleLCS(a: string[], b: string[]): [number, number][] {
-  const bMap = new Map<string, number[]>();
+  const positions = new Map<string, { indices: number[]; next: number }>();
   for (let j = 0; j < b.length; j++) {
     const line = b[j]!;
-    if (!bMap.has(line)) bMap.set(line, []);
-    bMap.get(line)!.push(j);
+    const entry = positions.get(line);
+    if (entry) entry.indices.push(j);
+    else positions.set(line, { indices: [j], next: 0 });
   }
 
   const result: [number, number][] = [];
   let lastJ = -1;
 
   for (let i = 0; i < a.length; i++) {
-    const indices = bMap.get(a[i]!);
-    if (!indices) continue;
-    for (const j of indices) {
-      if (j > lastJ) {
-        result.push([i, j]);
-        lastJ = j;
-        break;
-      }
+    const entry = positions.get(a[i]!);
+    if (!entry) continue;
+    // `lastJ` only grows, so positions at or before it are never useful again for this line.
+    while (entry.next < entry.indices.length && entry.indices[entry.next]! <= lastJ) entry.next++;
+    const j = entry.indices[entry.next];
+    if (j !== undefined) {
+      result.push([i, j]);
+      lastJ = j;
     }
   }
 
   return result;
 }
 
-function isNearChange(changes: DiffChange[], current: DiffChange, context: number): boolean {
-  const idx = changes.indexOf(current);
+/** Whether the equal block `changes[idx]` is shown in full: the first and last block, or one beside a change, or a short one. */
+function isNearChange(changes: DiffChange[], idx: number, context: number): boolean {
+  const current = changes[idx]!;
   if (idx <= 0 || idx >= changes.length - 1) return true;
 
   // Check if there's a non-equal change within context lines

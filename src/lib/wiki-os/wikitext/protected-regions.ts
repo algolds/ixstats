@@ -34,7 +34,9 @@ const OPAQUE_TAG_NAMES = [
 /** `<ref>` content is wikitext, but it may hold blank lines, so a block scan steps over it whole. */
 const STEP_OVER_TAG_NAMES = [...OPAQUE_TAG_NAMES, "ref"] as const;
 
-const OPEN_TAG = new RegExp(`<(${STEP_OVER_TAG_NAMES.join("|")})(?=[\\s/>])[^>]*>`, "iy");
+const STEP_OVER_NAMES: ReadonlySet<string> = new Set(STEP_OVER_TAG_NAMES);
+/** The longest name in `STEP_OVER_TAG_NAMES`, with a little room: a longer run of letters is no such tag. */
+const MAX_TAG_NAME_LENGTH = 16;
 
 export interface OpenTag {
   /** Lower-case tag name. */
@@ -47,19 +49,38 @@ export interface OpenTag {
   selfClosing: boolean;
 }
 
+/**
+ * The first `>` at or after `from`, or -1. Scans of one text go forward, and the answer for `from`
+ * holds for every later position up to that `>`: remembering it keeps a text full of `<nowiki `
+ * openers that never close (each would scan to the end) linear instead of quadratic.
+ */
+let gtText = "";
+let gtFrom = 0;
+let gtAt = -1;
+function nextGreaterThan(text: string, from: number): number {
+  if (text === gtText && from >= gtFrom && (gtAt === -1 || from <= gtAt)) return gtAt;
+  gtText = text;
+  gtFrom = from;
+  gtAt = text.indexOf(">", from);
+  return gtAt;
+}
+
+const isAsciiLetter = (code: number) => (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+const WHITESPACE = /\s/;
+
 /** The opaque (or `<ref>`) opening tag that starts at `text[i]`, or null. */
 export function matchOpenTag(text: string, i: number): OpenTag | null {
   if (text.charCodeAt(i) !== 60) return null;
-  OPEN_TAG.lastIndex = i;
-  const match = OPEN_TAG.exec(text);
-  if (!match) return null;
-  const openEnd = i + match[0].length;
-  return {
-    name: match[1]!.toLowerCase(),
-    start: i,
-    openEnd,
-    selfClosing: match[0].endsWith("/>"),
-  };
+  let nameEnd = i + 1;
+  while (nameEnd - i <= MAX_TAG_NAME_LENGTH && isAsciiLetter(text.charCodeAt(nameEnd))) nameEnd++;
+  const name = text.slice(i + 1, nameEnd).toLowerCase();
+  if (!STEP_OVER_NAMES.has(name)) return null;
+  // The name must end at whitespace, "/" or ">" (`<referencesfoo>` is no `<references>`).
+  const next = text[nameEnd];
+  if (next === undefined || !(next === "/" || next === ">" || WHITESPACE.test(next))) return null;
+  const close = nextGreaterThan(text, nameEnd);
+  if (close === -1) return null;
+  return { name, start: i, openEnd: close + 1, selfClosing: text[close - 1] === "/" };
 }
 
 interface CloseTags {

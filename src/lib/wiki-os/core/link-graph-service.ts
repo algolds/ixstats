@@ -22,6 +22,67 @@ function articleTarget(rawTarget: string, source: string): CanonicalTitle | null
   return canon && !NON_ARTICLE_NAMESPACES.has(namespaceId ?? 0) ? canon : null;
 }
 
+/** A `[[Target#Section|Label]]` link as written. */
+export interface WikitextLink {
+  target: string;
+  section?: string;
+  label?: string;
+}
+
+/**
+ * `[[Target#Section|Label]]` links, left to right, as `/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g`
+ * would find them, in one pass. The regex backtracks over everything after each `[[` that never
+ * closes, so a text of `[[a[[a[[a...` costs time quadratic in its length; here every run up to the
+ * next `]`, `|` or `#` is looked up once (`stopper`) and shared by all the `[[` inside it.
+ */
+export function* wikitextLinks(wikitext: string): Generator<WikitextLink> {
+  const stopper = (stops: string) => {
+    let from = 0;
+    let stop = -1;
+    return (at: number): number => {
+      if (at < from || at > stop) {
+        from = at;
+        stop = at;
+        while (stop < wikitext.length && !stops.includes(wikitext[stop]!)) stop++;
+      }
+      return stop;
+    };
+  };
+  const targetEnd = stopper("]|#");
+  const sectionEnd = stopper("]|");
+  const labelEnd = stopper("]");
+
+  let open = wikitext.indexOf("[[");
+  while (open !== -1) {
+    const link = linkAt(open + 2);
+    if (link) {
+      yield link.link;
+      open = wikitext.indexOf("[[", link.end);
+    } else {
+      open = wikitext.indexOf("[[", open + 1);
+    }
+  }
+
+  function linkAt(start: number): { link: WikitextLink; end: number } | null {
+    let at = targetEnd(start);
+    if (at === start) return null;
+    const link: WikitextLink = { target: wikitext.slice(start, at) };
+    if (wikitext[at] === "#") {
+      const sectionStart = at + 1;
+      at = sectionEnd(sectionStart);
+      if (at === sectionStart) return null;
+      link.section = wikitext.slice(sectionStart, at);
+    }
+    if (wikitext[at] === "|") {
+      const labelStart = at + 1;
+      at = labelEnd(labelStart);
+      if (at === labelStart) return null;
+      link.label = wikitext.slice(labelStart, at);
+    }
+    return wikitext.startsWith("]]", at) ? { link, end: at + 2 } : null;
+  }
+}
+
 export interface ExtractedLink {
   targetSlug: string;
   /** Canonical title of the target: what `WikiArticle.title` holds when the page exists. */
@@ -29,6 +90,24 @@ export interface ExtractedLink {
   anchorText?: string;
   sectionAnchor?: string;
   isExternal: boolean;
+}
+
+/** Record a link to `target` once per `target#section`: the first anchor text wins. */
+function addLink(
+  linkMap: Map<string, ExtractedLink>,
+  target: CanonicalTitle,
+  section: string | undefined,
+  anchorText: string
+): void {
+  const key = `${target.slug}#${section || ""}`;
+  if (linkMap.has(key)) return;
+  linkMap.set(key, {
+    targetSlug: target.slug,
+    targetTitle: target.title,
+    anchorText,
+    sectionAnchor: section || undefined,
+    isExternal: false,
+  });
 }
 
 export class LinkGraphService {
@@ -39,50 +118,22 @@ export class LinkGraphService {
     const linkMap = new Map<string, ExtractedLink>();
 
     // 1. Parse Wikitext internal links: [[Target|Label]] or [[Target#Section|Label]]
-    const wikitextRegex = /\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g;
-    let match: RegExpExecArray | null;
-
-    while ((match = wikitextRegex.exec(wikitext)) !== null) {
-      const rawTarget = match[1]?.trim();
-      const section = match[2]?.trim();
-      const label = match[3]?.trim() || rawTarget;
-
+    for (const link of wikitextLinks(wikitext)) {
+      const rawTarget = link.target.trim();
       const target = rawTarget ? articleTarget(rawTarget, source) : null;
-      if (target) {
-        const key = `${target.slug}#${section || ""}`;
-        if (!linkMap.has(key)) {
-          linkMap.set(key, {
-            targetSlug: target.slug,
-            targetTitle: target.title,
-            anchorText: label,
-            sectionAnchor: section || undefined,
-            isExternal: false,
-          });
-        }
-      }
+      if (target) addLink(linkMap, target, link.section?.trim(), link.label?.trim() || rawTarget);
     }
 
     // 2. Parse HTML anchors: <a href="/wiki/Target">
     if (html) {
       const htmlRegex =
         /<a\s+[^>]*href=["'](?:\/wiki\/|\/w\/)([^"#'?]+)(?:#([^"']+))?["'][^>]*>(.*?)<\/a>/gi;
-      while ((match = htmlRegex.exec(html)) !== null) {
+      for (const match of html.matchAll(htmlRegex)) {
         const rawTarget = match[1]?.trim();
-        const section = match[2]?.trim();
-        const label = match[3]?.replace(/<[^>]*>/g, "").trim();
-
         const target = rawTarget ? articleTarget(decodeTitleParam(rawTarget), source) : null;
         if (target) {
-          const key = `${target.slug}#${section || ""}`;
-          if (!linkMap.has(key)) {
-            linkMap.set(key, {
-              targetSlug: target.slug,
-              targetTitle: target.title,
-              anchorText: label || target.slug,
-              sectionAnchor: section || undefined,
-              isExternal: false,
-            });
-          }
+          const label = match[3]?.replace(/<[^>]*>/g, "").trim();
+          addLink(linkMap, target, match[2]?.trim(), label || target.slug);
         }
       }
     }

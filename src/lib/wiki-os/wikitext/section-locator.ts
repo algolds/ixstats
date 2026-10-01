@@ -34,27 +34,48 @@ export function findSectionLine(wikitext: string, section: string): number | nul
 // Numbered sections (`action=edit&section=N`)
 // ---------------------------------------------------------------------------
 
-/** A heading line of wikitext, one to six `=` on both sides ("= Title =" is a level-1 section as in MediaWiki). */
-const SECTION_HEADING = /^(={1,6})(.+?)\1[ \t]*$/u;
-
 /**
  * `wikitext` with every comment and opaque element (`<nowiki>`, `<pre>`, ...) blanked out to spaces,
  * keeping every newline, so a heading-looking line inside one is not found and offsets still match.
+ * One pass: it jumps from `<` to `<`, and the protected-region scanners it asks are linear.
  */
 function maskProtected(wikitext: string): string {
-  let masked = "";
-  let i = 0;
-  while (i < wikitext.length) {
-    const end = wikitext[i] === "<" ? skipProtectedAt(wikitext, i) : null;
+  let open = wikitext.indexOf("<");
+  if (open === -1) return wikitext;
+  const parts: string[] = [];
+  let copied = 0;
+  while (open !== -1) {
+    const end = skipProtectedAt(wikitext, open);
     if (end === null) {
-      masked += wikitext[i];
-      i++;
+      open = wikitext.indexOf("<", open + 1);
     } else {
-      masked += wikitext.slice(i, end).replace(/[^\n]/gu, " ");
-      i = end;
+      parts.push(wikitext.slice(copied, open), wikitext.slice(open, end).replace(/[^\n]/gu, " "));
+      copied = end;
+      open = wikitext.indexOf("<", end);
     }
   }
-  return masked;
+  parts.push(wikitext.slice(copied));
+  return parts.join("");
+}
+
+const isBlank = (char: string | undefined) => char === " " || char === "\t" || char === "\r";
+
+/**
+ * The level and text of a heading line ("= Title =" is a level-1 section as in MediaWiki), or null.
+ * One to six `=` count on both sides and the smaller side wins ("=== Odd ==" is level 2 titled
+ * "= Odd"). Linear: it counts the `=` at both ends and never backtracks.
+ */
+function headingOfLine(line: string): { level: number; text: string } | null {
+  let end = line.length;
+  while (end > 0 && isBlank(line[end - 1])) end--;
+  let left = 0;
+  while (left < end && line[left] === "=") left++;
+  let right = 0;
+  while (right < end - left && line[end - 1 - right] === "=") right++;
+  const level = Math.min(left, right, 6);
+  if (level === 0) return null;
+  const text = line.slice(level, end - level).trim();
+  return text ? { level, text } : null;
 }
 
 export interface SectionRange {
@@ -78,9 +99,8 @@ export function sectionHeadings(wikitext: string): SectionHeading[] {
   const headings: SectionHeading[] = [];
   let offset = 0;
   for (const line of maskProtected(wikitext).split("\n")) {
-    const match = SECTION_HEADING.exec(line);
-    const text = match?.[2]?.trim();
-    if (match && text) headings.push({ start: offset, level: match[1]!.length, text });
+    const heading = headingOfLine(line);
+    if (heading) headings.push({ start: offset, ...heading });
     offset += line.length + 1;
   }
   return headings;
