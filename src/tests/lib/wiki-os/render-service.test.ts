@@ -676,7 +676,7 @@ describe("loadViewBundle", () => {
 
 describe("renderFallbackView", () => {
   it("compiles the wikitext in-process, without MediaWiki and without persisting", async () => {
-    mockFindUnique.mockResolvedValue({ wikitext: "'''Bold''' text", contentHtml: null });
+    mockFindUnique.mockResolvedValue({ wikitext: "'''Bold''' text", contentHtml: null, revisions: [] });
 
     const bundle = await renderFallbackView("a");
 
@@ -689,6 +689,7 @@ describe("renderFallbackView", () => {
     mockFindUnique.mockResolvedValue({
       wikitext: "Newer text",
       contentHtml: "<p>Earlier render.</p>",
+      revisions: [{ byteSize: 10, textDeleted: false }],
     });
 
     const bundle = await renderFallbackView("a");
@@ -698,15 +699,44 @@ describe("renderFallbackView", () => {
   });
 
   it("uses the stored HTML of an HTML-only row", async () => {
-    mockFindUnique.mockResolvedValue({ wikitext: "", contentHtml: "<p>Legacy.</p>" });
+    mockFindUnique.mockResolvedValue({ wikitext: "", contentHtml: "<p>Legacy.</p>", revisions: [] });
 
     await expect(renderFallbackView("a")).resolves.toMatchObject({
       bodyHtml: expect.stringContaining("Legacy."),
     });
   });
 
+  it("is an empty bundle for a page an edit blanked, whatever HTML its earlier text left behind (m4)", async () => {
+    mockFindUnique.mockResolvedValue({
+      wikitext: "",
+      contentHtml: "<p>Old content that must not come back.</p>",
+      revisions: [{ byteSize: 0, textDeleted: false }],
+    });
+
+    const bundle = await renderFallbackView("a");
+
+    expect(bundle).toEqual(buildViewBundle(""));
+    expect(JSON.stringify(bundle)).not.toContain("Old content");
+    expect(mockFindUnique.mock.calls[0]?.[0].select.revisions).toEqual({
+      where: { parked: false },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 1,
+      select: { byteSize: true, textDeleted: true },
+    });
+  });
+
+  it("keeps the stored HTML of a stub whose text was never imported (a revision that only holds a size, or a hidden one)", async () => {
+    for (const revisions of [[{ byteSize: 480, textDeleted: false }], [{ byteSize: 0, textDeleted: true }]]) {
+      mockFindUnique.mockResolvedValueOnce({ wikitext: "", contentHtml: "<p>Legacy.</p>", revisions });
+
+      await expect(renderFallbackView("a")).resolves.toMatchObject({
+        bodyHtml: expect.stringContaining("Legacy."),
+      });
+    }
+  });
+
   it("is null for a stub and for a missing article", async () => {
-    mockFindUnique.mockResolvedValueOnce({ wikitext: "", contentHtml: "" });
+    mockFindUnique.mockResolvedValueOnce({ wikitext: "", contentHtml: "", revisions: [] });
     await expect(renderFallbackView("a")).resolves.toBeNull();
 
     mockFindUnique.mockResolvedValueOnce(null);

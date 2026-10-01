@@ -183,18 +183,45 @@ export async function loadViewBundle(articleId: string): Promise<LoadedViewBundl
   }
 }
 
+/** The page's current revision as the blank check needs it: size and whether its text is hidden (see `isBlanked`). */
+const CURRENT_REVISION = {
+  where: { parked: false },
+  orderBy: [{ createdAt: "desc" as const }, { id: "desc" as const }],
+  take: 1,
+  select: { byteSize: true, textDeleted: true },
+} satisfies Prisma.WikiArticle$revisionsArgs;
+
+/**
+ * Whether the page's current live revision IS its blank text: an edit blanked it (the revision is as long as the text,
+ * and its text is not hidden). An HTML-only row has no revision, and a stub whose text was never imported has one that
+ * only holds a size, or a hidden one: for those the stored HTML is all the page has.
+ */
+function isBlanked(article: {
+  wikitext: string;
+  revisions: Array<{ byteSize: number; textDeleted: boolean }>;
+}): boolean {
+  const [current] = article.revisions;
+  return (
+    current !== undefined &&
+    !current.textDeleted &&
+    current.byteSize === Buffer.byteLength(article.wikitext, "utf8")
+  );
+}
+
 /**
  * A view built in-process for an article that has no bundle and whose render failed: the HTML
  * MediaWiki produced for an earlier revision (`contentHtml`), else the wikitext compiled locally
- * (no templates, no Lua). Sanitized like any bundle, never persisted. Null when the article has
- * neither (a stub).
+ * (no templates, no Lua). Sanitized like any bundle, never persisted. An empty bundle for a page an edit blanked
+ * (see `isBlanked`). Null when the article has nothing (a stub).
  */
 export async function renderFallbackView(articleId: string): Promise<ViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
     where: { id: articleId },
-    select: { wikitext: true, contentHtml: true },
+    select: { wikitext: true, contentHtml: true, revisions: CURRENT_REVISION },
   });
   if (!row) return null;
+  // A page an edit blanked shows nothing: the HTML kept from its earlier text is not its content.
+  if (row.wikitext.trim() === "" && isBlanked(row)) return buildViewBundle("");
   const html = row.contentHtml?.trim()
     ? row.contentHtml
     : parseWikitextToHtml(row.wikitext, "ixwiki");
@@ -220,23 +247,6 @@ const BLANK_PAGE_METADATA: RenderMetadata = {
   displayTitle: null,
   properties: {},
 };
-
-/**
- * Whether the page's current live revision IS its blank text: an edit blanked it (the revision is as long as the text,
- * and its text is not hidden). An HTML-only row has no revision, and a stub whose text was never imported has one that
- * only holds a size, or a hidden one: for those the stored HTML is all the page has.
- */
-function isBlanked(article: {
-  wikitext: string;
-  revisions: Array<{ byteSize: number; textDeleted: boolean }>;
-}): boolean {
-  const [current] = article.revisions;
-  return (
-    current !== undefined &&
-    !current.textDeleted &&
-    current.byteSize === Buffer.byteLength(article.wikitext, "utf8")
-  );
-}
 
 /**
  * The HTML to build the bundle from: MediaWiki's parse of the article's own wikitext; nothing for a page an
@@ -334,13 +344,8 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
         source: true,
         wikitext: true,
         contentHtml: true,
-        // The page's current revision: tells a page an edit blanked from one that only has stored HTML (see `isBlanked`).
-        revisions: {
-          where: { parked: false },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: { byteSize: true, textDeleted: true },
-        },
+        // tells a page an edit blanked from one that only has stored HTML (see `isBlanked`)
+        revisions: CURRENT_REVISION,
       },
     });
     if (!article) return FAILED;
