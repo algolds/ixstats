@@ -52,10 +52,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
   wikitextToHtml: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  __esModule: true,
-  MediaWikiExportWorker: { enqueue: jest.fn() },
-}));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },

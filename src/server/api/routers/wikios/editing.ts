@@ -16,7 +16,6 @@ import {
   getArticleHistoryShadow,
 } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import {
   getWikiActorLabel,
@@ -165,17 +164,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         authorName
       );
 
-      // 2. Background MediaWiki sync & cache purge
-      MediaWikiExportWorker.enqueue({
-        slug: title,
-        title,
-        wikitext: input.wikitext,
-        summary: input.summary,
-        minor: input.minor,
-        authorWikiUsername: authorName,
-        revisionId: saveResult.revisionId,
-      });
-
+      // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
       void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
@@ -223,17 +212,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         authorName
       );
 
-      // 2. Background MediaWiki sync
-      MediaWikiExportWorker.enqueue({
-        slug: title,
-        title,
-        wikitext: restoredWikitext,
-        summary,
-        minor: false,
-        authorWikiUsername: authorName,
-        revisionId: saveResult.revisionId,
-      });
-
+      // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
       void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
@@ -299,17 +278,7 @@ export const wikiosEditingRouter = createTRPCRouter({
         authorName
       );
 
-      // 2. Background MediaWiki sync
-      MediaWikiExportWorker.enqueue({
-        slug: title,
-        title,
-        wikitext: restoredWikitext,
-        summary,
-        minor: false,
-        authorWikiUsername: authorName,
-        revisionId: saveResult.revisionId,
-      });
-
+      // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
       void CloudflareGuardian.purgeArticleEdgeCache(title);
 
       return {
@@ -368,23 +337,20 @@ export const wikiosEditingRouter = createTRPCRouter({
       }
 
       // 2. Upload to MediaWiki Action API
-      const result = await executeMediaWikiWrite(
-        {
-          action: "upload",
-          filename: fileName,
-          comment: `${input.comment} (via WikiOS)`,
-          text: input.description,
-          ignorewarnings: "1",
-        },
-        ctx
-      );
+      const result = await executeMediaWikiWrite({
+        action: "upload",
+        filename: fileName,
+        comment: `${input.comment} (via WikiOS)`,
+        text: input.description,
+        ignorewarnings: "1",
+      });
 
-      const resAny = result.result as any;
+      const { upload } = result.result;
       return {
         success: result.success,
-        filename: resAny?.upload?.filename ?? fileName,
-        url: resAny?.upload?.imageinfo?.url ?? null,
-        descriptionUrl: resAny?.upload?.imageinfo?.descriptionurl ?? null,
+        filename: upload?.filename ?? fileName,
+        url: upload?.imageinfo?.url ?? null,
+        descriptionUrl: upload?.imageinfo?.descriptionurl ?? null,
       };
     }),
 

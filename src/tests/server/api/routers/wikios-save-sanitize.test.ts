@@ -40,10 +40,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
   wikitextToHtml: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  __esModule: true,
-  MediaWikiExportWorker: { enqueue: jest.fn() },
-}));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
@@ -68,7 +64,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import {
   getRevisionWikitextShadow,
   getArticleHistoryShadow,
@@ -215,7 +210,6 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
       code: "FORBIDDEN",
     });
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
-    expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
   });
 
   it.each(forbidden)("revertToRevision refuses %s for a non-admin", async (title) => {
@@ -237,9 +231,6 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     await caller.saveWikitext({ title: "Caphiria", wikitext: "x" });
     await caller.saveWikitext({ title: "User:Linked/Notes", wikitext: "x" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
-    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Caphiria", revisionId: "rev-1" })
-    );
   });
 
   it("refuses another user's page and a user page without a verified linked account", async () => {
@@ -332,9 +323,6 @@ describe("wikiosEditingRouter canonical titles (plan 403)", () => {
       expect.objectContaining({ slug: "Foo bar", title: "Foo bar" }),
       expect.anything(),
       expect.anything()
-    );
-    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Foo bar" })
     );
   });
 
@@ -626,7 +614,6 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
     );
     await expect(caller.rollback({ title: "Gone" })).rejects.toMatchObject(refused);
     expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
-    expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
   });
 
   it("checks the caller's rights on a deleted title before telling them it was deleted", async () => {

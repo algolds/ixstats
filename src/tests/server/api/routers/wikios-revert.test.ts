@@ -36,10 +36,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
   wikitextToHtml: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  __esModule: true,
-  MediaWikiExportWorker: { enqueue: jest.fn() },
-}));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
   CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
@@ -64,7 +60,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
-import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 import {
   getRevisionWikitextShadow,
@@ -141,7 +136,6 @@ beforeEach(() => {
 
 const expectNothingSaved = () => {
   expect(ArticleRepository.saveArticle).not.toHaveBeenCalled();
-  expect(MediaWikiExportWorker.enqueue).not.toHaveBeenCalled();
   expect(CloudflareGuardian.purgeArticleEdgeCache).not.toHaveBeenCalled();
 };
 
@@ -190,9 +184,6 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
       expect.objectContaining({ editSummary: "Reverted to revision r1 via WikiOS" }),
       expect.anything(),
       expect.anything()
-    );
-    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Foo bar", wikitext: "old text", revisionId: "rev-new" })
     );
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledTimes(1);
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledWith("Foo bar");
@@ -288,7 +279,6 @@ describe("wikiosEditingRouter.rollback (plan 402)", () => {
       expect.anything(),
       expect.anything()
     );
-    expect(MediaWikiExportWorker.enqueue).toHaveBeenCalledTimes(1);
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledTimes(1);
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledWith("Foo bar");
   });
