@@ -166,6 +166,31 @@ describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", ()
 });
 
 const authorsQuery = api.wikios.getArticleAuthors.useQuery as jest.Mock;
+const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery as jest.Mock;
+
+describe("ArticleRenderer asks for Lorewards and awards only on an IxWiki page (plan 416)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("asks once for an IxWiki page", () => {
+    renderArticle("ixwiki");
+
+    expect(awardsQuery).toHaveBeenCalledWith(
+      { title: "Portal:Eurth" },
+      expect.objectContaining({ enabled: true })
+    );
+    expect(awardsQuery.mock.calls.every(([, options]) => options.enabled === true)).toBe(true);
+  });
+
+  it("does not ask for another wiki's page", () => {
+    renderArticle("iiwiki");
+
+    expect(awardsQuery).toHaveBeenCalledWith(
+      { title: "Portal:Eurth" },
+      expect.objectContaining({ enabled: false })
+    );
+    expect(awardsQuery.mock.calls.every(([, options]) => options.enabled === false)).toBe(true);
+  });
+});
 
 const EMBED_IDS = ["ixstats-embed-css", "ixstats-embed-js", "ixstats-embed-prefetch"];
 const embedAssets = () => EMBED_IDS.map((id) => document.getElementById(id));

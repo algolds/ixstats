@@ -570,9 +570,10 @@ export function ArticleRenderer({
 
   const citeTooltipPortal = useCiteTooltips(contentRef);
 
+  // Lorewards and article awards belong to IxWiki pages: another wiki's page asks for none.
   const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
     { title },
-    { staleTime: 300000 }
+    { staleTime: 300000, enabled: source === "ixwiki" }
   );
   const awardsData = awardsQuery.data;
 
