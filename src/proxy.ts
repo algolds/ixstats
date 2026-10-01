@@ -162,6 +162,20 @@ function handleWikiStandaloneRouting(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * `/wiki/<title>?action=raw` (MediaWiki's raw-wikitext URL, used by bots) is answered by
+ * /api/wiki/raw: rewritten there with the path after `/wiki/` as `path`, everything else untouched.
+ */
+function handleWikiRawRewrite(req: NextRequest): NextResponse | null {
+  const { pathname, searchParams } = req.nextUrl;
+  if (!pathname.startsWith("/wiki/") || searchParams.get("action") !== "raw") return null;
+
+  const url = req.nextUrl.clone();
+  url.pathname = "/api/wiki/raw";
+  url.searchParams.set("path", pathname.slice("/wiki/".length));
+  return NextResponse.rewrite(url);
+}
+
+/**
  * /admin and /settings are only gated inside the Clerk callback. When Clerk is
  * unavailable, those routes must fail closed instead of falling through unauthenticated.
  */
@@ -298,6 +312,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
   const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
   if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;
+
+  const wikiRawRewrite = handleWikiRawRewrite(req);
+  if (wikiRawRewrite) return wikiRawRewrite;
 
   const clerk = getClerkMiddleware();
   if (clerk) {
