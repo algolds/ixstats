@@ -6,11 +6,13 @@
  * (MediaWiki refuses such a file too, `filetype-mime-mismatch`). Only png, jpeg, gif, webp, svg and pdf are
  * accepted (`UPLOAD_EXTENSIONS`).
  *
- * An SVG is a document, so it is checked like one: it must start like an SVG, and it is refused when it holds
- * anything that could run or load something (a script, an event handler, a `javascript:` URL, a `foreignObject`,
- * an external reference, an entity declaration). MediaWiki refuses scripted SVGs as well. The scan is one pass over
- * the text (no backtracking pattern runs over it), so a hostile 10 MB file costs a bounded, linear amount of work.
+ * An SVG is a document, so it is checked like one (`svg-scan.ts`): it must be well-formed UTF-8 XML with an `svg` root, and
+ * it is refused when it holds anything that could run or load something (a script, an event handler, a `javascript:` URL,
+ * a `foreignObject`, an external reference, an entity declaration). MediaWiki refuses scripted SVGs as well. The scan is
+ * linear in the size of the file, so a hostile 10 MB file costs a bounded amount of work.
  */
+
+import { scanSvg, type SvgTag } from "./svg-scan";
 
 export type FileKind = "png" | "jpeg" | "gif" | "webp" | "svg" | "pdf";
 
@@ -167,203 +169,6 @@ function sniffWebp(bytes: Uint8Array): SniffResult {
 /** What an SVG may start with: an XML declaration, a comment, a DOCTYPE or the root element itself. */
 const SVG_START = /^(?:<\?xml[\s?]|<!--|<!doctype\s+svg|<svg[\s>/])/i;
 const SVG_ROOT = /<svg[\s>/]/i;
-/** Elements that run code or pull in another document. */
-const FORBIDDEN_ELEMENTS: ReadonlySet<string> = new Set([
-  "script",
-  "foreignobject",
-  "iframe",
-  "embed",
-  "object",
-  "applet",
-  "handler",
-  "listener",
-]);
-/** An image carried inline in a `data:` URL is a picture, not a document: the only `data:` value an SVG may reference. */
-const INLINE_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,/i;
-const NAMED_REFERENCES: Readonly<Record<string, string>> = {
-  colon: ":",
-  tab: "",
-  newline: "",
-  lpar: "(",
-  rpar: ")",
-};
-
-/** `value` as a browser reads a URL in it: character references decoded, whitespace and control characters dropped. */
-function normalizeReference(value: string): string {
-  return value
-    .replace(/&#x([0-9a-f]{1,6});?/gi, (_, hex: string) => safeChar(parseInt(hex, 16)))
-    .replace(/&#(\d{1,7});?/g, (_, dec: string) => safeChar(parseInt(dec, 10)))
-    .replace(
-      /&([a-z]{2,8});/gi,
-      (match, name: string) => NAMED_REFERENCES[name.toLowerCase()] ?? match
-    )
-    .replace(/[\s\u0000-\u001f\u007f-\u009f]+/g, "");
-}
-
-function safeChar(code: number): string {
-  return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "";
-}
-
-interface Tag {
-  name: string;
-  attrs: Array<readonly [string, string]>;
-}
-
-const isSpace = (char: string): boolean =>
-  char === " " || char === "\t" || char === "\n" || char === "\r" || char === "\f";
-
-/** The end of the name that starts at `from`: the first space, `=`, `/` or `>`. */
-function nameEnd(text: string, from: number, stops: string): number {
-  let at = from;
-  while (at < text.length && !isSpace(text.charAt(at)) && !stops.includes(text.charAt(at))) at++;
-  return at;
-}
-
-function skipSpaces(text: string, from: number): number {
-  let at = from;
-  while (at < text.length && isSpace(text.charAt(at))) at++;
-  return at;
-}
-
-/** One attribute starting at `from`: its name and value, and where the next thing starts. */
-function readAttribute(text: string, from: number): { name: string; value: string; end: number } {
-  const stop = nameEnd(text, from, "=/>");
-  const name = text.slice(from, stop);
-  let at = skipSpaces(text, stop);
-  if (text.charAt(at) !== "=") return { name, value: "", end: stop === from ? from + 1 : stop };
-  at = skipSpaces(text, at + 1);
-  const quote = text.charAt(at);
-  if (quote === '"' || quote === "'") {
-    const close = text.indexOf(quote, at + 1);
-    const end = close === -1 ? text.length : close;
-    return { name, value: text.slice(at + 1, end), end: end + 1 };
-  }
-  const end = nameEnd(text, at, ">");
-  return { name, value: text.slice(at, end), end };
-}
-
-/** Every element tag of the text, as a name and its attributes; comments, CDATA and processing instructions are skipped. */
-function* tagsOf(text: string): Generator<Tag> {
-  let at = text.indexOf("<");
-  while (at !== -1 && at < text.length) {
-    const next = text.charAt(at + 1);
-    if (text.startsWith("<!--", at)) {
-      const close = text.indexOf("-->", at + 4);
-      at = close === -1 ? -1 : text.indexOf("<", close + 3);
-      continue;
-    }
-    if (text.startsWith("<![CDATA[", at)) {
-      const close = text.indexOf("]]>", at + 9);
-      at = close === -1 ? -1 : text.indexOf("<", close + 3);
-      continue;
-    }
-    if (next === "?" || next === "!" || next === "/" || next === "") {
-      at = text.indexOf("<", at + 1);
-      continue;
-    }
-    const nameStop = nameEnd(text, at + 1, "/>");
-    const tag: Tag = { name: text.slice(at + 1, nameStop), attrs: [] };
-    let cursor = nameStop;
-    for (;;) {
-      cursor = skipSpaces(text, cursor);
-      const char = text.charAt(cursor);
-      if (char === "" || char === ">") break;
-      if (char === "/") {
-        cursor++;
-        continue;
-      }
-      const attribute = readAttribute(text, cursor);
-      if (attribute.name) tag.attrs.push([attribute.name, attribute.value]);
-      cursor = attribute.end;
-    }
-    yield tag;
-    at = text.indexOf("<", cursor + 1);
-  }
-}
-
-/** The part of an element name after any namespace prefix, lower-cased (`svg:script` is `script`). */
-const localName = (name: string): string => name.slice(name.lastIndexOf(":") + 1).toLowerCase();
-
-/** Whether a URL an SVG refers to stays inside the file: a fragment (`#grad`) or an inline raster image. */
-function isLocalReference(value: string): boolean {
-  const url = normalizeReference(value);
-  return url === "" || url.startsWith("#") || INLINE_IMAGE.test(url);
-}
-
-/** What is wrong with one tag, or null. */
-function tagProblem({ name, attrs }: Tag): string | null {
-  if (FORBIDDEN_ELEMENTS.has(localName(name))) return `it contains a <${localName(name)}> element`;
-  for (const [attribute, value] of attrs) {
-    const key = attribute.toLowerCase();
-    if (key.startsWith("on")) return `it has an event handler (${attribute})`;
-    if (localName(key) === "href" && !isLocalReference(value)) {
-      return "it refers to something outside the file (href)";
-    }
-    // <set attributeName="href" to="javascript:..."> and <animate> write an href the checks above never see.
-    if (key === "attributename" && localName(normalizeReference(value).toLowerCase()) === "href") {
-      return "it animates an href";
-    }
-  }
-  return null;
-}
-
-/** `value` without one pair of quotes around it. */
-function unquote(value: string): string {
-  const quote = value.charAt(0);
-  if ((quote === '"' || quote === "'") && value.length > 1 && value.endsWith(quote)) {
-    return value.slice(1, -1).trim();
-  }
-  return value;
-}
-
-/**
- * The first `url(...)` that points outside the file, or null. One forward pass: each `url(` is judged between itself and
- * the `)` that closes it, and the search goes on after that `)`, so no part of the text is read twice. A `url(` that is
- * never closed is refused at once (nothing after it could be told apart from its argument): scanning on from every
- * later `url(` to the end of the text would be quadratic, and the text is up to 10 MB of an uploader's choosing.
- */
-function externalUrlFunction(text: string): string | null {
-  const lower = text.toLowerCase();
-  let at = lower.indexOf("url(");
-  while (at !== -1) {
-    const close = text.indexOf(")", at + 4);
-    if (close === -1) return "it has a url() that is never closed";
-    const argument = unquote(text.slice(at + 4, close).trim());
-    if (!isLocalReference(argument)) return "it refers to something outside the file (url())";
-    at = lower.indexOf("url(", close + 1);
-  }
-  return null;
-}
-
-/** Strings that must appear nowhere in an SVG (checked on the text as a browser would read it). */
-const FORBIDDEN_TEXT: ReadonlyArray<readonly [string, string]> = [
-  ["javascript:", "it contains a javascript: URL"],
-  ["vbscript:", "it contains a vbscript: URL"],
-  ["data:text/html", "it contains an HTML data: URL"],
-  ["@import", "it imports a stylesheet"],
-  ["-moz-binding", "it binds an XBL document"],
-  ["expression(", "it contains a CSS expression"],
-];
-
-/**
- * Why `text` (an SVG document) must not be served, or null when it is clean: the reason is a sentence fragment that
- * finishes "This SVG was refused because ...".
- */
-export function svgProblem(text: string): string | null {
-  const lower = text.toLowerCase();
-  if (lower.includes("<!entity")) return "it declares an entity";
-  if (lower.includes("<?xml-stylesheet")) return "it loads an external stylesheet";
-  if (/<!doctype[^>]*\[/i.test(text.slice(0, 4096))) return "its DOCTYPE has an internal subset";
-  const flattened = normalizeReference(lower);
-  for (const [needle, reason] of FORBIDDEN_TEXT) {
-    if (flattened.includes(needle)) return reason;
-  }
-  for (const tag of tagsOf(text)) {
-    const problem = tagProblem(tag);
-    if (problem) return problem;
-  }
-  return externalUrlFunction(text);
-}
 
 const PIXELS_PER_UNIT: Readonly<Record<string, number>> = {
   "": 1,
@@ -403,15 +208,8 @@ function viewBoxSize(value: string | undefined): { width: number; height: number
 }
 
 /** The size an SVG states: its `width` and `height`, else its `viewBox`; null where it states none. */
-function svgSize(text: string): { width: number | null; height: number | null } {
-  let root: Tag | undefined;
-  for (const tag of tagsOf(text)) {
-    if (localName(tag.name) === "svg") {
-      root = tag;
-      break;
-    }
-  }
-  const attr = (name: string) => root?.attrs.find(([key]) => key.toLowerCase() === name)?.[1];
+function svgSize(root: SvgTag): { width: number | null; height: number | null } {
+  const attr = (name: string) => root.attrs.find(([key]) => key.toLowerCase() === name)?.[1];
   const box = viewBoxSize(attr("viewbox"));
   return {
     width: lengthInPixels(attr("width")) ?? box?.width ?? null,
@@ -419,13 +217,36 @@ function svgSize(text: string): { width: number | null; height: number | null } 
   };
 }
 
+/** The text of an SVG file, its BOM and leading white space gone; null when the bytes are not UTF-8. */
+function svgText(bytes: Uint8Array): string | null {
+  try {
+    return new TextDecoder("utf-8", { fatal: true })
+      .decode(bytes)
+      .replace(/^\uFEFF/, "")
+      .trimStart();
+  } catch {
+    return null;
+  }
+}
+
 function sniffSvg(bytes: Uint8Array): SniffResult | null {
-  const text = new TextDecoder("utf-8").decode(bytes).replace(/^﻿/, "").trimStart();
+  const text = svgText(bytes);
+  if (text === null) {
+    // not UTF-8: refused as an unsafe SVG when it starts like one, else it is just not a file we take
+    const head = new TextDecoder("utf-8")
+      .decode(bytes.subarray(0, 512))
+      .replace(/^\uFEFF/, "")
+      .trimStart();
+    return SVG_START.test(head)
+      ? fail("unsafe-svg", "This SVG was refused because it is not UTF-8.")
+      : null;
+  }
   if (!SVG_START.test(text)) return null;
   if (!SVG_ROOT.test(text)) return corrupt("SVG image");
-  const problem = svgProblem(text);
-  if (problem) return fail("unsafe-svg", `This SVG was refused because ${problem}.`);
-  const { width, height } = svgSize(text);
+  const scan = scanSvg(text);
+  if (scan.problem !== null)
+    return fail("unsafe-svg", `This SVG was refused because ${scan.problem}.`);
+  const { width, height } = svgSize(scan.root);
   return ok("svg", width, height);
 }
 

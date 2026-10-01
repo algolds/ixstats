@@ -7,9 +7,9 @@ import {
   extensionMatches,
   fileExtension,
   sniffFile,
-  svgProblem,
   type SniffResult,
 } from "~/lib/wiki-os/core/file-sniff";
+import { svgProblem } from "~/lib/wiki-os/core/svg-scan";
 
 const bytes = (...parts: Array<number | number[] | string>): Uint8Array =>
   Uint8Array.from(
@@ -314,11 +314,11 @@ describe("sniffFile: SVG", () => {
 
   it("reads ten megabytes of closed url() references in linear time, and accepts them when they stay in the file", () => {
     const started = Date.now();
-    const closed = `<svg><style>${"fill:url(#a);".repeat(Math.floor(9_800_000 / 13))}</style></svg>`;
-    expect(svgProblem(closed)).toBeNull();
+    const css = "fill:url(#a);".repeat(Math.floor(9_800_000 / 13));
+    expect(svgProblem(`<svg><style>${css}</style></svg>`)).toBeNull();
     expect(Date.now() - started).toBeLessThan(3_000);
     // one that leaves the file, at the very end, is still found
-    expect(svgProblem(`${closed}<style>a{fill:url(//evil.example/a)}</style>`)).toBe(
+    expect(svgProblem(`<svg><style>${css}a{fill:url(//evil.example/a)}</style></svg>`)).toBe(
       "it refers to something outside the file (url())"
     );
   });
