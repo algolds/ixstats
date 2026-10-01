@@ -5,11 +5,7 @@
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: { wikiRevision: { findMany: jest.fn() } },
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge/http-reader", () => ({
-  __esModule: true,
-  fetchMediaWikiPageAuthorsAndRevisions: jest.fn().mockResolvedValue(null),
+  db: { wikiRevision: { findMany: jest.fn() }, wikiAccountLink: { findMany: jest.fn() } },
 }));
 
 import { db } from "~/server/db";
@@ -45,6 +41,7 @@ const row = (over: Record<string, unknown> = {}) => ({
 const realFetch = globalThis.fetch;
 beforeEach(() => {
   jest.clearAllMocks();
+  (db.wikiAccountLink.findMany as unknown as jest.Mock).mockResolvedValue([]);
   globalThis.fetch = jest.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
 });
 afterAll(() => {
@@ -84,42 +81,6 @@ describe("user contributions", () => {
     const contribs = await ixwikiGetUserContribs("carol", 10);
 
     expect(contribs.map((c) => [c.rev_id, c.parked]).sort()).toEqual([
-      [101, true],
-      [99, false],
-    ]);
-  });
-
-  it("flags the MediaWiki contribution of a revision WikiOS parked (MediaWiki lists every edit its editor made)", async () => {
-    globalThis.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        query: {
-          usercontribs: [
-            {
-              revid: 101,
-              title: "Foo",
-              ns: 0,
-              timestamp: "2026-09-27T10:00:00Z",
-              comment: "x",
-              size: 20,
-            },
-            {
-              revid: 99,
-              title: "Bar",
-              ns: 0,
-              timestamp: "2026-09-26T10:00:00Z",
-              comment: "y",
-              size: 10,
-            },
-          ],
-        },
-      }),
-    }) as typeof fetch;
-    findMany.mockResolvedValue([row({ parked: true, mwRevId: 101 })]);
-
-    const contribs = await ixwikiGetUserContribs("carol", 10);
-
-    expect(contribs.map((c) => [c.rev_id, c.parked])).toEqual([
       [101, true],
       [99, false],
     ]);

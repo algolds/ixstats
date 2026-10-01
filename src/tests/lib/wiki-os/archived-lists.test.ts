@@ -15,6 +15,7 @@ jest.mock("~/server/db", () => ({
     wikiCategory: { findFirst: jest.fn() },
     wikiCategoryMember: { findMany: jest.fn() },
     wikiAsset: { count: jest.fn() },
+    wikiAccountLink: { findMany: jest.fn() },
     wikiTemplate: { findMany: jest.fn() },
     user: { count: jest.fn() },
     $queryRawUnsafe: jest.fn(),
@@ -44,6 +45,7 @@ const mockDb = jest.requireMock<{
     | "wikiCategory"
     | "wikiCategoryMember"
     | "wikiAsset"
+    | "wikiAccountLink"
     | "wikiTemplate"
     | "user",
     Delegate
@@ -62,6 +64,7 @@ beforeEach(() => {
   mockDb.wikiLink.findMany.mockResolvedValue([]);
   mockDb.wikiCategoryMember.findMany.mockResolvedValue([]);
   mockDb.wikiAsset.count.mockResolvedValue(0);
+  mockDb.wikiAccountLink.findMany.mockResolvedValue([]);
   mockDb.user.count.mockResolvedValue(0);
   mockDb.wikiTemplate.findMany.mockResolvedValue([]);
   mockDb.$queryRawUnsafe.mockResolvedValue([]);
@@ -125,7 +128,9 @@ describe("activity and links", () => {
     await ixwikiGetUserContribs("Amy", 10, 0);
     await ixwikiGetUserCreatedPages("Amy", 10);
     expect(mockDb.wikiRevision.findMany.mock.calls[0]?.[0].where.article).toMatchObject(published);
-    expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
+    // Created pages are one raw query over the pages' first revisions, which names the status.
+    const [strings] = mockDb.$queryRaw.mock.calls[0] as [TemplateStringsArray];
+    expect(strings.join("$")).toContain(`a."status" = 'PUBLISHED'`);
   });
 
   it("backlinks come from published pages, and a link to a deleted page is a red link", async () => {

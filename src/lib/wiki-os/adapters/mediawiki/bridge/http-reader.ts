@@ -3,6 +3,7 @@
 
 import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
 import {
+  type SisterWikiSource,
   type WikiArticle,
   type WikiSearchResult,
   type WikiSource,
@@ -228,12 +229,12 @@ export async function httpGetCategoryMembers(
 }
 
 /**
- * Fetch full revision lineage from MediaWiki to accurately identify the original page creator,
- * creation timestamp, latest editor, and all historical contributors.
+ * Fetch a sister wiki page's revision lineage to identify the original page creator, creation
+ * timestamp, latest editor, and all historical contributors. IxWiki's own come from Postgres.
  */
 export async function fetchMediaWikiPageAuthorsAndRevisions(
   title: string,
-  wiki: WikiSource = "ixwiki",
+  wiki: SisterWikiSource,
   limit: number = 250,
   timeoutMs: number = 8000
 ): Promise<{
@@ -251,12 +252,7 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
 } | null> {
   // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
   const cleanTitle = title.replace(/_/g, " ").trim();
-  const rawBase =
-    wiki === "iiwiki"
-      ? getIiwikiApiBaseUrl()
-      : wiki === "althistory"
-        ? ALTHISTORY_API
-        : DEFAULT_MEDIAWIKI_URL;
+  const rawBase = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
   const base = rawBase.replace(/\/+$/, "");
 
   const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);

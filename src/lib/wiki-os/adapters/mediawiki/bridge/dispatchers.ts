@@ -22,7 +22,6 @@ import {
   ixwikiGetWikitext,
   ixwikiSearch,
   ixwikiRecentChanges,
-  ixwikiGetHistory,
   ixwikiGetUserContribs,
   ixwikiGetUserCreatedPages,
   ixwikiGetUserInfo,
@@ -177,13 +176,6 @@ export async function getPageSections(
  */
 export async function getRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
   return ixwikiRecentChanges(limit);
-}
-
-/**
- * Get page revision history via direct MySQL.
- */
-export async function getPageHistory(title: string, limit?: number, offset?: number) {
-  return ixwikiGetHistory(title, limit, offset);
 }
 
 /**

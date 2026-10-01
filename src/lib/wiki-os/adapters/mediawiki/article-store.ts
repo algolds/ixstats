@@ -12,7 +12,6 @@ import { toArticleSlug, toRevisionRef } from "../../core/domain-types";
 import { loadRevisionAuthors } from "../../core/revision-authors";
 import {
   getArticleWikitext,
-  getPageHistory,
   getRevisionWikitext,
   type SisterWikiSource,
   type WikiSource,
@@ -103,51 +102,31 @@ export async function getRevisionWikitextShadow(
 }
 
 /**
- * Fetch revision history from PostgreSQL, falling back to MediaWiki. Parked revisions are left out
- * unless the caller is a history list (`includeParked`): everything that reads "the latest revision"
- * off this list (the edit-conflict check, rollback) must not see them.
+ * Fetch revision history from PostgreSQL. Parked revisions are left out unless the caller is a
+ * history list (`includeParked`): everything that reads "the latest revision" off this list (the
+ * edit-conflict check, rollback) must not see them. MediaWiki is never asked.
  */
 export async function getPageHistoryShadow(
   title: string,
   limit = 50,
-  offset?: number,
+  _offset?: number,
   source: WikiSource = "ixwiki",
   { includeParked = false }: { includeParked?: boolean } = {}
 ): Promise<{ revisions: HistoryRevision[]; hasMore: boolean; fromShadow: boolean }> {
-  // 1. Check PostgreSQL revision records
   const pgRevs = await ArticleRepository.getHistory(title, source, limit, { includeParked });
-  if (pgRevs.length > 0) {
-    return {
-      revisions: pgRevs.map((r) => ({
-        revid: toRevisionRef(r),
-        timestamp: r.createdAt.toISOString(),
-        user: r.author || "Wiki Contributor",
-        comment: r.summary || "",
-        size: r.byteSize || 0,
-        byteDelta: r.byteDelta ?? 0,
-        minor: r.minor,
-        parked: r.parked,
-      })),
-      hasMore: false,
-      fromShadow: true,
-    };
-  }
-
-  // 2. Fall back to MediaWiki
-  const revList = await getPageHistory(title, limit, offset);
   return {
-    revisions: revList.map((r) => ({
-      revid: String(r.rev_id),
-      timestamp: r.rev_timestamp,
-      user: r.rev_user_text || "Wiki Contributor",
-      comment: r.rev_comment || "",
-      size: r.rev_len || 0,
-      byteDelta: r.diff || 0,
-      minor: r.rev_minor_edit === 1,
+    revisions: pgRevs.map((r) => ({
+      revid: toRevisionRef(r),
+      timestamp: r.createdAt.toISOString(),
+      user: r.author || "Wiki Contributor",
+      comment: r.summary || "",
+      size: r.byteSize || 0,
+      byteDelta: r.byteDelta ?? 0,
+      minor: r.minor,
       parked: r.parked,
     })),
-    hasMore: revList.length >= limit,
-    fromShadow: false,
+    hasMore: false,
+    fromShadow: true,
   };
 }
 

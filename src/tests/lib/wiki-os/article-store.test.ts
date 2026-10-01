@@ -7,7 +7,6 @@ import {
 
 const mockGetArticleWikitext = jest.fn();
 const mockGetCurrentRevMeta = jest.fn();
-const mockGetPageHistory = jest.fn();
 const mockGetRevisionWikitext = jest.fn();
 
 const mockWikiArticleFindFirst = jest.fn();
@@ -43,7 +42,6 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: (...a: unknown[]) => mockGetArticleWikitext(...a),
   getCurrentRevMeta: (...a: unknown[]) => mockGetCurrentRevMeta(...a),
-  getPageHistory: (...a: unknown[]) => mockGetPageHistory(...a),
   getRevisionWikitext: (...a: unknown[]) => mockGetRevisionWikitext(...a),
 }));
 
@@ -170,7 +168,6 @@ test("history read-through serves local revisions when present", async () => {
   expect(mockWikiRevisionFindMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { articleId: "art1", parked: false } })
   );
-  expect(mockGetPageHistory).not.toHaveBeenCalled();
 });
 
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
@@ -201,24 +198,12 @@ test("history lists ask for parked revisions and get them flagged; everything el
   );
 });
 
-test("history read-through falls back to MediaWiki bridge when no local revisions", async () => {
+test("a page with no local revisions has an empty history: MediaWiki is not asked (plan 418)", async () => {
   mockWikiRevisionFindMany.mockResolvedValue([]);
-  mockGetPageHistory.mockResolvedValue([
-    {
-      rev_id: 7,
-      rev_timestamp: "2026-06-01T00:00:00Z",
-      rev_user_text: "carol",
-      rev_comment: "",
-      rev_len: 10,
-      rev_minor_edit: 0,
-      diff: 3,
-    },
-  ]);
 
   const res = await getArticleHistoryShadow("Foo", 50);
 
-  expect(mockGetPageHistory).toHaveBeenCalled();
-  expect(res.revisions[0]).toMatchObject({ revid: "7", user: "carol", byteDelta: 3 });
+  expect(res).toEqual({ revisions: [], hasMore: false, fromShadow: true });
 });
 
 describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and limited (NEW-5)", () => {
