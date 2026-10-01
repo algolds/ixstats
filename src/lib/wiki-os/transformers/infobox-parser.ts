@@ -9,6 +9,16 @@
  * Pure functions — no side effects, no database, no fetch.
  */
 
+import { isBlank } from "../wikitext/blank";
+import { forwardFinder } from "../wikitext/forward-finder";
+import {
+  replaceInlineTemplates,
+  replacePipedLinks,
+  replaceSimpleLinks,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "./clean-markup-passes";
+
 export interface InfoboxField {
   value: unknown;
   key: string;
@@ -39,17 +49,17 @@ export interface ParsedInfobox {
  */
 export function parseCoordTemplate(text: string): [number, number] | null {
   // {{coord|...}} format
-  const coordMatch = text.match(/\{\{coord\|([^}]+)\}\}/i);
-  if (coordMatch) {
-    const parts = coordMatch[1]!.split("|").map((s) => s.trim());
+  const coordBody = firstCoordBody(text);
+  if (coordBody !== null) {
+    const parts = coordBody.split("|").map((s) => s.trim());
     return parseCoordParts(parts);
   }
 
   // Try bare numeric coords
-  const numMatch = text.match(/(-?\d+\.?\d*)\s*[,|]\s*(-?\d+\.?\d*)/);
-  if (numMatch) {
-    const a = parseFloat(numMatch[1]!);
-    const b = parseFloat(numMatch[2]!);
+  const numbers = firstNumberPair(text);
+  if (numbers) {
+    const a = parseFloat(numbers[0]);
+    const b = parseFloat(numbers[1]);
     if (!isNaN(a) && !isNaN(b)) {
       // Heuristic: if first is lat range (-90 to 90), second is lng
       if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return [b, a]; // [lng, lat]
@@ -57,6 +67,62 @@ export function parseCoordTemplate(text: string): [number, number] | null {
     }
   }
 
+  return null;
+}
+
+/** What follows the first `{{coord|` that a `}}` closes (what `/\{\{coord\|([^}]+)\}\}/i` captures), or null. */
+export function firstCoordBody(text: string): string | null {
+  const nextBrace = forwardFinder(text, "}");
+  const opener = /\{\{coord\|/gi;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const start = found.index + found[0].length;
+    const close = nextBrace(start);
+    if (close === -1) return null; // nothing closes any later template either
+    if (close > start && text.charAt(close + 1) === "}") return text.slice(start, close);
+  }
+  return null;
+}
+
+const isDigit = (code: number): boolean => code >= 48 && code <= 57;
+
+/** The end of `\d+\.?\d*` that starts at `from`, a digit. */
+function numberEnd(text: string, from: number): number {
+  let at = from;
+  while (isDigit(text.charCodeAt(at))) at++;
+  if (text.charCodeAt(at) === 46) at++;
+  while (isDigit(text.charCodeAt(at))) at++;
+  return at;
+}
+
+/**
+ * The two numbers of the first `-?\d+\.?\d*\s*[,|]\s*-?\d+\.?\d*` in the text (what
+ * `/(-?\d+\.?\d*)\s*[,|]\s*(-?\d+\.?\d*)/` captures), or null. The first number of a candidate runs as far as it
+ * can, so every start inside one digit run answers alike: it is tried once, from its first digit.
+ */
+export function firstNumberPair(text: string): [string, string] | null {
+  let at = 0;
+  while (at < text.length) {
+    if (!isDigit(text.charCodeAt(at))) {
+      at++;
+      continue;
+    }
+    let runEnd = at;
+    while (isDigit(text.charCodeAt(runEnd))) runEnd++;
+    const leftEnd = numberEnd(text, at);
+    let separator = leftEnd;
+    while (isBlank(text.charCodeAt(separator))) separator++;
+    const code = text.charCodeAt(separator);
+    if (code === 44 || code === 124) {
+      let right = separator + 1;
+      while (isBlank(text.charCodeAt(right))) right++;
+      const digits = text.charCodeAt(right) === 45 ? right + 1 : right;
+      if (isDigit(text.charCodeAt(digits))) {
+        const left = text.charCodeAt(at - 1) === 45 ? at - 1 : at;
+        return [text.slice(left, leftEnd), text.slice(right, numberEnd(text, digits))];
+      }
+    }
+    at = runEnd;
+  }
   return null;
 }
 
@@ -113,16 +179,42 @@ function dmsToDecimal(parts: number[]): number {
 
 // ── Population parsing ─────────────────────────────────────────────
 
+/** The number written before the first million, billion or thousand (what `/([\d,.]+)\s*(million|billion|thousand)/i` captures), and that word. */
+export function firstMagnitude(text: string): [number: string, word: string] | null {
+  const word = /million|billion|thousand/gi;
+  for (let found = word.exec(text); found; found = word.exec(text)) {
+    let end = found.index;
+    while (end > 0 && isBlank(text.charCodeAt(end - 1))) end--;
+    let start = end;
+    while (start > 0 && /[\d,.]/.test(text.charAt(start - 1))) start--;
+    if (start < end) return [text.slice(start, end), found[0]];
+  }
+  return null;
+}
+
+/** The digits of the first `{{formatnum:1234567}}` or `{{formatnum|1,234}}` (what `/\{\{formatnum[:|](\d[\d,]*)\}\}/i` captures), or null. */
+export function firstFormatnum(text: string): string | null {
+  const opener = /\{\{formatnum[:|]/gi;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const start = found.index + found[0].length;
+    if (!isDigit(text.charCodeAt(start))) continue;
+    let end = start + 1;
+    while (isDigit(text.charCodeAt(end)) || text.charCodeAt(end) === 44) end++;
+    if (text.startsWith("}}", end)) return text.slice(start, end);
+  }
+  return null;
+}
+
 /** Parse population strings like "1,234,567", "12.5 million", "{{formatnum:1234567}}" */
 export function parsePopulation(text: string): number | null {
   // Strip wiki templates
-  let clean = text.replace(/\{\{[^}]*\}\}/g, "").trim();
+  let clean = replaceInlineTemplates(text, /\{\{[^}]*\}\}/, () => "").trim();
 
   // "12.5 million" / "1.2 billion"
-  const millMatch = clean.match(/([\d,.]+)\s*(million|billion|thousand)/i);
+  const millMatch = firstMagnitude(clean);
   if (millMatch) {
-    const num = parseFloat(millMatch[1]!.replace(/,/g, ""));
-    const mult = millMatch[2]!.toLowerCase();
+    const num = parseFloat(millMatch[0].replace(/,/g, ""));
+    const mult = millMatch[1].toLowerCase();
     if (!isNaN(num)) {
       if (mult === "billion") return Math.round(num * 1e9);
       if (mult === "million") return Math.round(num * 1e6);
@@ -131,8 +223,8 @@ export function parsePopulation(text: string): number | null {
   }
 
   // Extract {{formatnum:1234567}} or {{formatnum|1234567}} value
-  const fmtMatch = text.match(/\{\{formatnum[:|](\d[\d,]*)\}\}/i);
-  if (fmtMatch) clean = fmtMatch[1]!;
+  const formatnum = firstFormatnum(text);
+  if (formatnum !== null) clean = formatnum;
 
   // Plain numeric
   const num = parseFloat(clean.replace(/[,\s]/g, ""));
@@ -145,13 +237,13 @@ export function parsePopulation(text: string): number | null {
 export function cleanWikiValue(raw: string): string {
   let s = raw;
   // [[Link|Display]] → Display; [[Link]] → Link
-  s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  s = unpackInternalLinks(s);
   // '''bold''' / ''italic''
   s = s.replace(/'{2,3}/g, "");
   // Strip remaining templates (but keep their first arg for simple ones)
-  s = s.replace(/\{\{[^}]*\}\}/g, "");
+  s = replaceInlineTemplates(s, /\{\{[^}]*\}\}/, () => "");
   // HTML tags
-  s = s.replace(/<[^>]+>/g, "");
+  s = stripHtmlTags(s);
   // &nbsp; etc
   s = s.replace(/&\w+;/g, " ");
   // Collapse whitespace
@@ -218,10 +310,10 @@ export function parseInfobox(wikitext: string): ParsedInfobox | null {
   let depth = 0;
   let infoboxEnd = -1;
   for (let i = infoboxStart; i < wikitext.length - 1; i++) {
-    if (wikitext[i] === "{" && wikitext[i + 1] === "{") {
+    if (wikitext.charCodeAt(i) === 123 && wikitext.charCodeAt(i + 1) === 123) {
       depth++;
       i++; // skip next char
-    } else if (wikitext[i] === "}" && wikitext[i + 1] === "}") {
+    } else if (wikitext.charCodeAt(i) === 125 && wikitext.charCodeAt(i + 1) === 125) {
       depth--;
       i++;
       if (depth === 0) {
@@ -252,19 +344,21 @@ export function parseInfobox(wikitext: string): ParsedInfobox | null {
   let fieldStart = 0;
 
   for (let i = 0; i < fieldsStr.length; i++) {
-    if (fieldsStr[i] === "{" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "{") {
+    const code = fieldsStr.charCodeAt(i);
+    const next = fieldsStr.charCodeAt(i + 1); // NaN past the end: no pair
+    if (code === 123 && next === 123) {
       templateDepth++;
       i++;
-    } else if (fieldsStr[i] === "}" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "}") {
+    } else if (code === 125 && next === 125) {
       templateDepth--;
       i++;
-    } else if (fieldsStr[i] === "[" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "[") {
+    } else if (code === 91 && next === 91) {
       linkDepth++;
       i++;
-    } else if (fieldsStr[i] === "]" && i + 1 < fieldsStr.length && fieldsStr[i + 1] === "]") {
+    } else if (code === 93 && next === 93) {
       linkDepth--;
       i++;
-    } else if (fieldsStr[i] === "|" && templateDepth === 0 && linkDepth === 0) {
+    } else if (code === 124 && templateDepth === 0 && linkDepth === 0) {
       const fieldStr = fieldsStr.slice(fieldStart, i);
       const parsed = parseField(fieldStr);
       if (parsed) fields.push(parsed);
@@ -342,6 +436,13 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
 }
 
 /**
+ * ponytail: MAX_INFOBOX_ROWS, 1,000: the most rows an infobox is drawn with. An infobox has a hundred fields
+ * at the most; a text of two million characters can be 200,000 `|`-separated fields, and each is a table row of
+ * 500 characters of markup.
+ */
+const MAX_INFOBOX_ROWS = 1_000;
+
+/**
  * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
  */
 export function renderInfoboxHtml(parsed: ParsedInfobox): string {
@@ -382,20 +483,22 @@ export function renderInfoboxHtml(parsed: ParsedInfobox): string {
     }
   }
 
+  let rendered = 0;
   for (const f of parsed.fields) {
     if (!f.cleanValue || f === titleField || f === imageField) continue;
+    if (++rendered > MAX_INFOBOX_ROWS) break;
     const label = f.key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     // Format wiki links inside clean value: [[Target|Label]] -> <a href="/wiki/Target">Label</a>
-    const formattedVal = f.cleanValue
-      .replace(
-        /\[\[([^|\]]+)\|([^\]]+)\]\]/g,
-        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$2</a>'
-      )
-      .replace(
-        /\[\[([^\]]+)\]\]/g,
-        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$1</a>'
-      );
+    const formattedVal = replaceSimpleLinks(
+      replacePipedLinks(
+        f.cleanValue,
+        (target, shown) =>
+          `<a href="/wiki/${target}" class="text-wiki hover:underline font-medium">${shown}</a>`
+      ),
+      (target) =>
+        `<a href="/wiki/${target}" class="text-wiki hover:underline font-medium">${target}</a>`
+    );
 
     rows += `<tr class="infobox-row border-b border-border/20 last:border-b-0 hover:bg-muted/15 transition-colors"><th scope="row" class="infobox-label py-1.5 px-2.5 text-left text-xs font-semibold text-muted-foreground align-top w-2/5">${label}</th><td class="infobox-data py-1.5 px-2.5 text-left text-xs text-foreground align-top leading-relaxed">${formattedVal}</td></tr>`;
   }

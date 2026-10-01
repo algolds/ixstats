@@ -1,46 +1,212 @@
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { resolveImageUrl, getImageUrl } from "./image-url";
-import { parseInfoboxToHtml } from "./infobox-parser";
-import { splitBalancedPipes } from "../wikitext/parameter-parser";
-import { findMatchingClosingBrackets } from "../wikitext/link-parser";
-import { matchBrackets } from "../wikitext/match-index";
+/** @jest-environment node */
+/**
+ * The linear rewrites behind the fallback compiler (plan F15, the regex-DoS sweep): the infobox value readers,
+ * the link rewriters and `parseWikitextToHtml` itself, each held against a verbatim copy of the code it replaced
+ * on random small texts made of the tokens the code reads (so unbalanced openers and closers are the common
+ * case) and on the real-looking pages of src/tests/fixtures/wikitext. The gate that they are fast is
+ * regex-dos.test.ts.
+ */
+import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
+import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import {
-  nextFileOpener,
-  replaceBareExternalLinks,
   replaceInlineTemplates,
-  replaceLabelledExternalLinks,
   replacePipedLinks,
   replaceSimpleLinks,
-  stripBareExternalLinks,
-  stripComments,
-  stripHtmlTags,
-  stripNamespacedLinks,
-  stripSelfClosingRefs,
-  stripTagBlocks,
   stripUnclosedTemplateTail,
-  unpackExternalLinks,
-  unpackInternalLinks,
-} from "./clean-markup-passes";
+} from "~/lib/wiki-os/transformers/clean-markup-passes";
+import { getImageUrl, resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import {
-  hasReferencesTag,
-  hasReflist,
-  replaceDelimited,
-  replaceHeadings,
-  replaceReferencesTags,
-  replaceReflists,
-  replaceRefs,
-  replaceWikitables,
-  stripNamespacedBrackets,
-} from "./compile-passes";
-import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
+  cleanWikiValue,
+  firstCoordBody,
+  firstFormatnum,
+  firstMagnitude,
+  firstNumberPair,
+  parseInfoboxToHtml,
+  parsePopulation,
+} from "~/lib/wiki-os/transformers/infobox-parser";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import {
+  COMPILE_CEILING,
+  imageDimensionAttributes,
+  parseWikitextToHtml,
+} from "~/lib/wiki-os/transformers/wikitext-parser";
+import { findMatchingClosingBrackets } from "~/lib/wiki-os/wikitext/link-parser";
+import { splitBalancedPipes } from "~/lib/wiki-os/wikitext/parameter-parser";
+import {
+  extractTableCellContent,
+  splitBalancedDoubleTokens,
+} from "~/lib/wiki-os/wikitext/table-parser";
+import { parseInfoboxWithTemplates as legacyParseInfoboxWithTemplates } from "./legacy/unified-parser";
 
-export { unpackInternalLinks };
+const fixtures = fixtureTexts();
+
+// ---- infobox-parser ---------------------------------------------------------------------------------
+
+/** `cleanWikiValue` as it was. */
+function legacyCleanWikiValue(raw: string): string {
+  let s = raw;
+  s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  s = s.replace(/'{2,3}/g, "");
+  s = s.replace(/\{\{[^}]*\}\}/g, "");
+  s = s.replace(/<[^>]+>/g, "");
+  s = s.replace(/&\w+;/g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
+
+/** `parsePopulation` as it was. */
+function legacyParsePopulation(text: string): number | null {
+  let clean = text.replace(/\{\{[^}]*\}\}/g, "").trim();
+  const millMatch = clean.match(/([\d,.]+)\s*(million|billion|thousand)/i);
+  if (millMatch) {
+    const num = parseFloat(millMatch[1]!.replace(/,/g, ""));
+    const mult = millMatch[2]!.toLowerCase();
+    if (!isNaN(num)) {
+      if (mult === "billion") return Math.round(num * 1e9);
+      if (mult === "million") return Math.round(num * 1e6);
+      if (mult === "thousand") return Math.round(num * 1e3);
+    }
+  }
+  const fmtMatch = text.match(/\{\{formatnum[:|](\d[\d,]*)\}\}/i);
+  if (fmtMatch) clean = fmtMatch[1]!;
+  const num = parseFloat(clean.replace(/[,\s]/g, ""));
+  return !isNaN(num) && num > 0 ? Math.round(num) : null;
+}
+
+const VALUE_TOKENS = [
+  "[[",
+  "]]",
+  "[[a|b]]",
+  "[[a]]",
+  "[",
+  "]",
+  "|",
+  "{{",
+  "}}",
+  "{{x}}",
+  "{{coord|",
+  "{{formatnum:",
+  "{{formatnum|",
+  "{{Formatnum:",
+  "1",
+  "2",
+  "12",
+  "3.5",
+  ".",
+  ",",
+  "-",
+  "- ",
+  " ",
+  "\n",
+  "\u00a0",
+  "million",
+  "Billion",
+  "THOUSAND",
+  " million",
+  "a",
+  "<b>",
+  "</b>",
+  "<",
+  ">",
+  "''",
+  "'''",
+  "&amp;",
+  "&",
+  ";",
+  "N",
+  "E",
+  "40",
+  "79.5",
+];
+
+describe("infobox-parser: values are cleaned and read in one scan", () => {
+  const texts = [
+    ...randomTexts(VALUE_TOKENS, 60_000, 51, 12),
+    ...fixtures.flatMap((t) => t.split("\n")),
+  ];
+
+  it("cleanWikiValue", () => {
+    expect(disagreements(texts, cleanWikiValue, legacyCleanWikiValue)).toEqual([]);
+  });
+
+  it("parsePopulation", () => {
+    expect(disagreements(texts, parsePopulation, legacyParsePopulation)).toEqual([]);
+  });
+
+  it("the {{coord|…}} body, the first pair of numbers, the magnitude and the formatnum value", () => {
+    const captures = (text: string) => ({
+      body: text.match(/\{\{coord\|([^}]+)\}\}/i)?.[1] ?? null,
+      pair: ((m) => (m ? [m[1], m[2]] : null))(text.match(/(-?\d+\.?\d*)\s*[,|]\s*(-?\d+\.?\d*)/)),
+      magnitude: ((m) => (m ? [m[1], m[2]] : null))(
+        text.match(/([\d,.]+)\s*(million|billion|thousand)/i)
+      ),
+      formatnum: text.match(/\{\{formatnum[:|](\d[\d,]*)\}\}/i)?.[1] ?? null,
+    });
+    const scanned = (text: string) => ({
+      body: firstCoordBody(text),
+      pair: firstNumberPair(text),
+      magnitude: firstMagnitude(text),
+      formatnum: firstFormatnum(text),
+    });
+    expect(disagreements(texts, scanned, captures)).toEqual([]);
+  });
+});
+
+describe("clean-markup-passes: piped and simple links are rewritten where the expression rewrote them", () => {
+  const LINK_TOKENS = [
+    "[[",
+    "]]",
+    "[",
+    "]",
+    "|",
+    "a",
+    "b c",
+    " ",
+    "[[a|b]]",
+    "[[a]]",
+    "[[|x]]",
+    "[[a|]]",
+    "]]]",
+    "[[[",
+    "\n",
+    "{{",
+    "}}",
+  ];
+  const texts = [...randomTexts(LINK_TOKENS, 60_000, 52, 12), ...fixtures];
+
+  it("replacePipedLinks", () => {
+    expect(
+      disagreements(
+        texts,
+        (t) => replacePipedLinks(t, (target, label) => `<${target}>${label}</>`),
+        (t) =>
+          t.replace(
+            /\[\[([^|\]]+)\|([^\]]+)\]\]/g,
+            (_m, target: string, label: string) => `<${target}>${label}</>`
+          )
+      )
+    ).toEqual([]);
+  });
+
+  it("replaceSimpleLinks", () => {
+    expect(
+      disagreements(
+        texts,
+        (t) => replaceSimpleLinks(t, (target) => `<${target}>`),
+        (t) => t.replace(/\[\[([^\]]+)\]\]/g, (_m, target: string) => `<${target}>`)
+      )
+    ).toEqual([]);
+  });
+});
+
+// ---- wikitext-parser: parseWikitextToHtml, the whole compiler ----------------------------------------------
+// The compiler as it was (verbatim from before the sweep, renamed): its regular-expression passes over the text.
 
 /**
  * Strips recursively nested templates (e.g. {{Infobox ... {{flag|...}} ... }})
  * while selectively unpacking useful inline templates (quotes, main links, flags, lang).
  */
-function stripWikitextTemplates(input: string): string {
+function legacyStripWikitextTemplates(input: string): string {
   if (!input || !input.includes("{{")) return input;
 
   let text = input;
@@ -151,10 +317,10 @@ function stripWikitextTemplates(input: string): string {
 /**
  * Converts MediaWiki wikitables ({| ... |}) to responsive HTML tables.
  */
-function parseWikitables(input: string): string {
+function legacyParseWikitables(input: string): string {
   if (!input.includes("{|")) return input;
 
-  return replaceWikitables(input, (content) => {
+  return input.replace(/\{\|([\s\S]*?)\|\}/g, (_match, content: string) => {
     const lines = content.split("\n");
     let html =
       '\n\n<div class="my-3 overflow-x-auto rounded-xl border border-border/40 bg-card/60 backdrop-blur-md shadow-xs"><table class="w-full text-xs text-left border-collapse">';
@@ -203,38 +369,17 @@ function parseWikitables(input: string): string {
 }
 
 /**
- * ` width="…" height="…"` for an image whose wikitext gave its size (`300px`, `300x200px`): the
- * browser reserves the picture's box before it loads. Nothing for a size not given, and the height
- * only when the text names one.
- */
-export function imageDimensionAttributes(params: readonly string[]): string {
-  for (const param of params) {
-    const size = /^(\d+)(?:x(\d+))?px$/i.exec(param.trim());
-    if (size) return ` width="${size[1]}"${size[2] ? ` height="${size[2]}"` : ""}`;
-  }
-  return "";
-}
-
-/**
  * Converts wikitext file and image tags to HTML figure/img elements,
  * properly handling nested links and balanced brackets in captions.
  */
-function convertWikitextImages(text: string, wikiSource: string): string {
+function legacyConvertWikitextImages(text: string, wikiSource: string): string {
   let result = "";
   let i = 0;
-  // Where every `[[` closes, from one pass: scanning forward from each opener would be quadratic on a page
-  // with thousands of openers that never close.
-  const index = matchBrackets(text);
 
   while (i < text.length) {
-    // Text between links is copied whole, not a character at a time.
-    const open = text.indexOf("[[", i);
-    if (open === -1) break;
-    result += text.slice(i, open);
-    i = open;
     const prefix = text.slice(i, i + 8).toLowerCase();
     if (prefix.startsWith("[[file:") || prefix.startsWith("[[image:")) {
-      const closeIdx = findMatchingClosingBrackets(text, i, index);
+      const closeIdx = findMatchingClosingBrackets(text, i);
       if (closeIdx !== -1) {
         const raw = text.slice(i, closeIdx + 2);
         const inner = raw.slice(2, -2);
@@ -290,63 +435,18 @@ function convertWikitextImages(text: string, wikiSource: string): string {
     i++;
   }
 
-  return result + text.slice(i);
-}
-
-/**
- * Strips wikitext file, image, and media links, properly handling nested brackets.
- */
-export function stripWikitextFiles(text: string): string {
-  const pieces: string[] = [];
-  let copied = 0;
-  let from = 0;
-  // Where every `[[` closes, from one pass: scanning forward from each opener would be quadratic on a page
-  // with thousands of openers that never close.
-  const index = matchBrackets(text);
-
-  for (;;) {
-    const open = nextFileOpener(text, from);
-    if (open === -1) break;
-    const closeIdx = findMatchingClosingBrackets(text, open, index);
-    if (closeIdx === -1) {
-      from = open + 1;
-      continue;
-    }
-    pieces.push(text.slice(copied, open));
-    copied = from = closeIdx + 2;
-  }
-  pieces.push(text.slice(copied));
-  return pieces.join("");
-}
-
-/**
- * ponytail: COMPILE_CEILING, 200,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
- * the in-process fallback for a page MediaWiki could not render (a reader's page or an old revision, an
- * editor preview) and compiles lore cards and feed excerpts in the browser. Page text is user-controlled
- * and up to 2,000,000 characters and the compiler is a chain of regular-expression passes, so above this
- * a text is shown as its escaped source (`plainFallbackHtml`): a hostile page costs one copy, not a compile.
- */
-export const COMPILE_CEILING = 200_000;
-
-/** The source of a page too large to compile: HTML-escaped in a `<pre>`, under a short notice. */
-export function plainFallbackHtml(wikitext: string): string {
-  const escaped = wikitext.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  return (
-    '<p class="wikios-fallback-notice">This page is too large to format right now, so its source text is shown as it is.</p>' +
-    `<pre class="wikios-fallback-plain">${escaped}</pre>`
-  );
+  return result;
 }
 
 /**
  * Robust wikitext parser that converts raw MediaWiki markup into clean HTML
  * for display in card modals, wiki previews, and lore excerpts.
  */
-export function parseWikitextToHtml(
+function legacyParseWikitextToHtml(
   wikitext: string | null | undefined,
   wikiSource: string = "ixwiki"
 ): string {
   if (!wikitext || !wikitext.trim()) return "";
-  if (wikitext.length > COMPILE_CEILING) return plainFallbackHtml(wikitext);
 
   let text = wikitext;
 
@@ -354,7 +454,7 @@ export function parseWikitextToHtml(
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
 
   // 2. Strip HTML comments: <!-- ... -->
-  text = stripComments(text);
+  text = text.replace(/<!--[\s\S]*?-->/g, "");
 
   // 3. Strip MediaWiki magic words & behavior switches
   text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
@@ -363,61 +463,59 @@ export function parseWikitextToHtml(
   const references: string[] = [];
   const refMap = new Map<string, number>();
 
-  text = replaceRefs(text, ({ name, content }) => {
-    const cleanName = name ? name.trim() : "";
-    if (cleanName && refMap.has(cleanName)) {
-      const idx = refMap.get(cleanName)!;
+  text = text.replace(
+    /<ref(?:\s+name=["']?([^"'>\s]+)["']?)?(?:\s*\/>|>(.*?)<\/ref>)/gis,
+    (_match, name, content) => {
+      const cleanName = name ? name.trim() : "";
+      if (cleanName && refMap.has(cleanName)) {
+        const idx = refMap.get(cleanName)!;
+        return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
+      }
+      const idx = references.length + 1;
+      if (cleanName) refMap.set(cleanName, idx);
+      const refContent = (content || "").trim();
+      references.push(refContent || cleanName);
       return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
     }
-    const idx = references.length + 1;
-    if (cleanName) refMap.set(cleanName, idx);
-    const refContent = (content || "").trim();
-    references.push(refContent || cleanName);
-    return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
-  });
+  );
 
   // 5. Strip galleries & math tags
-  text = stripTagBlocks(text, "gallery");
-  text = stripTagBlocks(text, "math");
+  text = text.replace(/<gallery\b[^>]*>[\s\S]*?<\/gallery>/gi, "");
+  text = text.replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, "");
 
   // 6. Convert wikitables to responsive HTML tables
-  text = parseWikitables(text);
+  text = legacyParseWikitables(text);
 
   // 6b. Extract and convert Infobox template to HTML table before stripping
   const infoboxHtml = parseInfoboxToHtml(text);
 
   // 7. Strip recursively nested templates: {{...}}
-  text = stripWikitextTemplates(text);
+  text = legacyStripWikitextTemplates(text);
 
   // 8. Strip category tags: [[Category:...]], [Category:...]
-  text = stripNamespacedLinks(text, "category:");
-  text = stripNamespacedBrackets(text, "category:");
+  text = text.replace(/\[\[(?:category|Category):[^\]]+\]\]/gi, "");
+  text = text.replace(/\[(?:category|Category):[^\]]+\]/gi, "");
 
   // 8b. Strip Template:Name references from MediaWiki extracts
-  text = stripNamespacedLinks(text, "template:");
-  text = stripNamespacedBrackets(text, "template:");
+  text = text.replace(/\[\[(?:Template|template):[^\]]+\]\]/gi, "");
+  text = text.replace(/\[(?:Template|template):[^\]]+\]/gi, "");
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
-  text = convertWikitextImages(text, wikiSource);
+  text = legacyConvertWikitextImages(text, wikiSource);
 
   // 10. Convert wikitext headings
-  text = replaceHeadings(
-    text,
-    4,
-    (title) =>
-      `\n\n<h6 class="text-xs font-bold uppercase tracking-wider text-foreground mt-3 mb-1">${title}</h6>\n\n`
+  text = text.replace(
+    /^====\s*(.*?)\s*====/gm,
+    '\n\n<h6 class="text-xs font-bold uppercase tracking-wider text-foreground mt-3 mb-1">$1</h6>\n\n'
   );
-  text = replaceHeadings(
-    text,
-    3,
-    (title) => `\n\n<h5 class="text-sm font-bold text-foreground mt-3.5 mb-1.5">${title}</h5>\n\n`
+  text = text.replace(
+    /^===\s*(.*?)\s*===/gm,
+    '\n\n<h5 class="text-sm font-bold text-foreground mt-3.5 mb-1.5">$1</h5>\n\n'
   );
-  text = replaceHeadings(
-    text,
-    2,
-    (title) =>
-      `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">${title}</h4>\n\n`
+  text = text.replace(
+    /^==\s*(.*?)\s*==/gm,
+    '\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">$1</h4>\n\n'
   );
 
   // 11. Convert bullet lists (* item)
@@ -475,65 +573,51 @@ export function parseWikitextToHtml(
   text = text.replace(/''((?:(?!'')[\s\S])+)''/g, '<em class="italic text-foreground/90">$1</em>');
 
   // 18. Convert strikethrough: <s>text</s>, <del>text</del>, ~~text~~
-  const strike = (inner: string) => `<del class="line-through opacity-75">${inner}</del>`;
-  text = replaceDelimited(text, [
-    { open: "<s>", close: "</s>", render: strike },
-    { open: "<del>", close: "</del>", render: strike },
-    { open: "~~", close: "~~", render: strike },
-  ]);
+  text = text.replace(
+    /<s>([\s\S]*?)<\/s>|<del>([\s\S]*?)<\/del>|~~([\s\S]*?)~~/gi,
+    (_m, g1, g2, g3) => {
+      const inner = g1 || g2 || g3 || "";
+      return `<del class="line-through opacity-75">${inner}</del>`;
+    }
+  );
 
   // 19. Convert underline: <u>text</u>
-  text = replaceDelimited(text, [
-    {
-      open: "<u>",
-      close: "</u>",
-      render: (inner) => `<u class="underline decoration-primary/60">${inner}</u>`,
-    },
-  ]);
+  text = text.replace(/<u>([\s\S]*?)<\/u>/gi, '<u class="underline decoration-primary/60">$1</u>');
 
   // 20. Convert code/tt: <code>text</code>, <tt>text</tt>
-  const code = (inner: string) =>
-    `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
-  text = replaceDelimited(text, [
-    { open: "<code>", close: "</code>", render: code },
-    { open: "<tt>", close: "</tt>", render: code },
-  ]);
+  text = text.replace(/<code>([\s\S]*?)<\/code>|<tt>([\s\S]*?)<\/tt>/gi, (_m, g1, g2) => {
+    const inner = g1 || g2 || "";
+    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
+  });
 
   // 21. Convert pre blocks: <pre>text</pre>
-  text = replaceDelimited(text, [
-    {
-      open: "<pre>",
-      close: "</pre>",
-      render: (content) =>
-        `\n\n<pre class="my-2 overflow-x-auto rounded-lg bg-muted/40 p-3 font-mono text-xs text-foreground">${content}</pre>\n\n`,
-    },
-  ]);
+  text = text.replace(/<pre>([\s\S]*?)<\/pre>/gi, (_m, content) => {
+    return `\n\n<pre class="my-2 overflow-x-auto rounded-lg bg-muted/40 p-3 font-mono text-xs text-foreground">${content}</pre>\n\n`;
+  });
 
   // 22. Convert piped internal links: [[Target Page|Display Label]]
-  text = replacePipedLinks(text, (page, label) => {
+  text = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (_match, page: string, label: string) => {
     const route = titleToWikiOSRoute(page.trim());
     return `<a href="${route}" class="text-primary font-semibold hover:underline">${label.trim()}</a>`;
   });
 
   // 23. Convert simple internal links: [[Target Page]]
-  text = replaceSimpleLinks(text, (page) => {
+  text = text.replace(/\[\[([^\]]+)\]\]/g, (_match, page: string) => {
     const p = page.trim();
     const route = titleToWikiOSRoute(p);
     return `<a href="${route}" class="text-primary font-semibold hover:underline">${p}</a>`;
   });
 
   // 24. Convert external links with label: [http://example.com Display Label]
-  text = replaceLabelledExternalLinks(
-    text,
-    (url, label) =>
-      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary font-semibold hover:underline inline-flex items-center gap-1">${label}</a>`
+  text = text.replace(
+    /\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary font-semibold hover:underline inline-flex items-center gap-1">$2</a>'
   );
 
   // 25. Convert external links without label: [http://example.com]
-  text = replaceBareExternalLinks(
-    text,
-    (url) =>
-      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[link]</a>`
+  text = text.replace(
+    /\[(https?:\/\/[^\s\]]+)\]/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[link]</a>'
   );
 
   // 25b. Expand references list
@@ -545,16 +629,16 @@ export function parseWikitextToHtml(
       )
       .join("")}</ol>\n\n`;
 
-    if (hasReferencesTag(text)) {
-      text = replaceReferencesTags(text, reflistHtml);
-    } else if (hasReflist(text)) {
-      text = replaceReflists(text, reflistHtml);
+    if (/<references\b[^>]*\/?>/i.test(text)) {
+      text = text.replace(/<references\b[^>]*\/?>/gi, reflistHtml);
+    } else if (/\{\{[Rr]eflist[^}]*\}\}/i.test(text)) {
+      text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, reflistHtml);
     } else {
       text += `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
     }
   } else {
-    text = replaceReferencesTags(text, "");
-    text = replaceReflists(text, "");
+    text = text.replace(/<references\b[^>]*\/?>/gi, "");
+    text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, "");
   }
 
   // 26. Format Paragraphs
@@ -594,103 +678,217 @@ export function parseWikitextToHtml(
   return infoboxHtml ? `${infoboxHtml}\n\n${htmlOutput}` : htmlOutput;
 }
 
-/**
- * ponytail: the most an EXCERPT (`cleanWikiMarkup` with `maxLength > 0`) reads of a text, 20,000
- * characters: it only shows the lead of the page, and `saveArticle` and the inbound sync already cut to
- * this length, so a hostile 2 MB page costs what 20,000 characters cost. A caller that cleans a whole
- * section (`maxLength` 0: the country-import heuristics, the cache and content extractors) gets all of
- * the text, and every pass reads it in linear time (clean-markup-passes.ts); the ones that stayed regular
- * expressions cannot run away (anchored, or bounded by the next `=`, `}` or line end).
- */
-export const CLEAN_MARKUP_CEILING = 20_000;
+const COMPILER_TOKENS = [
+  "<ref>",
+  "</ref>",
+  "<ref name=a>",
+  '<ref name="b"/>',
+  "<ref name=a/>",
+  "<ref name='c' />",
+  "<REF",
+  "<refx>",
+  "<ref ",
+  "name=",
+  "<references/>",
+  "<references>",
+  "<references group=x />",
+  "{{reflist}}",
+  "{{Reflist|2}}",
+  "{|",
+  "|}",
+  "|-",
+  "|",
+  "!",
+  "!!",
+  "||",
+  'style="a" |',
+  "{{Infobox country\n| name = X\n| capital = [[Y]]\n}}",
+  "{{Infobox",
+  "}}",
+  "{{",
+  "{{flag|x}}",
+  "{{nowrap|n}}",
+  "{{quote|q|a}}",
+  "{{convert|1|km|mi}}",
+  "[[a]]",
+  "[[a|b]]",
+  "[[",
+  "]]",
+  "[",
+  "]",
+  "[[File:a.png|thumb|cap [[x]]]]",
+  "[[Image:b.jpg|200px|alt=z]]",
+  "[[File:",
+  "[[Category:C]]",
+  "[Category:D]",
+  "[[category:",
+  "[[Template:T]]",
+  "[Template:U]",
+  "Template:X",
+  "Template :Y",
+  "== H ==",
+  "=== H ===",
+  "==== H ====",
+  "==",
+  "===",
+  "====",
+  "=",
+  "\n",
+  "\n",
+  "\n\n",
+  " ",
+  " ",
+  "\t",
+  "\u00a0",
+  "\r",
+  "* a",
+  "# b",
+  ": c",
+  "; d",
+  "----",
+  "'''",
+  "''",
+  "'''''",
+  "<s>",
+  "</s>",
+  "<S>",
+  "<del>",
+  "</del>",
+  "~~",
+  "<u>",
+  "</u>",
+  "<code>",
+  "</code>",
+  "<tt>",
+  "</tt>",
+  "<pre>",
+  "</pre>",
+  "<gallery>",
+  "</gallery>",
+  "<math>",
+  "</math>",
+  "<!--",
+  "-->",
+  "<!-- c -->",
+  "[http://a.b]",
+  "[http://a.b label]",
+  "[http://a.b  ]",
+  "[https://c.d x y]",
+  "__TOC__",
+  "[blurb:x|y] ",
+  "<blockquote>q</blockquote>",
+  "a",
+  "bc",
+  "Hello world",
+  "Üñï",
+  "&amp;",
+  "<",
+  ">",
+  "{",
+  "}",
+];
 
-/**
- * ponytail: Single authoritative plaintext wikitext cleaner.
- * Strips all wikitext markup, templates, tags, references, and formatting into clean plain text.
- * An excerpt (`maxLength > 0`) reads at most CLEAN_MARKUP_CEILING characters of `rawText`; with
- * `maxLength` 0 the whole text is cleaned.
- */
-export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: number = 0): string {
-  if (!rawText || !rawText.trim()) return "";
+describe("wikitext-parser: parseWikitextToHtml answers what it answered", () => {
+  it("on 30,000 random small texts", () => {
+    const texts = randomTexts(COMPILER_TOKENS, 30_000, 81, 14);
+    expect(
+      disagreements(
+        texts,
+        (t) => parseWikitextToHtml(t, "ixwiki"),
+        (t) => legacyParseWikitextToHtml(t, "ixwiki")
+      )
+    ).toEqual([]);
+  });
 
-  let text =
-    maxLength > 0 && rawText.length > CLEAN_MARKUP_CEILING
-      ? rawText.slice(0, CLEAN_MARKUP_CEILING)
-      : rawText;
+  it("on every real-looking page, whole and cut at every blank line", () => {
+    const pieces = fixtures.flatMap((text) => [text, ...text.split(/\n\n+/)]);
+    expect(
+      disagreements(
+        pieces,
+        (t) => parseWikitextToHtml(t, "ixwiki"),
+        (t) => legacyParseWikitextToHtml(t, "ixwiki")
+      )
+    ).toEqual([]);
+  });
 
-  // 1. Strip blurb tags: [blurb:slug|Title]
-  text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
+  it("serves a text over its ceiling as escaped source, with a notice, and compiles one at it", () => {
+    const over = `<b>${"a & b ".repeat(40_000)}`;
+    expect(over.length).toBeGreaterThan(COMPILE_CEILING);
+    const html = parseWikitextToHtml(over);
+    expect(html.startsWith('<p class="wikios-fallback-notice">')).toBe(true);
+    expect(html).toContain('<pre class="wikios-fallback-plain">&lt;b&gt;a &amp; b a &amp; b ');
+    expect(html.endsWith("</pre>")).toBe(true);
+    expect(html.match(/<pre/g)).toHaveLength(1);
+    const atCeiling = "a ".repeat(COMPILE_CEILING / 2);
+    expect(atCeiling).toHaveLength(COMPILE_CEILING);
+    expect(parseWikitextToHtml(atCeiling)).toBe(
+      `<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3">${atCeiling.trim()}</p>`
+    );
+  });
+});
 
-  // 2. Strip HTML comments: <!-- ... -->
-  text = stripComments(text);
+// ---- adapters/ixstates/unified-parser ----------------------------------------------------------------------
 
-  // 3. Strip MediaWiki magic words & behavior switches
-  text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
+const FIELD_TOKENS = [
+  "<ref>",
+  "</ref>",
+  "<ref name=a>",
+  "<ref name=a/>",
+  "<ref />",
+  "<REF",
+  "<refx>y</ref>",
+  "<small>",
+  "</small>",
+  "<nowiki>",
+  "</nowiki>",
+  "<br>",
+  "<br />",
+  "<!--",
+  "-->",
+  "<!-- c -->",
+  "[[a]]",
+  "[[a|b]]",
+  "[[",
+  "]]",
+  "[[File:x.png|thumb]]",
+  "[[x.png|100px]]",
+  "{{flag|Urcea}}",
+  "{{convert|12|km|mi}}",
+  "{{formatnum:1234}}",
+  "{{Switcher|[[File:a.png]]|b}}",
+  "{{plainlist|a|b}}",
+  "{{nts|5}}",
+  "{{sort|a|b}}",
+  "{{small|s}}",
+  "{{HDI data|2020|x|0.9}}",
+  "{{start date|2020|1|2}}",
+  "'''",
+  "''",
+  "&amp;",
+  " ",
+  ",",
+  ", ",
+  "|",
+  "text",
+  "Urcea",
+  "1,234",
+  "5 million",
+  "40|N",
+  "<b>b</b>",
+  "{{x}}",
+];
 
-  // 4. Strip ref tags: <ref>...</ref> or <ref ... />
-  text = stripTagBlocks(text, "ref");
-  text = stripSelfClosingRefs(text);
-
-  // 5. Strip gallery and math tags
-  text = stripTagBlocks(text, "gallery");
-  text = stripTagBlocks(text, "math");
-
-  // 6. Strip file/image links: [[File:...]], [[Image:...]]
-  text = stripWikitextFiles(text);
-
-  // 7. Strip category links: [[Category:...]]
-  text = stripNamespacedLinks(text, "category:");
-
-  // 8. Strip Template references: [[Template:...]] or Template:Foo
-  text = stripNamespacedLinks(text, "template:");
-  text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
-
-  // 9. Iteratively strip nested templates: {{...}}
-  text = stripWikitextTemplates(text);
-
-  // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
-  text = unpackInternalLinks(text);
-
-  // 11. Convert external links [url text] -> text or [url] -> ""
-  text = unpackExternalLinks(text);
-  text = stripBareExternalLinks(text);
-
-  // 12. Strip HTML tags
-  text = stripHtmlTags(text);
-
-  // 13. Strip headings: == Heading ==
-  text = text.replace(/^==+[^=]+==+/gm, "");
-
-  // 14. Strip bold/italic formatting
-  text = text.replace(/'''''/g, "").replace(/'''/g, "").replace(/''/g, "");
-
-  // 15. Clean up entities and whitespace
-  text = text.replace(/&\w+;/g, " ");
-  text = text.replace(/\s+/g, " ").trim();
-
-  if (maxLength > 0 && text.length > maxLength) {
-    return text.slice(0, maxLength).trim() + "…";
-  }
-
-  return text;
-}
-
-/**
- * Strips all wikitext markup, templates, tags, and formatting into a clean plain text excerpt (default max 300 chars).
- */
-export function cleanWikitextExcerpt(
-  rawText: string | null | undefined,
-  maxLength: number = 300
-): string {
-  return cleanWikiMarkup(rawText, maxLength);
-}
-
-/** Alias for cleanWikiMarkup / cleanWikitextExcerpt */
-export const cleanExcerpt = cleanWikiMarkup;
-
-/**
- * Calculates raw text byte size
- */
-export function calculateRawTextBytes(text: string | null | undefined): number {
-  return Buffer.byteLength(text || "", "utf8");
-}
+describe("unified-parser: infobox values are cleaned by scanning", () => {
+  const infobox = (value: string) =>
+    `{{Infobox country\n| conventional_long_name = ${value}\n| capital = ${value}\n| image_flag = ${value}\n| population_estimate = ${value}\n| leader_name1 = ${value}\n}}`;
+  it("parseInfoboxWithTemplates answers what it answered, on 25,000 random fields", () => {
+    const texts = [...randomTexts(FIELD_TOKENS, 25_000, 121, 12)].map(infobox);
+    expect(
+      disagreements(
+        texts,
+        (t) => parseInfoboxWithTemplates(t, "Urcea"),
+        (t) => legacyParseInfoboxWithTemplates(t, "Urcea")
+      )
+    ).toEqual([]);
+  });
+});

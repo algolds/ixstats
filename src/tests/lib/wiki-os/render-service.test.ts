@@ -449,6 +449,20 @@ describe("renderFallbackView", () => {
     expect(mockUpdateMany).not.toHaveBeenCalled();
   });
 
+  it("serves a page over the compiler's ceiling as its escaped source, and does not compile it", async () => {
+    const wikitext = `<script>alert(1)</script> ${"[[ ".repeat(120_000)}`;
+    mockFindUnique.mockResolvedValue({ wikitext, contentHtml: null });
+
+    const started = performance.now();
+    const bundle = await renderFallbackView("a");
+
+    expect(performance.now() - started).toBeLessThan(5_000);
+    expect(bundle?.bodyHtml).toContain('class="wikios-fallback-plain"');
+    expect(bundle?.bodyHtml).toContain("&lt;script&gt;alert(1)&lt;/script&gt; [[ [[ ");
+    expect(bundle?.bodyHtml).not.toContain("<script");
+    expect(bundle?.bodyHtml).toContain("too large to format");
+  });
+
   it("prefers the HTML MediaWiki produced for an earlier revision over compiling the wikitext", async () => {
     mockFindUnique.mockResolvedValue({
       wikitext: "Newer text",

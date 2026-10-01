@@ -1,3 +1,6 @@
+// The unified infobox parser as it was before the regex-DoS sweep (plan F15), verbatim: regex-dos-transformers.test.ts holds
+// the scanning rewrite against it. Not used by any code.
+
 /**
  * unified-wiki-parser.ts — Comprehensive wiki infobox parser with template processing.
  *
@@ -17,17 +20,7 @@ import {
   extractCoordsFromFields,
   cleanWikiValue,
 } from "~/lib/wiki-os/transformers/infobox-parser";
-import {
-  lowerAscii,
-  replaceInlineTemplates,
-  replaceTagBlocks,
-  rewriteSpans,
-  stripComments,
-  stripHtmlTags,
-  unpackInternalLinks,
-} from "~/lib/wiki-os/transformers/clean-markup-passes";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
-import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
 export { resolveImageUrl };
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -243,34 +236,14 @@ function processHdi(value: string): string {
 }
 
 function processWikilinks(value: string): string {
-  return unpackInternalLinks(value);
-}
-
-/** `<ref .../>` (what `/<ref[^/>]*\/>/gi` cuts): the first `/` or `>` after `<ref` is a `/` that `>` follows. */
-function stripLooseSelfClosingRefs(value: string): string {
-  const lower = lowerAscii(value);
-  const nextStop = forwardFinder(value, /[/>]/g);
-  return rewriteSpans(value, (from) => {
-    for (
-      let open = lower.indexOf("<ref", from);
-      open !== -1;
-      open = lower.indexOf("<ref", open + 1)
-    ) {
-      const stop = nextStop(open + 4);
-      if (stop === -1) return null;
-      if (value.startsWith("/>", stop)) return [open, stop + 2];
-    }
-    return null;
-  });
+  return value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
 }
 
 function processRefs(value: string): string {
-  const withoutBlocks = stripLooseSelfClosingRefs(replaceTagBlocks(value, "ref", () => "", false));
-  // What follows a `<ref ...>` that nothing closes is cut with it.
-  const open = lowerAscii(withoutBlocks).indexOf("<ref");
-  return open !== -1 && withoutBlocks.indexOf(">", open + 4) !== -1
-    ? withoutBlocks.slice(0, open)
-    : withoutBlocks;
+  return value
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
+    .replace(/<ref[^/>]*\/>/gi, "")
+    .replace(/<ref[^>]*>[\s\S]*/gi, "");
 }
 
 function processBr(value: string): string {
@@ -278,11 +251,11 @@ function processBr(value: string): string {
 }
 
 function processSmall(value: string): string {
-  return replaceTagBlocks(value, "small", () => "", false);
+  return value.replace(/<small[^>]*>[\s\S]*?<\/small>/gi, "");
 }
 
 function processComments(value: string): string {
-  return stripComments(value);
+  return value.replace(/<!--[\s\S]*?-->/g, "");
 }
 
 function processSort(value: string): string {
@@ -298,7 +271,7 @@ function processDts(value: string): string {
 }
 
 function processNowiki(value: string): string {
-  return replaceTagBlocks(value, "nowiki", (inside) => inside, false);
+  return value.replace(/<nowiki[^>]*>([\s\S]*?)<\/nowiki>/gi, "$1");
 }
 
 function processColor(value: string): string {
@@ -545,7 +518,7 @@ function extractFilename(value: string): string {
   if (!value) return "";
   // Trim comments first
   // eslint-disable-next-line prefer-const
-  let clean = stripComments(value).trim();
+  let clean = value.replace(/<!--[\s\S]*?-->/g, "").trim();
 
   // If it's an external URL, return as is
   if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) {
@@ -571,9 +544,11 @@ function extractFilename(value: string): string {
   }
 
   // Strip general templates and formatting
-  let plain = unpackInternalLinks(
-    stripHtmlTags(replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => ""))
-  ).trim();
+  let plain = clean
+    .replace(/\{\{[^}]*\}\}/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
+    .trim();
 
   if (plain.includes("|")) {
     plain = plain.split("|")[0]!.trim();
