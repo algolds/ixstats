@@ -77,11 +77,17 @@ describe("wikios page-view queries (plan 412)", () => {
     expect(mockListPages).toHaveBeenCalledTimes(1);
   });
 
-  it("getCategoryPage asks for one page of 200 from `from`", async () => {
+  it("getCategoryPage asks for one page of 200 from `from`, strictly after `after`", async () => {
     mockMemberPage.mockResolvedValue({ members: [], total: 0, next: null });
     await caller().getCategoryPage({ category: "Countries", from: "Au" });
+    expect(mockMemberPage).toHaveBeenCalledWith("Countries", { from: "Au", after: "", limit: 200 });
 
-    expect(mockMemberPage).toHaveBeenCalledWith("Countries", { from: "Au", limit: 200 });
+    await caller().getCategoryPage({ category: "Countries", from: "Au", after: "Aurelia" });
+    expect(mockMemberPage).toHaveBeenLastCalledWith("Countries", {
+      from: "Au",
+      after: "Aurelia",
+      limit: 200,
+    });
   });
 
   it("getFileInfo answers null for an unknown file", async () => {

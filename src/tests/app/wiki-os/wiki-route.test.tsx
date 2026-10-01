@@ -591,21 +591,27 @@ describe("namespaced pages (plan 412 step 4)", () => {
     expect(mockResolveAuthor).not.toHaveBeenCalled();
   });
 
-  it("a category page shows its prose, then its members from ?from=", async () => {
+  it("a category page shows its prose, then its members from ?from= (and strictly after ?after=)", async () => {
     succeeds(article({ title: "Category:Countries" }));
     mockCategoryPage.mockResolvedValue({
       members: [{ title: "Aurelia", namespace: 0 }],
       total: 250,
-      next: "Borea",
+      next: { sortKey: "Aurelia", title: "Aurelia" },
     });
     const { tree } = await outcome(["Category:Countries"], { from: "Au" });
 
-    expect(mockCategoryPage).toHaveBeenCalledWith({ category: "Countries", from: "Au" });
+    expect(mockCategoryPage).toHaveBeenCalledWith({ category: "Countries", from: "Au", after: "" });
+    await outcome(["Category:Countries"], { from: "Aurelia", after: "Aurelia" });
+    expect(mockCategoryPage).toHaveBeenLastCalledWith({
+      category: "Countries",
+      from: "Aurelia",
+      after: "Aurelia",
+    });
     const client = propsOf(tree, "ArticlePageClient");
     expect(client).toMatchObject({ title: "Category:Countries" });
     expect((client?.children as ReactElement).props).toMatchObject({
       total: 250,
-      next: "Borea",
+      next: { sortKey: "Aurelia", title: "Aurelia" },
       from: "Au",
     });
   });

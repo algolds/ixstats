@@ -26,12 +26,21 @@ export interface CategoryMember {
   namespace: number;
 }
 
+/**
+ * A position in a category's member list: the last member shown. The next page starts strictly after
+ * it in (sort key, title) order, so members that share a sort key are neither repeated nor skipped.
+ */
+export interface CategoryCursor {
+  sortKey: string;
+  title: string;
+}
+
 export interface CategoryMemberPage {
   members: CategoryMember[];
   /** Every member of the category, not only this page's. */
   total: number;
-  /** Where the next page starts (a `from` value), or null at the end. */
-  next: string | null;
+  /** The cursor of the next page, or null at the end. */
+  next: CategoryCursor | null;
 }
 
 interface MemberRow {
@@ -43,12 +52,15 @@ interface MemberRow {
 export class CategoryService {
   /**
    * One page of a category's members in MediaWiki's order: by sort key (the page title when it has
-   * none), case-insensitively, starting at `from`. Members of every namespace are listed (a deleted
-   * page is not a member for anyone); the caller tells subcategories (14), files (6) and pages apart.
+   * none), case-insensitively. The page starts at the sort key `from` (inclusive, MediaWiki's
+   * `?from=`), or, with `after` (the title of the last member of the previous page, whose sort key is
+   * `from`), strictly after that member: ties on the sort key break by title, so a long run of equal
+   * keys never repeats or stalls a page. Members of every namespace are listed (a deleted page is not
+   * a member for anyone); the caller tells subcategories (14), files (6) and pages apart.
    */
   static async getMemberPage(
     category: string,
-    { from, limit }: { from: string; limit: number }
+    { from, after, limit }: { from: string; after: string; limit: number }
   ): Promise<CategoryMemberPage> {
     const name = category
       .replace(/^Category:/i, "")
@@ -56,6 +68,11 @@ export class CategoryService {
       .trim();
     const slug = toArticleSlug(name);
     const inCategory = Prisma.sql`c."slug" = ${slug} OR lower(c."name") = lower(${name})`;
+    const sortKey = Prisma.sql`upper(COALESCE(m."sortKey", a."title"))`;
+    const start =
+      after === ""
+        ? Prisma.sql`${sortKey} >= upper(${from})`
+        : Prisma.sql`(${sortKey}, a."title") > (upper(${from}), ${after})`;
 
     const [rows, totals] = await Promise.all([
       db.$queryRaw<MemberRow[]>`
@@ -65,8 +82,8 @@ export class CategoryService {
         JOIN wiki_categories c ON c."id" = m."categoryId"
         JOIN wiki_articles a ON a."id" = m."articleId"
         WHERE (${inCategory}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'
-          AND upper(COALESCE(m."sortKey", a."title")) >= upper(${from})
-        ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"
+          AND ${start}
+        ORDER BY ${sortKey}, a."title"
         LIMIT ${limit + 1}`,
       db.$queryRaw<Array<{ total: bigint }>>`
         SELECT count(*) AS "total"
@@ -76,10 +93,13 @@ export class CategoryService {
         WHERE (${inCategory}) AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED'`,
     ]);
 
-    const members = rows
-      .slice(0, limit)
-      .map((row) => ({ title: row.title, namespace: row.namespace }));
-    return { members, total: Number(totals[0]?.total ?? 0), next: rows[limit]?.sortKey ?? null };
+    const shown = rows.slice(0, limit);
+    const last = shown[shown.length - 1];
+    return {
+      members: shown.map((row) => ({ title: row.title, namespace: row.namespace })),
+      total: Number(totals[0]?.total ?? 0),
+      next: rows.length > limit && last ? { sortKey: last.sortKey, title: last.title } : null,
+    };
   }
 
   /**

@@ -43,11 +43,18 @@ export const wikiosPageViewsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().min(1).max(500),
+        /** The sort key to start at, or (with `after`) the sort key of the last member of the previous page. */
         from: z.string().max(255).default(""),
+        /** The title of the last member of the previous page: start strictly after it. */
+        after: z.string().max(255).default(""),
       })
     )
     .query(({ input }) =>
-      CategoryService.getMemberPage(input.category, { from: input.from, limit: CATEGORY_PAGE_SIZE })
+      CategoryService.getMemberPage(input.category, {
+        from: input.from,
+        after: input.after,
+        limit: CATEGORY_PAGE_SIZE,
+      })
     ),
 
   /** The file behind a `File:` page or `Special:FilePath`; null when WikiOS knows no such file. */

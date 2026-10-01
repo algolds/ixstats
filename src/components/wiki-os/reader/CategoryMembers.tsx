@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
-import type { CategoryMember } from "~/lib/wiki-os/core/category-service";
+import type { CategoryCursor, CategoryMember } from "~/lib/wiki-os/core/category-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 const SUBCATEGORY_NAMESPACE = 14;
@@ -49,8 +49,8 @@ export interface CategoryMembersProps {
   total: number;
   /** The `?from=` of this page ("" on the first). */
   from: string;
-  /** Where the next page starts, or null at the end. */
-  next: string | null;
+  /** The cursor of the next page (`?from=<sort key>&after=<title>`), or null at the end. */
+  next: CategoryCursor | null;
 }
 
 export function CategoryMembers({ title, members, total, from, next }: CategoryMembersProps) {
@@ -94,7 +94,7 @@ export function CategoryMembers({ title, members, total, from, next }: CategoryM
         )}
         {next && (
           <Link
-            href={`${base}?from=${encodeURIComponent(next)}`}
+            href={`${base}?${new URLSearchParams({ from: next.sortKey, after: next.title })}`}
             className="hover:text-wiki"
             prefetch={false}
             rel="next"

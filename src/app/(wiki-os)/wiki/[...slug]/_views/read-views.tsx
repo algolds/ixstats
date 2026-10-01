@@ -107,9 +107,10 @@ async function userView(canon: CanonicalTitle, view: ReadView, query: SearchPara
 /** `Category:<name>`: the page's prose (if it has any), then its members, 200 to a page. */
 async function categoryView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
   const from = queryParam(query, "from") ?? "";
+  const after = queryParam(query, "after") ?? "";
   const [loaded, page] = await Promise.all([
     loadArticle(canon.title, view.followRedirect),
-    orNotFound(api.wikios.getCategoryPage({ category: canon.base, from })),
+    orNotFound(api.wikios.getCategoryPage({ category: canon.base, from, after })),
   ]);
   const members = (
     <CategoryMembers

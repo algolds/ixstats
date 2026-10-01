@@ -145,14 +145,14 @@ describe("CategoryMembers", () => {
         members={members}
         total={450}
         from="Au"
-        next="Borea Sea"
+        next={{ sortKey: "Borea Sea", title: "Borea Sea (country)" }}
       />
     );
 
     expect(screen.getByText(/Showing 4 of 450 members, starting at “Au”/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Next page" })).toHaveAttribute(
       "href",
-      "/wiki/Category:Countries?from=Borea%20Sea"
+      "/wiki/Category:Countries?from=Borea+Sea&after=Borea+Sea+%28country%29"
     );
     expect(screen.getByRole("link", { name: "First page" })).toHaveAttribute(
       "href",

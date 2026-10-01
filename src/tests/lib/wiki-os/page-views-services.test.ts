@@ -52,6 +52,38 @@ import {
   SITEMAP_PAGE_SIZE,
 } from "~/lib/wiki-os/core/sitemap-service";
 
+interface SqlLike {
+  strings: readonly string[];
+  values: readonly unknown[];
+}
+const isSql = (value: unknown): value is SqlLike =>
+  typeof value === "object" && value !== null && "strings" in value && "values" in value;
+
+/** The SQL a `$queryRaw` tagged-template call sends, nested Prisma.sql fragments inlined, "?" for each value. */
+function sqlOf(
+  strings: readonly string[],
+  values: readonly unknown[]
+): { sql: string; values: unknown[] } {
+  let sql = strings[0] ?? "";
+  const flat: unknown[] = [];
+  values.forEach((value, index) => {
+    if (isSql(value)) {
+      const inner = sqlOf(value.strings, value.values);
+      sql += inner.sql;
+      flat.push(...inner.values);
+    } else {
+      sql += "?";
+      flat.push(value);
+    }
+    sql += strings[index + 1] ?? "";
+  });
+  return { sql: sql.replace(/\s+/g, " "), values: flat };
+}
+const call = (index: number) => {
+  const [strings, ...values] = mockQueryRaw.mock.calls[index] as [string[], ...unknown[]];
+  return sqlOf(strings, values);
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockArchived.mockResolvedValue(new Set());
@@ -204,6 +236,7 @@ describe("CategoryService.getMemberPage (Category: pages)", () => {
 
     const page = await CategoryService.getMemberPage("Category:Countries", {
       from: "Au",
+      after: "",
       limit: 2,
     });
 
@@ -213,26 +246,71 @@ describe("CategoryService.getMemberPage (Category: pages)", () => {
         { title: "Category:Islands", namespace: 14 },
       ],
       total: 250,
-      next: "Borea",
+      // The cursor is the last member shown, (sort key, title): the next page starts strictly after it.
+      next: { sortKey: "Islands", title: "Category:Islands" },
     });
     // The first query is ordered by the sort key (the title when there is none), limit + 1 rows.
-    const [members] = mockQueryRaw.mock.calls[0] as [string[], ...unknown[]];
-    expect(members.join("?")).toContain('upper(COALESCE(m."sortKey", a."title"))');
+    const members = call(0);
+    expect(members.sql).toContain('ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"');
     // A deleted page is a member for no one, in the list and in the count.
-    const [totals] = mockQueryRaw.mock.calls[1] as [string[], ...unknown[]];
-    for (const sql of [members.join("?"), totals.join("?")]) {
+    for (const { sql } of [members, call(1)]) {
       expect(sql).toContain(`a."status" = 'PUBLISHED'`);
     }
-    expect(mockQueryRaw.mock.calls[0]).toContain(3);
+    expect(members.values).toContain(3); // limit + 1
   });
 
   it("has no next page at the end of the list", async () => {
     mockQueryRaw
       .mockResolvedValueOnce([{ title: "Aurelia", namespace: 0, sortKey: "Aurelia" }])
       .mockResolvedValueOnce([{ total: BigInt(1) }]);
-    const page = await CategoryService.getMemberPage("Countries", { from: "", limit: 200 });
+    const page = await CategoryService.getMemberPage("Countries", {
+      from: "",
+      after: "",
+      limit: 200,
+    });
     expect(page.next).toBeNull();
     expect(page.total).toBe(1);
+  });
+
+  it("starts a first page at the sort key (inclusive) and a later page strictly after (sort key, title)", async () => {
+    const run = async (from: string, after: string) => {
+      mockQueryRaw.mockClear();
+      mockQueryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: BigInt(0) }]);
+      await CategoryService.getMemberPage("Countries", { from, after, limit: 200 });
+      return call(0);
+    };
+
+    const first = await run("Au", "");
+    expect(first.sql).toContain('upper(COALESCE(m."sortKey", a."title")) >= upper(?)');
+    expect(first.values).toContain("Au");
+
+    const later = await run("A", "Aaron");
+    expect(later.sql).toContain(
+      '(upper(COALESCE(m."sortKey", a."title")), a."title") > (upper(?), ?)'
+    );
+    expect(later.sql).not.toContain(">= upper");
+    expect(later.values).toEqual(expect.arrayContaining(["A", "Aaron"]));
+    // Equal keys sort by title, so the tuple order is the list's own order: no repeat, no stall.
+    expect(later.sql).toContain('ORDER BY upper(COALESCE(m."sortKey", a."title")), a."title"');
+  });
+
+  it("a run of members with one sort key pages through by title: the cursor is the last shown, never the first of the next", async () => {
+    const tied = ["Alpha", "Beta", "Gamma", "Delta"].map((title) => ({
+      title,
+      namespace: 0,
+      sortKey: "SAME",
+    }));
+    mockQueryRaw
+      .mockResolvedValueOnce(tied.slice(0, 3))
+      .mockResolvedValueOnce([{ total: BigInt(4) }]);
+    const page = await CategoryService.getMemberPage("Countries", {
+      from: "",
+      after: "",
+      limit: 2,
+    });
+
+    expect(page.members.map((m) => m.title)).toEqual(["Alpha", "Beta"]);
+    expect(page.next).toEqual({ sortKey: "SAME", title: "Beta" });
   });
 });
 
